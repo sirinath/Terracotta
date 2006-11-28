@@ -6,7 +6,7 @@
 #        Anywhere. Make sure he is aware of such change.
 
 tc.build-control.version=2.2
-tc.build-control.branch=trunk
+tc.build-control.branch=lawton
 tc.tests.configuration.appserver.factory.name=tomcat5
 tc.tests.configuration.appserver.major-version=5.0
 tc.tests.configuration.appserver.minor-version=28
