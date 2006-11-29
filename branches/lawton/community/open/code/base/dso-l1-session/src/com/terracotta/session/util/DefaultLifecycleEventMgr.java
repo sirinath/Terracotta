@@ -37,7 +37,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
         HttpSessionListener l = sessionListeners[i];
         if (l != null) l.sessionCreated(e);
       } catch (Throwable ignore) {
-        // nada
+        ignore.printStackTrace();
       }
 
     }
@@ -51,7 +51,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
         HttpSessionListener l = sessionListeners[i];
         if (l != null) l.sessionDestroyed(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
     }
   }
@@ -63,7 +63,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
       try {
         ((HttpSessionBindingListener) val).valueBound(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
     }
   }
@@ -75,7 +75,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
       try {
         ((HttpSessionBindingListener) val).valueUnbound(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
     }
   }
@@ -88,7 +88,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
         HttpSessionAttributeListener l = attributeListeners[i];
         if (l != null) l.attributeRemoved(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
 
     }
@@ -103,7 +103,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
         HttpSessionAttributeListener l = attributeListeners[i];
         if (l != null) l.attributeReplaced(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
     }
   }
@@ -116,7 +116,7 @@ public class DefaultLifecycleEventMgr implements LifecycleEventMgr {
         HttpSessionAttributeListener l = attributeListeners[i];
         if (l != null) l.attributeAdded(e);
       } catch (Throwable ignore) {
-        // n/a
+        ignore.printStackTrace();
       }
     }
   }
