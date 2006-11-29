@@ -110,16 +110,18 @@ public class TCObjectPhysical extends TCObjectImpl {
   public void logicalInvoke(int method, String methodSignature, Object[] params) {
     throw new UnsupportedOperationException();
   }
-  
+
   public void literalValueChanged(Object newValue, Object oldValue) {
     getObjectManager().getTransactionManager().literalValueChanged(this, newValue, oldValue);
-    setPeerObject(new WeakObjectReference(getObjectID(), newValue, getObjectManager().getReferenceQueue()));
+    synchronized (getResolveLock()) {
+      setPeerObject(new WeakObjectReference(getObjectID(), newValue, getObjectManager().getReferenceQueue()));
+    }
   }
-  
+
   public void setLiteralValue(Object newValue) {
     setPeerObject(new WeakObjectReference(getObjectID(), newValue, getObjectManager().getReferenceQueue()));
   }
-  
+
   protected boolean isEvictable() {
     return true;
   }
