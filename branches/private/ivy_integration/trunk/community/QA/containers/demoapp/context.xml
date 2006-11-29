@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context docBase="simplesession" path="/simplesession">
+
+  <!-- setting randomClass isn't really important here, I'm just
+       testing that standard attributes of Tomcat's standard manager 
+       can be used withthe DSO implementation -->
+  <Manager randomClass="java.util.Random" />    
+</Context>
