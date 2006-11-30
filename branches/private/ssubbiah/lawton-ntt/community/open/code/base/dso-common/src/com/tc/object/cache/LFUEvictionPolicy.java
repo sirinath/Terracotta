@@ -120,7 +120,8 @@ public class LFUEvictionPolicy implements EvictionPolicy {
   }
 
   public Collection getRemovalCandidates(int maxCount) {
-
+    
+    long start = System.currentTimeMillis();
     Collection rv = new HashSet();
     int count = 0;
     ArrayList accessCounts;
@@ -173,6 +174,7 @@ public class LFUEvictionPolicy implements EvictionPolicy {
           c.accessCount(AGING_FACTOR);
           c = (Cacheable) c.getNext();
         }
+        log_time_taken(start);
         return rv;
       }
     }
@@ -217,7 +219,15 @@ public class LFUEvictionPolicy implements EvictionPolicy {
         }
         c = next;
       }
+      log_time_taken(start);
       return rv;
+    }
+  }
+
+  private void log_time_taken(long start) {
+    long taken = System.currentTimeMillis() - start;
+    if(taken > 1000) {
+      logger.info("Time taken to compute removal candidates : " + taken + " ms");
     }
   }
 
