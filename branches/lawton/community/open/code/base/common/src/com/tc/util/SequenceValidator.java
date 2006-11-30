@@ -100,9 +100,6 @@ public class SequenceValidator {
     }
 
     public void setCurrent(SequenceID next) {
-      if(!isNext(next)) {
-        throw new AssertionError("Trying to set to " + next + " but current = " + current);
-      }
       if (sequenceIDs != null) {
       //TODO:: Remove once problem is fixed.
       logger.info("Setting current Sequence IDs from current = " + current + " to next = " + next);
