@@ -1,0 +1,3 @@
+<Context path="/perftest" docBase="perftest">
+<Manager className="org.apache.catalina.session.StandardManager" pathname="" />
+</Context>
