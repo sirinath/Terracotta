@@ -420,11 +420,10 @@ public class DistributedObjectServer extends SEDA {
 
     Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE,
                                                         new BatchTransactionLookupHandler(), 1, maxStageSize);
-    BatchedTransactionProcessor txnProcessor = new BatchedTransactionProcessorImpl(maxStageSize, sequenceValidator,
-                                                                                   objectManager, gtxm,
+    BatchedTransactionProcessor txnProcessor = new BatchedTransactionProcessorImpl( objectManager, gtxm,
                                                                                    batchTxLookupStage.getSink());
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
-                                               new ProcessTransactionHandler(transactionBatchManager, txnProcessor,
+                                               new ProcessTransactionHandler(transactionBatchManager, txnProcessor, sequenceValidator,
                                                                              recycler), 1, maxStageSize);
 
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
