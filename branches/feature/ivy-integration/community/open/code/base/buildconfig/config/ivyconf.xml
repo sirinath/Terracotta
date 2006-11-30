@@ -1,0 +1,11 @@
+<ivyconf>
+  <conf defaultResolver="tc-repo"/>
+  <resolvers>
+    <url name="tc-repo">
+      <artifact pattern="http://eellispc.terracotta.lan/~eellis/lib/[artifact]-[revision].[ext]"/>
+    </url>
+  </resolvers>
+  <modules>
+    <module organisation="terracotta" name=".*" resolver="tc-repo"/>
+  </modules>
+</ivyconf>

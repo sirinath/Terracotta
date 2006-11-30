@@ -2,6 +2,13 @@
 IF NOT EXIST build-tc.rb GOTO no_build_tc
 
 set JRUBY_HOME=%~p0..\..\buildsystems\jruby
+if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
+GOTO has_jruby_home
+
+:install_jruby
+cd buildconfig
+ant
+cd ..
 
 :has_jruby_home
 if "x%JAVA_HOME%"=="x" GOTO has_no_java_home
