@@ -5,6 +5,11 @@ package org.springframework.web.context.request;
 
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * Helper class to expose the  <code>ServletRequestAttributes.getRequest()</code>.
+ * 
+ * @author Liyu Yi
+ */
 public class HttpRequestAccessor {
   public static HttpServletRequest getRequest(ServletRequestAttributes attributes) {
     return attributes.getRequest();
