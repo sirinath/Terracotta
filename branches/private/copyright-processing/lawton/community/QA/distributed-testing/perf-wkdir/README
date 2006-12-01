@@ -1,0 +1,56 @@
+This README pertains to the following files:
+
+	- hosts
+	- http-load-client.properties
+	- license.lic
+	- tc-config.xml
+	
+OVERVIEW:
+	
+	This environment allows you to move compiled Eclipse code from your local
+	machine to a series of dedicated (Linux) machines used in session replication
+	performance testing. The bin directory provides the necessary scrips to begin
+	a "perf" test and collect it's results.
+	
+SETUP:
+
+	Each configured machine will need a directory named "working" in it's user's
+	home directory. You will need to configure ssh keys allowing the master-node
+	to connect with each other node. You will need a copy of the
+	"container-installs" directory placed in the working directory. 
+	
+	NOTE: container-installs contains Tomcat and WebLogic downloaded from
+		http://kong.terracotta.lan/resources/resources/appservers/tc-archives/
+		
+		- Standard Tomcat5.0.28 download in .jar form
+		- tc-weblogic81/server (just the server directory of WLS81)
+
+FILE DESCRIPTIONS:
+
+	"hosts" - lists the machines used for the function of: master-node (primary
+	load client), l1 (container hosts), l2 (cluster admin server), 2ndLoad (other
+	load clients)
+
+	"http-load-client.properties" - lists the hosts which will be paged by the
+	load clients, the number of threads (per load client), sessions (per load
+	client), and session sticky ratio (100 sticky will ensure that a session
+	remains bound to the machine which created it).
+
+	"license.lic" - required by terracotta servers
+
+	"tc-config.xml" - you must edit this file to match your specific cluster
+	environment
+
+IMPORTANT SCRIPTS:
+
+	mv-to-master.sh - will compile, generate (war) and move the entire
+	"perf-wkdir" to the master-node.
+	
+	-- THE REMAINING SCRIPTS DESCRIBED MUST BE RUN FROM THE "MASTER-NODE" --
+
+	killalljava.sh - kills all java processes on each machine in the cluster
+
+	run-containers-standalone.sh - starts each container in the cluster
+
+	run.sh - deploys and runs the entire clustered performance test from start to
+	finish
