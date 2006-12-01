@@ -9,12 +9,13 @@
 	<property name="ivy.jar.dir" value="${basedir}/ivy"/>
 	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy-1.4.jar"/>
 	<property name="ivy.conf.dir" value="${basedir}/config"/>
+	<property name="ivy.buildsystems.dir" value="${basedir}/../../../buildsystems"/>
 	
 	<!-- ================================= 
 	target: resolve-dependencies              
 	================================= -->
 	<target name="resolve-dependencies" depends="configure">
-		<ant inheritRefs="true" antfile="build.xml" dir="../../../buildsystems" target="resolve"/>
+		<ant inheritRefs="true" antfile="build.xml" dir="${ivy.buildsystems.dir}" target="resolve"/>
 	</target>
 	
 	<!-- ================================= 
