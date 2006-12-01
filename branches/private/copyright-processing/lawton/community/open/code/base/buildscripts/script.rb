@@ -1,3 +1,9 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
 # A module which is an instance of the Script class encapsulates in its scope
 # the top-level methods, top-level constants, and instance variables defined in
 # a ruby script file (and its subfiles) loaded by a ruby program. This allows
