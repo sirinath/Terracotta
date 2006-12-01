@@ -9,9 +9,6 @@ import junit.framework.TestCase;
 
 /**
  * @author steve
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 public class IdentityWeakHashMapTest extends TestCase {
   public void tests() throws Exception {

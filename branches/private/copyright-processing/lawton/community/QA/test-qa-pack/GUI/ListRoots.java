@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ */
 import com.tc.admin.ConnectionListener;
 import com.tc.admin.ServerConnectionManager;
 import com.tc.admin.dso.DSOField;
