@@ -1,3 +1,9 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
 #!/bin/bash
 #-------------------------------------------------------------------------------
 # This script will build a tst dist and move it to the perf-wk dir to be
