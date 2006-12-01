@@ -21,20 +21,20 @@ import java.util.Set;
 
 public class BatchedTransactionProcessorImpl implements BatchedTransactionProcessor {
 
-  private static final int                             MAX_TRANSACTIONS_PER_BATCH = 1000;
-  private static final State                           OUT_OF_SINK                = new State("OUT_OF_SINK");
-  private static final State                           IN_SINK                    = new State("IN_SINK");
+  private static final int                     MAX_TRANSACTIONS_PER_BATCH = 1000;
+  private static final State                   OUT_OF_SINK                = new State("OUT_OF_SINK");
+  private static final State                   IN_SINK                    = new State("IN_SINK");
 
-  private final Object                                 completedTxnIdsLock        = new Object();
-  private final TransactionSequencer                   sequencer;
+  private final Object                         completedTxnIdsLock        = new Object();
+  private final TransactionSequencer           sequencer;
 
-  private volatile State                               state                      = OUT_OF_SINK;
-  private volatile BatchedTransactionProcessingContext batchedContext             = new BatchedTransactionProcessingContext();
-  private Set                                          completedTxnIDs            = new HashSet();
+  private volatile State                       state                      = OUT_OF_SINK;
+  private BatchedTransactionProcessingContext  batchedContext             = new BatchedTransactionProcessingContext();
+  private Set                                  completedTxnIDs            = new HashSet();
 
-  private final ServerGlobalTransactionManager         gtxm;
-  private final ObjectManager                          objectManager;
-  private final Sink                                   batchTxnLookupSink;
+  private final ServerGlobalTransactionManager gtxm;
+  private final ObjectManager                  objectManager;
+  private final Sink                           batchTxnLookupSink;
 
   public BatchedTransactionProcessorImpl(ObjectManager objectManager, ServerGlobalTransactionManager gtxm,
                                          Sink batchTxnLookupSink) {
@@ -133,7 +133,7 @@ public class BatchedTransactionProcessorImpl implements BatchedTransactionProces
     return sequencer.isPending(txns);
   }
 
-  public String toString() {
+  public synchronized String toString() {
     return "BatchedTransactionProcessorImpl = { " + state + " batchedContext = " + batchedContext + " } ";
   }
 
