@@ -1,3 +1,11 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
 <!-- Example Server Configuration File -->
 <!-- Note that component elements are nested corresponding to their
      parent-child relationships with each other -->
