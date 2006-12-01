@@ -3,7 +3,7 @@ Terracotta
 
 Documentation: http://docs.terracotta.org
 Forums:        http://www.terracottatech.com/forums/
-Mailing Lists: http://www.terracotta.org/confluence/display/orgsite/Mailing+Lists
+Mailing Lists: http://lists.terracotta.org
 Services:      http://www.terracottatech.com/support_services.shtml
 
 
