@@ -15,6 +15,7 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.util.State;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -140,14 +141,18 @@ public class BatchedTransactionProcessorImpl implements BatchedTransactionProces
   public class TxnLookupContext implements ObjectManagerResultsContext {
 
     private final ServerTransaction txn;
-    private boolean                 pending = false;
+    private volatile boolean        pending = false;
 
     public TxnLookupContext(ServerTransaction txn) {
       this.txn = txn;
     }
 
     public Set getCheckedOutObjectIDs() {
-      return BatchedTransactionProcessorImpl.this.getCheckedOutObjectIDs();
+      if (pending) {
+        return Collections.EMPTY_SET;
+      } else {
+        return BatchedTransactionProcessorImpl.this.getCheckedOutObjectIDs();
+      }
     }
 
     public boolean isPendingRequest() {
