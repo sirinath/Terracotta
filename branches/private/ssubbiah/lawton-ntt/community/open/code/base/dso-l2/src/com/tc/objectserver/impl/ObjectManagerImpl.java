@@ -24,6 +24,7 @@ import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.ManagedObjectFaultingContext;
+import com.tc.objectserver.context.ManagedObjectFlushingContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -38,6 +39,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
+import com.tc.util.Counter;
 import com.tc.util.concurrent.StoppableThread;
 
 import gnu.trove.THashSet;
@@ -72,7 +74,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private static final int                     INITIAL_SET_SIZE         = 1;
   private static final float                   LOAD_FACTOR              = 0.75f;
   private static final int                     INITIAL_MAP_SIZE         = 10000;
-  private static final int                     COMMIT_SIZE              = 500;
+  private static final int                     COMMIT_SIZE              = 5000;
   private static final int                     MAX_LOOKUP_OBJECTS_COUNT = 5000;
   private static final long                    REMOVE_THRESHOLD         = 300;
 
@@ -83,6 +85,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private GarbageCollector                     collector                = new NullGarbageCollector();
   private int                                  checkedOutCount          = 0;
   private PendingList                          pending                  = new PendingList();
+  private Counter                              flushCount               = new Counter();
 
   private volatile boolean                     inShutdown               = false;
 
@@ -91,14 +94,16 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final ThreadGroup                    gcThreadGroup;
   private ObjectManagerStatsListener           stats                    = new NullObjectManagerStatsListener();
   private final PersistenceTransactionProvider persistenceTransactionProvider;
-  private final Sink                           faultManagedObjectStage;
+  private final Sink                           faultSink;
+  private final Sink                           flushSink;
   private final ObjectManagementMonitorMBean   objectManagementMonitor;
 
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
-                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultManagedObjectStage,
-                           ObjectManagementMonitorMBean objectManagementMonitor) {
-    this.faultManagedObjectStage = faultManagedObjectStage;
+                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink,
+                           Sink flushSink, ObjectManagementMonitorMBean objectManagementMonitor) {
+    this.faultSink = faultSink;
+    this.flushSink = flushSink;
     Assert.assertNotNull(objectStore);
     this.config = config;
     this.gcThreadGroup = gcThreadGroup;
@@ -298,7 +303,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       // Request Faulting in a different stage and give back a "Referenced" Proxy
       ManagedObjectFaultingContext mofc = new ManagedObjectFaultingContext(id, isRemoveOnRelease(flags),
                                                                            isMissingOkay(flags));
-      faultManagedObjectStage.add(mofc);
+      faultSink.add(mofc);
 
       // don't account for a cache "miss" unless this was a real request
       // originating from a client
@@ -808,39 +813,54 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     int size = references_size();
     int toEvict = stat.getObjectCountToEvict(size);
     if (toEvict <= 0) return;
+
     // This could be a costly call, so call just once
     Collection removalCandidates = evictionPolicy.getRemovalCandidates(toEvict);
-    int evicted = 0;
-    for (Iterator i = removalCandidates.iterator(); i.hasNext();) {
-      ArrayList splitRC = new ArrayList(COMMIT_SIZE);
-      while (splitRC.size() < COMMIT_SIZE && i.hasNext()) {
-        splitRC.add(i.next());
-        i.remove();
-      }
 
-      HashSet toFlush = new HashSet();
-      ArrayList removed = new ArrayList();
-      reapCache(splitRC, toFlush, removed);
-      evicted += (toFlush.size() + removed.size());
-      removed = null; // / Let GC work for us
-      if (!toFlush.isEmpty()) {
-        PersistenceTransaction tx = newTransaction();
-        flushAll(tx, toFlush);
-        tx.commit();
-        evicted(toFlush);
-      }
+    HashSet toFlush = new HashSet();
+    ArrayList removed = new ArrayList();
+    reapCache(removalCandidates, toFlush, removed);
+
+    int evicted = (toFlush.size() + removed.size());
+    // Let GC work for us
+    removed = null;
+    removalCandidates = null;
+
+    if (!toFlush.isEmpty()) {
+      initateFlushRequest(toFlush);
+      toFlush = null; // make GC work
+      waitUntilFlushComplete();
     }
+
     // TODO:: Send the right objects to the cache manager
     stat.objectEvicted(evicted, references_size(), Collections.EMPTY_LIST);
-    if (false) log_debug_cache_end();
   }
 
-  // XXX::TODO:: Remove this method
-  private void log_debug_cache_end() {
-    int all = getAllObjectIDs().size();
-    int cached = references_size();
-    int percent = cached * 100 / all;
-    logger.debug("Total Objects = " + all + " and cached size is " + cached + " ( about " + percent + " % )");
+  private void waitUntilFlushComplete() {
+    flushCount.waitUntil(0);
+  }
+
+  private void initateFlushRequest(Collection toFlush) {
+    flushCount.increment(toFlush.size());
+    for (Iterator i = toFlush.iterator(); i.hasNext();) {
+      int count = 0;
+      ManagedObjectFlushingContext mofc = new ManagedObjectFlushingContext();
+      while (count < COMMIT_SIZE && i.hasNext()) {
+        mofc.addObjectToFlush(i.next());
+        count++;
+        // i.remove();
+      }
+      flushSink.add(mofc);
+    }
+  }
+
+  public void flushAndEvict(List objects2Flush) {
+    PersistenceTransaction tx = newTransaction();
+    int size = objects2Flush.size();
+    flushAll(tx, objects2Flush);
+    tx.commit();
+    evicted(objects2Flush);
+    flushCount.decrement(size);
   }
 
   // XXX:: This is not synchronized and might not give us the right number. Performance over accuracy. This is to be

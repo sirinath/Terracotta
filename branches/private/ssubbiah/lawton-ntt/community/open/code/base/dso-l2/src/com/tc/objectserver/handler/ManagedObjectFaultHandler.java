@@ -15,7 +15,7 @@ import com.tc.objectserver.persistence.api.ManagedObjectStore;
 
 public class ManagedObjectFaultHandler extends AbstractEventHandler {
 
-  private ObjectManager objectManager;
+  private ObjectManager      objectManager;
   private ManagedObjectStore objectStore;
 
   public void handleEvent(EventContext context) {
@@ -24,7 +24,7 @@ public class ManagedObjectFaultHandler extends AbstractEventHandler {
     ManagedObject mo = objectStore.getObjectByID(oid);
     objectManager.addFaultedObject(oid, mo, mfc.isRemoveOnRelease());
   }
-  
+
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
