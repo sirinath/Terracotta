@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<!-- This is a configuration file to be used by the server when it's running
+     Terracotta demos.
+
+     Note that all data is stored under your temporary directory
+     (for example, /tmp on Un*x-style systems), inside a newly-created 
+     directory each time you run this server. Watch the server's startup
+     output to see exactly where this data is stored.
+-->
+
+<tc:tc-config
+    xmlns:tc="http://www.terracotta.org/config">
+
+    <system>
+        <!-- YOU MUST CHANGE THIS TO RUN JDBC DEMOS.
+        
+             If you want to run JDBC demos, you need to do two things:
+             
+               (a) enable JDBC here, by setting 'jdbc-enabled' to 'true';
+               (b) uncomment the 'application' section below, and 
+                   fill in the hostname of your database under 
+                   'database/listener/host'.
+             
+             You'll also need to make sure you pass correct database connection
+             information to the script that runs each JDBC demo.
+        -->
+        <configuration-model>demo</configuration-model>
+    </system>
+    
+    <servers>
+        <server name="localhost">
+            <data>%d/server/server-data</data>
+            <logs>%d/server/server-logs</logs>
+        
+            <jdbc>
+                <!-- This simply adds some additional visibility into what
+                     the Terracotta JDBC product is doing during the demos.
+                     It does not materially impact the behavior of the product
+                     in any way. -->
+                <debugging>
+                    <layered-drivers-below-server>
+                        <layered-driver>com.tc.jdbc.simple.drivers.logging.LoggingNestingDriver(mode:sql-only,file:stderr,name:server)</layered-driver>
+                    </layered-drivers-below-server>
+                </debugging>
+            </jdbc>
+        </server>
+    </servers>
+
+<!--
+    Uncomment this if you wish to run JDBC demos; see the instructions
+    above.
+-->
+
+    <application>
+        <jdbc>
+            <database>
+                <listener>
+                    <host>test16.terracotta.lan</host>
+                    <port>9001</port>
+                </listener>
+            </database>
+        </jdbc>
+    </application>
+
+
+</tc:tc-config>

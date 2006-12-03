@@ -1,0 +1,50 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.terracotta.dso-container.qa</groupId>
+    <artifactId>container-dso-no-session</artifactId>
+    <packaging>pom</packaging>
+    <name>Servlet accessing pure DSO outside of session context</name>
+    <description>
+        A simple acknowledgment application; designed to test whether using "pure" Terracotta
+        DSO works in the context of a web application when the Terracotta for Sessions product
+        is also in use.  A (badly written) web front end sends ack requests to the ack service,
+        which responds with an ack when one of its [distributed] workers processes the request.
+    </description>
+    <version>CURRENT</version>
+    <url>http://www.terracotta.org/</url>
+    <build>
+        <defaultGoal>package</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.4</source>
+                    <target>1.4</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <module>AckService</module>
+        <module>AckServiceServlet</module>
+    </modules>
+</project>
