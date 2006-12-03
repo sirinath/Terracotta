@@ -1,0 +1,2138 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<project name="tee_tc">
+   
+   <taskdef resource="net/sf/antcontrib/antlib.xml">
+      <classpath>
+         <pathelement location="${basedir}/../../lib/ant/ant-contrib-1.0b2.jar" /> 
+      </classpath>
+   </taskdef>
+
+   <path id="junittest.classpath">
+      <pathelement location="${basedir}/client/build" />
+      <fileset dir="${basedir}/client/build">         
+         <include name="test/CommonTest.class" />
+      	 <include name="test/DSOTest.class" />     	
+      	 <include name="test/DSODocsTest.class" />
+      	 <!--<include name="test/DemoConsoleChatPackTest.class" />-->
+      	 <include name="test/DemoJTablePackTest.class" />
+      	 <include name="test/DemoSharedEditorTest.class" />
+      	 <!--<include name="test/DemoSharedEditor2Test.class" />-->
+      	 <include name="test/DemoWebTest.class" />      	 
+      	 <include name="test/EclipsePackTest.class" />
+      	 <include name="test/JREPackTest.class" />
+      	 <include name="test/CommonTSTTest.class" />
+      	 <include name="test/SessionsTest.class" />
+      	 <include name="test/SessionsDocsTest.class" />
+      	 <include name="test/SandBoxVendorTest.class" />
+      	 <include name="test/CommonTEETest.class" />
+      	 <include name="test/TEEDSOTest.class" />
+     	
+      </fileset>
+      <pathelement location="${build.classes}" />
+   </path>	
+	
+	<property name="tvs.homedir" value="${basedir}/terracotta-2.1.0"/>
+	<property name="tvs.server.download" value="sand.terracotta.lan" />
+	<!--<property name="tvs.server.download" value="fileserver.terracotta.lan" />-->
+	<property name="build.download.dir" value="/export2/homes/cruise/monkey/changeset-kits/main" />
+	<!--<property name="build.download.dir" value="/export2/homes/cruise/monkey/changeset-kits/irving" />-->	
+	<!--<property name="build.download.dir" value="/export2/homes/cruise/monkey/changeset-kits/judah" />-->
+	<property name="build.download.dir" value="/export2/homes/cruise/monkey/candidates/judah/RC8" />
+	<property name="tvs.build.name" value="tvs" />
+	<property name="tvs.zip" value="${tvs.build.name}.zip" />
+	<property name="tvs.targz" value="tvs.tar.gz"/>
+	<property name="tvs.tar" value="${tvs.build.name}.tar" />
+	<property name="tvs.dir" value="${basedir}/TVS" />
+	<property name="client.src" value="${basedir}/client/src" />
+	<property name="client.build" value="${basedir}/client/build" />
+	<property name="java.dir" value="${basedir}/test" />
+	<property name="src.dir" value="${client.src}/test" />
+	<property name="tvs.installer" value="${basedir}/installer" />
+	<!--<property name="admin.dir" value="${basedir}/client/admin" />-->
+	
+	<!-- Root folder files -->
+	<property name="homedir.value" value="${tvs.homedir}" />		
+	
+	<!-- Common folder and files for DSO-->
+	<property name="common.dir" value="${tvs.homedir}/common" />				
+	<property name="lib.dir" value="${common.dir}/lib" />
+	<property name="libdir.value" value="${lib.dir}" />
+	<property name="libdsodir.value" value="${libdir.value}/dso-boot" />
+	
+	<!-- Common folder and files for TST-->
+	<property name="libtomcatdir.value" value="${libdir.value}/tomcat" />
+	<property name="libweblogicdir.value" value="${libdir.value}/weblogic" />
+	
+	<!-- Spring folder and files -->
+	<property name="spring.dir" value="${tvs.homedir}/spring" />	
+	<property name="springbin.dir" value="${spring.dir}/bin" />	
+	<!--<property name="bindir.value" value="${bin.dir}" />	-->
+	<property name="spr_start-tc-server.value" value="${springbin.dir}/start-tc-server.bat" />
+	<property name="spr_stop-tc-server.value" value="${springbin.dir}/stop-tc-server.bat" />
+	<property name="spr_tc-admin.value" value="${springbin.dir}/tc-admin.bat"/>
+	<property name="spr_tc-version.value" value="${springbin.dir}/tc-version.bat"/>
+	<property name="linsol_spr_tc-version.value" value="${springbin.dir}/tc-version.sh"/>
+	<property name="springlibexec.dir" value="${spring.dir}/libexec" />			
+	<property name="springconfigs.dir" value="${spring.dir}/config-sample" />			
+	
+	<!-- Spring Docs folder and files -->
+	<property name="sdocs.dir" value="${spring.dir}/docs" />
+	<property name="sdocsdir.value" value="${sdocs.dir}" />
+	<property name="sdocshtmldir.value" value="${sdocs.dir}/html" />
+	<property name="sdocshtmlTerradir.value" value="${sdocshtmldir.value}/TerracottaSpringGuide" />
+	<property name="sdocshtmlTerracssdir.value" value="${sdocshtmlTerradir.value}/css" />
+	<property name="sdocshtmlTerraimgdir.value" value="${sdocshtmlTerradir.value}/images" />
+	<property name="sdocshtmlTerrascriptsdir.value" value="${sdocshtmlTerradir.value}/scripts" />
+	<property name="sdocshtmlTerradatadir.value" value="${sdocshtmlTerradir.value}/wwhdata" />
+	<property name="sdocshtmlTerradatacomdir.value" value="${sdocshtmlTerradatadir.value}/common" />
+	<property name="sdocshtmlTerradatajsdir.value" value="${sdocshtmlTerradatadir.value}/js" />
+	<property name="sdocshtmlTerradatajssearchdir.value" value="${sdocshtmlTerradatajsdir.value}/search" />
+	<property name="sdocshtmlTerradatajssrpairsdir.value" value="${sdocshtmlTerradatajssearchdir.value}/pairs" />
+	<property name="sdocshtmlTerradataxml.value" value="${sdocshtmlTerradatadir.value}/xml" />
+	<property name="sdocshtmlTerrahelp.value" value="${sdocshtmlTerradir.value}/wwhelp" />
+	<property name="sdocshtmlTerrahelpimg.value" value="${sdocshtmlTerrahelp.value}/images" />
+	<property name="sdocshtmlTerrahelpimpl.value" value="${sdocshtmlTerrahelp.value}/wwhimpl" />
+	<property name="sdocshtmlTerrahelpimplcom.value" value="${sdocshtmlTerrahelpimpl.value}/common" />
+	<property name="sdocshtmlTerrahelpimplcomhtml.value" value="${sdocshtmlTerrahelpimplcom.value}/html" />
+	<property name="sdocshtmlTerrahelpimplcomimg.value" value="${sdocshtmlTerrahelpimplcom.value}/images" />
+	<property name="sdocshtmlTerrahelpimplcompriv.value" value="${sdocshtmlTerrahelpimplcom.value}/private" />
+	<property name="sdocshtmlTerrahelpimplcomscrp.value" value="${sdocshtmlTerrahelpimplcom.value}/scripts" />
+	<property name="sdocshtmlTerrahelpimpljs.value" value="${sdocshtmlTerrahelpimpl.value}/js" />
+	<property name="sdocshtmlTerrahelpimpljshtml.value" value="${sdocshtmlTerrahelpimpljs.value}/html" />
+	<property name="sdocshtmlTerrahelpimpljsimg.value" value="${sdocshtmlTerrahelpimpljs.value}/images" />
+	<property name="sdocshtmlTerrahelpimpljspriv.value" value="${sdocshtmlTerrahelpimpljs.value}/private" />
+	<property name="sdocshtmlTerrahelpimpljsscrp.value" value="${sdocshtmlTerrahelpimpljs.value}/scripts" />	
+	
+	<!-- Sample Coordination folder and files -->
+	<property name="springsamples.dir" value="${spring.dir}/samples" />
+	<property name="sscoordination.dir" value="${springsamples.dir}/coordination" />
+	<property name="sscolib.dir" value="${sscoordination.dir}/lib" />
+	<property name="sscosrc.dir" value="${sscoordination.dir}/src" />
+	<property name="sscosrcmain.dir" value="${sscosrc.dir}/main" />
+	<property name="sscosrcmainjava.dir" value="${sscosrcmain.dir}/java" />
+	<property name="sscosrcmainjavademo.dir" value="${sscosrcmainjava.dir}/demo" />
+	<property name="sscosrcmainjavademoco.dir" value="${sscosrcmainjavademo.dir}/coordination" />
+	<property name="sscosrcmainres.dir" value="${sscosrcmain.dir}/resources" />
+	<property name="sscosrcmainresdemo.dir" value="${sscosrcmainres.dir}/demo" />
+	<property name="sscosrcmainresdemoco.dir" value="${sscosrcmainresdemo.dir}/coordination" />
+	<property name="sscosrcmainwebapp.dir" value="${sscosrcmain.dir}/webapp" />
+	<property name="sscosrcmainwebappINF.dir" value="${sscosrcmainwebapp.dir}/WEB-INF" />
+	<property name="sscotarget.dir" value="${sscoordination.dir}/target" />
+	<property name="sscotargetclasses.dir" value="${sscotarget.dir}/classes/demo/coordination" />
+	<property name="sscotomcat1.dir" value="${sscoordination.dir}/tomcat1" />
+	<property name="sscotomcat1conf.dir" value="${sscotomcat1.dir}/conf" />
+	<property name="sscotomcat1confcat.dir" value="${sscotomcat1conf.dir}/Catalina" />
+	<property name="sscotomcat1confcatlocal.dir" value="${sscotomcat1confcat.dir}/localhost" />
+	<property name="sscotomcat2.dir" value="${sscoordination.dir}/tomcat2" />
+	<property name="sscotomcat2conf.dir" value="${sscotomcat2.dir}/conf" />
+	<property name="sscotomcat2confcat.dir" value="${sscotomcat2conf.dir}/Catalina" />
+	<property name="sscotomcat2confcatlocal.dir" value="${sscotomcat2confcat.dir}/localhost" />
+	
+	<!-- Sample Events folder and files -->
+	<property name="ssevents.dir" value="${springsamples.dir}/events" />
+	<property name="sseventslib.dir" value="${ssevents.dir}/lib" />
+	<property name="sseventssrc.dir" value="${ssevents.dir}/src" />
+	<property name="sseventssrcmain.dir" value="${sseventssrc.dir}/main" />
+	<property name="sseventssrcmainjava.dir" value="${sseventssrcmain.dir}/java" />
+	<property name="sseventssrcmainjavademo.dir" value="${sseventssrcmainjava.dir}/demo" />
+	<property name="sseventssrcmainjavademoevents.dir" value="${sseventssrcmainjavademo.dir}/events" />
+    <property name="sseventssrcmainjavademoeventsweb.dir" value="${sseventssrcmainjavademoevents.dir}/web" />	
+	<property name="sseventssrcmainres.dir" value="${sseventssrcmain.dir}/resources" />
+	<property name="sseventssrcmainresdemo.dir" value="${sseventssrcmainres.dir}/demo" />
+	<property name="sseventssrcmainresdemoevents.dir" value="${sseventssrcmainresdemo.dir}/events" />		
+    <property name="sseventssrcmainwebapp.dir" value="${sseventssrcmain.dir}/webapp" />
+	<property name="sseventssrcmainwebappINF.dir" value="${sseventssrcmainwebapp.dir}/WEB-INF" />
+    <property name="sseventssrcmainwebappINFtld.dir" value="${sseventssrcmainwebappINF.dir}/tld" />
+	<property name="sseventssrcmainwebappINFview.dir" value="${sseventssrcmainwebappINF.dir}/view" />		
+    <property name="sseventstarget.dir" value="${ssevents.dir}/target" />
+	<property name="sseventstargetclasses.dir" value="${sseventstarget.dir}/classes/demo/events" />
+	<property name="sseventstargetclassesdemoeventsweb.dir" value="${sseventstargetclasses.dir}/web" />			
+	<property name="sseventstomcat1.dir" value="${ssevents.dir}/tomcat1" />
+	<property name="sseventstomcat1conf.dir" value="${sseventstomcat1.dir}/conf" />
+	<property name="sseventstomcat1confcat.dir" value="${sseventstomcat1conf.dir}/Catalina" />
+	<property name="sseventstomcat1confcatlocal.dir" value="${sseventstomcat1confcat.dir}/localhost" />
+	<property name="sseventstomcat2.dir" value="${ssevents.dir}/tomcat2" />
+	<property name="sseventstomcat2conf.dir" value="${sseventstomcat2.dir}/conf" />
+	<property name="sseventstomcat2confcat.dir" value="${sseventstomcat2conf.dir}/Catalina" />
+	<property name="sseventstomcat2confcatlocal.dir" value="${sseventstomcat2confcat.dir}/localhost" />
+	
+	<!-- Sample Jmx folder and files -->
+	<property name="ssjmx.dir" value="${springsamples.dir}/jmx" />
+	<property name="ssjmxlib.dir" value="${ssjmx.dir}/lib" />
+	<property name="ssjmxsrc.dir" value="${ssjmx.dir}/src" />
+	<property name="ssjmxsrcmain.dir" value="${ssjmxsrc.dir}/main" />
+	<property name="ssjmxsrcmainjava.dir" value="${ssjmxsrcmain.dir}/java" />
+	<property name="ssjmxsrcmainjavademo.dir" value="${ssjmxsrcmainjava.dir}/demo" />
+	<property name="ssjmxsrcmainjavademojmx.dir" value="${ssjmxsrcmainjavademo.dir}/jmx" />
+    <property name="ssjmxsrcmainjavademojmxweb.dir" value="${ssjmxsrcmainjavademojmx.dir}/web" />	
+	<property name="ssjmxsrcmainres.dir" value="${ssjmxsrcmain.dir}/resources" />
+	<property name="ssjmxsrcmainresdemo.dir" value="${ssjmxsrcmainres.dir}/demo" />
+	<property name="ssjmxsrcmainresdemojmx.dir" value="${ssjmxsrcmainresdemo.dir}/jmx" />		
+    <property name="ssjmxsrcmainwebapp.dir" value="${ssjmxsrcmain.dir}/webapp" />
+	<property name="ssjmxsrcmainwebappINF.dir" value="${ssjmxsrcmainwebapp.dir}/WEB-INF" />
+    <property name="ssjmxsrcmainwebappINFtld.dir" value="${ssjmxsrcmainwebappINF.dir}/tld" />
+	<property name="ssjmxsrcmainwebappINFview.dir" value="${ssjmxsrcmainwebappINF.dir}/view" />		
+    <property name="ssjmxtarget.dir" value="${ssjmx.dir}/target" />
+	<property name="ssjmxtargetclasses.dir" value="${ssjmxtarget.dir}/classes/demo/jmx" />
+	<property name="ssjmxtargetclassesdemojmxweb.dir" value="${ssjmxtargetclasses.dir}/web" />			
+	<property name="ssjmxtomcat1.dir" value="${ssjmx.dir}/tomcat1" />
+	<property name="ssjmxtomcat1conf.dir" value="${ssjmxtomcat1.dir}/conf" />
+	<property name="ssjmxtomcat1confcat.dir" value="${ssjmxtomcat1conf.dir}/Catalina" />
+	<property name="ssjmxtomcat1confcatlocal.dir" value="${ssjmxtomcat1confcat.dir}/localhost" />
+	<property name="ssjmxtomcat2.dir" value="${ssjmx.dir}/tomcat2" />
+	<property name="ssjmxtomcat2conf.dir" value="${ssjmxtomcat2.dir}/conf" />
+	<property name="ssjmxtomcat2confcat.dir" value="${ssjmxtomcat2conf.dir}/Catalina" />
+	<property name="ssjmxtomcat2confcatlocal.dir" value="${ssjmxtomcat2confcat.dir}/localhost" />
+	
+	<!-- Sample Webflow folder and files -->
+	<property name="sswebflow.dir" value="${springsamples.dir}/webflow" />
+	<property name="sswebflowlib.dir" value="${sswebflow.dir}/lib" />
+	<property name="sswebflowsrc.dir" value="${sswebflowlib.dir}/src" />
+	<property name="sswebflowsrcmain.dir" value="${sswebflowsrc.dir}/main" />
+	<property name="sswebflowsrcmainjava.dir" value="${sswebflowsrcmain.dir}/java" />
+	<property name="sswebflowsrcmainjavademo.dir" value="${sswebflowsrcmainjava.dir}/demo" />
+	<property name="sswebflowsrcmainjavademowebflow.dir" value="${sswebflowsrcmainjavademo.dir}/webflow" />
+    <!--<property name="sswebflowsrcmainjavademowebflowweb.dir" value="${sswebflowsrcmainjavademowebflow.dir}/web" />	
+	<property name="sswebflowsrcmainres.dir" value="${sswebflowsrcmain.dir}/resources" />
+	<property name="sswebflowsrcmainresdemo.dir" value="${sswebflowsrcmainres.dir}/demo" />
+	<property name="sswebflowsrcmainresdemowebflow.dir" value="${sswebflowsrcmainresdemo.dir}/webflow" />-->		
+    <property name="sswebflowsrcmainwebapp.dir" value="${sswebflowsrcmain.dir}/webapp" />
+	<property name="sswebflowsrcmainwebappINF.dir" value="${sswebflowsrcmainwebapp.dir}/WEB-INF" />
+    <!--<property name="sswebflowsrcmainwebappINFtld.dir" value="${sswebflowsrcmainwebappINF.dir}/tld" />
+	<property name="sswebflowsrcmainwebappINFview.dir" value="${sswebflowsrcmainwebappINF.dir}/view" />-->		
+    <property name="sswebflowtarget.dir" value="${sswebflow.dir}/target" />
+	<property name="sswebflowtargetclasses.dir" value="${sswebflowtarget.dir}/classes/demo/webflow" />
+	<!--<property name="sswebflowtargetclassesdemowebflowweb.dir" value="${sswebflowtargetclasses.dir}/web" />-->			
+	<property name="sswebflowtomcat1.dir" value="${sswebflow.dir}/tomcat1" />
+	<property name="sswebflowtomcat1conf.dir" value="${sswebflowtomcat1.dir}/conf" />
+	<property name="sswebflowtomcat1confcat.dir" value="${sswebflowtomcat1conf.dir}/Catalina" />
+	<property name="sswebflowtomcat1confcatlocal.dir" value="${sswebflowtomcat1confcat.dir}/localhost" />
+	<property name="sswebflowtomcat2.dir" value="${sswebflow.dir}/tomcat2" />
+	<property name="sswebflowtomcat2conf.dir" value="${sswebflowtomcat2.dir}/conf" />
+	<property name="sswebflowtomcat2confcat.dir" value="${sswebflowtomcat2conf.dir}/Catalina" />
+	<property name="sswebflowtomcat2confcatlocal.dir" value="${sswebflowtomcat2confcat.dir}/localhost" />
+	
+	<!-- spring Uninstall folder -->
+	<property name="spruninstall.dir" value="${spring.dir}/uninstall" />
+	<property name="spruninstallreso.dir" value="${spruninstall.dir}/resource" />
+	
+	<!-- Uninstall folder -->
+	<property name="teeuninstall.dir" value="${tvs.homedir}/uninstall" />
+	<property name="teeuninstallreso.dir" value="${teeuninstall.dir}/resource" />
+	
+	<!-- DSO folder and files -->
+	<property name="dso.dir" value="${tvs.homedir}/dso" />	
+	<property name="bin.dir" value="${dso.dir}/bin" />	
+	<property name="bindir.value" value="${bin.dir}" />	
+	<property name="start-tc-server.value" value="${bin.dir}/start-tc-server.bat" />
+	<property name="stop-tc-server.value" value="${bin.dir}/stop-tc-server.bat" />
+	<property name="tc-admin.value" value="${bin.dir}/tc-admin.bat"/>
+	<property name="tc-version.value" value="${bin.dir}/tc-version.bat"/>
+	<property name="libexec.dir" value="${dso.dir}/libexec" />
+	<property name="libexecdir.value" value="${libexec.dir}" />	
+	<property name="sconfig.dir" value="${dso.dir}/sample-config" />
+	<property name="configs.dir" value="${dso.dir}/config-sample" />
+	<property name="sconfigdir.value" value="${sconfig.dir}" />
+	<!-- DSO Docs folder and files -->
+	<property name="docs.dir" value="${dso.dir}/docs" />
+	<property name="docsdir.value" value="${docs.dir}" />
+	<property name="docshtmldir.value" value="${docs.dir}/html" />
+	<property name="docshtmlTerradir.value" value="${docshtmldir.value}/TerracottaDSOGuide" />
+	<property name="docshtmlTerracssdir.value" value="${docshtmlTerradir.value}/css" />
+	<property name="docshtmlTerraimgdir.value" value="${docshtmlTerradir.value}/images" />
+	<property name="docshtmlTerrascriptsdir.value" value="${docshtmlTerradir.value}/scripts" />
+	<property name="docshtmlTerradatadir.value" value="${docshtmlTerradir.value}/wwhdata" />
+	<property name="docshtmlTerradatacomdir.value" value="${docshtmlTerradatadir.value}/common" />
+	<property name="docshtmlTerradatajsdir.value" value="${docshtmlTerradatadir.value}/js" />
+	<property name="docshtmlTerradatajssearchdir.value" value="${docshtmlTerradatajsdir.value}/search" />
+	<property name="docshtmlTerradatajssrpairsdir.value" value="${docshtmlTerradatajssearchdir.value}/pairs" />
+	<property name="docshtmlTerradataxml.value" value="${docshtmlTerradatadir.value}/xml" />
+	<property name="docshtmlTerrahelp.value" value="${docshtmlTerradir.value}/wwhelp" />
+	<property name="docshtmlTerrahelpimg.value" value="${docshtmlTerrahelp.value}/images" />
+	<property name="docshtmlTerrahelpimpl.value" value="${docshtmlTerrahelp.value}/wwhimpl" />
+	<property name="docshtmlTerrahelpimplcom.value" value="${docshtmlTerrahelpimpl.value}/common" />
+	<property name="docshtmlTerrahelpimplcomhtml.value" value="${docshtmlTerrahelpimplcom.value}/html" />
+	<property name="docshtmlTerrahelpimplcomimg.value" value="${docshtmlTerrahelpimplcom.value}/images" />
+	<property name="docshtmlTerrahelpimplcompriv.value" value="${docshtmlTerrahelpimplcom.value}/private" />
+	<property name="docshtmlTerrahelpimplcomscrp.value" value="${docshtmlTerrahelpimplcom.value}/scripts" />
+	<property name="docshtmlTerrahelpimpljs.value" value="${docshtmlTerrahelpimpl.value}/js" />
+	<property name="docshtmlTerrahelpimpljshtml.value" value="${docshtmlTerrahelpimpljs.value}/html" />
+	<property name="docshtmlTerrahelpimpljsimg.value" value="${docshtmlTerrahelpimpljs.value}/images" />
+	<property name="docshtmlTerrahelpimpljspriv.value" value="${docshtmlTerrahelpimpljs.value}/private" />
+	<property name="docshtmlTerrahelpimpljsscrp.value" value="${docshtmlTerrahelpimpljs.value}/scripts" />				
+			
+	<!-- DSO samples folder and files -->
+	<property name="demo.dir" value="${dso.dir}/samples" />		
+	<property name="demodir.value" value="${demo.dir}"/>	
+	<property name="start-demo-server.value" value="${demo.dir}/start-demo-server.bat" />
+	<property name="tc-config.value" value="${demo.dir}/tc-config.xml" />	
+		
+	<!-- DSO samples/consoleChat folder and files -->
+	<property name="ConsoleChat.dir" value="${demo.dir}/consoleChat" />
+	<property name="ConsoleChatdir.value" value="${ConsoleChat.dir}" />	
+	<property name="Consolesrc.dir" value="${ConsoleChat.dir}/src" />
+	<!--<property name="Consolebuild.value" value="${ConsoleChat.dir}/build.xml" />-->
+	<property name="Consolerundemo.value" value="${ConsoleChat.dir}/rundemo.bat" />			
+	<!-- DSO samples/consoleChat/src folder and files -->
+	<property name="Consolesrcfile.name" value="${Consolesrc.dir}/demo/consolechat" />
+	<property name="Consolesrcfile.value" value="${Consolesrcfile.name}" />
+	<property name="src.consolechatfile" value="${java.dir}/Chatter.java" />
+	<property name="consolechat.rundemofile" value="${java.dir}/rundemo.bat" />
+	
+	<!-- exec and arguments -->	
+	<property name="tvs.host" value="localhost" />
+	<property name="tvs.port" value="9520" />
+	<property name="taskkill.dir" value="C:/WINDOWS/system32/" />
+	<property name="taskkill.name" value="${taskkill.dir}/taskkill.exe" />
+	
+	<!-- DSO Demo/jtable folder and files -->
+	<property name="jtable.dir" value="${demo.dir}/jtable" />
+	<property name="jtabledir.value" value="${jtable.dir}" />
+	<property name="jtablesrc.dir" value="${jtable.dir}/src" />
+	<property name="jtablebuild.value" value="${jtable.dir}/build.bat" />	
+	<property name="jtablerundemo.value" value="${jtable.dir}/rundemo.bat" />
+	<property name="lin_jtablerundemo.value" value="${jtable.dir}/rundemo.sh" />
+	<!-- DSO Demo/jtable/src folder and files -->
+	<property name="jtablesrcfile.name" value="${jtablesrc.dir}/demo/jtable" />
+	<property name="jtablesrcfile.value" value="${jtablesrcfile.name}" />
+	
+	<!-- DSO Demo/shared Editor folder and files -->
+	<property name="sharedEditor.dir" value="${demo.dir}/sharededitor" />	
+	<property name="sharedEditordir.value" value="${sharedEditor.dir}" />
+	<property name="sharedEditorbuild.value" value="${sharedEditor.dir}/build.bat" />	
+	<property name="sharedEditorrundemo.value" value="${sharedEditor.dir}/rundemo.bat" />
+	<property name="lin_sharedEditorrundemo.value" value="${sharedEditor.dir}/rundemo.sh" />
+	<!-- Demo/sharedEditor/lib folder and files -->
+	<property name="sharedEditorlib.dir" value="${sharedEditor.dir}/lib" />
+	<property name="sharedEditorlibdir.value" value="${sharedEditorlib.dir}" />
+	<!-- Demo/sharedEditor/src folder and files -->
+	<property name="sharedEditorsrc.dir" value="${sharedEditor.dir}/src" />
+	<property name="sharedEditorsrcdir.value" value="${sharedEditorsrc.dir}" />
+	<property name="shareddditorclassesdir.value" value="${sharedEditor.dir}/classes" />
+	<property name="sharedEditorsrcsubdir.value" value="${sharedEditorsrc.dir}/demo/sharedEditor" />	
+	<property name="sharedEditorsrcbeansfile.value" value="${sharedEditorsrcsubdir.value}/beans" />
+	<property name="sharedEditorsrcmodelfile.value" value="${sharedEditorsrcsubdir.value}/model" />
+	<property name="sharedEditorsrcuifile.value" value="${sharedEditorsrcsubdir.value}/ui" />
+	<property name="sharedEditorsrcimgfile.value" value="${sharedEditorsrc.dir}/img" />		
+	
+	<!-- DSO Demo/shared Editor2 folder and files -->
+	<property name="sharedEditor2.dir" value="${demo.dir}/sharedEditor2" /> 
+	<property name="sharedEditor2set.dir" value="${sharedEditor2.dir}/.settings" />	
+	<property name="sharedEditor2img.dir" value="${sharedEditor2.dir}/images" />
+	<property name="sharedEditor2lib.dir" value="${sharedEditor2.dir}/lib" />
+	<property name="sharedEditor2src.dir" value="${sharedEditor2.dir}/src" />
+	<property name="sharedEditor2srccom.dir" value="${sharedEditor2src.dir}/com" />
+	<property name="sharedEditor2srccomterra.dir" value="${sharedEditor2srccom.dir}/terracotta" />
+	<property name="sharedEditor2srccomterrasamp.dir" value="${sharedEditor2srccomterra.dir}/samples" />
+	<property name="sharedEditor2srccomterrasampsharededitor.dir" value="${sharedEditor2srccomterrasamp.dir}/sharededitor" />
+	<property name="sharedEditor2srccomterrasampsharededitorcontrols.dir" value="${sharedEditor2srccomterrasampsharededitor.dir}/controls" />
+	<property name="sharedEditor2srccomterrasampsharededitorevents.dir" value="${sharedEditor2srccomterrasampsharededitor.dir}/events" />
+	<property name="sharedEditor2srccomterrasampsharededitormodels.dir" value="${sharedEditor2srccomterrasampsharededitor.dir}/models" />
+	<property name="sharedEditor2srccomterrasampsharededitorui.dir" value="${sharedEditor2srccomterrasampsharededitor.dir}/ui" />
+	
+	<!-- DSO Demo/web folder and files -->
+	<property name="web.dir" value="${demo.dir}/web" />
+	<property name="webdir.value" value="${web.dir}" />
+	<property name="webdemo.dir" value="${web.dir}/demo" />
+	<property name="webdemodir.value" value="${webdemo.dir}" />
+	<property name="webbuild.value" value="${web.dir}/build.bat" />	
+	<property name="webrundemo.value" value="${web.dir}/rundemo.bat" />	
+	<property name="lin_webrundemo.value" value="${web.dir}/rundemo.sh" />
+	<property name="weblib.dir" value="${web.dir}/lib" />
+	<property name="weblibdir.value" value="${weblib.dir}" />
+	<!-- DSO Demo/web/demo/image folder and files -->	
+	<property name="webdemoimgfile.value" value="${webdemo.dir}/images" />	
+	<!-- DSO Demo/web/src folder and files -->
+	<property name="websrc.dir" value="${web.dir}/src" />
+	<property name="websrcdir.value" value="${websrc.dir}" />
+	<property name="websrcfile.value" value="${websrc.dir}/demo/sharedservlet" />
+	<property name="websrcexpfile.value" value="${websrcfile.value}/exception" />	
+	
+	<!-- Uninstall DSO folder and files -->
+	<property name="uninstall.dir" value="${dso.dir}/Uninstall_Terracotta for DSO" />
+	<property name="uninstallreso.dir" value="${uninstall.dir}/resource" />
+
+	<!-- DSO eclipse folder and files -->
+	<property name="eclipse.dir" value="${tvs.homedir}/eclipse" />
+	<property name="eclipsedir.value" value="${eclipse.dir}" />
+	<property name="eclipsecomdir.value" value="${eclipse.dir}/com.terracotta.dso_3.1.1" />
+	<property name="eclipsecomcommondir.value" value="${eclipsecomdir.value}/common" />
+	<property name="eclipsecomcommonlibdir.value" value="${eclipsecomcommondir.value}/lib" />
+	<property name="eclipsecomcommonlibdsodir.value" value="${eclipsecomcommonlibdir.value}/dso-boot" />
+	<property name="eclipsecomlibtomcatdir.value" value="${eclipsecomcommonlibdir.value}/tomcat" />
+	<property name="eclipsecomlibweblogicdir.value" value="${eclipsecomcommonlibdir.value}/weblogic" />		
+	<property name="eclipsecomhtmldir.value" value="${eclipsecomdir.value}/html" />
+	<property name="eclipsecomhtmlconceptsdir.value" value="${eclipsecomhtmldir.value}/concepts" />
+	<property name="eclipsecomhtmlrefdir.value" value="${eclipsecomhtmldir.value}/ref" />
+	<property name="eclipsecomhtmlrefdemodir.value" value="${eclipsecomhtmlrefdir.value}/demos" />
+	<property name="eclipsecomhtmltasksdir.value" value="${eclipsecomhtmldir.value}/tasks" />
+	<property name="eclipsecomhtmltasksconfigdir.value" value="${eclipsecomhtmltasksdir.value}/config" />
+	<property name="eclipsecomhtmltasksconfigappdir.value" value="${eclipsecomhtmltasksconfigdir.value}/app" />
+	<property name="eclipsecomhtmltasksconfigclientsdir.value" value="${eclipsecomhtmltasksconfigdir.value}/clients" />
+	<property name="eclipsecomhtmltasksconfigserversdir.value" value="${eclipsecomhtmltasksconfigdir.value}/servers" />
+	<property name="eclipsecomhtmltutorialdir.value" value="${eclipsecomhtmldir.value}/tutorial" />	
+	<property name="eclipsecomimgdir.value" value="${eclipsecomdir.value}/images" />
+	<property name="eclipsecomimgeclipsedir.value" value="${eclipsecomimgdir.value}/eclipse" />			
+	<property name="eclipsecommetadir.value" value="${eclipsecomdir.value}/META-INF" />	
+	<!--<property name="eclipsemetadir.value" value="${eclipsedir.value}/META-INF" />-->
+
+	<!-- DSO jre folder and files -->
+	<property name="jre.dir" value="${tvs.homedir}/jre" />
+	<property name="jredir.value" value="${jre.dir}" />
+	<property name="jrebindir.value" value="${jredir.value}/bin" />
+	<property name="jrebinclientdir.value" value="${jrebindir.value}/client" />
+	<property name="jrejredir.value" value="${jre.dir}/jre" />
+	<property name="jrejrebindir.value" value="${jrejredir.value}/bin" />
+	<property name="jrejrebinclientdir.value" value="${jrejrebindir.value}/client" />	
+	<property name="jrejrebinserverdir.value" value="${jrejrebindir.value}/server" />
+	<property name="jrejrelibdir.value" value="${jrejredir.value}/lib" />
+	<property name="jrejrelibaudiodir.value" value="${jrejrelibdir.value}/audio" />	
+	<property name="jrejrelibcmmdir.value" value="${jrejrelibdir.value}/cmm" />
+	<property name="jrejrelibextdir.value" value="${jrejrelibdir.value}/ext" />	
+	<property name="jrejrelibfontsdir.value" value="${jrejrelibdir.value}/fonts" />
+	<property name="jrelibdir.value" value="${jre.dir}/lib" />
+	<property name="jrelibaudiodir.value" value="${jrelibdir.value}/audio" />	
+	<property name="jrelibcmmdir.value" value="${jrelibdir.value}/cmm" />
+	<property name="jrelibextdir.value" value="${jrelibdir.value}/ext" />
+	<property name="jrelibfontsdir.value" value="${jrelibdir.value}/fonts" />
+	<property name="jrelibi386dir.value" value="${jrelibdir.value}/i386" />	
+	<property name="jrelibimdir.value" value="${jrelibdir.value}/im" />
+	<property name="jrelibimgdir.value" value="${jrelibdir.value}/images" />
+	<property name="jrelibimgcursorsdir.value" value="${jrelibimgdir.value}/cursors" />
+	<property name="jrelibjavawdir.value" value="${jrelibdir.value}/javaws" />
+	<property name="jrelibmanagdir.value" value="${jrelibdir.value}/management" />
+	<property name="jrelibsecurdir.value" value="${jrelibdir.value}/security" />
+	<property name="jrelibzidir.value" value="${jrelibdir.value}/zi" />	
+     <!-- linux -->
+	<property name="jrejavawsdir.value" value="${jredir.value}/javaws" /> 		
+	<property name="jrelibiclientdir.value" value="${jrelibi386dir.value}/client" />
+	<property name="jrelibiheadlessdir.value" value="${jrelibi386dir.value}/headless" />
+    <property name="jrelibimotifdir.value" value="${jrelibi386dir.value}/motif21" />
+    <property name="jrelibinativedir.value" value="${jrelibi386dir.value}/native_threads" /> 
+    <property name="jrelibiserverdir.value" value="${jrelibi386dir.value}/server" />
+    <property name="jrelibixawtdir.value" value="${jrelibi386dir.value}/xawt" />
+	<property name="jrelibimgicondir.value" value="${jrelibimgdir.value}/icons" />
+	<property name="jrelibobliquedir.value" value="${jrelibdir.value}/oblique-fonts" />		    		
+	<property name="jreliblocaledir.value" value="${jrelibdir.value}/locale" />
+	<property name="jremandir.value" value="${jredir.value}/man" />
+	<property name="jremanjadir.value" value="${jremandir.value}/ja_JP.eucJP" />
+	<property name="jremanjaman1dir.value" value="${jremanjadir.value}/man1" />
+	<property name="jremanman1dir.value" value="${jremandir.value}/man1" />
+    <property name="jreplugindir.value" value="${jredir.value}/plugin" />
+    <property name="jreplugindesktopdir.value" value="${jreplugindir.value}/desktop" />
+    <property name="jreplugini386dir.value" value="${jreplugindir.value}/i386" />
+	<property name="jreplugini386ns7dir.value" value="${jreplugini386dir.value}/ns7" />
+	<property name="jreplugini386ns7gccdir.value" value="${jreplugini386dir.value}/ns7-gcc29" />
+	<!-- solaris -->
+	<property name="jremanjdir.value" value="${jremandir.value}/ja" />
+	<property name="jremanjasman1dir.value" value="${jremanjdir.value}/sman1" />
+	<property name="jremanjapckdir.value" value="${jremandir.value}/ja_JP.PCK" />
+	<property name="jremanjapcksman1dir.value" value="${jremanjapckdir.value}/sman1" />
+	<property name="jremanjajpdir.value" value="${jremandir.value}/ja_JP.UTF-8" />
+	<property name="jremanjajpsman1dir.value" value="${jremanjajpdir.value}/sman1" />
+	<property name="jremansman1dir.value" value="${jremandir.value}/sman1" />
+	<property name="jrepluginsparcdir.value" value="${jreplugindir.value}/sparc" />	
+	<property name="jrepluginsparcns4dir.value" value="${jrepluginsparcdir.value}/ns4" />
+	<property name="jrepluginsparcns7dir.value" value="${jrepluginsparcdir.value}/ns7" />	
+	<property name="jrelibsparcdir.value" value="${jrelibdir.value}/sparc" />
+	<property name="jrelibsparcclientdir.value" value="${jrelibsparcdir.value}/client" />	
+	<property name="jrelibsparcclient64dir.value" value="${jrelibsparcclientdir.value}/64" />
+	<property name="jrelibsparcheadlessdir.value" value="${jrelibsparcdir.value}/headless" />
+	<property name="jrelibsparcmotifdir.value" value="${jrelibsparcdir.value}/motif21" />
+	<property name="jrelibsparcnativedir.value" value="${jrelibsparcdir.value}/native_threads" />
+	<property name="jrelibsparcserverdir.value" value="${jrelibsparcdir.value}/server" />
+	<property name="jrelibsparcserver64dir.value" value="${jrelibsparcserverdir.value}/64" />
+	<property name="jrelibsparcxawtdir.value" value="${jrelibsparcdir.value}/xawt" />	
+	
+	<!-- Sessions folder and files -->
+	<property name="sessions.dir" value="${tvs.homedir}/sessions" />	
+	<property name="sessionsbin.dir" value="${sessions.dir}/bin" />
+	<property name="sess-start-tc-server.value" value="${sessionsbin.dir}/start-tc-server.bat" />
+	<property name="sess-stop-tc-server.value" value="${sessionsbin.dir}/stop-tc-server.bat" />
+	<property name="sess-tc-admin.value" value="${sessionsbin.dir}/tc-admin.bat"/>
+	<property name="sess-tc-config.value" value="${sessionsbin.dir}/tc-configurator.bat"/>
+	<property name="sess-tc-version.value" value="${sessionsbin.dir}/tc-version.bat"/>
+	<property name="lin_sess-tc-version.value" value="${sessionsbin.dir}/tc-version.sh"/>
+	<property name="sessionslibexec.dir" value="${sessions.dir}/libexec" />
+	<property name="sessionsconfigsample.dir" value="${sessions.dir}/config-sample" />
+	<property name="sessionsuninstall.dir" value="${sessions.dir}/uninstall" />
+	<property name="sessionsuninstallres.dir" value="${sessionsuninstall.dir}/resource" />
+	
+	
+	<!-- Sessions Docs folder and files -->
+	<property name="sessionsdocs.dir" value="${sessions.dir}/docs" />	
+	<property name="sessionshtmldir.value" value="${sessionsdocs.dir}/html" />	
+	<property name="sessionshtmlTerradir.value" value="${sessionshtmldir.value}/TerracottaSessionsQuickStart" />
+	<property name="sessionshtmlTerracssdir.value" value="${sessionshtmlTerradir.value}/css" />	
+	<property name="sessionshtmlTerraimgdir.value" value="${sessionshtmlTerradir.value}/images" />	
+	<property name="sessionshtmlTerrascriptsdir.value" value="${sessionshtmlTerradir.value}/scripts" />
+	<property name="sessionshtmlTerradatadir.value" value="${sessionshtmlTerradir.value}/wwhdata" />	
+	<property name="sessionshtmlTerradatacomdir.value" value="${sessionshtmlTerradatadir.value}/common" />	
+	<property name="sessionshtmlTerradatajsdir.value" value="${sessionshtmlTerradatadir.value}/js" />	
+	<property name="sessionshtmlTerradatajssearchdir.value" value="${sessionshtmlTerradatajsdir.value}/search" />
+	<property name="sessionshtmlTerradatajssrpairsdir.value" value="${sessionshtmlTerradatajssearchdir.value}/pairs" />	
+	<property name="sessionshtmlTerradataxml.value" value="${sessionshtmlTerradatadir.value}/xml" />	
+	<property name="sessionshtmlTerrahelp.value" value="${sessionshtmlTerradir.value}/wwhelp" />
+	<property name="sessionshtmlTerrahelpimg.value" value="${sessionshtmlTerrahelp.value}/images" />	
+	<property name="sessionshtmlTerrahelpimpl.value" value="${sessionshtmlTerrahelp.value}/wwhimpl" />	
+	<property name="sessionshtmlTerrahelpimplcom.value" value="${sessionshtmlTerrahelpimpl.value}/common" />	
+	<property name="sessionshtmlTerrahelpimplcomhtml.value" value="${sessionshtmlTerrahelpimplcom.value}/html" />
+	<property name="sessionshtmlTerrahelpimplcomimg.value" value="${sessionshtmlTerrahelpimplcom.value}/images" />
+	<property name="sessionshtmlTerrahelpimplcompriv.value" value="${sessionshtmlTerrahelpimplcom.value}/private" />
+	<property name="sessionshtmlTerrahelpimplcomscrp.value" value="${sessionshtmlTerrahelpimplcom.value}/scripts" />	
+	<property name="sessionshtmlTerrahelpimpljs.value" value="${sessionshtmlTerrahelpimpl.value}/js" />
+	<property name="sessionshtmlTerrahelpimpljshtml.value" value="${sessionshtmlTerrahelpimpljs.value}/html" />
+	<property name="sessionshtmlTerrahelpimpljsimg.value" value="${sessionshtmlTerrahelpimpljs.value}/images" />
+	<property name="sessionshtmlTerrahelpimpljspriv.value" value="${sessionshtmlTerrahelpimpljs.value}/private" />
+	<property name="sessionshtmlTerrahelpimpljsscrp.value" value="${sessionshtmlTerrahelpimpljs.value}/scripts" />
+	
+	<!-- sandbox folder and files -->
+	<property name="sandbox.dir" value="${sessions.dir}/sandbox" />
+	<property name="sandboxdir.value" value="${sandbox.dir}" />
+	<property name="sandboxbindir.value" value="${sandbox.dir}/bin" />
+	<!-- tomcat5.0/9081 folder and files -->
+	<property name="sandboxtom50dir.value" value="${sandbox.dir}/tomcat5.0" />
+	<property name="sandboxtom509081dir.value" value="${sandboxtom50dir.value}/9081" />
+	<property name="sandboxtom509081confdir.value" value="${sandboxtom509081dir.value}/conf" />
+	<property name="sandboxtom509081confcatdir.value" value="${sandboxtom509081confdir.value}/Catalina" />
+	<property name="sandboxtom509081confcatlocaldir.value" value="${sandboxtom509081confcatdir.value}/localhost" />
+	<property name="sandboxtom509081webappsdir.value" value="${sandboxtom509081dir.value}/webapps" />
+	<!-- 9082 folder and files -->
+	<property name="sandboxtom509082dir.value" value="${sandboxtom50dir.value}/9082" />
+	<property name="sandboxtom509082confdir.value" value="${sandboxtom509082dir.value}/conf" />
+	<property name="sandboxtom509082confcatdir.value" value="${sandboxtom509082confdir.value}/Catalina" />
+	<property name="sandboxtom509082confcatlocaldir.value" value="${sandboxtom509082confcatdir.value}/localhost" />
+	<property name="sandboxtom509082webappsdir.value" value="${sandboxtom509082dir.value}/webapps" />
+	<!-- tomcat5.5/9081 folder and files -->
+	<property name="sandboxtom55dir.value" value="${sandbox.dir}/tomcat5.5" />
+	<property name="sandboxtom559081dir.value" value="${sandboxtom55dir.value}/9081" />
+	<property name="sandboxtom559081confdir.value" value="${sandboxtom559081dir.value}/conf" />
+	<property name="sandboxtom559081confcatdir.value" value="${sandboxtom559081confdir.value}/Catalina" />
+	<property name="sandboxtom559081confcatlocaldir.value" value="${sandboxtom559081confcatdir.value}/localhost" />
+	<property name="sandboxtom559081webappsdir.value" value="${sandboxtom559081dir.value}/webapps" />
+	<!-- 9082 folder and files -->
+	<property name="sandboxtom559082dir.value" value="${sandboxtom55dir.value}/9082" />
+	<property name="sandboxtom559082confdir.value" value="${sandboxtom559082dir.value}/conf" />
+	<property name="sandboxtom559082confcatdir.value" value="${sandboxtom559082confdir.value}/Catalina" />
+	<property name="sandboxtom559082confcatlocaldir.value" value="${sandboxtom559082confcatdir.value}/localhost" />
+	<property name="sandboxtom559082webappsdir.value" value="${sandboxtom559082dir.value}/webapps" />
+	<!-- wls/9081 folder and files -->
+	<property name="sandboxwlsdir.value" value="${sandbox.dir}/wls8.1" />
+	<property name="sandboxwls9081dir.value" value="${sandboxwlsdir.value}/9081" />
+	<property name="sandboxwls9081Appldir.value" value="${sandboxwls9081dir.value}/applications" />
+	<property name="sandboxwls9081tmplsdir.value" value="${sandboxwls9081dir.value}/tmpls" />
+	<!-- 9082 -->
+	<property name="sandboxwls9082dir.value" value="${sandboxwlsdir.value}/9082" />
+	<property name="sandboxwls9082Appldir.value" value="${sandboxwls9082dir.value}/applications" />
+	<property name="sandboxwls9082tmplsdir.value" value="${sandboxwls9082dir.value}/tmpls" />
+	<!-- vendor folder and files -->
+	<property name="vendordir.value" value="${tvs.homedir}/vendor" />
+	<property name="vendortomtdir.value" value="${vendordir.value}/tomcat5.5" />
+	<property name="vendortomtbindir.value" value="${vendortomtdir.value}/bin" />
+	<property name="vendortomtcomdir.value" value="${vendortomtdir.value}/common" />
+	<property name="vendortomtcomi18ndir.value" value="${vendortomtcomdir.value}/i18n" />
+	<property name="vendortomtcomlibdir.value" value="${vendortomtcomdir.value}/lib" />
+	<property name="vendortomtconfdir.value" value="${vendortomtdir.value}/conf" />
+	<property name="vendortomtconfcatdir.value" value="${vendortomtconfdir.value}/Catalina" />
+	<property name="vendortomtconfcatlocaldir.value" value="${vendortomtconfcatdir.value}/localhost" />
+	<property name="vendortomtserverdir.value" value="${vendortomtdir.value}/server" />
+	<property name="vendortomtserverlibdir.value" value="${vendortomtserverdir.value}/lib" />
+	<property name="vendortomtserverwebappsdir.value" value="${vendortomtserverdir.value}/webapps" />
+	<property name="vendortomtserverwebhostmandir.value" value="${vendortomtserverwebappsdir.value}/host-manager" />
+	<property name="vendortomtserverwebhostmanimgdir.value" value="${vendortomtserverwebhostmandir.value}/images" />
+	<property name="vendortomtserverwebhostmanINFdir.value" value="${vendortomtserverwebhostmandir.value}/WEB-INF" />
+	<property name="vendortomtserverwebhostmanINFlibdir.value" value="${vendortomtserverwebhostmanINFdir.value}/lib" />
+	<property name="vendortomtserverwebmangdir.value" value="${vendortomtserverwebappsdir.value}/manager" />
+	<property name="vendortomtserverwebmangimgdir.value" value="${vendortomtserverwebmangdir.value}/images" />
+	<property name="vendortomtserverwebmangINFdir.value" value="${vendortomtserverwebmangdir.value}/WEB-INF" />
+	<property name="vendortomtserverwebmangINFlibdir.value" value="${vendortomtserverwebmangINFdir.value}/lib" />
+	<property name="vendortomtwebappsdir.value" value="${vendortomtdir.value}/webapps" />	
+	<property name="vendortomtwebappsrootdir.value" value="${vendortomtwebappsdir.value}/ROOT" />
+	<property name="vendortomtwebappsrootadmindir.value" value="${vendortomtwebappsrootdir.value}/admin" />
+	<property name="vendortomtwebappsrootINFdir.value" value="${vendortomtwebappsrootdir.value}/WEB-INF" />
+	<property name="vendortomtwebappsrootINFlibdir.value" value="${vendortomtwebappsrootINFdir.value}/lib" />
+	
+	<!-- for linux -->
+	<property name="lin_start-tc-server.value" value="${bin.dir}/start-tc-server.sh" />
+	<property name="lin_stop-tc-server.value" value="${bin.dir}/stop-tc-server.sh" />
+	<property name="lin_tc-admin.value" value="${bin.dir}/tc-admin.sh"/>
+	<property name="lin_tc-version.value" value="${bin.dir}/tc-version.sh"/>
+	<property name="lin_start-demo-server.value" value="${demo.dir}/start-demo-server.sh" />
+    
+	<property name="osname" value="${os.name}" />
+	
+	<!--<property name="src.consolechatfile" value="${java.dir}/Chatter.java" />
+		<property name="consolechat.rundemofile" value="${java.dir}/rundemo.bat" />
+		<property name="viewer.tcconfigfile" value="${java.dir}/tc-config.xml" />
+		<property name="libtomcatdir.value" value="${libdir.value}/tomcat" />	
+		<property name="libweblogicdir.value" value="${libdir.value}/weblogic" />-->
+	
+	<if>
+	      <os family="unix" />
+	      <then>
+	         <property name="tvs.start" value="start-tc-server" />
+	         <property name="tvs.stop" value="stop-tc-server" />
+	         <property name="dso-boot.jar" value="${tvs.homedir}/lib/dso-boot/dso-boot-hotspot_linux_142.jar"/>	      	 
+	      </then>
+	      <else>
+	         <property name="tvs.start" value="start-tc-server.bat" />
+	         <property name="tvs.stop" value="stop-tc-server.bat" />
+	         <property name="dso-boot.jar" value="${tvs.homedir}/lib/dso-boot/dso-boot-hotspot_win32_150.jar"/>
+	         <property name="tvs.win" value="true" />
+	      </else>
+	</if>
+	
+	<target name="clean" description="Remove the folders">	      
+	      <delete dir="${basedir}/junitreports" />
+	      <delete dir="${basedir}/reports" />
+	      <delete dir="${basedir}/report" />	      
+	      <delete dir="${tvs.homedir}" />
+		  <delete dir="${tvs.dir}" />
+	   	  <delete dir="${basedir}/client/build" />
+		  <delete file="${basedir}/tvs.zip" />		  
+		  <delete file="${basedir}/version.txt" />
+		  <delete dir="${client.src}" />
+		  <delete dir="${basedir}/client" />
+		  <delete dir="${tvs.installer}" />
+		  <delete file="${basedir}/tvs.tar.gz" />
+		  <delete file="${basedir}/tvs.tar" />
+	</target>
+	
+	<!-- download the kit for windows-->
+	<target name="download_dso" depends="init, download_dso.tvs" >
+	</target>
+	<target name="download_tst" depends="init, download_tst.tvs" >
+	</target>
+	<target name="download_spr" depends="init, download_spr.tvs" >
+	</target>
+	<target name="download_tee" depends="init, download_tee.tvs" >
+	</target>
+	
+	<!-- running pack test for DSO -->
+	<target name="dso_packagetest" depends="init">    	
+		<if><isset property="tvs.win"/>
+		<then>	        
+			<antcall target="compile_client" />
+			<antcall target="deployversion_dso.scripts" />	
+			<parallel>		
+				<sequential> 
+					<sleep seconds="30"/>					
+					<antcall target="dso_test_and_report" />
+				</sequential>		    	
+			</parallel>	
+		</then>
+			<else>
+				<antcall target="download_dso.tvs" />
+				<antcall target="compile_client" />
+				<antcall target="linsol_deployversion_dso.scripts" />
+				<parallel>
+									
+						<sequential> 
+							<sleep seconds="30"/>					
+								<antcall target="dso_test_and_report" />
+						</sequential>		    	
+				</parallel>				
+			</else>
+		 </if>	
+	</target>	
+	
+	<!-- running pack test for Sessions (TST)-->
+	<target name="tst_packagetest" depends="init">    			
+		<if><isset property="tvs.win"/>
+				<then>	        
+					<antcall target="compile_client" />
+					<antcall target="deployversion_tst.scripts" />	
+					<parallel>		
+						<sequential> 
+							<sleep seconds="30"/>					
+							<antcall target="tst_test_and_report" />
+						</sequential>		    	
+					</parallel>	
+				</then>
+					<else>
+						<antcall target="download_tst.tvs" />
+						<antcall target="compile_client" />
+						<antcall target="linsol_deployversion_tst.scripts" />
+						<parallel>
+											
+								<sequential> 
+									<sleep seconds="30"/>					
+										<antcall target="tst_test_and_report" />
+								</sequential>		    	
+						</parallel>				
+					</else>
+				 </if>	
+		</target>
+	
+	<!-- running pack test for SPRING -->
+			<target name="spr_packagetest" depends="init">    			
+				<if><isset property="tvs.win"/>
+						<then>	        
+							<antcall target="compile_client" />
+							<antcall target="deployversion_spr.scripts" />	
+							<parallel>		
+								<sequential> 
+									<sleep seconds="30"/>					
+									<antcall target="spr_test_and_report" />
+								</sequential>		    	
+							</parallel>	
+						</then>
+							<else>
+								<antcall target="download_spr.tvs" />
+								<antcall target="compile_client" />
+								<antcall target="linsol_deployversion_spr.scripts" />
+								<parallel>
+													
+										<sequential> 
+											<sleep seconds="30"/>					
+												<antcall target="lin_spr_test_and_report" />
+										</sequential>		    	
+								</parallel>				
+							</else>
+						 </if>	
+				</target>
+	
+	<!-- running pack test for TEE -->
+		<target name="tee_packagetest" depends="init">    			
+			<if><isset property="tvs.win"/>
+					<then>	        
+						<antcall target="compile_client" />
+						<antcall target="deployversion_dso.scripts" />	
+						<parallel>		
+							<sequential> 
+								<sleep seconds="30"/>					
+								<antcall target="tee_test_and_report" />
+							</sequential>		    	
+						</parallel>	
+					</then>
+						<else>
+							<antcall target="download_tee.tvs" />
+							<antcall target="compile_client" />
+							<antcall target="linsol_deployversion_dso.scripts" />
+							<parallel>
+												
+									<sequential> 
+										<sleep seconds="30"/>					
+											<antcall target="tee_test_and_report" />
+									</sequential>		    	
+							</parallel>				
+						</else>
+					 </if>	
+			</target>
+	
+    <!-- running demos for DSO-->	
+	<target name="consolechat" depends="init, compile_client, deployversion_dso.scripts, consolechatcompile.app, start.tcadmin, start.tvs, deployconsolechat.app, deployconsolechat.app1">
+		<parallel>			
+			<sequential> 
+				<sleep seconds="30"/>          
+				<antcall target="dso_test_and_report" />
+			</sequential>			
+		    
+			<sequential>
+             <sleep seconds="120"/>
+            <antcall target="shutdown_servers" />
+        	</sequential>		
+		</parallel>		
+	</target>
+	
+	<!--<target name="jtable" depends="init, compile_client, deployversion_dso.scripts, jtablecompile.app, start.tcadmin, start.tvs, deployjtable.app, deployjtable.app1">-->
+	<target name="jtable" depends="init, compile_client" >		
+		   <if><isset property="tvs.win"/>
+				<then>
+					<antcall target="deployversion_dso.scripts" />
+					<antcall target="jtablecompile.app" />
+					<antcall target="start.tcadmin" />
+					<antcall target="start.tvs" />
+					<antcall target="deployjtable.app" />
+					<antcall target="deployjtable.app1" />
+					<parallel>	
+						<sequential> 
+							<sleep seconds="30"/>					
+							<antcall target="dso_test_and_report" />
+						</sequential>
+	                   <sequential>
+		                 <sleep seconds="120"/>
+		                    <antcall target="shutdown_servers" />
+		        	   </sequential>
+					</parallel>	
+				</then>
+					<else><if>
+						<equals arg1="${osname}" arg2 = "Linux"/>
+						<then>
+					<antcall target="linsol_deployversion_dso.scripts" />
+					<antcall target="jtablecompile.app" />
+					<antcall target="linsol_start.tcadmin" />
+					<antcall target="linsol_start.tvs" />
+					<antcall target="linsol_deployjtable.app" />
+					<antcall target="linsol_deployjtable.app1" />
+					<parallel>							
+							<sequential> 
+								<sleep seconds="30"/>					
+									<antcall target="dso_test_and_report" />
+							</sequential>
+						<sequential>
+					                 <sleep seconds="120"/>
+					                    <antcall target="lin_shutdown_servers" />
+						</sequential>
+						</parallel>
+					</then>
+					<else>
+						<antcall target="linsol_deployversion_dso.scripts" />
+						<antcall target="jtablecompile.app" />
+						<antcall target="linsol_start.tcadmin" />
+						<antcall target="linsol_start.tvs" />
+						<antcall target="linsol_deployjtable.app" />
+						<antcall target="linsol_deployjtable.app1" />
+						<parallel>							
+								<sequential> 
+									<sleep seconds="30"/>					
+										<antcall target="dso_test_and_report" />
+								</sequential>
+							<sequential>
+						                 <sleep seconds="120"/>
+						                    <antcall target="sol_shutdown_servers" />
+							</sequential>
+							</parallel>
+					</else>
+		 	</if>
+				</else>
+			</if>
+	</target>	
+		
+	<!--<target name="sharededitor" depends="init, compile_client, deployversion_dso.scripts, sharedEditorcompile.app, start.tcadmin, start.tvs, deploysharedEditor.app, deploysharedEditor.app1">-->
+	<target name="sharededitor" depends="init, compile_client" >	
+		<if><isset property="tvs.win"/>
+						<then>
+							<antcall target="deployversion_dso.scripts" />
+							<antcall target="sharedEditorcompile.app" />
+							<antcall target="start.tcadmin" />
+							<antcall target="start.tvs" />
+							<antcall target="deploysharedEditor.app" />
+							<antcall target="deploysharedEditor.app1" />
+							<parallel>	
+								<sequential> 
+									<sleep seconds="30"/>					
+									<antcall target="dso_test_and_report" />
+								</sequential>
+			                   <sequential>
+				                 <sleep seconds="120"/>
+				                    <antcall target="shutdown_servers" />
+				        	   </sequential>
+							</parallel>	
+						</then>
+							<else>
+								<antcall target="linsol_deployversion_dso.scripts" />
+								<antcall target="sharedEditorcompile.app" />
+								<antcall target="linsol_start.tcadmin" />
+								<antcall target="linsol_start.tvs" />
+								<antcall target="linsol_deploysharedEditor.app" />
+								<antcall target="linsol_deploysharedEditor.app1" />
+								<parallel>							
+										<sequential> 
+											<sleep seconds="30"/>					
+												<antcall target="dso_test_and_report" />
+										</sequential>
+									<sequential>
+								                 <sleep seconds="120"/>
+								                    <antcall target="lin_shutdown_servers" />
+									</sequential>
+								</parallel>
+							</else>
+				 </if>		
+	</target>
+	
+	<!--<target name="web" depends="init, compile_client, deployversion_dso.scripts, webcompile.app, start.tcadmin, start.tvs, deployweb.app, deployweb.app1">-->
+	<target name="web" depends="init, compile_client" >
+		<if><isset property="tvs.win"/>
+						<then>
+							<antcall target="deployversion_dso.scripts" />
+							<antcall target="webcompile.app" />
+							<antcall target="start.tcadmin" />
+							<antcall target="start.tvs" />
+							<antcall target="deployweb.app" />
+							<antcall target="deployweb.app1" />
+							<parallel>	
+								<sequential> 
+									<sleep seconds="30"/>					
+									<antcall target="dso_test_and_report" />
+								</sequential>
+			                   <sequential>
+				                 <sleep seconds="120"/>
+				                    <antcall target="shutdown_servers" />
+				        	   </sequential>
+							</parallel>	
+						</then>
+							<else>
+								<antcall target="linsol_deployversion_dso.scripts" />
+								<antcall target="webcompile.app" />
+								<antcall target="linsol_start.tcadmin" />
+								<antcall target="linsol_start.tvs" />
+								<antcall target="linsol_deployweb.app" />
+								<antcall target="linsol_deployweb.app1" />
+								<parallel>							
+										<sequential> 
+											<sleep seconds="30"/>					
+												<antcall target="dso_test_and_report" />
+										</sequential>
+									<sequential>
+								                 <sleep seconds="120"/>
+								                    <antcall target="lin_shutdown_servers" />
+									</sequential>
+								</parallel>
+							</else>
+						 </if>			
+	</target>
+		
+	<target name="init">
+		<echo message="${osname}" />
+	  <available file="${tvs.homedir}" property="tvs.homedir.exists" />      
+      <mkdir dir="${basedir}/reports" />
+      <mkdir dir="${basedir}/junitreports" />
+      <mkdir dir="${basedir}/report/html" />
+	  <mkdir dir="${tvs.installer}" />
+	  <mkdir dir="${tvs.dir}" />
+      <mkdir dir="${basedir}/client/build" />
+      <mkdir dir="${basedir}/client/src/test" />	  
+      <copydir src="${java.dir}" dest="${src.dir}"/>	   
+	</target>
+	
+		
+	<target name="download_dso.tvs" unless="tvs.homedir.exists">   	
+		 <if><isset property="tvs.win"/>
+		<then>			
+			<sshexec host="${tvs.server.download}"
+						    	      	username="cruise"
+						    	      	password="cruise"
+						    	      	trust="yes"
+						    			command="ls -ltr ${build.download.dir}/windows/tc.dso-windows-i686-installer-AT-devwinpc-CS1.3851.exe |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+						    	        outputproperty="tvsexe" />
+						    	        <echo message="********************************************"/>
+						    	        <echo message="${tvsexe}"/>
+						    	        <scp file="cruise:cruise@${tvs.server.download}:${tvsexe}"  localTofile="${tvs.installer}" trust="yes"/> 
+		</then>
+		<else><if>
+			<equals arg1="${osname}" arg2 = "Linux"/>
+			<then>
+				<sshexec host="${tvs.server.download}"
+			    	            	username="cruise"
+			    	            	password="cruise"
+			    	            	trust="yes"
+			    	      			command="ls -ltr ${build.download.dir}/linux/tc.dso-linux-i686-cruise-AT-linmonk3-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+			    	                outputproperty="tvs.tar.gz" />
+			    	                <echo message="********************************************"/>
+			    	                <echo message="${tvs.tar.gz}"/>
+			    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+			    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+			    			<!--<untar src="${basedir}/${tvs.tar}" dest="${basedir}"/>	-->		    
+							<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+							<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+			    			</exec>			     			
+			    	      	<echo message="TVS downloaded file is:"/>
+			     			<echo message="${tvs.targz}"/>
+			</then>
+			<else>
+				<sshexec host="${tvs.server.download}"
+							    	            	username="cruise"
+							    	            	password="cruise"
+							    	            	trust="yes"
+							    	      			command="ls -ltr 
+				${build.download.dir}/solaris/tc.dso-solaris-sparc-cruise-AT-solmonk1-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print 
+				field}'"
+							    	                outputproperty="tvs.tar.gz" />
+							    	                <echo message="********************************************"/>
+							    	                <echo message="${tvs.tar.gz}"/>
+							    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+							    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+											<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+											<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+							    			</exec>			     			
+							    	      	<echo message="TVS downloaded file is:"/>
+							     			<echo message="${tvs.targz}"/>
+			</else>
+			</if>
+			</else>
+			</if>
+	 </target>
+	
+	<target name="download_tst.tvs" unless="tvs.homedir.exists">   	
+			 <if><isset property="tvs.win"/>
+			<then>				
+				<sshexec host="${tvs.server.download}"
+							    	      	username="cruise"
+							    	      	password="cruise"
+							    	      	trust="yes"
+							    			command="ls -ltr ${build.download.dir}/windows/tc.tst-windows-i686-installer-AT-devwinpc-CS1.3851.exe |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+							    	        outputproperty="tvsexe" />
+							    	        <echo message="********************************************"/>
+							    	        <echo message="${tvsexe}"/>
+							    	        <scp file="cruise:cruise@${tvs.server.download}:${tvsexe}"  localTofile="${tvs.installer}" trust="yes"/> 
+			</then>
+			<else><if>
+				<equals arg1="${osname}" arg2 = "Linux"/>
+				<then>
+					<sshexec host="${tvs.server.download}"
+				    	            	username="cruise"
+				    	            	password="cruise"
+				    	            	trust="yes"
+				    	      			command="ls -ltr ${build.download.dir}/linux/tc.tst-linux-i686-cruise-AT-linmonk3-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+				    	                outputproperty="tvs.tar.gz" />
+				    	                <echo message="********************************************"/>
+				    	                <echo message="${tvs.tar.gz}"/>
+				    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+				    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+				    			<!--<untar src="${basedir}/${tvs.tar}" dest="${basedir}"/>	-->		    
+								<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+								<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+				    			</exec>			     			
+				    	      	<echo message="TVS downloaded file is:"/>
+				     			<echo message="${tvs.targz}"/>
+				</then>
+				<else>
+					<sshexec host="${tvs.server.download}"
+								    	            	username="cruise"
+								    	            	password="cruise"
+								    	            	trust="yes"
+								    	      			command="ls -ltr 
+					${build.download.dir}/solaris/tc.tst-solaris-sparc-cruise-AT-solmonk1-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print 
+					field}'"
+								    	                outputproperty="tvs.tar.gz" />
+								    	                <echo message="********************************************"/>
+								    	                <echo message="${tvs.tar.gz}"/>
+								    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+								    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+												<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+												<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+								    			</exec>			     			
+								    	      	<echo message="TVS downloaded file is:"/>
+								     			<echo message="${tvs.targz}"/>
+				</else>
+				</if>
+				</else>
+				</if>
+		 </target>
+	
+	<target name="download_spr.tvs" unless="tvs.homedir.exists">   	
+				 <if><isset property="tvs.win"/>
+				<then>			
+					<sshexec host="${tvs.server.download}"
+								    	      	username="cruise"
+								    	      	password="cruise"
+								    	      	trust="yes"
+								    			command="ls -ltr ${build.download.dir}/windows/tc.spr*.exe |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+								    	        outputproperty="tvsexe" />
+								    	        <echo message="********************************************"/>
+								    	        <echo message="${tvsexe}"/>
+								    	        <scp file="cruise:cruise@${tvs.server.download}:${tvsexe}"  localTofile="${tvs.installer}" trust="yes"/> 
+				</then>
+				<else><if>
+					<equals arg1="${osname}" arg2 = "Linux"/>
+					<then>
+						<sshexec host="${tvs.server.download}"
+					    	            	username="cruise"
+					    	            	password="cruise"
+					    	            	trust="yes"
+					    	      			command="ls -ltr ${build.download.dir}/linux/tc.spr-linux-i686-cruise-AT-linmonk3-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+					    	                outputproperty="tvs.tar.gz" />
+					    	                <echo message="********************************************"/>
+					    	                <echo message="${tvs.tar.gz}"/>
+					    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+					    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+					    			<!--<untar src="${basedir}/${tvs.tar}" dest="${basedir}"/>	-->		    
+									<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+									<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+					    			</exec>			     			
+					    	      	<echo message="TVS downloaded file is:"/>
+					     			<echo message="${tvs.targz}"/>
+					</then>
+					<else>
+						<sshexec host="${tvs.server.download}"
+									    	            	username="cruise"
+									    	            	password="cruise"
+									    	            	trust="yes"
+									    	      			command="ls -ltr 
+						${build.download.dir}/solaris/tc.spr*.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print 
+						field}'"
+									    	                outputproperty="tvs.tar.gz" />
+									    	                <echo message="********************************************"/>
+									    	                <echo message="${tvs.tar.gz}"/>
+									    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+									    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+													<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+													<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+									    			</exec>			     			
+									    	      	<echo message="TVS downloaded file is:"/>
+									     			<echo message="${tvs.targz}"/>
+					</else>
+					</if>
+					</else>
+					</if>
+			 </target>
+	
+	<target name="download_tee.tvs" unless="tvs.homedir.exists">   	
+			 <if><isset property="tvs.win"/>
+			<then>			
+				<sshexec host="${tvs.server.download}"
+							    	      	username="cruise"
+							    	      	password="cruise"
+							    	      	trust="yes"
+							    			command="ls -ltr ${build.download.dir}/windows/tc.tee*.exe |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+							    	        outputproperty="tvsexe" />
+							    	        <echo message="********************************************"/>
+							    	        <echo message="${tvsexe}"/>
+							    	        <scp file="cruise:cruise@${tvs.server.download}:${tvsexe}"  localTofile="${tvs.installer}" trust="yes"/> 
+			</then>
+			<else><if>
+				<equals arg1="${osname}" arg2 = "Linux"/>
+				<then>
+					<sshexec host="${tvs.server.download}"
+				    	            	username="cruise"
+				    	            	password="cruise"
+				    	            	trust="yes"
+				    	      			command="ls -ltr ${build.download.dir}/linux/tc.tee-linux-i686-cruise-AT-linmonk3-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print field}'"
+				    	                outputproperty="tvs.tar.gz" />
+				    	                <echo message="********************************************"/>
+				    	                <echo message="${tvs.tar.gz}"/>
+				    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+				    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+				    			<!--<untar src="${basedir}/${tvs.tar}" dest="${basedir}"/>	-->		    
+								<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+								<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+				    			</exec>			     			
+				    	      	<echo message="TVS downloaded file is:"/>
+				     			<echo message="${tvs.targz}"/>
+				</then>
+				<else>
+					<sshexec host="${tvs.server.download}"
+								    	            	username="cruise"
+								    	            	password="cruise"
+								    	            	trust="yes"
+								    	      			command="ls -ltr 
+					${build.download.dir}/solaris/tc.tee-solaris-sparc-cruise-AT-solmonk1-CS1.3851.tar.gz |awk '$0 !~ /lehman/' | awk '{field=$NF} END {print 
+					field}'"
+								    	                outputproperty="tvs.tar.gz" />
+								    	                <echo message="********************************************"/>
+								    	                <echo message="${tvs.tar.gz}"/>
+								    	       			<scp file="cruise:cruise@${tvs.server.download}:${tvs.tar.gz}"  trust="yes" localTofile="${tvs.targz}"/> 
+								    			<gunzip src="${basedir}/${tvs.targz}" dest="${basedir}/${tvs.tar}"/>
+												<exec dir="${basedir}" command="tar -xvf tvs.tar" outputproperty="${basedir}"></exec>
+												<exec dir="${tvs.dir}" executable="ls" outputproperty="tvs.targz">
+								    			</exec>			     			
+								    	      	<echo message="TVS downloaded file is:"/>
+								     			<echo message="${tvs.targz}"/>
+				</else>
+				</if>
+				</else>
+				</if>
+		 </target>
+	
+	<target name="compile_client">
+		      <chmod dir="${client.build}" perm="777" />
+		      <javac srcdir="${client.src}" destdir="${client.build}" />
+	</target>	
+	
+	<target name="consolechatcompile.app">
+		      <delete dir="${ConsoleChat.dir}/classes" />		     		       
+		      <copy file="${src.consolechatfile}" todir="${Consolesrcfile.name}" overwrite="true"/>	
+		      <copy file="${consolechat.rundemofile}" todir="${ConsoleChat.dir}" overwrite="true"/>
+			  <echo message="successfully deleted the folder: ${consolechatbuild.dir}" />
+		      <mkdir dir="${ConsoleChat.dir}/classes"/>
+		      <echo message="Compling the console chat app ${ConsoleChat.dir}" />
+		      <javac target="1.4" source="1.4" srcdir="${Consolesrc.dir}" destdir="${ConsoleChat.dir}/classes"/>
+		      
+	</target>
+	
+	<target name="jtablecompile.app">
+			      <delete dir="${jtable.dir}/classes" />
+				  <echo message="successfully deleted the folder: ${jtable.dir}/classes" />
+				  <mkdir dir="${jtable.dir}/classes"/>
+			      <echo message="Compling the jtable app ${jtable.dir}" />   
+		          <javac target="1.4" source="1.4" srcdir="${jtablesrc.dir}" destdir="${jtable.dir}/classes"/>
+			      <!--<exec dir="${jtable.dir}" executable="${jtablebuild.value}" spawn="true">		         
+			      </exec>-->
+	</target>
+	
+	<target name="sharedEditorcompile.app">
+				   <delete dir="${sharedEditor.dir}/classes" />
+				   <echo message="successfully deleted the folder: ${sharedEditor.dir}/classes" />
+		           <mkdir dir="${sharedEditor.dir}/classes"/>
+				   <echo message="Compling the shared Editor app ${sharedEditor.dir}" />
+		           <javac target="1.4" source="1.4" srcdir="${sharedEditorsrc.dir}" destdir="${shareddditorclassesdir.value}" classpath="${sharedEditor.dir}/lib/forms_rt.jar"/>
+				   <copy todir="${sharedEditor.dir}/classes/img">
+					<fileset dir="${sharedEditor.dir}/src/img" excludes="**/SCCS/**"/>
+				   </copy>
+				   <!--<echo message="Starting build.bat: ${sharedEditorbuild.value}" />
+				   <exec dir="${sharedEditor.dir}" executable="${sharedEditorbuild.value}" spawn="true">		         
+				   </exec>-->
+	</target>
+	
+	<target name="sharedEditor2compile.app">
+		   <delete dir="${sharedEditor2.dir}/classes" />
+		   <echo message="successfully deleted the folder: ${sharedEditor2.dir}/classes" />
+		   <mkdir dir="${sharedEditor2.dir}/classes"/>
+		   <echo message="Compling the shared Editor2 app ${sharedEditor2.dir}" />		      
+		   <javac target="1.4" source="1.4" srcdir="${sharedEditor2src.dir}" destdir="${sharedEditor2.dir}/classes"/>
+		   
+	</target>
+	
+	<target name="webcompile.app">
+			<delete dir="${web.dir}/classes" />
+			<echo message="successfully deleted the folder: ${web.dir}/classes" />
+		    <mkdir dir="${web.dir}/classes"/>
+			<echo message="Compling the web app ${web.dir}" />
+		    <javac target="1.4" source="1.4" srcdir="${websrc.dir}" destdir="${web.dir}/classes" classpath="${web.dir}/lib/org.mortbay.jetty-4.2.20.jar"/>
+		    <!--<echo message="Starting build.bat: ${webbuild.value}" />
+		    <exec dir="${web.dir}" executable="${webbuild.value}" spawn="true">		         
+			</exec>-->
+	</target>
+	
+	<target name="start.tcadmin">
+		<echo message="Starting terracotta console by running tc.admin.bat: ${tc-admin.value}" />
+		<exec dir="${bin.dir}" executable="${tc-admin.value}" spawn="true">				
+		</exec>		
+	</target>
+	
+	<target name="linsol_start.tcadmin">
+			<echo message="Starting terracotta console by running tc.admin.bat: ${lin_tc-admin.value}" />
+			<exec dir="${bin.dir}" executable="${lin_tc-admin.value}" spawn="true">				
+			</exec>		
+	</target>
+	
+	<target name="start.tvs">		    
+		 <echo message="Starting TVS server from ${start-demo-server.value}" />
+		<chmod file="${start-demo-server.value}" perm="777" />
+		 <exec dir="${demo.dir}" executable="${start-demo-server.value}" spawn="true">		 	
+		 </exec>
+	</target>
+	
+	<target name="linsol_start.tvs">		    
+			 <echo message="Starting TVS server from ${lin_start-demo-server.value}" />
+			<chmod file="${lin_start-demo-server.value}" perm="777" />
+			 <exec dir="${demo.dir}" executable="${lin_start-demo-server.value}" spawn="true">		 	
+			 </exec>
+    </target>
+	
+	<target name="deployconsolechat.app">		    
+		<echo message="Starting the demo from ${Consolerundemo.value}" />
+		<chmod file="${Consolerundemo.value}" perm="777" />
+		<exec dir="${ConsoleChat.dir}" executable="${Consolerundemo.value}" spawn="true">
+		</exec>		
+   </target>
+	
+	<target name="deployconsolechat.app1">		    
+			<echo message="Starting the demo from ${Consolerundemo.value}" />
+			<chmod file="${Consolerundemo.value}" perm="777" />
+			<exec dir="${ConsoleChat.dir}" executable="${Consolerundemo.value}" spawn="true">
+			</exec>							
+		    <!--Note: Modified rundemo.bat with "%*" into "kalai"-->
+		    <!--Note: Modified Chatter.java, In class MessageObject, String message = ""; and String username = ""; into String message = "hi"; and String username = "kalai";-->
+		  
+	</target>	
+	<!--<target name="adminconsole.app">		
+		<javac srcdir="${admin.dir}" classpath="C:\main\code\base\build\deploy\src.classes;C:\main\code\base\build\common\src.classes"
+		destdir="${client.build}" />
+				<echo message="Get the values from admin console" />
+		        <java classname="${client.build}/teetest/ListRoots">		        	         
+		        </java>	
+	</target>-->
+	
+	<target name="deployjtable.app">		    
+				<echo message="Starting the demo from ${jtablerundemo.value}" />
+				<chmod file="${jtablerundemo.value}" perm="777" />
+				<exec dir="${jtable.dir}" executable="${jtablerundemo.value}" spawn="true">
+				</exec>  
+	</target>
+	
+	<target name="deployjtable.app1">		    
+				<echo message="Starting the demo from ${jtablerundemo.value}" />
+				<chmod file="${jtablerundemo.value}" perm="777" />
+				<exec dir="${jtable.dir}" executable="${jtablerundemo.value}" spawn="true">
+				</exec>  
+	</target>
+	
+	<target name="linsol_deployjtable.app">		    
+					<echo message="Starting the demo from ${lin_jtablerundemo.value}" />
+					<chmod file="${lin_jtablerundemo.value}" perm="777" />
+					<exec dir="${jtable.dir}" executable="${lin_jtablerundemo.value}" spawn="true">
+					</exec>  
+		</target>
+		
+	<target name="linsol_deployjtable.app1">		    
+					<echo message="Starting the demo from ${lin_jtablerundemo.value}" />
+					<chmod file="${lin_jtablerundemo.value}" perm="777" />
+					<exec dir="${jtable.dir}" executable="${lin_jtablerundemo.value}" spawn="true">
+					</exec>  
+	</target>
+	
+	<target name="deploysharedEditor.app">		    
+					<echo message="Starting the demo from ${sharedEditorrundemo.value}" />
+					<chmod file="${sharedEditorrundemo.value}" perm="777" />
+					<exec dir="${sharedEditor.dir}" executable="${sharedEditorrundemo.value}" spawn="true">
+					</exec>  
+	</target>
+		
+	<target name="deploysharedEditor.app1">		    
+		<echo message="Starting the demo from ${sharedEditorrundemo.value}" />
+		<chmod file="${sharedEditorrundemo.value}" perm="777" />
+		<exec dir="${sharedEditor.dir}" executable="${sharedEditorrundemo.value}" spawn="true">
+		</exec>  
+	</target>
+	
+	<target name="linsol_deploysharedEditor.app">		    
+						<echo message="Starting the demo from ${lin_sharedEditorrundemo.value}" />
+						<chmod file="${lin_sharedEditorrundemo.value}" perm="777" />
+						<exec dir="${sharedEditor.dir}" executable="${lin_sharedEditorrundemo.value}" spawn="true">
+						</exec>  
+	</target>
+			
+	<target name="linsol_deploysharedEditor.app1">		    
+			<echo message="Starting the demo from ${lin_sharedEditorrundemo.value}" />
+			<chmod file="${lin_sharedEditorrundemo.value}" perm="777" />
+			<exec dir="${sharedEditor.dir}" executable="${lin_sharedEditorrundemo.value}" spawn="true">
+			</exec>  
+	</target>
+	
+	<target name="deployweb.app">
+				<echo message="Starting the demo from ${webrundemo.value}" />
+				<chmod file="${webrundemo.value}" perm="777" />
+				<exec dir="${web.dir}" executable="${webrundemo.value}" spawn="true">
+					<arg line="8051" />
+				</exec>  
+	</target>
+				
+	<target name="deployweb.app1">		    
+			<echo message="Starting the demo from ${webrundemo.value}" />
+			<chmod file="${webrundemo.value}" perm="777" />
+			<exec dir="${web.dir}" executable="${webrundemo.value}" spawn="true">
+				<arg line="8052" />
+			</exec>  
+	</target>
+	
+	<target name="linsol_deployweb.app">
+					<echo message="Starting the demo from ${lin_webrundemo.value}" />
+					<chmod file="${lin_webrundemo.value}" perm="777" />
+					<exec dir="${web.dir}" executable="${lin_webrundemo.value}" spawn="true">
+						<arg line="8051" />
+					</exec>  
+	</target>
+					
+	<target name="linsol_deployweb.app1">		    
+			<echo message="Starting the demo from ${lin_webrundemo.value}" />
+			<chmod file="${lin_webrundemo.value}" perm="777" />
+			<exec dir="${web.dir}" executable="${lin_webrundemo.value}" spawn="true">
+				<arg line="8052" />
+			</exec>  
+	</target>
+	 
+	<target name="deployversion_dso.scripts">			
+		<echo message="Starting tc version from ${tc-version.value}" />
+							<chmod file="${tc-version.value}" perm="777" />
+							 <exec dir="${bin.dir}" executable="${tc-version.value}" output="version.txt">
+							 	<arg line="-v" />
+							 </exec>
+	</target>
+	
+     <target name="linsol_deployversion_dso.scripts">			
+			<echo message="Starting tc version from ${lin_tc-version.value}" />
+								<chmod file="${lin_tc-version.value}" perm="777" />
+								 <exec dir="${bin.dir}" executable="${lin_tc-version.value}" output="version.txt">
+								 	<arg line="-v" />
+								 </exec>
+	</target>
+	
+	<target name="deployversion_tst.scripts">			
+			<echo message="Starting tc version from ${sess-tc-version.value}" />
+			<chmod file="${sess-tc-version.value}" perm="777" />
+			 <exec dir="${sessionsbin.dir}" executable="${sess-tc-version.value}" output="version.txt">
+			 	<arg line="-v" />
+			 </exec>
+	</target>		
+	
+	<target name="linsol_deployversion_tst.scripts">			
+				<echo message="Starting tc version from ${lin_sess-tc-version.value}" />
+				<chmod file="${lin_sess-tc-version.value}" perm="777" />
+				 <exec dir="${sessionsbin.dir}" executable="${lin_sess-tc-version.value}" output="version.txt">
+				 	<arg line="-v" />
+				 </exec>
+	</target>
+	
+	<target name="deployversion_spr.scripts">			
+				<echo message="Starting tc version from ${spr_tc-version.value}" />
+				<chmod file="${spr_tc-version.value}" perm="777" />
+				 <exec dir="${springbin.dir}" executable="${spr_tc-version.value}" output="version.txt">
+				 	<arg line="-v" />
+				 </exec>
+	</target>		
+		
+	<target name="linsol_deployversion_spr.scripts">			
+					<echo message="Starting tc version from ${linsol_spr_tc-version.value}" />
+					<chmod file="${linsol_spr_tc-version.value}" perm="777" />
+					 <exec dir="${springbin.dir}" executable="${linsol_spr_tc-version.value}" output="version.txt">
+					 	<arg line="-v" />
+					 </exec>
+	</target>
+	
+	<target name="dso_test_and_report" depends="dso_run_junit, dso_junit, jre_junit, make_junit_report" />
+	
+	<target name="tst_test_and_report" depends="tst_run_junit, tst_junit, vendor_junit, jre_junit, make_junit_report" />
+	
+	<target name="spr_test_and_report" depends="spr_run_junit, jre_junit, spr_junit, vendor_junit, make_junit_report" />
+	
+	<target name="lin_spr_test_and_report" depends="spr_run_junit, spr_junit, vendor_junit, make_junit_report" />
+	
+	<target name="tee_test_and_report" depends="spr_run_junit, tee_run_junit, dso_junit, jre_junit, tst_junit, spr_junit, vendor_junit, make_junit_report" />
+	
+	<target name="dso_run_junit">
+			      <junit printsummary="yes" haltonfailure="no" fork="yes">
+			         <classpath refid="junittest.classpath" />		      	
+			      	<!-- Common folder and files for DSO-->
+			      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+			      	<jvmarg value="-Dcommon.dir=${common.dir}" />		      	
+			      	<jvmarg value="-Dlibdir.value=${libdir.value}" />
+			        <jvmarg value="-Dlibdsodir.value=${libdsodir.value}" />
+			      	<!-- DSO folder and files -->		      	
+  			      	<jvmarg value="-Ddso.dir=${dso.dir}" />		      	
+  			      	<jvmarg value="-Dbindir.value=${bindir.value}" />
+  			      	<jvmarg value="-Dlibexecdir.value=${libexecdir.value}" />
+  			      	<jvmarg value="-Dsconfigdir.value=${sconfigdir.value}" />
+			      	<jvmarg value="-Dconfigs.dir=${configs.dir}" />
+			      	<jvmarg value="-Ddemodir.value=${demodir.value}" />
+			      	
+			      	<jvmarg value="-Duninstall.dir=${uninstall.dir}" />
+			        <jvmarg value="-Duninstallreso.dir=${uninstallreso.dir}" />
+			      	
+			      	<formatter type="plain" />
+      			         <formatter type="xml" />
+      			         <batchtest todir="./reports">
+      			            <fileset dir="${client.build}">
+      			            	<include name="test/CommonTest.class" /> 
+      			            	<include name="test/DSOTest.class" />
+      			            </fileset>
+      			         </batchtest>
+			       </junit>
+	</target>
+			      	
+	<target name="dso_junit">
+		      <junit printsummary="yes" haltonfailure="no" fork="yes">
+		         <classpath refid="junittest.classpath" />		      			      		
+		      	<!-- DSO folder and files -->		      	
+		      	<!--<jvmarg value="-Ddso.dir=${dso.dir}" />		      	
+		      	<jvmarg value="-Dbindir.value=${bindir.value}" />
+		      	<jvmarg value="-Dlibexecdir.value=${libexecdir.value}" />
+		      	<jvmarg value="-Dsconfigdir.value=${sconfigdir.value}" />-->		      	
+		      	<!-- DSO Docs folder and files -->
+		      	<jvmarg value="-Dhomedir.value=${homedir.value}" />	
+		      	<jvmarg value="-Ddocsdir.value=${docsdir.value}" />
+		      	<jvmarg value="-Ddocshtmldir.value=${docshtmldir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradir.value=${docshtmlTerradir.value}" />
+		      	<jvmarg value="-DdocshtmlTerracssdir.value=${docshtmlTerracssdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerraimgdir.value=${docshtmlTerraimgdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerrascriptsdir.value=${docshtmlTerrascriptsdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradatadir.value=${docshtmlTerradatadir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradatacomdir.value=${docshtmlTerradatacomdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradatajsdir.value=${docshtmlTerradatajsdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradatajssearchdir.value=${docshtmlTerradatajssearchdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradatajssrpairsdir.value=${docshtmlTerradatajssrpairsdir.value}" />
+		      	<jvmarg value="-DdocshtmlTerradataxml.value=${docshtmlTerradataxml.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelp.value=${docshtmlTerrahelp.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimg.value=${docshtmlTerrahelpimg.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpl.value=${docshtmlTerrahelpimpl.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimplcom.value=${docshtmlTerrahelpimplcom.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimplcomhtml.value=${docshtmlTerrahelpimplcomhtml.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimplcomimg.value=${docshtmlTerrahelpimplcomimg.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimplcompriv.value=${docshtmlTerrahelpimplcompriv.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimplcomscrp.value=${docshtmlTerrahelpimplcomscrp.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpljs.value=${docshtmlTerrahelpimpljs.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpljshtml.value=${docshtmlTerrahelpimpljshtml.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpljsimg.value=${docshtmlTerrahelpimpljsimg.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpljspriv.value=${docshtmlTerrahelpimpljspriv.value}" />
+		      	<jvmarg value="-DdocshtmlTerrahelpimpljsscrp.value=${docshtmlTerrahelpimpljsscrp.value}" />
+		      	<!-- DSO samples folder and files -->     			      			      			      			      			      			      			      			      			      			      	
+		      	<jvmarg value="-Ddemodir.value=${demodir.value}" />
+		      			      	
+		      	<jvmarg value="-DConsoleChatdir.value=${ConsoleChatdir.value}" />
+		      	<jvmarg value="-DConsolesrcfile.value=${Consolesrcfile.value}" />		      	
+		      	
+		      	<jvmarg value="-Djtabledir.value=${jtabledir.value}" />
+		      	<jvmarg value="-Djtablesrcfile.value=${jtablesrcfile.value}" />
+		      	
+		      	<jvmarg value="-DsharedEditordir.value=${sharedEditordir.value}" />		      	
+		      	<jvmarg value="-DsharedEditorlibdir.value=${sharedEditorlibdir.value}" />
+		      	<jvmarg value="-DsharedEditorsrcdir.value=${sharedEditorsrcdir.value}" />		      	
+		      	<jvmarg value="-DsharedEditorsrcsubdir.value=${sharedEditorsrcsubdir.value}" />
+		      	<jvmarg value="-DsharedEditorsrcbeansfile.value=${sharedEditorsrcbeansfile.value}" />
+		      	<jvmarg value="-DsharedEditorsrcmodelfile.value=${sharedEditorsrcmodelfile.value}" />
+		      	<jvmarg value="-DsharedEditorsrcuifile.value=${sharedEditorsrcuifile.value}" />
+		      	<jvmarg value="-DsharedEditorsrcimgfile.value=${sharedEditorsrcimgfile.value}" />
+		      	
+		      	<jvmarg value="-DsharedEditor2.dir=${sharedEditor2.dir}" />
+		      	<jvmarg value="-DsharedEditor2set.dir=${sharedEditor2set.dir}" />
+		      	<jvmarg value="-DsharedEditor2img.dir=${sharedEditor2img.dir}" />
+		      	<jvmarg value="-DsharedEditor2lib.dir=${sharedEditor2lib.dir}" />
+		      	<jvmarg value="-DsharedEditor2src.dir=${sharedEditor2src.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccom.dir=${sharedEditor2srccom.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterra.dir=${sharedEditor2srccomterra.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasamp.dir=${sharedEditor2srccomterrasamp.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasampsharededitor.dir=${sharedEditor2srccomterrasampsharededitor.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasampsharededitorcontrols.dir=${sharedEditor2srccomterrasampsharededitorcontrols.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasampsharededitorevents.dir=${sharedEditor2srccomterrasampsharededitorevents.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasampsharededitormodels.dir=${sharedEditor2srccomterrasampsharededitormodels.dir}" />
+		      	<jvmarg value="-DsharedEditor2srccomterrasampsharededitorui.dir=${sharedEditor2srccomterrasampsharededitorui.dir}" />
+		      	
+		      	<jvmarg value="-Dwebdir.value=${webdir.value}" />		      	
+		      	<jvmarg value="-Dwebdemodir.value=${webdemodir.value}" />		      	
+		      	<jvmarg value="-Dweblibdir.value=${weblibdir.value}" />
+		      	<jvmarg value="-Dwebsrcdir.value=${websrcdir.value}" />		      	
+		      	<jvmarg value="-Dwebdemoimgfile.value=${webdemoimgfile.value}" />
+		      	<jvmarg value="-Dwebsrcfile.value=${websrcfile.value}" />
+		      	<jvmarg value="-Dwebsrcexpfile.value=${websrcexpfile.value}" />
+		      	
+		      	<jvmarg value="-Duninstall.dir=${uninstall.dir}" />
+		      	<jvmarg value="-Duninstallreso.dir=${uninstallreso.dir}" />
+ 	      	
+		      	<jvmarg value="-Declipsedir.value=${eclipsedir.value}" />
+		      	<jvmarg value="-Declipsecomdir.value=${eclipsecomdir.value}" />
+		      	<jvmarg value="-Declipsecomcommondir.value=${eclipsecomcommondir.value}" />
+		        <jvmarg value="-Declipsecomcommonlibdir.value=${eclipsecomcommonlibdir.value}" />
+		      	<jvmarg value="-Declipsecomcommonlibdsodir.value=${eclipsecomcommonlibdsodir.value}" />
+		      	<jvmarg value="-Declipsecomlibtomcatdir.value=${eclipsecomlibtomcatdir.value}" />
+		      	<jvmarg value="-Declipsecomlibweblogicdir.value=${eclipsecomlibweblogicdir.value}" />		      			      	
+				<jvmarg value="-Declipsecomhtmldir.value=${eclipsecomhtmldir.value}" />
+		      	<jvmarg value="-Declipsecomhtmlconceptsdir.value=${eclipsecomhtmlconceptsdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmlrefdir.value=${eclipsecomhtmlrefdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmlrefdemodir.value=${eclipsecomhtmlrefdemodir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltasksdir.value=${eclipsecomhtmltasksdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltasksconfigdir.value=${eclipsecomhtmltasksconfigdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltasksconfigappdir.value=${eclipsecomhtmltasksconfigappdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltasksconfigclientsdir.value=${eclipsecomhtmltasksconfigclientsdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltasksconfigserversdir.value=${eclipsecomhtmltasksconfigserversdir.value}" />
+		      	<jvmarg value="-Declipsecomhtmltutorialdir.value=${eclipsecomhtmltutorialdir.value}" />		      	
+		      	<jvmarg value="-Declipsecomimgdir.value=${eclipsecomimgdir.value}" />
+		      	<jvmarg value="-Declipsecomimgeclipsedir.value=${eclipsecomimgeclipsedir.value}" />		      				
+				<jvmarg value="-Declipsecommetadir.value=${eclipsecommetadir.value}" />
+		      	
+		      	<!--<jvmarg value="-Djredir.value=${jredir.value}" />
+		      	<jvmarg value="-Djrebindir.value=${jrebindir.value}" />
+		      	<jvmarg value="-Djrebinclientdir.value=${jrebinclientdir.value}" />
+		      	<jvmarg value="-Djrejredir.value=${jrejredir.value}" />
+		      	<jvmarg value="-Djrejrebindir.value=${jrejrebindir.value}" />
+		      	<jvmarg value="-Djrejrebinclientdir.value=${jrejrebinclientdir.value}" />		      	
+		      	<jvmarg value="-Djrejrebinserverdir.value=${jrejrebinserverdir.value}" />
+		      	<jvmarg value="-Djrejrelibdir.value=${jrejrelibdir.value}" />
+		      	<jvmarg value="-Djrejrelibaudiodir.value=${jrejrelibaudiodir.value}" />
+		      	<jvmarg value="-Djrejrelibcmmdir.value=${jrejrelibcmmdir.value}" />
+		      	<jvmarg value="-Djrejrelibextdir.value=${jrejrelibextdir.value}" />		      	
+		      	<jvmarg value="-Djrejrelibfontsdir.value=${jrejrelibfontsdir.value}" />
+		      	<jvmarg value="-Djrelibdir.value=${jrelibdir.value}" />
+		      	<jvmarg value="-Djrelibaudiodir.value=${jrelibaudiodir.value}" /> 
+		      	<jvmarg value="-Djrelibcmmdir.value=${jrelibcmmdir.value}" />
+		      	<jvmarg value="-Djrelibextdir.value=${jrelibextdir.value}" />
+		      	<jvmarg value="-Djrelibfontsdir.value=${jrelibfontsdir.value}" />
+		      	<jvmarg value="-Djrelibi386dir.value=${jrelibi386dir.value}" />
+		      	<jvmarg value="-Djrelibimdir.value=${jrelibimdir.value}" />
+		      	<jvmarg value="-Djrelibimgdir.value=${jrelibimgdir.value}" />		      	
+		      	<jvmarg value="-Djrelibimgcursorsdir.value=${jrelibimgcursorsdir.value}" />
+		      	<jvmarg value="-Djrelibjavawdir.value=${jrelibjavawdir.value}" />
+		      	<jvmarg value="-Djrelibmanagdir.value=${jrelibmanagdir.value}" />
+		      	<jvmarg value="-Djrelibsecurdir.value=${jrelibsecurdir.value}" />
+		      	<jvmarg value="-Djrelibzidir.value=${jrelibzidir.value}" />-->
+		      	<!-- linux -->
+		      	<!--<jvmarg value="-Djrejavawsdir.value=${jrejavawsdir.value}" />
+		      	<jvmarg value="-Djrelibiclientdir.value=${jrelibiclientdir.value}" />
+		      	<jvmarg value="-Djrelibiheadlessdir.value=${jrelibiheadlessdir.value}" />
+		      	<jvmarg value="-Djrelibimotifdir.value=${jrelibimotifdir.value}" />
+		      	<jvmarg value="-Djrelibinativedir.value=${jrelibinativedir.value}" />
+		      	<jvmarg value="-Djrelibiserverdir.value=${jrelibiserverdir.value}" />
+		      	<jvmarg value="-Djrelibixawtdir.value=${jrelibixawtdir.value}" />
+		      	<jvmarg value="-Djrelibimgicondir.value=${jrelibimgicondir.value}" />
+		      	<jvmarg value="-Djrelibobliquedir.value=${jrelibobliquedir.value}" />
+		      	<jvmarg value="-Djremandir.value=${jremandir.value}" />
+		      	<jvmarg value="-Djremanjadir.value=${jremanjadir.value}" />
+		      	<jvmarg value="-Djremanjaman1dir.value=${jremanjaman1dir.value}" />
+		      	<jvmarg value="-Djremanman1dir.value=${jremanman1dir.value}" />
+		      	<jvmarg value="-Djreplugindir.value=${jreplugindir.value}" />
+		      	<jvmarg value="-Djreplugindesktopdir.value=${jreplugindesktopdir.value}" />
+		      	<jvmarg value="-Djreplugini386dir.value=${jreplugini386dir.value}" />
+		      	<jvmarg value="-Djreplugini386ns7dir.value=${jreplugini386ns7dir.value}" />
+		      	<jvmarg value="-Djreplugini386ns7gccdir.value=${jreplugini386ns7gccdir.value}" />-->
+		      	<!--solaris -->
+		      	<!--<jvmarg value="-Djremanjdir.value=${jremanjdir.value}" />
+		      	<jvmarg value="-Djremanjasman1dir.value=${jremanjasman1dir.value}" />
+		      	<jvmarg value="-Djremanjapckdir.value=${jremanjapckdir.value}" />
+		      	<jvmarg value="-Djremanjapcksman1dir.value=${jremanjapcksman1dir.value}" />
+		      	<jvmarg value="-Djremanjajpdir.value=${jremanjajpdir.value}" />
+		      	<jvmarg value="-Djremanjajpsman1dir.value=${jremanjajpsman1dir.value}" />
+		      	<jvmarg value="-Djremansman1dir.value=${jremansman1dir.value}" />	      	
+		      	<jvmarg value="-Djrepluginsparcdir.value=${jrepluginsparcdir.value}" />
+		      	<jvmarg value="-Djrepluginsparcns4dir.value=${jrepluginsparcns4dir.value}" />
+		      	<jvmarg value="-Djrepluginsparcns7dir.value=${jrepluginsparcns7dir.value}" />
+		      	
+		      	<jvmarg value="-Djrelibsparcdir.value=${jrelibsparcdir.value}" />
+		      	<jvmarg value="-Djrelibsparcclientdir.value=${jrelibsparcclientdir.value}" />
+		      	<jvmarg value="-Djrelibsparcclient64dir.value=${jrelibsparcclient64dir.value}" />
+		      	<jvmarg value="-Djrelibsparcheadlessdir.value=${jrelibsparcheadlessdir.value}" />
+		      	<jvmarg value="-Djrelibsparcmotifdir.value=${jrelibsparcmotifdir.value}" />
+		      	<jvmarg value="-Djrelibsparcnativedir.value=${jrelibsparcnativedir.value}" />
+		      	<jvmarg value="-Djrelibsparcserverdir.value=${jrelibsparcserverdir.value}" />
+		      	<jvmarg value="-Djrelibsparcserver64dir.value=${jrelibsparcserver64dir.value}" />
+		      	<jvmarg value="-Djrelibsparcxawtdir.value=${jrelibsparcxawtdir.value}" />-->		      	
+		      	
+		      	<formatter type="plain" />
+		         <formatter type="xml" />
+		         <batchtest todir="./reports">
+		            <fileset dir="${client.build}">		            			            	     	
+		            	<include name="test/DSODocsTest.class" />		            	
+		            	<include name="test/DemoJTablePackTest.class" />
+		            	<include name="test/DemoSharedEditorTest.class" />
+		            	<include name="test/DemoWebTest.class" />
+		            	<include name="test/EclipsePackTest.class" />		            	
+		            </fileset>
+		         </batchtest>
+		      </junit>
+		</target>
+	
+	<target name="tst_run_junit">
+		      <junit printsummary="yes" haltonfailure="no" fork="yes">
+		         <classpath refid="junittest.classpath" />      	
+		      	<!-- Common folder and files for TST-->
+		      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+		      	<jvmarg value="-Dcommon.dir=${common.dir}" />		      	
+		      	<jvmarg value="-Dlibdir.value=${libdir.value}" />
+		        <jvmarg value="-Dlibdsodir.value=${libdsodir.value}" />	      	
+		      	<jvmarg value="-Dlibtomcatdir.value=${libtomcatdir.value}" />
+		      	<jvmarg value="-Dlibweblogicdir.value=${libweblogicdir.value}" />
+		      	<!-- Sessions folder and files -->
+  		      	<jvmarg value="-Dsessions.dir=${sessions.dir}" />
+  		      	<jvmarg value="-Dsessionsbin.dir=${sessionsbin.dir}" />
+  		      	<jvmarg value="-Dsessionslibexec.dir=${sessionslibexec.dir}" />
+  		      	<jvmarg value="-Dsessionsconfigsample.dir=${sessionsconfigsample.dir}" />	      	
+  		      	<jvmarg value="-Dsessionsuninstall.dir=${sessionsuninstall.dir}" />
+  		      	<jvmarg value="-Dsessionsuninstallres.dir=${sessionsuninstallres.dir}" />
+		      	
+		      	
+		      	<formatter type="plain" />
+		      		         <formatter type="xml" />
+		      		         <batchtest todir="./reports">
+		      		            <fileset dir="${client.build}">
+		      		            	<include name="test/CommonTSTTest.class" />
+		      		            	<include name="test/SessionsTest.class" />
+		      		            </fileset>
+		      		         </batchtest>
+		      		      </junit>
+	 </target>
+		      	
+	<target name="tst_junit">
+	      <junit printsummary="yes" haltonfailure="no" fork="yes">
+	         <classpath refid="junittest.classpath" />      	
+	      	<!-- Common folder and files for TST-->
+	      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+	      	<!--<jvmarg value="-Dcommon.dir=${common.dir}" />		      	
+	      	<jvmarg value="-Dlibdir.value=${libdir.value}" />
+	        <jvmarg value="-Dlibdsodir.value=${libdsodir.value}" />	      	
+	      	<jvmarg value="-Dlibtomcatdir.value=${libtomcatdir.value}" />
+	      	<jvmarg value="-Dlibweblogicdir.value=${libweblogicdir.value}" />-->	      		      	
+	      	<!-- Sessions folder and files -->
+	      	<!--<jvmarg value="-Dsessions.dir=${sessions.dir}" />
+	      	<jvmarg value="-Dsessionsbin.dir=${sessionsbin.dir}" />
+	      	<jvmarg value="-Dsessionslibexec.dir=${sessionslibexec.dir}" />
+	      	<jvmarg value="-Dsessionsconfigsample.dir=${sessionsconfigsample.dir}" />	      	
+	      	<jvmarg value="-Dsessionsuninstall.dir=${sessionsuninstall.dir}" />
+	      	<jvmarg value="-Dsessionsuninstallres.dir=${sessionsuninstallres.dir}" />-->
+     	
+	      	<!-- Sessions Docs folder and files -->		      	
+	      	<jvmarg value="-Dsessionsdocs.dir=${sessionsdocs.dir}" />
+	      	<jvmarg value="-Dsessionshtmldir.value=${sessionshtmldir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerradir.value=${sessionshtmlTerradir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerracssdir.value=${sessionshtmlTerracssdir.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerraimgdir.value=${sessionshtmlTerraimgdir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrascriptsdir.value=${sessionshtmlTerrascriptsdir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerradatadir.value=${sessionshtmlTerradatadir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerradatacomdir.value=${sessionshtmlTerradatacomdir.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerradatajsdir.value=${sessionshtmlTerradatajsdir.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerradatajssearchdir.value=${sessionshtmlTerradatajssearchdir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerradatajssrpairsdir.value=${sessionshtmlTerradatajssrpairsdir.value}" />
+	      	<jvmarg value="-DsessionshtmlTerradataxml.value=${sessionshtmlTerradataxml.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelp.value=${sessionshtmlTerrahelp.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelpimg.value=${sessionshtmlTerrahelpimg.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpl.value=${sessionshtmlTerrahelpimpl.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelpimplcom.value=${sessionshtmlTerrahelpimplcom.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelpimplcomhtml.value=${sessionshtmlTerrahelpimplcomhtml.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimplcomimg.value=${sessionshtmlTerrahelpimplcomimg.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimplcompriv.value=${sessionshtmlTerrahelpimplcompriv.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimplcomscrp.value=${sessionshtmlTerrahelpimplcomscrp.value}" />	      	
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpljs.value=${sessionshtmlTerrahelpimpljs.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpljshtml.value=${sessionshtmlTerrahelpimpljshtml.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpljsimg.value=${sessionshtmlTerrahelpimpljsimg.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpljspriv.value=${sessionshtmlTerrahelpimpljspriv.value}" />
+	      	<jvmarg value="-DsessionshtmlTerrahelpimpljsscrp.value=${sessionshtmlTerrahelpimpljsscrp.value}" />
+	      	<!-- sandbox folder and files -->
+	      	<jvmarg value="-Dsandboxdir.value=${sandboxdir.value}" />
+	      	<jvmarg value="-Dsandboxbindir.value=${sandboxbindir.value}" />
+	      	<!-- tomcat5.0/9081 folder and files -->
+	      	<jvmarg value="-Dsandboxtom50dir.value=${sandboxtom50dir.value}" />
+	      	<jvmarg value="-Dsandboxtom509081dir.value=${sandboxtom509081dir.value}" />
+	      	<jvmarg value="-Dsandboxtom509081confdir.value=${sandboxtom509081confdir.value}" />
+	      	<jvmarg value="-Dsandboxtom509081confcatdir.value=${sandboxtom509081confcatdir.value}" />
+	      	<jvmarg value="-Dsandboxtom509081confcatlocaldir.value=${sandboxtom509081confcatlocaldir.value}" />
+	      	<jvmarg value="-Dsandboxtom509081webappsdir.value=${sandboxtom509081webappsdir.value}" />
+	      	<!-- 9082 folder and files -->
+	      	<jvmarg value="-Dsandboxtom509082dir.value=${sandboxtom509082dir.value}" />
+	      	<jvmarg value="-Dsandboxtom509082confdir.value=${sandboxtom509082confdir.value}" />
+	      	<jvmarg value="-Dsandboxtom509082confcatdir.value=${sandboxtom509082confcatdir.value}" />
+	      	<jvmarg value="-Dsandboxtom509082confcatlocaldir.value=${sandboxtom509082confcatlocaldir.value}" />
+	      	<jvmarg value="-Dsandboxtom509082webappsdir.value=${sandboxtom509082webappsdir.value}" />
+	      	<!-- tomcat5.5/9081 folder and files -->
+	      	<jvmarg value="-Dsandboxtom55dir.value=${sandboxtom55dir.value}" />
+	      	<jvmarg value="-Dsandboxtom559081dir.value=${sandboxtom559081dir.value}" />
+	      	<jvmarg value="-Dsandboxtom559081confdir.value=${sandboxtom559081confdir.value}" />
+	      	<jvmarg value="-Dsandboxtom559081confcatdir.value=${sandboxtom559081confcatdir.value}" />
+	      	<jvmarg value="-Dsandboxtom559081confcatlocaldir.value=${sandboxtom559081confcatlocaldir.value}" />
+	      	<jvmarg value="-Dsandboxtom559081webappsdir.value=${sandboxtom559081webappsdir.value}" />
+	      	<!-- 9082 folder and files -->
+	      	<jvmarg value="-Dsandboxtom559082dir.value=${sandboxtom559082dir.value}" />
+	      	<jvmarg value="-Dsandboxtom559082confdir.value=${sandboxtom559082confdir.value}" />
+	      	<jvmarg value="-Dsandboxtom559082confcatdir.value=${sandboxtom559082confcatdir.value}" />
+	      	<jvmarg value="-Dsandboxtom559082confcatlocaldir.value=${sandboxtom559082confcatlocaldir.value}" />
+	      	<jvmarg value="-Dsandboxtom559082webappsdir.value=${sandboxtom559082webappsdir.value}" />	      		
+	      	<!-- wls/9081 folder and files -->
+	      	<jvmarg value="-Dsandboxwlsdir.value=${sandboxwlsdir.value}" />
+	      	<jvmarg value="-Dsandboxwls9081dir.value=${sandboxwls9081dir.value}" />
+	      	<jvmarg value="-Dsandboxwls9081Appldir.value=${sandboxwls9081Appldir.value}" />
+	      	<jvmarg value="-Dsandboxwls9081tmplsdir.value=${sandboxwls9081tmplsdir.value}" />	      		
+	      	<!-- 9082 -->
+	      	<jvmarg value="-Dsandboxwls9082dir.value=${sandboxwls9082dir.value}" />
+	      	<jvmarg value="-Dsandboxwls9082Appldir.value=${sandboxwls9082Appldir.value}" />
+	      	<jvmarg value="-Dsandboxwls9082tmplsdir.value=${sandboxwls9082tmplsdir.value}" />  
+	      	
+	      	
+	      	<formatter type="plain" />
+	         <formatter type="xml" />
+	         <batchtest todir="./reports">
+	            <fileset dir="${client.build}">	            		            	
+	            	<include name="test/SessionsDocsTest.class" />
+	            	<include name="test/SandBoxTest.class" />
+	            	<!--<include name="test/JREPackTest.class" />-->	            	
+	            </fileset>
+	         </batchtest>
+	      </junit>
+	</target>
+	
+	<target name="vendor_junit">
+			      <junit printsummary="yes" haltonfailure="no" fork="yes">
+			         <classpath refid="junittest.classpath" />      	
+
+			      				<!-- vendor folder and files -->	      	
+			      		      	<jvmarg value="-Dvendordir.value=${vendordir.value}" />
+			      		      	<jvmarg value="-Dvendortomtdir.value=${vendortomtdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtbindir.value=${vendortomtbindir.value}" />
+			      		      	<jvmarg value="-Dvendortomtcomdir.value=${vendortomtcomdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtcomi18ndir.value=${vendortomtcomi18ndir.value}" />
+			      		      	<jvmarg value="-Dvendortomtcomlibdir.value=${vendortomtcomlibdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtconfdir.value=${vendortomtconfdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtconfcatdir.value=${vendortomtconfcatdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtconfcatlocaldir.value=${vendortomtconfcatlocaldir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverdir.value=${vendortomtserverdir.value}" />	      	
+			      		      	<jvmarg value="-Dvendortomtserverlibdir.value=${vendortomtserverlibdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverwebappsdir.value=${vendortomtserverwebappsdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverwebhostmandir.value=${vendortomtserverwebhostmandir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverwebhostmanimgdir.value=${vendortomtserverwebhostmanimgdir.value}" />
+			      		      	<jvmarg value="-DvendortomtserverwebhostmanINFdir.value=${vendortomtserverwebhostmanINFdir.value}" />
+			      		      	<jvmarg value="-DvendortomtserverwebhostmanINFlibdir.value=${vendortomtserverwebhostmanINFlibdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverwebmangdir.value=${vendortomtserverwebmangdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtserverwebmangimgdir.value=${vendortomtserverwebmangimgdir.value}" />
+			      		      	<jvmarg value="-DvendortomtserverwebmangINFdir.value=${vendortomtserverwebmangINFdir.value}" />
+			      		      	<jvmarg value="-DvendortomtserverwebmangINFlibdir.value=${vendortomtserverwebmangINFlibdir.value}" />
+			      	 	      	<jvmarg value="-Dvendortomtwebappsdir.value=${vendortomtwebappsdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtwebappsrootdir.value=${vendortomtwebappsrootdir.value}" />
+			      		      	<jvmarg value="-Dvendortomtwebappsrootadmindir.value=${vendortomtwebappsrootadmindir.value}" />
+			      		      	<jvmarg value="-DvendortomtwebappsrootINFdir.value=${vendortomtwebappsrootINFdir.value}" />
+			      		      	<jvmarg value="-DvendortomtwebappsrootINFlibdir.value=${vendortomtwebappsrootINFlibdir.value}" />
+	 
+			      	<formatter type="plain" />
+			         <formatter type="xml" />
+			         <batchtest todir="./reports">
+			            <fileset dir="${client.build}">	            		            			            	
+			            	<include name="test/VendorTest.class" />	            	
+			            </fileset>
+			         </batchtest>
+			      </junit>
+			</target>
+	
+	<target name="jre_junit">
+		      <junit printsummary="yes" haltonfailure="no" fork="yes">
+		         <classpath refid="junittest.classpath" />      	
+
+						<jvmarg value="-Djredir.value=${jredir.value}" />
+				      	<jvmarg value="-Djrebindir.value=${jrebindir.value}" />
+				      	<jvmarg value="-Djrebinclientdir.value=${jrebinclientdir.value}" />
+				      	<jvmarg value="-Djrejredir.value=${jrejredir.value}" />
+				      	<jvmarg value="-Djrejrebindir.value=${jrejrebindir.value}" />
+				      	<jvmarg value="-Djrejrebinclientdir.value=${jrejrebinclientdir.value}" />		      	
+				      	<jvmarg value="-Djrejrebinserverdir.value=${jrejrebinserverdir.value}" />
+				      	<jvmarg value="-Djrejrelibdir.value=${jrejrelibdir.value}" />
+				      	<jvmarg value="-Djrejrelibaudiodir.value=${jrejrelibaudiodir.value}" />
+				      	<jvmarg value="-Djrejrelibcmmdir.value=${jrejrelibcmmdir.value}" />
+				      	<jvmarg value="-Djrejrelibextdir.value=${jrejrelibextdir.value}" />		      	
+				      	<jvmarg value="-Djrejrelibfontsdir.value=${jrejrelibfontsdir.value}" />
+				      	<jvmarg value="-Djrelibdir.value=${jrelibdir.value}" />
+				      	<jvmarg value="-Djrelibaudiodir.value=${jrelibaudiodir.value}" /> 
+				      	<jvmarg value="-Djrelibcmmdir.value=${jrelibcmmdir.value}" />
+				      	<jvmarg value="-Djrelibextdir.value=${jrelibextdir.value}" />
+				      	<jvmarg value="-Djrelibfontsdir.value=${jrelibfontsdir.value}" />
+				      	<jvmarg value="-Djrelibi386dir.value=${jrelibi386dir.value}" />
+				      	<jvmarg value="-Djrelibimdir.value=${jrelibimdir.value}" />
+				      	<jvmarg value="-Djrelibimgdir.value=${jrelibimgdir.value}" />		      	
+				      	<jvmarg value="-Djrelibimgcursorsdir.value=${jrelibimgcursorsdir.value}" />
+				      	<jvmarg value="-Djrelibjavawdir.value=${jrelibjavawdir.value}" />
+				      	<jvmarg value="-Djrelibmanagdir.value=${jrelibmanagdir.value}" />
+				      	<jvmarg value="-Djrelibsecurdir.value=${jrelibsecurdir.value}" />
+				      	<jvmarg value="-Djrelibzidir.value=${jrelibzidir.value}" />
+				      	<!-- linux -->
+				      	<jvmarg value="-Djrejavawsdir.value=${jrejavawsdir.value}" />
+				      	<jvmarg value="-Djrelibiclientdir.value=${jrelibiclientdir.value}" />
+				      	<jvmarg value="-Djrelibiheadlessdir.value=${jrelibiheadlessdir.value}" />
+				      	<jvmarg value="-Djrelibimotifdir.value=${jrelibimotifdir.value}" />
+				      	<jvmarg value="-Djrelibinativedir.value=${jrelibinativedir.value}" />
+				      	<jvmarg value="-Djrelibiserverdir.value=${jrelibiserverdir.value}" />
+				      	<jvmarg value="-Djrelibixawtdir.value=${jrelibixawtdir.value}" />
+				      	<jvmarg value="-Djrelibimgicondir.value=${jrelibimgicondir.value}" />
+				      	<jvmarg value="-Djrelibobliquedir.value=${jrelibobliquedir.value}" />
+				      	<jvmarg value="-Djremandir.value=${jremandir.value}" />
+				      	<jvmarg value="-Djremanjadir.value=${jremanjadir.value}" />
+				      	<jvmarg value="-Djremanjaman1dir.value=${jremanjaman1dir.value}" />
+				      	<jvmarg value="-Djremanman1dir.value=${jremanman1dir.value}" />
+				      	<jvmarg value="-Djreplugindir.value=${jreplugindir.value}" />
+				      	<jvmarg value="-Djreplugindesktopdir.value=${jreplugindesktopdir.value}" />
+				      	<jvmarg value="-Djreplugini386dir.value=${jreplugini386dir.value}" />
+				      	<jvmarg value="-Djreplugini386ns7dir.value=${jreplugini386ns7dir.value}" />
+				      	<jvmarg value="-Djreplugini386ns7gccdir.value=${jreplugini386ns7gccdir.value}" />
+				      	<!--solaris -->
+				      	<jvmarg value="-Djremanjdir.value=${jremanjdir.value}" />
+				      	<jvmarg value="-Djremanjasman1dir.value=${jremanjasman1dir.value}" />
+				      	<jvmarg value="-Djremanjapckdir.value=${jremanjapckdir.value}" />
+				      	<jvmarg value="-Djremanjapcksman1dir.value=${jremanjapcksman1dir.value}" />
+				      	<jvmarg value="-Djremanjajpdir.value=${jremanjajpdir.value}" />
+				      	<jvmarg value="-Djremanjajpsman1dir.value=${jremanjajpsman1dir.value}" />
+				      	<jvmarg value="-Djremansman1dir.value=${jremansman1dir.value}" />	      	
+				      	<jvmarg value="-Djrepluginsparcdir.value=${jrepluginsparcdir.value}" />
+				      	<jvmarg value="-Djrepluginsparcns4dir.value=${jrepluginsparcns4dir.value}" />
+				      	<jvmarg value="-Djrepluginsparcns7dir.value=${jrepluginsparcns7dir.value}" />
+				      	
+				      	<jvmarg value="-Djrelibsparcdir.value=${jrelibsparcdir.value}" />
+				      	<jvmarg value="-Djrelibsparcclientdir.value=${jrelibsparcclientdir.value}" />
+				      	<jvmarg value="-Djrelibsparcclient64dir.value=${jrelibsparcclient64dir.value}" />
+				      	<jvmarg value="-Djrelibsparcheadlessdir.value=${jrelibsparcheadlessdir.value}" />
+				      	<jvmarg value="-Djrelibsparcmotifdir.value=${jrelibsparcmotifdir.value}" />
+				      	<jvmarg value="-Djrelibsparcnativedir.value=${jrelibsparcnativedir.value}" />
+				      	<jvmarg value="-Djrelibsparcserverdir.value=${jrelibsparcserverdir.value}" />
+				      	<jvmarg value="-Djrelibsparcserver64dir.value=${jrelibsparcserver64dir.value}" />
+				      	<jvmarg value="-Djrelibsparcxawtdir.value=${jrelibsparcxawtdir.value}" />
+ 
+		      	<formatter type="plain" />
+		         <formatter type="xml" />
+		         <batchtest todir="./reports">
+		            <fileset dir="${client.build}">	            		            			            	
+		            	<include name="test/JREPackTest.class" />	            	
+		            </fileset>
+		         </batchtest>
+		      </junit>
+		</target>
+	
+	<target name="spr_run_junit">
+		      <junit printsummary="yes" haltonfailure="no" fork="yes">
+		         <classpath refid="junittest.classpath" />		      	
+		      	<!-- Common folder and files for DSO-->
+		      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+		      	<jvmarg value="-Dcommon.dir=${common.dir}" />		      	
+		      	<jvmarg value="-Dlibdir.value=${libdir.value}" />
+		        <jvmarg value="-Dlibdsodir.value=${libdsodir.value}" />
+		      	<jvmarg value="-Dlibtomcatdir.value=${libtomcatdir.value}" />
+		        <jvmarg value="-Dlibweblogicdir.value=${libweblogicdir.value}" />		    
+		      	<!-- Spring folder and files -->
+		      	<jvmarg value="-Dspring.dir=${spring.dir}" />
+		      	<jvmarg value="-Dspringbin.dir=${springbin.dir}" />
+		      	<jvmarg value="-Dspringlibexec.dir=${springlibexec.dir}" />
+		      	<jvmarg value="-Dspringconfigs.dir=${springconfigs.dir}" />
+		      	<jvmarg value="-Dspringsamples.dir=${springsamples.dir}" />	      		      	
+		      	
+		      	<formatter type="plain" />
+			         <formatter type="xml" />
+			         <batchtest todir="./reports">
+			            <fileset dir="${client.build}">
+			            	<include name="test/CommonTEESpringTest.class" /> 
+			      	        <include name="test/SpringTest.class" />			            				            	
+			            </fileset>
+			         </batchtest>
+		       </junit>
+		</target>
+	
+	<target name="spr_junit">
+			      <junit printsummary="yes" haltonfailure="no" fork="yes">
+			         <classpath refid="junittest.classpath" />		      			      		
+			      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+			      	<!-- Spring Docs folder and files -->		      	
+			      	<jvmarg value="-Dsdocsdir.value=${sdocsdir.value}" />
+			      	<jvmarg value="-Dsdocshtmldir.value=${sdocshtmldir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradir.value=${sdocshtmlTerradir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerracssdir.value=${sdocshtmlTerracssdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerraimgdir.value=${sdocshtmlTerraimgdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrascriptsdir.value=${sdocshtmlTerrascriptsdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradatadir.value=${sdocshtmlTerradatadir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradatacomdir.value=${sdocshtmlTerradatacomdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradatajsdir.value=${sdocshtmlTerradatajsdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradatajssearchdir.value=${sdocshtmlTerradatajssearchdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradatajssrpairsdir.value=${sdocshtmlTerradatajssrpairsdir.value}" />
+			      	<jvmarg value="-DsdocshtmlTerradataxml.value=${sdocshtmlTerradataxml.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelp.value=${sdocshtmlTerrahelp.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimg.value=${sdocshtmlTerrahelpimg.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpl.value=${sdocshtmlTerrahelpimpl.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimplcom.value=${sdocshtmlTerrahelpimplcom.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimplcomhtml.value=${sdocshtmlTerrahelpimplcomhtml.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimplcomimg.value=${sdocshtmlTerrahelpimplcomimg.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimplcompriv.value=${sdocshtmlTerrahelpimplcompriv.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimplcomscrp.value=${sdocshtmlTerrahelpimplcomscrp.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpljs.value=${sdocshtmlTerrahelpimpljs.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpljshtml.value=${sdocshtmlTerrahelpimpljshtml.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpljsimg.value=${sdocshtmlTerrahelpimpljsimg.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpljspriv.value=${sdocshtmlTerrahelpimpljspriv.value}" />
+			      	<jvmarg value="-DsdocshtmlTerrahelpimpljsscrp.value=${sdocshtmlTerrahelpimpljsscrp.value}" />
+			      	<!-- Spring samples folder and files -->
+			      	<jvmarg value="-Dspringsamples.dir=${springsamples.dir}" />			      	
+			      	<!-- Sample Coordination folder and files -->			      	
+			      	<jvmarg value="-Dsscoordination.dir=${sscoordination.dir}" />			      	
+			      	<jvmarg value="-Dsscolib.dir=${sscolib.dir}" />
+			      	<jvmarg value="-Dsscosrc.dir=${sscosrc.dir}" />
+			      	<jvmarg value="-Dsscosrcmain.dir=${sscosrcmain.dir}" />
+			      	<jvmarg value="-Dsscosrcmainjava.dir=${sscosrcmainjava.dir}" />
+			      	<jvmarg value="-Dsscosrcmainjavademo.dir=${sscosrcmainjavademo.dir}" />
+			      	<jvmarg value="-Dsscosrcmainjavademoco.dir=${sscosrcmainjavademoco.dir}" />
+			      	<jvmarg value="-Dsscosrcmainres.dir=${sscosrcmainres.dir}" />
+			      	<jvmarg value="-Dsscosrcmainresdemo.dir=${sscosrcmainresdemo.dir}" />			      	
+			      	<jvmarg value="-Dsscosrcmainresdemoco.dir=${sscosrcmainresdemoco.dir}" />
+			      	<jvmarg value="-Dsscosrcmainwebapp.dir=${sscosrcmainwebapp.dir}" />
+			      	<jvmarg value="-DsscosrcmainwebappINF.dir=${sscosrcmainwebappINF.dir}" />
+			      	<jvmarg value="-Dsscotarget.dir=${sscotarget.dir}" />
+			      	<jvmarg value="-Dsscotargetclasses.dir=${sscotargetclasses.dir}" />
+			      	<jvmarg value="-Dsscotomcat1.dir=${sscotomcat1.dir}" />
+					<jvmarg value="-Dsscotomcat1conf.dir=${sscotomcat1conf.dir}" />
+			      	<jvmarg value="-Dsscotomcat1confcat.dir=${sscotomcat1confcat.dir}" />
+			      	<jvmarg value="-Dsscotomcat1confcatlocal.dir=${sscotomcat1confcatlocal.dir}" />
+			      	<jvmarg value="-Dsscotomcat2.dir=${sscotomcat2.dir}" />			      		
+			      	<jvmarg value="-Dsscotomcat2conf.dir=${sscotomcat2conf.dir}" />
+			      	<jvmarg value="-Dsscotomcat2confcat.dir=${sscotomcat2confcat.dir}" />
+			      	<jvmarg value="-Dsscotomcat2confcatlocal.dir=${sscotomcat2confcatlocal.dir}" />			      			      	
+			      	
+			      	<!-- Sample Events folder and files -->
+			      	<jvmarg value="-Dssevents.dir=${ssevents.dir}" />
+			      	<jvmarg value="-Dsseventslib.dir=${sseventslib.dir}" />			      	
+			      	<jvmarg value="-Dsseventssrc.dir=${sseventssrc.dir}" />
+			      	<jvmarg value="-Dsseventssrcmain.dir=${sseventssrcmain.dir}" />			      	
+			      	<jvmarg value="-Dsseventssrcmainjava.dir=${sseventssrcmainjava.dir}" />
+			      	<jvmarg value="-Dsseventssrcmainjavademo.dir=${sseventssrcmainjavademo.dir}" />
+			      	<jvmarg value="-Dsseventssrcmainjavademoevents.dir=${sseventssrcmainjavademoevents.dir}" />
+			      	<jvmarg value="-Dsseventssrcmainjavademoeventsweb.dir=${sseventssrcmainjavademoeventsweb.dir}" />			      	
+			      	<jvmarg value="-Dsseventssrcmainres.dir=${sseventssrcmainres.dir}" />
+			      	<jvmarg value="-Dsseventssrcmainresdemo.dir=${sseventssrcmainresdemo.dir}" />			      	
+			      	<jvmarg value="-Dsseventssrcmainresdemoevents.dir=${sseventssrcmainresdemoevents.dir}" />
+			      	<jvmarg value="-Dsseventssrcmainwebapp.dir=${sseventssrcmainwebapp.dir}" />
+			      	<jvmarg value="-DsseventssrcmainwebappINF.dir=${sseventssrcmainwebappINF.dir}" />
+			      	<jvmarg value="-DsseventssrcmainwebappINFtld.dir=${sseventssrcmainwebappINFtld.dir}" />
+			      	<jvmarg value="-DsseventssrcmainwebappINFview.dir=${sseventssrcmainwebappINFview.dir}" />			      			      	
+			      	<jvmarg value="-Dsseventstarget.dir=${sseventstarget.dir}" />
+			      	<jvmarg value="-Dsseventstargetclasses.dir=${sseventstargetclasses.dir}" />
+			      	<jvmarg value="-Dsseventstargetclassesdemoeventsweb.dir=${sseventstargetclassesdemoeventsweb.dir}" />			      	
+			      	<jvmarg value="-Dsseventstomcat1.dir=${sseventstomcat1.dir}" />
+					<jvmarg value="-Dsseventstomcat1conf.dir=${sseventstomcat1conf.dir}" />
+			      	<jvmarg value="-Dsseventstomcat1confcat.dir=${sseventstomcat1confcat.dir}" />
+			      	<jvmarg value="-Dsseventstomcat1confcatlocal.dir=${sseventstomcat1confcatlocal.dir}" />
+			      	<jvmarg value="-Dsseventstomcat2.dir=${sseventstomcat2.dir}" />			      		
+			      	<jvmarg value="-Dsseventstomcat2conf.dir=${sseventstomcat2conf.dir}" />
+			      	<jvmarg value="-Dsseventstomcat2confcat.dir=${sseventstomcat2confcat.dir}" />
+			      	<jvmarg value="-Dsseventstomcat2confcatlocal.dir=${sseventstomcat2confcatlocal.dir}" />
+			      	
+			      	<!-- Sample Jmx folder and files -->
+			      	<jvmarg value="-Dssjmx.dir=${ssjmx.dir}" />
+			      	<jvmarg value="-Dssjmxlib.dir=${ssjmxlib.dir}" />			      	
+			      	<jvmarg value="-Dssjmxsrc.dir=${ssjmxsrc.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmain.dir=${ssjmxsrcmain.dir}" />			      	
+			      	<jvmarg value="-Dssjmxsrcmainjava.dir=${ssjmxsrcmainjava.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmainjavademo.dir=${ssjmxsrcmainjavademo.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmainjavademojmx.dir=${ssjmxsrcmainjavademojmx.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmainjavademojmxweb.dir=${ssjmxsrcmainjavademojmxweb.dir}" />			      	
+			      	<jvmarg value="-Dssjmxsrcmainres.dir=${ssjmxsrcmainres.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmainresdemo.dir=${ssjmxsrcmainresdemo.dir}" />			      	
+			      	<jvmarg value="-Dssjmxsrcmainresdemojmx.dir=${ssjmxsrcmainresdemojmx.dir}" />
+			      	<jvmarg value="-Dssjmxsrcmainwebapp.dir=${ssjmxsrcmainwebapp.dir}" />
+			      	<jvmarg value="-DssjmxsrcmainwebappINF.dir=${ssjmxsrcmainwebappINF.dir}" />
+			      	<jvmarg value="-DssjmxsrcmainwebappINFtld.dir=${ssjmxsrcmainwebappINFtld.dir}" />
+			      	<jvmarg value="-DssjmxsrcmainwebappINFview.dir=${ssjmxsrcmainwebappINFview.dir}" />			      			      	
+			      	<jvmarg value="-Dssjmxtarget.dir=${ssjmxtarget.dir}" />
+			      	<jvmarg value="-Dssjmxtargetclasses.dir=${ssjmxtargetclasses.dir}" />
+			      	<jvmarg value="-Dssjmxtargetclassesdemojmxweb.dir=${ssjmxtargetclassesdemojmxweb.dir}" />			      	
+			      	<jvmarg value="-Dssjmxtomcat1.dir=${ssjmxtomcat1.dir}" />
+					<jvmarg value="-Dssjmxtomcat1conf.dir=${ssjmxtomcat1conf.dir}" />
+			      	<jvmarg value="-Dssjmxtomcat1confcat.dir=${ssjmxtomcat1confcat.dir}" />
+			      	<jvmarg value="-Dssjmxtomcat1confcatlocal.dir=${ssjmxtomcat1confcatlocal.dir}" />
+			      	<jvmarg value="-Dssjmxtomcat2.dir=${ssjmxtomcat2.dir}" />			      		
+			      	<jvmarg value="-Dssjmxtomcat2conf.dir=${ssjmxtomcat2conf.dir}" />
+			      	<jvmarg value="-Dssjmxtomcat2confcat.dir=${ssjmxtomcat2confcat.dir}" />
+			      	<jvmarg value="-Dssjmxtomcat2confcatlocal.dir=${ssjmxtomcat2confcatlocal.dir}" />
+			      	
+			      	<!-- Sample Webflowfolder and files -->
+			      	<jvmarg value="-Dsswebflow.dir=${sswebflow.dir}" />
+			      	<jvmarg value="-Dsswebflowlib.dir=${sswebflowlib.dir}" />			      	
+			      	<jvmarg value="-Dsswebflowsrc.dir=${sswebflowsrc.dir}" />
+			      	<jvmarg value="-Dsswebflowsrcmain.dir=${sswebflowsrcmain.dir}" />			      	
+			      	<jvmarg value="-Dsswebflowsrcmainjava.dir=${sswebflowsrcmainjava.dir}" />
+			      	<jvmarg value="-Dsswebflowsrcmainjavademo.dir=${sswebflowsrcmainjavademo.dir}" />
+			      	<jvmarg value="-Dsswebflowsrcmainjavademowebflow.dir=${sswebflowsrcmainjavademowebflow.dir}" />
+			      	<!--<jvmarg value="-Dsswebflowsrcmainjavademowebflowweb.dir=${sswebflowsrcmainjavademowebflowweb.dir}" />			      	
+			      	<jvmarg value="-Dsswebflowsrcmainres.dir=${sswebflowsrcmainres.dir}" />
+			      	<jvmarg value="-Dsswebflowsrcmainresdemo.dir=${sswebflowsrcmainresdemo.dir}" />			      	
+			      	<jvmarg value="-Dsswebflowsrcmainresdemowebflow.dir=${sswebflowsrcmainresdemowebflow.dir}" />-->
+			      	<jvmarg value="-Dsswebflowsrcmainwebapp.dir=${sswebflowsrcmainwebapp.dir}" />
+			      	<jvmarg value="-DsswebflowsrcmainwebappINF.dir=${sswebflowsrcmainwebappINF.dir}" />
+			      	<!--<jvmarg value="-DsswebflowsrcmainwebappINFtld.dir=${sswebflowsrcmainwebappINFtld.dir}" />
+			      	<jvmarg value="-DsswebflowsrcmainwebappINFview.dir=${sswebflowsrcmainwebappINFview.dir}" />	-->		      			      	
+			      	<jvmarg value="-Dsswebflowtarget.dir=${sswebflowtarget.dir}" />
+			      	<jvmarg value="-Dsswebflowtargetclasses.dir=${sswebflowtargetclasses.dir}" />
+			      	<!--<jvmarg value="-Dsswebflowtargetclassesdemowebflowweb.dir=${sswebflowtargetclassesdemowebflowweb.dir}" />-->		      	
+			      	<jvmarg value="-Dsswebflowtomcat1.dir=${sswebflowtomcat1.dir}" />
+					<jvmarg value="-Dsswebflowtomcat1conf.dir=${sswebflowtomcat1conf.dir}" />
+			      	<jvmarg value="-Dsswebflowtomcat1confcat.dir=${sswebflowtomcat1confcat.dir}" />
+			      	<jvmarg value="-Dsswebflowtomcat1confcatlocal.dir=${sswebflowtomcat1confcatlocal.dir}" />
+			      	<jvmarg value="-Dsswebflowtomcat2.dir=${sswebflowtomcat2.dir}" />			      		
+			      	<jvmarg value="-Dsswebflowtomcat2conf.dir=${sswebflowtomcat2conf.dir}" />
+			      	<jvmarg value="-Dsswebflowtomcat2confcat.dir=${sswebflowtomcat2confcat.dir}" />
+			      	<jvmarg value="-Dsswebflowtomcat2confcatlocal.dir=${sswebflowtomcat2confcatlocal.dir}" />
+	      	
+			      	<!-- Uninstall folder -->
+			      	<jvmarg value="-Dteeuninstall.dir=${teeuninstall.dir}" />
+			      	<jvmarg value="-Dteeuninstallreso.dir=${teeuninstallreso.dir}" />
+			      	<jvmarg value="-Dspruninstall.dir=${spruninstall.dir}" />
+			      	<jvmarg value="-Dspruninstallreso.dir=${spruninstallreso.dir}" />
+			      	
+			      		
+			      	<formatter type="plain" />
+			         <formatter type="xml" />
+			         <batchtest todir="./reports">
+			            <fileset dir="${client.build}">		            			            	     	
+			            	<include name="test/SpringDocsTest.class" />
+			            	<include name="test/SampleCoordinationTest.class" />
+			            	<include name="test/SampleEventsTest.class" />
+			            	<include name="test/SampleJmxTest.class" />
+			            	<include name="test/UninstallTest.class" />
+		            	
+			            </fileset>
+			         </batchtest>
+			      </junit>
+			</target>
+	
+	<target name="tee_run_junit">
+	      <junit printsummary="yes" haltonfailure="no" fork="yes">
+	         <classpath refid="junittest.classpath" />		      	
+	      	<!-- Common folder and files for DSO-->
+	      	<jvmarg value="-Dhomedir.value=${homedir.value}" />		      	
+	      	<jvmarg value="-Dcommon.dir=${common.dir}" />		      	
+	      	<jvmarg value="-Dlibdir.value=${libdir.value}" />
+	        <jvmarg value="-Dlibdsodir.value=${libdsodir.value}" />
+	      	<jvmarg value="-Dlibtomcatdir.value=${libtomcatdir.value}" />
+	        <jvmarg value="-Dlibweblogicdir.value=${libweblogicdir.value}" />
+	      	<!-- DSO folder and files -->		      	
+      		<jvmarg value="-Ddso.dir=${dso.dir}" />		      	
+      		<jvmarg value="-Dbindir.value=${bindir.value}" />
+      		<jvmarg value="-Dlibexecdir.value=${libexecdir.value}" />
+      		<jvmarg value="-Dconfigs.dir=${configs.dir}" />
+	      	<jvmarg value="-Ddemodir.value=${demodir.value}" />
+	      	<!-- Sessions folder and files -->
+	      	<jvmarg value="-Dsessions.dir=${sessions.dir}" />
+	      	<jvmarg value="-Dsessionsbin.dir=${sessionsbin.dir}" />
+	      	<jvmarg value="-Dsessionslibexec.dir=${sessionslibexec.dir}" />
+	      	<jvmarg value="-Dsessionsconfigsample.dir=${sessionsconfigsample.dir}" />	      	
+	      	<jvmarg value="-Dsessionsuninstall.dir=${sessionsuninstall.dir}" />
+	      	<jvmarg value="-Dsessionsuninstallres.dir=${sessionsuninstallres.dir}" />
+	      	<!-- Spring folder and files -->
+	      	<jvmarg value="-Dspring.dir=${spring.dir}" />
+	      	<jvmarg value="-Dspringbin.dir=${springbin.dir}" />
+	      	<jvmarg value="-Dspringlibexec.dir=${springlibexec.dir}" />
+	      	<jvmarg value="-Dspringconfigs.dir=${springconfigs.dir}" />
+	      	<jvmarg value="-Dspringsamples.dir=${springsamples.dir}" />	      		      	
+	      	
+	      	<formatter type="plain" />
+		         <formatter type="xml" />
+		         <batchtest todir="./reports">
+		            <fileset dir="${client.build}">	            	 
+		            	<include name="test/TEEDSOTest.class" />
+		            	<include name="test/TEESessionsTest.class" />		      	       		            			            	
+		            </fileset>
+		         </batchtest>
+	       </junit>
+	</target>
+		
+		<target name="make_junit_report">
+		      <junitreport todir="./junitreports">
+		         <fileset dir="${basedir}/reports">
+		            <include name="*.xml" />
+		         </fileset>
+
+		         <fileset dir="${basedir}/junitreports">
+		            <include name="TEST-*.xml" />
+		         </fileset>
+		         <!--<report format="frames" todir="./report/html"/>-->
+		         <report format="noframes" todir="./report/html" />
+		      </junitreport>
+		</target>
+	
+	<target name="shutdown_servers" depends="stop.tvs"/>
+	<target name="stop.tvs">
+      <echo message="Stopping TVS server in ${stop-tc-server.value}" />
+      <chmod file="${stop-tc-server.value}" perm="777" />	      
+      <exec dir="${bin.dir}" executable="${stop-tc-server.value}">
+         <arg line="${tvs.host} ${tvs.port}" />
+      </exec>
+	  <echo message="closing the tc admin console and Removing all the clients" />
+	  <exec dir="${taskkill.dir}" executable="${taskkill.name}">
+		         <arg line="/F /IM java.exe" />
+	   </exec>		
+	</target>
+	
+	<target name="lin_shutdown_servers" depends="lin_stop.tvs"/>
+		<target name="lin_stop.tvs">
+	      <echo message="Stopping TVS server in ${lin_stop-tc-server.value}" />
+	      <chmod file="${lin_stop-tc-server.value}" perm="777" />	      
+	      <exec dir="${bin.dir}" executable="${lin_stop-tc-server.value}">
+	         <arg line="${tvs.host} ${tvs.port}" />
+	      </exec>
+		  <echo message="closing the tc admin console and Removing all the clients" />
+		<sshexec host="test03.terracotta.lan"
+	      	username="kkannaiy"
+	      	password="wa2ejema"
+	      	trust="yes"
+			command="killall java"
+		/>
+	</target>
+	
+	<target name="sol_shutdown_servers" depends="sol_stop.tvs"/>
+			<target name="sol_stop.tvs">
+		      <echo message="Stopping TVS server in ${lin_stop-tc-server.value}" />
+		      <chmod file="${lin_stop-tc-server.value}" perm="777" />	      
+		      <exec dir="${bin.dir}" executable="${lin_stop-tc-server.value}">
+		         <arg line="${tvs.host} ${tvs.port}" />
+		      </exec>
+			  <echo message="closing the tc admin console and Removing all the clients" />
+			<sshexec host="solqa2.terracotta.lan"
+		      	username="kkannaiy"
+		      	password="wa2ejema"
+		      	trust="yes"
+				command="killall java"
+			/>
+	</target>
+</project>
+   
+

@@ -1,0 +1,225 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<project name="weblogic_tc" default="run.wls" basedir=".">
+
+  <taskdef resource="net/sf/antcontrib/antlib.xml">
+    <classpath>
+      <pathelement location="${basedir}/../ant-lib/ant-contrib-1.0b2.jar" />
+    </classpath>
+  </taskdef>
+
+  <taskdef name="module.classes" classname="com.tc.ant.ModuleClasses"
+           classpath="${basedir}/../ant-lib/tc-ant.jar" />
+
+  <if><not><isset property="tc.base"/></not>
+  <then>
+    <property name="base.guess" value="${basedir}/../../../../open/code/base"/>
+    <available file="${base.guess}" property="base.exists"/>
+    <if><isset property="base.exists"/>
+    <then>
+      <property name="tc.base" value="${base.guess}"/>
+    </then>
+    </if>
+  </then>
+  </if>
+
+  <property name="output.dir" value="${basedir}/output"/>
+  <property name="download.dir" value="${basedir}/download"/>
+  <property name="bea.home" value="${output.dir}/bea"/>
+  <property name="bea.jar" value="bea81sp5.jar"/>
+  <property name="config" value="config"/>
+  <property name="weblogic.port" value="8001"/>
+  <property name="demoapp.path" value="${basedir}/../demoapp"/>
+  <property name="tc.config" value="${basedir}/../config/tc-config.xml"/>
+  
+  <path id="wl.class.path">
+    <pathelement location="${bea.home}/weblogic81/server/lib/weblogic.jar"/>
+  </path>
+
+  <module.classes base="${tc.base}" prop="common.classes" module="common"/>
+  <module.classes base="${tc.base}" prop="management.classes" module="management"/>
+  <module.classes base="${tc.base}" prop="dso-l1.classes" module="dso-l1"/>
+  <module.classes base="${tc.base}" prop="dso-common.classes" module="dso-common"/>
+  <module.classes base="${tc.base}" prop="thirdparty.classes" module="thirdparty"/>
+  <module.classes base="${tc.base}" prop="aspectwerkz.classes" module="aspectwerkz"/>
+  <module.classes base="${tc.base}" prop="dso-l1-session.classes" module="dso-l1-session"/>
+  <module.classes base="${tc.base}" prop="dso-l1-weblogic.classes" module="dso-l1-weblogic"/>
+
+  <path id="tc.classpath">
+    <pathelement location="${management.classes}"/>
+    <pathelement location="${common.classes}"/>
+    <pathelement location="${dso-l1.classes}"/>
+    <pathelement location="${dso-common.classes}"/>
+    <pathelement location="${thirdparty.classes}"/>
+    <pathelement location="${aspectwerkz.classes}"/>
+
+    <fileset dir="${tc.base}/common/lib">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${tc.base}/management/lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="tc.session.classpath">
+    <pathelement location="${dso-l1-weblogic.classes}"/>
+    <pathelement location="${dso-l1-session.classes}"/>
+  </path>
+
+  <property name="tc.classpath" refid="tc.classpath"/>
+  <property name="tc.session.classpath" refid="tc.session.classpath"/>
+
+  <target name="init">
+    <mkdir dir="${output.dir}"/>
+    <available file="${bea.home}" property="bea.home.exists"/>
+    <available file="${download.dir}/${bea.jar}" property="bea.jar.exists"/>
+    <available file="${output.dir}/${config}/config.xml" property="config.exists"/>
+
+    <java fork="true" 
+          classpath="${dso-l1.classes}"
+          outputproperty="boot.jar.name" 
+          failonerror="true" 
+          classname="com.tc.object.tools.BootJarSignature"/> 
+
+    <property name="dso.boot.jar" value="${tc.base}/build/homes/tools/${boot.jar.name}"/>
+
+    <available file="${dso.boot.jar}" property="boot.jar.exists"/>
+
+    <if><not><isset property="boot.jar.exists"/></not>
+    <then>
+      <fail message="DSO boot jar does not exist: ${dso.boot.jar}"/>
+    </then>
+    </if>
+    
+  </target>
+
+  <target name="clean" description="Remove the bea home and config directories">
+    <delete dir="${output.dir}"/>
+  </target>
+
+  <target name="compile.app">
+    <mkdir dir="${output.dir}/build"/>
+    <javac srcdir="${demoapp.path}" 
+           includes="*.java" 
+           destdir="${output.dir}/build" 
+           classpathref="wl.class.path"/>
+    <war webxml="${demoapp.path}/web.xml" destfile="${output.dir}/simplesession.war">
+      <classes dir="${output.dir}/build"/>
+      <webinf file="weblogic.xml"/>
+      <fileset dir="${demoapp.path}" includes="*.jsp"/>
+      <fileset dir="${demoapp.path}" includes="*.html"/>
+    </war>
+  </target>
+
+  <target name="run.wls" 
+          depends="init, unpack.jar, compile.app, config.wls, boot.wls"
+          description="install and run a WebLogic server.  Use -Dconfig=name -Dport=nnnn to specify a config directory and port.">
+    <echo message="Servlet is deployed to:   http://localhost:${weblogic.port}/simplesession/SimpleSession"/>
+    <input message="hit enter to exit"/>
+    <shutdown.wls weblogic.port="${weblogic.port}"/>
+  </target>
+
+  <target name="config.wls" depends="init" unless="config.exists">
+    <taskdef name="wlserver" classname="weblogic.ant.taskdefs.management.WLServer"
+             classpath="${bea.home}/weblogic81/server/lib/weblogic.jar"/>
+
+    <taskdef name="wldeploy" classname="weblogic.ant.taskdefs.management.WLDeploy"
+             classpath="${bea.home}/weblogic81/server/lib/weblogic.jar"/>
+
+    <mkdir dir="${output.dir}/${config}"/>
+
+    <wlserver beahome="${bea.home}" weblogichome="${bea.home}/weblogic81" dir="${output.dir}/${config}"
+              port="${weblogic.port}"
+              generateConfig="true" username="weblogic" password="weblogic"
+              classpathref="wl.class.path" failonerror="true" fork="true">
+      <sysproperty key="tc.classpath" value="${tc.classpath}"/>
+      <sysproperty key="tc.session.classpath" value="${tc.session.classpath}"/>
+      <sysproperty key="tc.config" value="${tc.config}"/>
+      <!-- <sysproperty key="tc.classloader.writeToDisk" value="true"/> -->
+      <jvmarg value="-Xbootclasspath/p:${dso.boot.jar}"/>
+      <!--       <jvmarg value="-Xdebug"/> -->
+      <!--       <jvmarg value="-Xnoagent"/> -->
+      <!--       <jvmarg value="-Djava.compiler=NONE"/> -->
+      <!--       <jvmarg value="-Xrunjdwp:server=y,transport=dt_socket,address=8000,suspend=y"/> -->
+    </wlserver>
+    <wldeploy action="deploy"
+              source="${output.dir}/simplesession.war" name="simplesession"
+              user="weblogic" password="weblogic" verbose="true" adminurl="t3://localhost:${weblogic.port}"
+              debug="true" targets="myserver" failonerror="true"/>
+
+    <shutdown.wls weblogic.port="${weblogic.port}"/>
+  </target>
+
+  <target name="boot.wls">
+    <taskdef name="wlserver" classname="weblogic.ant.taskdefs.management.WLServer"
+             classpath="${bea.home}/weblogic81/server/lib/weblogic.jar" />
+
+
+    <if><isset property="debug"/>
+    <then>
+      <wlserver beahome="${bea.home}" weblogichome="${bea.home}/weblogic81"
+                dir="${output.dir}/${config}" port="${weblogic.port}" username="weblogic" password="weblogic"
+                classpathref="wl.class.path" action="start" productionmodeenabled="true" failonerror="true" fork="true">
+        <sysproperty key="tc.classpath" value="${tc.classpath}"/>
+        <sysproperty key="tc.session.classpath" value="${tc.session.classpath}"/>
+        <sysproperty key="tc.config" value="${tc.config}"/>
+        <jvmarg value="-Xbootclasspath/p:${dso.boot.jar}"/>
+        <jvmarg value="-Dtc.classloader.writeToDisk=true"/>
+        <jvmarg value="-Xdebug"/>
+        <jvmarg value="-Xnoagent"/>
+        <jvmarg value="-Djava.compiler=javac"/>
+        <jvmarg value="-Xrunjdwp:server=y,transport=dt_socket,address=8000,suspend=y"/>
+      </wlserver>
+    </then>
+    <else>
+      <wlserver beahome="${bea.home}" 
+                weblogichome="${bea.home}/weblogic81"
+                dir="${output.dir}/${config}" 
+                port="${weblogic.port}" 
+                username="weblogic" 
+                password="weblogic"
+                classpathref="wl.class.path" 
+                action="start" 
+                productionmodeenabled="true" 
+                failonerror="true" 
+                fork="true">
+        <sysproperty key="tc.classpath" value="${tc.classpath}"/>
+        <sysproperty key="tc.session.classpath" value="${tc.session.classpath}"/>
+        <sysproperty key="tc.config" value="${tc.config}"/>
+        <jvmarg value="-Xbootclasspath/p:${dso.boot.jar}"/>
+        <jvmarg value="-Dtc.classloader.writeToDisk=true"/>
+      </wlserver>        
+    </else>
+    </if>
+  </target>
+
+  <target name="download.wls" unless="bea.jar.exists">
+    <mkdir dir="${download.dir}"/>    
+    <get src="ftp://ftp:user@sand.terracotta.lan/pub/test-app-servers/${bea.jar}" dest="${download.dir}/${bea.jar}"/>
+  </target>
+
+  <target name="unpack.jar" depends="download.wls" unless="bea.home.exists">
+    <unjar src="${download.dir}/${bea.jar}" dest="${output.dir}"/>
+  </target>
+
+  <macrodef name="shutdown.wls">
+    <attribute name="weblogic.port"/>
+
+    <sequential>
+      <java classname="weblogic.Admin" classpathref="wl.class.path" fork="true">
+        <arg line="-adminurl t3://localhost:@{weblogic.port}"/>
+        <arg line="-username weblogic"/>
+        <arg line="-password weblogic"/>
+        <arg value="FORCESHUTDOWN"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+</project>
