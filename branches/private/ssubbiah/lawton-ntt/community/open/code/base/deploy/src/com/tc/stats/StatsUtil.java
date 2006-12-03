@@ -9,12 +9,15 @@ import com.tc.stats.statistics.CountStatisticImpl;
 
 import javax.management.j2ee.statistics.CountStatistic;
 
-
 public class StatsUtil {
 
   public static CountStatistic makeCountStat(SampledCounter counter, String name, String unit, String desc) {
-    CountStatisticImpl stat = new CountStatisticImpl(name, unit, desc);
     TimeStampedCounterValue sample = counter.getMostRecentSample();
+    return makeCountStat(sample, name, unit, desc);
+  }
+
+  public static CountStatistic makeCountStat(TimeStampedCounterValue sample, String name, String unit, String desc) {
+    CountStatisticImpl stat = new CountStatisticImpl(name, unit, desc);
     // TODO: we could include the min/max/avg in the returned stat
     stat.setLastSampleTime(sample.getTimestamp());
     stat.setCount(sample.getCounterValue());

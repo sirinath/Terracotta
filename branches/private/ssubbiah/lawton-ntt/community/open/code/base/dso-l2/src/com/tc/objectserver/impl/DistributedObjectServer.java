@@ -362,7 +362,8 @@ public class DistributedObjectServer extends SEDA {
     if (gcEnabled) logger.debug("Verbose GC enabled: " + verboseGC);
     sampledCounterManager = new SampledCounterManagerImpl();
     SampledCounter objectCreationRate = sampledCounterManager.createCounter(new SampledCounterConfig(1, 900, true, 0L));
-    ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate);
+    SampledCounter objectFaultRate = sampledCounterManager.createCounter(new SampledCounterConfig(1, 900, true, 0L));
+    ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate, objectFaultRate);
 
     SequenceValidator sequenceValidator = new SequenceValidator(0);
     ManagedObjectFaultHandler managedObjectFaultHandler = new ManagedObjectFaultHandler();

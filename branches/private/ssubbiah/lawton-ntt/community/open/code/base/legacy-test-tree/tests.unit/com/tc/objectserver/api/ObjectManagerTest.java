@@ -101,6 +101,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   private TCLogger                           logger;
   private ObjectManagerStatsImpl             stats;
   private SampledCounter                     newObjectCounter;
+  private SampledCounterImpl                 objectfaultCounter;
   private TestPersistenceTransactionProvider persistenceTransactionProvider;
   private TestPersistenceTransaction         NULL_TRANSACTION;
 
@@ -123,7 +124,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ManagedObjectStateFactory.disableSingleton(true);
     ManagedObjectStateFactory.createInstance(new NullManagedObjectChangeListenerProvider(), new InMemoryPersistor());
     this.newObjectCounter = new SampledCounterImpl(new SampledCounterConfig(1, 1, true, 0L));
-    stats = new ObjectManagerStatsImpl(newObjectCounter);
+    this.objectfaultCounter = new SampledCounterImpl(new SampledCounterConfig(1, 1, true, 0L));
+    stats = new ObjectManagerStatsImpl(newObjectCounter, objectfaultCounter);
     persistenceTransactionProvider = new TestPersistenceTransactionProvider();
     NULL_TRANSACTION = TestPersistenceTransaction.NULL_TRANSACTION;
   }
@@ -627,8 +629,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     TestSink flushSink = new TestSink();
     config.paranoid = paranoid;
     objectManager = new ObjectManagerImpl(config, createThreadGroup(), clientStateManager, store,
-                                          new LRUEvictionPolicy(100), persistenceTransactionProvider, faultSink, flushSink,
-                                          new MockObjectManagementMonitor());
+                                          new LRUEvictionPolicy(100), persistenceTransactionProvider, faultSink,
+                                          flushSink, new MockObjectManagementMonitor());
     new TestMOFaulter(this.objectManager, store, faultSink).start();
     new TestMOFlusher(this.objectManager, flushSink).start();
 

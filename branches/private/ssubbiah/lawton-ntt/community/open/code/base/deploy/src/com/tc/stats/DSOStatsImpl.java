@@ -3,8 +3,6 @@
  */
 package com.tc.stats;
 
-import java.lang.reflect.Method;
-
 import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStats;
@@ -14,8 +12,10 @@ import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.statistics.DoubleStatistic;
 import com.tc.stats.statistics.DoubleStatisticImpl;
 
-import javax.management.j2ee.statistics.Statistic;
+import java.lang.reflect.Method;
+
 import javax.management.j2ee.statistics.CountStatistic;
+import javax.management.j2ee.statistics.Statistic;
 
 /**
  * This is the root interface to the global DSO Server statistics.
@@ -65,6 +65,13 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
     rv.setDoubleValue(value);
     return rv;
   }
+  
+  public CountStatistic getCacheMissRate() {
+    return StatsUtil.makeCountStat( objMgrStats.getCacheMissRate()
+                                   , "Server Cache Miss Rate", "Misses per second",
+                                                     "Number of cache misses per second");
+  }
+
 
   public Statistic[] getStatistics(String[] names) {
     int         count  = names.length;
