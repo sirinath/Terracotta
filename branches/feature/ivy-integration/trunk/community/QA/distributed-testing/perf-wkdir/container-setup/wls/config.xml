@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+<Domain ConfigurationVersion="8.1.5.0" Name="mydomain">
+    <EmbeddedLDAP
+        CredentialEncrypted="{3DES}NSVQgtn7xdojOWXyb7G46ESr89OP3EubgrJNnmMOBLQ=" Name="mydomain"/>
+    <SecurityConfiguration
+        CredentialEncrypted="{3DES}ehgR79weUhgb3Uauun9I821FdlseLqNSuAZFU6LPcCoem4SER8l3n3nFL/RuiNRWQXkreaQaqmg6aIkXeI7NRqb29Aq+YDHf"
+        Name="mydomain" RealmBootStrapVersion="1"/>
+    <Server Name="myserver" ServerVersion="8.1.5.0">
+        <SSL IdentityAndTrustLocations="KeyStores" Name="myserver"/>
+    </Server>
+    <Security Name=""/>
+    <Realm FileRealm="wl_default_file_realm" Name="wl_default_realm"/>
+    <FileRealm Name="wl_default_file_realm"/>
+    <PasswordPolicy Name="wl_default_password_policy"/>
+    
+     <Application Name="_appsdir_ROOT_dir" Path="applications"
+        StagingMode="nostage" TwoPhase="true">
+        <WebAppComponent Name="ROOT" Targets="myserver" URI="ROOT"/>
+    </Application>
+    <Application Name="_appsdir_perftest_war"
+        Path="applications"
+        StagingMode="nostage" TwoPhase="true">
+        <WebAppComponent Name="perftest" Targets="myserver" URI="perftest.war"/>
+    </Application>
+</Domain>
