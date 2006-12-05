@@ -1,15 +1,10 @@
 Terracotta
 ==========
 
-Forums:  http://www.terracotta.org/forums/
-Support: support@terracottatech.com
-Sales:   sales@terracottatech.com or +1 415-738-4000
-
-
-Documentation
--------------
-
-http://www.terracotta.org/confluence/display/docs/
+Documentation: http://docs.terracotta.org
+Forums:        http://www.terracottatech.com/forums/
+Mailing Lists: http://lists.terracotta.org
+Services:      http://www.terracottatech.com/support_services.shtml
 
 
 Getting Started
@@ -105,15 +100,6 @@ It is possible to control the JVM that the Terracotta Server uses by
 setting the TC_JAVA_HOME environment variable.  This should be used with
 caution, as doing so may cause the Terracotta Server to run with an unsupported
 JVM.
-
-
-Further Information and Support
--------------------------------
-
-Further information on Terracotta is available from:
-   http://www.terracotta.org
-Also, we encourage you to email support@terracottatech.com with any questions,
-comments, or issues regarding running Terracotta.
 
 
 ----

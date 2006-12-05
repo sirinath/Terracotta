@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object;
 
@@ -118,6 +118,10 @@ public class TCObjectPhysical extends TCObjectImpl {
     }
   }
 
+  /**
+   * Unlike literalValueChange, this method is not synchronized on getResolveLock() because this method is called
+   * by the applicator thread which has been synchronized on getResolveLock() in TCObjectImpl.hydrate().
+   */
   public void setLiteralValue(Object newValue) {
     setPeerObject(new WeakObjectReference(getObjectID(), newValue, getObjectManager().getReferenceQueue()));
   }

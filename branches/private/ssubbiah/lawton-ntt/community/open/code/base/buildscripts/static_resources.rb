@@ -1,3 +1,9 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
 # An object that knows about all of the static resources in the buildsystem -- that is,
 # it understands where a bunch of support files (that the buildsystem needs to do its
 # job) live. Like BuildResults, it's much cleaner and more maintainable to have these
@@ -75,17 +81,20 @@ class StaticResources
         FilePath.new(@root_directory, '..', 'demos')
     end
 
-    # this function is retired since we want to pull vendors app from URL instead
-    #~ def vendors_directory
-        #~ FilePath.new(@root_directory, '..', 'vendors')
-    #~ end
-    
     def vendors_url
-        default_url = "http://kong/resources/resources/vendors"
-        ENV["VENDORS_URL"].nil? ? default_url : ENV["VENDORS_URL"]
+        default_url = "http://download.terracotta.org/bundled-vendors"
+        ENV["TC_VENDORS_URL"].nil? ? default_url : ENV["TC_VENDORS_URL"]
     end
     
-
+    def jre_url      
+      default_url = "http://download.terracotta.org/bundled-jre/sun"
+      ENV["TC_JRE_URL"].nil? ? default_url : ENV["TC_JRE_URL"]
+    end
+    
+    def docflex_home
+      ENV["DOCFLEX_HOME"]
+    end
+  
     def templates_directory
         FilePath.new(@root_directory, '..', '..', 'kits', 'source', 'templates')
     end

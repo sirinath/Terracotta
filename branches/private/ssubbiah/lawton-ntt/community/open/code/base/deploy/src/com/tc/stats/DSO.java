@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.stats;
 
@@ -25,7 +25,9 @@ import com.tc.objectserver.lockmanager.api.LockManagerMBean;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.tx.ServerTransactionManagerEventListener;
 import com.tc.objectserver.tx.ServerTransactionManagerMBean;
+import com.tc.stats.statistics.CountStatistic;
 import com.tc.stats.statistics.DoubleStatistic;
+import com.tc.stats.statistics.Statistic;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,12 +38,10 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.j2ee.statistics.CountStatistic;
-import javax.management.j2ee.statistics.Statistic;
 
 /**
  * This is the top-level MBean for the DSO subsystem, off which to hang JSR-77 Stats and Config MBeans.
- * 
+ *
  * @see DSOMBean
  * @see DSOStatsImpl
  */
@@ -83,7 +83,7 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
     setupRoots();
     setupClients();
   }
-  
+
   public void reset() {
     // TODO:  implement this?
   }

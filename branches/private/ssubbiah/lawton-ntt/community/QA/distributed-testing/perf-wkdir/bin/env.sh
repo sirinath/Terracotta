@@ -1,3 +1,9 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
 JDK14=/usr/java/j2sdk1.4.2_12
 JDK15=/usr/java/jdk1.5.0_08
 

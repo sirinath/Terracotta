@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package org.terracotta.dso;
 
@@ -175,7 +175,7 @@ public class JdtUtils {
       if (resolvedNames != null && resolvedNames.length > 0) {
         return concatenateName(resolvedNames[0][0], resolvedNames[0][1].replace('.', '$'));
       }
-      return null;
+      return "*";
     } else {
       return Signature.toString(refTypeSig.substring(arrayCount));
     }

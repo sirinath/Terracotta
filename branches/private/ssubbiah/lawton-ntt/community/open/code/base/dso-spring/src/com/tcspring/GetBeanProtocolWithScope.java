@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tcspring;
 
@@ -18,6 +18,11 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 
+/**
+ * Virtualize <code>AbstractBeanFactory.getBean()</code> with <code>Scope<code> support.
+ * 
+ * @author Liyu Yi
+ */
 public class GetBeanProtocolWithScope extends GetBeanProtocol {
   private static final String TC_SESSION_SCOPE_CONVERSATION_ID = "_TC_SESSION_SCOPE_CONVERSATION_ID";
   private transient final Log logger = LogFactory.getLog(this.getClass());
@@ -43,8 +48,6 @@ public class GetBeanProtocolWithScope extends GetBeanProtocol {
   }
   
   public Object interceptGetSessionId(StaticJoinPoint jp, HttpSession session) throws Throwable {
-    Thread.dumpStack();
-    
     Object conversationId = session.getAttribute(TC_SESSION_SCOPE_CONVERSATION_ID);
     if (conversationId == null) {
       conversationId = jp.proceed();

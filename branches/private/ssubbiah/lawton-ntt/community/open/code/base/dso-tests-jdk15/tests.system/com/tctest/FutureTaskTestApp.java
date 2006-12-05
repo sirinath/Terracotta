@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tctest;
 
@@ -10,7 +10,6 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
-import com.tc.util.DebugUtil;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.ArrayList;
@@ -265,7 +264,6 @@ public class FutureTaskTestApp extends AbstractTransparentApp {
 
   private void timeoutGetTask(int index, FutureTask longTask) throws Exception {
     if (index == 0) {
-      DebugUtil.DEBUG = true;
       root.setTask(longTask);
     }
 
@@ -287,12 +285,6 @@ public class FutureTaskTestApp extends AbstractTransparentApp {
     Assert.assertTrue(root.getTask().isCancelled());
 
     Assert.assertTrue(root.getTask().isDone());
-
-    barrier.await();
-    
-    if (index == 0) {
-      DebugUtil.DEBUG = false;
-    }
 
     barrier.await();
   }

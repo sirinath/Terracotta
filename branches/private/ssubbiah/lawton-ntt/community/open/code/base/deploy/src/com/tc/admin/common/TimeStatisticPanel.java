@@ -1,16 +1,15 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.common;
-
-import java.util.Date;
-
-import javax.management.j2ee.statistics.Statistic;
-import javax.management.j2ee.statistics.TimeStatistic;
 
 import org.jfree.data.time.Second;
 
 import com.tc.admin.ConnectionContext;
+import com.tc.stats.statistics.Statistic;
+import com.tc.stats.statistics.TimeStatistic;
+
+import java.util.Date;
 
 public class TimeStatisticPanel extends StatisticPanel {
   public TimeStatisticPanel(ConnectionContext cc) {

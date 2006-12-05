@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.stats;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
+
+import com.tc.stats.statistics.Statistic;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -12,10 +14,8 @@ import java.util.Map;
 import javax.management.AttributeChangeNotification;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotificationBroadcasterSupport;
-import javax.management.j2ee.statistics.Statistic;
-import javax.management.j2ee.statistics.Stats;
 
-public class StatsSupport extends NotificationBroadcasterSupport implements Stats, Serializable {
+public class StatsSupport extends NotificationBroadcasterSupport implements Serializable {
   private final Map              m_stats        = new HashMap();
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 

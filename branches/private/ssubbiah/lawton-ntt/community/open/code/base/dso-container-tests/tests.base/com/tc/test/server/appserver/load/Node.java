@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.test.server.appserver.load;
 
@@ -32,8 +32,8 @@ public class Node implements Runnable {
   protected final Random          random = new Random();
 
   public Node(URL mutateUrl, URL validateUrl, int numSessions, long duration) {
-    // this.client = HttpUtil.createHttpClient();
     this.client = new HttpClient();
+    this.client.getHttpConnectionManager().getParams().setConnectionTimeout(60 * 1000);
     this.mutateUrl = mutateUrl;
     this.validateUrl = validateUrl;
     this.sessions = createStates(numSessions);

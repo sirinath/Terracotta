@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.test;
 
@@ -71,6 +71,9 @@ public class TCTestCase extends TestCase {
   private boolean                          dumpThreadsOnTimeout      = true;
   private int                              numThreadDumps            = 3;
   private long                             dumpInterval              = 500;
+
+  // a way to ensure that system clock moves forward...
+  private long                             previousSystemMillis      = 0;
 
   public TCTestCase() {
     super();
@@ -478,6 +481,13 @@ public class TCTestCase extends TestCase {
       assertEquals("Object and [de]serialized object failed hashCode() comparison", obj.hashCode(), deserializedObj
           .hashCode());
     }
+  }
+
+  protected synchronized void assertTimeDirection() {
+    long currentMillis = System.currentTimeMillis();
+    assertTrue("System Clock Moved Backwards! [current=" + currentMillis + ", previous=" + previousSystemMillis + "]",
+               currentMillis >= previousSystemMillis);
+    previousSystemMillis = currentMillis;
   }
 
   private void doThreadDump() {

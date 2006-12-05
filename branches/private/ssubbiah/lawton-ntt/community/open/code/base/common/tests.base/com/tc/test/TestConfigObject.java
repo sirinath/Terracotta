@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.test;
 
@@ -74,7 +74,7 @@ public class TestConfigObject {
 
   public static final String      APP_SERVER_REPOSITORY_URL_BASE   = STATIC_PROPERTIES_PREFIX + "appserver.repository";
 
-  public static final String      APP_SERVER_HOME                  = STATIC_PROPERTIES_PREFIX + "appserver.home";
+  public static final String      APP_SERVER_HOME                  = DYNAMIC_PROPERTIES_PREFIX + "appserver.home";
 
   private static final String     APP_SERVER_FACTORY_NAME          = STATIC_PROPERTIES_PREFIX
                                                                      + "appserver.factory.name";

@@ -1,3 +1,9 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
 modules:
   - linked-child-process:
       options:
@@ -105,13 +111,6 @@ modules:
         - dso-common-jdk15
         - thirdparty
         - management
-  - dso-demoapp:
-      options:
-        compiler_version: 1.4
-      dependencies:
-        - common
-        - dso-common
-        - dso-common-jdk15
   - deploy:
       options:
         compiler_version: 1.4
@@ -386,7 +385,6 @@ module-groups:
     - dso-l1-tomcat50
     - dso-l1-tomcat55
     - dso-l2
-    - dso-demoapp
     - deploy
     - simulator
     - ui-configurator

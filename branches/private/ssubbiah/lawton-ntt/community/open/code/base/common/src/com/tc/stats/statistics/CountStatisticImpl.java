@@ -1,28 +1,13 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.stats.statistics;
 
-import javax.management.j2ee.statistics.CountStatistic;
-
-/**
- * An implementation of javax.management.j2ee.statistics.CountStatistic.
- *
- * @see javax.management.j2ee.statistics.CountStatistic
- * @see StatisticImpl
- */
-
-public class CountStatisticImpl extends StatisticImpl
-  implements CountStatistic
-{
+public class CountStatisticImpl extends StatisticImpl implements CountStatistic {
   private long m_count;
 
   public CountStatisticImpl() {
-    super("CountStatistic", "", "", 0, 0);
-  }
-
-  public CountStatisticImpl(String name, String unit, String description) {
-    super(name, unit, description, 0, 0);
+    this(0L);
   }
 
   public CountStatisticImpl(long count) {
@@ -35,9 +20,5 @@ public class CountStatisticImpl extends StatisticImpl
 
   public long getCount() {
     return m_count;
-  }
-
-  public void update(long count) {
-    setCount(count);
   }
 }

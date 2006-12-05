@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.dso;
 
+import com.tc.admin.AdminClient;
+import com.tc.admin.ConnectionContext;
+import com.tc.stats.statistics.CountStatistic;
+
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
 import javax.management.ObjectName;
-import javax.management.j2ee.statistics.CountStatistic;
-
-import com.tc.admin.ConnectionContext;
-import com.tc.admin.AdminClient;
 
 public class DSOClient {
   private   ConnectionContext     cc;
@@ -55,7 +55,7 @@ public class DSOClient {
   public String getHost() {
     if(host == null) {
       host = "unknown";
-      
+
       String addr = getRemoteAddress();
       if(addr != null && addr.indexOf(':') != -1) {
         host = addr.substring(0, addr.lastIndexOf(':'));

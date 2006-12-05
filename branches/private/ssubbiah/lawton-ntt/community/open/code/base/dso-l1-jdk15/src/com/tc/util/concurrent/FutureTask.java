@@ -1,10 +1,7 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.util.concurrent;
-
-import com.tc.object.bytecode.ManagerUtil;
-import com.tc.util.DebugUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -231,9 +228,6 @@ public class FutureTask implements Future, Runnable {
       } finally {
         lock.unlock();
       }
-      if (DebugUtil.DEBUG) {
-        System.err.println("In FutureTask managedInnerCancel: -- Client id: " + ManagerUtil.getClientID() + ", runner: " + r + ", state: " + state);
-      }
       if (r != null) {
         r.interrupt();
       }
@@ -247,9 +241,6 @@ public class FutureTask implements Future, Runnable {
         setState(CANCELLED);
       } finally {
         lock.unlock();
-      }
-      if (DebugUtil.DEBUG) {
-        System.err.println("In FutureTask innerRun: -- Client id: " + ManagerUtil.getClientID() + ", mayInterruptIfRunning: " + mayInterruptIfRunning);
       }
       lock.lock();
       try {
@@ -278,9 +269,6 @@ public class FutureTask implements Future, Runnable {
           lock.unlock();
         }
         if (isRunning) {
-          if (DebugUtil.DEBUG) {
-            System.err.println("In FutureTask innerRun: -- Client id: " + ManagerUtil.getClientID() + ", state: " + state);
-          }
           Object o = callable.call();
           lock.lock();
           try {
