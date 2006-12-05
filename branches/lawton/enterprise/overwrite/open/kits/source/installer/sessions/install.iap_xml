@@ -1802,7 +1802,7 @@ You may cancel this installation at any time by clicking the 'Cancel' button.]]>
 									</property>
 									<property name="narrative">
 										<string><![CDATA[The back up of your sessions folder to $BACKUP_FOLDER$ cannot complete.
-Close all applications pointing to your existing Terracotta Enterprise Edition installation.]]></string>
+Close all applications pointing to your existing Terracotta Sessions Enterprise Edition installation.]]></string>
 									</property>
 									<property name="dismissalAction">
 										<int>0</int>
@@ -1876,7 +1876,7 @@ Close all applications pointing to your existing Terracotta Enterprise Edition i
 									</property>
 									<property name="narrative">
 										<string><![CDATA[The deletion of your sessions folder to $USER_MAGIC_FOLDER_1$ cannot complete.
-Close all applications pointing to your existing Terracotta Enterprise Edition installation.]]></string>
+Close all applications pointing to your existing Terracotta Sessions Enterprise Edition installation.]]></string>
 									</property>
 									<property name="dismissalAction">
 										<int>1</int>
@@ -1999,7 +1999,7 @@ Close all applications pointing to your existing Terracotta Enterprise Edition i
 											<method name="addElement">
 												<object class="com.zerog.ia.installer.util.VariablePropertyData" objectID="f83cc80293a5">
 													<property name="propertyValue">
-														<string><![CDATA[Launch Terracotta Sessions Enterprise Edition Welcome Application]]></string>
+														<string><![CDATA[Launch Terracotta Sessions Enterprise Edition Welcome]]></string>
 													</property>
 													<property name="propertyName">
 														<string><![CDATA[$IC_PANEL_LAUNCH_WELCOME$]]></string>
@@ -2472,7 +2472,7 @@ and any path to a file to read from that file]]></string>
 						<string><![CDATA[terracotta-sessions-for-tomcat]]></string>
 					</property>
 					<property name="win32MagicFolderPath">
-						<string><![CDATA[Terracotta Enterprise]]></string>
+						<string><![CDATA[Terracotta]]></string>
 					</property>
 				</object>
 			</property>
@@ -2500,7 +2500,7 @@ and any path to a file to read from that file]]></string>
 						<string><![CDATA[]]></string>
 					</property>
 					<property name="win32MagicFolderPath">
-						<string><![CDATA[Terracotta Enterprise]]></string>
+						<string><![CDATA[Terracotta]]></string>
 					</property>
 				</object>
 			</property>
