@@ -1,10 +1,15 @@
 <ivyconf>
-  <conf defaultResolver="ibiblio"/>
+  <conf defaultResolver="ibiblio-chain"/>
   <resolvers>
     <url name="tc-repo">
       <artifact pattern="http://eellispc.terracotta.lan/~eellis/lib/[artifact]-[revision].[ext]"/>
     </url>
-    <ibiblio name="ibiblio"/>
+    <chain name="ibiblio-chain" returnFirst="true">
+      <ibiblio name="ibiblio" />
+      <url name="tc-mirror">
+      	<artifact pattern="http://eellispc.terracotta.lan/~eellis/mirror/[artifact]-[revision].[ext]"/>
+      </url>
+    </chain>
   </resolvers>
   <modules>
 	<module organisation="terracotta" name=".*" resolver="tc-repo"/>
