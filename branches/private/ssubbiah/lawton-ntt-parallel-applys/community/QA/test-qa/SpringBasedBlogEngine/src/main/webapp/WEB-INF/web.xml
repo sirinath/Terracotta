@@ -1,0 +1,31 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<web-app>
+    <display-name>SpringBasedBlog</display-name>
+    <description>
+        A servlet that interfaces to a singleton blog bean,
+        which is distributed by Terracotta.
+    </description>
+	<context-param>
+  		<param-name>contextConfigLocation</param-name>
+  		<param-value>/WEB-INF/applicationContext.xml</param-value>
+	</context-param>
+    <listener>
+    	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+    <servlet>
+        <display-name>SpringBasedBlog</display-name>
+        <servlet-name>SpringBasedBlog</servlet-name>
+        <servlet-class>org.terracotta.spring.blog.servlet.SpringBasedBlogServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SpringBasedBlog</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+</web-app>
