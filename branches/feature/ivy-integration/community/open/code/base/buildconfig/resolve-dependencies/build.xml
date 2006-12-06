@@ -11,8 +11,17 @@
 	<!-- ================================= 
 	target: run              
 	================================= -->
-	<target name="run" depends="configure">
-		<ant inheritRefs="true" antfile="build.xml" dir="${ivy.codebase.dir}/common" target="resolve"/>
+	<target name="run" depends="configure, buildlist">
+		<subant buildpathref="build-path" inheritRefs="true" target="resolve"/>
+	</target>
+	
+	<!-- ================================= 
+	target: buildlist              
+	================================= -->
+	<target name="buildlist"> 
+	    <ivy:buildlist reference="build-path">
+    	  <fileset dir="${ivy.codebase.dir}" includes="*/build.xml" excludes="buildconfig/build.xml ui-eclipse/build.xml"/>
+    	</ivy:buildlist>
 	</target>
 	
 	<!-- ================================= 

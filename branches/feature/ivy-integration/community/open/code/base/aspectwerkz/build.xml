@@ -1,4 +1,4 @@
-<project name="common" xmlns:ivy="antlib:fr.jayasoft.ivy.ant">
+<project name="aspectwerkz" xmlns:ivy="antlib:fr.jayasoft.ivy.ant">
   
   <!-- ================================= 
   target: resolve              

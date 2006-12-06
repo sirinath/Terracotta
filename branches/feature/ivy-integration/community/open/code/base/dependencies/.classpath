@@ -31,5 +31,11 @@
 	<classpathentry kind="lib" path="lib/servlet-api-2.4.jar"/>
 	<classpathentry kind="lib" path="lib/serializer-2.7.0.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.9.jar"/>
+	<classpathentry kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/treemap-tc-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jmxremote-1.0.1_04.jar"/>
+	<classpathentry kind="lib" path="lib/jmxremote_optional-1.0.1_03-b57-tc.jar"/>
+	<classpathentry kind="lib" path="lib/appframe-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.0x.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>
