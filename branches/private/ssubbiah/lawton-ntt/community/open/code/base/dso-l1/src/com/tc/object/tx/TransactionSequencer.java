@@ -21,7 +21,6 @@ public class TransactionSequencer {
   private static final int              MAX_BYTE_SIZE_FOR_BATCH;
   private static final int              MAX_PENDING_BATCHES;
   private static final long             MAX_SLEEP_TIME_BEFORE_HALT;
-  private static final long[]           SLEEP_TIMES;
 
   static {
     // Set the values from the properties here.
@@ -29,8 +28,6 @@ public class TransactionSequencer {
     MAX_BYTE_SIZE_FOR_BATCH = TCProperties.getProperties().getInt("l1.transactionmanager.maxBatchSizeInKiloBytes") * 1024;
     MAX_PENDING_BATCHES = TCProperties.getProperties().getInt("l1.transactionmanager.maxPendingBatches");
     MAX_SLEEP_TIME_BEFORE_HALT = TCProperties.getProperties().getLong("l1.transactionmanager.maxSleepTimeBeforeHalt");
-    SLEEP_TIMES = new long[MAX_PENDING_BATCHES];
-    initSleepTimes();
   }
 
   private final SequenceGenerator       sequence       = new SequenceGenerator(1);
@@ -40,43 +37,22 @@ public class TransactionSequencer {
   private ClientTransactionBatch        currentBatch;
   private int                           pending_size   = 0;
 
+  private int                           slowDownStartsAt;
+  private double                        sleepTimeIncrements;
+
   public TransactionSequencer(TransactionBatchFactory batchFactory) {
     this.batchFactory = batchFactory;
     currentBatch = createNewBatch();
+    this.slowDownStartsAt = (int) (MAX_PENDING_BATCHES * 0.66);
+    this.sleepTimeIncrements = MAX_SLEEP_TIME_BEFORE_HALT / (MAX_PENDING_BATCHES - slowDownStartsAt);
+    if (LOGGING_ENABLED) log_settings();
   }
 
-  private static void initSleepTimes() {
-    int i = 0;
-    int end = MAX_SLEEP_TIME_BEFORE_HALT <= 0 ? SLEEP_TIMES.length : SLEEP_TIMES.length / 2;
-    for (; i < end; i++) {
-      SLEEP_TIMES[i] = 0;
-    }
-    int log2 = logBase2(MAX_SLEEP_TIME_BEFORE_HALT);
-    int stepSize = log2 > 0 ? (SLEEP_TIMES.length - i) / log2 : Integer.MAX_VALUE;
-    int steps = 0;
-    int st = 1;
-    for (; i < SLEEP_TIMES.length; i++) {
-      SLEEP_TIMES[i] = st;
-      if (++steps >= stepSize) {
-        steps = 0;
-        st *= 2;
-      }
-    }
-    if (LOGGING_ENABLED) {
-      log_sleep_time();
-    }
-  }
-
-  private static void log_sleep_time() {
-    StringBuffer sb = new StringBuffer("Sleep times are initialized to :");
-    for (int i = 0; i < SLEEP_TIMES.length; i++) {
-      sb.append(" ").append(SLEEP_TIMES[i]);
-    }
-    logger.info(sb.toString());
-  }
-
-  private static int logBase2(long n) {
-    return (int) (Math.log(n) / Math.log(2));
+  private void log_settings() {
+    logger.info("Max Byte Size for Batches = " + MAX_BYTE_SIZE_FOR_BATCH + " Max Pending Batches = "
+                + MAX_PENDING_BATCHES);
+    logger.info("Max Sleep time = " + MAX_SLEEP_TIME_BEFORE_HALT + " Slow down starts at = " + slowDownStartsAt
+                + " sleep time increments = " + sleepTimeIncrements);
   }
 
   private ClientTransactionBatch createNewBatch() {
@@ -104,15 +80,13 @@ public class TransactionSequencer {
   }
 
   private void throttle() {
-    int idx = pending_size - 1;
-    if (idx > -1 && idx < SLEEP_TIMES.length) {
-      long sleepTime = SLEEP_TIMES[idx];
-      if (sleepTime > 0) {
-        try {
-          wait(sleepTime);
-        } catch (InterruptedException e) {
-          throw new TCRuntimeException(e);
-        }
+    int diff = pending_size - slowDownStartsAt;
+    if (diff >= 0) {
+      long sleepTime = (long) (1 + diff * sleepTimeIncrements);
+      try {
+        wait(sleepTime);
+      } catch (InterruptedException e) {
+        throw new TCRuntimeException(e);
       }
     }
   }
