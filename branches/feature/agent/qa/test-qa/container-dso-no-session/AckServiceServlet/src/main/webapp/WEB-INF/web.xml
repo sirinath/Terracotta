@@ -1,0 +1,32 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<web-app>
+    <display-name>ServletWithPureDSO</display-name>
+    <description>
+        A servlet that uses a "pure" DSO service, inside a container
+        but outside of the context of a session, use an URL of
+        '/[path to servlet]/[command]' path to access it.
+        
+        [path to servlet] should be of the form:
+        http[s]://&lt;server&gt;/&lt;webapp-name&gt;/ack
+        
+        Commands may be one of "ack" or "init": "init" takes two
+        query parameters "name" (optional) and "worker-count"
+        (required) to create/replace the Ack service.
+    </description>
+    <servlet>
+        <display-name>DSOAckServiceServlet</display-name>
+        <servlet-name>DSOAckServiceServlet</servlet-name>
+        <servlet-class>org.terracotta.qa.ack.servlet.AckServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DSOAckServiceServlet</servlet-name>
+        <url-pattern>/ack/*</url-pattern>
+    </servlet-mapping>
+</web-app>
