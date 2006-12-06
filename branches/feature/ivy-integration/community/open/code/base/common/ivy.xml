@@ -2,12 +2,6 @@
 <ivy-module version="1.0">
   <info organisation="ibiblio" module="common"/>
   <dependencies>
-  	<!-- lib.tests.base -->
-	<dependency name="ant" rev="1.6.2"/>
-	<dependency name="ant" rev="junit-1.6.2" org="terracotta"/>
-	<dependency name="junit" rev="3.8.1"/>
-	<dependency name="junit-addons" rev="1.4"/>
-	<!-- lib -->
 	<dependency name="antlr" rev="2.7.3" org="terracotta"/>
 	<dependency name="bsh" rev="2.0b4" org="terracotta"/>
 	<dependency name="commons-cli" rev="1.0"/>

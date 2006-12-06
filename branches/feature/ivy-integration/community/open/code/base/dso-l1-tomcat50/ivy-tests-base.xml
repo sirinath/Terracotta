@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <ivy-module version="1.0">
-  <info organisation="ibiblio" module="dso-l1-tomcat50"/>
+  <info organisation="ibiblio" module="dso-l1-tomcat50-tests-base"/>
   <dependencies>
-	<!-- lib.tests.base -->
 	<dependency name="catalina" rev="5.0.28" org="terracotta"/>
 	<dependency name="servlet-api" rev="2.4" org="terracotta"/>
 	<dependency name="tomcat-util" rev="5.0.28" org="terracotta"/>
