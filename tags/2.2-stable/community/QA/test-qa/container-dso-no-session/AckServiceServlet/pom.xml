@@ -1,0 +1,39 @@
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.terracotta.dso-container.qa</groupId>
+        <artifactId>container-dso-no-session</artifactId>
+        <version>CURRENT</version>
+    </parent>
+    <groupId>org.terracotta.dso-container.qa</groupId>
+    <artifactId>servlet-using-ack-service</artifactId>
+    <name>Servlet that uses AckService outside of a session context</name>
+    <version>CURRENT</version>
+    <url>http://www.terracotta.org/</url>
+    <packaging>war</packaging>
+    <build>
+        <finalName>pure-dso-servlet</finalName>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>org.terracotta.dso-container.qa</groupId>
+            <artifactId>ack-service</artifactId>
+            <version>CURRENT</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.4</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>
