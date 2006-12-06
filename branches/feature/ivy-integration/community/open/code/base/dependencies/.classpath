@@ -37,5 +37,10 @@
 	<classpathentry kind="lib" path="lib/jmxremote_optional-1.0.1_03-b57-tc.jar"/>
 	<classpathentry kind="lib" path="lib/appframe-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/jfreechart-1.0.0x.jar"/>
+	<classpathentry kind="lib" path="lib/tc_cargo-core-uberjar-0.8.jar"/>
+	<classpathentry kind="lib" path="lib/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/catalina-5.0.28.jar"/>
+	<classpathentry kind="lib" path="lib/tomcat-util-5.0.28.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

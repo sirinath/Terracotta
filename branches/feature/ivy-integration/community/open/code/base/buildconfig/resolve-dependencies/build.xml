@@ -20,7 +20,7 @@
 	================================= -->
 	<target name="buildlist"> 
 	    <ivy:buildlist reference="build-path">
-    	  <fileset dir="${ivy.codebase.dir}" includes="*/build.xml" excludes="buildconfig/build.xml ui-eclipse/build.xml"/>
+    	  <fileset dir="${ivy.codebase.dir}" includes="*/build.xml" excludes="buildconfig/build.xml"/>
     	</ivy:buildlist>
 	</target>
 	
