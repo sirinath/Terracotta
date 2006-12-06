@@ -2,7 +2,6 @@
 <ivy-module version="1.0">
   <info organisation="ibiblio" module="aspectwerkz"/>
   <dependencies>
-	<!-- lib -->
 	<dependency name="dom4j" rev="1.6.1"/>
   </dependencies>
 </ivy-module>

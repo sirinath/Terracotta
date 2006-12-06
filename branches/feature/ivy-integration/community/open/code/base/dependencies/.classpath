@@ -42,5 +42,8 @@
 	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/catalina-5.0.28.jar"/>
 	<classpathentry kind="lib" path="lib/tomcat-util-5.0.28.jar"/>
+	<classpathentry kind="lib" path="lib/tomcat-coyote-x.jar"/>
+	<classpathentry kind="lib" path="lib/tomcat-util-x.jar"/>
+	<classpathentry kind="lib" path="lib/catalina-x.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>
