@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
 
@@ -397,8 +398,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     for (Iterator i = removalCandidates.iterator(); i.hasNext();) {
       ManagedObjectReference removalCandidate = (ManagedObjectReference) i.next();
-      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isPinned()
-          && !removalCandidate.isNew()) {
+      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isNew()) {
         evictionPolicy.remove(removalCandidate);
         if (removalCandidate.getObject().isDirty()) {
           markReferenced(removalCandidate);
@@ -454,6 +454,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         reference = getOrLookupReference(id, (context.isPendingRequest() ? DEFAULT_FLAG : NEW_REQUEST));
         if (available && !checkedoutObjectIDs.contains(id) && reference.isReferenced()) {
           available = false;
+          // Setting only the first referenced object to process Pending. If objects are being faulted in, then this will
+          // ensure that we dont run processPending multiple times unnecessarily.
+          reference.setProcessPendingOnRelease(true);
         }
       } else {
         if (canCreate) {
@@ -471,26 +474,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
       if (reference == null) throw new AssertionError("ManagedObjectReference is null");
       objects.add(reference);
-      reference.pin();
     }
 
     Set processLater = Collections.EMPTY_SET;
     if (available) {
       processLater = addReachableObjectsIfNecessary(channelID, maxReachableObjects, objects);
-    }
-
-    ManagedObjectReference processPendingRef = null;
-    for (Iterator i = objects.iterator(); i.hasNext();) {
-      ManagedObjectReference reference = (ManagedObjectReference) i.next();
-      reference.unpin();
-      if (reference.isReferenced()) {
-        processPendingRef = reference;
-      }
-    }
-    if (processPendingRef != null) {
-      // Setting only the last referenced object to process Pending. If objects are being faulted in, then this will
-      // ensure that we dont run processPending multiple times unnecessarily.
-      processPendingRef.setProcessPendingOnRelease(true);
     }
 
     if (available) {
@@ -521,7 +509,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         ManagedObjectReference newRef = getReference(id);
         // Note : Objects are looked up only if it is in the memory and not referenced
         if (newRef != null && !newRef.isReferenced()) {
-          newRef.pin();
           if (objects.add(newRef)) {
             lookedUpObjects.add(newRef);
           }
@@ -571,7 +558,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference ref = (ManagedObjectReference) references.remove(id);
       if (ref != null) {
-        Assert.assertFalse(ref.isReferenced() || ref.getProcessPendingOnRelease() || ref.isPinned());
+        Assert.assertFalse(ref.isReferenced() || ref.getProcessPendingOnRelease());
         evictionPolicy.remove(ref);
       }
     }
