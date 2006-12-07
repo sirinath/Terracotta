@@ -39,6 +39,7 @@ public class TransactionSequencer {
 
   private int                           slowDownStartsAt;
   private double                        sleepTimeIncrements;
+  private int                           txnsPerBatch   = 0;
 
   public TransactionSequencer(TransactionBatchFactory batchFactory) {
     this.batchFactory = batchFactory;
@@ -69,12 +70,14 @@ public class TransactionSequencer {
   public synchronized void addTransaction(ClientTransaction txn) {
     SequenceID sequenceID = new SequenceID(sequence.getNextSequence());
     txn.setSequenceID(sequenceID);
+    txnsPerBatch++;
     addTransactionToBatch(txn, currentBatch);
     if (currentBatch.byteSize() > MAX_BYTE_SIZE_FOR_BATCH) {
       put(currentBatch);
       reconcilePendingSize();
-      if (LOGGING_ENABLED) log_size();
+      if (LOGGING_ENABLED) log_stats();
       currentBatch = createNewBatch();
+      txnsPerBatch = 0;
     }
     throttle();
   }
@@ -103,12 +106,12 @@ public class TransactionSequencer {
     }
   }
 
-  private void log_size() {
+  private void log_stats() {
     int size = pending_size;
     if (size == MAX_PENDING_BATCHES) {
-      logger.info("MAX pending size reached !!! : " + size);
+      logger.info("Max pending size reached !!! : Pending Batches size = " + size + " TxnsInBatch = " + txnsPerBatch);
     } else if (size % 5 == 0) {
-      logger.info("Pending Batch Size : " + size);
+      logger.info("Pending Batch Size : " + size + " TxnsInBatch = " + txnsPerBatch);
     }
   }
 
