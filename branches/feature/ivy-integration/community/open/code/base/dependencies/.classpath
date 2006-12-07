@@ -45,5 +45,22 @@
 	<classpathentry kind="lib" path="lib/tomcat-coyote-x.jar"/>
 	<classpathentry kind="lib" path="lib/tomcat-util-x.jar"/>
 	<classpathentry kind="lib" path="lib/catalina-x.jar"/>
+	<classpathentry kind="lib" path="lib/spring-webflow-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/spring-tomcat-weaver-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring-hibernate3-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring-binding-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/spring-aspects-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring-agent-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring-1.2.8.jar"/>
+	<classpathentry kind="lib" path="lib/ognl-2.7.jar"/>
+	<classpathentry kind="lib" path="lib/jmock-cglib-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/jmock-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/hsqldb-1.7.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/hibernate-3.1.2.jar"/>
+	<classpathentry kind="lib" path="lib/ehcache-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-pool-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/commons-dbcp-1.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-nodep-2.1_3.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

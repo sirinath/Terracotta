@@ -1,0 +1,17 @@
+<project name="dso-spring" xmlns:ivy="antlib:fr.jayasoft.ivy.ant">
+  
+  <!-- ================================= 
+  target: resolve              
+  ================================= -->
+  <target name="resolve" description="--> retreive dependencies with ivy">
+  	<ivy:resolve file="${basedir}/ivy.xml"/>
+    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
+    <ivy:resolve file="${basedir}/ivy-tests-unit.xml"/>
+    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
+    <ivy:resolve file="${basedir}/ivy-variants-spring-20.xml"/>
+    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
+    <ivy:resolve file="${basedir}/ivy-variants-spring-128.xml"/>
+    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
+  </target>
+  
+</project>
