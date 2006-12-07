@@ -23,9 +23,12 @@ public class TransactionSequencer {
   private final Map             pendingTxns = new LinkedHashMap();
   private final LinkedList      txnQ        = new LinkedList();
 
+  private int                   txnsCount;
+
   public synchronized void addTransactions(List txns) {
     if (false) log_incoming(txns);
     txnQ.addAll(txns);
+    txnsCount+= txns.size();
   }
 
   private void log_incoming(List txns) {
@@ -40,10 +43,19 @@ public class TransactionSequencer {
       ServerTransaction txn = (ServerTransaction) txnQ.removeFirst();
       if (toProcessOrMakePending(txn)) {
         if (false) log_outgoing(txn);
+        txnsCount--;
         return txn;
       }
     }
+    if(false) log_no_txns_to_process();
     return null;
+  }
+
+  private void log_no_txns_to_process() {
+    if (txnsCount != 0) {
+      int psize = pendingTxns.size();
+      logger.info("No More Txns that can be processed : txnCount = " + txnsCount + " of which pending txns = " + psize);
+    }
   }
 
   private void log_outgoing(ServerTransaction txn) {
@@ -65,6 +77,7 @@ public class TransactionSequencer {
 
   public synchronized void makePending(ServerTransaction txn) {
     Object old = pendingTxns.put(txn.getServerTransactionID(), new PendingAccount(txn));
+    txnsCount ++;
     Assert.assertNull(old);
     if (false) logger.info("Make Pending : " + txn);
   }
@@ -72,6 +85,7 @@ public class TransactionSequencer {
   public synchronized void processedPendingTxn(ServerTransaction txn) {
     PendingAccount pa = (PendingAccount) pendingTxns.remove(txn.getServerTransactionID());
     if (pa == null) { throw new AssertionError("processedPendingTxn() called without calling makePending()"); }
+    txnsCount--;
     LinkedList txns = pa.getPendingTxnList();
     while (!txns.isEmpty()) {
       // Order need to be maintained
