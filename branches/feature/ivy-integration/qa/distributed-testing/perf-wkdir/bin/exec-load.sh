@@ -20,15 +20,17 @@ duration=$2
 wkdir=$3
 jars=$4
 
+cmd="${JAVA_HOME}/bin/java -Xms512m -Xmx512m -classpath ${jars}../lib/classes $classname $duration $wkdir"
+
 echo ""
 echo "****************************************************************************************************"
 echo ""
 echo "EXECUTING TEST"
 echo $HOSTNAME
 echo pwd: $wkdir
-echo "java" -Xms256m -Xmx512m -classpath ${jars}../lib/classes $classname $duration $wkdir
+echo $cmd
 echo ""
 echo "****************************************************************************************************"
 echo ""
 
-${JAVA_HOME}/bin/java -Xms1024m -Xmx1280m -classpath ${jars}../lib/classes $classname $duration $wkdir
+$cmd

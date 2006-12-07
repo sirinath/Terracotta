@@ -33,7 +33,7 @@ fi
 cd build/dist/
 
 if [ $2 == "tst" ]; then
-  cp ${homedir}/../license.lic terracotta*/
+  # cp ${homedir}/../license.lic terracotta*/
   zip -rq ${homedir}/../terracotta-tst.zip terracotta*/
 fi
 

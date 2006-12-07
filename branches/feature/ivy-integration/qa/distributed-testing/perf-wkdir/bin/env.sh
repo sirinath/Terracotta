@@ -15,7 +15,7 @@ export PATH=$PATH:${JAVA_HOME}/bin
 
 export TC_HOME=~/${wkdir}/terracotta-tst
 
-export TOMCAT_JAVA_OPTS="-server -Xms1024m -Xmx1024m -verbose:gc -XX:+PrintGCTimeStamps -Dtc.stage.monitor=true -Dtc.stage.monitor.delay=2000 -Dcom.terracotta.session.invalidator.sleep=30"
+export TOMCAT_JAVA_OPTS="-server -Xms1024m -Xmx1024m -verbose:gc -XX:+PrintGCTimeStamps -Dtc.stage.monitor=true -Dtc.stage.monitor.delay=2000 -Dcom.terracotta.session.invalidator.sleep=120"
 
 export TOMCAT_JAVA_HOME=${JDK15}
 export CATALINA_HOME=~/${wkdir}/instance/jakarta-tomcat-5.0.28
