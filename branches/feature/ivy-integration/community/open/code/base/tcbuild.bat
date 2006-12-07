@@ -6,9 +6,10 @@ if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
 GOTO has_jruby_home
 
 :install_jruby
-cd buildconfig
-ant
-cd ..
+echo "--------------------------------------------------------------------------------"
+echo "LOADING JRUBY USING IVY"
+echo ""
+%ANT_HOME%/bin/ant -buildfile %~p0buildconfig/build.xml
 
 :has_jruby_home
 if "x%JAVA_HOME%"=="x" GOTO has_no_java_home
@@ -26,6 +27,20 @@ echo Your JAVA_HOME (possibly located via TC_JAVA_HOME_15), "%JAVA_HOME%", does 
 GOTO end
 
 :located_java_home
+
+echo "--------------------------------------------------------------------------------"
+echo "RUNNING ANT+IVY"
+echo ""
+
+%ANT_HOME%/bin/ant -buildfile %~p0buildconfig/resolve-dependencies/build.xml
+set TCBUILD_ERR=%ERRORLEVEL%
+IF NOT %TCBUILD_ERR%==0 GOTO end
+
+echo ""
+echo "--------------------------------------------------------------------------------"
+echo "RUNNING TCBUILD"
+echo ""
+
 %JRUBY_HOME%\bin\jruby.bat -Ibuildscripts build-tc.rb %*
 set TCBUILD_ERR=%ERRORLEVEL%
 GOTO end
