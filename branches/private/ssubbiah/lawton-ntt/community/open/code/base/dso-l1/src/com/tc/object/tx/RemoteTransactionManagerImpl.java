@@ -193,7 +193,12 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
       lockAccounting.add(txID, Arrays.asList(txn.getAllLockIDs()));
     }
 
+    long start = System.currentTimeMillis();
     sequencer.addTransaction(txn);
+    long diff = System.currentTimeMillis() - start;
+    if (diff > 1000) {
+      logger.info("WARNING ! Took more than 1000ms to add to sequencer  : " + diff + " ms");
+    }
 
     synchronized (lock) {
       if (isStoppingOrStopped()) {
