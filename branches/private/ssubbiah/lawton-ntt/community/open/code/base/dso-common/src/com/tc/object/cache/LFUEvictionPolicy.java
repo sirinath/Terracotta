@@ -145,8 +145,12 @@ public class LFUEvictionPolicy implements EvictionPolicy {
       if (mark != null) {
         stop = (Cacheable) mark.getNext();
       } else {
-        // The first time the last element is not processed !!
+        // The first time the last 20 % of element are not processed to be fair with new objects
         stop = (Cacheable) cache.getLast();
+        int ignore = (int) (cache.size() * 0.2);
+        while(ignore-- > 0) {
+          stop = (Cacheable) stop.getPrevious();
+        }
       }
       // Step 1: Remove elements which were never accessed and at the same time collect stats
       while (cache.size() - rv.size() > capacity && count > 0 && c != null && c != stop) {
