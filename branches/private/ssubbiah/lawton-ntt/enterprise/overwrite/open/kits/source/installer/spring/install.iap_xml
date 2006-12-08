@@ -1839,7 +1839,7 @@ Close all applications pointing to your existing Terracotta for Spring Enterpris
 									<method name="addElement">
 										<object class="com.zerog.ia.installer.util.VariablePropertyData" objectID="f77ba5cfa613">
 											<property name="propertyValue">
-												<string><![CDATA[Launch Terracotta for Spring Enterprise Edition Welcome Application]]></string>
+												<string><![CDATA[Launch Terracotta for Spring Enterprise Edition Welcome]]></string>
 											</property>
 											<property name="propertyName">
 												<string><![CDATA[$IC_PANEL_LAUNCH_WELCOME$]]></string>
@@ -2316,7 +2316,7 @@ and any path to a file to read from that file]]></string>
 						<string><![CDATA[$PRODUCT_NAME$]]></string>
 					</property>
 					<property name="win32MagicFolderPath">
-						<string><![CDATA[Terracotta Enterprise]]></string>
+						<string><![CDATA[Terracotta]]></string>
 					</property>
 				</object>
 			</property>
@@ -2344,7 +2344,7 @@ and any path to a file to read from that file]]></string>
 						<string><![CDATA[]]></string>
 					</property>
 					<property name="win32MagicFolderPath">
-						<string><![CDATA[Terracotta Enterprise]]></string>
+						<string><![CDATA[Terracotta]]></string>
 					</property>
 				</object>
 			</property>
