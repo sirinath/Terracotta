@@ -46,7 +46,7 @@ public final class StandardDsoServer implements DsoServer {
 
     dsoServer = new ExtraProcessServerControl(new ExtraProcessServerControl.DebugParams(), domain, params.dsoPort(),
                                               params.jmxPort(), params.configFile().toString(), params.workingDir(),
-                                              Directories.getInstallationRoot(), false, jvmArgs, "");
+                                              null, false, jvmArgs, "");
     dsoServer.writeOutputTo(params.outputFile());
     dsoServer.start(2 * 60 * 1000);
 
