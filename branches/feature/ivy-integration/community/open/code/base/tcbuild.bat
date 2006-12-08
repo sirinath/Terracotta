@@ -6,10 +6,10 @@ if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
 GOTO has_jruby_home
 
 :install_jruby
-echo "--------------------------------------------------------------------------------"
-echo "LOADING JRUBY USING IVY"
-echo ""
-%ANT_HOME%/bin/ant -buildfile %~p0buildconfig/build.xml
+echo --------------------------------------------------------------------------------
+echo LOADING JRUBY USING IVY
+
+call %ANT_HOME%\bin\ant.bat -buildfile %~p0buildconfig\build.xml
 
 :has_jruby_home
 if "x%JAVA_HOME%"=="x" GOTO has_no_java_home
@@ -28,18 +28,15 @@ GOTO end
 
 :located_java_home
 
-echo "--------------------------------------------------------------------------------"
-echo "RUNNING ANT+IVY"
-echo ""
+echo --------------------------------------------------------------------------------
+echo RUNNING ANT+IVY
 
-%ANT_HOME%/bin/ant -buildfile %~p0buildconfig/resolve-dependencies/build.xml
+call %ANT_HOME%\bin\ant.bat -buildfile %~p0buildconfig\resolve-dependencies\build.xml
 set TCBUILD_ERR=%ERRORLEVEL%
 IF NOT %TCBUILD_ERR%==0 GOTO end
 
-echo ""
-echo "--------------------------------------------------------------------------------"
-echo "RUNNING TCBUILD"
-echo ""
+echo --------------------------------------------------------------------------------
+echo RUNNING TCBUILD"
 
 %JRUBY_HOME%\bin\jruby.bat -Ibuildscripts build-tc.rb %*
 set TCBUILD_ERR=%ERRORLEVEL%
@@ -50,5 +47,5 @@ GOTO end
 	GOTO end
 
 :end
-echo tcbuild.bat: exit code is %E%
+echo tcbuild.bat: exit code is %TCBULD_ERR%
 exit /b %TCBUILD_ERR%

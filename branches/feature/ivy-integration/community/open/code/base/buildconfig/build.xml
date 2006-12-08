@@ -32,7 +32,7 @@
 		<mkdir dir="${ivy.jar.dir}"/>
 		<!-- download Ivy from web site so that it can be used even without any special installation -->
 		<echo message="installing ivy..."/>
-		<get src="http://eellispc.terracotta.lan/~eellis/ivy/ivy-1.4.jar" dest="${ivy.jar.file}" usetimestamp="true"/>
+		<get src="http://download.terracotta.org/buildjars/ivy/ivy-1.4.jar" dest="${ivy.jar.file}" usetimestamp="true"/>
 		<path id="ivy.lib.path">
 			<fileset dir="${ivy.jar.dir}" includes="*.jar"/>
 		</path>

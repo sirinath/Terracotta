@@ -2,15 +2,15 @@
   <conf defaultResolver="ibiblio-chain"/>
   <resolvers>
     <url name="tc-repo">
-      <artifact pattern="http://eellispc.terracotta.lan/~eellis/lib/[artifact]-[revision].[ext]"/>
+      <artifact pattern="http://download.terracotta.org/buildjars/lib/[artifact]-[revision].[ext]"/>
     </url>
     <url name="tc-repo-eclipse">
-      <artifact pattern="http://eellispc.terracotta.lan/~eellis/eclipse-api/[artifact]-[revision].[ext]"/>
+      <artifact pattern="http://download.terracotta.org/buildjars/eclipse-api/[artifact]-[revision].[ext]"/>
     </url>
     <chain name="ibiblio-chain" returnFirst="true">
       <ibiblio name="ibiblio" />
       <url name="tc-mirror">
-      	<artifact pattern="http://eellispc.terracotta.lan/~eellis/mirror/[artifact]-[revision].[ext]"/>
+      	<artifact pattern="http://download.terracotta.org/buildjars/mirror/[artifact]-[revision].[ext]"/>
       </url>
     </chain>
   </resolvers>
