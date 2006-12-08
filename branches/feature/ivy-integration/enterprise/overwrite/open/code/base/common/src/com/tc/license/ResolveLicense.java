@@ -57,6 +57,8 @@ public final class ResolveLicense implements Resolve {
     if (!tcLic.exists()) {
       System.out.println("\nNo License Specified.");
       System.out.println("Looking for: " + tcLicPath);
+      String licReqUrl = "http://www.terracottatech.com/request.jsp?page=license";
+      System.out.println("For information on obtaining a license see "+licReqUrl);
       System.out.println("Server Shutting Down...\n");
       System.out.flush();
       System.exit(3);
