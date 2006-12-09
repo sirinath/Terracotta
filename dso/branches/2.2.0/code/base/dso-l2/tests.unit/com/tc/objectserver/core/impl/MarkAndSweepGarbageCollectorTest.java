@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -311,10 +310,6 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
   }
 
   public void notifyGCComplete(Set toDelete) {
-    throw new ImplementMe();
-  }
-
-  public void flushAndEvict(List objects2Flush) {
     throw new ImplementMe();
   }
 

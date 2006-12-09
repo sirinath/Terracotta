@@ -32,8 +32,8 @@ public class LFUEvictionPolicy implements EvictionPolicy {
   private final int             capacity;
   private final int             evictionSize;
   private final TLinkedList     cache        = new TLinkedList();
-  // This is a marker in the linked list where the new objects starts.
-  private TLinkable             mark         = null;
+  // This is a marker in the linked list where the old (non-new) objects starts.
+  private TLinkable             mark;
 
   public LFUEvictionPolicy(int capacity) {
     this(capacity, capacity / 10);
@@ -48,7 +48,7 @@ public class LFUEvictionPolicy implements EvictionPolicy {
   }
 
   public synchronized boolean add(Cacheable obj) {
-    cache.addLast(obj);
+    cache.addBefore(mark, obj);
     return isCacheFull();
   }
 
@@ -121,11 +121,10 @@ public class LFUEvictionPolicy implements EvictionPolicy {
 
   public Collection getRemovalCandidates(int maxCount) {
 
-    long start = System.currentTimeMillis();
     Collection rv = new HashSet();
     int count = 0;
     ArrayList accessCounts;
-    Cacheable stop, c;
+    Cacheable save, c;
     synchronized (this) {
       if (capacity > 0) {
         if (!isCacheFull()) { return Collections.EMPTY_LIST; }
@@ -141,26 +140,24 @@ public class LFUEvictionPolicy implements EvictionPolicy {
       count = Math.min(cache.size(), maxCount);
       accessCounts = new ArrayList(cache.size());
 
-      c = (Cacheable) cache.getFirst();
-      if (mark != null) {
-        stop = (Cacheable) mark.getNext();
-      } else {
-        // The first time the last 20 % of element are not processed to be fair with new objects
-        stop = (Cacheable) cache.getLast();
-        int ignore = (int) (cache.size() * 0.2);
-        while(ignore-- > 0) {
-          stop = (Cacheable) stop.getPrevious();
-        }
+      c = (Cacheable) mark;
+      if (c == null) {
+        c = (Cacheable) cache.getFirst();
       }
+      save = c;
+      mark = (Cacheable) cache.getFirst();
+
       // Step 1: Remove elements which were never accessed and at the same time collect stats
-      while (cache.size() - rv.size() > capacity && count > 0 && c != null && c != stop) {
+      while (cache.size() - rv.size() > capacity && count > 0 && c != null) {
         Cacheable next = (Cacheable) c.getNext();
         int accessed = c.accessCount(AGING_FACTOR);
         if (accessed == 0) {
           if (c.canEvict()) {
             rv.add(c);
-            cache.remove(c);
-            cache.addLast(c);
+            if (mark != c) {
+              cache.remove(c);
+              cache.addBefore(mark, c);
+            }
             count--;
           }
         } else {
@@ -170,14 +167,12 @@ public class LFUEvictionPolicy implements EvictionPolicy {
         }
         c = next;
       }
-      while (c != null && c != stop) {
-        c.accessCount(AGING_FACTOR);
-        c = (Cacheable) c.getNext();
-      }
       if (cache.size() - rv.size() <= capacity || count <= 0) {
         // we already got what is needed
-        mark = (TLinkable) cache.getLast();
-        log_time_taken(start);
+        while (c != null) {
+          c.accessCount(AGING_FACTOR);
+          c = (Cacheable) c.getNext();
+        }
         return rv;
       }
     }
@@ -188,9 +183,6 @@ public class LFUEvictionPolicy implements EvictionPolicy {
       Integer ac = (Integer) i.next();
       incrementAccessCountFor(accessCountSummary, ac);
     }
-
-    // release memory when done
-    accessCounts = null;
 
     // Step 3: Use the summary that was built earlier to decide the accessCountCutOff
     int accessCountCutOff = 0;
@@ -205,37 +197,27 @@ public class LFUEvictionPolicy implements EvictionPolicy {
       }
     }
 
-    // release memory when done
-    accessCountSummary = null;
-
     // Step 4 : Use the calculated accessCountCutOff to get the rigth candidates under the lock. Since we release teh
     // lock,
     // we have to be fault tolerant
+    c = save;
     synchronized (this) {
-      c = (Cacheable) cache.getFirst();
-      while (cache.size() - rv.size() > capacity && count > 0 && c != null && c != stop) {
+      while (cache.size() - rv.size() > capacity && count > 0 && c != null) {
         Cacheable next = (Cacheable) c.getNext();
         int accessed = c.accessCount(1);
         if (accessed <= accessCountCutOff) {
           if (c.canEvict()) {
             rv.add(c);
-            cache.remove(c);
-            cache.addLast(c);
+            if (mark != c) {
+              cache.remove(c);
+              cache.addBefore(mark, c);
+            }
             count--;
           }
         }
         c = next;
       }
-      mark = (TLinkable) cache.getLast();
-      log_time_taken(start);
       return rv;
-    }
-  }
-
-  private void log_time_taken(long start) {
-    long taken = System.currentTimeMillis() - start;
-    if (taken > 1000) {
-      logger.info("Time taken to compute removal candidates : " + taken + " ms");
     }
   }
 
@@ -256,7 +238,7 @@ public class LFUEvictionPolicy implements EvictionPolicy {
   public synchronized void remove(Cacheable obj) {
     if (contains(obj)) {
       if (mark == obj) {
-        mark = obj.getPrevious();
+        mark = obj.getNext();
       }
       cache.remove(obj);
     }

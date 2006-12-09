@@ -87,7 +87,6 @@ import com.tc.objectserver.handler.ClientHandshakeHandler;
 import com.tc.objectserver.handler.CommitTransactionChangeHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
 import com.tc.objectserver.handler.ManagedObjectFaultHandler;
-import com.tc.objectserver.handler.ManagedObjectFlushHandler;
 import com.tc.objectserver.handler.ManagedObjectRequestHandler;
 import com.tc.objectserver.handler.ProcessTransactionHandler;
 import com.tc.objectserver.handler.RequestLockUnLockHandler;
@@ -362,17 +361,13 @@ public class DistributedObjectServer extends SEDA {
     if (gcEnabled) logger.debug("Verbose GC enabled: " + verboseGC);
     sampledCounterManager = new SampledCounterManagerImpl();
     SampledCounter objectCreationRate = sampledCounterManager.createCounter(new SampledCounterConfig(1, 900, true, 0L));
-    SampledCounter objectFaultRate = sampledCounterManager.createCounter(new SampledCounterConfig(1, 900, true, 0L));
-    ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate, objectFaultRate);
+    ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate);
 
     SequenceValidator sequenceValidator = new SequenceValidator(0);
-    ManagedObjectFaultHandler managedObjectFaultHandler = new ManagedObjectFaultHandler();
+    ManagedObjectFaultHandler mangedObjectFaultHandler = new ManagedObjectFaultHandler();
     // Server initiated request processing queues shouldn't have any max queue size.
     Stage faultManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FAULT_STAGE,
-                                                             managedObjectFaultHandler, 4, -1);
-    ManagedObjectFlushHandler managedObjectFlushHandler = new ManagedObjectFlushHandler();
-    Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
-                                                             managedObjectFlushHandler, 4, -1);
+                                                             mangedObjectFaultHandler, 4, -1);
 
     TCProperties objManagerProperties = l2Properties.getPropertiesFor("objectmanager");
 
@@ -380,8 +375,7 @@ public class DistributedObjectServer extends SEDA {
                                                                   objManagerProperties.getInt("deleteBatchSize")),
                                           getThreadGroup(), clientStateManager, objectStore, swapCache,
                                           persistenceTransactionProvider, faultManagedObjectStage.getSink(),
-                                          flushManagedObjectStage.getSink(), l2Management
-                                              .findObjectManagementMonitorMBean());
+                                          l2Management.findObjectManagementMonitorMBean());
     objectManager.setStatsListener(objMgrStats);
     objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, verboseGC));
     managedObjectChangeListenerProvider.setListener(objectManager);
@@ -426,12 +420,12 @@ public class DistributedObjectServer extends SEDA {
 
     Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE,
                                                         new BatchTransactionLookupHandler(), 1, maxStageSize);
-    BatchedTransactionProcessor txnProcessor = new BatchedTransactionProcessorImpl(objectManager, gtxm,
+    BatchedTransactionProcessor txnProcessor = new BatchedTransactionProcessorImpl(maxStageSize, sequenceValidator,
+                                                                                   objectManager, gtxm,
                                                                                    batchTxLookupStage.getSink());
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
                                                new ProcessTransactionHandler(transactionBatchManager, txnProcessor,
-                                                                             sequenceValidator, recycler), 1,
-                                               maxStageSize);
+                                                                             recycler), 1, maxStageSize);
 
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);

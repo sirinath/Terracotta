@@ -16,4 +16,6 @@ public interface BatchedTransactionProcessor {
 
   public void processTransactions(EventContext context, Sink applyChangesSink);
 
+  public void shutDownClient(ChannelID channelID);
+
 }

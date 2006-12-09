@@ -13,7 +13,6 @@ import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -115,8 +114,5 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
   public Set getAllObjectIDs();
 
   public void addFaultedObject(ObjectID oid, ManagedObject mo, boolean removeOnRelease);
-  
-  //XXX::TODO:: This will change
-  public void flushAndEvict(List objects2Flush);
 
 }

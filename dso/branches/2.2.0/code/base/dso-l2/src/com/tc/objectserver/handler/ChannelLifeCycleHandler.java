@@ -12,6 +12,7 @@ import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.tx.BatchedTransactionProcessor;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.util.concurrent.ThreadUtil;
@@ -24,6 +25,7 @@ public class ChannelLifeCycleHandler extends AbstractEventHandler {
   private final TransactionBatchManager  transactionBatchManager;
   private TCLogger                       logger;
   private final CommunicationsManager    commsManager;
+  private BatchedTransactionProcessor    txnProcessor;
 
   public ChannelLifeCycleHandler(CommunicationsManager commsManager, ServerTransactionManager transactionManager,
                                  TransactionBatchManager transactionBatchManager) {
@@ -42,6 +44,7 @@ public class ChannelLifeCycleHandler extends AbstractEventHandler {
         // Giving 0.5 sec for the server to catch up with any pending transactions. Not a fool prove mechanism.
         ThreadUtil.reallySleep(500);
         logger.info("Received transport disconnect.  Killing client " + channelID);
+        txnProcessor.shutDownClient(channelID);
         transactionManager.shutdownClient(channelID);
         transactionBatchManager.shutdownClient(channelID);
       }
@@ -52,6 +55,7 @@ public class ChannelLifeCycleHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext scc = (ServerConfigurationContext) context;
     this.logger = scc.getLogger(ChannelLifeCycleHandler.class);
+    txnProcessor = scc.getBatchedTransactionProcessor();
   }
 
 }

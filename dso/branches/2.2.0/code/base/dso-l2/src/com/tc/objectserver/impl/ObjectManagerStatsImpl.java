@@ -6,7 +6,6 @@ package com.tc.objectserver.impl;
 import com.tc.objectserver.api.ObjectManagerStats;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.stats.counter.sampled.SampledCounter;
-import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 
 /**
  * Implements the object manager stats
@@ -17,11 +16,9 @@ public class ObjectManagerStatsImpl implements ObjectManagerStatsListener, Objec
   private long                 cacheMisses    = 0L;
   private long                 objectsCreated = 0L;
   private final SampledCounter newObjectCounter;
-  private final SampledCounter faultRateCounter;
 
-  public ObjectManagerStatsImpl(SampledCounter newObjectCounter, SampledCounter faultRateCounter) {
+  public ObjectManagerStatsImpl(SampledCounter newObjectCounter) {
     this.newObjectCounter = newObjectCounter;
-    this.faultRateCounter = faultRateCounter;
   }
 
   public synchronized void cacheHit() {
@@ -30,7 +27,6 @@ public class ObjectManagerStatsImpl implements ObjectManagerStatsListener, Objec
 
   public synchronized void cacheMiss() {
     this.cacheMisses++;
-    this.faultRateCounter.increment();
   }
 
   public synchronized void newObjectCreated() {
@@ -56,10 +52,6 @@ public class ObjectManagerStatsImpl implements ObjectManagerStatsListener, Objec
 
   public long getTotalObjectsCreated() {
     return this.objectsCreated;
-  }
-
-  public TimeStampedCounterValue getCacheMissRate() {
-    return this.faultRateCounter.getMostRecentSample();
   }
 
 }

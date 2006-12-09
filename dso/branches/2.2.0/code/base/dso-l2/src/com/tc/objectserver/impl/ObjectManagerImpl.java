@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.objectserver.impl;
 
@@ -25,7 +24,6 @@ import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.ManagedObjectFaultingContext;
-import com.tc.objectserver.context.ManagedObjectFlushingContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -40,7 +38,6 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
-import com.tc.util.Counter;
 import com.tc.util.concurrent.StoppableThread;
 
 import gnu.trove.THashSet;
@@ -75,7 +72,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private static final int                     INITIAL_SET_SIZE         = 1;
   private static final float                   LOAD_FACTOR              = 0.75f;
   private static final int                     INITIAL_MAP_SIZE         = 10000;
-  private static final int                     COMMIT_SIZE              = 5000;
+  private static final int                     COMMIT_SIZE              = 500;
   private static final int                     MAX_LOOKUP_OBJECTS_COUNT = 5000;
   private static final long                    REMOVE_THRESHOLD         = 300;
 
@@ -86,7 +83,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private GarbageCollector                     collector                = new NullGarbageCollector();
   private int                                  checkedOutCount          = 0;
   private PendingList                          pending                  = new PendingList();
-  private Counter                              flushCount               = new Counter();
 
   private volatile boolean                     inShutdown               = false;
 
@@ -95,16 +91,14 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final ThreadGroup                    gcThreadGroup;
   private ObjectManagerStatsListener           stats                    = new NullObjectManagerStatsListener();
   private final PersistenceTransactionProvider persistenceTransactionProvider;
-  private final Sink                           faultSink;
-  private final Sink                           flushSink;
+  private final Sink                           faultManagedObjectStage;
   private final ObjectManagementMonitorMBean   objectManagementMonitor;
 
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
-                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink,
-                           Sink flushSink, ObjectManagementMonitorMBean objectManagementMonitor) {
-    this.faultSink = faultSink;
-    this.flushSink = flushSink;
+                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultManagedObjectStage,
+                           ObjectManagementMonitorMBean objectManagementMonitor) {
+    this.faultManagedObjectStage = faultManagedObjectStage;
     Assert.assertNotNull(objectStore);
     this.config = config;
     this.gcThreadGroup = gcThreadGroup;
@@ -304,7 +298,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       // Request Faulting in a different stage and give back a "Referenced" Proxy
       ManagedObjectFaultingContext mofc = new ManagedObjectFaultingContext(id, isRemoveOnRelease(flags),
                                                                            isMissingOkay(flags));
-      faultSink.add(mofc);
+      faultManagedObjectStage.add(mofc);
 
       // don't account for a cache "miss" unless this was a real request
       // originating from a client
@@ -398,7 +392,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     for (Iterator i = removalCandidates.iterator(); i.hasNext();) {
       ManagedObjectReference removalCandidate = (ManagedObjectReference) i.next();
-      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isNew()) {
+      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isPinned()
+          && !removalCandidate.isNew()) {
         evictionPolicy.remove(removalCandidate);
         if (removalCandidate.getObject().isDirty()) {
           markReferenced(removalCandidate);
@@ -454,9 +449,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         reference = getOrLookupReference(id, (context.isPendingRequest() ? DEFAULT_FLAG : NEW_REQUEST));
         if (available && !checkedoutObjectIDs.contains(id) && reference.isReferenced()) {
           available = false;
-          // Setting only the first referenced object to process Pending. If objects are being faulted in, then this will
-          // ensure that we dont run processPending multiple times unnecessarily.
-          reference.setProcessPendingOnRelease(true);
         }
       } else {
         if (canCreate) {
@@ -474,11 +466,26 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
       if (reference == null) throw new AssertionError("ManagedObjectReference is null");
       objects.add(reference);
+      reference.pin();
     }
 
     Set processLater = Collections.EMPTY_SET;
     if (available) {
       processLater = addReachableObjectsIfNecessary(channelID, maxReachableObjects, objects);
+    }
+
+    ManagedObjectReference processPendingRef = null;
+    for (Iterator i = objects.iterator(); i.hasNext();) {
+      ManagedObjectReference reference = (ManagedObjectReference) i.next();
+      reference.unpin();
+      if (reference.isReferenced()) {
+        processPendingRef = reference;
+      }
+    }
+    if (processPendingRef != null) {
+      // Setting only the last referenced object to process Pending. If objects are being faulted in, then this will
+      // ensure that we dont run processPending multiple times unnecessarily.
+      processPendingRef.setProcessPendingOnRelease(true);
     }
 
     if (available) {
@@ -509,6 +516,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         ManagedObjectReference newRef = getReference(id);
         // Note : Objects are looked up only if it is in the memory and not referenced
         if (newRef != null && !newRef.isReferenced()) {
+          newRef.pin();
           if (objects.add(newRef)) {
             lookedUpObjects.add(newRef);
           }
@@ -558,7 +566,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference ref = (ManagedObjectReference) references.remove(id);
       if (ref != null) {
-        Assert.assertFalse(ref.isReferenced() || ref.getProcessPendingOnRelease());
+        Assert.assertFalse(ref.isReferenced() || ref.getProcessPendingOnRelease() || ref.isPinned());
         evictionPolicy.remove(ref);
       }
     }
@@ -800,54 +808,39 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     int size = references_size();
     int toEvict = stat.getObjectCountToEvict(size);
     if (toEvict <= 0) return;
-
     // This could be a costly call, so call just once
     Collection removalCandidates = evictionPolicy.getRemovalCandidates(toEvict);
+    int evicted = 0;
+    for (Iterator i = removalCandidates.iterator(); i.hasNext();) {
+      ArrayList splitRC = new ArrayList(COMMIT_SIZE);
+      while (splitRC.size() < COMMIT_SIZE && i.hasNext()) {
+        splitRC.add(i.next());
+        i.remove();
+      }
 
-    HashSet toFlush = new HashSet();
-    ArrayList removed = new ArrayList();
-    reapCache(removalCandidates, toFlush, removed);
-
-    int evicted = (toFlush.size() + removed.size());
-    // Let GC work for us
-    removed = null;
-    removalCandidates = null;
-
-    if (!toFlush.isEmpty()) {
-      initateFlushRequest(toFlush);
-      toFlush = null; // make GC work
-      waitUntilFlushComplete();
+      HashSet toFlush = new HashSet();
+      ArrayList removed = new ArrayList();
+      reapCache(splitRC, toFlush, removed);
+      evicted += (toFlush.size() + removed.size());
+      removed = null; // / Let GC work for us
+      if (!toFlush.isEmpty()) {
+        PersistenceTransaction tx = newTransaction();
+        flushAll(tx, toFlush);
+        tx.commit();
+        evicted(toFlush);
+      }
     }
-
     // TODO:: Send the right objects to the cache manager
     stat.objectEvicted(evicted, references_size(), Collections.EMPTY_LIST);
+    if (false) log_debug_cache_end();
   }
 
-  private void waitUntilFlushComplete() {
-    flushCount.waitUntil(0);
-  }
-
-  private void initateFlushRequest(Collection toFlush) {
-    flushCount.increment(toFlush.size());
-    for (Iterator i = toFlush.iterator(); i.hasNext();) {
-      int count = 0;
-      ManagedObjectFlushingContext mofc = new ManagedObjectFlushingContext();
-      while (count < COMMIT_SIZE && i.hasNext()) {
-        mofc.addObjectToFlush(i.next());
-        count++;
-        // i.remove();
-      }
-      flushSink.add(mofc);
-    }
-  }
-
-  public void flushAndEvict(List objects2Flush) {
-    PersistenceTransaction tx = newTransaction();
-    int size = objects2Flush.size();
-    flushAll(tx, objects2Flush);
-    tx.commit();
-    evicted(objects2Flush);
-    flushCount.decrement(size);
+  // XXX::TODO:: Remove this method
+  private void log_debug_cache_end() {
+    int all = getAllObjectIDs().size();
+    int cached = references_size();
+    int percent = cached * 100 / all;
+    logger.debug("Total Objects = " + all + " and cached size is " + cached + " ( about " + percent + " % )");
   }
 
   // XXX:: This is not synchronized and might not give us the right number. Performance over accuracy. This is to be

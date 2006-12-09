@@ -3,14 +3,10 @@
  */
 package com.tc.objectserver.api;
 
-import com.tc.stats.counter.sampled.TimeStampedCounterValue;
-
 public interface ObjectManagerStats {
 
   double getCacheHitRatio();
-  
-  TimeStampedCounterValue getCacheMissRate();
-  
+
   long getTotalRequests();
 
   long getTotalCacheMisses();

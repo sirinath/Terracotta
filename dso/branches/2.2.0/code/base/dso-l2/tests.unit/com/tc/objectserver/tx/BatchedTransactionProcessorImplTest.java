@@ -23,12 +23,12 @@ import com.tc.objectserver.handler.BatchTransactionLookupHandler;
 import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.test.TCTestCase;
 import com.tc.util.SequenceID;
+import com.tc.util.SequenceValidator;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +41,7 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
   private TestObjectManager               objectManager;
   private BatchTransactionLookupHandler   handler;
   private TestGlobalTransactionManager    gtxm;
+  private SequenceValidator               sequenceValidator;
   private BatchedTransactionProcessorImpl batchTxnProcessor;
   private int                             sqID;
   private int                             txnID;
@@ -54,6 +55,7 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
     channelID = new ChannelID(0);
     objectManager = new TestObjectManager();
     gtxm = new TestGlobalTransactionManager();
+    sequenceValidator = new SequenceValidator(sqID++);
     MockStage batchTxnStage = new MockStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE);
     Sink batchTxnSink = batchTxnStage.getSink();
 
@@ -64,7 +66,7 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
     handler = new BatchTransactionLookupHandler();
     MockStage applyStage = new MockStage(ServerConfigurationContext.APPLY_CHANGES_STAGE);
     stageMap.put(ServerConfigurationContext.APPLY_CHANGES_STAGE, applyStage);
-    batchTxnProcessor = new BatchedTransactionProcessorImpl(objectManager, gtxm, batchTxnSink);
+    batchTxnProcessor = new BatchedTransactionProcessorImpl(-1, sequenceValidator, objectManager, gtxm, batchTxnSink);
     cctxt.txnBatchProcessor = batchTxnProcessor;
 
     handler.initialize(cctxt);
@@ -82,14 +84,14 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
         .getSink();
     MockSink applySink = (MockSink) ((Stage) stageMap.get(ServerConfigurationContext.APPLY_CHANGES_STAGE)).getSink();
 
-    // make sure that an event context is created and put into the Batch Transaction Lookup Stage
+    // make sure that a Transaction Queue is created and put into the Batch Transaction Lookup Stage
     assertFalse(batchTxnSink.queue.isEmpty());
     EventContext context = (EventContext) batchTxnSink.queue.remove(0);
     assertNotNull(context);
 
     assertTrue(applySink.queue.isEmpty());
 
-    // send more txn and see that event context is NOT added again to the stage
+    // send more txn and see that Transaction Queue is NOT added again to the stage
     List txns2 = createTxns(2);
     Collection completedTxnIds2 = getCompletedTxnIDs(5);
     completedTxnIds.addAll(completedTxnIds2);
@@ -134,7 +136,7 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
     // A request to lookup should be added to batch
     batchTxnProcessor.addTransactions(channelID, txns, completedTxnIds);
 
-    // make sure that an EventContext is put into the Batch Transaction Lookup Stage
+    // make sure that a Transaction Queue is put into the Batch Transaction Lookup Stage
     assertFalse(batchTxnSink.queue.isEmpty());
     context = (EventContext) batchTxnSink.queue.remove(0);
     assertNotNull(context);
@@ -144,20 +146,13 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
     // Now process context and make sure that object lookups are done.
     handler.handleEvent(context);
 
-    assertTrue(batchTxnProcessor.isPending(txns));
-
-    ArrayList argsList = new ArrayList();
     // Look up should have happened yet
-    for (int i = 0; i < txns.size(); i++) {
-      args = (Object[]) objectManager.lookupObjectForCreateIfNecessaryContexts.poll(100);
-      assertNotNull(args);
-      argsList.add(args);
-    }
-    // No more lookups
     args = (Object[]) objectManager.lookupObjectForCreateIfNecessaryContexts.poll(100);
-    assertNull(args);
+    assertNotNull(args);
 
-    // send more txn and see that an Event context is added again to the stage
+    assertTrue(batchTxnProcessor.isPending(channelID));
+
+    // send more txn and see that Transaction Queue is NOT added again to the stage
     txns2 = createTxns(2);
     completedTxnIds2 = getCompletedTxnIDs(5);
     completedTxnIds.addAll(completedTxnIds2);
@@ -165,29 +160,26 @@ public class BatchedTransactionProcessorImplTest extends TCTestCase {
 
     batchTxnProcessor.addTransactions(channelID, txns2, completedTxnIds2);
 
-    assertFalse(batchTxnSink.queue.isEmpty());
-    context = (EventContext) batchTxnSink.queue.remove(0);
-    assertNotNull(context);
+    assertTrue(batchTxnSink.queue.isEmpty());
     assertTrue(applySink.queue.isEmpty());
 
     // Now process pending
     objectManager.makePending = false;
-    for (Iterator i = argsList.iterator(); i.hasNext();) {
-      args = (Object[]) i.next();
-      objectManager.processPending(args);
-    }
-    assertFalse(batchTxnProcessor.isPending(txns));
+    objectManager.processPending(args);
 
+    // Transaction Queue should have been added to batchTxnSink
+    assertFalse(batchTxnProcessor.isPending(channelID));
+    assertFalse(batchTxnSink.queue.isEmpty());
+    context = (EventContext) batchTxnSink.queue.remove(0);
+    assertNotNull(context);
 
-    // Event context should not have been added to batchTxnSink
-    assertTrue(batchTxnSink.queue.isEmpty());
     assertTrue(applySink.queue.isEmpty());
 
     // Now process context and make sure that object lookups are done.
     handler.handleEvent(context);
 
     // Look up should have happened
-    count = txns2.size();
+    count = txns.size() - 1; // -1 coz one request when to pending
     while (count-- > 0) {
       args = (Object[]) objectManager.lookupObjectForCreateIfNecessaryContexts.poll(100);
       assertNotNull(args);

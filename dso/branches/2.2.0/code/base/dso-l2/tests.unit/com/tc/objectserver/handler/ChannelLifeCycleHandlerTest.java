@@ -10,6 +10,7 @@ import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TestCommunicationsManager;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
+import com.tc.objectserver.tx.TestBatchedTransactionProcessor;
 import com.tc.objectserver.tx.TestServerTransactionManager;
 import com.tc.objectserver.tx.TestTransactionBatchManager;
 
@@ -22,14 +23,17 @@ public class ChannelLifeCycleHandlerTest extends TestCase {
   private TestTransactionBatchManager transactionBatchManager;
   private TestServerTransactionManager transactionManager;
   private TestCommunicationsManager commsManager;
+  private TestBatchedTransactionProcessor txnBatchProcessor;
   
   protected void setUp() throws Exception {
     super.setUp();
     transactionManager = new TestServerTransactionManager();
     this.transactionBatchManager = new TestTransactionBatchManager();
     this.commsManager = new TestCommunicationsManager();
+    this.txnBatchProcessor = new TestBatchedTransactionProcessor();
     handler = new ChannelLifeCycleHandler(this.commsManager, this.transactionManager, this.transactionBatchManager);
     TestServerConfigurationContext tscc = new TestServerConfigurationContext();
+    tscc.txnBatchProcessor = this.txnBatchProcessor;
     handler.initialize(tscc);
   }
 
@@ -57,6 +61,7 @@ public class ChannelLifeCycleHandlerTest extends TestCase {
     };
     handler.handleEvent(disconnectEvent);
     
+    assertEquals(channelID, txnBatchProcessor.shutdownClientCalls.poll(1));
     assertEquals(channelID, transactionManager.shutdownClientCalls.poll(1));
     assertEquals(channelID, transactionBatchManager.shutdownClientCalls.poll(1));
     
@@ -64,6 +69,7 @@ public class ChannelLifeCycleHandlerTest extends TestCase {
     this.commsManager.shutdown = true;
     handler.handleEvent(disconnectEvent);
     
+    assertNull(txnBatchProcessor.shutdownClientCalls.poll(1));
     assertNull(transactionManager.shutdownClientCalls.poll(1));
     assertNull(transactionBatchManager.shutdownClientCalls.poll(1));
   }

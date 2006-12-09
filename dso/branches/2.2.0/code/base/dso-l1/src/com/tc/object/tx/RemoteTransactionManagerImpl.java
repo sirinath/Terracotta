@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.tx;
 
@@ -10,8 +9,7 @@ import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
-import com.tc.properties.TCProperties;
-import com.tc.util.Assert;
+import com.tc.util.SequenceGenerator;
 import com.tc.util.SequenceID;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
@@ -29,28 +27,28 @@ import java.util.Set;
 
 /**
  * Sends off committed transactions
- * 
+ *
  * @author steve
  */
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   private static final long                TIMEOUT                 = 30000L;
-
-  private static final int                 MAX_OUTSTANDING_BATCHES = TCProperties
-                                                                       .getProperties()
-                                                                       .getInt(
-                                                                               "l1.transactionmanager.maxOutstandingBatchSize");
-
+  private static final int                 MAX_TRANSACTION_SIZE    = 1000;
+  private static final int                 MAX_OUTSTANDING_BATCHES = 2;
   private static final State               STARTING                = new State("STARTING");
   private static final State               RUNNING                 = new State("RUNNING");
   private static final State               PAUSED                  = new State("PAUSED");
   private static final State               STOP_INITIATED          = new State("STOP-INITIATED");
   private static final State               STOPPED                 = new State("STOPPED");
 
+  private final TransactionBatchFactory    batchFactory;
+
   private final Object                     lock                    = new Object();
   private final Map                        incompleteBatches       = new HashMap();
   private final HashMap                    lockFlushCallbacks      = new HashMap();
 
+  private ClientTransactionBatch           currentBatch;
+  private final Object                     currentBatchLock        = new Object();
   private int                              outStandingBatches      = 0;
   private final TCLogger                   logger;
   private final TransactionBatchAccounting batchAccounting;
@@ -58,17 +56,17 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   private State                            status;
   private final SessionManager             sessionManager;
-  private final TransactionSequencer       sequencer;
 
   public RemoteTransactionManagerImpl(TCLogger logger, final TransactionBatchFactory batchFactory,
                                       TransactionBatchAccounting batchAccounting, LockAccounting lockAccounting,
                                       SessionManager sessionManager) {
     this.logger = logger;
+    this.batchFactory = batchFactory;
     this.batchAccounting = batchAccounting;
     this.lockAccounting = lockAccounting;
     this.sessionManager = sessionManager;
     this.status = RUNNING;
-    this.sequencer = new TransactionSequencer(batchFactory);
+    currentBatch = createNewBatch();
   }
 
   public void pause() {
@@ -101,7 +99,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
    */
   public void clear() {
     synchronized (lock) {
-      sequencer.clear();
+      currentBatch = createNewBatch();
       incompleteBatches.clear();
     }
   }
@@ -119,7 +117,11 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     synchronized (lock) {
       this.status = STOP_INITIATED;
 
-      sendBatches(true, "stop()");
+      if (!currentBatch.isEmpty()) {
+        // Send the betch
+        logger.debug("stop(): Current batch has " + currentBatch.numberOfTxns() + " transactions. Sending them");
+        sendCurrentBatch();
+      }
 
       int count = 10;
       long t0 = System.currentTimeMillis();
@@ -185,42 +187,33 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     }
   }
 
+  private final SequenceGenerator sequence = new SequenceGenerator(1);
+
   public void commit(ClientTransaction txn) {
     TransactionID txID = txn.getTransactionID();
 
     if (!txn.hasChangesOrNotifies()) throw new AssertionError("Attempt to commit an empty transaction.");
-    if (!txn.isConcurrent()) {
-      lockAccounting.add(txID, Arrays.asList(txn.getAllLockIDs()));
-    }
 
-    long start = System.currentTimeMillis();
-    sequencer.addTransaction(txn);
-    long diff = System.currentTimeMillis() - start;
-    if (diff > 1000) {
-      logger.info("WARNING ! Took more than 1000ms to add to sequencer  : " + diff + " ms");
+    synchronized (currentBatchLock) {
+      SequenceID sequenceID = new SequenceID(sequence.getNextSequence());
+      txn.setSequenceID(sequenceID);
+
+      if (!txn.isConcurrent()) {
+        lockAccounting.add(txID, Arrays.asList(txn.getAllLockIDs()));
+      }
+
+      addTransactionToBatch(txn, currentBatch);
     }
 
     synchronized (lock) {
-      if (isStoppingOrStopped()) {
-        // Send now if stop is requested
-        sendBatches(true, "commit() : Stop initiated.");
-      }
       waitUntilRunning();
-      sendBatches(false);
-    }
-  }
 
-  private void sendBatches(boolean ignoreMax) {
-    sendBatches(ignoreMax, null);
-  }
-
-  private void sendBatches(boolean ignoreMax, String message) {
-    ClientTransactionBatch batch;
-    while ((ignoreMax || canSendBatch()) && (batch = sequencer.getNextBatch()) != null) {
-      if (message != null) {
-        logger.debug(message + " : Sending batch containing " + batch.numberOfTxns() + " Txns.");
+      if (canSendBatch() && !currentBatch.isEmpty()) {
+        sendCurrentBatch();
       }
-      sendBatch(batch, true);
+      // We throttle batch after adding to the batch. This will not allow the thread to go forward
+      // and create more transactions.
+      throttleBatchSize();
     }
   }
 
@@ -238,7 +231,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
       outStandingBatches = 0;
       List toSend = batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
       if (toSend.size() == 0) {
-        sendBatches(false, " resendOutstanding()");
+        if (currentBatch.isEmpty()) {
+          logger.debug("resendOutstanding(): current batch is empty."
+                       + "  The next transaction commit will cause it to be sent.");
+        } else {
+          logger.debug("resendOutstanding(): current Batch : " + currentBatch);
+          sendCurrentBatch();
+        }
       } else {
         for (Iterator i = toSend.iterator(); i.hasNext();) {
           TxnBatchID id = (TxnBatchID) i.next();
@@ -266,9 +265,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
           batch.addTransactionSequenceIDsTo(sequenceIDs);
         }
         // Add Last next
-        SequenceID currentBatchMinSeq = sequencer.getNextSequenceID();
-        Assert.assertFalse(SequenceID.NULL_ID.equals(currentBatchMinSeq));
-        sequenceIDs.add(currentBatchMinSeq);
+        SequenceID currentBatchMinSeq = currentBatch.getMinTransactionSequence();
+        if (SequenceID.NULL_ID.equals(currentBatchMinSeq)) {
+          SequenceID currentSequenceID = new SequenceID(sequence.getCurrentSequence());
+          sequenceIDs.add(currentSequenceID.next());
+        } else {
+          sequenceIDs.add(currentBatchMinSeq);
+        }
       }
       return sequenceIDs;
     }
@@ -297,6 +300,17 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     return status == STOP_INITIATED || status == STOPPED;
   }
 
+  private void addTransactionToBatch(ClientTransaction txn, ClientTransactionBatch batch) {
+    batch.addTransaction(txn);
+  }
+
+  private void sendCurrentBatch() {
+    synchronized (currentBatchLock) {
+      sendBatch(currentBatch, true);
+      currentBatch = createNewBatch();
+    }
+  }
+
   private void sendBatch(ClientTransactionBatch batchToSend, boolean account) {
     synchronized (lock) {
       if (account) {
@@ -314,17 +328,36 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     }
   }
 
+  private ClientTransactionBatch createNewBatch() {
+    return batchFactory.nextBatch();
+  }
+
+  // If there are commits struck here and the application terminates, chances are these
+  // transactions will not be sent to the server. Such a behavior in the application indicates
+  // a bug in the client application.
+  private void throttleBatchSize() {
+    while (currentBatch.numberOfTxns() > MAX_TRANSACTION_SIZE || status != RUNNING) {
+      try {
+        lock.wait();
+      } catch (InterruptedException ie) {
+        throw new AssertionError();
+      }
+    }
+  }
+
   public void receivedBatchAcknowledgement(TxnBatchID txnBatchID) {
     synchronized (lock) {
       if (status == STOP_INITIATED) {
-        logger.warn(status + " : Received ACK for batch = " + txnBatchID);
+        logger.warn(status + " : Received ACK for a batch. The Current Batch size = " + currentBatch.numberOfTxns());
         lock.notifyAll();
         return;
       }
 
       waitUntilRunning();
       outStandingBatches--;
-      sendBatches(false);
+      if (canSendBatch() && !currentBatch.isEmpty()) {
+        sendCurrentBatch();
+      }
       lock.notifyAll();
     }
   }
@@ -349,7 +382,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         if (!completed.isNull()) {
           incompleteBatches.remove(completed);
           if (status == STOP_INITIATED && incompleteBatches.size() == 0) {
-            logger.debug("Received ACK for the last Transaction. Moving to STOPPED state.");
+            logger.debug("Received ACK for the last Transaction. Moving to STOPPED state. The Current Batch size = "
+                         + currentBatch.numberOfTxns());
             status = STOPPED;
           }
         }

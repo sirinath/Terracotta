@@ -99,11 +99,6 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
   public DoubleStatistic getCacheHitRatio() {
     return getStats().getCacheHitRatio();
   }
-  
-  public CountStatistic getCacheMissRate() {
-    return getStats().getCacheMissRate();
-  }
-
 
   public CountStatistic getTransactionRate() {
     return getStats().getTransactionRate();
