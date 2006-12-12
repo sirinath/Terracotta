@@ -43,8 +43,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
     // 2006-07-11 andrew -- We should get rid of the reference to Directories.getInstallationRoot() here.
     // Tests don't run in an environment where such a thing even exists. If the server needs an
     // "installation directory", the tests should be creating one themselves.
-    // 2006-12-11 jvoegele -- doing as andrew advised...
-    this(debugParams, host, dsoPort, adminPort, configFileLoc, null, null, mergeOutput);
+    this(debugParams, host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(), mergeOutput);
   }
 
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
