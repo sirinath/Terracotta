@@ -3,15 +3,12 @@
  */
 package com.tc.hooks;
 
-public abstract class StatsListener {
+public interface StatsListener {
 
-  public abstract void lockAquire(String lockID, long startTime);
+  void lockAquire(String lockID, long startTime, long endTime);
   
-  public abstract void transactionCommit();
+  void transactionCommit(String lockID, long startTime, long endTime);
   
-  public abstract void objectFault();
-  
-  protected long currentTime() {
-    return System.currentTimeMillis();
-  }
+  void objectFault(int size);
+ 
 }

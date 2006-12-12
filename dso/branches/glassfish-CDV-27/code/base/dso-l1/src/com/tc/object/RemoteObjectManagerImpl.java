@@ -1,9 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.hooks.StatsObserver;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
@@ -32,7 +34,7 @@ import java.util.Map.Entry;
 /**
  * This class is a kludge but I think it will do the trick for now. It is responsible for any communications to the
  * server for object retrieval and removal
- *
+ * 
  * @author steve
  */
 public class RemoteObjectManagerImpl implements RemoteObjectManager {
@@ -47,7 +49,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   private final Map                                outstandingObjectRequests = new THashMap();
   private final Map                                outstandingRootRequests   = new THashMap();
   private long                                     objectRequestIDCounter    = 0;
-  private final ObjectRequestMonitor               requestMonitor;
+  // private final ObjectRequestMonitor requestMonitor;
   private final ChannelIDProvider                  cip;
   private final RequestRootMessageFactory          rrmFactory;
   private final RequestManagedObjectMessageFactory rmomFactory;
@@ -58,15 +60,16 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   private final SessionManager                     sessionManager;
   private final TCLogger                           logger;
   private static final int                         REMOVE_OBJECTS_THRESHOLD  = 10000;
+  private final StatsObserver                      statsObserver;
 
   public RemoteObjectManagerImpl(TCLogger logger, ChannelIDProvider cip, RequestRootMessageFactory rrmFactory,
-                                 RequestManagedObjectMessageFactory rmomFactory, ObjectRequestMonitor requestMonitor,
+                                 RequestManagedObjectMessageFactory rmomFactory, StatsObserver statsObserver,
                                  int defaultDepth, SessionManager sessionManager) {
     this.logger = logger;
     this.cip = cip;
     this.rrmFactory = rrmFactory;
     this.rmomFactory = rmomFactory;
-    this.requestMonitor = requestMonitor;
+    this.statsObserver = statsObserver;
     this.defaultDepth = defaultDepth;
     this.sessionManager = sessionManager;
   }
@@ -176,7 +179,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     // non-blocking lookups. So if we loose those requests on restart it is still ok.
     this.outstandingObjectRequests.put(id, ctxt);
     rmom.send();
-    requestMonitor.notifyObjectRequest(ctxt);
+    statsObserver.objectFault(ctxt.getObjectIDs().size()); 
   }
 
   private RequestManagedObjectMessage createRequestManagedObjectMessage(ObjectRequestContext ctxt, Set removed) {

@@ -1,9 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
 import com.tc.asm.Type;
+import com.tc.hooks.StatsListener;
 import com.tc.hooks.StatsObserver;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
@@ -59,6 +61,7 @@ public class ManagerImpl implements Manager {
   private final Portability                        portability;
 
   private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
+  private StatsObserver                            statsObserver = new StatsObserver();
   private ClientObjectManager                      objectManager;
   private ClientShutdownManager                    shutdownManager;
   private ClientTransactionManager                 txManager;
@@ -148,7 +151,7 @@ public class ManagerImpl implements Manager {
 
   private void startClient() {
     this.dso = new DistributedObjectClient(this.config, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class))), classProvider, this.connectionComponents, this);
+        .getLogger(DistributedObjectClient.class))), classProvider, this.connectionComponents, this, statsObserver);
     this.dso.start();
     this.objectManager = dso.getObjectManager();
     this.txManager = dso.getTransactionManager();
@@ -277,7 +280,7 @@ public class ManagerImpl implements Manager {
       return this.objectManager.createOrReplaceRoot(name, object);
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
-      
+
       // shouldn't get here
       throw new AssertionError();
     }
@@ -310,9 +313,9 @@ public class ManagerImpl implements Manager {
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj) {
-      long startTime = StatsObserver.currentTime();
-      this.txManager.begin(lockID, type);
-      StatsObserver.lockAquire(lockID, startTime);
+    long startTime = System.currentTimeMillis();
+    this.txManager.begin(lockID, type);
+    statsObserver.lockAquire(lockID, startTime, System.currentTimeMillis());
     if (runtimeLogger.lockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
@@ -333,9 +336,10 @@ public class ManagerImpl implements Manager {
   }
 
   public void commitLock(String lockName) {
-
     try {
+      long startTime = System.currentTimeMillis();
       this.txManager.commit(lockName);
+      statsObserver.transactionCommit(lockName, startTime, System.currentTimeMillis());
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
     }
@@ -456,19 +460,18 @@ public class ManagerImpl implements Manager {
     if (obj == null) { throw new NullPointerException("monitorExit called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
-
+    String lockName = null;
     try {
       if (tco != null) {
         if (tco.autoLockingDisabled()) { return; }
-
-        // don't call this.commit() here, the error handling would happen twice in that case
-        this.txManager.commit(generateAutolockName(tco));
+        lockName = generateAutolockName(tco);
       } else if (isLiteralAutolock(obj)) {
-        this.txManager.commit(generateLiteralLockName(obj));
+        lockName = generateLiteralLockName(obj);
       }
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
     }
+    if (lockName != null) commitLock(lockName);
   }
 
   public boolean isLocked(Object obj) {
@@ -737,6 +740,10 @@ public class ManagerImpl implements Manager {
 
   public TCLogger getLogger(String loggerName) {
     return TCLogging.getLogger(loggerName);
+  }
+
+  public void registerStatsListener(StatsListener statsListener) {
+    statsObserver.registerListener(statsListener);
   }
 
   private static class MethodDisplayNames {

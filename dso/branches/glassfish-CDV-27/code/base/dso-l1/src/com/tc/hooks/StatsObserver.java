@@ -9,72 +9,67 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public final class StatsObserver {
+public final class StatsObserver implements StatsListener {
 
   private volatile StatsListener statsListener;
-  private static StatsObserver   statsObserver = new StatsObserver();
 
-  private StatsObserver() {
+  public StatsObserver() {
     this.statsListener = new NullStatsListener();
   }
 
-  public static synchronized void registerListener(StatsListener listener) {
-    if (statsObserver.statsListener instanceof StatsObserver.NullStatsListener) {
-      statsObserver.statsListener = listener;
-    } else if (statsObserver.statsListener instanceof StatsObserver.BroadcastStatsListener) {
-      StatsObserver.BroadcastStatsListener broadcast = (StatsObserver.BroadcastStatsListener) statsObserver.statsListener;
+  public synchronized void registerListener(StatsListener listener) {
+    if (statsListener instanceof StatsObserver.NullStatsListener) {
+      statsListener = listener;
+    } else if (statsListener instanceof StatsObserver.BroadcastStatsListener) {
+      StatsObserver.BroadcastStatsListener broadcast = (StatsObserver.BroadcastStatsListener) statsListener;
       List listeners = broadcast.getListeners();
       listeners.add(listener);
       broadcast.setListeners(listeners);
     } else {
-      StatsObserver.BroadcastStatsListener broadcast = statsObserver.new BroadcastStatsListener();
+      StatsObserver.BroadcastStatsListener broadcast = new BroadcastStatsListener();
       List listeners = broadcast.getListeners();
-      listeners.add(statsObserver.statsListener);
+      listeners.add(statsListener);
       listeners.add(listener);
       broadcast.setListeners(listeners);
-      statsObserver.statsListener = broadcast;
+      statsListener = broadcast;
     }
   }
 
-  public static synchronized void removeListener(StatsListener listener) throws NoSuchElementException {
-    if (statsObserver.statsListener instanceof StatsObserver.BroadcastStatsListener) {
-      StatsObserver.BroadcastStatsListener broadcast = (StatsObserver.BroadcastStatsListener) statsObserver.statsListener;
+  public synchronized void removeListener(StatsListener listener) throws NoSuchElementException {
+    if (statsListener instanceof StatsObserver.BroadcastStatsListener) {
+      StatsObserver.BroadcastStatsListener broadcast = (StatsObserver.BroadcastStatsListener) statsListener;
       List listeners = broadcast.getListeners();
       if (!listeners.remove(listener)) throw new NoSuchElementException();
       if (listeners.size() == 1) {
-        statsObserver.statsListener = (StatsListener) listeners.iterator().next();
+        statsListener = (StatsListener) listeners.iterator().next();
         return;
       }
       broadcast.setListeners(listeners);
     } else {
-      if (statsObserver.statsListener != listener) throw new NoSuchElementException();
-      statsObserver.statsListener = statsObserver.new NullStatsListener();
+      if (statsListener != listener) throw new NoSuchElementException();
+      statsListener = new NullStatsListener();
     }
-  }
-  
-  public static long currentTime() {
-    return statsObserver.statsListener.currentTime();
   }
 
   // -------------------------------------------------------------------------------------------------------------------
   // StatsListener implementation
 
-  public static void lockAquire(String lockID, long startTime) {
-    statsObserver.statsListener.lockAquire(lockID, startTime);
+  public void lockAquire(String lockID, long startTime, long endTime) {
+    statsListener.lockAquire(lockID, startTime, endTime);
   }
 
-  public static void objectFault() {
-    statsObserver.statsListener.objectFault();
+  public void objectFault(int size) {
+    statsListener.objectFault(size);
   }
 
-  public static void transactionCommit() {
-    statsObserver.statsListener.transactionCommit();
+  public void transactionCommit(String lockID, long startTime, long endTime) {
+    statsListener.transactionCommit(lockID, startTime, endTime);
   }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Multi-Listener implementation
 
-  private final class BroadcastStatsListener extends StatsListener {
+  private final class BroadcastStatsListener implements StatsListener {
 
     private volatile List listeners;
 
@@ -82,21 +77,21 @@ public final class StatsObserver {
       this.listeners = new ArrayList();
     }
 
-    public void lockAquire(String lockID, long startTime) {
+    public void lockAquire(String lockID, long startTime, long endTime) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).lockAquire(lockID, startTime);
+        ((StatsListener) iter.next()).lockAquire(lockID, startTime, endTime);
       }
     }
 
-    public void objectFault() {
+    public void objectFault(int size) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).objectFault();
+        ((StatsListener) iter.next()).objectFault(size);
       }
     }
 
-    public void transactionCommit() {
+    public void transactionCommit(String lockID, long startTime, long endTime) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).transactionCommit();
+        ((StatsListener) iter.next()).transactionCommit(lockID, startTime, endTime);
       }
     }
 
@@ -112,22 +107,18 @@ public final class StatsObserver {
   // -------------------------------------------------------------------------------------------------------------------
   // Null-Listener implementation
 
-  private final class NullStatsListener extends StatsListener {
+  private final class NullStatsListener implements StatsListener {
 
-    public void lockAquire(String lockID, long startTime) {
+    public void lockAquire(String lockID, long startTime, long endTime) {
       // do nothing
     }
 
-    public void transactionCommit() {
+    public void transactionCommit(String lockID, long startTime, long endTime) {
       // do nothing
     }
 
-    public void objectFault() {
+    public void objectFault(int size) {
       // do nothing
-    }
-    
-    protected long currentTime() {
-      return 0L;
     }
   }
 }
