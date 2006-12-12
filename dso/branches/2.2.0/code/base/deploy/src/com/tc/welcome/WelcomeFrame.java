@@ -19,8 +19,7 @@ public class WelcomeFrame extends HyperlinkFrame {
   private static BundleHelper m_bundleHelper = new BundleHelper(WelcomeFrame.class);
   
   public WelcomeFrame() {
-    super();
-    setTitle(m_bundleHelper.getString(getProduct().toLowerCase()+".welcome.title"));
+    super(m_bundleHelper.getString(getProduct().toLowerCase()+".welcome.title"));
   }
   
   protected URL getPage() {
@@ -51,7 +50,7 @@ public class WelcomeFrame extends HyperlinkFrame {
 
   protected void hyperlinkActivated(AttributeSet anchor, String action) {
     if(action.equals("show_samples")) {
-      if("DSO".equals(getProduct())) {
+      if("DSO".equalsIgnoreCase(getProduct())) {
         runDSOSampleLauncher();
       } else {
         File file = new File(getProductDirectory(), "samples");
