@@ -32,14 +32,12 @@ import javax.swing.text.Document;
 import javax.swing.text.html.HTML;
 
 public class DSOSamplesFrame extends HyperlinkFrame {
-  private BundleHelper m_bundleHelper = new BundleHelper(DSOSamplesFrame.class);
-  private TextPane     m_outputPane;
-  private ArrayList    m_processList;
+  private static BundleHelper m_bundleHelper = new BundleHelper(DSOSamplesFrame.class);
+  private TextPane            m_outputPane;
+  private ArrayList           m_processList;
 
   public DSOSamplesFrame() {
-    super();
-
-    setTitle(m_bundleHelper.getString("frame.title"));
+    super(m_bundleHelper.getString("frame.title"));
 
     m_processList = new ArrayList();
     m_outputPane = new XTextPane();
@@ -50,7 +48,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
     getContentPane().add(scroller, BorderLayout.SOUTH);
     runServer();
   }
-
+  
   private void toOutputPane(String s) {
     Document doc = m_outputPane.getDocument();
 

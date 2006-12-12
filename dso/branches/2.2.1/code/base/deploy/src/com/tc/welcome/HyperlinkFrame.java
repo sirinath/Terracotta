@@ -54,17 +54,19 @@ import javax.swing.text.html.HTMLEditorKit;
 
 public abstract class HyperlinkFrame extends Frame implements HyperlinkListener {
   private static BundleHelper m_bundleHelper = new BundleHelper(HyperlinkFrame.class);
+  private static String       m_product      = System.getProperty("tc.welcome.product", "dso");
+  private static File         m_productDir   = new File(System.getProperty("tc.install-root"), m_product.toLowerCase());
+
   private TextPane            m_textPane;
-  private String              m_product;
-  private File                m_productDir;
   private SimpleAttributeSet  m_underlineAttrSet;
     
   public HyperlinkFrame() {
-    super();
-    
-    m_product    = System.getProperty("tc.welcome.product", "dso");
-    m_productDir = new File(System.getProperty("tc.install-root"), m_product.toLowerCase());
+    this("");
+  }
   
+  public HyperlinkFrame(String title) {
+    super(title);
+    
     MenuBar menubar = new MenuBar();
     Menu    menu;
     
@@ -188,11 +190,11 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
   
   protected void hyperlinkActivated(AttributeSet anchor, String action) {/**/}
   
-  protected String getProduct() {
+  protected static String getProduct() {
     return m_product;
   }
   
-  protected File getProductDirectory() {
+  protected static File getProductDirectory() {
     return m_productDir;
   }
   
@@ -404,11 +406,17 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
     }
   }
   
+  protected void pageLoaded() {
+    pack();
+    center();
+    setVisible(true);
+  }
+  
   class PageListener implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent pce) {
-      pack();
-      center();
-      setVisible(true);
+      if(!isVisible() && "page".equals(pce.getPropertyName())) {
+        pageLoaded();
+      }
     }
   }
 }
