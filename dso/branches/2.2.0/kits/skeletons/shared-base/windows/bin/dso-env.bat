@@ -24,7 +24,8 @@ GOTO tc_dso_env_1
   IF NOT "%TOPDIR%" == "" GOTO tc_dso_env_0_0
     ECHO Error: When the -q option is specified, I expect that
     ECHO the environment variable TOPDIR is set so that I
-    ECHO can locate the libexec directory.
+    ECHO can locate the libexec directory of your Terracotta
+    ECHO software installation.
     GOTO tc_dso_env_3
   
   :tc_dso_env_0_0
