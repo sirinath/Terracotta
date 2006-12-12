@@ -46,6 +46,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
     ScrollPane scroller = new ScrollPane(m_outputPane);
     scroller.setPreferredSize(new Dimension(500, 200));
     getContentPane().add(scroller, BorderLayout.SOUTH);
+    runServer();
   }
   
   private void toOutputPane(String s) {
