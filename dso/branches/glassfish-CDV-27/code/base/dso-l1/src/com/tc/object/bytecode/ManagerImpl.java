@@ -4,6 +4,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.Type;
+import com.tc.hooks.StatsObserver;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
@@ -309,7 +310,9 @@ public class ManagerImpl implements Manager {
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj) {
-    this.txManager.begin(lockID, type);
+      long startTime = StatsObserver.currentTime();
+      this.txManager.begin(lockID, type);
+      StatsObserver.lockAquire(lockID, startTime);
     if (runtimeLogger.lockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
