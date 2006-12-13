@@ -165,22 +165,25 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   }
 
   private void sendRequest(ObjectRequestContext ctxt) {
-    statsObserver.beginObjectFault(ctxt.getObjectIDs().size()); 
-    Set tr = new HashSet(removeObjects);
-    RequestManagedObjectMessage rmom = createRequestManagedObjectMessage(ctxt, tr);
-    removeObjects.clear();
-    ObjectID id = null;
-    for (Iterator i = ctxt.getObjectIDs().iterator(); i.hasNext();) {
-      id = (ObjectID) i.next();
-      dnaRequests.put(id, null);
+    statsObserver.beginObjectFault(ctxt.getObjectIDs().size());
+    try {
+      Set tr = new HashSet(removeObjects);
+      RequestManagedObjectMessage rmom = createRequestManagedObjectMessage(ctxt, tr);
+      removeObjects.clear();
+      ObjectID id = null;
+      for (Iterator i = ctxt.getObjectIDs().iterator(); i.hasNext();) {
+        id = (ObjectID) i.next();
+        dnaRequests.put(id, null);
+      }
+      // XXX:: This is a little weird that we add only the last ObjectID to the outstandingObjectRequests map
+      // when we add all the list of ObjectIDs to dnaRequests. This is done so that we only send the request once
+      // on resend. Since the only way we request for more than one ObjectID in 1 message is when someone initiate
+      // non-blocking lookups. So if we loose those requests on restart it is still ok.
+      this.outstandingObjectRequests.put(id, ctxt);
+      rmom.send();
+    } finally {
+      statsObserver.endObjectFault(ctxt.getObjectIDs().size());
     }
-    // XXX:: This is a little weird that we add only the last ObjectID to the outstandingObjectRequests map
-    // when we add all the list of ObjectIDs to dnaRequests. This is done so that we only send the request once
-    // on resend. Since the only way we request for more than one ObjectID in 1 message is when someone initiate
-    // non-blocking lookups. So if we loose those requests on restart it is still ok.
-    this.outstandingObjectRequests.put(id, ctxt);
-    rmom.send();
-    statsObserver.endObjectFault(ctxt.getObjectIDs().size()); 
   }
 
   private RequestManagedObjectMessage createRequestManagedObjectMessage(ObjectRequestContext ctxt, Set removed) {

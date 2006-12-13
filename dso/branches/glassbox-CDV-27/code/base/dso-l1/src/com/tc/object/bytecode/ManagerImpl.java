@@ -314,8 +314,11 @@ public class ManagerImpl implements Manager {
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj) {
     statsObserver.beginLockAquire(lockID);
-    this.txManager.begin(lockID, type);
-    statsObserver.endLockAquire(lockID);
+    try {
+      this.txManager.begin(lockID, type);
+    } finally {
+      statsObserver.endLockAquire(lockID);
+    }
     if (runtimeLogger.lockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
@@ -336,12 +339,13 @@ public class ManagerImpl implements Manager {
   }
 
   public void commitLock(String lockName) {
+    statsObserver.beginTransactionCommit(lockName);
     try {
-      statsObserver.beginTransactionCommit(lockName);
       this.txManager.commit(lockName);
-      statsObserver.endTransactionCommit(lockName);
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
+    } finally {
+      statsObserver.endTransactionCommit(lockName);
     }
   }
 
