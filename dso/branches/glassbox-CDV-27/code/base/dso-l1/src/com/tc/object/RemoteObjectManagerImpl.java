@@ -165,6 +165,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   }
 
   private void sendRequest(ObjectRequestContext ctxt) {
+    statsObserver.beginObjectFault(ctxt.getObjectIDs().size()); 
     Set tr = new HashSet(removeObjects);
     RequestManagedObjectMessage rmom = createRequestManagedObjectMessage(ctxt, tr);
     removeObjects.clear();
@@ -179,7 +180,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     // non-blocking lookups. So if we loose those requests on restart it is still ok.
     this.outstandingObjectRequests.put(id, ctxt);
     rmom.send();
-    statsObserver.objectFault(ctxt.getObjectIDs().size()); 
+    statsObserver.endObjectFault(ctxt.getObjectIDs().size()); 
   }
 
   private RequestManagedObjectMessage createRequestManagedObjectMessage(ObjectRequestContext ctxt, Set removed) {

@@ -5,10 +5,16 @@ package com.tc.hooks;
 
 public interface StatsListener {
 
-  void lockAquire(String lockID, long startTime, long endTime);
+  void beginLockAquire(String lockID);
   
-  void transactionCommit(String lockID, long startTime, long endTime);
+  void endLockAquire(String lockID);
   
-  void objectFault(int size);
+  void beginTransactionCommit(String lockID);
+  
+  void endTransactionCommit(String lockID);
+  
+  void beginObjectFault(int size);
+  
+  void endObjectFault(int size);
  
 }

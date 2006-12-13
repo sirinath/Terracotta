@@ -54,16 +54,28 @@ public final class StatsObserver implements StatsListener {
   // -------------------------------------------------------------------------------------------------------------------
   // StatsListener implementation
 
-  public void lockAquire(String lockID, long startTime, long endTime) {
-    statsListener.lockAquire(lockID, startTime, endTime);
+  public void beginLockAquire(String lockID) {
+    statsListener.beginLockAquire(lockID);
+  }
+  
+  public void endLockAquire(String lockID) {
+    statsListener.endLockAquire(lockID);
+  }
+  
+  public void beginObjectFault(int size) {
+    statsListener.beginObjectFault(size);
   }
 
-  public void objectFault(int size) {
-    statsListener.objectFault(size);
+  public void endObjectFault(int size) {
+    statsListener.endObjectFault(size);
   }
 
-  public void transactionCommit(String lockID, long startTime, long endTime) {
-    statsListener.transactionCommit(lockID, startTime, endTime);
+  public void beginTransactionCommit(String lockID) {
+    statsListener.beginTransactionCommit(lockID);
+  }
+  
+  public void endTransactionCommit(String lockID) {
+    statsListener.endTransactionCommit(lockID);
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -77,21 +89,39 @@ public final class StatsObserver implements StatsListener {
       this.listeners = new ArrayList();
     }
 
-    public void lockAquire(String lockID, long startTime, long endTime) {
+    public void beginLockAquire(String lockID) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).lockAquire(lockID, startTime, endTime);
+        ((StatsListener) iter.next()).beginLockAquire(lockID);
+      }
+    }
+    
+    public void endLockAquire(String lockID) {
+      for (Iterator iter = listeners.iterator(); iter.hasNext();) {
+        ((StatsListener) iter.next()).endLockAquire(lockID);
       }
     }
 
-    public void objectFault(int size) {
+    public void beginObjectFault(int size) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).objectFault(size);
+        ((StatsListener) iter.next()).beginObjectFault(size);
+      }
+    }
+    
+    public void endObjectFault(int size) {
+      for (Iterator iter = listeners.iterator(); iter.hasNext();) {
+        ((StatsListener) iter.next()).endObjectFault(size);
       }
     }
 
-    public void transactionCommit(String lockID, long startTime, long endTime) {
+    public void beginTransactionCommit(String lockID) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ((StatsListener) iter.next()).transactionCommit(lockID, startTime, endTime);
+        ((StatsListener) iter.next()).beginTransactionCommit(lockID);
+      }
+    }
+    
+    public void endTransactionCommit(String lockID) {
+      for (Iterator iter = listeners.iterator(); iter.hasNext();) {
+        ((StatsListener) iter.next()).endTransactionCommit(lockID);
       }
     }
 
@@ -109,15 +139,27 @@ public final class StatsObserver implements StatsListener {
 
   private final class NullStatsListener implements StatsListener {
 
-    public void lockAquire(String lockID, long startTime, long endTime) {
+    public void beginLockAquire(String lockID) {
+      // do nothing
+    }
+    
+    public void endLockAquire(String lockID) {
       // do nothing
     }
 
-    public void transactionCommit(String lockID, long startTime, long endTime) {
+    public void beginTransactionCommit(String lockID) {
+      // do nothing
+    }
+    
+    public void endTransactionCommit(String lockID) {
       // do nothing
     }
 
-    public void objectFault(int size) {
+    public void beginObjectFault(int size) {
+      // do nothing
+    }
+    
+    public void endObjectFault(int size) {
       // do nothing
     }
   }
