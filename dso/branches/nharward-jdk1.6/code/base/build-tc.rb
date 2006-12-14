@@ -685,7 +685,8 @@ END
 
         @jvm_set = JVMSet.new
         compile_14 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.4 code", "1.4.0_0", "1.4.999_999", "jvms.compile-1.4", "JAVA_HOME_14")
-        compile_15 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.4 code", "1.5.0_0", "1.5.999_999", "jvms.compile-1.5", "JAVA_HOME_15")
+        #compile_15 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.5 code", "1.5.0_0", "1.5.999_999", "jvms.compile-1.5", "JAVA_HOME_15")
+        compile_15 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.5 code", "1.5.0_0", "1.6.999_999", "jvms.compile-1.5", "JAVA_HOME_15")
 
         raise RuntimeError, "You must specify a valid 1.4 JVM using the JAVA_HOME_14 configuration property (e.g., via the 'TC_JAVA_HOME_14' environment variable." if compile_14.nil?
         raise RuntimeError, "You must specify a valid 1.5 JVM using the JAVA_HOME_15 configuration property (e.g., via the 'TC_JAVA_HOME_15' environment variable." if compile_15.nil?
