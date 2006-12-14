@@ -693,7 +693,7 @@ END
         @jvm_set.set('compile-1.4', compile_14)
         @jvm_set.set('compile-1.5', compile_15)
 
-        tests_15 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.5 code", '1.5.0_0', '1.5.999_999', "jvms.tests-1.5", "JAVA_HOME_TESTS_15")
+        tests_15 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.5 code", '1.5.0_0', '1.6.999_999', "jvms.tests-1.5", "JAVA_HOME_TESTS_15")
         if tests_15.nil?
             @jvm_set.alias('tests-1.5', 'compile-1.5')
         else
@@ -720,7 +720,7 @@ END
         if run14_tests_with_15 =~ /^\s*true\s*$/i
             @jvm_set.alias('tests-1.4', 'tests-1.5')
         else
-            tests_14 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.4 code", '1.4.0_0', '1.5.999_999', "jvms.tests-1.4", "JAVA_HOME_TESTS_14")
+            tests_14 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.4 code", '1.4.0_0', '1.6.999_999', "jvms.tests-1.4", "JAVA_HOME_TESTS_14")
             if tests_14.nil?
                 @jvm_set.alias('tests-1.4', 'compile-1.4')
             else
