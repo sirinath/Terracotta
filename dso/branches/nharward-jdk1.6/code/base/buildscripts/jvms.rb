@@ -213,7 +213,7 @@ class JVM
                 required_version = JavaVersion.new(@max_version)
 
                 if this_version > required_version
-                    raise RuntimeError, "The version of #{descrip}, '#{this_version}', is greater than the minimum required of '#{required_version}'."
+                    raise RuntimeError, "The version of #{descrip}, '#{this_version}', is greater than the maximum allowed value of '#{required_version}'."
                 end
             end
         end
