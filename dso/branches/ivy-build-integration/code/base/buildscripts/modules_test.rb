@@ -47,9 +47,7 @@ class BuildSubtree
             # their own classes.
             write_dynamic_property(file, "linked-child-process-classpath", build_module.module_set['linked-child-process'].subtree('src').classpath(build_results, :full, :runtime))
 
-            if container_home = ENV['TC_CONTAINER_HOME']
-                write_dynamic_property(file, "appserver.home", container_home)
-            end
+            write_dynamic_property(file, "appserver.home", ENV['TC_CONTAINER_HOME'])
 
             # Builds up the set of classes required for DSO to support sessions
             sessionSet = PathSet.new
