@@ -132,7 +132,7 @@ public class TestConfigObject {
   private static void loadEnv() {
     File userDir = new File(System.getProperty("user.dir"));
     String baseDirProp = System.getProperty(TC_BASE_DIR);
-    if (baseDirProp == null) return;
+    if (baseDirProp == null || baseDirProp.trim().equals("")) invalidBaseDir();
     String[] baseDirParts = baseDirProp.split("/");
     String baseDir = null;
     int count = baseDirParts.length - 1;
@@ -147,15 +147,17 @@ public class TestConfigObject {
       else break;
     }
 
-    if (baseDir == null || baseDir.trim().equals("")) throw new RuntimeException("System Property: " + TC_BASE_DIR
-                                                                                 + " is not valid.\n"
-                                                                                 + System.getProperty(TC_BASE_DIR));
-    
+    if (baseDir == null || baseDir.trim().equals("")) invalidBaseDir();
+
     if (StringUtils.isBlank(System.getProperty(Directories.TC_INSTALL_ROOT_PROPERTY_NAME))) {
       System.setProperty(Directories.TC_INSTALL_ROOT_PROPERTY_NAME, baseDir);
       System.setProperty(Directories.TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME, "true");
     }
     System.setProperty(Directories.TC_LICENSE_LOCATION_PROPERTY_NAME, baseDir);
+  }
+
+  private static void invalidBaseDir() {
+    throw new RuntimeException("System Property: " + TC_BASE_DIR + " is not valid.\n" + System.getProperty(TC_BASE_DIR));
   }
 
   private TestConfigObject() throws IOException {
