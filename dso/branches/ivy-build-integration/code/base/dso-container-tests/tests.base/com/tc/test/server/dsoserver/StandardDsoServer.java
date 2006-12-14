@@ -3,6 +3,7 @@
  */
 package com.tc.test.server.dsoserver;
 
+import com.tc.config.Directories;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.test.server.ServerParameters;
 import com.tc.test.server.ServerResult;
