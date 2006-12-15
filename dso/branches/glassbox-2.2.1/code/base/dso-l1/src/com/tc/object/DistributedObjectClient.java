@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object;
 
@@ -8,6 +9,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.config.schema.dynamic.ConfigItem;
+import com.tc.hooks.StatsObserver;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.ChannelIDLogger;
 import com.tc.logging.ChannelIDLoggerProvider;
@@ -125,9 +127,11 @@ public class DistributedObjectClient extends SEDA {
   private CacheManager                             cacheManager;
   private L1Management                             l1Management;
   private TCProperties                             l1Properties;
+  private StatsObserver                            statsObserver;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
-                                 PreparedComponentsFromL2Connection connectionComponents, Manager manager) {
+                                 PreparedComponentsFromL2Connection connectionComponents, Manager manager,
+                                 StatsObserver statsObserver) {
     super(threadGroup);
     Assert.assertNotNull(config);
     this.config = config;
@@ -135,6 +139,7 @@ public class DistributedObjectClient extends SEDA {
     this.connectionComponents = connectionComponents;
     this.pauseListener = new NullPauseListener();
     this.manager = manager;
+    this.statsObserver = statsObserver;
   }
 
   public void setPauseListener(PauseListener pauseListener) {
@@ -197,8 +202,7 @@ public class DistributedObjectClient extends SEDA {
                                                                           channel.getRequestRootMessageFactory(),
                                                                           channel
                                                                               .getRequestManagedObjectMessageFactory(),
-                                                                          new NullObjectRequestMonitor(), faultCount,
-                                                                          sessionManager);
+                                                                          statsObserver, faultCount, sessionManager);
 
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(channel
         .getObjectIDBatchRequestMessageFactory());

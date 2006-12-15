@@ -27,6 +27,7 @@ import com.tc.exception.ExceptionWrapperImpl;
 import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.geronimo.GeronimoLoaderNaming;
+import com.tc.hooks.StatsListener;
 import com.tc.logging.TCLogger;
 import com.tc.management.TerracottaMBean;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
@@ -276,6 +277,7 @@ public class BootJarTool {
       loadTerracottaClass(TraverseTest.class.getName());
       loadTerracottaClass(Os.class.getName());
       loadTerracottaClass(NIOWorkarounds.class.getName());
+      loadTerracottaClass(StatsListener.class.getName());
 
       // These two classes need to be specified as literal in order to prevent
       // the static block of IdentityWeakHashMap from executing during generating

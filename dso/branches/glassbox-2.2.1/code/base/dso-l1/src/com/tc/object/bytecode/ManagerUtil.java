@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.hooks.StatsListener;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
@@ -375,6 +376,10 @@ public class ManagerUtil {
 
   public static SessionMonitorMBean getSessionMonitorMBean() {
     return getManager().getSessionMonitorMBean();
+  }
+  
+  public static void registerStatsListener(StatsListener statsListener) {
+    getManager().registerStatsListener(statsListener);
   }
 
 }

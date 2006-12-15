@@ -1,11 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
+import com.tc.hooks.StatsObserver;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
@@ -59,7 +61,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(manager);
 
     client = new DistributedObjectClient(configHelper, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class))), new MockClassProvider(), components, NullManager.getInstance());
+        .getLogger(DistributedObjectClient.class))), new MockClassProvider(), components, NullManager.getInstance(),
+                                         new StatsObserver());
     client.start();
 
     lockManager = (ClientLockManagerImpl) client.getLockManager();
