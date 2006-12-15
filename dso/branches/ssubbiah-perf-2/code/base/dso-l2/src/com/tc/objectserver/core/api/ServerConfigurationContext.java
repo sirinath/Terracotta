@@ -12,9 +12,9 @@ import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
-import com.tc.objectserver.tx.BatchedTransactionProcessor;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
+import com.tc.objectserver.tx.TransactionObjectManager;
 
 public interface ServerConfigurationContext extends ConfigurationContext {
 
@@ -51,7 +51,7 @@ public interface ServerConfigurationContext extends ConfigurationContext {
 
   public ServerTransactionManager getTransactionManager();
 
-  public BatchedTransactionProcessor getBatchedTransactionProcessor();
+  public TransactionObjectManager getTransactionObjectManager();
 
   public ManagedObjectStore getObjectStore();
 

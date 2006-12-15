@@ -30,14 +30,15 @@ import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
-import com.tc.objectserver.tx.BatchedTransactionProcessor;
-import com.tc.objectserver.tx.BatchedTransactionProcessorImpl;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionImpl;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TestTransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReader;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
+import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionObjectManagerImpl;
+import com.tc.objectserver.tx.TransactionSequencer;
 import com.tc.test.TCTestCase;
 import com.tc.util.SequenceID;
 import com.tc.util.SequenceValidator;
@@ -61,7 +62,7 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
   private TestTransactionBatchManager       transactionBatchManager;
   private TestGlobalTransactionManager      gtxm;
   private SequenceValidator                 sequenceValidator;
-  private BatchedTransactionProcessorImpl   batchTxnProcessor;
+  private TransactionObjectManager          txnObjectManager;
 
   public void setUp() throws Exception {
     objectManager = new TestObjectManager();
@@ -71,8 +72,8 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     MockStage batchTxnStage;
     stageMap.put(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE,
                  (batchTxnStage = new MockStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE)));
-    batchTxnProcessor = new BatchedTransactionProcessorImpl(objectManager, gtxm, batchTxnStage.getSink());
-    handler = new ProcessTransactionHandler(transactionBatchManager, batchTxnProcessor, sequenceValidator,
+    txnObjectManager = new TransactionObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,  batchTxnStage.getSink());
+    handler = new ProcessTransactionHandler(transactionBatchManager, txnObjectManager, sequenceValidator,
                                             new NullMessageRecycler());
 
     transactionBatchReaderFactory = new TestTransactionBatchReaderFactory();
@@ -249,8 +250,8 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public BatchedTransactionProcessor getBatchedTransactionProcessor() {
-      return batchTxnProcessor;
+    public TransactionObjectManager getTransactionObjectManager() {
+      return txnObjectManager;
     }
 
   }

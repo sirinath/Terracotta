@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
 
@@ -122,8 +123,6 @@ import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.DBException;
 import com.tc.objectserver.persistence.sleepycat.SerializationAdapterFactory;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor;
-import com.tc.objectserver.tx.BatchedTransactionProcessor;
-import com.tc.objectserver.tx.BatchedTransactionProcessorImpl;
 import com.tc.objectserver.tx.CommitTransactionMessageRecycler;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -131,6 +130,8 @@ import com.tc.objectserver.tx.ServerTransactionManagerImpl;
 import com.tc.objectserver.tx.ServerTransactionManagerMBean;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
+import com.tc.objectserver.tx.TransactionObjectManagerImpl;
+import com.tc.objectserver.tx.TransactionSequencer;
 import com.tc.properties.TCProperties;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
@@ -426,10 +427,11 @@ public class DistributedObjectServer extends SEDA {
 
     Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE,
                                                         new BatchTransactionLookupHandler(), 1, maxStageSize);
-    BatchedTransactionProcessor txnProcessor = new BatchedTransactionProcessorImpl(objectManager, gtxm,
-                                                                                   batchTxLookupStage.getSink());
+    TransactionObjectManagerImpl txnObjectManager = new TransactionObjectManagerImpl(objectManager,
+                                                                                     new TransactionSequencer(), gtxm,
+                                                                                     batchTxLookupStage.getSink());
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
-                                               new ProcessTransactionHandler(transactionBatchManager, txnProcessor,
+                                               new ProcessTransactionHandler(transactionBatchManager, txnObjectManager,
                                                                              sequenceValidator, recycler), 1,
                                                maxStageSize);
 
@@ -542,7 +544,7 @@ public class DistributedObjectServer extends SEDA {
                                                                                            reconnectTimeout, persistent);
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
-                                                 txnProcessor, clientHandshakeManager, channelStats,
+                                                 txnObjectManager, clientHandshakeManager, channelStats,
                                                  new CommitTransactionMessageToTransactionBatchReader());
 
     stageManager.startAll(context);
