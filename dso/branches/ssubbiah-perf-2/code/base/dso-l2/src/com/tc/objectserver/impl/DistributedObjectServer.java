@@ -161,7 +161,7 @@ import javax.management.NotCompliantMBeanException;
 
 /**
  * Startup and shutdown point. Builds and starts the server. This is a quick and dirty dirty way of doing this stuff
- * 
+ *
  * @author steve
  */
 public class DistributedObjectServer extends SEDA {
@@ -649,7 +649,12 @@ public class DistributedObjectServer extends SEDA {
     } catch (Throwable t) {
       logger.error("Error shutting down jmx server", t);
     }
-    basicStop();
+
+    // XXX: not calling basicStop() here, it creates a race condition with the Sleepycat's own writer lock (see
+    // LKC-3239) Provided we ever fix graceful server shutdown, we'll want to uncommnet this at that time and/or get rid
+    // of this method completely
+
+    // basicStop();
   }
 
   private void basicStop() {
