@@ -156,7 +156,7 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
       applyPendingTxns.put(txnID, newGrouping);
       lookupContext.getSink().add(new ApplyTransactionContext(txn, newGrouping.getObjects()));
       makeUnpending(lookupContext);
-      // log("lookupObjectsForApplyAndAddToSink(): Sucess: " + txn.getServerTransactionID());
+      // log("lookupObjectsForApplyAndAddToSink(): Success: " + txn.getServerTransactionID());
     }
   }
 
@@ -202,6 +202,7 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
 
   private void makePending(TxnLookupContext context) {
     if (context.isNewRequest()) {
+      context.setNewRequest(false);
       ServerTransaction txn = context.getTransaction();
       context.makePending(txn.getChannelID(), txn.getObjectIDs());
       sequencer.makePending(txn);
@@ -209,7 +210,7 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
   }
 
   private void makeUnpending(TxnLookupContext context) {
-    if (context.isPendingRequest()) {
+    if (!context.isNewRequest()) {
       sequencer.processedPendingTxn(context.getTransaction());
       initiateLookup();
     }
@@ -318,17 +319,19 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
       return Collections.EMPTY_SET;
     }
 
+    public boolean isNewRequest() {
+      return isNew;
+    }
+    
+    public void setNewRequest(boolean b) {
+      this.isNew = b;
+    }
+
     public synchronized boolean isPendingRequest() {
       return pending;
     }
 
-    public synchronized boolean isNewRequest() {
-      return isNew;
-    }
-
-    // Make pending could be called more than once !
     public synchronized void makePending(ChannelID channelID, Collection ids) {
-      isNew = false;
       pending = true;
     }
 
