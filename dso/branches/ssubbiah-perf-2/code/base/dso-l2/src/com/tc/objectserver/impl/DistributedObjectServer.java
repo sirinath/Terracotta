@@ -442,7 +442,8 @@ public class DistributedObjectServer extends SEDA {
                              new ApplyTransactionChangeHandler(instanceMonitor, transactionBatchManager, gtxm), 1,
                              maxStageSize);
     stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                             new CommitTransactionChangeHandler(gtxm, transactionStorePTP), 1, maxStageSize);
+                             new CommitTransactionChangeHandler(gtxm, transactionStorePTP), (persistent ? 2 : 1),
+                             maxStageSize);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, new BroadcastChangeHandler(), 1,
                              maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,

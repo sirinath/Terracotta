@@ -57,6 +57,7 @@ public final class TxnObjectGrouping implements PrettyPrintable {
   }
 
   public void merge(TxnObjectGrouping oldGrouping) {
+    Assert.assertTrue(this.txID != ServerTransactionID.NULL_ID);
     txns.addAll(oldGrouping.txns);
     objects.putAll(oldGrouping.objects);
     pendingApplys.addAll(oldGrouping.pendingApplys);
