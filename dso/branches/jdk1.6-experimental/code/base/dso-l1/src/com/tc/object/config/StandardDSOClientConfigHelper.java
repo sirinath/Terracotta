@@ -582,15 +582,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("java.awt.geom.Dimension2D");
     // end java.awt.Dimension
 
-    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D");
-    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Double");
-    spec = getOrCreateSpec("java.awt.geom.Line2D");
-    spec = getOrCreateSpec("java.awt.geom.Line2D$Double");
-    spec = getOrCreateSpec("java.awt.geom.Ellipse2D");
-    spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Double");
-    spec = getOrCreateSpec("java.awt.BasicStroke");
-    spec = getOrCreateSpec("java.awt.geom.GeneralPath");
-
     spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
     addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
     ld = new LockDefinition("tctreeLock", ConfigLockLevel.WRITE);
@@ -1025,6 +1016,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private void addJavaUtilConcurrentFutureTaskSpec() {
+    if (Vm.isJDK16()) {
+      getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
+    }
     TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.FutureTask$Sync");
     addWriteAutolock("* java.util.concurrent.FutureTask$Sync.*(..)");
     spec.setHonorTransient(true);
