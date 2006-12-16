@@ -561,6 +561,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Float");
     // end java.awt.geom.Ellipse2D
 
+    // java.awt.geom.Path2D
+    if (Vm.isJDK16()) {
+      spec = getOrCreateSpec("java.awt.geom.Path2D");
+      spec = getOrCreateSpec("java.awt.geom.Path2D$Double");
+      spec = getOrCreateSpec("java.awt.geom.Path2D$Float");
+    }
+    // end java.awt.geom.Path2D
+
     // java.awt.geom.GeneralPath
     spec = getOrCreateSpec("java.awt.geom.GeneralPath");
     // end java.awt.geom.GeneralPath
@@ -1060,7 +1068,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private void addJDK15PreInstrumentedSpec() {
-    if (Vm.VERSION_1_5.equals(Vm.getMajorVersion())) {
+    if (Vm.isJDK15()) {
       TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
       addCustomAdapter("sun.misc.Unsafe", UnsafeAdapter.class);
       spec = getOrCreateSpec(DSOUnsafe.CLASS_DOTS);
