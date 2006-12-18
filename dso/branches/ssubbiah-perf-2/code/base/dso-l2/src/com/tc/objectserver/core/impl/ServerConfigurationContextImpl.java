@@ -17,7 +17,7 @@ import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 
 /**
  * App specific configuration context
@@ -36,14 +36,14 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
   private final ChannelStats                  channelStats;
   private final TransactionBatchReaderFactory transactionBatchReaderFactory;
   private final ObjectRequestManager          objectRequestManager;
-  private final TransactionObjectManager      txnObjectManager;
+  private final TransactionalObjectManager      txnObjectManager;
 
   public ServerConfigurationContextImpl(StageManager stageManager, ObjectManager objectManager,
                                         ObjectRequestManager objectRequestManager, ManagedObjectStore objectStore,
                                         LockManager lockManager, DSOChannelManager channelManager,
                                         ClientStateManager clientStateManager,
                                         ServerTransactionManager transactionManager,
-                                        TransactionObjectManager txnObjectManager,
+                                        TransactionalObjectManager txnObjectManager,
                                         ServerClientHandshakeManager clientHandshakeManager, ChannelStats channelStats,
                                         TransactionBatchReaderFactory transactionBatchReaderFactory) {
     super(stageManager);
@@ -80,7 +80,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
     return transactionManager;
   }
 
-  public TransactionObjectManager getTransactionObjectManager() {
+  public TransactionalObjectManager getTransactionalObjectManager() {
     return txnObjectManager;
   }
 

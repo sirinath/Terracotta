@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-public interface TransactionObjectManager {
+public interface TransactionalObjectManager {
 
   public void addTransactions(ChannelID channelID, List txns, Collection completedTxnIds);
 

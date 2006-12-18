@@ -9,12 +9,12 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 
 public class BatchTransactionLookupHandler extends AbstractEventHandler {
 
   private Sink                     applyChangesSink;
-  private TransactionObjectManager txnObjectMgr;
+  private TransactionalObjectManager txnObjectMgr;
 
   public void handleEvent(EventContext context) {
     this.txnObjectMgr.lookupObjectsForTransactions(applyChangesSink);
@@ -24,7 +24,7 @@ public class BatchTransactionLookupHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     applyChangesSink = context.getStage(ServerConfigurationContext.APPLY_CHANGES_STAGE).getSink();
-    txnObjectMgr = oscc.getTransactionObjectManager();
+    txnObjectMgr = oscc.getTransactionalObjectManager();
   }
 
 }

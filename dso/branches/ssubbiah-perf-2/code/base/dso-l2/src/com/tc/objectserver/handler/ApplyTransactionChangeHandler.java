@@ -29,7 +29,7 @@ import com.tc.objectserver.tx.NoSuchBatchException;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -50,7 +50,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
   private final TransactionBatchManager        transactionBatchManager;
   private TCLogger                             logger;
   private final ServerGlobalTransactionManager gtxm;
-  private TransactionObjectManager             txnObjectMgr;
+  private TransactionalObjectManager             txnObjectMgr;
 
   public ApplyTransactionChangeHandler(ObjectInstanceMonitor instanceMonitor,
                                        TransactionBatchManager transactionBatchManager,
@@ -118,7 +118,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     this.transactionManager = scc.getTransactionManager();
     this.broadcastChangesSink = scc.getStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE).getSink();
     this.commitChangesSink = scc.getStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE).getSink();
-    this.txnObjectMgr = scc.getTransactionObjectManager();
+    this.txnObjectMgr = scc.getTransactionalObjectManager();
     this.channelManager = scc.getChannelManager();
     this.lockManager = scc.getLockManager();
     this.logger = scc.getLogger(getClass());

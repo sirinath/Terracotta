@@ -130,7 +130,7 @@ import com.tc.objectserver.tx.ServerTransactionManagerImpl;
 import com.tc.objectserver.tx.ServerTransactionManagerMBean;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
-import com.tc.objectserver.tx.TransactionObjectManagerImpl;
+import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionSequencer;
 import com.tc.properties.TCProperties;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -425,9 +425,9 @@ public class DistributedObjectServer extends SEDA {
                                                           objectManager, taa, globalTxnCounter, channelStats);
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
 
-    Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE,
+    Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE,
                                                         new BatchTransactionLookupHandler(), 1, maxStageSize);
-    TransactionObjectManagerImpl txnObjectManager = new TransactionObjectManagerImpl(objectManager,
+    TransactionalObjectManagerImpl txnObjectManager = new TransactionalObjectManagerImpl(objectManager,
                                                                                      new TransactionSequencer(), gtxm,
                                                                                      batchTxLookupStage.getSink());
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,

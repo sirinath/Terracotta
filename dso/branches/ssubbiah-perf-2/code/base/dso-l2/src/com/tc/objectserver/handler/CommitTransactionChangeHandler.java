@@ -13,7 +13,7 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.tx.ServerTransactionManager;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 
 import java.util.Set;
 
@@ -22,7 +22,7 @@ public class CommitTransactionChangeHandler extends AbstractEventHandler {
   private ServerTransactionManager             transactionManager;
   private final ServerGlobalTransactionManager gtxm;
   private final PersistenceTransactionProvider ptxp;
-  private TransactionObjectManager             txnObjectManager;
+  private TransactionalObjectManager             txnObjectManager;
 
   public CommitTransactionChangeHandler(ServerGlobalTransactionManager gtxm, PersistenceTransactionProvider ptxp) {
     this.gtxm = gtxm;
@@ -47,7 +47,7 @@ public class CommitTransactionChangeHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext scc = (ServerConfigurationContext) context;
     this.transactionManager = scc.getTransactionManager();
-    this.txnObjectManager = scc.getTransactionObjectManager();
+    this.txnObjectManager = scc.getTransactionalObjectManager();
   }
 
 }

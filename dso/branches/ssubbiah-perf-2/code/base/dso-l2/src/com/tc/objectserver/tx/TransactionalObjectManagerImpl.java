@@ -36,7 +36,7 @@ import java.util.Set;
  * This class keeps track of locally checked out objects for applys and maintain the objects to txnid mapping in the
  * server. It wraps calls going to object manager from lookup, apply, commit stages
  */
-public class TransactionObjectManagerImpl implements TransactionObjectManager, PrettyPrintable {
+public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
 
   // TODO:: Move to TCProperties
   private static final int                     MAX_OBJECTS_TO_COMMIT = 500;
@@ -59,7 +59,7 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
   private final Set                            pendingObjectRequest  = new HashSet();
   private final PendingList                    pendingTxnList        = new PendingList();
 
-  public TransactionObjectManagerImpl(ObjectManager objectManager, TransactionSequencer sequencer,
+  public TransactionalObjectManagerImpl(ObjectManager objectManager, TransactionSequencer sequencer,
                                       ServerGlobalTransactionManager gtxm, Sink lookupSink) {
     this.objectManager = objectManager;
     this.sequencer = sequencer;
@@ -338,7 +338,7 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
       }
       if (pending) {
         pending = false;
-        TransactionObjectManagerImpl.this.initiateProcessPending();
+        TransactionalObjectManagerImpl.this.initiateProcessPending();
       }
     }
 

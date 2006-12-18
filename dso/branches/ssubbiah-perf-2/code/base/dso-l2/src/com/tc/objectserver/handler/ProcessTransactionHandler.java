@@ -20,7 +20,7 @@ import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReader;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.util.SequenceValidator;
 
 import java.io.IOException;
@@ -42,11 +42,11 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
   private final TransactionBatchManager     transactionBatchManager;
   private final MessageRecycler             messageRecycler;
   private final SequenceValidator           sequenceValidator;
-  private final TransactionObjectManager txnObjectManager;
+  private final TransactionalObjectManager txnObjectManager;
   private Sink lookupStage;
 
   public ProcessTransactionHandler(TransactionBatchManager transactionBatchManager,
-                                   TransactionObjectManager txnObjectManager,
+                                   TransactionalObjectManager txnObjectManager,
                                    SequenceValidator sequenceValidator, MessageRecycler messageRecycler) {
     this.transactionBatchManager = transactionBatchManager;
     this.txnObjectManager = txnObjectManager;
@@ -85,6 +85,6 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
-    lookupStage = context.getStage(ServerConfigurationContext.BATCH_TRANSACTION_LOOKUP_STAGE).getSink();
+    lookupStage = context.getStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE).getSink();
   }
 }

@@ -20,7 +20,7 @@ import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.tx.BatchedTransactionProcessor;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
-import com.tc.objectserver.tx.TransactionObjectManager;
+import com.tc.objectserver.tx.TransactionalObjectManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class TestServerConfigurationContext implements ServerConfigurationContex
   public Map                          stages = new HashMap();
   public ChannelStats                 channelStats;
   public BatchedTransactionProcessor  txnBatchProcessor;
-  public TransactionObjectManager     txnObjectManager;
+  public TransactionalObjectManager     txnObjectManager;
 
   public void addStage(String name, Stage stage) {
     stages.put(name, stage);
@@ -92,7 +92,7 @@ public class TestServerConfigurationContext implements ServerConfigurationContex
     return objectRequestManager;
   }
 
-  public TransactionObjectManager getTransactionObjectManager() {
+  public TransactionalObjectManager getTransactionalObjectManager() {
     return txnObjectManager;
   }
 
