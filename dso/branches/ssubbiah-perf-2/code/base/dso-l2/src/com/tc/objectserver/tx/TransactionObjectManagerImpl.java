@@ -314,11 +314,6 @@ public class TransactionObjectManagerImpl implements TransactionObjectManager, P
       return txn;
     }
 
-    // TODO:: Remove this
-    public Set getCheckedOutObjectIDs() {
-      return Collections.EMPTY_SET;
-    }
-
     public boolean isNewRequest() {
       return isNew;
     }
