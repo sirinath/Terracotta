@@ -3,7 +3,6 @@
  */
 package com.tc.test.server.dsoserver;
 
-import com.tc.config.Directories;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.test.server.ServerParameters;
 import com.tc.test.server.ServerResult;
@@ -46,7 +45,7 @@ public final class StandardDsoServer implements DsoServer {
 
     dsoServer = new ExtraProcessServerControl(new ExtraProcessServerControl.DebugParams(), domain, params.dsoPort(),
                                               params.jmxPort(), params.configFile().toString(), params.workingDir(),
-                                              Directories.getInstallationRoot(), false, jvmArgs, "");
+                                              null, false, jvmArgs, "");
     dsoServer.writeOutputTo(params.outputFile());
     dsoServer.start(2 * 60 * 1000);
 

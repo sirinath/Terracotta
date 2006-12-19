@@ -4,8 +4,6 @@
 # All rights reserved
 #
 
-require 'rexml/document'
-
 # Adds methods to BuildSubtree that let it return all kinds of various CLASSPATHs,
 # native library paths, and so on, for use both in runtime and compile-time situations.
 #
@@ -288,21 +286,34 @@ class BuildSubtree
         build_environment.os_type(:nice)
     end
 
+
+    module DOM4J
+      # Include some DOM4J classes in this module.
+      %w(Document DocumentException Element Node).each do |dom4j_class|
+        include_class("org.dom4j.#{dom4j_class}")
+        include_class("org.dom4j.io.SAXReader")
+      end
+    end
+
+    include_class("java.io.FileReader")
+
     # Returns an Array containing the names of all libraries defined in the Ivy
     # dependency file(s) for this subtree.  The Array elements are simple file
     # names and do not include any paths.
     def ivy_dependencies(type)
-        result = Array.new
+      result = Array.new
 
-        dependencies_file = ivy_file_name.canonicalize.to_s
-        if File.exists?(dependencies_file)
-          xml = REXML::Document.new(File.new(dependencies_file))
-          REXML::XPath.each(xml, "/ivy-module/dependencies/dependency") do |node|
-              result << "#{node.attributes['name']}-#{node.attributes['rev']}.jar"
-          end
+      dependencies_file = ivy_file_name.canonicalize.to_s
+      if File.exists?(dependencies_file)
+        xml = DOM4J::SAXReader.new.read(FileReader.new(dependencies_file))
+        xml.selectNodes("/ivy-module/dependencies/dependency").each do |node|
+          name = node.attribute('name').value
+          rev = node.attribute('rev').value
+          result << "#{name}-#{rev}.jar"
         end
+      end
 
-        result
+      result
     end
 
     # The name of the Ivy dependency file for this subtree.
