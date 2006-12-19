@@ -28,6 +28,7 @@ public class ThreadDumpTest extends TCTestCase {
       args.add("-Djava.library.path=" + libPath);
     }
 
+    args.add("-D" + Directories.TC_INSTALL_ROOT_PROPERTY_NAME + "=" + Directories.getInstallationRoot());
     args.add("-D" + TestConfigObject.PROPERTY_FILE_LIST_PROPERTY_NAME + "="
              + System.getProperty(TestConfigObject.PROPERTY_FILE_LIST_PROPERTY_NAME));
     process.setJavaArguments((String[]) args.toArray(new String[args.size()]));

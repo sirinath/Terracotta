@@ -8,10 +8,6 @@
     <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
     <ivy:resolve file="${basedir}/ivy-tests-unit.xml"/>
     <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
-    <ivy:resolve file="${basedir}/ivy-variants-spring-20.xml"/>
-    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
-    <ivy:resolve file="${basedir}/ivy-variants-spring-128.xml"/>
-    <ivy:retrieve pattern="${ivy.dependencies.dir}/[artifact]-[revision].[ext]"/>
   </target>
   
 </project>
