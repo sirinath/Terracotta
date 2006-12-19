@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<ivy-module version="1.0">
+  <info organisation="ibiblio" module="dso-spring-variants-spring-128"/>
+  <dependencies>
+  	<dependency name="spring" rev="1.2.8" org="terracotta"/>
+  </dependencies>
+</ivy-module>

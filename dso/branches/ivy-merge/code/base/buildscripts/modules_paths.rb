@@ -4,6 +4,8 @@
 # All rights reserved
 #
 
+require 'rexml/document'
+
 # Adds methods to BuildSubtree that let it return all kinds of various CLASSPATHs,
 # native library paths, and so on, for use both in runtime and compile-time situations.
 #
@@ -17,7 +19,7 @@
 # * Any overall libraries for this subtree (<modulename>/lib.<subtreename>) -- <subtreename> is omitted if it's 'src'
 # * Any runtime libraries for this subtree (<modulename>/lib.<subtreename>.runtime) -- <subtreename> is omitted if it's 'src' -- but *only* if the CLASSPATH is being computed for runtime (as opposed to compile-time)
 # * Any compile-time libraries for this subtree (<modulename>/lib.<subtreename>.compile) -- <subtreename> is omitted if it's 'src' -- but *only* if the CLASSPATH is being computed for compile-time (as opposed to runtime)
-# 
+#
 # and then...
 #
 # * All four of the above, for any subtrees in this same module that this subtree is dependent upon
@@ -37,6 +39,7 @@
 # 'compiling against' a native library).
 
 class BuildSubtree
+
     # Returns the CLASSPATH that this subtree should be compiled or run with. type must
     # be either :runtime or :compile; libraries in <module>/lib.<subtree>.runtime will only
     # be added if type is :runtime, while libraries in module/lib.<subtree>.compile will only
@@ -102,6 +105,9 @@ class BuildSubtree
     # Returns the libraries for just this subtree (as a PathSet); type is either :runtime or :compile.
     def subtree_only_libraries(type)
         out = PathSet.new
+        ivy_dependencies(type).each do |jar|
+            out << FilePath.new(@static_resources.lib_dependencies_directory, jar)
+        end
         roots = subtree_only_library_roots(type)
         roots.each { |root| out << JarDirectory.new(root).to_classpath }
         out
@@ -280,5 +286,27 @@ class BuildSubtree
     # This implies that native libraries must be organized by operating-system test
     def native_library_subdir(build_environment)
         build_environment.os_type(:nice)
+    end
+
+    # Returns an Array containing the names of all libraries defined in the Ivy
+    # dependency file(s) for this subtree.  The Array elements are simple file
+    # names and do not include any paths.
+    def ivy_dependencies(type)
+        result = Array.new
+
+        dependencies_file = ivy_file_name.canonicalize.to_s
+        if File.exists?(dependencies_file)
+          xml = REXML::Document.new(File.new(dependencies_file))
+          REXML::XPath.each(xml, "/ivy-module/dependencies/dependency") do |node|
+              result << "#{node.attributes['name']}-#{node.attributes['rev']}.jar"
+          end
+        end
+
+        result
+    end
+
+    # The name of the Ivy dependency file for this subtree.
+    def ivy_file_name
+        FilePath.new(@build_module.root.to_s, "ivy#{lib_suffix.gsub(/\./, '-')}.xml")
     end
 end

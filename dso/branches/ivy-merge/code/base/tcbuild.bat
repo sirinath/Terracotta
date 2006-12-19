@@ -1,12 +1,14 @@
-@echo off
-rem
-rem All content copyright (c) 2003-2006 Terracotta, Inc.,
-rem except as may otherwise be noted in a separate copyright notice.
-rem All rights reserved
-rem
+@ECHO OFF
 IF NOT EXIST build-tc.rb GOTO no_build_tc
 
 set JRUBY_HOME=%~p0..\..\buildsystems\jruby
+if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
+GOTO has_jruby_home
+
+:install_jruby
+cd buildconfig
+ant
+cd ..
 
 :has_jruby_home
 if "x%JAVA_HOME%"=="x" GOTO has_no_java_home
