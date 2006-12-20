@@ -164,7 +164,7 @@
                id="workbenchNatureAction">
          </action>
          <action
-               label="Start Terracotta Server"
+               label="Servers"
                icon="images/eclipse/logo16.gif"
                style="pulldown"
                class="org.terracotta.dso.actions.StartServerHandler"
@@ -271,13 +271,11 @@
       <objectContribution
             objectClass="org.eclipse.jdt.core.IJavaProject"
             id="stopTerracottaServerContribution">
-         <visibility>
-            <objectState name="sessionProperty" value="org.terracotta.dso.ServerRunning"/>
-         </visibility>
          <action
-               label="Stop Terracotta Server"
-               icon="images/eclipse/stop.gif"
-               class="org.terracotta.dso.actions.StopServerAction"
+               label="Servers"
+               icon="images/eclipse/logo16.gif"
+               style="pulldown"
+               class="org.terracotta.dso.actions.StartServerHandler"
                menubarPath="projectPopupMenu/group2"
                enablesFor="1"
                helpContextId="stop_server_context"
@@ -285,6 +283,7 @@
          </action>
       </objectContribution>
 
+<!--
       <objectContribution
             objectClass="org.eclipse.jdt.core.IJavaProject"
             id="startTerracottaServerContribution">
@@ -297,7 +296,7 @@
             </and>
          </visibility>
          <action
-               label="Start Terracotta Server"
+               label="Servers"
                icon="images/eclipse/start.gif"
                style="pulldown"
                class="org.terracotta.dso.actions.StartServerHandler"
@@ -307,6 +306,7 @@
                id="startTerracottaServerAction">
          </action>
       </objectContribution>
+-->
 
       <objectContribution
             objectClass="org.eclipse.jdt.core.IJavaProject"
