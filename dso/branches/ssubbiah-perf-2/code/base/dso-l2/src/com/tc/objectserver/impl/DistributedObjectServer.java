@@ -374,7 +374,7 @@ public class DistributedObjectServer extends SEDA {
                                                              managedObjectFaultHandler, 4, -1);
     ManagedObjectFlushHandler managedObjectFlushHandler = new ManagedObjectFlushHandler();
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
-                                                             managedObjectFlushHandler, 4, -1);
+                                                             managedObjectFlushHandler, (persistent ? 1 : 4), -1);
 
     TCProperties objManagerProperties = l2Properties.getPropertiesFor("objectmanager");
 
@@ -444,7 +444,7 @@ public class DistributedObjectServer extends SEDA {
     stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
                              new ApplyTransactionChangeHandler(instanceMonitor, gtxm), 1, -1);
     stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                             new CommitTransactionChangeHandler(gtxm, transactionStorePTP), (persistent ? 2 : 1),
+                             new CommitTransactionChangeHandler(gtxm, transactionStorePTP), (persistent ? 4 : 1),
                              maxStageSize);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
                              new BroadcastChangeHandler(transactionBatchManager), 1, maxStageSize);
