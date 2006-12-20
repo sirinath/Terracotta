@@ -62,8 +62,6 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   
   private final Map proxyBuilderMap = new HashMap();
   
-  static final boolean      MONKEY_MODE = ServerManager.MONKEY_MODE;
-  
   private ProxyBuilder proxyBuilder = null;
 
   public GenericServer(TestConfigObject config, NewAppServerFactory factory, AppServerInstallation installation, FileSystemPath tcConfigPath, int serverId, File tempDir) throws Exception {
@@ -97,7 +95,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
       }
     }
     
-    if (!MONKEY_MODE) {
+    if (Boolean.getBoolean("tc.server.debug")) {
       int debugPort = AppServerUtil.getPort();
       logger.info("Debug port=" + debugPort);
       parameters.appendJvmArgs(" -Xdebug -Xrunjdwp:transport=dt_socket,address=" + debugPort + ",server=y,suspend=n ");
@@ -128,6 +126,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   
   public class HttpInvokerProxyBuilder implements ProxyBuilder {
     private HttpClient client;
+    
     public Object createProxy(Class serviceType, String url, Map initialContext) throws Exception {
       String serviceURL = "http://localhost:" + result.serverPort() + "/" + url;
       logger.debug("Getting proxy for: " + serviceURL);
@@ -173,7 +172,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   }
   
   public Object getProxy(Class serviceType, String url, Map initialContext) throws Exception {
-    Class exporterClass = (Class)initialContext.get(ProxyBuilder.EXPORTER_TYPE_KEY);
+    Class exporterClass = (Class) initialContext.get(ProxyBuilder.EXPORTER_TYPE_KEY);
     this.proxyBuilder = (ProxyBuilder) proxyBuilderMap.get(exporterClass);
     return this.proxyBuilder.createProxy(serviceType, url, initialContext);
   }

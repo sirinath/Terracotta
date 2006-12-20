@@ -35,10 +35,7 @@ public class ServerManager {
   private final TestConfigObject config;
   private NewAppServerFactory    factory;
 
-  static final boolean           MONKEY_MODE    = true;
-
   public ServerManager(Class testClass) throws Exception {
-    this.testClass = testClass;
     PropertiesHackForRunningInEclipse.initializePropertiesWhenRunningInEclipse();
 
     config = TestConfigObject.getInstance();
@@ -73,7 +70,6 @@ public class ServerManager {
 
   private File                  tempDir;
 
-  private final Class           testClass;
 
   private synchronized File serverInstallDir() {
     return makeDir(config.appserverServerInstallDir() + File.separator + SERVER_INSTALL);
@@ -116,7 +112,7 @@ public class ServerManager {
     }
     File toDir = new File(tempDir, "working");
 
-    if (MONKEY_MODE) {
+    if (!Boolean.getBoolean("tc.server.debug")) {
       logger.warn("working dir under short-name: " + workingDir);
       logger.warn("working dir under temp: " + toDir);
 
