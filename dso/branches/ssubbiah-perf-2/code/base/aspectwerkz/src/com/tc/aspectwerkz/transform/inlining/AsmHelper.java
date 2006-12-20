@@ -136,18 +136,14 @@ public class AsmHelper implements TransformationConstants {
    */
   public static void dumpClass(final String dumpDir, final String className, final byte[] bytes)
           throws IOException {
-    final File dir;
-    if (className.lastIndexOf('/') > 0) {
-      dir = new File(dumpDir + File.separator + className.substring(0, className.lastIndexOf('/')));
-    } else {
-      dir = new File(dumpDir);
-    }
+    int n = className.lastIndexOf('/');
+    File dir = new File(dumpDir, n>0 ? className.substring(0, n) : "");
     dir.mkdirs();
-    String fileName = dumpDir + File.separator + className + ".class";
+    File outFile = new File(dumpDir, className + ".class");
     if (Properties.PRINT_DEPLOYMENT_INFO) {
-      System.out.println("AW INFO: dumping class " + className + " to " + dumpDir);
+      System.out.println("Writing resource: " + outFile);
     }
-    FileOutputStream os = new FileOutputStream(fileName);
+    FileOutputStream os = new FileOutputStream(outFile);
     os.write(bytes);
     os.close();
   }
@@ -162,19 +158,7 @@ public class AsmHelper implements TransformationConstants {
    */
   public static void dumpClass(final String dumpDir, final String className, final ClassWriter cw)
           throws IOException {
-    String base = "";
-    if (className.lastIndexOf('/') > 0) {
-      base = className.substring(0, className.lastIndexOf('/'));
-    }
-    File dir = new File(dumpDir + File.separator + base);
-    dir.mkdirs();
-    String fileName = dumpDir + File.separator + className + ".class";
-    if (Properties.PRINT_DEPLOYMENT_INFO) {
-      System.out.println("AW INFO: dumping class " + className + " to " + dumpDir);
-    }
-    FileOutputStream os = new FileOutputStream(fileName);
-    os.write(cw.toByteArray());
-    os.close();
+    dumpClass(dumpDir, className, cw.toByteArray());
   }
 
   /**

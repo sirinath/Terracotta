@@ -896,8 +896,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addIncludePattern("com.tcspring.ApplicationContextEventProtocol", true, true, true);
 
     addIncludePattern("com.tcspring.ComplexBeanId", true, true, true);
-    addIncludePattern("com.tcspring.GetBeanProtocolWithScope$ScopedBeanDestructionCallBack", true, true, true);
-    addIncludePattern("com.tcspring.GetBeanProtocolWithScope$ChainedBindingListener", true, true, true);
+    // addIncludePattern("com.tcspring.BeanContainer", true, true, true);
+    getOrCreateSpec("com.tcspring.BeanContainer").addTransient("isInitialized"); //.setHonorTransient(true);
+    
+    // scoped beans
+    // addTransient("org.springframework.web.context.request.ServletRequestAttributes$DestructionCallbackBindingListener", "aw$MIXIN_0");
+    addIncludePattern("com.tcspring.SessionProtocol$DestructionCallbackBindingListener", true, true, true);
+    addIncludePattern("com.tcspring.ScopedBeanDestructionCallBack", true, true, true);
 
     // Spring AOP introduction/mixin classes
     addIncludePattern("org.springframework.aop.support.IntroductionInfoSupport", true, true, true);
@@ -1030,9 +1035,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private void addJDK15InstrumentedSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$ConditionObject");
-    spec.setCallConstructorOnLoad(true);
-    spec.setHonorTransient(true);
+    if (Vm.getMegaVersion() > 1 && Vm.getMajorVersion() > 4) {
+      TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$ConditionObject");
+      spec.setCallConstructorOnLoad(true);
+      spec.setHonorTransient(true);
+    }
   }
 
   private void addJavaUtilCollectionPreInstrumentedSpec() {
@@ -1062,7 +1069,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private void addJDK15PreInstrumentedSpec() {
-    if (Vm.isJDK15()) {
+    if (Vm.getMegaVersion() > 1 && Vm.getMajorVersion() > 4) {
       TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
       addCustomAdapter("sun.misc.Unsafe", UnsafeAdapter.class);
       spec = getOrCreateSpec(DSOUnsafe.CLASS_DOTS);

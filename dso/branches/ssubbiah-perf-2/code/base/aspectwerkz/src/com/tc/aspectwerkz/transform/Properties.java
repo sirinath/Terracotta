@@ -8,6 +8,8 @@ import com.tc.aspectwerkz.expression.regexp.Pattern;
 import com.tc.aspectwerkz.expression.regexp.TypePattern;
 import com.tc.aspectwerkz.expression.SubtypePatternType;
 
+import java.io.File;
+
 /**
  * TODO document class
  *
@@ -77,10 +79,27 @@ public class Properties {
         DUMP_PATTERN = Pattern.compileTypePattern(dumpPattern, SubtypePatternType.NOT_HIERARCHICAL);
       }
     }
-    DUMP_DIR_CLOSURES = "_dump/closures";
-    DUMP_DIR_BEFORE = "_dump/before";
-    DUMP_DIR_AFTER = "_dump/after";
-    DUMP_DIR_FACTORIES = "_dump/factories";
+    
+    String userHome = System.getProperty("user.home");
+    String rootDir = null;
+    if (userHome != null) {
+      File homeDir = new File(userHome);
+      if (homeDir.isDirectory() && homeDir.canWrite()) { 
+        rootDir = new File(homeDir, "adapted").getAbsolutePath(); 
+      }
+    }
+    
+    if(rootDir!=null) {
+      DUMP_DIR_CLOSURES = rootDir;
+      DUMP_DIR_BEFORE = rootDir;
+      DUMP_DIR_AFTER = rootDir;
+      DUMP_DIR_FACTORIES = rootDir;
+    } else {
+      DUMP_DIR_CLOSURES = "_dump/closures";
+      DUMP_DIR_BEFORE = "_dump/before";
+      DUMP_DIR_AFTER = "_dump/after";
+      DUMP_DIR_FACTORIES = "_dump/factories";
+    }
   }
 
 }
