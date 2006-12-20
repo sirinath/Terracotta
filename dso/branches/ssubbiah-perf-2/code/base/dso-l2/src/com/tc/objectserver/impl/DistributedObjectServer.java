@@ -40,6 +40,7 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
+import com.tc.object.cache.LFUConfigImpl;
 import com.tc.object.cache.LFUEvictionPolicy;
 import com.tc.object.cache.LRUEvictionPolicy;
 import com.tc.object.cache.NullCache;
@@ -292,7 +293,7 @@ public class DistributedObjectServer extends SEDA {
       if (cachePolicy.equals("LRU")) {
         swapCache = new LRUEvictionPolicy(-1);
       } else if (cachePolicy.equals("LFU")) {
-        swapCache = new LFUEvictionPolicy(-1);
+        swapCache = new LFUEvictionPolicy(-1, new LFUConfigImpl(l2Properties.getPropertiesFor("lfu")));
       } else {
         throw new AssertionError("Unknown Cache Policy : " + cachePolicy
                                  + " Accepted Values are : <LRU>/<LFU> Please check tc.properties");
