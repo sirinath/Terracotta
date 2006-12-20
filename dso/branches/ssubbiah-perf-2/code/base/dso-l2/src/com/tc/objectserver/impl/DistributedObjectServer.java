@@ -81,7 +81,7 @@ import com.tc.objectserver.core.impl.ServerManagementContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
 import com.tc.objectserver.handler.ApplyTransactionChangeHandler;
-import com.tc.objectserver.handler.BatchTransactionLookupHandler;
+import com.tc.objectserver.handler.TransactionLookupHandler;
 import com.tc.objectserver.handler.BroadcastChangeHandler;
 import com.tc.objectserver.handler.ChannelLifeCycleHandler;
 import com.tc.objectserver.handler.ClientHandshakeHandler;
@@ -427,7 +427,7 @@ public class DistributedObjectServer extends SEDA {
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
 
     Stage batchTxLookupStage = stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE,
-                                                        new BatchTransactionLookupHandler(), 1, maxStageSize);
+                                                        new TransactionLookupHandler(), 1, maxStageSize);
     TransactionalObjectManagerImpl txnObjectManager = new TransactionalObjectManagerImpl(objectManager,
                                                                                          new TransactionSequencer(),
                                                                                          gtxm, batchTxLookupStage
@@ -440,8 +440,9 @@ public class DistributedObjectServer extends SEDA {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
+    // Lookup stage should never be blocked trying to add to apply stage
     stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
-                             new ApplyTransactionChangeHandler(instanceMonitor, gtxm), 1, maxStageSize);
+                             new ApplyTransactionChangeHandler(instanceMonitor, gtxm), 1, -1);
     stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
                              new CommitTransactionChangeHandler(gtxm, transactionStorePTP), (persistent ? 2 : 1),
                              maxStageSize);
