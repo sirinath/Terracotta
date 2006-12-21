@@ -133,7 +133,7 @@ public class TestConfigObject {
     File userDir = new File(System.getProperty("user.dir"));
     String baseDirProp = System.getProperty(TC_BASE_DIR);
     if (baseDirProp == null || baseDirProp.trim().equals("")) invalidBaseDir();
-    String[] baseDirParts = baseDirProp.split("/");
+    String[] baseDirParts = baseDirProp.split(System.getProperty("file.separator"));
     String baseDir = null;
     int count = baseDirParts.length - 1;
     File parent = null;
