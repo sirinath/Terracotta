@@ -157,7 +157,11 @@ public class TestConfigObject {
   }
 
   private static void invalidBaseDir() {
-    throw new RuntimeException("System Property: " + TC_BASE_DIR + " is not valid.\n" + System.getProperty(TC_BASE_DIR));
+    String value = System.getProperty(TC_BASE_DIR);
+    StringBuffer buf = new StringBuffer();
+    buf.append("The value of the system property " + TC_BASE_DIR + " is not valid.");
+    buf.append(" The value is: \"").append(value).append("\"");
+    throw new RuntimeException(buf.toString());
   }
 
   private TestConfigObject() throws IOException {
