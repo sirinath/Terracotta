@@ -34,7 +34,7 @@ public final class TxnObjectGrouping implements PrettyPrintable {
   private Map                       objects;
   private final Map                 newRootsMap;
   private int                       pendingApplys;
-  private boolean isActive;
+  private boolean                   isActive              = true;
 
   public TxnObjectGrouping(ServerTransactionID sTxID, Map newRootsMap) {
     this.txID = sTxID;
@@ -100,7 +100,7 @@ public final class TxnObjectGrouping implements PrettyPrintable {
     oldGrouping.objects = null;
     oldGrouping.isActive = false;
   }
-  
+
   public boolean isActive() {
     return isActive;
   }
