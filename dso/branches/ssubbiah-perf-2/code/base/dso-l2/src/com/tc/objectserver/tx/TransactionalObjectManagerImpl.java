@@ -169,18 +169,23 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       TxnObjectGrouping newGrouping = new TxnObjectGrouping(txnID, txn.getNewRoots());
       mergeTransactionGroupings(oids, newGrouping);
       applyPendingTxns.put(txnID, newGrouping);
-      applySink.add(new ApplyTransactionContext(txn, getRequiredMaps(oids , newGrouping.getObjects())));
+      applySink.add(new ApplyTransactionContext(txn, getRequiredObjectsMap(oids, newGrouping.getObjects())));
       makeUnpending(txn);
       // log("lookupObjectsForApplyAndAddToSink(): Success: " + txn.getServerTransactionID());
     }
   }
 
-  private Map getRequiredMaps(Collection oids, Map objects) {
+  private Map getRequiredObjectsMap(Collection oids, Map objects) {
     HashMap map = new HashMap(oids.size());
     for (Iterator i = oids.iterator(); i.hasNext();) {
       Object oid = i.next();
       Object mo = objects.get(oid);
-      Assert.assertNotNull(mo);
+      if (mo == null) {
+        dump();
+        log("NULL !! " + oid + " not found ! " + oids);
+        log("Map contains " + objects);
+        throw new AssertionError("Object is NULL !! : " + oid);
+      }
       map.put(oid, mo);
     }
     return map;
@@ -194,20 +199,16 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   // look natural.
   private void mergeTransactionGroupings(Collection oids, TxnObjectGrouping newGrouping) {
     long start = System.currentTimeMillis();
-    HashSet merged = new HashSet();
     for (Iterator i = oids.iterator(); i.hasNext();) {
       ObjectID oid = (ObjectID) i.next();
       TxnObjectGrouping oldGrouping = (TxnObjectGrouping) checkedOutObjects.get(oid);
       if (oldGrouping == null) {
         throw new AssertionError("Transaction Grouping for lookedup objects is Null !! " + oid);
-      } else if (oldGrouping != newGrouping) {
+      } else if (oldGrouping != newGrouping && oldGrouping.isActive()) {
         ServerTransactionID oldTxnId = oldGrouping.getServerTransactionID();
-        if (!merged.contains(oldTxnId)) {
-          // This merge has a sideeffect of setting all reference contained in oldGrouping to null.
-          newGrouping.merge(oldGrouping);
-          merged.add(oldTxnId);
-          commitPendingTxns.remove(oldTxnId);
-        }
+        // This merge has a sideeffect of setting all reference contained in oldGrouping to null.
+        newGrouping.merge(oldGrouping);
+        commitPendingTxns.remove(oldTxnId);
       }
     }
     for (Iterator j = newGrouping.getObjects().keySet().iterator(); j.hasNext();) {

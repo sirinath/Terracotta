@@ -34,6 +34,7 @@ public final class TxnObjectGrouping implements PrettyPrintable {
   private Map                       objects;
   private final Map                 newRootsMap;
   private int                       pendingApplys;
+  private boolean isActive;
 
   public TxnObjectGrouping(ServerTransactionID sTxID, Map newRootsMap) {
     this.txID = sTxID;
@@ -76,7 +77,7 @@ public final class TxnObjectGrouping implements PrettyPrintable {
    * collections to smaller collections for performance reasons.
    */
   public void merge(TxnObjectGrouping oldGrouping) {
-    Assert.assertTrue(this.txID != ServerTransactionID.NULL_ID);
+    Assert.assertTrue(this.txID != ServerTransactionID.NULL_ID && oldGrouping.isActive());
     if (txns.size() >= oldGrouping.txns.size()) {
       txns.putAll(oldGrouping.txns);
     } else {
@@ -97,6 +98,11 @@ public final class TxnObjectGrouping implements PrettyPrintable {
     // Setting these references to null so that we disable any futher access to these through old grouping
     oldGrouping.txns = null;
     oldGrouping.objects = null;
+    oldGrouping.isActive = false;
+  }
+  
+  public boolean isActive() {
+    return isActive;
   }
 
   public boolean limitReached() {
