@@ -169,10 +169,21 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       TxnObjectGrouping newGrouping = new TxnObjectGrouping(txnID, txn.getNewRoots());
       mergeTransactionGroupings(oids, newGrouping);
       applyPendingTxns.put(txnID, newGrouping);
-      applySink.add(new ApplyTransactionContext(txn, newGrouping.getObjects()));
+      applySink.add(new ApplyTransactionContext(txn, getRequiredMaps(oids , newGrouping.getObjects())));
       makeUnpending(txn);
       // log("lookupObjectsForApplyAndAddToSink(): Success: " + txn.getServerTransactionID());
     }
+  }
+
+  private Map getRequiredMaps(Collection oids, Map objects) {
+    HashMap map = new HashMap(oids.size());
+    for (Iterator i = oids.iterator(); i.hasNext();) {
+      Object oid = i.next();
+      Object mo = objects.get(oid);
+      Assert.assertNotNull(mo);
+      map.put(oid, mo);
+    }
+    return map;
   }
 
   private void log(String message) {
@@ -202,7 +213,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     for (Iterator j = newGrouping.getObjects().keySet().iterator(); j.hasNext();) {
       checkedOutObjects.put(j.next(), newGrouping);
     }
-    for (Iterator j = newGrouping.getApplyPendingTxns().iterator(); j.hasNext();) {
+    for (Iterator j = newGrouping.getApplyPendingTxnsIterator(); j.hasNext();) {
       ServerTransactionID oldTxnId = (ServerTransactionID) j.next();
       if (applyPendingTxns.containsKey(oldTxnId)) {
         applyPendingTxns.put(oldTxnId, newGrouping);
