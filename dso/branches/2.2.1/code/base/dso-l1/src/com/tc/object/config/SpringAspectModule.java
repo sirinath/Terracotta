@@ -70,10 +70,33 @@ public class SpringAspectModule implements AspectModule {
   private void buildDefinitionForGetBeanProtocol(AspectModuleDeployer deployer) {
     AspectDefinitionBuilder builder = deployer.newAspectBuilder("com.tcspring.GetBeanProtocol", DeploymentModel.PER_JVM, null);
 
+//    This approach does not work because of Spring's handling of the circular dependencies     
+//    builder.addAdvice("after", 
+//        "execution(org.springframework.beans.factory.support.AbstractBeanFactory.new(..)) "
+//            + "AND this(factory)",
+//        "registerBeanPostProcessor(StaticJoinPoint jp, org.springframework.beans.factory.support.AbstractBeanFactory factory)");
+    
+    builder.addAdvice("around",
+      "execution(* org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(String, ..)) "
+          + "AND args(beanName, ..) AND target(beanFactory)",
+      "beanNameCflow(StaticJoinPoint jp, String beanName,"
+          + "org.springframework.beans.factory.config.AutowireCapableBeanFactory beanFactory)");
+
+    builder.addAdvice("around",
+      "withincode(* org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(String, ..)) "
+          + "AND call(* org.springframework.beans.BeanWrapper+.getWrappedInstance()) "
+          + "AND this(beanFactory)",
+      "virtualizeSingletonBean(StaticJoinPoint jp, "
+          + "org.springframework.beans.factory.config.AutowireCapableBeanFactory beanFactory)");
+
     builder.addAdvice("after", 
-        "execution(org.springframework.beans.factory.support.AbstractBeanFactory.new(..)) "
-            + "AND this(factory)",
-        "registerBeanPostProcessor(StaticJoinPoint jp, org.springframework.beans.factory.support.AbstractBeanFactory factory)");
+      "withincode(* org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(String, ..)) "
+          + "AND call(* org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(..)) " 
+          + "AND this(beanFactory) AND args(beanName, mergedBeanDefinition, instanceWrapper)",
+      "initializeSingletonBean(String beanName, " 
+          + "org.springframework.beans.factory.support.RootBeanDefinition mergedBeanDefinition, "
+          + "org.springframework.beans.BeanWrapper instanceWrapper, " 
+          + "org.springframework.beans.factory.config.AutowireCapableBeanFactory beanFactory)");
   }
   
   private void buildDefinitionForScopeProtocol(AspectModuleDeployer deployer) {

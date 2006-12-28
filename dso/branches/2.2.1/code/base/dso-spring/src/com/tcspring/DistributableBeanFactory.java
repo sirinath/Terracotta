@@ -61,6 +61,6 @@ public interface DistributableBeanFactory {
 
   BeanContainer removeBeanContainer(ComplexBeanId beanId);
   
-  void virtualizeBean(ComplexBeanId beanId, Object bean, BeanContainer container);
+  void initializeBean(ComplexBeanId beanId, Object bean, BeanContainer container);
 
 }

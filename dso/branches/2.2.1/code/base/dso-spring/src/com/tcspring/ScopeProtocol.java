@@ -59,7 +59,7 @@ public class ScopeProtocol {
         if(container.getBean()==null) {
           container.setBean(bean);
         } else {
-          factory.virtualizeBean(beanId, bean, container);
+          factory.initializeBean(beanId, bean, container);
         }
 
         if(container.getDestructionCallBack()==null) {

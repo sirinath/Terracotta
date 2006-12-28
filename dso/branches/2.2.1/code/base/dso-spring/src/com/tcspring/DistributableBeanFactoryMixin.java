@@ -339,7 +339,7 @@ public final class DistributableBeanFactoryMixin implements DistributableBeanFac
     }
   }
   
-  public void virtualizeBean(ComplexBeanId beanId, Object bean, BeanContainer container) {
+  public void initializeBean(ComplexBeanId beanId, Object bean, BeanContainer container) {
     logger.info(getId() + " Initializing distributed bean " + beanId);
 
     // TODO make initialization from shadow local copy optional
