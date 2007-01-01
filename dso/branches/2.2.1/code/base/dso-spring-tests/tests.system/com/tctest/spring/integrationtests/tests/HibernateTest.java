@@ -28,8 +28,8 @@ public class HibernateTest extends AbstractTwoServerDeploymentTest {
   
   public HibernateTest() {
     super();
-    this.disableTestUntil("testLazyObj", "2008-01-01");
-    this.disableTestUntil("testLazyChild", "2008-01-01");
+    this.disableTestUntil("testLazyObj", "2010-03-01");
+    this.disableTestUntil("testLazyChild", "2010-03-01");
   }
   
   public void testSharePersitentObj() throws Exception {
