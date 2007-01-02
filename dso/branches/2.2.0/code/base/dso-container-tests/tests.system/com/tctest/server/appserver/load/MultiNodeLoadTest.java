@@ -25,7 +25,6 @@ public final class MultiNodeLoadTest extends AbstractAppServerTestCase {
   }
 
   public void testFourNodeLoad() throws Throwable {
-  	collectVmStats();
     startDsoServer();
     runNodes(4);
   }
