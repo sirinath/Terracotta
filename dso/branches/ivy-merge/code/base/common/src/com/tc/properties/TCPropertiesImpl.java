@@ -16,7 +16,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Map.Entry;
 
 /**
  * This class is an easy way to read properties that will help tune DSO. It first loads properties from the
@@ -25,6 +27,8 @@ import java.util.Properties;
  * during build time.
  */
 public class TCPropertiesImpl implements TCProperties {
+
+  public static final String        SYSTEM_PROP_PREFIX         = "com.tc.properties";
 
   private static final LogBuffer    LOG_BUFFER                 = new LogBuffer();
 
@@ -49,6 +53,19 @@ public class TCPropertiesImpl implements TCProperties {
     String tcJarDir = getTCJarRootDirectory();
     if (tcJarDir != null) {
       loadOverrides(tcJarDir, TC_PROPERTIES_FILE);
+    }
+
+    applySystemPropertyOverrides();
+  }
+
+  private void applySystemPropertyOverrides() {
+    for (Iterator i = props.entrySet().iterator(); i.hasNext();) {
+      Map.Entry e = (Entry) i.next();
+      String key = (String) e.getKey();
+      String sysPropOverride = System.getProperty(SYSTEM_PROP_PREFIX + "." + key);
+      if (sysPropOverride != null) {
+        e.setValue(sysPropOverride);
+      }
     }
   }
 
@@ -130,6 +147,11 @@ public class TCPropertiesImpl implements TCProperties {
     return Long.valueOf(val).longValue();
   }
 
+  public float getFloat(String key) {
+    String val = getProperty(key);
+    return Float.valueOf(val).floatValue();
+  }
+
   static class LogBuffer {
     // This class could be made fancier if it needs to log message at different levels (ie. INFO vs ERROR, etc)
 
@@ -182,5 +204,4 @@ public class TCPropertiesImpl implements TCProperties {
     }
 
   }
-
 }

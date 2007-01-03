@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.tomcat.session;
 
@@ -9,14 +10,18 @@ import org.apache.catalina.Valve;
 import org.apache.catalina.util.ServerInfo;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Map;
 
 public class VersionHelper {
-  private static final Object[] NO_ARGS      = new Object[] {};
+  private static final Object[] NO_ARGS           = new Object[] {};
   private static final Class[]  NO_ARGS_SIGNATURE = new Class[] {};
 
-  private static final Version  TOMCAT_50    = new Version("50");
-  private static final Version  TOMCAT_55    = new Version("55");
+  private static final Version  TOMCAT_50         = new Version("50");
+  private static final Version  TOMCAT_55         = new Version("55");
   private static final Version  CURRENT;
+
+  Map                           m                 = new HashMap();
 
   static {
     String serverInfo = ServerInfo.getServerInfo();
@@ -28,9 +33,9 @@ public class VersionHelper {
 
     String ver = serverInfo.substring(lastSlash + 1);
 
-    if (ver.startsWith("5.0.")) {
+    if (ver.startsWith("5.0")) {
       CURRENT = TOMCAT_50;
-    } else if (ver.startsWith("5.5.")) {
+    } else if (ver.startsWith("5.5")) {
       CURRENT = TOMCAT_55;
     } else {
       throw new AssertionError("Cannot determine tomcat version from " + serverInfo);
@@ -42,11 +47,12 @@ public class VersionHelper {
   }
 
   public static Valve createSessionValve() {
-    return (Valve) createObject(CURRENT, "session.SessionValve"+CURRENT.getVersion());
+    return (Valve) createObject(CURRENT, "session.SessionValve" + CURRENT.getVersion());
   }
 
   public static Pipeline createTerracottaPipeline(Container container) {
-    return (Pipeline) createObject(CURRENT, "TerracottaPipeline", new Class[] { Container.class }, new Object[] { container });
+    return (Pipeline) createObject(CURRENT, "TerracottaPipeline", new Class[] { Container.class },
+                                   new Object[] { container });
   }
 
   private static final Object createObject(Version version, String clazz) {
@@ -73,11 +79,11 @@ public class VersionHelper {
     Version(String version) {
       this.version = version;
     }
-    
+
     public String getPackageName() {
       return "tomcat" + version;
     }
-    
+
     public String getVersion() {
       return version;
     }
