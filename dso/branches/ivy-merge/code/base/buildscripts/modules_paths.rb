@@ -102,12 +102,17 @@ class BuildSubtree
 
     # Returns the libraries for just this subtree (as a PathSet); type is either :runtime or :compile.
     def subtree_only_libraries(type)
+        out = dependencies_libraries(type)
+        roots = subtree_only_library_roots(type)
+        roots.each { |root| out << JarDirectory.new(root).to_classpath }
+        out
+    end
+
+    def dependencies_libraries(type)
         out = PathSet.new
         ivy_dependencies(type).each do |jar|
             out << FilePath.new(@static_resources.lib_dependencies_directory, jar)
         end
-        roots = subtree_only_library_roots(type)
-        roots.each { |root| out << JarDirectory.new(root).to_classpath }
         out
     end
 
