@@ -22,6 +22,5 @@
 	<classpathentry kind="lib" path="lib/aspectjrt.jar"/>
 	-->
 	<classpathentry kind="lib" path="lib/aspectjrtsrc.zip"/>
-	<classpathentry kind="lib" path="lib/aspectjweaver.jar"/>
 	<classpathentry kind="output" path="build.eclipse/ECLIPSE.IS.MESSEDUP"/>
 </classpath>
