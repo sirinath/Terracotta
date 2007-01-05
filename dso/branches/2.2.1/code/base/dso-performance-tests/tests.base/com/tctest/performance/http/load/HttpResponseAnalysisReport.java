@@ -1,101 +1,193 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.performance.http.load;
 
-import com.tctest.performance.generate.load.Measurement;
-import com.tctest.performance.results.PerformanceMeasurementMarshaller;
-
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.URL;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 final class HttpResponseAnalysisReport {
 
-  static final String RESULTS_FILE = "response-statistics.obj";
-  static final String PAD          = " ";
+  static final String RESULTS_FILE_PREFIX = "response-statistics";
+  static final String PAD                 = " ";
 
   private HttpResponseAnalysisReport() {
     // cannot instantiate
   }
 
-  public static void printReport(File resultsDir, String testName, int duration) throws FileNotFoundException,
-      IOException {
+  private static class UrlStat {
+    private final IntList times   = new IntList();
+    private int           errors  = 0;
+    private int           success = 0;
 
-    StatWrapper statWrapper = getStats(resultsDir);
-    //writeData(statWrapper, duration);
+    void add(ResponseStatistic stat) {
+      times.add(stat.duration());
+      if (stat.statusCode() == 200) {
+        success++;
+      } else {
+        errors++;
+      }
+    }
+  }
+
+  private static class HostStat {
+    private final Map urlStats = new TreeMap();
+
+    void add(String urlKey, ResponseStatistic stat) {
+      UrlStat urlStat = (UrlStat) urlStats.get(urlKey);
+      if (urlStat == null) {
+        urlStat = new UrlStat();
+        urlStats.put(urlKey, urlStat);
+      }
+
+      urlStat.add(stat);
+    }
+
+  }
+
+  private static class StatsIterator implements Iterator {
+
+    private final File[]    files;
+    private final Pattern   pattern = Pattern.compile("^" + RESULTS_FILE_PREFIX + "\\.(.+)\\.(\\d+)\\.gz$");
+    private final int[]     counts;
+    private int             index   = 0;
+    private GZIPInputStream in;
+
+    public StatsIterator(File resultsDir) {
+      files = resultsDir.listFiles(new FileFilter() {
+        public boolean accept(File pathname) {
+          return pattern.matcher(pathname.getName()).matches();
+        }
+      });
+
+      counts = new int[files.length];
+
+      for (int i = 0; i < files.length; i++) {
+        File file = files[i];
+        Matcher m = pattern.matcher(file.getName());
+        if (!m.matches()) { throw new RuntimeException(file + " doesn't match"); }
+        int count = Integer.parseInt(m.group(2));
+        System.err.println("Going to read " + count + " stats from host " + m.group(1));
+        counts[i] = count;
+      }
+    }
+
+    public boolean hasNext() {
+      for (int i = 0; i < counts.length; i++) {
+        if (counts[i] > 0) { return true; }
+      }
+      return false;
+    }
+
+    public Object next() {
+      try {
+        return next0();
+      } catch (Exception e) {
+        if (e instanceof RuntimeException) { throw (RuntimeException) e; }
+        throw new RuntimeException(e);
+      }
+    }
+
+    private Object next0() throws Exception {
+      if (index >= counts.length) { throw new IllegalStateException("no more data: index = " + index); }
+
+      if (in == null) {
+        in = inputFor(files[index]);
+      }
+
+      if (counts[index] == 0) {
+        index++;
+        in.close();
+        in = inputFor(files[index]);
+      }
+
+      counts[index]--;
+      return new ObjectInputStream(in).readObject();
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+
+    public int numClients() {
+      return files.length;
+    }
+
+    private static GZIPInputStream inputFor(File file) throws FileNotFoundException, IOException {
+      return new GZIPInputStream(new BufferedInputStream(new FileInputStream(file)));
+    }
+  }
+
+  public static void printReport(File resultsDir, String testName, int duration) throws IOException {
+    StatsIterator statsIterator = new StatsIterator(resultsDir);
+
+    int count = 0;
+
     Map hostGroup = new TreeMap();
     Map fullUrlGroup = new TreeMap();
-    List fullUrlList;
-    Map urlGroup;
-    List urlList;
-    URL url;
-    String hostKey;
-    String urlKey;
-    ResponseStatistic[] stats = statWrapper.stats.toArray();
+
     long minStart = Long.MAX_VALUE;
     long maxEnd = -1;
 
-    for (int i = 0; i < stats.length; i++) {
-      ResponseStatistic stat = stats[i];
+    while (statsIterator.hasNext()) {
+      count++;
+      if ((count % 50000) == 0) {
+        System.err.println("Processed " + count + " stats...");
+      }
+
+      ResponseStatistic stat = (ResponseStatistic) statsIterator.next();
       minStart = Math.min(stat.startTime(), minStart);
       maxEnd = Math.max(stat.endTime(), maxEnd);
 
       // split url parts
-      url = new URL(stat.url());
-      hostKey = url.getHost() + ":" + url.getPort();
-      urlKey = url.getPath() + url.getQuery();
+      URL url = new URL(stat.url());
+      String hostKey = url.getHost() + ":" + url.getPort();
+      String urlKey = url.getPath() + url.getQuery();
 
-      // populate full url group
-      if (!fullUrlGroup.containsKey(urlKey)) {
-        fullUrlList = new ArrayList();
-        fullUrlGroup.put(urlKey, fullUrlList);
-      } else {
-        fullUrlList = (List) fullUrlGroup.get(urlKey);
+      // group response times for all unique URLs
+      IntList urlTimes = (IntList) fullUrlGroup.get(urlKey);
+      if (urlTimes == null) {
+        urlTimes = new IntList();
+        fullUrlGroup.put(urlKey, urlTimes);
       }
+      urlTimes.add(stat.duration());
 
-      if (!hostGroup.containsKey(hostKey)) { // group hosts
-        urlGroup = new HashMap(); // create new url group
-        urlList = new ArrayList(); // create new url list
-        urlGroup.put(urlKey, urlList);
-        hostGroup.put(hostKey, urlGroup);
-
-      } else {
-        urlGroup = (Map) hostGroup.get(hostKey);
-        if (!urlGroup.containsKey(urlKey)) { // group urls in host group
-          urlList = new ArrayList();
-          urlGroup.put(urlKey, urlList);
-        } else {
-          urlList = (List) urlGroup.get(urlKey);
-        }
+      //
+      HostStat hostStat = (HostStat) hostGroup.get(hostKey);
+      if (hostStat == null) {
+        hostStat = new HostStat();
+        hostGroup.put(hostKey, hostStat);
       }
-      fullUrlList.add(stat); // add stats to full url list
-      urlList.add(stat); // add stats to host/url list
+      hostStat.add(urlKey, stat);
     }
 
-    int realDuration = (int)((maxEnd - minStart) / 1000);
+    int realDuration = (int) ((maxEnd - minStart) / 1000);
 
-    printHeader(resultsDir, testName, realDuration, statWrapper.loadClients);
+    printHeader(resultsDir, testName, realDuration, statsIterator.numClients());
     out("Throughput Analyze:");
     out(repeat('_', "Throughput Analyze:".length()));
 
     Iterator iter = hostGroup.entrySet().iterator();
     while (iter.hasNext()) {
       Map.Entry entry = (Map.Entry) iter.next();
-      Map value = (Map) entry.getValue();
-      String key = (String) entry.getKey();
-      throughputAnalysis(key, value, realDuration);
+      String hostKey = (String) entry.getKey();
+      HostStat hostStat = (HostStat) entry.getValue();
+      throughputAnalysis(hostKey, hostStat, realDuration);
     }
     nl();
     nl();
@@ -104,7 +196,7 @@ final class HttpResponseAnalysisReport {
     responseAnalysis(fullUrlGroup);
   }
 
-  private static void throughputAnalysis(String key, Map value, long duration) {
+  private static void throughputAnalysis(String key, HostStat hostStat, long duration) {
     int colWidth = 16;
     nl();
     write("(" + key + ")", (42 + key.length()) - ((key.length() + 2) / 2));
@@ -124,41 +216,39 @@ final class HttpResponseAnalysisReport {
     int totalSuccess = 0;
     int totalError = 0;
 
-    String urlKey;
-    List values;
-    Map.Entry entry;
-    Iterator iter = value.entrySet().iterator();
+    Iterator iter = hostStat.urlStats.entrySet().iterator();
     while (iter.hasNext()) {
-
       double ave = 0;
       double tps = 0;
-      int success = 0;
-      int error = 0;
-      double size = 0;
       long sum = 0;
 
-      entry = (Map.Entry) iter.next();
-      values = (List) entry.getValue();
-      urlKey = (String) entry.getKey();
+      Map.Entry entry = (Map.Entry) iter.next();
+      String urlKey = (String) entry.getKey();
+      UrlStat urlStat = (UrlStat) entry.getValue();
+
+      final IntList times = urlStat.times;
+      final int success = urlStat.success;
+      final int error = urlStat.errors;
+
       out(urlKey);
-      size = values.size();
+      int size = times.size();
 
       for (int i = 0; i < size; i++) {
-        ResponseStatistic stat = (ResponseStatistic) values.get(i);
-        sum += stat.duration();
-        if (stat.statusCode() == 200) success++;
-        else error++;
+        sum += times.get(i);
       }
-      ave = sum / size;
+
+      double doubleSize = size;
+
+      ave = sum / doubleSize;
       totalAve += ave;
-      tps = size / duration;
+      tps = doubleSize / duration;
       totalTps += tps;
-      totalTotal += size;
+      totalTotal += doubleSize;
       totalSuccess += success;
       totalError += error;
       writeNum(Math.floor(ave), colWidth);
       writeNum(tps, colWidth);
-      writeNum(size, colWidth);
+      writeNum(doubleSize, colWidth);
       writeNum(success, colWidth);
       writeNum(error, colWidth);
       nl();
@@ -189,28 +279,21 @@ final class HttpResponseAnalysisReport {
     nl();
     out(repeat('-', 80));
 
-    String urlKey;
-    List values;
-    Map.Entry entry;
-    Iterator iter = urlGroup.entrySet().iterator();
-    while (iter.hasNext()) {
-
+    for (Iterator iter = urlGroup.entrySet().iterator(); iter.hasNext(); ) {
       double ave = 0;
       double size = 0;
       double squareSum = 0;
       long sum = 0;
-      long duration;
 
-      entry = (Map.Entry) iter.next();
-      values = (List) entry.getValue();
-      urlKey = (String) entry.getKey();
+      Map.Entry entry = (Map.Entry) iter.next();
+      String urlKey = (String) entry.getKey();
+      IntList values = (IntList) entry.getValue();
       out(urlKey);
       size = values.size();
       long[] durationSpread = new long[values.size()];
 
       for (int i = 0; i < size; i++) {
-        ResponseStatistic stat = (ResponseStatistic) values.get(i);
-        duration = stat.duration();
+        int duration = values.get(i);
         sum += duration;
         squareSum += duration * duration;
         durationSpread[i] = duration;
@@ -251,32 +334,6 @@ final class HttpResponseAnalysisReport {
     out("" + loadClients, 6);
   }
 
-  private static StatWrapper getStats(File resultsDir) throws FileNotFoundException {
-    String[] files = resultsDir.list(new FilenameFilter() {
-      public boolean accept(File dir, String name) {
-        return (name.startsWith(RESULTS_FILE.substring(0, RESULTS_FILE.length() - 4))) ? true : false;
-      }
-    });
-    StatsCollector allStats = new StatsCollector();
-    for (int i = 0; i < files.length; i++) {
-      FileInputStream in = new FileInputStream(resultsDir + File.separator + files[i]);
-      StatsCollector sc = StatsCollector.read(in);
-      allStats.add(sc);
-    }
-
-    return new StatWrapper(files.length, allStats);
-  }
-
-  private static class StatWrapper {
-    StatWrapper(final int loadClients, StatsCollector c) {
-      this.loadClients = loadClients;
-      this.stats = c;
-    }
-
-    final int            loadClients;
-    final StatsCollector stats;
-  }
-
   private static void write(String str, int width) {
     if (str.length() > width) str = str.substring(0, width);
     System.out.print(pad(width - str.length()) + str);
@@ -315,39 +372,5 @@ final class HttpResponseAnalysisReport {
 
   private static void nl() {
     System.out.print("\n");
-  }
-
-  private static List generateStatistics(ResponseStatistic[] stats) {
-    List measurementList = new ArrayList();
-    Measurement[] measurements = new Measurement[stats.length];
-    for (int i = 0; i < stats.length; i++) {
-      if (stats[i] == null) continue;
-      measurements[i] = new Measurement(i, stats[i].duration());
-    }
-    measurementList.add(measurements);
-    return measurementList;
-  }
-
-  private static void writeData(StatWrapper statWrapper, int duration) {
-    try {
-      File output = new File("../results.data");
-      output.createNewFile();
-      System.err.println("WROTE RESULT DATA TO: " + output);
-
-      PerformanceMeasurementMarshaller.Header header = PerformanceMeasurementMarshaller.createHeader();
-      header.title = "HTTP RESPONSE ANALYSIS";
-      header.xLabel = "Requests";
-      header.yLabel = "Response Time";
-      header.duration = duration;
-
-      String[] lineDescriptions = new String[] { "Cluster Response Times" };
-
-      PerformanceMeasurementMarshaller.marshall(generateStatistics(statWrapper.stats.toArray()), header, output,
-                                                lineDescriptions);
-      System.out.println("\n\n");
-    } catch (Exception e) {
-      System.out.println("\nUnable to write data file\n\n");
-      e.printStackTrace();
-    }
   }
 }
