@@ -28,6 +28,14 @@ public class ClusterMembershipMessage extends DSOMessageBase {
     public static boolean isNodeDisconnected(final int t) {
       return t == NODE_DISCONNECTED;
     }
+
+    public static String toString(int eventType) {
+      switch (eventType) {
+        case NODE_CONNECTED: return "NODE_CONNECTED";
+        case NODE_DISCONNECTED: return "NODE_DISCONNECTED";
+        default: return "UNKNOWN";
+      }
+    }
   }
 
   private static final byte EVENT_TYPE = 0;
@@ -64,6 +72,14 @@ public class ClusterMembershipMessage extends DSOMessageBase {
     }
   }
 
+  public boolean isNodeConnectedEvent() {
+    return EventType.isNodeConnected(eventType);
+  }
+  
+  public boolean isNodeDisconnectedEvent() {
+    return EventType.isNodeDisconnected(eventType);
+  }
+  
   public int getEventType() {
     return eventType;
   }
