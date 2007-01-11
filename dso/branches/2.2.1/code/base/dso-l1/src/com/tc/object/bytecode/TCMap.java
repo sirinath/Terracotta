@@ -6,7 +6,7 @@ package com.tc.object.bytecode;
 
 public interface TCMap {
 
-  public void __tc_put(Object key, Object value);
+  public void __tc_applicator_put(Object key, Object value);
 
-  public void __tc_remove(Object key);
+  public void __tc_applicator_remove(Object key);
 }

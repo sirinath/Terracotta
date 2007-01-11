@@ -178,7 +178,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
    * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
    * scope of such synchronization.
    */
-  public void __tc_remove(Object key) {
+  public void __tc_applicator_remove(Object key) {
     if (key == null) {
       super.remove(key);
     } else {
@@ -232,7 +232,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
    * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
    * scope of such synchronization.
    */
-  public void __tc_put(Object key, Object value) {
+  public void __tc_applicator_put(Object key, Object value) {
     super.put(key, value);
   }
 

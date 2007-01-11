@@ -9,6 +9,7 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.hook.impl.Util;
 
 import java.util.Map.Entry;
@@ -19,7 +20,7 @@ import java.util.Map.Entry;
  *
  * @see HashMapTC class
  */
-public class HashtableTC extends Hashtable implements Manageable, Clearable {
+public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearable {
 
   private volatile transient TCObject $__tc_MANAGED;
 
@@ -131,7 +132,7 @@ public class HashtableTC extends Hashtable implements Manageable, Clearable {
    * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
    * scope of such synchronization.
    */
-  public synchronized void __tc_put(Object key, Object value) {
+  public synchronized void __tc_applicator_put(Object key, Object value) {
     if (key == null || value == null) { throw new NullPointerException(); }
     super.put(key, wrapValueIfNecessary(value));
   }
@@ -176,7 +177,7 @@ public class HashtableTC extends Hashtable implements Manageable, Clearable {
    * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
    * scope of such synchronization.
    */
-  public synchronized void __tc_remove(Object key) {
+  public synchronized void __tc_applicator_remove(Object key) {
     super.remove(key);
   }
 

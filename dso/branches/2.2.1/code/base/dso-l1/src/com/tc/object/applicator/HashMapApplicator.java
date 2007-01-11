@@ -104,7 +104,7 @@ public class HashMapApplicator extends BaseApplicator {
         Object value = getObjectForValue(objectManager, v);
 
         if (m instanceof TCMap) {
-          ((TCMap)m).__tc_put(pkey, value);
+          ((TCMap)m).__tc_applicator_put(pkey, value);
         } else {
           m.put(pkey, value);
         }
@@ -113,7 +113,7 @@ public class HashMapApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE:
         Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
         if (m instanceof TCMap) {
-          ((TCMap)m).__tc_remove(rkey);
+          ((TCMap)m).__tc_applicator_remove(rkey);
         } else {
           m.remove(rkey);
         }
