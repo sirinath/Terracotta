@@ -124,6 +124,17 @@ public class HashtableTC extends Hashtable implements Manageable, Clearable {
       return super.put(key, value);
     }
   }
+  
+  /**
+   * This method is only to be invoked from the applicator thread. This method does not need to check if the
+   * map is managed as it will always be managed when called by the applicator thread. In addition, this method
+   * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
+   * scope of such synchronization.
+   */
+  public synchronized void __tc_put(Object key, Object value) {
+    if (key == null || value == null) { throw new NullPointerException(); }
+    super.put(key, wrapValueIfNecessary(value));
+  }
 
   private static Object unwrapValueIfNecessary(Object value) {
     if (value instanceof ValuesWrapper) {
@@ -157,6 +168,16 @@ public class HashtableTC extends Hashtable implements Manageable, Clearable {
     } else {
       return super.remove(key);
     }
+  }
+  
+  /**
+   * This method is only to be invoked from the applicator thread. This method does not need to check if the
+   * map is managed as it will always be managed when called by the applicator thread. In addition, this method
+   * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
+   * scope of such synchronization.
+   */
+  public synchronized void __tc_remove(Object key) {
+    super.remove(key);
   }
 
   public synchronized int size() {
