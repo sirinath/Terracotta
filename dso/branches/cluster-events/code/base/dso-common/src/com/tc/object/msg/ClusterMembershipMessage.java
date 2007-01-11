@@ -50,8 +50,8 @@ public class ClusterMembershipMessage extends DSOMessageBase {
   }
 
   private static final byte EVENT_TYPE          = 0;
-  private static final byte NODE_ID             = 2;
-  private static final byte ALL_NODES           = 3;
+  private static final byte NODE_ID             = 1;
+  private static final byte ALL_NODES           = 2;
 
   public ClusterMembershipMessage(MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel,
                                   TCMessageType type) {
