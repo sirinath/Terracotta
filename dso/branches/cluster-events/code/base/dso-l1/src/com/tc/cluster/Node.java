@@ -14,4 +14,8 @@ public class Node {
   public String getNodeId() {
     return nodeId;
   }
+  
+  public String toString() {
+    return nodeId;
+  }
 }

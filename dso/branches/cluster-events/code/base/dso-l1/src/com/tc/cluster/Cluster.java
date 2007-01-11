@@ -9,9 +9,9 @@ import java.util.Map;
 
 public class Cluster {
 
-  private final Map  nodes;
+  private final Map nodes;
 
-  private Node thisNode;
+  private Node      thisNode;
 
   public Cluster() {
     nodes = new HashMap();
@@ -24,30 +24,42 @@ public class Cluster {
   public Map getNodes() {
     return nodes;
   }
-  
+
   public void thisNodeConnected(final String thisNodeId, String[] nodesCurrentlyInCluster) {
     thisNode = new Node(thisNodeId);
     nodes.put(thisNode.getNodeId(), thisNode);
     for (int i = 0; i < nodesCurrentlyInCluster.length; i++) {
-      Node n= new Node(nodesCurrentlyInCluster[i]);
+      Node n = new Node(nodesCurrentlyInCluster[i]);
       nodes.put(n.getNodeId(), n);
     }
     // FIXME: raise event
+    System.err.println("\n\n###################################\n" + " THIS NODE CONNECTED: thisNode=" + thisNode
+                       + "\n" + "###################################\n\n");
   }
-  
+
   public void thisNodeDisconnected() {
     nodes.clear();
     // FIXME: raise event
   }
-  
+
   public void nodeConnected(String nodeId) {
-    Node n= new Node(nodeId);
+    Node n = new Node(nodeId);
     nodes.put(n.getNodeId(), n);
-    // FIXME: raise event
+    // FIXME: fire event
+    System.err.println("\n\n###################################\n" + " NODE CONNECTED ("
+                       + System.identityHashCode(this) + "): nodeId " + nodeId + "\n"
+                       + "###################################\n\n");
   }
-  
+
   public void nodeDisconnected(String nodeId) {
     nodes.remove(nodeId);
-    // FIXME: raise event
+    // FIXME: fire event
+    System.err.println("\n\n###################################\n" + " NODE DIS-CONNECTED ("
+                       + System.identityHashCode(this) + "): nodeId " + nodeId + "\n"
+                       + "###################################\n\n");
+  }
+
+  public String toString() {
+    return "Cluster{ thisNode=" + thisNode + ", nodesInCluster=" + nodes.toString() + "}";
   }
 }

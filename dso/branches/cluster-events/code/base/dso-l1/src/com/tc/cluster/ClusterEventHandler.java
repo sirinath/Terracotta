@@ -19,13 +19,20 @@ public class ClusterEventHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) throws EventHandlerException {
     if (! (context instanceof ClusterMembershipMessage)) throw new EventHandlerException("Unknown context type: " + context.getClass().getName());
     ClusterMembershipMessage cmm = (ClusterMembershipMessage) context;
+    
+    System.err.println("\n\n#### Got Message on channel " + cmm.getChannelID().toLong() + " -> " + cmm.print());
+    
     if (cmm.isNodeConnectedEvent()) {
       cluster.nodeConnected(cmm.getNodeId());
     } else if (cmm.isNodeDisconnectedEvent()) {
       cluster.nodeDisconnected(cmm.getNodeId());
+    } else if (cmm.isThisNodeConnected()) {
+      cluster.thisNodeConnected(cmm.getNodeId(), cmm.getAllNodeIds());
     } else {
       throw new EventHandlerException("Unknown event type: " + cmm);
     }
+    
+    System.err.println("\n\n ### current Cluster = " + cluster);
   }
 
 }

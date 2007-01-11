@@ -51,6 +51,7 @@ import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
 import com.tc.object.msg.ClientHandshakeAckMessageImpl;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
+import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
@@ -470,7 +471,7 @@ public class DistributedObjectServer extends SEDA {
                                                  new RequestLockUnLockHandler(), 1, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE,
                              new ChannelLifeCycleHandler(communicationsManager, transactionManager,
-                                                         transactionBatchManager), 1, maxStageSize);
+                                                         transactionBatchManager, channelManager), 1, maxStageSize);
     SampledCounter globalObjectFaultCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
                                                                                                            true, 0L));
     SampledCounter globalObjectFlushCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
@@ -520,6 +521,7 @@ public class DistributedObjectServer extends SEDA {
     lsnr.addClassMapping(TCMessageType.CLIENT_HANDSHAKE_ACK_MESSAGE, ClientHandshakeAckMessageImpl.class);
     lsnr.addClassMapping(TCMessageType.JMX_MESSAGE, JMXMessage.class);
     lsnr.addClassMapping(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, JmxRemoteTunnelMessage.class);
+    lsnr.addClassMapping(TCMessageType.CLUSTER_MEMBERSHIP_EVENT_MESSAGE, ClusterMembershipMessage.class);
 
     Sink hydrateSink = hydrateStage.getSink();
     lsnr.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
