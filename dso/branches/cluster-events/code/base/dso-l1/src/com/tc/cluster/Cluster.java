@@ -25,6 +25,13 @@ public class Cluster {
     return nodes;
   }
 
+//  public void thisNodeConnected(final String thisNodeId) {
+//    thisNode = new Node(thisNodeId);
+//    nodes.put(thisNode.getNodeId(), thisNode);
+//    // FIXME: raise event
+//    log("thisNodeConnected", thisNodeId);
+//  }
+  
   public void thisNodeConnected(final String thisNodeId, String[] nodesCurrentlyInCluster) {
     thisNode = new Node(thisNodeId);
     nodes.put(thisNode.getNodeId(), thisNode);
@@ -33,30 +40,34 @@ public class Cluster {
       nodes.put(n.getNodeId(), n);
     }
     // FIXME: raise event
-    System.err.println("\n\n###################################\n" + "thisNodeConnected -> " + this + "\n"
-                       + "###################################\n\n");
+    log("thisNodeConnected", thisNodeId);
   }
 
   public void thisNodeDisconnected() {
     nodes.clear();
     // FIXME: raise event
+    log("thisNodeDisconnected", thisNode.getNodeId());
   }
 
   public void nodeConnected(String nodeId) {
     Node n = new Node(nodeId);
     nodes.put(n.getNodeId(), n);
     // FIXME: fire event
-    System.err.println("\n\n###################################\n" + "nodeConnected -> " + this + "\n"
-                       + "###################################\n\n");
+    log("nodeConnected", nodeId);
   }
 
   public void nodeDisconnected(String nodeId) {
     nodes.remove(nodeId);
     // FIXME: fire event
-    System.err.println("\n\n###################################\n" + "nodeConnected -> " + this + "\n"
-                       + "###################################\n\n");
+    log("nodeDisconnected", nodeId);
   }
 
+  private void log(String event, String nodeId) {
+    System.err.println("\n\n###################################\n" + event + ": nodeId = " + nodeId + " cluster -> " + this + "\n"
+                       + "###################################\n\n");
+    
+  }
+  
   public String toString() {
     return "Cluster{ thisNode=" + thisNode + ", nodesInCluster=" + nodes.keySet() + "}";
   }
