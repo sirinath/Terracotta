@@ -6,6 +6,8 @@ package com.tc.objectserver.tx;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ObjectID;
 import com.tc.object.tx.ServerTransactionID;
@@ -16,6 +18,7 @@ import com.tc.objectserver.context.CommitTransactionContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RecallObjectsContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
@@ -26,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +43,11 @@ import java.util.Map.Entry;
  */
 public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
 
+  private static final TCLogger                logger                  = TCLogging.getLogger(ObjectManager.class);
+  private static final int                     MAX_COMMIT_SIZE         = TCPropertiesImpl
+                                                                           .getProperties()
+                                                                           .getInt(
+                                                                                   "l2.objectmanager.maxObjectsToCommit");
   private final ObjectManager                  objectManager;
   private final TransactionSequencer           sequencer;
   private final ServerGlobalTransactionManager gtxm;
@@ -182,7 +191,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   }
 
   private void log(String message) {
-    System.err.println(Thread.currentThread() + " :: " + message);
+    logger.info(message);
   }
 
   // This method written to be optimized to perform large merges fast. Hence the code flow might not
@@ -332,7 +341,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       txnIDs.addAll(tog.getTxnIDs());
       objects.putAll(tog.getObjects());
       i.remove();
-      if (objects.size() > 5000) {
+      if (objects.size() > MAX_COMMIT_SIZE) {
         break;
       }
     }
@@ -358,17 +367,21 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   // Recall Stage method
   public synchronized void recallCheckedoutObject(RecallObjectsContext roc) {
     if (roc.recallAll()) {
-      ArrayList recalled = new ArrayList();
+      IdentityHashMap recalled = new IdentityHashMap();
+      HashMap recalledObjects = new HashMap();
       for (Iterator i = checkedOutObjects.entrySet().iterator(); i.hasNext();) {
         Entry e = (Entry) i.next();
         TxnObjectGrouping tog = (TxnObjectGrouping) e.getValue();
         if (tog.getServerTransactionID().isNull()) {
-          recalled.addAll(tog.getObjects().values());
           i.remove();
+          if (!recalled.containsKey(tog)) {
+            recalled.put(tog, null);
+            recalledObjects.putAll(tog.getObjects());
+          }
         }
       }
-      if (!recalled.isEmpty()) {
-        objectManager.releaseAll(recalled);
+      if (!recalledObjects.isEmpty()) {
+        objectManager.releaseAll(recalledObjects.values());
       }
     }
   }
