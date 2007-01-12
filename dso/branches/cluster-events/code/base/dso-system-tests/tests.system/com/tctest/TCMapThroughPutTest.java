@@ -3,17 +3,17 @@
  */
 package com.tctest;
 
-public class ArrayCopyTest extends TransparentTestBase {
+public class TCMapThroughPutTest extends TransparentTestBase {
 
-  private static final int NODE_COUNT = 5;
+  private static final int NODE_COUNT = 4;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
     t.initializeTestRunner();
   }
 
   protected Class getApplicationClass() {
-    return ArrayCopyTestApp.class;
+    return TCMapThroughPutTestApp.class;
   }
 
 }
