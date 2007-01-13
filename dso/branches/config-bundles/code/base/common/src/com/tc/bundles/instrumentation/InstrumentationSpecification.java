@@ -4,11 +4,16 @@
  */
 package com.tc.bundles.instrumentation;
 
+
 /**
  * Placeholder for Antonio's "real" interface which will allow bundles to define roots/lock/aspects/etc.
  */
 public interface InstrumentationSpecification {
+  
+  public String[] getAdditionalBootJarClasses();
+  
+  public String[] getIncludedClasses();
 
-  String sayHello();
+  public ClassInstrumentationSpec[] getClassInstrumentationSpec();
 
 }
