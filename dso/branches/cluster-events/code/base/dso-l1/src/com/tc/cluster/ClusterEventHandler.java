@@ -25,7 +25,7 @@ public class ClusterEventHandler extends AbstractEventHandler {
     } else if (cmm.isNodeDisconnectedEvent()) {
       cluster.nodeDisconnected(cmm.getNodeId());
     } else if (cmm.isThisNodeConnected()) {
-//      cluster.thisNodeConnected(cmm.getNodeId(), cmm.getAllNodeIds());
+      cluster.thisNodeConnected(cmm.getNodeId(), cmm.getAllNodeIds());
     } else {
       throw new EventHandlerException("Unknown event type: " + cmm);
     }
