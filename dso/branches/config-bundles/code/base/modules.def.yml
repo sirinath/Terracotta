@@ -8,14 +8,15 @@ modules:
   - linked-child-process:
       options:
         compiler_version: 1.4
+  - thirdparty:
+      options:
+        compiler_version: 1.4
   - common:
       options:
         compiler_version: 1.4
       dependencies:
         - linked-child-process
-  - thirdparty:
-      options:
-        compiler_version: 1.4
+        - thirdparty
   - aspectwerkz:
       options:
         compiler_version: 1.4
