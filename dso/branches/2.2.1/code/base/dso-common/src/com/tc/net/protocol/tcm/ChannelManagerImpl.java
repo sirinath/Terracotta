@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
 
@@ -19,7 +20,7 @@ import java.util.Map;
 
 /**
  * provides the sessionIDs
- * 
+ *
  * @author steve
  */
 class ChannelManagerImpl implements ChannelManager, ChannelEventListener, ServerMessageChannelFactory {
@@ -40,10 +41,7 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
 
   public MessageChannelInternal createNewChannel(ChannelID id) {
     MessageChannelInternal channel = channelFactory.createNewChannel(id);
-    synchronized (this) {
-      channels.put(channel.getChannelID(), channel);
-      channel.addListener(this);
-    }
+    channel.addListener(this);
     return channel;
   }
 
@@ -65,14 +63,10 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
     return (MessageChannelInternal) channels.get(id);
   }
 
-  public synchronized void routeChannelStateChanges(Sink sink) {
-    this.stateChangeSink = sink;
-  }
-
   public synchronized MessageChannelInternal[] getChannels() {
     return (MessageChannelInternal[]) channels.values().toArray(EMPTY_CHANNEL_ARARY);
   }
-  
+
   public synchronized Collection getAllChannelIDs() {
     return new HashSet(channels.keySet());
   }
@@ -108,10 +102,17 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
         removeChannel(channel);
       }
     } else if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
-      fireChannelCreatedEvent(channel);
+      addChannel(channel);
     }
 
     this.stateChangeSink.add(event);
+  }
+
+  private void addChannel(MessageChannel channel) {
+    synchronized (this) {
+      channels.put(channel.getChannelID(), channel);
+    }
+    fireChannelCreatedEvent(channel);
   }
 
   private void removeChannel(MessageChannel channel) {
@@ -124,6 +125,10 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   public synchronized void addEventListener(ChannelManagerEventListener listener) {
     if (listener == null) { throw new IllegalArgumentException("listener must be non-null"); }
     this.eventListeners.add(listener);
+  }
+
+  public synchronized void routeChannelStateChanges(Sink sink) {
+    this.stateChangeSink = sink;
   }
 
 }

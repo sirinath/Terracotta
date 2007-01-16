@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
 
@@ -14,6 +15,7 @@ import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.session.NullSessionManager;
+import com.tc.util.concurrent.ThreadUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -74,16 +76,19 @@ public class ChannelManagerTest extends TestCase {
     long sequence = 1;
 
     MessageChannelInternal channel1 = channelManager.createNewChannel(new ChannelID(sequence++));
+    channelManager.notifyChannelEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, channel1));
     channel1.setSendLayer(new NullNetworkLayer());
     assertEquals(++channelCount, channelManager.getChannels().length);
     assertTrue(channel1.isOpen());
 
     MessageChannelInternal channel2 = channelManager.createNewChannel(new ChannelID(sequence++));
+    channelManager.notifyChannelEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, channel2));
     channel2.setSendLayer(new NullNetworkLayer());
     assertEquals(++channelCount, channelManager.getChannels().length);
     assertTrue(channel2.isOpen());
 
     MessageChannelInternal channel3 = channelManager.createNewChannel(new ChannelID(sequence++));
+    channelManager.notifyChannelEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, channel3));
     channel3.setSendLayer(new NullNetworkLayer());
     assertEquals(++channelCount, channelManager.getChannels().length);
     assertTrue(channel3.isOpen());
@@ -130,15 +135,22 @@ public class ChannelManagerTest extends TestCase {
       channel.open();
       assertTrue(channel.isConnected());
 
+      for (int i = 0; i < 50; i++) {
+        if (channelManager.getChannels().length == 1) {
+          break;
+        }
+        ThreadUtil.reallySleep(100);
+      }
+
       assertEquals(1, channelManager.getChannels().length);
       clientComms.getConnectionManager().closeAllConnections(5000);
       assertFalse(channel.isConnected());
 
-      for (int i = 0; i < 30; i++) {
+      for (int i = 0; i < 50; i++) {
         if (channelManager.getChannels().length == 0) {
           break;
         }
-        Thread.sleep(100);
+        ThreadUtil.reallySleep(100);
       }
 
       assertEquals(0, channelManager.getChannels().length);

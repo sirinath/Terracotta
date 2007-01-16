@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.msg;
 
@@ -31,6 +32,7 @@ public class TestClientHandshakeMessage implements ClientHandshakeMessage {
   public NoExceptionLinkedQueue setTransactionIDsCalls         = new NoExceptionLinkedQueue();
   public Collection             transactionSequenceIDs         = new ArrayList();
   public Collection             transactionIDs                 = new ArrayList();
+  public MessageChannel         channel;
 
   public void addObjectID(ObjectID id) {
     clientObjectIds.add(id);
@@ -41,7 +43,7 @@ public class TestClientHandshakeMessage implements ClientHandshakeMessage {
   }
 
   public MessageChannel getChannel() {
-    return null;
+    return channel;
   }
 
   public ChannelID getChannelID() {

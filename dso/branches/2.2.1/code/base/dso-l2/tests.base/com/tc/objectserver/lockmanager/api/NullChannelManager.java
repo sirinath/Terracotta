@@ -1,9 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.msg.ClientHandshakeAckMessage;
@@ -39,13 +41,21 @@ public class NullChannelManager implements DSOChannelManager {
   public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) {
     return null;
   }
-  
+
   public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) {
     return null;
   }
 
   public Collection getAllChannelIDs() {
     return null;
+  }
+
+  public void addEventListener(ChannelManagerEventListener listener) {
+    //
+  }
+
+  public void publishChannel(MessageChannel channel) {
+    //
   }
 
 }

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.handshakemanager;
 
@@ -123,7 +124,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     assertEquals(gtxManager.transactionSequenceIDs, sentMessage.setTransactionSequenceIDsCalls.poll(0));
 
     // make sure that the manager set the expected object ids on the message...
-    assertEquals(objectIds, sentMessage.clientObjectIds);
+    assertEquals(objectIds, sentMessage.getObjectIDs());
 
     // make sure that the manager called addAllOutstandingWaitersTo on the lock
     // manager.

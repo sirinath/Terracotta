@@ -12,6 +12,7 @@ import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -212,6 +213,14 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     }
 
     public Collection getAllChannelIDs() {
+      throw new ImplementMe();
+    }
+
+    public void addEventListener(ChannelManagerEventListener listener) {
+      throw new ImplementMe();
+    }
+
+    public void publishChannel(MessageChannel channel) {
       throw new ImplementMe();
     }
   }

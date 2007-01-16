@@ -5,6 +5,7 @@ package com.tc.objectserver.lockmanager.impl;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.MockMessageChannel;
@@ -235,7 +236,7 @@ public class LockTimerTest extends TestCase {
     public String getChannelAddress(ChannelID channelID) {
       return null;
     }
-    
+
     public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) {
       throw new ImplementMe();
     }
@@ -245,6 +246,14 @@ public class LockTimerTest extends TestCase {
     }
 
     public Collection getAllChannelIDs() {
+      throw new ImplementMe();
+    }
+
+    public void addEventListener(ChannelManagerEventListener listener) {
+      throw new ImplementMe();
+    }
+
+    public void publishChannel(MessageChannel channel) {
       throw new ImplementMe();
     }
   }
