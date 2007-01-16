@@ -8,7 +8,6 @@ import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
-import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.net.DSOChannelManager;
 
 import java.util.Collection;
@@ -23,11 +22,11 @@ public class NullChannelManager implements DSOChannelManager {
   }
 
   public MessageChannel getChannel(ChannelID id) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public MessageChannel[] getChannels() {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public void closeAll(Collection channelIDs) {
@@ -35,19 +34,15 @@ public class NullChannelManager implements DSOChannelManager {
   }
 
   public String getChannelAddress(ChannelID channelID) {
-    return null;
+    return String.valueOf(channelID.toLong());
   }
 
   public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) {
-    return null;
-  }
-
-  public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public Collection getAllChannelIDs() {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   public void addEventListener(ChannelManagerEventListener listener) {
@@ -56,6 +51,10 @@ public class NullChannelManager implements DSOChannelManager {
 
   public void publishChannel(MessageChannel channel) {
     //
+  }
+
+  public MessageChannel[] getRawChannels() {
+    throw new UnsupportedOperationException();
   }
 
 }

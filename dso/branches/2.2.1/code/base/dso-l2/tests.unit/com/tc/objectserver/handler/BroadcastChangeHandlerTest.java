@@ -223,6 +223,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     public void publishChannel(MessageChannel channel) {
       throw new ImplementMe();
     }
+
+    public MessageChannel[] getRawChannels() {
+      return getChannels();
+    }
   }
 
   private static final class TestMessageChannel implements MessageChannel {

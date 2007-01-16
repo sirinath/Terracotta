@@ -416,6 +416,10 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       //
     }
 
+    public MessageChannel[] getRawChannels() {
+      return getChannels();
+    }
+
     private class TestChannel implements MessageChannel {
 
       private final ChannelID channelID;

@@ -30,8 +30,10 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
 
   private final Map                     publishedChannels   = new ConcurrentReaderHashMap();
   private final List                    eventListeners      = new CopyOnWriteArrayList();
+  private final ChannelManager          genericChannelManager;
 
   public DSOChannelManagerImpl(ChannelManager genericChannelManager) {
+    this.genericChannelManager = genericChannelManager;
     genericChannelManager.addEventListener(this);
   }
 
@@ -44,11 +46,10 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
   public void closeAll(Collection channelIDs) {
     for (Iterator i = channelIDs.iterator(); i.hasNext();) {
       ChannelID id = (ChannelID) i.next();
-      try {
-        MessageChannel channel = getChannel(id);
+
+      MessageChannel channel = genericChannelManager.getChannel(id);
+      if (channel != null) {
         channel.close();
-      } catch (NoSuchChannelException e) {
-        //
       }
     }
   }
@@ -112,6 +113,10 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
       throws NoSuchChannelException {
     return (BatchTransactionAcknowledgeMessage) getChannel(channelID)
         .createMessage(TCMessageType.BATCH_TRANSACTION_ACK_MESSAGE);
+  }
+
+  public MessageChannel[] getRawChannels() {
+    return genericChannelManager.getChannels();
   }
 
 }

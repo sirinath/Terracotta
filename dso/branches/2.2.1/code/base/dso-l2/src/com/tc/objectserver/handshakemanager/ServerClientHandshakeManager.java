@@ -114,6 +114,10 @@ public class ServerClientHandshakeManager {
         return;
       }
 
+      if (state == STARTING) {
+        this.channelManager.publishChannel(channel);
+      }
+
       this.sequenceValidator.initSequence(channelID, handshake.getTransactionSequenceIDs());
       this.transactionManager.setResentTransactionIDs(channelID, handshake.getResentTransactionIDs());
 
@@ -197,7 +201,8 @@ public class ServerClientHandshakeManager {
     lockManager.start();
     objectManager.start();
 
-    MessageChannel[] channels = channelManager.getChannels();
+    MessageChannel[] channels = channelManager.getRawChannels();
+
     for (int i = 0; i < channels.length; i++) {
       sendAckMessageTo(channels[i]);
     }

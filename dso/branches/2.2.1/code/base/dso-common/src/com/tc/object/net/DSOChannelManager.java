@@ -33,4 +33,6 @@ public interface DSOChannelManager {
   public void addEventListener(ChannelManagerEventListener listener);
 
   public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) throws NoSuchChannelException;
+
+  public MessageChannel[] getRawChannels();
 }

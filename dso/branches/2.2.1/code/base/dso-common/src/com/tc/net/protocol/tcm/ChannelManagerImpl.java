@@ -42,6 +42,11 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   public MessageChannelInternal createNewChannel(ChannelID id) {
     MessageChannelInternal channel = channelFactory.createNewChannel(id);
     channel.addListener(this);
+
+    synchronized (this) {
+      channels.put(channel.getChannelID(), channel);
+    }
+
     return channel;
   }
 
@@ -109,9 +114,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   }
 
   private void addChannel(MessageChannel channel) {
-    synchronized (this) {
-      channels.put(channel.getChannelID(), channel);
-    }
     fireChannelCreatedEvent(channel);
   }
 
