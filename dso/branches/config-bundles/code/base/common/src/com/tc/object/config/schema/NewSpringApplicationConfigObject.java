@@ -9,13 +9,13 @@ import com.tc.config.schema.BaseNewConfigObject;
 import com.tc.config.schema.context.ConfigContext;
 import com.tc.config.schema.dynamic.ObjectArrayConfigItem;
 import com.tc.config.schema.dynamic.ObjectArrayXPathBasedConfigItem;
-import com.terracottatech.configV2.NonDistributedFields;
-import com.terracottatech.configV2.SpringAppContext;
-import com.terracottatech.configV2.SpringAppContexts;
-import com.terracottatech.configV2.SpringApplication;
-import com.terracottatech.configV2.SpringApps;
-import com.terracottatech.configV2.SpringBean;
-import com.terracottatech.configV2.SpringDistributedEvent;
+import com.terracottatech.configV3.NonDistributedFields;
+import com.terracottatech.configV3.SpringAppContext;
+import com.terracottatech.configV3.SpringAppContexts;
+import com.terracottatech.configV3.SpringApplication;
+import com.terracottatech.configV3.SpringApps;
+import com.terracottatech.configV3.SpringBean;
+import com.terracottatech.configV3.SpringDistributedEvent;
 
 public class NewSpringApplicationConfigObject extends BaseNewConfigObject implements NewSpringApplicationConfig {
 

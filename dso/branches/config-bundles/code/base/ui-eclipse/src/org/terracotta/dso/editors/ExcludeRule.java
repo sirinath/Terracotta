@@ -3,7 +3,7 @@
  */
 package org.terracotta.dso.editors;
 
-import com.terracottatech.configV2.ClassExpression;
+import com.terracottatech.configV3.ClassExpression;
 
 public class ExcludeRule extends Rule {
   public ExcludeRule(ClassExpression expression) {

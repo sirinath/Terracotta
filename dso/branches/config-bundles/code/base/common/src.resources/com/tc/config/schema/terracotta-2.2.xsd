@@ -541,6 +541,15 @@
       </xs:documentation>
     </xs:annotation>
     <xs:all>
+      <xs:element name="plugins" type="plugins"
+        minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            This section contains the list of plugins to use in
+            the client.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="logs" type="path" minOccurs="0"
         default="logs-%i">
         <xs:annotation>
@@ -597,16 +606,6 @@
       </xs:documentation>
     </xs:annotation>
     <xs:all>
-      <xs:element name="plugins" type="plugins"
-        minOccurs="0">
-        <xs:annotation>
-          <xs:documentation>
-            This section contains the list of plugins and plugin
-            repositories to use in your application.
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-
       <xs:element name="dso" type="dso-application"
         minOccurs="0">
         <xs:annotation>

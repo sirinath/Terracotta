@@ -9,8 +9,8 @@ import org.dijon.Label;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
 import org.terracotta.dso.editors.xmlbeans.XmlStringEnumCombo;
-import com.terracottatech.configV2.DsoServerData;
-import com.terracottatech.configV2.Persistence;
+import com.terracottatech.configV3.DsoServerData;
+import com.terracottatech.configV3.Persistence;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

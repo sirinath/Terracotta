@@ -1,14 +1,15 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.config.schema;
 
 import org.apache.xmlbeans.XmlBoolean;
 
-import com.terracottatech.configV2.ConfigurationModel;
-import com.terracottatech.configV2.License;
-import com.terracottatech.configV2.System;
-import com.terracottatech.configV2.ConfigurationModel.Enum;
+import com.terracottatech.configV3.ConfigurationModel;
+import com.terracottatech.configV3.License;
+import com.terracottatech.configV3.System;
+import com.terracottatech.configV3.ConfigurationModel.Enum;
 
 /**
  * A mock {@link System}, for use in tests.
@@ -18,7 +19,7 @@ public class MockSystem extends MockXmlObject implements System {
   public MockSystem() {
     super();
   }
-  
+
   public boolean isSetDsoEnabled() {
     return false;
   }
@@ -26,8 +27,6 @@ public class MockSystem extends MockXmlObject implements System {
   public boolean isSetJdbcEnabled() {
     return false;
   }
-
-  
 
   public boolean isSetHttpEnabled() {
     return false;

@@ -22,12 +22,12 @@ import com.tc.object.config.schema.NewDSOApplicationConfigObject;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfigObject;
 import com.tc.util.Assert;
-import com.terracottatech.configV2.Application;
-import com.terracottatech.configV2.Client;
-import com.terracottatech.configV2.DsoApplication;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.SpringApplication;
-import com.terracottatech.configV2.System;
+import com.terracottatech.configV3.Application;
+import com.terracottatech.configV3.Client;
+import com.terracottatech.configV3.DsoApplication;
+import com.terracottatech.configV3.Servers;
+import com.terracottatech.configV3.SpringApplication;
+import com.terracottatech.configV3.System;
 
 import java.io.File;
 import java.util.HashMap;

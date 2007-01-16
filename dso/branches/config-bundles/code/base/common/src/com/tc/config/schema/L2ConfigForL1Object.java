@@ -11,9 +11,8 @@ import com.tc.config.schema.context.ConfigContext;
 import com.tc.config.schema.dynamic.ObjectArrayConfigItem;
 import com.tc.config.schema.dynamic.ObjectArrayXPathBasedConfigItem;
 import com.tc.util.Assert;
-import com.terracottatech.configV2.Server;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.System;
+import com.terracottatech.configV3.Server;
+import com.terracottatech.configV3.Servers;
 
 /**
  * The standard implementation of {@link L2ConfigForL1}.

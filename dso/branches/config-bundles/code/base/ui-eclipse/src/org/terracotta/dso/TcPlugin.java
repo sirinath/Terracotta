@@ -89,10 +89,10 @@ import org.terracotta.dso.wizards.ProjectWizard;
 
 import com.tc.admin.common.InputStreamDrainer;
 import com.tc.config.Loader;
-import com.terracottatech.configV2.Server;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.TcConfigDocument;
-import com.terracottatech.configV2.TcConfigDocument.TcConfig;
+import com.terracottatech.configV3.Server;
+import com.terracottatech.configV3.Servers;
+import com.terracottatech.configV3.TcConfigDocument;
+import com.terracottatech.configV3.TcConfigDocument.TcConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

@@ -21,10 +21,10 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
-import com.terracottatech.configV2.Server;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.TcConfigDocument;
-import com.terracottatech.configV2.TcConfigDocument.TcConfig;
+import com.terracottatech.configV3.Server;
+import com.terracottatech.configV3.Servers;
+import com.terracottatech.configV3.TcConfigDocument;
+import com.terracottatech.configV3.TcConfigDocument.TcConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

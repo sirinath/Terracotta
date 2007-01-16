@@ -11,7 +11,7 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.terracotta.dso.TcPlugin;
-import com.terracottatech.configV2.TcConfigDocument.TcConfig;
+import com.terracottatech.configV3.TcConfigDocument.TcConfig;
 
 public class DeleteFieldChange extends Change {
   private IField fField;

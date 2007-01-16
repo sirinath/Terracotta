@@ -7,8 +7,8 @@ import org.dijon.ContainerResource;
 
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
-import com.terracottatech.configV2.DsoClientData;
-import com.terracottatech.configV2.DsoClientDebugging;
+import com.terracottatech.configV3.DsoClientData;
+import com.terracottatech.configV3.DsoClientDebugging;
 
 public class DsoClientDebuggingPanel extends ConfigurationEditorPanel
   implements XmlObjectStructureListener

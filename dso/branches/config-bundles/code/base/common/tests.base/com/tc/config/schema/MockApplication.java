@@ -17,10 +17,10 @@ import org.xml.sax.ext.LexicalHandler;
 
 import com.tc.exception.ImplementMe;
 import com.tc.test.UniqueSequenceGenerator;
-import com.terracottatech.configV2.Application;
-import com.terracottatech.configV2.DsoApplication;
-import com.terracottatech.configV2.Plugins;
-import com.terracottatech.configV2.SpringApplication;
+import com.terracottatech.configV3.Application;
+import com.terracottatech.configV3.DsoApplication;
+import com.terracottatech.configV3.Plugins;
+import com.terracottatech.configV3.SpringApplication;
 
 import java.io.File;
 import java.io.InputStream;

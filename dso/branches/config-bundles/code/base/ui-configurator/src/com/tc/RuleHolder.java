@@ -7,9 +7,9 @@ import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.terracottatech.configV2.ClassExpression;
-import com.terracottatech.configV2.Include;
-import com.terracottatech.configV2.InstrumentedClasses;
+import com.terracottatech.configV3.ClassExpression;
+import com.terracottatech.configV3.Include;
+import com.terracottatech.configV3.InstrumentedClasses;
 
 public class RuleHolder {
   private InstrumentedClasses m_instrumentedClasses;

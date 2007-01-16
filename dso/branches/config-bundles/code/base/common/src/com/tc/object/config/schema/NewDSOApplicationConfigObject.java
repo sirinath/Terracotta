@@ -11,9 +11,9 @@ import com.tc.config.schema.dynamic.BooleanConfigItem;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.dynamic.StringArrayConfigItem;
 import com.tc.config.schema.dynamic.XPathBasedConfigItem;
-import com.terracottatech.configV2.DsoApplication;
-import com.terracottatech.configV2.Root;
-import com.terracottatech.configV2.Roots;
+import com.terracottatech.configV3.DsoApplication;
+import com.terracottatech.configV3.Root;
+import com.terracottatech.configV3.Roots;
 
 public class NewDSOApplicationConfigObject extends BaseNewConfigObject implements NewDSOApplicationConfig {
 

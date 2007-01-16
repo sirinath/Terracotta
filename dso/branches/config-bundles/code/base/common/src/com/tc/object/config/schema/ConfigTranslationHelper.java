@@ -6,13 +6,13 @@ package com.tc.object.config.schema;
 import org.apache.xmlbeans.XmlObject;
 
 import com.tc.util.Assert;
-import com.terracottatech.configV2.Autolock;
-import com.terracottatech.configV2.ClassExpression;
-import com.terracottatech.configV2.Include;
-import com.terracottatech.configV2.LockLevel;
-import com.terracottatech.configV2.Locks;
-import com.terracottatech.configV2.NamedLock;
-import com.terracottatech.configV2.OnLoad;
+import com.terracottatech.configV3.Autolock;
+import com.terracottatech.configV3.ClassExpression;
+import com.terracottatech.configV3.Include;
+import com.terracottatech.configV3.LockLevel;
+import com.terracottatech.configV3.Locks;
+import com.terracottatech.configV3.NamedLock;
+import com.terracottatech.configV3.OnLoad;
 
 /**
  * Knows how to translate various chunks of config between their XMLBeans representations and the internal
