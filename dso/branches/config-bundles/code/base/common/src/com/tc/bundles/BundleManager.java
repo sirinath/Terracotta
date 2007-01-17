@@ -6,12 +6,8 @@ package com.tc.bundles;
 
 public interface BundleManager {
 
-  void install(final Bundle bundle) throws BundleException;
+  void start(final String bundleName, final String bundleVersion) throws BundleException;
 
-  void start(final Bundle bundle) throws BundleException;
-
-  void stop(final Bundle bundle) throws BundleException;
-
-  void uninstall(final Bundle bundle) throws BundleException;
+  void stop(final String bundleName, final String bundleVersion) throws BundleException;
 
 }
