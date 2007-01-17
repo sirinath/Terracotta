@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.config.schema;
 
@@ -13,6 +14,7 @@ import com.tc.config.schema.dynamic.ObjectArrayXPathBasedConfigItem;
 import com.tc.util.Assert;
 import com.terracottatech.configV3.Server;
 import com.terracottatech.configV3.Servers;
+import com.terracottatech.configV3.System;
 
 /**
  * The standard implementation of {@link L2ConfigForL1}.

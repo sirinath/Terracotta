@@ -310,9 +310,9 @@
   </xs:complexType>
 
   <xs:complexType name="plugins">
-    <xs:sequence>
-      <xs:element name="repository" type="xs:anyURI" maxOccurs="unbounded" />
-      <xs:element name="plugin" type="plugin" maxOccurs="unbounded" />
+    <xs:sequence maxOccurs="unbounded">
+      <xs:element name="repository" type="xs:anyURI" minOccurs="0" />
+      <xs:element name="plugin" type="plugin" minOccurs="0" />
     </xs:sequence>
   </xs:complexType>
 
