@@ -43,7 +43,8 @@ import java.util.Map.Entry;
  */
 public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
 
-  private static final TCLogger                logger                  = TCLogging.getLogger(ObjectManager.class);
+  private static final TCLogger                logger                  = TCLogging
+                                                                           .getLogger(TransactionalObjectManagerImpl.class);
   private static final int                     MAX_COMMIT_SIZE         = TCPropertiesImpl
                                                                            .getProperties()
                                                                            .getInt(
@@ -381,6 +382,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
         }
       }
       if (!recalledObjects.isEmpty()) {
+        logger.info("Recalling " + recalledObjects.size() + " Objects to ObjectManager");
         objectManager.releaseAll(recalledObjects.values());
       }
     }
@@ -394,10 +396,10 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.println(getClass().getName());
-    out.indent().print("checkedOutObjects: ").println(checkedOutObjects);
+    out.indent().print("checkedOutObjects: ").visit(checkedOutObjects).println();
     out.indent().print("applyPendingTxns: ").visit(applyPendingTxns).println();
     out.indent().print("commitPendingTxns: ").visit(commitPendingTxns).println();
-    out.indent().println("pendingTxnList: " + pendingTxnList);
+    out.indent().print("pendingTxnList: ").visit(pendingTxnList).println();
     out.indent().print("pendingObjectRequest: ").visit(pendingObjectRequest).println();
     return out;
   }
