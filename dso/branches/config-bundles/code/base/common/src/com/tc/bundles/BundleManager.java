@@ -4,6 +4,10 @@
  */
 package com.tc.bundles;
 
+/**
+ * The idea here is to specify exactly what functionality we need from a bundle layer, the implementation can then be an
+ * OSGi implementation, our own, something else...
+ */
 public interface BundleManager {
 
   void start(final String bundleName, final String bundleVersion) throws BundleException;
