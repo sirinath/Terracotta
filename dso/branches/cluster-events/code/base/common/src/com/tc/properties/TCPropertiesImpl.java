@@ -28,19 +28,22 @@ import java.util.Map.Entry;
  */
 public class TCPropertiesImpl implements TCProperties {
 
-  public static final String        SYSTEM_PROP_PREFIX         = "com.tc";
+  public static final String            SYSTEM_PROP_PREFIX         = "com.tc";
 
-  private static final LogBuffer    LOG_BUFFER                 = new LogBuffer();
+  private static final LogBuffer        LOG_BUFFER                 = new LogBuffer();
 
   // This file resides in src.resource/com/tc/properties directory
-  private static final String       DEFAULT_TC_PROPERTIES_FILE = "tc.properties";
+  private static final String           DEFAULT_TC_PROPERTIES_FILE = "tc.properties";
 
   // This file,if present, overrides the default properties and resides in the same directory as tc.jar
-  private static final String       TC_PROPERTIES_FILE         = "tc.properties";
+  private static final String           TC_PROPERTIES_FILE         = "tc.properties";
+  
+  // This is the system property that can be set to point to a tc.properties file
+  private static final String           TC_PROPERTIES_SYSTEM_PROP  = "com.tc.properties";
 
-  private static final TCProperties INSTANCE;
+  private static final TCPropertiesImpl INSTANCE;
 
-  private final Properties          props                      = new Properties();
+  private final Properties              props                      = new Properties();
 
   static {
     INSTANCE = new TCPropertiesImpl();
@@ -53,6 +56,10 @@ public class TCPropertiesImpl implements TCProperties {
     String tcJarDir = getTCJarRootDirectory();
     if (tcJarDir != null) {
       loadOverrides(tcJarDir, TC_PROPERTIES_FILE);
+    }
+    String tcPropFile = System.getProperty(TC_PROPERTIES_SYSTEM_PROP);
+    if(tcPropFile != null) {
+      loadOverrides(tcPropFile);
     }
 
     applySystemPropertyOverrides();
@@ -69,21 +76,45 @@ public class TCPropertiesImpl implements TCProperties {
     }
   }
 
-  TCPropertiesImpl(String category) {
-    // No Op - Used by the subclass
+  public Properties addAllPropertiesTo(Properties properties) {
+    return addAllPropertiesTo(properties, null);
+  }
+
+  Properties addAllPropertiesTo(Properties properties, String filter) {
+    if (filter == null) {
+      properties.putAll(props);
+      return properties;
+    }
+    for (Iterator i = props.entrySet().iterator(); i.hasNext();) {
+      Map.Entry e = (Entry) i.next();
+      String key = (String) e.getKey();
+      if (key.startsWith(filter)) {
+        properties.put(key.substring(filter.length()), e.getValue());
+      }
+    }
+    return properties;
   }
 
   private void loadOverrides(String propDir, String propFile) {
     File file = new File(propDir, propFile);
+    loadOverrides(file);
+  }
+  
+  private void loadOverrides(String propFile) {
+    File file = new File(propFile);
+    loadOverrides(file);
+  }
+  
+  private void loadOverrides(File file) {
     if (file.canRead()) {
       try {
         FileInputStream fin = new FileInputStream(file);
-        LOG_BUFFER.addLog("Loading override properties from : " + propDir + File.separator + propFile);
+        LOG_BUFFER.addLog("Loading override properties from : " + file);
         props.load(fin);
       } catch (FileNotFoundException e) {
-        LOG_BUFFER.addLog("Couldnt find " + propFile + ". Ignoring it", e);
+        LOG_BUFFER.addLog("Couldnt find " + file + ". Ignoring it", e);
       } catch (IOException e) {
-        LOG_BUFFER.addLog("Couldnt read " + propFile + ". Ignoring it", e);
+        LOG_BUFFER.addLog("Couldnt read " + file + ". Ignoring it", e);
       }
     }
   }

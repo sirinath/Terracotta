@@ -280,7 +280,16 @@ class SubtreeTestRun
         @use_dso_boot_jar = buildconfig['include-dso-boot-jar'] =~ /^\s*true\s*$/i
         @needs_dso_boot_jar = @use_dso_boot_jar || (buildconfig['build-dso-boot-jar'] =~ /^\s*true\s*$/i)
         @timeout = (config_source["test_timeout"] || buildconfig["timeout"] || DEFAULT_TEST_TIMEOUT_SECONDS.to_s).to_i * 1000
-        @extra_jvmargs = buildconfig["jvmargs"] || [ ]
+        @extra_jvmargs = []
+        if buildconfig['jvmargs']
+          @extra_jvmargs += buildconfig['jvmargs'].split(/\s*,\s*/)
+        end
+
+        if test_props = buildconfig['test.tc.properties']
+          props_file = FilePath.new(@build_results.classes_directory(@subtree), test_props).canonicalize
+          @extra_jvmargs << "'-Dcom.tc.properties=#{props_file.to_s}'"
+        end
+
         @extra_jvmargs += config_source.as_array('jvmargs') unless config_source.as_array('jvmargs').nil?
         @jvm = tests_jvm(jvm_set)
     end
@@ -371,6 +380,13 @@ class SubtreeTestRun
             class_name = @build_results.class_name_for_class_file(@subtree, found_test)
             create_did_not_run_file(class_name, @testrun_results.results_file(@subtree, class_name)) unless FilePath.new(found_test).filename =~ /\$/
         end
+
+        # Grep for current java processes for debugging
+        path = File.join(@cwd.to_s, "javaprocesses.txt")
+        File.open(path, "w") do |file|
+            file << ps_grep_java
+        end
+
         puts "Done."
 
         @setUp = true
@@ -688,5 +704,22 @@ END
         out = @jvmargs || [ ]
         out += @extra_jvmargs unless @extra_jvmargs.empty?
         out
+    end
+
+        # do a "ps auxwwww | grep java"
+    # to be used in monkey environment ONLY
+    def ps_grep_java
+        ps_cmd = case @build_environment.os_type(:nice)
+            when /windows/i: 'pv.exe -l | grep java | grep -v grep'
+            when /linux/i:   'ps auxwwww | grep java | grep -v grep'
+            when /solaris/i: '/usr/ucb/ps auxwwww | grep java | grep -v grep'
+        end
+
+        begin
+            java_processes = `#{ps_cmd}`
+        rescue
+            java_processes = ''
+        end
+        java_processes
     end
 end

@@ -5,8 +5,6 @@ package com.tc.net.protocol.tcm;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
-import com.tc.async.api.Sink;
-import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
@@ -19,7 +17,7 @@ import java.util.Map;
 
 /**
  * provides the sessionIDs
- * 
+ *
  * @author steve
  */
 class ChannelManagerImpl implements ChannelManager, ChannelEventListener, ServerMessageChannelFactory {
@@ -29,7 +27,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   private final Map                             channels;
   private final boolean                         transportDisconnectRemovesChannel;
   private final ServerMessageChannelFactory     channelFactory;
-  private Sink                                  stateChangeSink     = new NullSink();
   private final List                            eventListeners      = new CopyOnWriteArrayList();
 
   public ChannelManagerImpl(boolean transportDisconnectRemovesChannel, ServerMessageChannelFactory channelFactory) {
@@ -65,14 +62,10 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
     return (MessageChannelInternal) channels.get(id);
   }
 
-  public synchronized void routeChannelStateChanges(Sink sink) {
-    this.stateChangeSink = sink;
-  }
-
   public synchronized MessageChannelInternal[] getChannels() {
     return (MessageChannelInternal[]) channels.values().toArray(EMPTY_CHANNEL_ARARY);
   }
-  
+
   public synchronized Collection getAllChannelIDs() {
     return new HashSet(channels.keySet());
   }
@@ -90,14 +83,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
     return true;
   }
 
-  public TCMessageFactory getMessageFactory() {
-    return this.channelFactory.getMessageFactory();
-  }
-
-  public TCMessageRouter getMessageRouter() {
-    return this.channelFactory.getMessageRouter();
-  }
-
   public void notifyChannelEvent(ChannelEvent event) {
     MessageChannel channel = event.getChannel();
 
@@ -110,8 +95,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
     } else if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
       fireChannelCreatedEvent(channel);
     }
-
-    this.stateChangeSink.add(event);
   }
 
   private void removeChannel(MessageChannel channel) {

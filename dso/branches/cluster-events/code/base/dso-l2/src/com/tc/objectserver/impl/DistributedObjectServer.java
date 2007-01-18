@@ -84,8 +84,6 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
 import com.tc.objectserver.handler.ApplyCompleteTransactionHandler;
 import com.tc.objectserver.handler.ApplyTransactionChangeHandler;
-import com.tc.objectserver.handler.RecallObjectsHandler;
-import com.tc.objectserver.handler.TransactionLookupHandler;
 import com.tc.objectserver.handler.BroadcastChangeHandler;
 import com.tc.objectserver.handler.ChannelLifeCycleHandler;
 import com.tc.objectserver.handler.ClientHandshakeHandler;
@@ -95,12 +93,14 @@ import com.tc.objectserver.handler.ManagedObjectFaultHandler;
 import com.tc.objectserver.handler.ManagedObjectFlushHandler;
 import com.tc.objectserver.handler.ManagedObjectRequestHandler;
 import com.tc.objectserver.handler.ProcessTransactionHandler;
+import com.tc.objectserver.handler.RecallObjectsHandler;
 import com.tc.objectserver.handler.RequestLockUnLockHandler;
 import com.tc.objectserver.handler.RequestObjectIDBatchHandler;
 import com.tc.objectserver.handler.RequestRootHandler;
 import com.tc.objectserver.handler.RespondToObjectRequestHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
 import com.tc.objectserver.handler.TransactionAcknowledgementHandler;
+import com.tc.objectserver.handler.TransactionLookupHandler;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
@@ -161,6 +161,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.management.MBeanServer;
@@ -183,6 +184,7 @@ public class DistributedObjectServer extends SEDA {
   private CommunicationsManager                communicationsManager;
   private ServerConfigurationContext           context;
   private ObjectManagerImpl                    objectManager;
+  private TransactionalObjectManagerImpl       txnObjectManager;
   private SampledCounterManager                sampledCounterManager;
   private LockManager                          lockManager;
   private ServerManagementContext              managementContext;
@@ -224,6 +226,10 @@ public class DistributedObjectServer extends SEDA {
       this.objectManager.dump();
     }
 
+    if (this.txnObjectManager != null) {
+      this.txnObjectManager.dump();
+    }
+
     if (this.transactionManager != null) {
       this.transactionManager.dump();
     }
@@ -235,13 +241,13 @@ public class DistributedObjectServer extends SEDA {
     try {
       startJMXServer();
     } catch (Throwable t) {
-      logger.error("Error starting jmx server", t);
+      logger.error("Unable to start the JMX server", t);
     }
 
     NIOWorkarounds.solaris10Workaround();
 
-    this.configSetupManager.commonl2Config().changesInItemIgnored(this.configSetupManager.commonl2Config().dataPath());
-    NewL2DSOConfig l2DSOConfig = this.configSetupManager.dsoL2Config();
+    configSetupManager.commonl2Config().changesInItemIgnored(configSetupManager.commonl2Config().dataPath());
+    NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.persistenceMode());
     PersistenceMode persistenceMode = (PersistenceMode) l2DSOConfig.persistenceMode().getObject();
 
@@ -250,7 +256,7 @@ public class DistributedObjectServer extends SEDA {
     final boolean persistent = persistenceMode.equals(PersistenceMode.PERMANENT_STORE);
 
     TCFile location = new TCFileImpl(this.configSetupManager.commonl2Config().dataPath().getFile());
-    this.startupLock = new StartupLock(location);
+    startupLock = new StartupLock(location);
 
     if (!startupLock.canProceed(new TCRandomFileAccessImpl(), persistent)) {
       consoleLogger.error("Another L2 process is using the directory " + location + " as data directory.");
@@ -276,10 +282,8 @@ public class DistributedObjectServer extends SEDA {
     logger.debug("server swap enabled: " + swapEnabled);
     final ManagedObjectChangeListenerProviderImpl managedObjectChangeListenerProvider = new ManagedObjectChangeListenerProviderImpl();
     if (swapEnabled) {
-      File dbhome = new File(this.configSetupManager.commonl2Config().dataPath().getFile(), "objectdb");
-
+      File dbhome = new File(configSetupManager.commonl2Config().dataPath().getFile(), "objectdb");
       logger.debug("persistent: " + persistent);
-
       if (!persistent) {
         if (dbhome.exists()) {
           logger.debug("deleting persistence database...");
@@ -289,7 +293,8 @@ public class DistributedObjectServer extends SEDA {
       }
       logger.debug("persistence database home: " + dbhome);
 
-      DBEnvironment dbenv = new DBEnvironment(persistent, dbhome);
+      DBEnvironment dbenv = new DBEnvironment(persistent, dbhome, l2Properties.getPropertiesFor("berkeleydb")
+          .addAllPropertiesTo(new Properties()));
       SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       persistor = new SleepycatPersistor(TCLogging.getLogger(SleepycatPersistor.class), dbenv,
                                          serializationAdapterFactory);
@@ -340,9 +345,8 @@ public class DistributedObjectServer extends SEDA {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
 
-    this.communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(),
-                                                               new PlainNetworkStackHarnessFactory(),
-                                                               this.connectionPolicy);
+    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(),
+                                                          new PlainNetworkStackHarnessFactory(), connectionPolicy);
 
     final DSOApplicationEvents appEvents;
     try {
@@ -396,7 +400,7 @@ public class DistributedObjectServer extends SEDA {
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
-      this.cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties));
+      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties));
       if (logger.isDebugEnabled()) {
         logger.debug("CacheManager Enabled : " + cacheManager);
       }
@@ -412,9 +416,9 @@ public class DistributedObjectServer extends SEDA {
                                                 httpSink);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
-    lsnr.getChannelManager().addEventListener(cteh);
 
     DSOChannelManager channelManager = new DSOChannelManagerImpl(lsnr.getChannelManager());
+    channelManager.addEventListener(cteh);
 
     ChannelStats channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
 
@@ -451,9 +455,8 @@ public class DistributedObjectServer extends SEDA {
                      new CommitTransactionChangeHandler(gtxm, transactionStorePTP), commitThreads, maxStageSize);
 
     TransactionalStageCoordinator txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
-    TransactionalObjectManagerImpl txnObjectManager = new TransactionalObjectManagerImpl(objectManager,
-                                                                                         new TransactionSequencer(),
-                                                                                         gtxm, txnStageCoordinator);
+    txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
+                                                          txnStageCoordinator);
     objectManager.setTransactionalObjectManager(txnObjectManager);
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
                                                new ProcessTransactionHandler(transactionBatchManager, txnObjectManager,
@@ -469,9 +472,13 @@ public class DistributedObjectServer extends SEDA {
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
                                                  new RequestLockUnLockHandler(), 1, maxStageSize);
-    stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE,
-                             new ChannelLifeCycleHandler(communicationsManager, transactionManager,
-                                                         transactionBatchManager, channelManager), 1, maxStageSize);
+    Stage channelLifecycleStage = stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE,
+                                                           new ChannelLifeCycleHandler(communicationsManager,
+                                                                                       transactionManager,
+                                                                                       transactionBatchManager, channelManager), 1,
+                                                           maxStageSize);
+    channelManager.addEventListener(new ChannelLifeCycleHandler.EventListener(channelLifecycleStage.getSink()));
+
     SampledCounter globalObjectFaultCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
                                                                                                            true, 0L));
     SampledCounter globalObjectFlushCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
@@ -535,8 +542,8 @@ public class DistributedObjectServer extends SEDA {
     lsnr.routeMessageType(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, jmxRemoteTunnelStage.getSink(),
                           hydrateSink);
 
-    Sink stateChangeSink = stageManager.getStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE).getSink();
-    lsnr.getChannelManager().routeChannelStateChanges(stateChangeSink);
+
+
 
     ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
 
@@ -588,8 +595,9 @@ public class DistributedObjectServer extends SEDA {
   private void startBeanShell(int port) {
     try {
       Interpreter i = new Interpreter();
-      i.set("dsoserver", this);
-      i.set("objectmanager", objectManager);
+      i.set("dsoServer", this);
+      i.set("objectManager", objectManager);
+      i.set("txnObjectManager", txnObjectManager);
       i.set("portnum", port);
       i.eval("setAccessibility(true)"); // turn off access restrictions
       i.eval("server(portnum)");
@@ -678,8 +686,8 @@ public class DistributedObjectServer extends SEDA {
   }
 
   private void basicStop() {
-    if (this.startupLock != null) {
-      this.startupLock.release();
+    if (startupLock != null) {
+      startupLock.release();
     }
   }
 
@@ -688,7 +696,7 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public ServerManagementContext getManagementContext() {
-    return this.managementContext;
+    return managementContext;
   }
 
   public MBeanServer getMBeanServer() {

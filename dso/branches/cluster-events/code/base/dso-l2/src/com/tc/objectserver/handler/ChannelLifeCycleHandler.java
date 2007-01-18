@@ -7,15 +7,15 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
+import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
-import com.tc.net.protocol.tcm.ChannelEvent;
-import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.net.DSOChannelManager;
+import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
@@ -40,26 +40,28 @@ public class ChannelLifeCycleHandler extends AbstractEventHandler {
   }
 
   public void handleEvent(EventContext context) {
-    ChannelEvent event = (ChannelEvent) context;
-    ChannelID channelID = event.getChannelID();
-    if (ChannelEventType.TRANSPORT_DISCONNECTED_EVENT.matches(event)) {
-      broadcastClusterMemebershipMessage(ClusterMembershipMessage.EventType.NODE_DISCONNECTED, channelID);
-      if (commsManager.isInShutdown()) {
-        logger.info("Ignoring transport disconnect for " + channelID + " while shutting down.");
-      } else {
-        // Giving 0.5 sec for the server to catch up with any pending transactions. Not a fool prove mechanism.
-        ThreadUtil.reallySleep(500);
-        logger.info("Received transport disconnect.  Killing client " + channelID);
-        transactionManager.shutdownClient(channelID);
-        transactionBatchManager.shutdownClient(channelID);
+    Event event = (Event) context;
+
+    switch (event.type) {
+      case Event.CREATE: {
+        channelCreated(event.channel);
+        broadcastClusterMemebershipMessage(ClusterMembershipMessage.EventType.NODE_CONNECTED, event.channel.getChannelID());
+        break;
       }
-    } else if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
-      broadcastClusterMemebershipMessage(ClusterMembershipMessage.EventType.NODE_CONNECTED, channelID);
+      case Event.REMOVE: {
+        channelRemoved(event.channel);
+        broadcastClusterMemebershipMessage(ClusterMembershipMessage.EventType.NODE_DISCONNECTED, event.channel.getChannelID());
+        break;
+      }
+      default: {
+        throw new AssertionError("unknown event: " + event.type);
+      }
     }
   }
 
+  //ClusterMembershipMessage.EventType.NODE_DISCONNECTED
   private void broadcastClusterMemebershipMessage(int eventType, ChannelID channelID) {
-    MessageChannel[] channels = channelMgr.getChannels();
+    MessageChannel[] channels = channelMgr.getActiveChannels();
     for (int i = 0; i < channels.length; i++) {
       MessageChannel channel = channels[i];
       ClusterMembershipMessage cmm = (ClusterMembershipMessage) channel
@@ -69,10 +71,59 @@ public class ChannelLifeCycleHandler extends AbstractEventHandler {
     }
   }
 
+  private void channelRemoved(MessageChannel channel) {
+    ChannelID channelID = channel.getChannelID();
+    if (commsManager.isInShutdown()) {
+      logger.info("Ignoring transport disconnect for " + channelID + " while shutting down.");
+    } else {
+      // Giving 0.5 sec for the server to catch up with any pending transactions. Not a fool prove mechanism.
+      ThreadUtil.reallySleep(500);
+      logger.info("Received transport disconnect.  Killing client " + channelID);
+      transactionManager.shutdownClient(channelID);
+      transactionBatchManager.shutdownClient(channelID);
+    }
+  }
+
+  private void channelCreated(MessageChannel channel) {
+    //
+  }
+
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ServerConfigurationContext scc = (ServerConfigurationContext) context;
     this.logger = scc.getLogger(ChannelLifeCycleHandler.class);
+  }
+
+  public static class Event implements EventContext {
+    public static final int     CREATE = 0;
+    public static final int     REMOVE = 1;
+
+    private final int            type;
+    private final MessageChannel channel;
+
+    Event(int type, MessageChannel channel) {
+      this.type = type;
+      this.channel = channel;
+      if ((type != CREATE) && (type != REMOVE)) { throw new IllegalArgumentException("invalid type: " + type); }
+    }
+  }
+
+  public static class EventListener implements DSOChannelManagerEventListener {
+
+    private final Sink sink;
+
+    public EventListener(Sink sink) {
+      this.sink = sink;
+    }
+
+    public void channelCreated(MessageChannel channel) {
+      sink.add(new Event(Event.CREATE, channel));
+    }
+
+    public void channelRemoved(MessageChannel channel) {
+      sink.add(new Event(Event.REMOVE, channel));
+    }
+
   }
 
 }

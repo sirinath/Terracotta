@@ -167,7 +167,7 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   public static class L1Client {
     public static void main(String args[]) throws InterruptedException {
       System.err.println("\n### New Client Started");
-      Thread.sleep(2 * 60 * 1000);
+//      Thread.sleep(2 * 60 * 1000);
     }
   }
 }

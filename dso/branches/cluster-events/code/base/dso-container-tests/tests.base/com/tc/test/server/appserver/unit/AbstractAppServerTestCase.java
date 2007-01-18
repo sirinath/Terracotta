@@ -13,6 +13,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
 import com.tc.object.config.schema.Lock;
 import com.tc.object.config.schema.Root;
+import com.tc.process.LinkedJavaProcessPollingAgent;
 import com.tc.test.TCTestCase;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.Server;
@@ -194,13 +195,13 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     String appserverURLBase = config.appserverURLBase();
     String appserverHome = config.appserverHome();
 
-    if (appserverURLBase != null && !appserverURLBase.trim().equals("")) {
-      URL host = new URL(appserverURLBase);
-      installation = appServerFactory.createInstallation(host, serverInstallDir, workingDir);
-
-    } else if (appserverHome != null && !appserverHome.trim().equals("")) {
+    if (appserverHome != null && !appserverHome.trim().equals("")) {
       File home = new File(appserverHome);
       installation = appServerFactory.createInstallation(home, workingDir);
+
+    } else if (appserverURLBase != null && !appserverURLBase.trim().equals("")) {
+      URL host = new URL(appserverURLBase);
+      installation = appServerFactory.createInstallation(host, serverInstallDir, workingDir);
 
     } else {
       throw new AssertionError(
@@ -376,7 +377,9 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         Server server = (Server) iter.next();
         server.stop();
       }
-
+      Thread.sleep(5000);
+      LinkedJavaProcessPollingAgent.destroy();
+      Thread.sleep(5000);
       if (dsoServer != null && dsoServer.isRunning()) dsoServer.stop();
     } finally {
       VmStat.stop();

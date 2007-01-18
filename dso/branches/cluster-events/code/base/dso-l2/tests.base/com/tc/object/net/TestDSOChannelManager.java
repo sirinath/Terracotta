@@ -33,7 +33,7 @@ public class TestDSOChannelManager implements DSOChannelManager {
   }
 
   public MessageChannel[] getChannels() {
-    return allChannels ;
+    return allChannels;
   }
 
   public boolean isValidID(ChannelID channelID) {
@@ -45,6 +45,34 @@ public class TestDSOChannelManager implements DSOChannelManager {
   }
 
   public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) {
+    throw new ImplementMe();
+  }
+
+  public void addEventListener(DSOChannelManagerEventListener listener) {
+    throw new ImplementMe();
+  }
+
+  public MessageChannel getActiveChannel(ChannelID id)  {
+    throw new ImplementMe();
+  }
+
+  public MessageChannel[] getActiveChannels() {
+    return allChannels;
+  }
+
+  public Collection getAllActiveChannelIDs() {
+    throw new ImplementMe();
+  }
+
+  public Collection getRawChannelIDs() {
+    throw new ImplementMe();
+  }
+
+  public boolean isActiveID(ChannelID channelID) {
+    throw new ImplementMe();
+  }
+
+  public void makeChannelActive(MessageChannel channel) {
     throw new ImplementMe();
   }
 

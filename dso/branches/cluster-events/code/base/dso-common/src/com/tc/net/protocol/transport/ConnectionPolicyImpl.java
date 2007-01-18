@@ -3,12 +3,15 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.util.Assert;
+
 public class ConnectionPolicyImpl implements ConnectionPolicy {
 
   private int maxConnections;
   private int connectionCount;
   
   public ConnectionPolicyImpl(int maxConnections) {
+    Assert.assertTrue("negative maxConnections", maxConnections >= 0);
     this.maxConnections = maxConnections;
   }
 
@@ -28,15 +31,14 @@ public class ConnectionPolicyImpl implements ConnectionPolicy {
   }
   
   public synchronized boolean maxConnectionsExceeded() {
-    return false;
+    return connectionCount > maxConnections;
   }
 
   public synchronized int getMaxConnections() {
-    return -1;
+    return maxConnections;
   }
 
   public synchronized void setMaxConnections(int i) {
     this.maxConnections = i;
   }
-  
 }
