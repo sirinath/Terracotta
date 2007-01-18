@@ -7,11 +7,11 @@ package com.tc.reporter;
 import org.apache.xmlbeans.XmlException;
 
 import com.tc.sysinfo.EnvStats;
-import com.terracottatech.configV2.Client;
-import com.terracottatech.configV2.Server;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.TcConfigDocument;
-import com.terracottatech.configV2.TcConfigDocument.TcConfig;
+import com.terracottatech.configV3.Client;
+import com.terracottatech.configV3.Server;
+import com.terracottatech.configV3.Servers;
+import com.terracottatech.configV3.TcConfigDocument;
+import com.terracottatech.configV3.TcConfigDocument.TcConfig;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
