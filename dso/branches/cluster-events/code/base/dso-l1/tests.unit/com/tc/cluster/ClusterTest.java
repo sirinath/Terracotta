@@ -107,14 +107,14 @@ public class ClusterTest extends TestCase {
     assertEquals(newNodeId, cel.getLastString());
     assertNull(cel.getLastStringArray());
     cel.reset();
-    
+
     // now cause node disconnected event
     cluster.nodeDisconnected(newNodeId);
     assertEquals("nodeDisconnected", cel.getLastMethodCalled());
     assertEquals(newNodeId, cel.getLastString());
     assertNull(cel.getLastStringArray());
     cel.reset();
-    
+
   }
 
   public void testNodeDisconnected() {
@@ -127,6 +127,15 @@ public class ClusterTest extends TestCase {
     assertNull(cel.getLastString());
   }
 
+  public void testClientExceptionSafety() {
+    cluster.addClusterEventListener(new TestEventListenerWithExceptions());
+    final String thisNodeId = "1";
+    final String[] nodesCurrentlyInCluster = new String[] {thisNodeId};
+    cluster.thisNodeConnected(thisNodeId , nodesCurrentlyInCluster );
+    cluster.thisNodeDisconnected();
+    cluster.nodeConnected(thisNodeId);
+    cluster.nodeDisconnected(thisNodeId);
+  }
 }
 
 class TestEventListener implements ClusterEventListener {
@@ -172,5 +181,25 @@ class TestEventListener implements ClusterEventListener {
     lastString = null;
     lastStringArray = null;
     lastMethodCalled = null;
+  }
+
+}
+
+class TestEventListenerWithExceptions implements ClusterEventListener {
+
+  public void nodeConnected(String nodeId) {
+    throw new RuntimeException("nodeConnected");
+  }
+
+  public void nodeDisconnected(String nodeId) {
+    throw new RuntimeException("nodeDisconnected");
+  }
+
+  public void thisNodeConnected(String thisNodeId, String[] nodesCurrentlyInCluster) {
+    throw new RuntimeException("thisNodeConnected");
+  }
+
+  public void thisNodeDisconnected(String thisNodeId) {
+    throw new RuntimeException("thisNodeDisconnected");
   }
 }
