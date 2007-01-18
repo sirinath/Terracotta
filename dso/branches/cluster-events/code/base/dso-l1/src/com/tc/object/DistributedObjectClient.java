@@ -7,7 +7,6 @@ import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
-import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventHandler;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.lang.TCThreadGroup;
@@ -263,8 +262,7 @@ public class DistributedObjectClient extends SEDA {
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
                                                                 1, maxSize);
     
-    final Cluster cluster = new Cluster();
-    final Stage clusterEventStage = stageManager.createStage(ClientConfigurationContext.CLUSTER_EVENT_STAGE, new ClusterEventHandler(cluster), 1, maxSize);
+    final Stage clusterEventStage = stageManager.createStage(ClientConfigurationContext.CLUSTER_EVENT_STAGE, new ClusterEventHandler(manager.getCluster()), 1, maxSize);
 
     // This set is designed to give the handshake manager an opportunity to pause stages when it is pausing due to
     // disconnect. Unfortunately, the lock response stage can block, which I didn't realize at the time, so it's not
@@ -274,7 +272,7 @@ public class DistributedObjectClient extends SEDA {
         .getLogger(ClientHandshakeManager.class)), channel.getChannelIDProvider(), channel
         .getClientHandshakeMessageFactory(), objectManager, remoteObjectManager, lockManager, rtxManager, gtxManager,
                                                         stagesToPauseOnDisconnect, pauseStage.getSink(),
-                                                        sessionManager, pauseListener, sequence, cluster);
+                                                        sessionManager, pauseListener, sequence, manager.getCluster());
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,

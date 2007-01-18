@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.cluster.Cluster;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
@@ -212,6 +213,10 @@ public final class NullManager implements Manager {
   }
 
   public final TCProperties getTCProperites() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Cluster getCluster() {
     throw new UnsupportedOperationException();
   }
 }

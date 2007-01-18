@@ -5,6 +5,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.Type;
+import com.tc.cluster.Cluster;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
@@ -59,6 +60,7 @@ public class ManagerImpl implements Manager {
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Thread                             shutdownAction;
   private final Portability                        portability;
+  private final Cluster cluster;
 
   private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
   private ClientObjectManager                      objectManager;
@@ -69,6 +71,7 @@ public class ManagerImpl implements Manager {
   private OptimisticTransactionManager             optimisticTransactionManager;
   private SerializationUtil                        serializer    = new SerializationUtil();
   private MethodDisplayNames                       methodDisplay = new MethodDisplayNames(serializer);
+
 
   public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
                      PreparedComponentsFromL2Connection connectionComponents) {
@@ -93,7 +96,7 @@ public class ManagerImpl implements Manager {
     this.startClient = startClient;
     this.classProvider = classProvider;
     this.connectionComponents = connectionComponents;
-
+    this.cluster = new Cluster();
     if (shutdownActionRequired) {
       shutdownAction = new Thread(new ShutdownAction());
       // Register a shutdown hook for the DSO client
@@ -812,6 +815,10 @@ public class ManagerImpl implements Manager {
       if (rv == null) { throw new AssertionError("missing display string for signature: " + methodSignature); }
       return rv;
     }
+  }
+
+  public Cluster getCluster() {
+    return cluster;
   }
 
 }
