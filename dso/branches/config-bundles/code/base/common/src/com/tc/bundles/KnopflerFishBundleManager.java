@@ -5,30 +5,52 @@
 package com.tc.bundles;
 
 import java.net.URL;
-import org.osgi.framework.BundleException;
+import java.util.Hashtable;
+import org.osgi.framework.BundleContext;
+//import org.osgi.framework.BundleException;
 import org.knopflerfish.framework.Framework;
+//import com.tc.bundles.BundleManager;
 
 /**
- * KnopflerFish OSGi implementation.
+ * BundleManager that uses the KnopflerFish OSGi implementation.
  */
-class KnopflerFishBundleManager {
-  public void start(final String bundleName, final String bundleVersion) 
-    throws BundleException {
+class KnopflerFishBundleManager 
+  implements com.tc.bundles.BundleManager {
+  
+  public void startBundle(final String bundleName, final String bundleVersion) 
+    throws com.tc.bundles.BundleException {
     try {
       URL bundleLocation = getBundleLocation(bundleName, bundleVersion);
       installBundle(bundleLocation.toString(), true);
     }
     catch (org.osgi.framework.BundleException bex) {
-      throw new BundleException("bleh!", bex);
+      throw new com.tc.bundles.BundleException("bleh!", bex);
+    }
+    catch (Exception ex) {
+      throw new com.tc.bundles.BundleException("bleh!", ex);
     }
   }
 
-  public void stop(final String bundleName, final String bundleVersion) 
-    throws BundleException {
+  public void stopBundle(final String bundleName, final String bundleVersion) 
+    throws com.tc.bundles.BundleException {
     // ???
   }
-  
-  private static Framework framework = null;
+
+  public void registerService(Object serviceObject, Hashtable serviceProps) 
+    throws com.tc.bundles.BundleException {
+    try {
+      installService(serviceObject, serviceProps);
+    }
+    catch (IllegalStateException isex) {
+      throw new com.tc.bundles.BundleException("bleh!", isex);
+    }
+    catch (Exception ex) {
+      throw new com.tc.bundles.BundleException("bleh!", ex);
+    }
+  }
+
+  private static Framework framework                     = null;
+  private static BundleContext systemBC                  = null;
   
   private static String OSGI_FWDIR_PROP                  = "org.osgi.framework.dir";
   private static String OSGI_FWDIR_PROP_DEFAULT          = "osgi/fwdir";
@@ -38,27 +60,25 @@ class KnopflerFishBundleManager {
   
   private static String KF_BUNDLESTORAGE_PROP            = "org.knopflerfish.framework.bundlestorage";
   private static String KF_BUNDLESTORAGE_PROP_DEFAULT    = "memory";
-  
-  private void startup() {
+
+  /**
+   * Creates an instance of the KnopflerFish OSGi framework
+   * and launches it.
+   */
+  private void startup() 
+    throws Exception {
+    //System.setProperty(OSGI_FWDIR_PROP, OSGI_FWDIR_PROP_DEFAULT);
     System.setProperty(OSGI_BOOTDELEGATION_PROP, OSGI_BOOTDELEGATION_PROP_DEFAULT);
     System.setProperty(KF_BUNDLESTORAGE_PROP, KF_BUNDLESTORAGE_PROP_DEFAULT);
-    //System.setProperty(OSGI_FWDIR_PROP, OSGI_FWDIR_PROP_DEFAULT);
     try {
-      synchronized(framework) {
-        framework = new Framework(null);
-        framework.launch(0);
-      }
-    }
-    catch (org.osgi.framework.BundleException bex) {
+      framework = new Framework(null);
+      framework.launch(0);
+      systemBC = framework.getSystemBundleContext();
     }
     catch (Exception ex) {
+      ex.printStackTrace();
+      throw ex;
     }
-  }
-  
-  private void shutdown() {
-  }
-  
-  private void restart() {
   }
 
   /**
@@ -68,15 +88,31 @@ class KnopflerFishBundleManager {
    * @param bundleVersion The vesion number of the bundle in x.x.x format
    * @returns An URL pointing to the location of the bundle hjar file
    */
-  private URL getBundleLocation(final String bundleName, final String bundleVersion) {
+  private URL getBundleLocation(String bundleName, String bundleVersion) {
     return null; 
-  }
-  
-  private void installBundle(final String bundleLocation, final boolean startBundle) 
-    throws org.osgi.framework.BundleException {
-    if (framework == null) startup();
-    
+  } 
+
+  /**
+   * Installs a bundle, and optionally start it.
+   * This will also create (if needed) an instance of KF and launch it.
+   * @param bundleLocation The bundle's jar file location (eg: file:/path/to/jar/file)
+   * @param startBundle The flag to indicate if the newly installed bundle should also start
+   */
+  private void installBundle(String bundleLocation, boolean startBundle) 
+    throws org.osgi.framework.BundleException, Exception {
+    if (framework != null) startup();
     long bundleId = framework.installBundle(bundleLocation, null);
     if (startBundle) framework.startBundle(bundleId);
   }
+
+  /**
+   * Install an OSGi service.
+   * @param serviceObject The service to install
+   * @param serviceProps Properties for the service
+   */
+  public void installService(Object serviceObject, Hashtable serviceProps)
+    throws IllegalStateException, Exception {
+    if (framework != null) startup();
+    systemBC.registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
+  }  
 }
