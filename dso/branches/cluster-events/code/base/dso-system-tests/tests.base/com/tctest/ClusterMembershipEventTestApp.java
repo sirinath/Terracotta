@@ -58,11 +58,9 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   private final int           initialNodeCount = getParticipantCount();
   private final CyclicBarrier start            = new CyclicBarrier(initialNodeCount);
   private final CyclicBarrier newClientUp      = new CyclicBarrier(initialNodeCount);
-  private final CyclicBarrier newClientDown    = new CyclicBarrier(initialNodeCount);
 
   // not shared..
   private final Hashtable     myCluster        = new Hashtable();
-  private String              thisNode;
   private final CyclicBarrier nodeDisBarrier   = new CyclicBarrier(2);
   private final CyclicBarrier nodeConnBarrier  = new CyclicBarrier(2);
 
@@ -78,9 +76,8 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
     ManagerUtil.addClusterEventListener(this);
     final int nodeToSpawn = start.barrier();
     assertCluster();
-    ExtraL1ProcessControl client = null;
     if (nodeToSpawn == 0) {
-      client = spawnNewClient();
+      spawnNewClient();
     }
     newClientUp.barrier();
     nodeConnBarrier.barrier();
@@ -88,14 +85,6 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
     nodeDisBarrier.barrier();
     System.err.println("\n### New client disconnect detected");
     assertCluster();
-  }
-
-  private void killClient(ExtraL1ProcessControl client) {
-    try {
-      client.shutdown();
-    } catch (Exception e) {
-      //
-    }
   }
 
   private ExtraL1ProcessControl spawnNewClient() throws Exception {
@@ -140,7 +129,6 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
       prevId = (String) trueCluster.put(thisNodeId, thisNodeId);
     }
     if (prevId != null) { throw new AssertionError("Error"); }
-    this.thisNode = thisNodeId;
     for (int i = 0; i < nodesCurrentlyInCluster.length; i++) {
       myCluster.put(nodesCurrentlyInCluster[i], nodesCurrentlyInCluster[i]);
     }
@@ -165,9 +153,8 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   }
 
   public static class L1Client {
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String args[])  {
       System.err.println("\n### New Client Started");
-//      Thread.sleep(2 * 60 * 1000);
     }
   }
 }

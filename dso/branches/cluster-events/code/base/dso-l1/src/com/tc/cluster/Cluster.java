@@ -4,6 +4,8 @@
  */
 package com.tc.cluster;
 
+import java.io.CharArrayWriter;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -58,6 +60,18 @@ public class Cluster {
 
   }
 
+  private void log(Throwable e, String nodeId) {
+    CharArrayWriter caw = new CharArrayWriter();
+    PrintWriter pw = new PrintWriter(caw);
+    e.printStackTrace(pw);
+    pw.flush();
+    final String stack = new String(caw.toString());
+    System.err.println("\n\n###################################\n" + "Got Exception -> nodeId = " + nodeId
+                       + " cluster -> " + this + "\n" + "Exception = " + stack + "\n"
+                       + "###################################\n\n");
+
+  }
+
   public synchronized String toString() {
     return "Cluster{ thisNode=" + thisNode + ", nodesInCluster=" + nodes.keySet() + "}";
   }
@@ -77,7 +91,7 @@ public class Cluster {
       try {
         l.thisNodeConnected(thisNode.getNodeId(), ids);
       } catch (Throwable e) {
-        log("Got Exception: " + e, thisNode.getNodeId());
+        log(e, thisNode.getNodeId());
       }
     }
   }
@@ -89,7 +103,7 @@ public class Cluster {
       try {
         l.thisNodeDisconnected(thisNode.getNodeId());
       } catch (Throwable e) {
-        log("Got Exception: " + e, thisNode.getNodeId());
+        log(e, thisNode.getNodeId());
       }
     }
   }
@@ -101,7 +115,7 @@ public class Cluster {
       try {
         l.nodeConnected(newNodeId);
       } catch (Throwable e) {
-        log("Got Exception: " + e, thisNode.getNodeId());
+        log(e, thisNode.getNodeId());
       }
     }
   }
@@ -113,7 +127,7 @@ public class Cluster {
       try {
         l.nodeDisconnected(nodeId);
       } catch (Throwable e) {
-        log("Got Exception: " + e, thisNode.getNodeId());
+        log(e, thisNode.getNodeId());
       }
     }
   }

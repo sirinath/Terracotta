@@ -53,14 +53,13 @@ public class ManagerImpl implements Manager {
   private final LiteralValues                      literals      = new LiteralValues();
 
   private final SetOnceFlag                        clientStarted = new SetOnceFlag();
-  private final DistributedMethodCallState         dmcState      = new DistributedMethodCallState();
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
   private final boolean                            startClient;
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Thread                             shutdownAction;
   private final Portability                        portability;
-  private final Cluster cluster;
+  private final Cluster                            cluster;
 
   private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
   private ClientObjectManager                      objectManager;
@@ -71,7 +70,6 @@ public class ManagerImpl implements Manager {
   private OptimisticTransactionManager             optimisticTransactionManager;
   private SerializationUtil                        serializer    = new SerializationUtil();
   private MethodDisplayNames                       methodDisplay = new MethodDisplayNames(serializer);
-
 
   public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
                      PreparedComponentsFromL2Connection connectionComponents) {
@@ -161,23 +159,13 @@ public class ManagerImpl implements Manager {
 
     this.optimisticTransactionManager = new OptimisticTransactionManagerImpl(objectManager, txManager);
 
-    if (dmcState.attemptInit()) {
-      if (!objectManager.enableDistributedMethods()) {
-        this.methodCallManager = new NullDistributedMethodCallManager();
-      } else {
-        this.methodCallManager = new DistributedMethodCallManagerImpl(objectManager, txManager, runtimeLogger,
-                                                                      classProvider);
-      }
-
-      final DistributedMethodCallManager dmcManager = methodCallManager;
-      Thread t = new Thread("Distributed Method Call Manager Starter Thread") {
-        public void run() {
-          dmcManager.start();
-          dmcState.initialized();
-        }
-      };
-      t.setDaemon(true);
-      t.start();
+    if (!objectManager.enableDistributedMethods()) {
+      this.methodCallManager = new NullDistributedMethodCallManager();
+    } else {
+      DistributedMethodCallManagerImpl tmp = new DistributedMethodCallManagerImpl(objectManager, txManager,
+                                                                                  runtimeLogger, classProvider);
+      cluster.addClusterEventListener(tmp);
+      this.methodCallManager = tmp;
     }
 
     this.shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
@@ -655,7 +643,7 @@ public class ManagerImpl implements Manager {
   }
 
   private void distributedInvoke(Object receiver, TCObject tcObject, String method, Object[] params) {
-    dmcState.waitUntilInitialized();
+    // dmcState.waitUntilInitialized();
     methodCallManager.distributedInvoke(receiver, tcObject, method, params);
   }
 
@@ -687,38 +675,6 @@ public class ManagerImpl implements Manager {
       // stop();
 
       shutdown(true);
-    }
-  }
-
-  private static class DistributedMethodCallState {
-    private static final int NOT_INITIALZIED = 0;
-    private static final int INITIALIZING    = 1;
-    private static final int INITIALIZED     = 2;
-
-    private int              state           = NOT_INITIALZIED;
-
-    synchronized boolean attemptInit() {
-      if (state == NOT_INITIALZIED) {
-        state = INITIALIZING;
-        return true;
-      }
-      return false;
-    }
-
-    synchronized void initialized() {
-      if (state != INITIALIZING) { throw new IllegalStateException("state is " + state); }
-      state = INITIALIZED;
-      notifyAll();
-    }
-
-    synchronized void waitUntilInitialized() {
-      while (state != INITIALIZED) {
-        try {
-          wait();
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
     }
   }
 
