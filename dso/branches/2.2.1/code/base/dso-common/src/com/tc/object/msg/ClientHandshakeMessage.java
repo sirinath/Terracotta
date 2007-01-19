@@ -3,6 +3,7 @@
  */
 package com.tc.object.msg;
 
+import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
@@ -30,7 +31,7 @@ public interface ClientHandshakeMessage {
 
   public Collection getPendingLockContexts();
 
-  public MessageChannel getChannel();
+  public ChannelID getChannelID();
 
   public void send();
 
@@ -43,5 +44,7 @@ public interface ClientHandshakeMessage {
   public void setIsObjectIDsRequested(boolean request);
 
   public boolean isObjectIDsRequested();
+
+  public MessageChannel getChannel();
 
 }

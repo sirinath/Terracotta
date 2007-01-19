@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.objectserver.handshakemanager;
 
@@ -8,14 +7,13 @@ import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.net.DSOChannelManager;
+import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.lockmanager.api.LockManager;
@@ -87,10 +85,8 @@ public class ServerClientHandshakeManager {
     return state == STARTED;
   }
 
-  public void notifyClientConnect(final ClientHandshakeMessage handshake) {
-    final MessageChannel channel = handshake.getChannel();
-    final ChannelID channelID = channel.getChannelID();
-
+  public void notifyClientConnect(ClientHandshakeMessage handshake) {
+    ChannelID channelID = handshake.getChannelID();
     logger.info("Client connected " + channelID);
     synchronized (this) {
       logger.debug("Handling client handshake...");
@@ -109,17 +105,17 @@ public class ServerClientHandshakeManager {
           logger.debug("Client " + channelID + " requested Object ID Sequences ");
           clientsRequestingObjectIDSequence.add(channelID);
         }
-        // XXX: It would be better to not have two different code paths that both call sendAckMessageTo(..)
-        sendAckMessageTo(channel);
+        // XXX: It would be better to not have two different code paths that both call sendAckMessageFor(..)
+        sendAckMessageFor(channelID);
         return;
       }
 
       if (state == STARTING) {
-        this.channelManager.publishChannel(channel);
+        channelManager.makeChannelActive(handshake.getChannel());
       }
 
-      this.sequenceValidator.initSequence(channelID, handshake.getTransactionSequenceIDs());
-      this.transactionManager.setResentTransactionIDs(channelID, handshake.getResentTransactionIDs());
+      this.sequenceValidator.initSequence(handshake.getChannelID(), handshake.getTransactionSequenceIDs());
+      this.transactionManager.setResentTransactionIDs(handshake.getChannelID(), handshake.getResentTransactionIDs());
 
       for (Iterator i = handshake.getObjectIDs().iterator(); i.hasNext();) {
         clientStateManager.addReference(channelID, (ObjectID) i.next());
@@ -127,14 +123,14 @@ public class ServerClientHandshakeManager {
 
       for (Iterator i = handshake.getLockContexts().iterator(); i.hasNext();) {
         LockContext ctxt = (LockContext) i.next();
-        lockManager.reestablishLock(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(), ctxt.getLockLevel(),
-                                    lockResponseSink);
+        lockManager.reestablishLock(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(),
+                                    ctxt.getLockLevel(), lockResponseSink);
       }
 
       for (Iterator i = handshake.getWaitContexts().iterator(); i.hasNext();) {
         WaitContext ctxt = (WaitContext) i.next();
-        lockManager.reestablishWait(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(), ctxt.getLockLevel(),
-                                    ctxt.getWaitInvocation(), lockResponseSink);
+        lockManager.reestablishWait(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(),
+                                    ctxt.getLockLevel(), ctxt.getWaitInvocation(), lockResponseSink);
       }
 
       for (Iterator i = handshake.getPendingLockContexts().iterator(); i.hasNext();) {
@@ -157,29 +153,30 @@ public class ServerClientHandshakeManager {
           start();
         }
       } else {
-        sendAckMessageTo(channel);
+        sendAckMessageFor(channelID);
       }
     }
   }
 
-  private void sendAckMessageTo(MessageChannel channel) {
-    final ChannelID channelID = channel.getChannelID();
+  private void sendAckMessageFor(ChannelID channelID) {
+    try {
+      logger.debug("Sending handshake acknowledgement to " + channelID);
+      ClientHandshakeAckMessage handshakeAck = channelManager.newClientHandshakeAckMessage(channelID);
+      if (clientsRequestingObjectIDSequence.remove(channelID)) {
+        long ids = oidSequence.nextObjectIDBatch(BATCH_SEQUENCE_SIZE);
+        logger.debug("Giving out Object ID Sequences to " + channelID + " from " + ids + " to "
+                    + (ids + BATCH_SEQUENCE_SIZE));
+        handshakeAck.initialize(ids, ids + BATCH_SEQUENCE_SIZE, persistent);
+      } else {
+        handshakeAck.initialize(0, 0, persistent);
+      }
+      handshakeAck.send();
 
-    logger.debug("Sending handshake acknowledgement to " + channelID);
+      channelManager.makeChannelActive(handshakeAck.getChannel());
 
-    ClientHandshakeAckMessage handshakeAck = (ClientHandshakeAckMessage) channel
-        .createMessage(TCMessageType.CLIENT_HANDSHAKE_ACK_MESSAGE);
-    if (clientsRequestingObjectIDSequence.remove(channelID)) {
-      long ids = oidSequence.nextObjectIDBatch(BATCH_SEQUENCE_SIZE);
-      logger.debug("Giving out Object ID Sequences to " + channelID + " from " + ids + " to "
-                   + (ids + BATCH_SEQUENCE_SIZE));
-      handshakeAck.initialize(ids, ids + BATCH_SEQUENCE_SIZE, persistent);
-    } else {
-      handshakeAck.initialize(0, 0, persistent);
+    } catch (NoSuchChannelException e) {
+      logger.warn("Not sending handshake message to disconnected client: " + channelID);
     }
-    handshakeAck.send();
-
-    channelManager.publishChannel(channel);
   }
 
   public synchronized void notifyTimeout() {
@@ -200,11 +197,9 @@ public class ServerClientHandshakeManager {
     logger.info("Starting DSO services...");
     lockManager.start();
     objectManager.start();
-
-    MessageChannel[] channels = channelManager.getRawChannels();
-
-    for (int i = 0; i < channels.length; i++) {
-      sendAckMessageTo(channels[i]);
+    for (Iterator i = channelManager.getRawChannelIDs().iterator(); i.hasNext();) {
+      ChannelID channelID = (ChannelID) i.next();
+      sendAckMessageFor(channelID);
     }
     state = STARTED;
   }

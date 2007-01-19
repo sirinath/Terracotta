@@ -5,28 +5,30 @@
 package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
+import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.net.DSOChannelManager;
+import com.tc.object.net.DSOChannelManagerEventListener;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @author steve
  */
 public class NullChannelManager implements DSOChannelManager {
 
-  public boolean isValidID(ChannelID channelID) {
+  public boolean isActiveID(ChannelID channelID) {
     return true;
   }
 
-  public MessageChannel getChannel(ChannelID id) {
+  public MessageChannel getActiveChannel(ChannelID id) {
     throw new UnsupportedOperationException();
   }
 
-  public MessageChannel[] getChannels() {
-    throw new UnsupportedOperationException();
+  public MessageChannel[] getActiveChannels() {
+    return new MessageChannel[] {};
   }
 
   public void closeAll(Collection channelIDs) {
@@ -34,27 +36,31 @@ public class NullChannelManager implements DSOChannelManager {
   }
 
   public String getChannelAddress(ChannelID channelID) {
-    return String.valueOf(channelID.toLong());
+    return "";
   }
 
   public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) {
     throw new UnsupportedOperationException();
   }
 
-  public Collection getAllChannelIDs() {
+  public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) {
     throw new UnsupportedOperationException();
   }
 
-  public void addEventListener(ChannelManagerEventListener listener) {
+  public Collection getAllActiveChannelIDs() {
+    return Collections.EMPTY_LIST;
+  }
+
+  public void addEventListener(DSOChannelManagerEventListener listener) {
     //
   }
 
-  public void publishChannel(MessageChannel channel) {
+  public void makeChannelActive(MessageChannel channel) {
     //
   }
 
-  public MessageChannel[] getRawChannels() {
-    throw new UnsupportedOperationException();
+  public Collection getRawChannelIDs() {
+    return Collections.EMPTY_LIST;
   }
 
 }

@@ -474,9 +474,13 @@ public class DistributedObjectServer extends SEDA {
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
                                                  new RequestLockUnLockHandler(), 1, maxStageSize);
-    stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE,
-                             new ChannelLifeCycleHandler(communicationsManager, transactionManager,
-                                                         transactionBatchManager), 1, maxStageSize);
+    Stage channelLifecycleStage = stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE,
+                                                           new ChannelLifeCycleHandler(communicationsManager,
+                                                                                       transactionManager,
+                                                                                       transactionBatchManager), 1,
+                                                           maxStageSize);
+    channelManager.addEventListener(new ChannelLifeCycleHandler.EventListener(channelLifecycleStage.getSink()));
+
     SampledCounter globalObjectFaultCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
                                                                                                            true, 0L));
     SampledCounter globalObjectFlushCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300,
@@ -539,8 +543,8 @@ public class DistributedObjectServer extends SEDA {
     lsnr.routeMessageType(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, jmxRemoteTunnelStage.getSink(),
                           hydrateSink);
 
-    Sink stateChangeSink = stageManager.getStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE).getSink();
-    lsnr.getChannelManager().routeChannelStateChanges(stateChangeSink);
+
+
 
     ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
 

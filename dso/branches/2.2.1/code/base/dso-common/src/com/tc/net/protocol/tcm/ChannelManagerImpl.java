@@ -1,13 +1,10 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.net.protocol.tcm;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
-import com.tc.async.api.Sink;
-import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
@@ -30,7 +27,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   private final Map                             channels;
   private final boolean                         transportDisconnectRemovesChannel;
   private final ServerMessageChannelFactory     channelFactory;
-  private Sink                                  stateChangeSink     = new NullSink();
   private final List                            eventListeners      = new CopyOnWriteArrayList();
 
   public ChannelManagerImpl(boolean transportDisconnectRemovesChannel, ServerMessageChannelFactory channelFactory) {
@@ -41,12 +37,10 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
 
   public MessageChannelInternal createNewChannel(ChannelID id) {
     MessageChannelInternal channel = channelFactory.createNewChannel(id);
-    channel.addListener(this);
-
     synchronized (this) {
       channels.put(channel.getChannelID(), channel);
+      channel.addListener(this);
     }
-
     return channel;
   }
 
@@ -89,14 +83,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
     return true;
   }
 
-  public TCMessageFactory getMessageFactory() {
-    return this.channelFactory.getMessageFactory();
-  }
-
-  public TCMessageRouter getMessageRouter() {
-    return this.channelFactory.getMessageRouter();
-  }
-
   public void notifyChannelEvent(ChannelEvent event) {
     MessageChannel channel = event.getChannel();
 
@@ -107,14 +93,8 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
         removeChannel(channel);
       }
     } else if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
-      addChannel(channel);
+      fireChannelCreatedEvent(channel);
     }
-
-    this.stateChangeSink.add(event);
-  }
-
-  private void addChannel(MessageChannel channel) {
-    fireChannelCreatedEvent(channel);
   }
 
   private void removeChannel(MessageChannel channel) {
@@ -127,10 +107,6 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   public synchronized void addEventListener(ChannelManagerEventListener listener) {
     if (listener == null) { throw new IllegalArgumentException("listener must be non-null"); }
     this.eventListeners.add(listener);
-  }
-
-  public synchronized void routeChannelStateChanges(Sink sink) {
-    this.stateChangeSink = sink;
   }
 
 }

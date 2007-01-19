@@ -6,14 +6,13 @@ package com.tc.objectserver.lockmanager.impl;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.MockMessageChannel;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.net.DSOChannelManager;
+import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.objectserver.lockmanager.api.LockAwardContext;
 import com.tc.util.TCAssertionError;
 
@@ -212,21 +211,17 @@ public class LockTimerTest extends TestCase {
       }
     }
 
-    public MessageChannel getChannel(ChannelID id) {
+    public MessageChannel getActiveChannel(ChannelID id) {
       synchronized (channels) {
         return (MessageChannel) this.channels.get(id);
       }
     }
 
-    public MessageChannel[] getChannels() {
+    public MessageChannel[] getActiveChannels() {
       throw new ImplementMe();
     }
 
-    public boolean isValidID(ChannelID channelID) {
-      throw new ImplementMe();
-    }
-
-    public MessageChannelInternal createNewChannel(ChannelID id) {
+    public boolean isActiveID(ChannelID channelID) {
       throw new ImplementMe();
     }
 
@@ -246,20 +241,20 @@ public class LockTimerTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public Collection getAllChannelIDs() {
+    public Collection getAllActiveChannelIDs() {
       throw new ImplementMe();
     }
 
-    public void addEventListener(ChannelManagerEventListener listener) {
+    public void addEventListener(DSOChannelManagerEventListener listener) {
       throw new ImplementMe();
     }
 
-    public void publishChannel(MessageChannel channel) {
+    public void makeChannelActive(MessageChannel channel) {
       throw new ImplementMe();
     }
 
-    public MessageChannel[] getRawChannels() {
-      return getChannels();
+    public Collection getRawChannelIDs() {
+      throw new ImplementMe();
     }
   }
 

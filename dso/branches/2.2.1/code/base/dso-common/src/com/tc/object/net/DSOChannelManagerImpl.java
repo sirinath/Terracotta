@@ -12,33 +12,36 @@ import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelManager;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
+import com.tc.object.msg.ClientHandshakeAckMessage;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Wraps the generic ChannelManager to hide it from the rest of the DSO world
+ * Wraps the generic ChannelManager to hide it from the rest of the DSO world and to provide delayed visibility of
+ * channels
  */
-public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManagerMBean, ChannelManagerEventListener {
-
+public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManagerMBean {
   private static final MessageChannel[] EMPTY_CHANNEL_ARRAY = new MessageChannel[] {};
 
-  private final Map                     publishedChannels   = new ConcurrentReaderHashMap();
+  private final Map                     activeChannels      = new ConcurrentReaderHashMap();
   private final List                    eventListeners      = new CopyOnWriteArrayList();
+
   private final ChannelManager          genericChannelManager;
 
   public DSOChannelManagerImpl(ChannelManager genericChannelManager) {
     this.genericChannelManager = genericChannelManager;
-    genericChannelManager.addEventListener(this);
+    this.genericChannelManager.addEventListener(new GenericChannelEventListener());
   }
 
-  public MessageChannel getChannel(ChannelID id) throws NoSuchChannelException {
-    MessageChannel rv = (MessageChannel) publishedChannels.get(id);
+  public MessageChannel getActiveChannel(ChannelID id) throws NoSuchChannelException {
+    MessageChannel rv = (MessageChannel) activeChannels.get(id);
     if (rv == null) { throw new NoSuchChannelException("No such channel: " + id); }
     return rv;
   }
@@ -54,22 +57,17 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
     }
   }
 
-  public MessageChannel[] getChannels() {
-    return (MessageChannel[]) publishedChannels.values().toArray(EMPTY_CHANNEL_ARRAY);
+  public MessageChannel[] getActiveChannels() {
+    return (MessageChannel[]) activeChannels.values().toArray(EMPTY_CHANNEL_ARRAY);
   }
 
-  public boolean isValidID(ChannelID channelID) {
-    return publishedChannels.containsKey(channelID);
-  }
-
-  public void addEventListener(ChannelManagerEventListener listener) {
-    if (listener == null) { throw new IllegalArgumentException("listener must be non-null"); }
-    this.eventListeners.add(listener);
+  public boolean isActiveID(ChannelID channelID) {
+    return activeChannels.containsKey(channelID);
   }
 
   public String getChannelAddress(ChannelID channelID) {
     try {
-      MessageChannel channel = getChannel(channelID);
+      MessageChannel channel = getActiveChannel(channelID);
       TCSocketAddress addr = channel.getRemoteAddress();
       return addr.getStringForm();
     } catch (NoSuchChannelException e) {
@@ -77,46 +75,61 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
     }
   }
 
-  public Collection getAllChannelIDs() {
-    return new HashSet(publishedChannels.keySet());
+  public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID)
+      throws NoSuchChannelException {
+    return (BatchTransactionAcknowledgeMessage) getActiveChannel(channelID)
+        .createMessage(TCMessageType.BATCH_TRANSACTION_ACK_MESSAGE);
   }
 
-  public void publishChannel(MessageChannel channel) {
-    publishedChannels.put(channel.getChannelID(), channel);
+  public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) throws NoSuchChannelException {
+    MessageChannelInternal channel = genericChannelManager.getChannel(channelID);
+    if (channel == null) { throw new NoSuchChannelException(); }
+    return (ClientHandshakeAckMessage) channel.createMessage(TCMessageType.CLIENT_HANDSHAKE_ACK_MESSAGE);
+  }
+
+  public Collection getAllActiveChannelIDs() {
+    return Collections.unmodifiableCollection(activeChannels.keySet());
+  }
+
+  public void makeChannelActive(MessageChannel channel) {
+    activeChannels.put(channel.getChannelID(), channel);
     fireChannelCreatedEvent(channel);
   }
 
-  public void channelCreated(MessageChannel channel) {
-    // do nothing here -- handshake manager will "publish" the channel when it sees fit
+  public void addEventListener(DSOChannelManagerEventListener listener) {
+    if (listener == null) { throw new NullPointerException("listener cannot be be null"); }
+    eventListeners.add(listener);
   }
 
-  public void channelRemoved(MessageChannel channel) {
-    publishedChannels.remove(channel.getChannelID());
-    fireChannelRemovedEvent(channel);
+  public Collection getRawChannelIDs() {
+    return genericChannelManager.getAllChannelIDs();
   }
 
   private void fireChannelCreatedEvent(MessageChannel channel) {
     for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
-      ChannelManagerEventListener eventListener = (ChannelManagerEventListener) iter.next();
+      DSOChannelManagerEventListener eventListener = (DSOChannelManagerEventListener) iter.next();
       eventListener.channelCreated(channel);
     }
   }
 
   private void fireChannelRemovedEvent(MessageChannel channel) {
     for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
-      ChannelManagerEventListener eventListener = (ChannelManagerEventListener) iter.next();
+      DSOChannelManagerEventListener eventListener = (DSOChannelManagerEventListener) iter.next();
       eventListener.channelRemoved(channel);
     }
   }
 
-  public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID)
-      throws NoSuchChannelException {
-    return (BatchTransactionAcknowledgeMessage) getChannel(channelID)
-        .createMessage(TCMessageType.BATCH_TRANSACTION_ACK_MESSAGE);
-  }
+  private class GenericChannelEventListener implements ChannelManagerEventListener {
 
-  public MessageChannel[] getRawChannels() {
-    return genericChannelManager.getChannels();
+    public void channelCreated(MessageChannel channel) {
+      // nothing
+    }
+
+    public void channelRemoved(MessageChannel channel) {
+      activeChannels.remove(channel.getChannelID());
+      fireChannelRemovedEvent(channel);
+    }
+
   }
 
 }

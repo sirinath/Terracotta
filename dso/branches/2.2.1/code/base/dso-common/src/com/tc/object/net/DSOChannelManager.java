@@ -5,34 +5,39 @@
 package com.tc.object.net;
 
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
+import com.tc.object.msg.ClientHandshakeAckMessage;
 
 import java.util.Collection;
 
 /**
- * Wraps the generic ChannelManager to isolate the rest of the DSO world from it's interface
+ * Wraps the generic ChannelManager adding slightly different channel visibility than DSO requires (we don't want
+ * channels to be visible to other subsystems until they have fully handshaked)
  */
 public interface DSOChannelManager {
 
   public void closeAll(Collection channelIDs);
 
-  public MessageChannel getChannel(ChannelID id) throws NoSuchChannelException;
+  public MessageChannel getActiveChannel(ChannelID id) throws NoSuchChannelException;
 
-  public MessageChannel[] getChannels();
+  public MessageChannel[] getActiveChannels();
 
-  public boolean isValidID(ChannelID channelID);
+  public boolean isActiveID(ChannelID channelID);
 
   public String getChannelAddress(ChannelID channelID);
 
-  public Collection getAllChannelIDs();
+  public Collection getAllActiveChannelIDs();
 
-  public void publishChannel(MessageChannel channel);
+  public void addEventListener(DSOChannelManagerEventListener listener);
 
-  public void addEventListener(ChannelManagerEventListener listener);
+  public void makeChannelActive(MessageChannel channel);
 
-  public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID) throws NoSuchChannelException;
+  public BatchTransactionAcknowledgeMessage newBatchTransactionAcknowledgeMessage(ChannelID channelID)
+      throws NoSuchChannelException;
 
-  public MessageChannel[] getRawChannels();
+  public ClientHandshakeAckMessage newClientHandshakeAckMessage(ChannelID channelID) throws NoSuchChannelException;
+
+  public Collection getRawChannelIDs();
+
 }

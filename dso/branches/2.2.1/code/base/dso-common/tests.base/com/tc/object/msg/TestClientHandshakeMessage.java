@@ -8,6 +8,7 @@ import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.tcm.TestMessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.WaitContext;
@@ -32,7 +33,7 @@ public class TestClientHandshakeMessage implements ClientHandshakeMessage {
   public NoExceptionLinkedQueue setTransactionIDsCalls         = new NoExceptionLinkedQueue();
   public Collection             transactionSequenceIDs         = new ArrayList();
   public Collection             transactionIDs                 = new ArrayList();
-  public MessageChannel         channel;
+  private TestMessageChannel    channel;
 
   public void addObjectID(ObjectID id) {
     clientObjectIds.add(id);
@@ -43,7 +44,14 @@ public class TestClientHandshakeMessage implements ClientHandshakeMessage {
   }
 
   public MessageChannel getChannel() {
-    return channel;
+    synchronized (this) {
+      if (channel == null) {
+        channel = new TestMessageChannel();
+        channel.channelID = channelID;
+      }
+
+      return channel;
+    }
   }
 
   public ChannelID getChannelID() {
