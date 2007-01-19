@@ -76,4 +76,8 @@ public class TestDSOChannelManager implements DSOChannelManager {
     throw new ImplementMe();
   }
 
+  public void makeChannelActive(MessageChannel channel, ClientHandshakeAckMessage ackMsg) {
+    throw new ImplementMe();
+  }
+
 }
