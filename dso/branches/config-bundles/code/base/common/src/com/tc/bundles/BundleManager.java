@@ -18,7 +18,7 @@ public interface BundleManager {
   void stopBundle(final String bundleName, final String bundleVersion) 
     throws BundleException;
   
-  void registerService(Object serviceObject, Hashtable serviceProps) 
+  void installService(Object serviceObject, Hashtable serviceProps) 
     throws BundleException; // should probably throw a different exception type
 
 }

@@ -7,14 +7,14 @@ package com.tc.bundles;
 import java.net.URL;
 import java.util.Hashtable;
 import org.osgi.framework.BundleContext;
-//import org.osgi.framework.BundleException;
 import org.knopflerfish.framework.Framework;
+//import org.osgi.framework.BundleException;
 //import com.tc.bundles.BundleManager;
 
 /**
  * BundleManager that uses the KnopflerFish OSGi implementation.
  */
-class KnopflerFishBundleManager 
+public class KnopflerFishBundleManager 
   implements com.tc.bundles.BundleManager {
   
   public void startBundle(final String bundleName, final String bundleVersion) 
@@ -33,18 +33,26 @@ class KnopflerFishBundleManager
 
   public void stopBundle(final String bundleName, final String bundleVersion) 
     throws com.tc.bundles.BundleException {
-    // ???
+    // do we even need to do this?
   }
 
-  public void registerService(Object serviceObject, Hashtable serviceProps) 
+  /**
+   * Install an OSGi service.
+   * @param serviceObject The service to install
+   * @param serviceProps Properties for the service
+   */
+  public void installService(Object serviceObject, Hashtable serviceProps) 
     throws com.tc.bundles.BundleException {
     try {
-      installService(serviceObject, serviceProps);
+      if (framework == null) startup();
+      systemBC.registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
     }
     catch (IllegalStateException isex) {
+      System.out.println(isex.getMessage());
       throw new com.tc.bundles.BundleException("bleh!", isex);
     }
     catch (Exception ex) {
+      System.out.println(ex.getMessage());
       throw new com.tc.bundles.BundleException("bleh!", ex);
     }
   }
@@ -100,19 +108,8 @@ class KnopflerFishBundleManager
    */
   private void installBundle(String bundleLocation, boolean startBundle) 
     throws org.osgi.framework.BundleException, Exception {
-    if (framework != null) startup();
+    if (framework == null) startup();
     long bundleId = framework.installBundle(bundleLocation, null);
     if (startBundle) framework.startBundle(bundleId);
   }
-
-  /**
-   * Install an OSGi service.
-   * @param serviceObject The service to install
-   * @param serviceProps Properties for the service
-   */
-  public void installService(Object serviceObject, Hashtable serviceProps)
-    throws IllegalStateException, Exception {
-    if (framework != null) startup();
-    systemBC.registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
-  }  
 }
