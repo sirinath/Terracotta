@@ -11,7 +11,6 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
-import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.Arrays;
@@ -68,7 +67,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         FooObject[] array = foos[index];
         for (int j = 0; j < array.length; j++) {
           FooObject foo = array[j];
-          Assert.assertNotNull(foo);
+          if (foo == null) notifyError("foo == null");
         }
       }
 
@@ -80,7 +79,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
           int[] array2 = array1[j];
           for (int k = 0; k < array2.length; k++) {
             int val = array2[k];
-            Assert.assertEquals(count++, val);
+            if (count++ != val) notifyError("count ++ != val");
           }
         }
       }
