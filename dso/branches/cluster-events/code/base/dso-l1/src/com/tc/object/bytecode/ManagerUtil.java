@@ -384,7 +384,7 @@ public class ManagerUtil {
   }
   
   public static void addClusterEventListener(ClusterEventListener cel) {
-    getManager().getCluster().addClusterEventListener(cel);
+    getManager().addClusterEventListener(cel);
   }
 
 }

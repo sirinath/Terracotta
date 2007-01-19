@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object;
 
@@ -7,6 +8,7 @@ import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
+import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventHandler;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.lang.TCThreadGroup;
@@ -102,7 +104,7 @@ import java.util.Collections;
 
 /**
  * Thing to startup a client.
- *
+ * 
  * @author steve
  */
 
@@ -115,6 +117,7 @@ public class DistributedObjectClient extends SEDA {
   private final ClassProvider                      classProvider;
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Manager                            manager;
+  private final Cluster                            cluster;
 
   private DSOClientMessageChannel                  channel;
   private ClientLockManager                        lockManager;
@@ -130,7 +133,8 @@ public class DistributedObjectClient extends SEDA {
   private TCProperties                             l1Properties;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
-                                 PreparedComponentsFromL2Connection connectionComponents, Manager manager) {
+                                 PreparedComponentsFromL2Connection connectionComponents, Manager manager,
+                                 Cluster cluster) {
     super(threadGroup);
     Assert.assertNotNull(config);
     this.config = config;
@@ -138,6 +142,7 @@ public class DistributedObjectClient extends SEDA {
     this.connectionComponents = connectionComponents;
     this.pauseListener = new NullPauseListener();
     this.manager = manager;
+    this.cluster = cluster;
   }
 
   public void setPauseListener(PauseListener pauseListener) {
@@ -261,8 +266,9 @@ public class DistributedObjectClient extends SEDA {
                                                 maxSize);
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
                                                                 1, maxSize);
-    
-    final Stage clusterEventStage = stageManager.createStage(ClientConfigurationContext.CLUSTER_EVENT_STAGE, new ClusterEventHandler(manager.getCluster()), 1, maxSize);
+
+    final Stage clusterEventStage = stageManager.createStage(ClientConfigurationContext.CLUSTER_EVENT_STAGE,
+                                                             new ClusterEventHandler(cluster), 1, maxSize);
 
     // This set is designed to give the handshake manager an opportunity to pause stages when it is pausing due to
     // disconnect. Unfortunately, the lock response stage can block, which I didn't realize at the time, so it's not
@@ -272,7 +278,7 @@ public class DistributedObjectClient extends SEDA {
         .getLogger(ClientHandshakeManager.class)), channel.getChannelIDProvider(), channel
         .getClientHandshakeMessageFactory(), objectManager, remoteObjectManager, lockManager, rtxManager, gtxManager,
                                                         stagesToPauseOnDisconnect, pauseStage.getSink(),
-                                                        sessionManager, pauseListener, sequence, manager.getCluster());
+                                                        sessionManager, pauseListener, sequence, cluster);
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,
@@ -333,8 +339,8 @@ public class DistributedObjectClient extends SEDA {
         consoleLogger.warn("Connection refused from server: " + serverHost + ":" + serverPort);
         ThreadUtil.reallySleep(5000);
       } catch (MaxConnectionsExceededException e) {
-        consoleLogger.warn("Connection refused MAXIMUM CONNECTIONS TO SERVER EXCEEDED: " + serverHost
-                           + ":" + serverPort);
+        consoleLogger.warn("Connection refused MAXIMUM CONNECTIONS TO SERVER EXCEEDED: " + serverHost + ":"
+                           + serverPort);
         ThreadUtil.reallySleep(5000);
       } catch (IOException ioe) {
         ioe.printStackTrace();

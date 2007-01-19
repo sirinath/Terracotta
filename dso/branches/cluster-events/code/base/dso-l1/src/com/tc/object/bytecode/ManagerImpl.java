@@ -6,6 +6,7 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.Type;
 import com.tc.cluster.Cluster;
+import com.tc.cluster.ClusterEventListener;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
@@ -151,7 +152,7 @@ public class ManagerImpl implements Manager {
 
   private void startClient() {
     this.dso = new DistributedObjectClient(this.config, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class))), classProvider, this.connectionComponents, this);
+        .getLogger(DistributedObjectClient.class))), classProvider, this.connectionComponents, this, cluster);
     this.dso.start();
     this.objectManager = dso.getObjectManager();
     this.txManager = dso.getTransactionManager();
@@ -643,7 +644,6 @@ public class ManagerImpl implements Manager {
   }
 
   private void distributedInvoke(Object receiver, TCObject tcObject, String method, Object[] params) {
-    // dmcState.waitUntilInitialized();
     methodCallManager.distributedInvoke(receiver, tcObject, method, params);
   }
 
@@ -773,8 +773,8 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Cluster getCluster() {
-    return cluster;
+  public void addClusterEventListener(ClusterEventListener cel) {
+    cluster.addClusterEventListener(cel);
   }
 
 }
