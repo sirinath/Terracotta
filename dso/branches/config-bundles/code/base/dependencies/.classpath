@@ -41,6 +41,7 @@
 	<classpathentry kind="lib" path="lib/jtidy-4aug2000r7-dev.jar"/>
 	<classpathentry kind="lib" path="lib/junit-3.8.1.jar"/>
 	<classpathentry kind="lib" path="lib/junit-addons-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/knopflerfish-2.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.9.jar"/>
 	<classpathentry kind="lib" path="lib/ognl-2.7.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.core.commands-3.2.0.I20060605-1400.jar"/>
