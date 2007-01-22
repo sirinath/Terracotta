@@ -63,6 +63,7 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   private final Hashtable     myCluster        = new Hashtable();
   private final CyclicBarrier nodeDisBarrier   = new CyclicBarrier(2);
   private final CyclicBarrier nodeConnBarrier  = new CyclicBarrier(2);
+  private String              thisNode;
 
   public void run() {
     try {
@@ -75,15 +76,17 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   private void runTest() throws Throwable {
     ManagerUtil.addClusterEventListener(this);
     final int nodeToSpawn = start.barrier();
+    System.err.println("\n### passed start barrier.  thisNode=" + thisNode);
     assertCluster();
     if (nodeToSpawn == 0) {
       spawnNewClient();
     }
     newClientUp.barrier();
+    System.err.println("\n### passed newClientUp barrier.  thisNode=" + thisNode);
     nodeConnBarrier.barrier();
-    System.err.println("\n### New client connection detected");
+    System.err.println("\n### passed passedNodeConn barrier.  thisNode=" + thisNode);
     nodeDisBarrier.barrier();
-    System.err.println("\n### New client disconnect detected");
+    System.err.println("\n### passed nodeDisBarrier barrier.  thisNode=" + thisNode);
     assertCluster();
   }
 
@@ -102,7 +105,7 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   }
 
   public void nodeConnected(String nodeId) {
-    System.err.println("\n### nodeConnected->nodeId=" + nodeId);
+    System.err.println("\n### nodeConnected: thisNode=" + thisNode + ", nodeId=" + nodeId);
     myCluster.put(nodeId, nodeId);
     try {
       nodeConnBarrier.barrier();
@@ -112,7 +115,7 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   }
 
   public void nodeDisconnected(String nodeId) {
-    System.err.println("\n### nodeDisconnected->nodeId=" + nodeId);
+    System.err.println("\n### nodeDisconnected: thisNode=" + thisNode + ", nodeId=" + nodeId);
     myCluster.remove(nodeId);
     try {
       nodeDisBarrier.barrier();
@@ -127,6 +130,7 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
     final String prevId;
     synchronized (trueCluster) {
       prevId = (String) trueCluster.put(thisNodeId, thisNodeId);
+      thisNode = thisNodeId;
     }
     if (prevId != null) { throw new AssertionError("Error"); }
     for (int i = 0; i < nodesCurrentlyInCluster.length; i++) {
@@ -153,8 +157,8 @@ public class ClusterMembershipEventTestApp extends AbstractTransparentApp implem
   }
 
   public static class L1Client {
-    public static void main(String args[])  {
-      System.err.println("\n### New Client Started");
+    public static void main(String args[]) throws InterruptedException {
+      Thread.sleep(10 * 1000);
     }
   }
 }
