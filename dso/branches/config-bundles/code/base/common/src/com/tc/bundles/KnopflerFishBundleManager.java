@@ -16,7 +16,12 @@ import org.knopflerfish.framework.Framework;
  */
 public class KnopflerFishBundleManager 
   implements com.tc.bundles.BundleManager {
-  
+
+  /**
+   * Starts a bundle. 
+   * @param bundleName The name of the bundle to start
+   * @param bundleVersion The version of the bundle to start  
+   */
   public void startBundle(final String bundleName, final String bundleVersion) 
     throws com.tc.bundles.BundleException {
     try {
@@ -31,9 +36,26 @@ public class KnopflerFishBundleManager
     }
   }
 
+  /**
+   * Stops a bundle. 
+   * @param bundleName The name of the bundle to stop
+   * @param bundleVersion The version of the bundle to stop  
+   */
   public void stopBundle(final String bundleName, final String bundleVersion) 
     throws com.tc.bundles.BundleException {
-    // do we even need to do this?
+    try {
+      URL bundleLocation = getBundleLocation(bundleName, bundleVersion);
+      long bundleId = framework.getBundleId(bundleLocation.toString());
+      if (bundleId == -1)
+        throw new com.tc.bundles.BundleException("Bundle " + bundleName + " for version " + bundleVersion + " not installed.");
+      uninstallBundle(bundleId);
+    }
+    catch (org.osgi.framework.BundleException bex) {
+      throw new com.tc.bundles.BundleException("bleh!", bex);
+    }
+    catch (java.net.MalformedURLException muex) {
+      throw new com.tc.bundles.BundleException("bleh", muex);
+    }
   }
 
   /**
@@ -57,6 +79,7 @@ public class KnopflerFishBundleManager
     }
   }
 
+  // ---
   private static Framework framework                     = null;
   private static BundleContext systemBC                  = null;
   
@@ -70,15 +93,55 @@ public class KnopflerFishBundleManager
   private static String KF_BUNDLESTORAGE_PROP_DEFAULT    = "memory";
 
   /**
+   * dummy
+   */
+  public static void main(String[] args) {
+    KnopflerFishBundleManager bm = new KnopflerFishBundleManager();
+    System.out.println("Instantiated KF BundleManager!");
+    try {
+      bm.installService(new Long(1), new Hashtable());
+      System.out.println("Service Installed.");
+      
+      bm.startBundle("sample1", "1.0.0");
+      System.out.println("Bundle Started.");
+
+      bm.startBundle("sample2", "1.0.0");
+      System.out.println("Bundle Started.");
+
+      bm.startBundle("sample3", "1.0.0");
+      System.out.println("Bundle Started.");
+
+      try {
+        Thread.sleep(10000);
+      }
+      catch(InterruptedException iex) {
+        System.out.println(iex.getLocalizedMessage());
+      }
+      bm.stopBundle("sample1", "1.0.0");
+      System.out.println("Bundle Stopped.");
+
+      bm.stopBundle("sample2", "1.0.0");
+      System.out.println("Bundle Stopped.");
+
+      bm.stopBundle("sample3", "1.0.0");
+      System.out.println("Bundle Stopped.");
+    }
+    catch (Exception ex) {
+      ex.printStackTrace();
+      System.exit(1);
+    }
+  }
+
+  /**
    * Creates an instance of the KnopflerFish OSGi framework
    * and launches it.
    */
   private void startup() 
     throws Exception {
-    //System.setProperty(OSGI_FWDIR_PROP, OSGI_FWDIR_PROP_DEFAULT);
-    System.setProperty(OSGI_BOOTDELEGATION_PROP, OSGI_BOOTDELEGATION_PROP_DEFAULT);
-    System.setProperty(KF_BUNDLESTORAGE_PROP, KF_BUNDLESTORAGE_PROP_DEFAULT);
     try {
+      //System.setProperty(OSGI_FWDIR_PROP, OSGI_FWDIR_PROP_DEFAULT);
+      System.setProperty(OSGI_BOOTDELEGATION_PROP, OSGI_BOOTDELEGATION_PROP_DEFAULT);
+      System.setProperty(KF_BUNDLESTORAGE_PROP, KF_BUNDLESTORAGE_PROP_DEFAULT);
       framework = new Framework(null);
       framework.launch(0);
       systemBC = framework.getSystemBundleContext();
@@ -96,8 +159,14 @@ public class KnopflerFishBundleManager
    * @param bundleVersion The vesion number of the bundle in x.x.x format
    * @returns An URL pointing to the location of the bundle hjar file
    */
-  private URL getBundleLocation(String bundleName, String bundleVersion) {
-    return null; 
+  private URL getBundleLocation(String bundleName, String bundleVersion)
+    throws java.net.MalformedURLException {
+    return new URL("file:/tmp/" + bundleName + "-" + bundleVersion + ".jar");
+    // DSOContextImpl
+    // L1TVSConfigurationSetupManager
+    // NewCommonL1Config
+    // Plugins (XML Bean; generated)
+    // Plugin (XML Bean; generated)
   } 
 
   /**
@@ -111,5 +180,11 @@ public class KnopflerFishBundleManager
     if (framework == null) startup();
     long bundleId = framework.installBundle(bundleLocation, null);
     if (startBundle) framework.startBundle(bundleId);
+  }
+  
+  private void uninstallBundle(long bundleId) 
+    throws org.osgi.framework.BundleException {
+    if (framework == null) return;
+    framework.stopBundle(bundleId);
   }
 }
