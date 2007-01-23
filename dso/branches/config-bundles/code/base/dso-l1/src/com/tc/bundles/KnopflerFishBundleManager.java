@@ -4,10 +4,11 @@
  */
 package com.tc.bundles;
 
+import org.knopflerfish.framework.Framework;
+import org.osgi.framework.BundleContext;
+
 import java.net.URL;
 import java.util.Hashtable;
-import org.osgi.framework.BundleContext;
-import org.knopflerfish.framework.Framework;
 
 /**
  * BundleManager that uses the KnopflerFish OSGi implementation.
@@ -124,11 +125,6 @@ public class KnopflerFishBundleManager implements com.tc.bundles.BundleManager {
     if (location == null) throw new com.tc.bundles.BundleException("Bundle file for bundle " + bundleName
                                                                    + ", version " + bundleVersion + " not found.");
     return location;
-    // DSOContextImpl
-    // L1TVSConfigurationSetupManager
-    // NewCommonL1Config
-    // Plugins (XML Bean; generated)
-    // Plugin (XML Bean; generated)
   }
 
   /**
@@ -140,7 +136,7 @@ public class KnopflerFishBundleManager implements com.tc.bundles.BundleManager {
   private void installBundle(String bundleLocation, boolean startBundle) throws org.osgi.framework.BundleException,
       Exception {
     if (framework == null) startup();
-    long bundleId = framework.installBundle(bundleLocation, null);
+    long bundleId  = framework.installBundle(bundleLocation, null);
     if (startBundle) framework.startBundle(bundleId);
   }
 

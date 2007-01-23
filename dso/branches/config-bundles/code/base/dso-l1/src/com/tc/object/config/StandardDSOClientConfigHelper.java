@@ -320,6 +320,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
           }
           catch (com.tc.bundles.BundleException bex) {
             System.out.println(bex.getMessage());
+            bex.printStackTrace();
           }
         }
     }

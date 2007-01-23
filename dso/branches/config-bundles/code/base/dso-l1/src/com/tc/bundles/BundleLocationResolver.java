@@ -29,21 +29,18 @@ public class BundleLocationResolver {
       NewCommonL1Config ncl1cfg = config.getNewCommonL1Config();
       Plugins plugins           = ncl1cfg.plugins();
       String[] repositories     = (plugins == null) ? new String[0] : plugins.getRepositoryArray();
-      bundleLocations           = new URL[repositories.length];
-      for(int i=0; i<repositories.length; i++) {
+      
+      bundleLocations = new URL[repositories.length];
+      for(int i=0; i<repositories.length; i++) 
         bundleLocations[i] = new URL(repositories[i]);
-        System.out.println(bundleLocations[i+1].toString());
-      }
     }
     
+    String bundleFile = relativePath + ".jar";
     for(int i=0; i<bundleLocations.length; i++) {
-      URI uri   = new URI(bundleLocations[i].toString() + "/" + relativePath + ".jar");
-      System.err.println(uri.toString());
-      File file = new File(uri);
-      if (file.exists()) 
+      URI uri = new URI(bundleLocations[i].toString() + "/" + bundleFile);
+      if (new File(uri).exists())
         return uri.toURL();
     }
-    
     return null;
   }
 
