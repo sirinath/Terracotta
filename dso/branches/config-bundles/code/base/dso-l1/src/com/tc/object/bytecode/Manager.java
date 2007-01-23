@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.cluster.ClusterEventListener;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
@@ -116,5 +117,8 @@ public interface Manager {
 
   public TCProperties getTCProperites();
 
+  public void addClusterEventListener(ClusterEventListener cel);
+
   public DSOClientConfigHelper getDSOConfigHelper();
+
 }
