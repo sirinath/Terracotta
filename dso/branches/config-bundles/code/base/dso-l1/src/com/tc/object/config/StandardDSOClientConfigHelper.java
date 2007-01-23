@@ -311,16 +311,18 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       KnopflerFishBundleManager bm    = new KnopflerFishBundleManager(resolver);
         NewCommonL1Config config = getNewCommonL1Config();
         Plugins plugins          = config.plugins();
-        Plugin[] bundles         = plugins.getPluginArray();
-        for (int i=0; i<bundles.length; i++) {
-          Plugin bundle = bundles[i];
-          try {
-            System.out.println("Starting: " + bundle.getName() + ", version " + bundle.getVersion());
-            bm.startBundle(bundle.getName(), bundle.getVersion());
-          }
-          catch (com.tc.bundles.BundleException bex) {
-            System.out.println(bex.getMessage());
-            bex.printStackTrace();
+        if (plugins != null) {
+          Plugin[] bundles = plugins.getPluginArray();
+          for (int i=0; i<bundles.length; i++) {
+            Plugin bundle = bundles[i];
+            try {
+              System.out.println("Starting: " + bundle.getName() + ", version " + bundle.getVersion());
+              bm.startBundle(bundle.getName(), bundle.getVersion());
+            }
+            catch (com.tc.bundles.BundleException bex) {
+              System.out.println(bex.getMessage());
+              bex.printStackTrace();
+            }
           }
         }
     }

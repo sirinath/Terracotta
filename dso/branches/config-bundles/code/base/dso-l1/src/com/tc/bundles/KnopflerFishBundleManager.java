@@ -120,7 +120,6 @@ public class KnopflerFishBundleManager implements com.tc.bundles.BundleManager {
    * @returns An URL pointing to the location of the bundle hjar file
    */
   private URL getBundleLocation(String bundleName, String bundleVersion) throws com.tc.bundles.BundleException {
-    // URL location = com.tc.bundles.BundleLocationResolver.getInstance().locateBundle(bundleName, bundleVersion);
     URL location = resolver.locateBundle(bundleName, bundleVersion);
     if (location == null) throw new com.tc.bundles.BundleException("Bundle file for bundle " + bundleName
                                                                    + ", version " + bundleVersion + " not found.");

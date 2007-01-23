@@ -11,6 +11,7 @@ bundled_demos:
   - dso:
       install_directory: dso/samples
       manifest:
+        - bundle
         - chatter
         - coordination
         - inventory
