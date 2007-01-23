@@ -18,7 +18,8 @@
   <clients>
     <logs>%(user.home)/terracotta/sharededitor/client-logs</logs>
     <plugins>
-      <repository>file:/tmp</repository>
+      <repository>file:/tmp/bundle0</repository>
+      <repository>file:/tmp/bundle1</repository>
       <plugin name="sample1" version="1.0.0"/>
       <plugin name="sample2" version="1.0.0"/>
       <plugin name="sample3" version="1.0.0"/>
