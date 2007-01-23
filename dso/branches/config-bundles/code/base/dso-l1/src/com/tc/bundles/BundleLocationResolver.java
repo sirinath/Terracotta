@@ -8,7 +8,6 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.terracottatech.configV3.Plugins;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
 
 public class BundleLocationResolver {
@@ -23,7 +22,7 @@ public class BundleLocationResolver {
   /**
    */
   private URL resolve(String relativePath) 
-    throws java.net.URISyntaxException, java.net.MalformedURLException {
+    throws java.io.IOException, java.net.MalformedURLException {
 
 	  if (bundleLocations == null) {
       NewCommonL1Config ncl1cfg = config.getNewCommonL1Config();
@@ -37,9 +36,15 @@ public class BundleLocationResolver {
     
     String bundleFile = relativePath + ".jar";
     for(int i=0; i<bundleLocations.length; i++) {
-      URI uri = new URI(bundleLocations[i].toString() + "/" + bundleFile);
-      if (new File(uri).exists())
-        return uri.toURL();
+      String path = bundleLocations[i].getPath();
+      System.out.println("Path for URI: " + path);
+      File file   = new File(path + "/" + bundleFile);
+      if (file.exists()) {
+        URL location = new URL("file", file.getCanonicalPath(), "");
+        System.out.println("Canonical Path: " + file.getCanonicalPath());
+        System.out.println("Bundle URL    : " + location.toString());
+        return location;
+      }
     }
     return null;
   }
@@ -62,8 +67,8 @@ public class BundleLocationResolver {
       System.err.println(murlex.getMessage());
       return null;
     }
-    catch (java.net.URISyntaxException usex) {
-      System.err.println(usex.getMessage());
+    catch (java.io.IOException ioex) {
+      System.err.println(ioex.getMessage());
       return null;
     }
   }

@@ -19,7 +19,7 @@
     <logs>%(user.home)/terracotta/jtable/client-logs</logs>
     <plugins>
        <repository>
-          file:/Users/jgalang/Work/TCProjects/dso/config-bundles/code/base/build/dist/terracotta-2.3.0/dso/samples/bundle/plugins
+          file:./plugins
        </repository>
        <plugin name="sample1" version="1.0.0"/>
        <plugin name="sample2" version="1.0.0"/>
