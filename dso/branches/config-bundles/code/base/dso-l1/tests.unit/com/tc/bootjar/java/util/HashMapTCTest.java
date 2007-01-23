@@ -7,6 +7,7 @@ import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.reflect.MemberInfo;
+import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.exception.ImplementMe;
 import com.tc.object.MockTCObject;
@@ -574,6 +575,10 @@ public class HashMapTCTest extends TCTestCase {
   private static class MockConfig implements DSOClientConfigHelper {
 
     final Set isNeverAdaptable = new HashSet();
+
+    public NewCommonL1Config getNewCommonL1Config() {
+      return null;
+    }
 
     public boolean shouldBeAdapted(String fullName) {
       return false;

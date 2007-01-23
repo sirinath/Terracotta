@@ -7,6 +7,7 @@ import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.reflect.MemberInfo;
+import com.tc.config.schema.NewCommonL1Config;
 import com.tc.object.Portability;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
@@ -112,6 +113,8 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   public boolean isUseNonDefaultConstructor(String className);
 
   public void addIncludePattern(String expression);
+  
+  public NewCommonL1Config getNewCommonL1Config();
 
   // Used for testing
   public void addIncludePattern(String expression, boolean honorTransient);

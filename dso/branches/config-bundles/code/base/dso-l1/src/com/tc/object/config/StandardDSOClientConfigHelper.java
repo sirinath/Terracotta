@@ -18,6 +18,9 @@ import com.tc.aspectwerkz.expression.ExpressionVisitor;
 import com.tc.aspectwerkz.reflect.ConstructorInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
+import com.tc.bundles.BundleLocationResolver;
+import com.tc.bundles.KnopflerFishBundleManager;
+import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
@@ -82,6 +85,8 @@ import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
+import com.terracottatech.configV3.Plugin;
+import com.terracottatech.configV3.Plugins;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -298,8 +303,26 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         userDefinedBootSpecs.put(spec.getClassName(), spec);
       }
     }
-
-    // process classes
+ 
+    // -------------------
+    if (interrogateBootJar) {
+      System.out.println("Attempting to load the OSGi Framework");
+      BundleLocationResolver resolver = new BundleLocationResolver(this);
+      KnopflerFishBundleManager bm    = new KnopflerFishBundleManager(resolver);
+        NewCommonL1Config config = getNewCommonL1Config();
+        Plugins plugins          = config.plugins();
+        Plugin[] bundles         = plugins.getPluginArray();
+        for (int i=0; i<bundles.length; i++) {
+          Plugin bundle = bundles[i];
+          try {
+            System.out.println("Starting: " + bundle.getName() + ", version " + bundle.getVersion());
+            bm.startBundle(bundle.getName(), bundle.getVersion());
+          }
+          catch (com.tc.bundles.BundleException bex) {
+            System.out.println(bex.getMessage());
+          }
+        }
+    }
   }
 
   private void addSpringApp(SpringApp springApp, Set appNames, List sLocks) throws ConfigurationSetupException {
@@ -428,6 +451,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   // This is used only for tests right now
   public void addIncludePattern(String expression) {
     addIncludePattern(expression, false, false, false);
+  }
+
+  public NewCommonL1Config getNewCommonL1Config() {
+    return configSetupManager.commonL1Config();
   }
 
   // This is used only for tests right now

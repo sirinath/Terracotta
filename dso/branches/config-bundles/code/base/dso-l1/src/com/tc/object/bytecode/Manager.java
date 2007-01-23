@@ -8,6 +8,7 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.TraverseTest;
+import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.properties.TCProperties;
 
@@ -115,4 +116,5 @@ public interface Manager {
 
   public TCProperties getTCProperites();
 
+  public DSOClientConfigHelper getDSOConfigHelper();
 }
