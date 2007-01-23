@@ -17,6 +17,12 @@
        See the Terracotta DSO Guide for additional information. -->
   <clients>
     <logs>%(user.home)/terracotta/sharededitor/client-logs</logs>
+    <plugins>
+      <repository>file:/tmp</repository>
+      <plugin name="sample1" version="1.0.0"/>
+      <plugin name="sample2" version="1.0.0"/>
+      <plugin name="sample3" version="1.0.0"/>
+    </plugins>
   </clients>
 
   <application>
