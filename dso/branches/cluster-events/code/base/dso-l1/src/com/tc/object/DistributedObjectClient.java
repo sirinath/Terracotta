@@ -234,6 +234,7 @@ public class DistributedObjectClient extends SEDA {
     // Set up the JMX management garbage
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
     l1Management = new L1Management(teh);
+    cluster.addClusterEventListener(l1Management.getTerracottaCluster());
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
                                                  new ThreadLockManagerImpl(lockManager), txFactory, rtxManager,

@@ -14,6 +14,7 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.management.beans.tx.ClientTxMonitor;
 import com.tc.management.beans.tx.ClientTxMonitorMBean;
 import com.tc.management.exposed.SessionsProduct;
+import com.tc.management.exposed.TerracottaCluster;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnectionServer;
@@ -45,6 +46,7 @@ public final class L1Management extends TerracottaManagement {
   private final ClientTxMonitor       clientTxBean;
   private final SessionMonitor        internalSessionBean;
   private final SessionsProduct       publicSessionBean;
+  private final TerracottaCluster     clusterBean;
 
   public L1Management(final TunnelingEventHandler tunnelingHandler) {
     super();
@@ -53,6 +55,7 @@ public final class L1Management extends TerracottaManagement {
       clientTxBean = new ClientTxMonitor();
       internalSessionBean = new SessionMonitor();
       publicSessionBean = new SessionsProduct(internalSessionBean, clientTxBean);
+      clusterBean = new TerracottaCluster();
     } catch (NotCompliantMBeanException ncmbe) {
       throw new TCRuntimeException(
                                    "Unable to construct one of the L1 MBeans: this is a programming error in one of those beans",
@@ -116,6 +119,10 @@ public final class L1Management extends TerracottaManagement {
     forceCreate = true;
   }
 
+  public TerracottaCluster getTerracottaCluster() {
+    return clusterBean;
+  }
+
   private void attemptToRegister() throws InstanceAlreadyExistsException, MBeanRegistrationException,
       NotCompliantMBeanException {
     synchronized (mBeanServerLock) {
@@ -136,6 +143,8 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(clientTxBean, MBeanNames.CLIENT_TX_INTERNAL);
     mBeanServer.registerMBean(internalSessionBean, MBeanNames.SESSION_INTERNAL);
     mBeanServer.registerMBean(publicSessionBean, L1MBeanNames.SESSION_PRODUCT_PUBLIC);
+    mBeanServer.registerMBean(clusterBean, L1MBeanNames.CLUSTER_BEAN_PUBLIC);
+    
   }
 
   private void addJMXConnectors() {
