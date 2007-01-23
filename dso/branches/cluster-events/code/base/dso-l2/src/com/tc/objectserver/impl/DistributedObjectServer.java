@@ -27,6 +27,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.remote.connect.ClientConnectEventHandler;
 import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
+import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
@@ -529,6 +530,7 @@ public class DistributedObjectServer extends SEDA {
     lsnr.addClassMapping(TCMessageType.JMX_MESSAGE, JMXMessage.class);
     lsnr.addClassMapping(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, JmxRemoteTunnelMessage.class);
     lsnr.addClassMapping(TCMessageType.CLUSTER_MEMBERSHIP_EVENT_MESSAGE, ClusterMembershipMessage.class);
+    lsnr.addClassMapping(TCMessageType.CLIENT_JMX_READY_MESSAGE, L1JmxReady.class);
 
     Sink hydrateSink = hydrateStage.getSink();
     lsnr.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
@@ -541,9 +543,7 @@ public class DistributedObjectServer extends SEDA {
     lsnr.routeMessageType(TCMessageType.JMX_MESSAGE, jmxEventsStage.getSink(), hydrateSink);
     lsnr.routeMessageType(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, jmxRemoteTunnelStage.getSink(),
                           hydrateSink);
-
-
-
+    lsnr.routeMessageType(TCMessageType.CLIENT_JMX_READY_MESSAGE, jmxRemoteTunnelStage.getSink(), hydrateSink);
 
     ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
 

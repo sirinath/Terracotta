@@ -52,6 +52,7 @@ public final class TCMessageType {
   public static final int           TYPE_MEMORY_DATA_STORE_REQUEST_MESSAGE        = 37;
   public static final int           TYPE_MEMORY_DATA_STORE_RESPONSE_MESSAGE       = 38;
   public static final int           TYPE_CLUSTER_MEMBERSHIP_EVENT_MESSAGE         = 39;
+  public static final int           TYPE_CLIENT_JMX_READY_MESSAGE                 = 40;
 
   public static final TCMessageType PING_MESSAGE                                  = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                  = new TCMessageType();
@@ -78,6 +79,7 @@ public final class TCMessageType {
   public static final TCMessageType MEMORY_DATA_STORE_REQUEST_MESSAGE             = new TCMessageType();
   public static final TCMessageType MEMORY_DATA_STORE_RESPONSE_MESSAGE            = new TCMessageType();
   public static final TCMessageType CLUSTER_MEMBERSHIP_EVENT_MESSAGE              = new TCMessageType();
+  public static final TCMessageType CLIENT_JMX_READY_MESSAGE                      = new TCMessageType();
 
   public static TCMessageType getInstance(int i) {
     return (TCMessageType) typeMap.get(i);
