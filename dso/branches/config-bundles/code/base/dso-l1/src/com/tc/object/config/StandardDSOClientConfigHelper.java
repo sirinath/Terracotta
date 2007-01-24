@@ -18,8 +18,6 @@ import com.tc.aspectwerkz.expression.ExpressionVisitor;
 import com.tc.aspectwerkz.reflect.ConstructorInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
-import com.tc.bundles.BundleLocationResolver;
-import com.tc.bundles.KnopflerFishBundleManager;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -85,8 +83,6 @@ import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
-import com.terracottatech.configV3.Plugin;
-import com.terracottatech.configV3.Plugins;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -302,29 +298,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         spec.markPreInstrumented();
         userDefinedBootSpecs.put(spec.getClassName(), spec);
       }
-    }
- 
-    // -------------------
-    if (interrogateBootJar) {
-      System.out.println("Attempting to load the OSGi Framework");
-      BundleLocationResolver resolver = new BundleLocationResolver(this);
-      KnopflerFishBundleManager bm    = new KnopflerFishBundleManager(resolver);
-        NewCommonL1Config config = getNewCommonL1Config();
-        Plugins plugins          = config.plugins();
-        if (plugins != null) {
-          Plugin[] bundles = plugins.getPluginArray();
-          for (int i=0; i<bundles.length; i++) {
-            Plugin bundle = bundles[i];
-            try {
-              System.out.println("Starting: " + bundle.getName() + ", version " + bundle.getVersion());
-              bm.startBundle(bundle.getName(), bundle.getVersion());
-            }
-            catch (com.tc.bundles.BundleException bex) {
-              System.out.println(bex.getMessage());
-              bex.printStackTrace();
-            }
-          }
-        }
     }
   }
 

@@ -1,12 +1,16 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode.hook.impl;
 
 import org.apache.commons.io.CopyUtils;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
+import com.tc.bundles.BundleManager;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -22,11 +26,12 @@ import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.terracottatech.configV3.ConfigurationModel;
+import com.terracottatech.configV3.Plugin;
+import com.terracottatech.configV3.Plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,7 +41,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 public class DSOContextImpl implements DSOContext {
 
@@ -48,6 +55,7 @@ public class DSOContextImpl implements DSOContext {
   private final DSOClientConfigHelper               configHelper;
   private final Manager                             manager;
   private final WeavingStrategy                     weavingStrategy;
+  private final BundleManager                       osgiRuntime;
 
   /**
    * Creates a "global" DSO Context. This context is appropriate only when there is only one DSO Context that applies to
@@ -72,14 +80,42 @@ public class DSOContextImpl implements DSOContext {
 
   private DSOContextImpl(DSOClientConfigHelper configHelper, Manager manager) {
     checkForProperlyInstrumentedBaseClasses();
-
     if (configHelper == null) { throw new NullPointerException(); }
 
     this.configHelper = configHelper;
     this.manager = manager;
-    InstrumentationLogger instrumentationLogger = new InstrumentationLoggerImpl(configHelper
-        .instrumentationLoggingOptions());
-    this.weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
+    weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
+        .instrumentationLoggingOptions()));
+    final Plugins plugins = configHelper.getNewCommonL1Config().plugins();
+    try {
+      osgiRuntime = plugins != null && plugins.sizeOfPluginArray() > 0 ? BundleManager.Factory
+          .createOSGiRuntime(plugins) : null;
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to create runtime for plugins", e);
+    }
+    if (osgiRuntime != null) {
+      try {
+        initPlugins(plugins.getPluginArray());
+      } catch (BundleException be) {
+        throw new RuntimeException("Unable to initialize plugins", be);
+      }
+    }
+  }
+
+  private void initPlugins(final Plugin[] plugins) throws BundleException {
+    for (int pos = 0; pos < plugins.length; ++pos) {
+      osgiRuntime.installBundle(plugins[pos].getName(), plugins[pos].getVersion());
+    }
+    if (configHelper instanceof StandardDSOClientConfigHelper) {
+      final Dictionary serviceProps = new Hashtable();
+      serviceProps.put(Constants.SERVICE_VENDOR, "Terracotta, Inc.");
+      serviceProps.put(Constants.SERVICE_DESCRIPTION, "Main point of entry for programmatic access to"
+                                                      + " the Terracotta bytecode instrumentation");
+      osgiRuntime.installService(configHelper, serviceProps);
+    }
+    for (int pos = 0; pos < plugins.length; ++pos) {
+      osgiRuntime.startBundle(plugins[pos].getName(), plugins[pos].getVersion());
+    }
   }
 
   private void checkForProperlyInstrumentedBaseClasses() {
@@ -100,7 +136,7 @@ public class DSOContextImpl implements DSOContext {
   /**
    * XXX::NOTE:: ClassLoader checks the returned byte array to see if the class is instrumented or not to maintain the
    * offset.
-   *
+   * 
    * @return new byte array if the class is instrumented and same input byte array if not.
    * @see ClassLoaderPreProcessorImpl
    */
@@ -145,20 +181,14 @@ public class DSOContextImpl implements DSOContext {
       } catch (Exception e) {
         throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
       }
-
-      StandardDSOClientConfigHelper helper = new StandardDSOClientConfigHelper(config);
-
-      staticConfigHelper = helper;
+      staticConfigHelper = new StandardDSOClientConfigHelper(config);
     }
 
     return staticConfigHelper;
   }
 
   private static PreparedComponentsFromL2Connection validateMakeL2Connection(L1TVSConfigurationSetupManager config)
-    throws UnknownHostException,
-           IOException,
-           TCTimeoutException
-  {
+      throws UnknownHostException, IOException, TCTimeoutException {
     L2Data[] l2Data = (L2Data[]) config.l2Config().l2Data().getObjects();
     Assert.assertNotNull(l2Data);
 
@@ -167,9 +197,9 @@ public class DSOContextImpl implements DSOContext {
     if (false && !config.loadedFromTrustedSource()) {
       String serverConfigMode = getServerConfigMode(serverHost, l2Data[0].dsoPort());
 
-      if(serverConfigMode != null && serverConfigMode.equals(ConfigurationModel.PRODUCTION)) {
-        String text = "Configuration constraint violation: " +
-                      "untrusted client configuration not allowed against production server";
+      if (serverConfigMode != null && serverConfigMode.equals(ConfigurationModel.PRODUCTION)) {
+        String text = "Configuration constraint violation: "
+                      + "untrusted client configuration not allowed against production server";
         throw new AssertionError(text);
       }
     }
@@ -180,12 +210,9 @@ public class DSOContextImpl implements DSOContext {
   private static final long MAX_HTTP_FETCH_TIME       = 30 * 1000; // 30 seconds
   private static final long HTTP_FETCH_RETRY_INTERVAL = 1 * 1000; // 1 second
 
-  private static String getServerConfigMode(String serverHost, int httpPort)
-    throws MalformedURLException,
-           TCTimeoutException,
-           IOException
-  {
-    URL  theURL    = new URL("http", serverHost, httpPort, "/config?query=mode");
+  private static String getServerConfigMode(String serverHost, int httpPort) throws MalformedURLException,
+      TCTimeoutException, IOException {
+    URL theURL = new URL("http", serverHost, httpPort, "/config?query=mode");
     long startTime = System.currentTimeMillis();
     long lastTrial = 0;
 
@@ -219,7 +246,7 @@ public class DSOContextImpl implements DSOContext {
     }
 
     throw new TCTimeoutException("We tried for " + (int) ((System.currentTimeMillis() - startTime) / 1000)
-                                 + " seconds, but couldn't fetch system configuration mode from the L2 " + "at '" + theURL
-                                 + "'. Is the L2 running?");
+                                 + " seconds, but couldn't fetch system configuration mode from the L2 " + "at '"
+                                 + theURL + "'. Is the L2 running?");
   }
 }

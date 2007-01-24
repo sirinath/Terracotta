@@ -5,6 +5,6 @@ package com.tc.util;
 
 import java.util.ResourceBundle;
 
-public interface BundleFactory {
+public interface ResourceBundleFactory {
   ResourceBundle createBundle(Class c);
 }

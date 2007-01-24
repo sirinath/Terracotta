@@ -6,11 +6,11 @@ package com.tc.util;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
-public class BundleHelper {
+public class ResourceBundleHelper {
   private ResourceBundle bundle;
   
-  public BundleHelper(Class clas) {
-    bundle = AbstractBundleFactory.getBundle(clas);
+  public ResourceBundleHelper(Class clas) {
+    bundle = AbstractResourceBundleFactory.getBundle(clas);
   }
   
   public Object getObject(final String key) {

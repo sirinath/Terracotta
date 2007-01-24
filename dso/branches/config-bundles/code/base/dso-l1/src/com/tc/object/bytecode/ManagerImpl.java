@@ -669,11 +669,6 @@ public class ManagerImpl implements Manager {
     return TCPropertiesImpl.getProperties();
   }
 
-
-  public DSOClientConfigHelper getDSOConfigHelper() {
-    return this.config;
-  }
-
   private class ShutdownAction implements Runnable {
     public void run() {
       // XXX: we should just call stop(), but for the 1.5 (chex) release, I'm reverting the behavior

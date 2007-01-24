@@ -20,7 +20,7 @@ import com.tc.admin.common.InputStreamDrainer;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.object.tools.BootJarSignature;
 import com.tc.object.tools.UnsupportedVMException;
-import com.tc.util.BundleHelper;
+import com.tc.util.ResourceBundleHelper;
 import com.tc.util.ProductInfo;
 import com.tc.util.runtime.Os;
 
@@ -53,7 +53,7 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
 
 public abstract class HyperlinkFrame extends Frame implements HyperlinkListener {
-  private static BundleHelper m_bundleHelper = new BundleHelper(HyperlinkFrame.class);
+  private static ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(HyperlinkFrame.class);
   private TextPane            m_textPane;
   private String              m_product;
   private File                m_productDir;

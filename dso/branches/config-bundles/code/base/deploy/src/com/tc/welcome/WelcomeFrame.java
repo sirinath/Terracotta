@@ -6,7 +6,7 @@ package com.tc.welcome;
 import org.dijon.ApplicationManager;
 
 import com.tc.admin.common.InputStreamDrainer;
-import com.tc.util.BundleHelper;
+import com.tc.util.ResourceBundleHelper;
 
 import java.awt.Cursor;
 import java.io.File;
@@ -16,7 +16,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.html.HTML;
 
 public class WelcomeFrame extends HyperlinkFrame {
-  private static BundleHelper m_bundleHelper = new BundleHelper(WelcomeFrame.class);
+  private static ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(WelcomeFrame.class);
   
   public WelcomeFrame() {
     super();

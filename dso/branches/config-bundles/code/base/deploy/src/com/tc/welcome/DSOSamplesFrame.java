@@ -12,7 +12,7 @@ import com.tc.admin.TCStop;
 import com.tc.admin.common.StreamReader;
 import com.tc.admin.common.TextPaneUpdater;
 import com.tc.admin.common.XTextPane;
-import com.tc.util.BundleHelper;
+import com.tc.util.ResourceBundleHelper;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -32,7 +32,7 @@ import javax.swing.text.Document;
 import javax.swing.text.html.HTML;
 
 public class DSOSamplesFrame extends HyperlinkFrame {
-  private BundleHelper m_bundleHelper = new BundleHelper(DSOSamplesFrame.class);
+  private ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(DSOSamplesFrame.class);
   private TextPane     m_outputPane;
   private ArrayList    m_processList;
 

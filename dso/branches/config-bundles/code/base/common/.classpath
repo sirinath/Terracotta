@@ -40,6 +40,6 @@
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/serializer-2.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/log4j-1.2.9.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
-	<classpathentry kind="lib" path="/dependencies/lib/knopflerfish-2.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="/dependencies/lib/knopflerfish-2.0.1.jar"/>
 	<classpathentry kind="output" path="build.eclipse/ECLIPSE.IS.MESSEDUP"/>
 </classpath>
