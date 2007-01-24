@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.bytecode.hook.impl;
@@ -10,7 +10,7 @@ import org.osgi.framework.Constants;
 
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
-import com.tc.bundles.BundleManager;
+import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -55,7 +55,7 @@ public class DSOContextImpl implements DSOContext {
   private final DSOClientConfigHelper               configHelper;
   private final Manager                             manager;
   private final WeavingStrategy                     weavingStrategy;
-  private final BundleManager                       osgiRuntime;
+  private final EmbeddedOSGiRuntime                 osgiRuntime;
 
   /**
    * Creates a "global" DSO Context. This context is appropriate only when there is only one DSO Context that applies to
@@ -87,18 +87,15 @@ public class DSOContextImpl implements DSOContext {
     weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
         .instrumentationLoggingOptions()));
     final Plugins plugins = configHelper.getNewCommonL1Config().plugins();
-    try {
-      osgiRuntime = plugins != null && plugins.sizeOfPluginArray() > 0 ? BundleManager.Factory
-          .createOSGiRuntime(plugins) : null;
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to create runtime for plugins", e);
-    }
-    if (osgiRuntime != null) {
+    if (plugins != null && plugins.sizeOfPluginArray() > 0) {
       try {
+        osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(plugins);
         initPlugins(plugins.getPluginArray());
-      } catch (BundleException be) {
-        throw new RuntimeException("Unable to initialize plugins", be);
+      } catch (Exception e) {
+        throw new RuntimeException("Unable to create runtime for plugins", e);
       }
+    } else {
+      osgiRuntime = null;
     }
   }
 

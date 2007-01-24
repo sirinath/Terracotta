@@ -17,9 +17,10 @@ import java.text.MessageFormat;
 import java.util.Dictionary;
 
 /**
- * BundleManager that uses the KnopflerFish OSGi implementation.
+ * Embedded KnopflerFish OSGi implementation, see the <a href="http://www.knopflerfish.org/">Knopflerfish documentation</a>
+ * for more details.
  */
-final class KnopflerFishBundleManager implements BundleManager {
+final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
 
   private static String       KF_BUNDLESTORAGE_PROP         = "org.knopflerfish.framework.bundlestorage";
   private static String       KF_BUNDLESTORAGE_PROP_DEFAULT = "memory";
@@ -37,7 +38,7 @@ final class KnopflerFishBundleManager implements BundleManager {
   /**
    * Creates and starts an in-memory OSGi layer using Knopflerfish.
    */
-  public KnopflerFishBundleManager(final URL[] bundleRepositories) throws Exception {
+  public KnopflerfishOSGi(final URL[] bundleRepositories) throws Exception {
     this.bundleRepositories = bundleRepositories;
     framework = new Framework(null);
     framework.launch(0);
