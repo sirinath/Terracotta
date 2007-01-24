@@ -29,6 +29,11 @@ public interface EmbeddedOSGiRuntime {
 
   void uninstallBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
+  /**
+   * This should shut down the OSGi framework itself and all running bundles.
+   */
+  void shutdown() throws BundleException;
+
   static class Factory {
     public static EmbeddedOSGiRuntime createOSGiRuntime(final Plugins plugins) throws Exception {
       final File bundleRoot = new File(Directories.getInstallationRoot(), "plugins");

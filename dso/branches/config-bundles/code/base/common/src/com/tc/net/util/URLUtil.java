@@ -16,21 +16,23 @@ public final class URLUtil {
   }
 
   /**
-   * @return the full URL to the given path, which could be based at any of the URLs in <code>baseURLs</code>, or
-   *         <code>null</code> if the path does not exist at any of them.
+   * @return the full URL to the given [relative] path, which could be located at any of the URLs in
+   *         <code>baseURLs</code>, or <code>null</code> if the path does not exist at any of them.
    * @throws MalformedURLException
    */
   public static URL resolve(final URL[] baseURLs, final String path) throws MalformedURLException {
-    if (baseURLs != null && path != null) return null;
-    for (int pos = 0; pos < baseURLs.length; pos++) {
-      final URL testURL = new URL(baseURLs[pos].toString() + "/" + path);
-      try {
-        final InputStream is = testURL.openStream();
-        is.read();
-        is.close();
-        return testURL;
-      } catch (IOException ioe) {
-        // Ignore this, the URL is bad
+    if (baseURLs != null && path != null) {
+      for (int pos = 0; pos < baseURLs.length; pos++) {
+        final URL testURL = new URL(baseURLs[pos].toString() + (baseURLs[pos].toString().endsWith("/") ? "" : "/")
+            + path);
+        try {
+          final InputStream is = testURL.openStream();
+          is.read();
+          is.close();
+          return testURL;
+        } catch (IOException ioe) {
+          // Ignore this, the URL is bad
+        }
       }
     }
     return null;

@@ -25,6 +25,7 @@ final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
   private static String       KF_BUNDLESTORAGE_PROP         = "org.knopflerfish.framework.bundlestorage";
   private static String       KF_BUNDLESTORAGE_PROP_DEFAULT = "memory";
 
+  // {0} := bundle name, {1} := bundle version (not necessarily numeric)
   private static final String BUNDLE_PATH                   = "{0}-{1}.jar";
 
   private final URL[]         bundleRepositories;
@@ -74,13 +75,17 @@ final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
     framework.uninstallBundle(getBundleID(bundleName, bundleVersion));
   }
 
+  public void shutdown() throws BundleException {
+    framework.shutdown();
+  }
+
   private URL getBundleURL(final String bundleName, final String bundleVersion) {
     final String path = MessageFormat.format(BUNDLE_PATH, new String[] { bundleName, bundleVersion });
     try {
       return URLUtil.resolve(bundleRepositories, path);
     } catch (MalformedURLException murle) {
-      throw new RuntimeException("Unable to resolve bundle " + path
-          + ", please check that your repositories are correctly configured", murle);
+      throw new RuntimeException("Unable to resolve bundle '" + path
+          + "', please check that your repositories are correctly configured", murle);
     }
   }
 

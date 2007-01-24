@@ -90,9 +90,18 @@ public class DSOContextImpl implements DSOContext {
     if (plugins != null && plugins.sizeOfPluginArray() > 0) {
       try {
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(plugins);
-        initPlugins(plugins.getPluginArray());
       } catch (Exception e) {
         throw new RuntimeException("Unable to create runtime for plugins", e);
+      }
+      try {
+        initPlugins(plugins.getPluginArray());
+      } catch (BundleException be1) {
+        try {
+          osgiRuntime.shutdown();
+        } catch (BundleException be2) {
+          logger.error("Error shutting down plugin runtime", be2);
+        }
+        throw new RuntimeException("Exception initializing plugins", be1);
       }
     } else {
       osgiRuntime = null;
