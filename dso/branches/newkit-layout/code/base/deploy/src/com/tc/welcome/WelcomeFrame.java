@@ -51,11 +51,12 @@ public class WelcomeFrame extends HyperlinkFrame {
 
   protected void hyperlinkActivated(AttributeSet anchor, String action) {
     if(action.equals("show_samples")) {
-      if("DSO".equals(getProduct())) {
+       System.out.println("*>>" + getProduct());
+      if("Pojos".equals(getProduct())) {
         runDSOSampleLauncher();
       } else {
-        File file = new File(getProductDirectory(), "samples");
-        file = new File(file, "samples.html");
+        //File file = new File("samples", getProductDirectory());
+        File file = new File(getProductDirectory(), "samples.html");
         
         openURL(file.getAbsolutePath());
       }
