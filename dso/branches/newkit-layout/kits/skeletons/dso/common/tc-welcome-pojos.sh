@@ -9,7 +9,7 @@
 TOPDIR=`dirname $0`/..
 . ${TOPDIR}/libexec/tc-functions.sh
 
-tc_install_dir ${TOPDIR}/..
+tc_install_dir ${TOPDIR}
 tc_classpath "" true
 tc_java_opts "-Dtc.install-root=${TC_INSTALL_DIR} -Dtc.welcome.product=DSO"
 

@@ -7,7 +7,7 @@ rem  All rights reserved.
 rem
 
 SETLOCAL
-cd %~d0%~p0..
+cd %~d0%~p0..\..
 
 SET EXIT_ON_ERROR=TRUE
 CALL "..\bin\make-boot-jar.bat" -o ..\..\common\lib\dso-boot -f %1\tc-config.xml

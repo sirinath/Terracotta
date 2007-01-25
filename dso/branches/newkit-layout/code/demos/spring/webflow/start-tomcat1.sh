@@ -12,18 +12,18 @@ TOPDIR=`dirname "$0"`/../../..
 TC_CONFIG_PATH="tc-config.xml"
 . "${TOPDIR}"/bin/dso-env.sh
 
-tc_install_dir "${TOPDIR}"/.. true
+tc_install_dir "${TOPDIR}" true
 JAVA_OPTS="${TC_JAVA_OPTS} -Dcom.sun.management.jmxremote"
 JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=8091"
 JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
 JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.ssl=false"
 
-JAVA_OPTS="${JAVA_OPTS} -Dtc.node-name=Node1
+JAVA_OPTS="${JAVA_OPTS} -Dtc.node-name=Node1"
 
 export JAVA_OPTS
 
 JAVA_HOME="${TC_JAVA_HOME:-${TOPDIR}/jre}"
-CATALINA_HOME="${TOPDIR}/../vendors/tomcat5.5"
+CATALINA_HOME="${TOPDIR}/external/tomcat5.5"
 CATALINA_BASE="tomcat1"
 export JAVA_HOME CATALINA_HOME CATALINA_BASE
 

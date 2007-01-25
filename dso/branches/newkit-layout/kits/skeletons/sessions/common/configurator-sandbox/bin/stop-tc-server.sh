@@ -5,5 +5,5 @@
 # All rights reserved.
 #
 
-cd `dirname "$0"`/..
+cd `dirname "$0"`/../..
 ../bin/stop-tc-server.sh -f "$1"/tc-config.xml
