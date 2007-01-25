@@ -5,6 +5,7 @@
 package com.tc.bundles;
 
 import org.knopflerfish.framework.Framework;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 
@@ -20,7 +21,7 @@ import java.util.Dictionary;
  * Embedded KnopflerFish OSGi implementation, see the <a href="http://www.knopflerfish.org/">Knopflerfish documentation</a>
  * for more details.
  */
-final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
+final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
 
   private static String       KF_BUNDLESTORAGE_PROP         = "org.knopflerfish.framework.bundlestorage";
   private static String       KF_BUNDLESTORAGE_PROP_DEFAULT = "memory";
@@ -50,6 +51,7 @@ final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
     if (bundleLocation != null) {
       try {
         framework.installBundle(bundleLocation.toString(), bundleLocation.openStream());
+        info(Message.BUNDLE_INSTALLED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
       } catch (IOException ioe) {
         throw new BundleException("Unable to open URL[" + bundleLocation + "]", ioe);
       }
@@ -60,23 +62,30 @@ final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
   }
 
   public void startBundle(final String bundleName, final String bundleVersion) throws BundleException {
-    framework.startBundle(getBundleID(bundleName, bundleVersion));
+    final long bundleID = getBundleID(bundleName, bundleVersion);
+    framework.startBundle(bundleID);
+    info(Message.BUNDLE_STARTED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
   }
 
   public void installService(final Object serviceObject, final Dictionary serviceProps) throws BundleException {
     framework.getSystemBundleContext().registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
+    info(Message.SERVICE_REGISTERED, new Object[] { serviceObject.getClass().getName() });
   }
 
   public void stopBundle(final String bundleName, final String bundleVersion) throws BundleException {
-    framework.startBundle(getBundleID(bundleName, bundleVersion));
+    final long bundleID = getBundleID(bundleName, bundleVersion);
+    framework.stopBundle(bundleID);
+    info(Message.BUNDLE_STOPPED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
   }
 
   public void uninstallBundle(final String bundleName, final String bundleVersion) throws BundleException {
     framework.uninstallBundle(getBundleID(bundleName, bundleVersion));
+    info(Message.BUNDLE_UNINSTALLED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
   }
 
   public void shutdown() throws BundleException {
     framework.shutdown();
+    info(Message.SHUTDOWN, new Object[0]);
   }
 
   private URL getBundleURL(final String bundleName, final String bundleVersion) {
@@ -92,6 +101,11 @@ final class KnopflerfishOSGi implements EmbeddedOSGiRuntime {
   private long getBundleID(final String bundleName, final String bundleVersion) {
     final URL bundleURL = getBundleURL(bundleName, bundleVersion);
     return framework.getBundleId(bundleURL.toString());
+  }
+
+  private String getSymbolicName(final String bundleName, final String bundleVersion) {
+    final Bundle bundle = framework.getSystemBundleContext().getBundle(getBundleID(bundleName, bundleVersion));
+    return bundle.getSymbolicName();
   }
 
 }
