@@ -8,7 +8,7 @@
 
 TOPDIR=`dirname "$0"`/..
 . "${TOPDIR}"/libexec/tc-functions.sh
-tc_install_dir "${TOPDIR}"/.. true
+tc_install_dir "${TOPDIR}" true
 tc_classpath "" false
 tc_java_opts ""
 tc_set_dso_boot_jar

@@ -6,7 +6,7 @@
 #  All rights reserved.
 #
 
-TOPDIR=`dirname "$0"`/../..
+TOPDIR=`dirname "$0"`/../../..
 . "${TOPDIR}"/libexec/tc-functions.sh
 
 TC_CONFIG_PATH="tc-config.xml"

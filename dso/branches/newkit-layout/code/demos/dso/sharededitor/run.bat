@@ -7,7 +7,7 @@ rem  All rights reserved.
 rem
 
 setlocal
-set topdir=%~d0%~p0..\..
+set topdir=%~d0%~p0..\..\..
 if "x%tc_install_dir%"=="x" set tc_install_dir=%topdir%\..
 cd %~d0%~p0
 call "%topdir%\libexec\tc-functions.bat" tc_install_dir "%tc_install_dir%" true

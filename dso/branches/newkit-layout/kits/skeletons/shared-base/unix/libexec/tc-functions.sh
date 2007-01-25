@@ -64,9 +64,9 @@ tc_install_dir() {
          exit 2
       fi
 
-      if test \! -f "${TC_INSTALL_DIR}/common/lib/tc.jar"; then
+      if test \! -f "${TC_INSTALL_DIR}/lib/tc.jar"; then
          echo "$0: The Terracotta installation directory, ${TC_INSTALL_DIR},"
-         echo "       doesn't seem to contain common/lib/tc.jar. Stop."
+         echo "       doesn't seem to contain lib/tc.jar. Stop."
 
          exit 3
       fi
@@ -82,10 +82,10 @@ tc_install_dir() {
          echo "       doesn't actually exist. Stop."
 
          exit 4
-      elif test \! -f "${TC_INSTALL_DIR}/common/lib/tc.jar"; then
+      elif test \! -f "${TC_INSTALL_DIR}/lib/tc.jar"; then
          echo "$0: The Terracotta installation directory you specified via the "
          echo "       environment variable TC_INSTALL_DIR, ${TC_INSTALL_DIR},"
-         echo "       doesn't seem to contain common/lib/tc.jar. We are proceeding, "
+         echo "       doesn't seem to contain lib/tc.jar. We are proceeding, "
          echo "       but this could cause problems."
       else
          curDir=`pwd`
@@ -197,9 +197,9 @@ tc_classpath() {
          echo "       ${TC_JAR_CLASSES}"
          echo ""
       else
-         if test \! -f "${TC_INSTALL_DIR}/common/lib/tc.jar"; then
-            echo "$0: There is no 'tc.jar' in TC_INSTALL_DIR/common/lib/tc.jar "
-            echo "       (${TC_INSTALL_DIR}/common/lib/tc.jar). Your Terracotta "
+         if test \! -f "${TC_INSTALL_DIR}/lib/tc.jar"; then
+            echo "$0: There is no 'tc.jar' in TC_INSTALL_DIR/lib/tc.jar "
+            echo "       (${TC_INSTALL_DIR}/lib/tc.jar). Your Terracotta "
             echo "       installation directory may be specified incorrectly or corrupt."
             echo "       (You may also specify a location for tc.jar manually, in the "
             echo "       TC_JAR_CLASSES environment variable.) Stop."
@@ -207,7 +207,7 @@ tc_classpath() {
             exit 9
          fi
 
-         TC_JAR_CLASSES="${TC_INSTALL_DIR}/common/lib/tc.jar"
+         TC_JAR_CLASSES="${TC_INSTALL_DIR}/lib/tc.jar"
       fi
 
       if test -z "${__DEFAULT_TC_APPLICATION_CLASSPATH}"; then
@@ -360,20 +360,20 @@ tc_set_dso_boot_jar() {
          exit 12
       fi
    else
-      DSO_BOOT_JAR_NAME="`${TC_JAVA} -classpath "${TC_INSTALL_DIR}/common/lib/tc.jar" ${TC_ALL_JAVA_OPTS} com.tc.object.tools.BootJarSignature`"
+      DSO_BOOT_JAR_NAME="`${TC_JAVA} -classpath "${TC_INSTALL_DIR}/lib/tc.jar" ${TC_ALL_JAVA_OPTS} com.tc.object.tools.BootJarSignature`"
       __FIND_DSO_BOOT_JAR_CMD_EXIT_CODE="$?"
       if test "$__FIND_DSO_BOOT_JAR_CMD_EXIT_CODE" != 0; then
          echo "$0: We were unable to determine the correct"
          echo "       name of the DSO boot JAR; we ran the tool do to that as follows:"
          echo ""
-         echo "       ${TC_JAVA} -classpath \"${TC_INSTALL_DIR}\common\lib\tc.jar\" ${TC_ALL_JAVA_OPTS} com.tc.object.tools.BootJarSignature"
+         echo "       ${TC_JAVA} -classpath \"${TC_INSTALL_DIR}\`lib\tc.jar\" ${TC_ALL_JAVA_OPTS} com.tc.object.tools.BootJarSignature"
          echo ""
          echo "       ...but we got exit code ${__FIND_DSO_BOOT_JAR_CMD_EXIT_CODE}. Stop."
 
          exit 13
       fi
 
-      DSO_BOOT_JAR="${TC_INSTALL_DIR}/common/lib/dso-boot/${DSO_BOOT_JAR_NAME}"
+      DSO_BOOT_JAR="${TC_INSTALL_DIR}/lib/dso-boot/${DSO_BOOT_JAR_NAME}"
       if test \! -f "${DSO_BOOT_JAR}"; then
          echo "$0: The DSO boot JAR you need for this platform,"
          echo "       ${DSO_BOOT_JAR},"

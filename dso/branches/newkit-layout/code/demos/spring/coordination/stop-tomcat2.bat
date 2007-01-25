@@ -7,7 +7,7 @@ rem  All rights reserved.
 rem
 
 setlocal
-set topdir=%~d0%~p0..\..
+set topdir=%~d0%~p0..\..\..
 
 if "x%tc_install_dir%"=="x" set tc_install_dir=%topdir%\..
 set catalina_home=%tc_install_dir%\vendors\tomcat5.5

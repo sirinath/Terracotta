@@ -200,7 +200,7 @@ public class ClassProcessorHelper {
       return (URL[]) systemURLS.clone();
     }
 
-    File tcLib = new File(new File(tcHomeDir, "common"), "lib");
+    File tcLib = new File(tcHomeDir, "lib");
     if (!tcLib.exists() || !tcLib.isDirectory() || !tcLib.canRead()) {
       Banner.errorBanner("Terracotta common lib directory [" + tcLib.getAbsolutePath()
                          + "] is not accessible. This value is based off of the system property "

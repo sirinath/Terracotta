@@ -23,7 +23,7 @@ else
 fi
 DSO_ENV_CONFIG=${1:-${TC_CONFIG_PATH}}
 
-tc_install_dir "${TOPDIR}"/.. true
+tc_install_dir "${TOPDIR}" true
 tc_config "${DSO_ENV_CONFIG}"
 tc_set_dso_boot_jar
 

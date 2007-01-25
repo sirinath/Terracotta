@@ -74,7 +74,7 @@ GOTO %SUBROUTINE%
    :tc_install_dir__1
       SET TC_INSTALL_DIR=%__DEFAULT_TC_INSTALL_DIR%
       IF NOT EXIST %TC_INSTALL_DIR% GOTO tc_install_dir__1_1
-      IF NOT EXIST %TC_INSTALL_DIR%\common\lib\tc.jar GOTO tc_install_dir__1_2
+      IF NOT EXIST %TC_INSTALL_DIR%\lib\tc.jar GOTO tc_install_dir__1_2
 
       PUSHD %TC_INSTALL_DIR%
       SET TC_INSTALL_DIR=%CD%
@@ -87,13 +87,13 @@ GOTO %SUBROUTINE%
          GOTO END
 
       :tc_install_dir__1_2
-         echo The Terracotta installation directory, %TC_INSTALL_DIR%, doesn't contain common/lib/tc.jar. Stop.
+         echo The Terracotta installation directory, %TC_INSTALL_DIR%, doesn't contain lib/tc.jar. Stop.
          SET EXITFLAG=TRUE
          GOTO END
 
    :tc_install_dir__2
       IF NOT EXIST "%TC_INSTALL_DIR%" GOTO tc_install_dir__2_1
-      IF NOT EXIST "%TC_INSTALL_DIR%/common/lib/tc.jar" GOTO tc_install_dir__2_2
+      IF NOT EXIST "%TC_INSTALL_DIR%/lib/tc.jar" GOTO tc_install_dir__2_2
       GOTO tc_install_dir__2_3
 
       :tc_install_dir__2_1
@@ -106,7 +106,7 @@ GOTO %SUBROUTINE%
       :tc_install_dir__2_2
          echo The Terracotta installation directory you specified via the
          echo environment variable TC_INSTALL_DIR, %TC_INSTALL_DIR%,"
-         echo doesn't seem to contain common/lib/tc.jar. We are proceeding,
+         echo doesn't seem to contain lib/tc.jar. We are proceeding,
          echo but this could cause problems.
          GOTO tc_install_dir__3
 
@@ -211,8 +211,8 @@ GOTO END
 
    :tc_classpath__2
       IF NOT "x%TC_JAR_CLASSES%"=="x" GOTO tc_classpath__2_1
-      IF NOT EXIST "%TC_INSTALL_DIR%\common\lib\tc.jar" GOTO tc_classpath__2_2
-      SET TC_JAR_CLASSES=%TC_INSTALL_DIR%\common\lib\tc.jar
+      IF NOT EXIST "%TC_INSTALL_DIR%\lib\tc.jar" GOTO tc_classpath__2_2
+      SET TC_JAR_CLASSES=%TC_INSTALL_DIR%\lib\tc.jar
       GOTO tc_classpath__2_3
 
       :tc_classpath__2_1
@@ -220,8 +220,8 @@ GOTO END
          GOTO :tc_classpath__2_3
 
       :tc_classpath__2_2
-         echo There is no 'tc.jar' in TC_INSTALL_DIR/common/lib/tc.jar
-         echo (%TC_INSTALL_DIR%/common/lib/tc.jar). Your Terracotta
+         echo There is no 'tc.jar' in TC_INSTALL_DIR/lib/tc.jar
+         echo (%TC_INSTALL_DIR%/lib/tc.jar). Your Terracotta
          echo installation directory may be specified incorrectly or corrupt.
          echo (You may also specify a location for tc.jar manually, in the
          echo TC_JAR_CLASSES environment variable.) Stop.
@@ -388,7 +388,7 @@ GOTO END
 
       :tc_set_dso_boot_jar__1_2
          IF NOT DEFINED TMPFILE SET TMPFILE=%TEMP%\var~
-         "%TC_JAVA%" -classpath "%TC_INSTALL_DIR%\common\lib\tc.jar" com.tc.object.tools.BootJarSignature >%TMPFILE%
+         "%TC_JAVA%" -classpath "%TC_INSTALL_DIR%\lib\tc.jar" com.tc.object.tools.BootJarSignature >%TMPFILE%
          FOR /F %%i IN (%TMPFILE%) DO @SET DSO_BOOT_JAR_NAME=%%i
          DEL %TMPFILE%
          SET __FIND_DSO_BOOT_JAR_CMD_EXIT_CODE=%errorlevel%
@@ -398,13 +398,13 @@ GOTO END
          :tc_set_dso_boot_jar__1_2_1
             echo We were unable to determine the correct
             echo name of the DSO boot JAR; we ran the tool do to that as follows:
-            echo %TC_JAVA% -classpath "%TC_INSTALL_DIR%\common\lib\tc.jar" com.tc.object.tools.BootJarSignature
+            echo %TC_JAVA% -classpath "%TC_INSTALL_DIR%\lib\tc.jar" com.tc.object.tools.BootJarSignature
             echo ...but we got exit code %__FIND_DSO_BOOT_JAR_CMD_EXIT_CODE%. Stop.
             SET EXITFLAG=TRUE
             GOTO END
 
          :tc_set_dso_boot_jar__1_2_2
-            SET DSO_BOOT_JAR=%TC_INSTALL_DIR%\common\lib\dso-boot\%DSO_BOOT_JAR_NAME%
+            SET DSO_BOOT_JAR=%TC_INSTALL_DIR%\lib\\dso-boot\%DSO_BOOT_JAR_NAME%
 
             IF NOT EXIST "%DSO_BOOT_JAR%" GOTO tc_set_dso_boot_jar__1_2_2_1
             GOTO END

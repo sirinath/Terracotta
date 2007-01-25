@@ -28,7 +28,7 @@ GOTO tc_dso_env_1
 :tc_dso_env_1
   SET __DSO_ENV_CONFIG=%~1
 
-  IF "x%TC_INSTALL_DIR%" == "x" SET TC_INSTALL_DIR=%TOPDIR%\..
+  IF "x%TC_INSTALL_DIR%" == "x" SET TC_INSTALL_DIR=%TOPDIR%
   CALL "%TOPDIR%\libexec\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%" TRUE
   CALL "%TOPDIR%\libexec\tc-functions.bat" tc_config "%__DSO_ENV_CONFIG%"
   CALL "%TOPDIR%\libexec\tc-functions.bat" tc_set_dso_boot_jar
