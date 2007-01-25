@@ -65,7 +65,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
     
     m_installRoot = new File(System.getProperty("tc.install-root"));
     m_product     = System.getProperty("tc.welcome.product", "pojos");
-    m_productDir  = new File(m_installRoot, m_product.toLowerCase());
+    m_productDir  = new File(getSamplesDir(), m_product.toLowerCase());
     System.out.println("->>" + m_productDir.getPath());
   
     MenuBar menubar = new MenuBar();
@@ -300,7 +300,8 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
   protected void runSampleScript(String scriptPath) {
     setTextPaneCursor(Cursor.WAIT_CURSOR);
     
-    File     dir  = new File(m_productDir, "samples");
+    //File     dir  = new File(m_productDir, "samples");
+    File     dir = m_productDir;
     String   ext  = Os.isWindows() ? ".bat" : ".sh";
     File     file = new File(dir, scriptPath+ext);
     String[] cmd  = {file.getAbsolutePath()};

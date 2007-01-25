@@ -37,7 +37,8 @@ public class WelcomeFrame extends HyperlinkFrame {
                            "-cp", getTCLib().getAbsolutePath(),
                            "com.tc.welcome.DSOSamplesFrame"};
 
-      Process            p          = exec(cmdarray, null, getSamplesDir());
+      //Process            p          = exec(cmdarray, null, getSamplesDir());
+      Process            p          = exec(cmdarray, null, getProductDirectory());
       InputStreamDrainer errDrainer = new InputStreamDrainer(p.getErrorStream());
       InputStreamDrainer outDrainer = new InputStreamDrainer(p.getInputStream());
       
