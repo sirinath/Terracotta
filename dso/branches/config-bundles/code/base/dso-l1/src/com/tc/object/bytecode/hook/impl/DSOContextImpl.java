@@ -117,7 +117,7 @@ public class DSOContextImpl implements DSOContext {
       serviceProps.put(Constants.SERVICE_VENDOR, "Terracotta, Inc.");
       serviceProps.put(Constants.SERVICE_DESCRIPTION, "Main point of entry for programmatic access to"
                                                       + " the Terracotta bytecode instrumentation");
-      osgiRuntime.installService(configHelper, serviceProps);
+      osgiRuntime.registerService(configHelper, serviceProps);
     }
     for (int pos = 0; pos < plugins.length; ++pos) {
       osgiRuntime.startBundle(plugins[pos].getName(), plugins[pos].getVersion());

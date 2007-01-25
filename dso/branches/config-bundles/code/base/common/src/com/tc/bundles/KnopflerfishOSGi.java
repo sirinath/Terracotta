@@ -67,7 +67,7 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
     info(Message.BUNDLE_STARTED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
   }
 
-  public void installService(final Object serviceObject, final Dictionary serviceProps) throws BundleException {
+  public void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException {
     framework.getSystemBundleContext().registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
     info(Message.SERVICE_REGISTERED, new Object[] { serviceObject.getClass().getName() });
   }

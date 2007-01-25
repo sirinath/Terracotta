@@ -49,10 +49,6 @@ abstract class AbstractEmbeddedOSGiRuntime implements EmbeddedOSGiRuntime {
     }
   }
 
-  protected final void debug(final Message message, final Object[] arguments) {
-    logger.debug(formatMessage(message, arguments));
-  }
-
   protected final void info(final Message message, final Object[] arguments) {
     logger.info(formatMessage(message, arguments));
   }

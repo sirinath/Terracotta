@@ -23,7 +23,7 @@ public interface EmbeddedOSGiRuntime {
 
   void startBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
-  void installService(final Object serviceObject, final Dictionary serviceProps) throws BundleException;
+  void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException;
 
   void stopBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
