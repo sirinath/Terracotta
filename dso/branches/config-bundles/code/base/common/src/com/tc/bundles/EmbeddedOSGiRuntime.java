@@ -4,6 +4,7 @@
  */
 package com.tc.bundles;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import com.tc.config.Directories;
@@ -23,6 +24,8 @@ public interface EmbeddedOSGiRuntime {
 
   void startBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
+  Bundle getBundle(String bundleName, String bundleVersion);
+  
   void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException;
 
   void stopBundle(final String bundleName, final String bundleVersion) throws BundleException;

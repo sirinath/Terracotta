@@ -5,6 +5,8 @@
 package com.tc.object.bytecode.hook.impl;
 
 import org.apache.commons.io.CopyUtils;
+import org.apache.xmlbeans.XmlException;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 
@@ -23,12 +25,14 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.DSOContext;
+import com.tc.object.config.ConfigLoader;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.terracottatech.configV3.Application;
 import com.terracottatech.configV3.ConfigurationModel;
 import com.terracottatech.configV3.Plugin;
 import com.terracottatech.configV3.Plugins;
@@ -120,7 +124,52 @@ public class DSOContextImpl implements DSOContext {
       osgiRuntime.registerService(configHelper, serviceProps);
     }
     for (int pos = 0; pos < plugins.length; ++pos) {
-      osgiRuntime.startBundle(plugins[pos].getName(), plugins[pos].getVersion());
+      String name = plugins[pos].getName();
+      String version = plugins[pos].getVersion();
+      
+      osgiRuntime.startBundle(name, version);
+      
+      Bundle bundle = osgiRuntime.getBundle(name, version);
+      if(bundle!=null) {
+        configureInstrumentation(bundle);
+      }
+    }
+  }
+
+  private void configureInstrumentation(Bundle bundle) {
+    String terracottaInstrumentation = (String) bundle.getHeaders().get("Terracotta-Instrumentation");
+    if(terracottaInstrumentation==null) {
+      return;
+    }
+    
+    URL configUrl = bundle.getResource(terracottaInstrumentation);
+    if(configUrl==null) {
+      return;
+    }
+    
+    InputStream is = null;
+    try {
+      is = configUrl.openStream();
+      Application application = Application.Factory.parse(is);
+      if(application!=null) {
+        ConfigLoader loader = new ConfigLoader(configHelper, logger);
+        loader.loadDsoConfig(application.getDso());
+        loader.loadSpringConfig(application.getSpring());
+      }
+    } catch (IOException e) {
+      logger.warn("Unable to read configuration from " + configUrl, e);
+    } catch (XmlException e) {
+      logger.warn("Unable to parse configuration from " + configUrl, e);
+    } catch (ConfigurationSetupException e) {
+      logger.warn("Unable to load configuration from " + configUrl, e);
+    } finally {
+      if(is!=null) {
+        try {
+          is.close();
+        } catch (IOException ex) {
+          // ignore
+        }
+      }
     }
   }
 
