@@ -1756,7 +1756,7 @@ public class BootJarTool {
   public static void main(String[] args) throws Exception {
     File installDir = getInstallationDir();
     String outputFileOptionMsg = "path to store boot JAR"
-                                 + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/common/lib/dso-boot" : "");
+                                 + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/lib/dso-boot" : "");
     Option targetFileOption = new Option(OUTPUT_FILE_OPTION, true, outputFileOptionMsg);
     targetFileOption.setArgName("file");
     targetFileOption.setLongOpt("output-file");
@@ -1827,7 +1827,7 @@ public class BootJarTool {
     File outputFile;
 
     if (!commandLine.hasOption(OUTPUT_FILE_OPTION)) {
-      File libDir = new File(new File(installDir, "common"), "lib");
+      File libDir = new File(installDir, "lib");
       outputFile = new File(libDir, "dso-boot");
     } else {
       outputFile = new File(commandLine.getOptionValue(OUTPUT_FILE_OPTION)).getAbsoluteFile();

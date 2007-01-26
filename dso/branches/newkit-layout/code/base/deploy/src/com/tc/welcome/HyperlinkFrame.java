@@ -64,7 +64,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
     super();
     
     m_installRoot = new File(System.getProperty("tc.install-root"));
-    m_product     = System.getProperty("tc.welcome.product", "pojos");
+    m_product     = System.getProperty("tc.welcome.product", "Pojos");
     m_productDir  = new File(getSamplesDir(), m_product.toLowerCase());
   
     MenuBar menubar = new MenuBar();
@@ -207,7 +207,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
       bootPath = new File(bootPath, BootJarSignature.getBootJarNameForThisVM());
       m_bootPath = bootPath;
     }
-    
+
     return m_bootPath.getAbsolutePath();
   }
 

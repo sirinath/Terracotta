@@ -202,7 +202,7 @@ public class ClassProcessorHelper {
 
     File tcLib = new File(tcHomeDir, "lib");
     if (!tcLib.exists() || !tcLib.isDirectory() || !tcLib.canRead()) {
-      Banner.errorBanner("Terracotta common lib directory [" + tcLib.getAbsolutePath()
+      Banner.errorBanner("Terracotta lib directory [" + tcLib.getAbsolutePath()
                          + "] is not accessible. This value is based off of the system property "
                          + TC_INSTALL_ROOT_SYSPROP);
       Util.exit();
