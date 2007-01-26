@@ -1,9 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
 import com.tc.asm.ClassAdapter;
+import com.tc.asm.MethodAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -11,8 +13,11 @@ import com.tc.asm.Opcodes;
 import com.tc.object.SerializationUtil;
 
 public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdapter implements Opcodes {
-  private static final String TC_TAKE_METHOD_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "take";
-  private static final String TC_PUT_METHOD_NAME  = ByteCodeUtil.TC_METHOD_PREFIX + "put";
+  private static final String TC_TAKE_METHOD_NAME  = ByteCodeUtil.TC_METHOD_PREFIX + "take";
+  private static final String TC_PUT_METHOD_NAME   = ByteCodeUtil.TC_METHOD_PREFIX + "put";
+
+  private static final String GET_ITEM_METHOD_NAME = "getItem";
+  private static final String GET_ITEM_METHOD_DESC = "()Ljava/lang/Object;";
 
   public JavaUtilConcurrentLinkedBlockingQueueClassAdapter(ClassVisitor cv) {
     super(cv);
@@ -27,19 +32,21 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+    mv = new NodeMethodAdapter(mv);
     if ("remove".equals(name) && "(Ljava/lang/Object;)Z".equals(desc)) {
       recreateRemoveMethod(mv);
     }
     return mv;
   }
-  
+
   /*
-   * The __tc_put() is a non-blocking version of put() and is called in the applicator only.
-   * We allow it to go over the capacity of the LinkedBlockingQueue but the capacity should
-   * eventually goes down by take() method in the application thread.
+   * The __tc_put() is a non-blocking version of put() and is called in the applicator only. We allow it to go over the
+   * capacity of the LinkedBlockingQueue but the capacity should eventually goes down by take() method in the
+   * application thread.
    */
   private void addTCPutMethod() {
-    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, TC_PUT_METHOD_NAME, "(Ljava/lang/Object;)V", null, new String[] { "java/lang/InterruptedException" });
+    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, TC_PUT_METHOD_NAME, "(Ljava/lang/Object;)V", null,
+                                         new String[] { "java/lang/InterruptedException" });
     mv.visitCode();
     Label l0 = new Label();
     Label l1 = new Label();
@@ -62,12 +69,14 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     Label l6 = new Label();
     mv.visitLabel(l6);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "putLock", "Ljava/util/concurrent/locks/ReentrantLock;");
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "putLock",
+                      "Ljava/util/concurrent/locks/ReentrantLock;");
     mv.visitVarInsn(ASTORE, 3);
     Label l7 = new Label();
     mv.visitLabel(l7);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "count", "Ljava/util/concurrent/atomic/AtomicInteger;");
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "count",
+                      "Ljava/util/concurrent/atomic/AtomicInteger;");
     mv.visitVarInsn(ASTORE, 4);
     Label l8 = new Label();
     mv.visitLabel(l8);
@@ -91,7 +100,8 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "capacity", "I");
     mv.visitJumpInsn(IF_ICMPGE, l2);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "notFull", "Ljava/util/concurrent/locks/Condition;");
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "notFull",
+                      "Ljava/util/concurrent/locks/Condition;");
     mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Condition", "signal", "()V");
     mv.visitJumpInsn(GOTO, l2);
     mv.visitLabel(l1);
@@ -128,9 +138,8 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
   }
 
   /**
-   * The __tc_take() method is the non-blocking version of take and is used by the applicator
-   * only. We allow the capacity to fall below 0, but the capacity should eventually goes up
-   * by the put() method in the application thread.
+   * The __tc_take() method is the non-blocking version of take and is used by the applicator only. We allow the
+   * capacity to fall below 0, but the capacity should eventually goes up by the put() method in the application thread.
    */
   private void addTCTakeMethod() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, TC_TAKE_METHOD_NAME, "()Ljava/lang/Object;", null,
@@ -403,5 +412,20 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     mv.visitInsn(RETURN);
     mv.visitMaxs(0, 0);
     mv.visitEnd();
+  }
+
+  private static class NodeMethodAdapter extends MethodAdapter implements Opcodes {
+    public NodeMethodAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+      if (GETFIELD == opcode && "java/util/concurrent/LinkedBlockingQueue$Node".equals(owner) && "item".equals(name)
+          && "Ljava/lang/Object;".equals(desc)) {
+        mv.visitMethodInsn(INVOKEVIRTUAL, owner, GET_ITEM_METHOD_NAME, GET_ITEM_METHOD_DESC);
+      } else {
+        super.visitFieldInsn(opcode, owner, name, desc);
+      }
+    }
   }
 }
