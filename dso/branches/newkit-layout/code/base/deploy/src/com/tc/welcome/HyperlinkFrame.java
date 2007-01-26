@@ -320,9 +320,13 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
   }
   
   protected void runScript(String scriptName) {
+     runScript(scriptName, "bin");
+  }
+  
+  protected void runScript(String scriptName, scriptRoot) {
     setTextPaneCursor(Cursor.WAIT_CURSOR);
     
-    File     dir  = new File(m_installRoot, "bin");
+    File     dir  = new File(m_installRoot, scriptRoot);
     String   ext  = Os.isWindows() ? ".bat" : ".sh";
     File     file = new File(dir, scriptName+ext);
     String[] cmd  = {file.getAbsolutePath()};

@@ -56,7 +56,7 @@ public class WelcomeFrame extends HyperlinkFrame {
       } else {
         File file = new File(getProductDirectory(), "samples.html");
         
-        openURL(file.getAbsolutePath());
+        openURL("file://" + file.getAbsolutePath());
       }
     }
     else if(action.equals("run_console")) {
@@ -65,7 +65,7 @@ public class WelcomeFrame extends HyperlinkFrame {
     }
     else if(action.equals("run_configurator")) {
       startFakeWaitPeriod();
-      runScript("tc-configurator");
+      runScript("sessions-configurator", "tools");
     }
     else if(action.equals("show_guide")) {
       File   file = new File(getProductDirectory(), "docs");

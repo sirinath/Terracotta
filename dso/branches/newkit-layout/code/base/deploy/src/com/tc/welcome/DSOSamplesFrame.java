@@ -273,7 +273,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
       File   dir  = new File(getProductDirectory(), name);
       File   file = new File(dir, "readme.html");
       
-      openURL(file.getAbsolutePath());
+      openURL("file://" + file.getAbsolutePath());
     }
     else if(action.equals("browse_source")) {
       String name       = (String)anchor.getAttribute(HTML.Attribute.NAME);
@@ -281,7 +281,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
       File   sampleDocs = new File(sampleDir, "docs");
       File   index      = new File(sampleDocs, "source.html");
       
-      openURL(index.getAbsolutePath());
+      openURL("file://" + index.getAbsolutePath());
     }
     else {
       openURL(action);
