@@ -6,5 +6,6 @@
 #
 
 cd `dirname "$0"`/../..
-../bin/make-boot-jar.sh -o ../../common/lib/dso-boot -f "$1"/tc-config.xml
-../bin/start-tc-server.sh -f "$1"/tc-config.xml
+SANDBOX="`pwd`/configurator-sandbox/$1"
+../bin/make-boot-jar.sh -o ../lib/dso-boot -f "${SANDBOX}"/tc-config.xml
+../bin/start-tc-server.sh -f "${SANDBOX}"/tc-config.xml

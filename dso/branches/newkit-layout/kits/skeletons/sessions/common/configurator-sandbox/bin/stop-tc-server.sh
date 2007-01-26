@@ -6,4 +6,5 @@
 #
 
 cd `dirname "$0"`/../..
-../bin/stop-tc-server.sh -f "$1"/tc-config.xml
+SANDBOX="`pwd`/configurator-sandbox/$1"
+../bin/stop-tc-server.sh -f "${SANDBOX}"/tc-config.xml

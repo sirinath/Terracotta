@@ -6,13 +6,12 @@
 #  All rights reserved.
 #
 
-cd `dirname "$0"`/..
+cd "`dirname $0`/.."
 SANDBOX="`pwd`"
-TC_INSTALL_DIR="${SANDBOX}"/../..
+TC_INSTALL_DIR="${SANDBOX}/../.."
 
 PORT="$1"
-
-CATALINA_BASE="${SANDBOX}"/tomcat5.0/${PORT}
+CATALINA_BASE="${SANDBOX}/tomcat5.0/${PORT}"
 export CATALINA_BASE
 
 if test "$2" != "nodso"; then

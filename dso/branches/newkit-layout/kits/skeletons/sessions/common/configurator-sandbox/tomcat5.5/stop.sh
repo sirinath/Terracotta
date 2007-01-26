@@ -12,7 +12,7 @@ TC_INSTALL_DIR="${SANDBOX}"/../..
 
 CATALINA_BASE="${SANDBOX}"/tomcat5.5/"$1"
 JAVA_HOME="${TC_JAVA_HOME:-${TC_INSTALL_DIR}/jre}"
-CATALINA_HOME="${CATALINA_HOME:-${TC_INSTALL_DIR}/vendors/tomcat5.5}"
+CATALINA_HOME="${CATALINA_HOME:-${TC_INSTALL_DIR}/external/tomcat5.5}"
 export JAVA_HOME CATALINA_BASE CATALINA_HOME
 
 if test ! -d "${CATALINA_HOME}" -o ! -f "${CATALINA_HOME}/bin/catalina.sh"; then

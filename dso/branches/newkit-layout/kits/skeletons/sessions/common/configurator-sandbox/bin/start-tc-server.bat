@@ -10,7 +10,8 @@ SETLOCAL
 cd %~d0%~p0..\..
 
 SET EXIT_ON_ERROR=TRUE
-CALL "..\bin\make-boot-jar.bat" -o ..\..\common\lib\dso-boot -f %1\tc-config.xml
-CALL "..\bin\start-tc-server.bat" -f %1\tc-config.xml
+SET SANDBOX=%CD%\configurator-sandbox\%1
+CALL "..\bin\make-boot-jar.bat" -o ..\lib\dso-boot -f %SANDBOX%\tc-config.xml
+CALL "..\bin\start-tc-server.bat" -f %SANDBOX%\tc-config.xml
 EXIT %ERRORLEVEL%
 ENDLOCAL

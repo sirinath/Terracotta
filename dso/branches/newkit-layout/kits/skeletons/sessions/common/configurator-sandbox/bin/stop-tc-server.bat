@@ -8,6 +8,7 @@ rem
 
 SETLOCAL
 cd %~d0%~p0..\..
-CALL "..\bin\stop-tc-server.bat" -f %1\tc-config.xml
+SET SANDBOX=%CD%\configurator-sandbox\%1
+CALL "..\bin\stop-tc-server.bat" -f %SANDBOX%\tc-config.xml
 EXIT %ERRORLEVEL%
 ENDLOCAL
