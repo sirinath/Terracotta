@@ -323,7 +323,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
      runScript(scriptName, "bin");
   }
   
-  protected void runScript(String scriptName, scriptRoot) {
+  protected void runScript(String scriptName, String scriptRoot) {
     setTextPaneCursor(Cursor.WAIT_CURSOR);
     
     File     dir  = new File(m_installRoot, scriptRoot);
