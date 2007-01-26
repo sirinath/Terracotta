@@ -10,16 +10,16 @@ if test "$1" = "-q" || test -n "${TOPDIR}"; then
   if test -z "${TOPDIR}"; then
     echo "Error: When the -q option is specified, I expect that"
     echo "the environment variable TOPDIR is set so that I"
-    echo "can locate the libexec directory of your Terracotta"
+    echo "can locate the bin directory of your Terracotta"
     echo "software installation."
     exit 1
   fi
   test "$1" = "-q" && shift
-  . "${TOPDIR}"/libexec/tc-functions.sh
+  . "${TOPDIR}"/bin/tc-functions.sh
   __DSO_ENV_QUIET="true"
 else
   TOPDIR=`dirname "$0"`/..
-  . "${TC_INSTALL_DIR:-${TOPDIR}}"/libexec/tc-functions.sh
+  . "${TC_INSTALL_DIR:-${TOPDIR}}"/bin/tc-functions.sh
 fi
 DSO_ENV_CONFIG=${1:-${TC_CONFIG_PATH}}
 

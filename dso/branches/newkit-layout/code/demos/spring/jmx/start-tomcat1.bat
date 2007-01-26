@@ -12,7 +12,7 @@ set topdir=%~d0%~p0..\..\..
 if "x%tc_install_dir%"=="x" set tc_install_dir=%topdir%
 set catalina_home=%tc_install_dir%\external\tomcat5.5
 
-call "%topdir%\libexec\tc-functions.bat" tc_install_dir "%tc_install_dir%" true
+call "%topdir%\bin\tc-functions.bat" tc_install_dir "%tc_install_dir%" true
 if "%exitflag%"=="true" goto end
 
 call "%topdir%\bin\dso-env.bat" -q tc-config.xml

@@ -36,8 +36,8 @@ IF NOT ERRORLEVEL 0 (
 
 IF ""%2"" == ""nodso"" GOTO doRunWLS
 
-CALL "..\..\libexec\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
-CALL "..\..\libexec\tc-functions.bat" tc_set_dso_boot_jar
+CALL "..\..\bin\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
+CALL "..\..\bin\tc-functions.bat" tc_set_dso_boot_jar
 
 IF "%EXITFLAG%"=="TRUE" GOTO END
 

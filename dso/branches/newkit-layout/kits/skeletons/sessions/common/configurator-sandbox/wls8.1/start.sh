@@ -30,7 +30,7 @@ export JAVA_HOME
 PORT="$1"
 
 if test "$2" != "nodso"; then
-    . ../../libexec/tc-functions.sh
+    . ../../bin/tc-functions.sh
     tc_install_dir "${TC_INSTALL_DIR}"
     tc_set_dso_boot_jar
 

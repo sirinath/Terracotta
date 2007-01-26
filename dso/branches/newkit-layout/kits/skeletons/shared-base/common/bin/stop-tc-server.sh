@@ -7,7 +7,7 @@
 #
 
 TOPDIR=`dirname "$0"`/..
-. "${TOPDIR}"/libexec/tc-functions.sh
+. "${TOPDIR}"/bin/tc-functions.sh
 
 tc_install_dir "${TOPDIR}"
 tc_classpath "" true
