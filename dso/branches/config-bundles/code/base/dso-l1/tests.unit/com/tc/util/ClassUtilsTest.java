@@ -23,6 +23,7 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
+import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.util.ClassUtils.ClassSpec;
 
@@ -513,6 +514,10 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    public void addTransientType(String className, String fieldName) {
+      throw new ImplementMe();
+    }
+    
     public String getOnLoadScriptIfDefined(String className) {
       throw new ImplementMe();
     }
@@ -621,6 +626,18 @@ public class ClassUtilsTest extends TestCase {
 
     public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
       return null;
+    }
+
+    public void addApplicationName(String name) {
+      throw new ImplementMe();
+    }
+
+    public void addInstrumentationDescriptor(InstrumentedClass classDesc) {
+      throw new ImplementMe();
+    }
+
+    public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
+      throw new ImplementMe();
     }
   }
 

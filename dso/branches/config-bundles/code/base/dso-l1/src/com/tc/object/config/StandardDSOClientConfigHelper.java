@@ -51,7 +51,6 @@ import com.tc.object.bytecode.aspectwerkz.AsmMethodInfo;
 import com.tc.object.bytecode.aspectwerkz.ClassInfoFactory;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
 import com.tc.object.bytecode.struts.IncludeTagAdapter;
-import com.tc.object.config.schema.AppContext;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
@@ -59,11 +58,8 @@ import com.tc.object.config.schema.ExcludedInstrumentedClass;
 import com.tc.object.config.schema.IncludeOnLoad;
 import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.config.schema.InstrumentedClass;
-import com.tc.object.config.schema.LockLevel;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
-import com.tc.object.config.schema.SpringApp;
-import com.tc.object.config.schema.SpringContextBean;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
 import com.tc.tomcat.transform.BootstrapAdapter;
@@ -83,12 +79,13 @@ import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
+import com.terracottatech.configV3.DsoApplication;
+import com.terracottatech.configV3.SpringApplication;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,13 +113,12 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private final L1TVSConfigurationSetupManager   configSetupManager;
 
-  private Lock[]                                 locks;
+  private Lock[]                                 locks                              = new Lock[0];
   private final Map                              roots                              = new ConcurrentHashMap();
-  private final Map                              types;
+  private final Map                              types                              = new HashMap();
 
-  private final LinkedList                       instrumentationDescriptors         = new LinkedList();
-
-  private final String[]                         applications;
+  private final Set                              applicationNames                   = Collections
+                                                                                        .synchronizedSet(new HashSet());
   private final CompoundExpressionMatcher        permanentExcludesMatcher;
   private final CompoundExpressionMatcher        nonportablesMatcher;
   private final List                             autoLockExcludes                   = new ArrayList();
@@ -134,6 +130,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private final Map                              adaptableCache                     = new HashMap();
 
+  /**
+   * A list of InstrumentationDescriptor representing include/exclude patterns
+   */
+  private final LinkedList                       instrumentationDescriptors         = new LinkedList();
+
+  /**
+   * A map of class names to TransparencyClassSpec for individual classes
+   */
   private final Map                              classSpecs                         = Collections
                                                                                         .synchronizedMap(new HashMap());
 
@@ -213,77 +217,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     NewSpringApplicationConfig springConfig = configSetupManager
         .springApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME);
 
-    appConfig.changesInItemForbidden(appConfig.roots());
-    com.tc.object.config.schema.Root[] configRoots = (com.tc.object.config.schema.Root[]) appConfig.roots().getObject();
-    if (configRoots == null) {
-      configRoots = new com.tc.object.config.schema.Root[] {};
-    }
-
-    for (int i = 0; i < configRoots.length; ++i) {
-      try {
-        ClassSpec classSpec = ClassUtils.parseFullyQualifiedFieldName(configRoots[i].fieldName());
-        String className = classSpec.getFullyQualifiedClassName();
-        String fieldName = classSpec.getShortFieldName();
-        String rootName = configRoots[i].rootName();
-        addRoot(className, fieldName, rootName, false);
-      } catch (ParseException pe) {
-        throw new ConfigurationSetupException("Root '" + configRoots[i].fieldName() + "' is invalid", pe);
-      }
-    }
-    logger.debug("roots: " + roots);
-
-    Set applicationNames = new HashSet();
-    appConfig.changesInItemForbidden(appConfig.webApplications());
-    if (appConfig.webApplications().getStringArray() != null) {
-      applicationNames.addAll(Arrays.asList(appConfig.webApplications().getStringArray()));
-    }
-
-    appConfig.changesInItemForbidden(appConfig.locks());
-    List lockList = new ArrayList();
-
-    addLocks(lockList, (com.tc.object.config.schema.Lock[]) appConfig.locks().getObject());
-
-    this.types = new HashMap();
-
-    appConfig.changesInItemForbidden(appConfig.transientFields());
-    addTransientFields(appConfig.transientFields().getStringArray());
-
-    SpringApp[] springApps = (SpringApp[]) springConfig.springApps().getObjects();
-    for (int i = 0; springApps != null && i < springApps.length; i++) {
-      SpringApp springApp = springApps[i];
-      if (springApp != null) {
-        addSpringApp(springApp, applicationNames, lockList);
-      }
-    }
-
-    this.applications = (String[]) applicationNames.toArray(new String[applicationNames.size()]);
-    logger.debug("web-applications: " + applicationNames);
-
-    logger.debug("transients: " + types);
-
-    logger.debug("locks: " + lockList);
-
-    this.locks = (Lock[]) lockList.toArray(new Lock[lockList.size()]);
-    rewriteHashtableAutLockSpecIfNecessary();
-
-    // process includes and excludes
-    appConfig.changesInItemForbidden(appConfig.instrumentedClasses());
-    addInstrumentedClasses((InstrumentedClass[]) appConfig.instrumentedClasses().getObject());
-
-    appConfig.changesInItemForbidden(appConfig.distributedMethods());
-    if (appConfig.distributedMethods().getStringArray() != null) {
-      this.distributedMethods.addAll(Arrays.asList(appConfig.distributedMethods().getStringArray()));
-    }
-    logger.debug("distributed-methods: " + ArrayUtils.toString(this.distributedMethods));
-
-    Set userDefinedBootClassNames = new HashSet();
-
-    appConfig.changesInItemForbidden(appConfig.additionalBootJarClasses());
-    if (appConfig.additionalBootJarClasses().getStringArray() != null) {
-      userDefinedBootClassNames.addAll(Arrays.asList(appConfig.additionalBootJarClasses().getStringArray()));
-    }
-    logger.debug("boot-jar/includes: " + ArrayUtils.toString(userDefinedBootClassNames));
-
     supportSharingThroughReflection = appConfig.supportSharingThroughReflection().getBoolean();
     try {
       doAutoconfig(interrogateBootJar);
@@ -291,114 +224,26 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
 
-    for (Iterator i = userDefinedBootClassNames.iterator(); i.hasNext();) {
-      String className = (String) i.next();
-      if (getSpec(className) == null) {
-        TransparencyClassSpec spec = new TransparencyClassSpec(className, this);
-        spec.markPreInstrumented();
-        userDefinedBootSpecs.put(spec.getClassName(), spec);
-      }
-    }
+    ConfigLoader loader = new ConfigLoader(this, logger);
+    loader.loadDsoConfig((DsoApplication) appConfig.getBean());
+    loader.loadSpringConfig((SpringApplication) springConfig.getBean());
+
+    logger.debug("web-applications: " + this.applicationNames);
+
+    logger.debug("roots: " + this.roots);
+    
+    logger.debug("transients: " + this.types);
+
+    logger.debug("locks: " + this.locks);
+
+    logger.debug("distributed-methods: " + ArrayUtils.toString(this.distributedMethods));
+    
+    rewriteHashtableAutLockSpecIfNecessary();
   }
-
-  private void addSpringApp(SpringApp springApp, Set appNames, List sLocks) throws ConfigurationSetupException {
-    // TODO scope the following by app namespace https://jira.terracotta.lan/jira/browse/LKC-2284
-    addInstrumentedClasses(springApp.includes());
-    addLocks(sLocks, springApp.locks());
-    addTransientFields(springApp.transientFields());
-
-    if (springApp.sessionSupport()) {
-      appNames.add(springApp.name()); // enable session support
-    }
-
-    AppContext[] appContexts = springApp.appContexts();
-    for (int j = 0; appContexts != null && j < appContexts.length; j++) {
-      AppContext appContext = appContexts[j];
-      if (appContext == null) continue;
-
-      DSOSpringConfigHelper springConfigHelper = new StandardDSOSpringConfigHelper();
-      springConfigHelper.addApplicationNamePattern(springApp.name());
-      springConfigHelper.setFastProxyEnabled(springApp.fastProxy()); // copy flag to all subcontexts
-
-      String[] distributedEvents = appContext.distributedEvents();
-      for (int k = 0; distributedEvents != null && k < distributedEvents.length; k++) {
-        springConfigHelper.addDistributedEvent(distributedEvents[k]);
-      }
-
-      String[] paths = appContext.paths();
-      for (int k = 0; paths != null && k < paths.length; k++) {
-        if (paths[k] != null) {
-          springConfigHelper.addConfigPattern(paths[k]);
-        }
-      }
-
-      SpringContextBean[] beans = appContext.beans();
-      for (int k = 0; beans != null && k < beans.length; k++) {
-        SpringContextBean bean = beans[k];
-        if (bean != null) {
-          springConfigHelper.addBean(bean.name());
-          String[] fields = bean.nonDistributedFields();
-          for (int l = 0; fields != null && l < fields.length; l++) {
-            if (fields[l] != null) {
-              springConfigHelper.excludeField(bean.name(), fields[l]);
-            }
-          }
-        }
-      }
-
-      addDSOSpringConfig(springConfigHelper);
-    }
-  }
+  
 
   public Portability getPortability() {
     return this.portability;
-  }
-
-  private void addTransientFields(String[] configTransients) throws ConfigurationSetupException {
-    if (configTransients != null && configTransients.length > 0) {
-      try {
-        this.types.putAll(new TypeMap(configTransients).getTypes());
-      } catch (ParseException e) {
-        throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
-      }
-    }
-  }
-
-  private void addInstrumentedClasses(InstrumentedClass[] configInstrumentedClasses) {
-    if (configInstrumentedClasses == null) return;
-
-    for (int i = 0; i < configInstrumentedClasses.length; i++) {
-      InstrumentedClass classDesc = configInstrumentedClasses[i];
-      InstrumentationDescriptor instrumentationDescriptor = newInstrumentationDescriptor(classDesc);
-
-      synchronized (this.instrumentationDescriptors) {
-        this.instrumentationDescriptors.addFirst(instrumentationDescriptor);
-      }
-    }
-  }
-
-  private void addLocks(List lockList, com.tc.object.config.schema.Lock[] configLocks) {
-    if (configLocks == null) return;
-
-    for (int i = 0; i < configLocks.length; ++i) {
-      LockLevel inLevel = configLocks[i].lockLevel();
-
-      ConfigLockLevel outLevel;
-      if (inLevel.equals(LockLevel.CONCURRENT)) outLevel = ConfigLockLevel.CONCURRENT;
-      else if (inLevel.equals(LockLevel.READ)) outLevel = ConfigLockLevel.READ;
-      else if (inLevel.equals(LockLevel.WRITE)) outLevel = ConfigLockLevel.WRITE;
-      else throw Assert.failure("Unknown lock level " + inLevel);
-
-      LockDefinition definition;
-      if (configLocks[i].isAutoLock()) {
-        definition = new LockDefinition(LockDefinition.TC_AUTOLOCK_NAME, outLevel);
-      } else {
-        definition = new LockDefinition(configLocks[i].lockName(), outLevel);
-      }
-      definition.commit();
-
-      lockList.add(new Lock(configLocks[i].methodExpression(), definition));
-    }
   }
 
   private void addAutoLockExcludePattern(String expression) {
@@ -416,12 +261,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private InstrumentationDescriptor newInstrumentationDescriptor(InstrumentedClass classDesc) {
-    ClassExpressionMatcher classExpressionMatcher = new ClassExpressionMatcherImpl(classInfoFactory, expressionHelper,
-                                                                                   classDesc.classExpression());
-
-    InstrumentationDescriptor instrumentationDescriptor = new InstrumentationDescriptorImpl(classDesc,
-                                                                                            classExpressionMatcher);
-    return instrumentationDescriptor;
+    return new InstrumentationDescriptorImpl(classDesc, //
+        new ClassExpressionMatcherImpl(classInfoFactory, expressionHelper, classDesc.classExpression()));
   }
 
   // This is used only for tests right now
@@ -444,11 +285,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     if (oldStyleCallConstructorOnLoad) {
       onLoad.setToCallConstructorOnLoad(true);
     }
-    InstrumentedClass classDesc = new IncludedInstrumentedClass(expression, honorTransient, honorVolatile, onLoad);
-    InstrumentationDescriptor descriptor = newInstrumentationDescriptor(classDesc);
-    synchronized (this.instrumentationDescriptors) {
-      this.instrumentationDescriptors.addFirst(descriptor);
-    }
+    addInstrumentationDescriptor(new IncludedInstrumentedClass(expression, honorTransient, honorVolatile, onLoad));
 
     clearAdaptableCache();
   }
@@ -470,12 +307,12 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   // This is used only for tests right now
   public void addExcludePattern(String expression) {
-    InstrumentedClass classDesc = new ExcludedInstrumentedClass(expression);
+    addInstrumentationDescriptor(new ExcludedInstrumentedClass(expression));
+  }
 
-    InstrumentationDescriptor descriptor = newInstrumentationDescriptor(classDesc);
-
+  public void addInstrumentationDescriptor(InstrumentedClass classDesc) {
     synchronized (this.instrumentationDescriptors) {
-      this.instrumentationDescriptors.addFirst(descriptor);
+      this.instrumentationDescriptors.addFirst(newInstrumentationDescriptor(classDesc));
     }
   }
 
@@ -1490,11 +1327,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private InstrumentationDescriptor getInstrumentationDescriptorFor(String fullName) {
-    InstrumentationDescriptor rv;
-
     synchronized (this.instrumentationDescriptors) {
       for (Iterator i = this.instrumentationDescriptors.iterator(); i.hasNext();) {
-        rv = (InstrumentationDescriptor) i.next();
+        InstrumentationDescriptor rv = (InstrumentationDescriptor) i.next();
         if (rv.matches(fullName)) { return rv; }
       }
     }
@@ -1569,8 +1404,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   public boolean isDSOSessions(String name) {
-    for (int i = 0; i < applications.length; i++) {
-      if (name.matches(applications[i].replaceAll("\\*", "\\.\\*"))) return true;
+    for (Iterator it = applicationNames.iterator(); it.hasNext();) {
+      String appName = (String) it.next();
+      if (name.matches(appName.replaceAll("\\*", "\\.\\*"))) return true;
     }
     return false;
   }
@@ -1632,7 +1468,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator) {
     synchronized (classSpecs) {
-
       TransparencyClassSpec spec = getSpec(className);
       if (spec == null) {
         if (applicator != null) {
@@ -1724,6 +1559,16 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     TransparencyClassSpec spec = this.getOrCreateSpec(className);
     spec.addTransient(fieldName);
   }
+  
+  public void addTransientType(String className, String fieldName) {
+    Type type = (Type) this.types.get(className);
+    if(type==null) {
+      type = new Type();
+      type.setName(className);
+      this.types.put(className, type);
+    }
+    type.addTransient(fieldName);
+  }
 
   public String toString() {
     return "<StandardDSOClientConfigHelper: " + configSetupManager + ">";
@@ -1764,4 +1609,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return spec.getLogicalExtendingClassName();
   }
 
+  public void addApplicationName(String name) {
+    applicationNames.add(name);
+  }
+
+  public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
+    userDefinedBootSpecs.put(className, spec);
+  }
+
 }
+

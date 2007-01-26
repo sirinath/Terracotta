@@ -28,6 +28,7 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
+import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.loaders.IsolationClassLoader;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tx.MockTransactionManager;
@@ -832,6 +833,22 @@ public class HashMapTCTest extends TCTestCase {
 
     public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
       return null;
+    }
+
+    public void addApplicationName(String name) {
+      throw new ImplementMe();
+    }
+
+    public void addInstrumentationDescriptor(InstrumentedClass classDesc) {
+      throw new ImplementMe();
+    }
+
+    public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
+      throw new ImplementMe();
+    }
+    
+    public void addTransientType(String className, String fieldName) {
+      throw new ImplementMe();
     }
   }
 
