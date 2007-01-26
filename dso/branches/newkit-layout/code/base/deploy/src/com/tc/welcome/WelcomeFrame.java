@@ -37,7 +37,6 @@ public class WelcomeFrame extends HyperlinkFrame {
                            "-cp", getTCLib().getAbsolutePath(),
                            "com.tc.welcome.DSOSamplesFrame"};
 
-      //Process            p          = exec(cmdarray, null, getSamplesDir());
       Process            p          = exec(cmdarray, null, getProductDirectory());
       InputStreamDrainer errDrainer = new InputStreamDrainer(p.getErrorStream());
       InputStreamDrainer outDrainer = new InputStreamDrainer(p.getInputStream());
@@ -52,11 +51,9 @@ public class WelcomeFrame extends HyperlinkFrame {
 
   protected void hyperlinkActivated(AttributeSet anchor, String action) {
     if(action.equals("show_samples")) {
-       System.out.println("*>>" + getProduct());
       if("Pojos".equals(getProduct())) {
         runDSOSampleLauncher();
       } else {
-        //File file = new File("samples", getProductDirectory());
         File file = new File(getProductDirectory(), "samples.html");
         
         openURL(file.getAbsolutePath());

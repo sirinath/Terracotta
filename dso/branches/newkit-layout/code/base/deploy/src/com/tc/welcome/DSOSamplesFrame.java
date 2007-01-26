@@ -64,7 +64,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
   }
   
   protected URL getPage() {
-    return getClass().getResource("SamplesDSO.html");
+    return getClass().getResource("SamplesPojos.html");
   }
   
   private StreamReader createStreamReader(InputStream stream) {

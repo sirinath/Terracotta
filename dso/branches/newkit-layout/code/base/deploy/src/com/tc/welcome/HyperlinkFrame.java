@@ -66,7 +66,6 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
     m_installRoot = new File(System.getProperty("tc.install-root"));
     m_product     = System.getProperty("tc.welcome.product", "pojos");
     m_productDir  = new File(getSamplesDir(), m_product.toLowerCase());
-    System.out.println("->>" + m_productDir.getPath());
   
     MenuBar menubar = new MenuBar();
     Menu    menu;
@@ -264,7 +263,6 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
   protected File getSamplesDir() {
     if(m_samplesDir == null) {
       m_samplesDir = new File(m_installRoot, "samples");
-      System.out.println("+>>" + m_samplesDir.getPath());
     }
     return m_samplesDir;
   }
