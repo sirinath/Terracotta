@@ -16,11 +16,10 @@ import com.tc.util.Assert;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Server representation of a list
@@ -110,16 +109,14 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
   }
 
 
-  public Collection getAllReferences() {
-    List allReferences = new ArrayList(this.references);
+  protected void addAllObjectReferencesTo(Set refs) {
+    addAllObjectReferencesFromIteratorTo(references.iterator(), refs);
     if (takeLockField != null) {
-      allReferences.add(takeLockField);
+      refs.add(takeLockField);
     }
     if (putLockField != null) {
-      allReferences.add(putLockField);
+      refs.add(putLockField);
     }
-    
-    return allReferences;
   }
 
   public void dehydrate(ObjectID objectID, DNAWriter writer) {
