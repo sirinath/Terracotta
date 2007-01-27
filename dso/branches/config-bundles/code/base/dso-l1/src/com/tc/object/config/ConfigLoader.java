@@ -225,7 +225,7 @@ public class ConfigLoader {
       Include[] includes = instrumentedClasses.getIncludeArray();
       for (int i = 0; includes != null && i < includes.length; i++) {
         Include include = includes[i];
-        IncludeOnLoad includeOnLoad = null;
+        IncludeOnLoad includeOnLoad = new IncludeOnLoad();
         OnLoad onLoad = include.getOnLoad();
         if(onLoad!=null) {
           if(onLoad.getExecute()!=null) {
