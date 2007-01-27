@@ -365,6 +365,43 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     ld.commit();
     addLock("* javax.swing.DefaultListModel.*(..)", ld);
 
+    addIncludePattern("java.awt.Color", true);
+    spec = getOrCreateSpec("java.awt.Color");
+    spec.addTransient("cs");
+
+    spec = getOrCreateSpec("java.awt.event.MouseMotionAdapter");
+    spec = getOrCreateSpec("java.awt.event.MouseAdapter");
+
+    // java.awt.point
+    spec = getOrCreateSpec("java.awt.Point");
+    spec = getOrCreateSpec("java.awt.geom.Point2D");
+    spec = getOrCreateSpec("java.awt.geom.Point2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Point2D$Float");
+    // end java.awt.Point
+
+    // java.awt.geom.Line
+    spec = getOrCreateSpec("java.awt.geom.Line2D");
+    spec = getOrCreateSpec("java.awt.geom.Line2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Line2D$Float");
+    // end java.awt.geom.Line
+
+    // java.awt.Rectangle
+    spec = getOrCreateSpec("java.awt.Rectangle");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D");
+    spec = getOrCreateSpec("java.awt.geom.RectangularShape");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Float");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Float");
+    // end java.awt.Rectangle
+
+    // java.awt.geom.Ellipse2D
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D");
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Float");
+    // end java.awt.geom.Ellipse2D
+
     // java.awt.geom.Path2D
     if (Vm.isJDK16()) {
       spec = getOrCreateSpec("java.awt.geom.Path2D");
@@ -373,6 +410,18 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
     // end java.awt.geom.Path2D
 
+    // java.awt.geom.GeneralPath
+    spec = getOrCreateSpec("java.awt.geom.GeneralPath");
+    // end java.awt.geom.GeneralPath
+
+    // java.awt.BasicStroke
+    spec = getOrCreateSpec("java.awt.BasicStroke");
+    // end java.awt.BasicStroke
+
+    // java.awt.Dimension
+    spec = getOrCreateSpec("java.awt.Dimension");
+    spec = getOrCreateSpec("java.awt.geom.Dimension2D");
+    // end java.awt.Dimension
 
     spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
     addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
@@ -530,6 +579,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("java.lang.Exception");
     spec = getOrCreateSpec("java.lang.RuntimeException");
     spec = getOrCreateSpec("java.lang.InterruptedException");
+    spec = getOrCreateSpec("java.awt.AWTException");
     spec = getOrCreateSpec("java.io.IOException");
     spec = getOrCreateSpec("java.io.FileNotFoundException");
     spec = getOrCreateSpec("java.lang.Error");
