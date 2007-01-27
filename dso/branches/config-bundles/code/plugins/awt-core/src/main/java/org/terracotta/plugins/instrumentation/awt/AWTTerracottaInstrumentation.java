@@ -13,7 +13,8 @@ public final class AWTTerracottaInstrumentation implements BundleActivator {
   public void start(final BundleContext context) throws Exception {
     final ServiceReference configHelperRef = context.getServiceReference(StandardDSOClientConfigHelper.class.getName());
     if (configHelperRef != null) {
-      final StandardDSOClientConfigHelper configHelper = (StandardDSOClientConfigHelper) configHelperRef;
+      final StandardDSOClientConfigHelper configHelper = (StandardDSOClientConfigHelper) context
+          .getService(configHelperRef);
       addAWTInstrumentation(configHelper);
       context.ungetService(configHelperRef);
     } else {
