@@ -1,10 +1,10 @@
 <?xml version="1.0"?><project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.terracotta.plugins</groupId>
-  <artifactId>awt-core</artifactId>
+  <artifactId>tc-awt-core</artifactId>
   <name>awt-core</name>
-  <version>1.0-SNAPSHOT</version>
-  <url>http://www.terracotta.org</url>
+  <version>1.0.0</version>
+  <url>http://www.terracotta.org/</url>
   <build>
     <plugins>
       <plugin>
@@ -15,7 +15,14 @@
             <manifest/>
             <manifestEntries>
               <Bundle-Activator>org.terracotta.plugins.instrumentation.awt.AWTTerracottaInstrumentation</Bundle-Activator>
+              <Bundle-Category>terracotta</Bundle-Category>
+              <Bundle-Copyright>Terracotta, Inc. (c) 2003-2007</Bundle-Copyright>
+              <Bundle-Description>Terracotta instrumentation for clustering java.awt.*</Bundle-Description>
+              <Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+              <Bundle-Name>Terracotta AWT Instrumentation</Bundle-Name>
+              <Bundle-RequiredExecutionEnvironment>J2SE-1.4</Bundle-RequiredExecutionEnvironment>
               <Bundle-SymbolicName>${pom.groupId}.${pom.artifactId}</Bundle-SymbolicName>
+              <Bundle-Vendor>Terracotta, Inc.</Bundle-Vendor>
               <Bundle-Version>${pom.version}</Bundle-Version>
             </manifestEntries>
           </archive>
