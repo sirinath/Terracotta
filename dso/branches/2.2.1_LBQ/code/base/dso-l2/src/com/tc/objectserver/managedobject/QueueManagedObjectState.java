@@ -98,12 +98,17 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
     }
   }
 
+  // Since LinkedBlockingQueue supports partial collection, we are not adding it to back references
   private void addChangeToCollector(ObjectID objectID, Object newValue, BackReferences includeIDs) {
     if (newValue instanceof ObjectID) {
       getListener().changed(objectID, null, (ObjectID) newValue);
-      includeIDs.addBackReference((ObjectID) newValue, objectID);
     }
   }
+  
+  public void addObjectReferencesTo(ManagedObjectTraverser traverser) {
+    traverser.addReachableObjectIDs(getObjectReferences());
+  }
+
 
   public Collection getAllReferences() {
     List allReferences = new ArrayList(this.references);
