@@ -88,12 +88,6 @@ bundled_components:
         - management
         - thirdparty
         - ui-configurator 
-  - dso:
-      install_directory: tools
-  - spring:
-      install_directory: tools
-  - sessions:
-      install_directory: tools
 packaging:
   - tar:
       assert: '@build_environment.os_type !~ /^\s*windows\s*$/i'
