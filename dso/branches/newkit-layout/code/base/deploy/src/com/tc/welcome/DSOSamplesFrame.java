@@ -120,7 +120,7 @@ public class DSOSamplesFrame extends HyperlinkFrame {
                            "-cp", getTCLib().getAbsolutePath(),
                            "com.tc.server.TCServerMain"};
 
-      Process      p          = exec(cmdarray, null, getProductDirectory());
+      Process      p          = exec(cmdarray, null, getSamplesDir());
       StreamReader errDrainer = createStreamReader(p.getErrorStream());
       StreamReader outDrainer = createStreamReader(p.getInputStream());
       
