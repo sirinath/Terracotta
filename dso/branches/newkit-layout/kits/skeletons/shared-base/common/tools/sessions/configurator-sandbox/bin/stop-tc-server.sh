@@ -5,6 +5,6 @@
 # All rights reserved.
 #
 
-cd `dirname "$0"`/../..
-SANDBOX="`pwd`/configurator-sandbox/$1"
+cd `dirname "$0"`/../../..
+SANDBOX="`pwd`/sessions/configurator-sandbox/$1"
 ../bin/stop-tc-server.sh -f "${SANDBOX}"/tc-config.xml

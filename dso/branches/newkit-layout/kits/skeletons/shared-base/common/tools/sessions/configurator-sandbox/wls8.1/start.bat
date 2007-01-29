@@ -14,7 +14,7 @@ REM -------------------------------------
 
 cd %~d0%~p0..
 SET SANDBOX=%CD%
-SET TC_INSTALL_DIR=%SANDBOX%\..\..
+SET TC_INSTALL_DIR=%SANDBOX%\..\..\..
 
 IF "%TC_JAVA_HOME%" == "" (
   SET TC_JAVA_HOME=%BEA_HOME%\jdk142_11
@@ -36,8 +36,8 @@ IF NOT ERRORLEVEL 0 (
 
 IF ""%2"" == ""nodso"" GOTO doRunWLS
 
-CALL "..\..\bin\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
-CALL "..\..\bin\tc-functions.bat" tc_set_dso_boot_jar
+CALL "..\..\..\bin\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
+CALL "..\..\..\bin\tc-functions.bat" tc_set_dso_boot_jar
 
 IF "%EXITFLAG%"=="TRUE" GOTO END
 

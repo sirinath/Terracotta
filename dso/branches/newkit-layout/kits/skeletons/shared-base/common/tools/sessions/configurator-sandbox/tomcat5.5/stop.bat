@@ -14,7 +14,7 @@ REM --------------------------------------------------------------------
 
 cd %~d0%~p0..
 SET SANDBOX=%CD%
-SET TC_INSTALL_DIR=%SANDBOX%\..\..
+SET TC_INSTALL_DIR=%SANDBOX%\..\..\..
 
 SET JAVA_HOME=%TC_INSTALL_DIR%\jre
 IF NOT "x%TC_JAVA_HOME%" == "x" (

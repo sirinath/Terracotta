@@ -12,7 +12,7 @@
 
 cd "`dirname $0`/.."
 SANDBOX="`pwd`"
-TC_INSTALL_DIR="${SANDBOX}/../.."
+TC_INSTALL_DIR="${SANDBOX}/../../.."
 
 if test -z "${TC_JAVA_HOME}" -a -n "${BEA_HOME}" -a -d "${BEA_HOME}/jdk142_11"; then
     TC_JAVA_HOME="${BEA_HOME}/jdk142_11"
@@ -30,7 +30,7 @@ export JAVA_HOME
 PORT="$1"
 
 if test "$2" != "nodso"; then
-    . ../../bin/tc-functions.sh
+    . ../../../bin/tc-functions.sh
     tc_install_dir "${TC_INSTALL_DIR}"
     tc_set_dso_boot_jar
 

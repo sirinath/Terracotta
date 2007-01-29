@@ -14,7 +14,7 @@ REM --------------------------------------------------------------------
 
 cd %~d0%~p0..
 SET SANDBOX=%CD%
-SET TC_INSTALL_DIR=%SANDBOX%\..\..
+SET TC_INSTALL_DIR=%SANDBOX%\..\..\..
 
 SET JAVA_HOME=%TC_INSTALL_DIR%\jre
 IF NOT "x%TC_JAVA_HOME%" == "x" (
@@ -44,8 +44,8 @@ REM --------------------------------------------------------------------
 
 IF "%2" == "nodso" goto runCatalina
 
-CALL "..\..\bin\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
-CALL "..\..\bin\tc-functions.bat" tc_set_dso_boot_jar
+CALL "..\..\..\bin\tc-functions.bat" tc_install_dir "%TC_INSTALL_DIR%"
+CALL "..\..\..\bin\tc-functions.bat" tc_set_dso_boot_jar
 
 IF "%EXITFLAG%"=="TRUE" GOTO END
 

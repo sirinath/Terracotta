@@ -6,9 +6,9 @@
 #  All rights reserved.
 #
 
-cd `dirname "$0"`/..
+cd "`dirname $0`/.."
 SANDBOX="`pwd`"
-TC_INSTALL_DIR="${SANDBOX}"/../..
+TC_INSTALL_DIR="${SANDBOX}/../../.."
 
 CATALINA_BASE="${SANDBOX}"/tomcat5.5/"$1"
 JAVA_HOME="${TC_JAVA_HOME:-${TC_INSTALL_DIR}/jre}"
