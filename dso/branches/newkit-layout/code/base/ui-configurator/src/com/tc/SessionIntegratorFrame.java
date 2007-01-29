@@ -181,7 +181,7 @@ public class SessionIntegratorFrame extends Frame {
   private static final String FS                        = System.getProperty("file.separator");
   private static final String DEFAULT_TC_INSTALL_DIR    = getDefaultInstallDir();
   private static final String TC_INSTALL_DIR            = System.getProperty("tc.install.dir", DEFAULT_TC_INSTALL_DIR);
-  private static final String DEFAULT_SANDBOX_ROOT      = TC_INSTALL_DIR+FS+"tools"+FS+"configurator-sandbox";
+  private static final String DEFAULT_SANDBOX_ROOT      = TC_INSTALL_DIR+FS+"tools"+FS+"sessions"+FS+"configurator-sandbox";
   private static final String SANDBOX_ROOT              = System.getProperty("configurator.sandbox", DEFAULT_SANDBOX_ROOT);
   private static final String L2_LABEL                  = "Terracotta Server";
   private static final String L2_STARTUP_SCRIPT         = "start-tc-server"+SCRIPT_EXTENSION;

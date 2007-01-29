@@ -65,7 +65,7 @@ public class WelcomeFrame extends HyperlinkFrame {
     }
     else if(action.equals("run_configurator")) {
       startFakeWaitPeriod();
-      runScript("sessions-configurator", "tools");
+      runScript("sessions-configurator", "tools" + System.getProperty("file.separator") + "sessions");
     }
     else if(action.equals("show_guide")) {
       File   file = new File(getProductDirectory(), "docs");
