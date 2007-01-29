@@ -20,7 +20,7 @@ JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.ssl=false"
 export JAVA_OPTS
 
 JAVA_HOME="${TC_JAVA_HOME:-${TOPDIR}/jre}"
-CATALINA_HOME="${TOPDIR}/external/tomcat5.5"
+CATALINA_HOME="${TOPDIR}/vendors/tomcat5.5"
 CATALINA_BASE="tomcat1"
 export JAVA_HOME CATALINA_HOME CATALINA_BASE
 
