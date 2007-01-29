@@ -26,8 +26,8 @@ IF NOT "x%TC_JAVA_HOME%" == "x" (
 )
 
 IF "x%CATALINA_HOME%" == "x" (
-  SET CATALINA_HOME=%TC_INSTALL_DIR%\external\tomcat5.5
-  ECHO Using CATALINA_HOME of '%TC_INSTALL_DIR%\external\tomcat5.5'.
+  SET CATALINA_HOME=%TC_INSTALL_DIR%\vendors\tomcat5.5
+  ECHO Using CATALINA_HOME of '%TC_INSTALL_DIR%\vendors\tomcat5.5'.
 ) else (
   IF NOT EXIST "%CATALINA_HOME%" (
     ECHO CATALINA_HOME of '%CATALINA_HOME%' does not exist.
