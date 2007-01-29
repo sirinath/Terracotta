@@ -32,7 +32,7 @@ bundled_demos:
         - townsend
 bundled_vendors:
    - tomcat-5.5.20:
-       install_directory: external/tomcat5.5
+       install_directory: vendors/tomcat5.5
 bundled_components:
   - base:
       documentations:
