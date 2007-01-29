@@ -10,7 +10,7 @@ setlocal
 set topdir=%~d0%~p0..\..\..
 
 if "x%tc_install_dir%"=="x" set tc_install_dir=%topdir%
-set catalina_home=%tc_install_dir%\external\tomcat5.5
+set catalina_home=%tc_install_dir%\vendors\tomcat5.5
 
 call "%topdir%\bin\tc-functions.bat" tc_install_dir "%tc_install_dir%" true
 if "%exitflag%"=="true" goto end
