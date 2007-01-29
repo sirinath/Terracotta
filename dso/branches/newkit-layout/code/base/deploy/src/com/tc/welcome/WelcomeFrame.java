@@ -61,7 +61,7 @@ public class WelcomeFrame extends HyperlinkFrame {
     }
     else if(action.equals("run_console")) {
       startFakeWaitPeriod();
-      runScript("tc-admin");
+      runScript("admin");
     }
     else if(action.equals("run_configurator")) {
       startFakeWaitPeriod();
