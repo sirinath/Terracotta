@@ -18,6 +18,8 @@ public class EnumTestApp extends AbstractTransparentApp {
 
   private final DataRoot      dataRoot = new DataRoot();
   private final CyclicBarrier barrier;
+  
+  private State stateRoot;
 
   public EnumTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -27,6 +29,8 @@ public class EnumTestApp extends AbstractTransparentApp {
   public void run() {
     try {
       int index = barrier.await();
+      
+      rootEnumTest(index);
 
       if (index == 0) {
         dataRoot.setState(State.START);
@@ -80,6 +84,28 @@ public class EnumTestApp extends AbstractTransparentApp {
       notifyError(t);
     }
   }
+  
+  private void rootEnumTest(int index) throws Exception {
+    if (index == 0) {
+      stateRoot = State.START;
+    }
+    
+    barrier.await();
+    
+    Assert.assertEquals(State.START, stateRoot);
+    
+    barrier.await();
+    
+    if (index == 1) {
+      stateRoot = State.RUN;
+    }
+    
+    barrier.await();
+    
+    Assert.assertEquals(State.RUN, stateRoot);
+    
+    barrier.await();
+  }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = EnumTestApp.class.getName();
@@ -95,6 +121,7 @@ public class EnumTestApp extends AbstractTransparentApp {
 
     spec.addRoot("barrier", "barrier");
     spec.addRoot("dataRoot", "dataRoot");
+    spec.addRoot("stateRoot", "stateRoot", false);
   }
 
   public enum State {

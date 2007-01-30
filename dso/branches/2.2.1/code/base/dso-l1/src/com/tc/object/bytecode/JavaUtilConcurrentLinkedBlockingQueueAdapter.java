@@ -12,17 +12,6 @@ import com.tc.object.SerializationUtil;
 
 public class JavaUtilConcurrentLinkedBlockingQueueAdapter implements Opcodes {
 
-  public static class PutAdapter extends AbstractMethodAdapter {
-
-    public MethodVisitor adapt(ClassVisitor classVisitor) {
-      return new PutMethodAdapter(visitOriginal(classVisitor), SerializationUtil.QUEUE_PUT_SIGNATURE);
-    }
-
-    public boolean doesOriginalNeedAdapting() {
-      return false;
-    }
-  }
-
   public static class ClearAdapter extends AbstractMethodAdapter {
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       return new ClearMethodAdapter(visitOriginal(classVisitor), SerializationUtil.CLEAR_SIGNATURE);
@@ -120,55 +109,6 @@ public class JavaUtilConcurrentLinkedBlockingQueueAdapter implements Opcodes {
 
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
                          "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
-      mv.visitLabel(notManaged);
-    }
-  }
-
-  private static class PutMethodAdapter extends MethodAdapter implements Opcodes {
-    private final String invokeMethodSignature;
-
-    public PutMethodAdapter(MethodVisitor mv, String invokeMethodSignature) {
-      super(mv);
-      this.invokeMethodSignature = invokeMethodSignature;
-    }
-    
-    /**
-     * Changing the while (count.get() == capacity) condition to
-     * while (count.get() >= capacity) due to the non-blocking version of put().
-     */
-    public void visitJumpInsn(int opcode, Label label) {
-      if (IF_ICMPEQ == opcode) {
-        opcode = IF_ICMPGE;
-      }
-      super.visitJumpInsn(opcode, label);
-    }
-
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
-      if ("insert".equals(name) && "(Ljava/lang/Object;)V".equals(desc)) {
-        addLogicalInvokeMethodCall();
-      }
-    }
-
-    private void addLogicalInvokeMethodCall() {
-      Label notManaged = new Label();
-      addCheckedManagedCode(mv, notManaged);
-      ByteCodeUtil.pushThis(mv);
-      ByteCodeUtil.pushThis(mv);
-      mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "putLock",
-                        "Ljava/util/concurrent/locks/ReentrantLock;");
-
-      mv.visitLdcInsn(invokeMethodSignature);
-
-      mv.visitLdcInsn(new Integer(1));
-      mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-      mv.visitInsn(DUP);
-      int count = 0;
-      mv.visitLdcInsn(new Integer(count++));
-      mv.visitVarInsn(ALOAD, 1);
-      mv.visitInsn(AASTORE);
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvokeWithTransaction",
-                         "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
       mv.visitLabel(notManaged);
     }
   }
