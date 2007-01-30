@@ -50,7 +50,6 @@ import com.tc.object.bytecode.aspectwerkz.AsmConstructorInfo;
 import com.tc.object.bytecode.aspectwerkz.AsmMethodInfo;
 import com.tc.object.bytecode.aspectwerkz.ClassInfoFactory;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
-import com.tc.object.bytecode.struts.IncludeTagAdapter;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
@@ -231,16 +230,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     logger.debug("web-applications: " + this.applicationNames);
 
     logger.debug("roots: " + this.roots);
-    
+
     logger.debug("transients: " + this.types);
 
     logger.debug("locks: " + this.locks);
 
     logger.debug("distributed-methods: " + ArrayUtils.toString(this.distributedMethods));
-    
+
     rewriteHashtableAutLockSpecIfNecessary();
   }
-  
 
   public Portability getPortability() {
     return this.portability;
@@ -262,7 +260,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private InstrumentationDescriptor newInstrumentationDescriptor(InstrumentedClass classDesc) {
     return new InstrumentationDescriptorImpl(classDesc, //
-        new ClassExpressionMatcherImpl(classInfoFactory, expressionHelper, classDesc.classExpression()));
+                                             new ClassExpressionMatcherImpl(classInfoFactory, expressionHelper,
+                                                                            classDesc.classExpression()));
   }
 
   // This is used only for tests right now
@@ -620,19 +619,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     markAllSpecsPreInstrumented();
 
     addJDK15InstrumentedSpec();
-
-    // Hack for honoring transient in Struts action classes
-    spec = getOrCreateSpec("org.apache.struts.action.ActionForm");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("org.apache.struts.action.ActionMappings");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("org.apache.struts.action.ActionServletWrapper");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("org.apache.struts.action.DynaActionFormClass");
-    spec.setHonorTransient(true);
-
-    // Hack for Struts <bean:include> tag
-    addCustomAdapter("org.apache.struts.taglib.bean.IncludeTag", IncludeTagAdapter.class);
 
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");
@@ -1559,10 +1545,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     TransparencyClassSpec spec = this.getOrCreateSpec(className);
     spec.addTransient(fieldName);
   }
-  
+
   public void addTransientType(String className, String fieldName) {
     Type type = (Type) this.types.get(className);
-    if(type==null) {
+    if (type == null) {
       type = new Type();
       type.setName(className);
       this.types.put(className, type);
@@ -1618,4 +1604,3 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
 }
-

@@ -1,8 +1,8 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
-package com.tc.object.bytecode.struts;
-
+package org.terracotta.plugins.instrumentation.struts;
 
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
@@ -40,13 +40,13 @@ public class IncludeTagAdapter extends ClassAdapter implements Opcodes {
 
   private void addSessionLockingSupport() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "doStartTag", "()I", null,
-                                         new String[] { "javax/servlet/jsp/JspException" });
+        new String[] { "javax/servlet/jsp/JspException" });
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "org/apache/struts/taglib/bean/IncludeTag", "pageContext",
-                      "Ljavax/servlet/jsp/PageContext;");
+        "Ljavax/servlet/jsp/PageContext;");
     mv.visitMethodInsn(INVOKEVIRTUAL, "javax/servlet/jsp/PageContext", "getSession",
-                       "()Ljavax/servlet/http/HttpSession;");
+        "()Ljavax/servlet/http/HttpSession;");
     mv.visitVarInsn(ASTORE, 1);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitTypeInsn(INSTANCEOF, "com/tc/session/SessionSupport");
@@ -58,7 +58,7 @@ public class IncludeTagAdapter extends ClassAdapter implements Opcodes {
     mv.visitLabel(l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKESPECIAL, "org/apache/struts/taglib/bean/IncludeTag", ByteCodeUtil.METHOD_RENAME_PREFIX
-                                                                                  + "doStartTag", "()I");
+        + "doStartTag", "()I");
     mv.visitVarInsn(ISTORE, 4);
     Label l4 = new Label();
     mv.visitJumpInsn(JSR, l4);
