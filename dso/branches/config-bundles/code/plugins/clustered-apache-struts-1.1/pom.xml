@@ -20,7 +20,7 @@
             <index>false</index>
             <manifest/>
             <manifestEntries>
-              <Bundle-Activator>org.terracotta.plugins.instrumentation.struts.StrutsTerracottaInstrumentation</Bundle-Activator>
+              <Bundle-Activator>org.terracotta.plugins.instrumentation.struts_1_1.StrutsTerracottaInstrumentation</Bundle-Activator>
               <Bundle-Category>terracotta</Bundle-Category>
               <Bundle-Copyright>Terracotta, Inc. (c) 2003-2007</Bundle-Copyright>
               <Bundle-Description>Terracotta instrumentation for clustering Apache Struts</Bundle-Description>
