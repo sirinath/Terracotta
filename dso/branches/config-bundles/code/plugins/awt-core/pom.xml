@@ -6,9 +6,9 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.terracotta.plugins</groupId>
-  <artifactId>tc-awt-core</artifactId>
+  <artifactId>clustered-awt</artifactId>
   <name>Clustered AWT</name>
-  <version>1.0.0</version>
+  <version>1.4</version>
   <packaging>jar</packaging>
   <url>http://www.terracotta.org/</url>
   <build>
