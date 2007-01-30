@@ -7,7 +7,7 @@
   <url>http://www.terracotta.org/</url>
   <packaging>pom</packaging>
   <modules>
-    <module>awt-core</module>
+    <module>clustered-awt-1.4</module>
     <module>clustered-apache-struts-1.1</module>
   </modules>
 </project>
