@@ -4,8 +4,13 @@
 require 'tmpdir'
 
 `rm -rf #{Dir.tmpdir}/terracotta*`
+`rm -rf #{Dir.tmpdir}/open*`
+`rm -rf #{Dir.tmpdir}/*.dat`
+`rm -rf #{Dir.tmpdir}/sprint*`
 
-topdir=File.join(File.expand_path(File.dirname(__FILE__)), "..", "..")
+topdir = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..")
+topdir = File.join(topdir, "..") if topdir =~ /community/
+
 if ENV['OS'] =~ /win/i
     topdir=`cygpath -u #{topdir}`
 end
