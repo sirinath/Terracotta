@@ -1,9 +1,15 @@
 <?xml version="1.0"?><project>
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.terracotta.plugins</groupId>
+    <artifactId>tc-plugins</artifactId>
+    <version>1.0.0</version>
+  </parent>
   <groupId>org.terracotta.plugins</groupId>
   <artifactId>clustered-apache-struts</artifactId>
   <name>Clustered Struts 1.1</name>
   <version>1.1</version>
+  <packaging>jar</packaging>
   <url>http://www.terracotta.org/</url>
   <build>
     <plugins>
