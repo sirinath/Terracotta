@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package org.terracotta.plugins.instrumentation.struts;
+package org.terracotta.plugins.instrumentation.struts_1_1;
 
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
