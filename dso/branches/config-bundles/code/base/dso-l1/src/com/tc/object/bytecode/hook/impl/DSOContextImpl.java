@@ -126,11 +126,11 @@ public class DSOContextImpl implements DSOContext {
     for (int pos = 0; pos < plugins.length; ++pos) {
       String name = plugins[pos].getName();
       String version = plugins[pos].getVersion();
-      
+
       osgiRuntime.startBundle(name, version);
-      
+
       Bundle bundle = osgiRuntime.getBundle(name, version);
-      if(bundle!=null) {
+      if (bundle != null) {
         configureInstrumentation(bundle);
       }
     }
@@ -138,20 +138,16 @@ public class DSOContextImpl implements DSOContext {
 
   private void configureInstrumentation(Bundle bundle) {
     String terracottaInstrumentation = (String) bundle.getHeaders().get("Terracotta-Instrumentation");
-    if(terracottaInstrumentation==null) {
-      return;
-    }
-    
+    if (terracottaInstrumentation == null) { return; }
+
     URL configUrl = bundle.getResource(terracottaInstrumentation);
-    if(configUrl==null) {
-      return;
-    }
-    
+    if (configUrl == null) { return; }
+
     InputStream is = null;
     try {
       is = configUrl.openStream();
       Application application = Application.Factory.parse(is);
-      if(application!=null) {
+      if (application != null) {
         ConfigLoader loader = new ConfigLoader(configHelper, logger);
         loader.loadDsoConfig(application.getDso());
         loader.loadSpringConfig(application.getSpring());
@@ -163,7 +159,7 @@ public class DSOContextImpl implements DSOContext {
     } catch (ConfigurationSetupException e) {
       logger.warn("Unable to load configuration from " + configUrl, e);
     } finally {
-      if(is!=null) {
+      if (is != null) {
         try {
           is.close();
         } catch (IOException ex) {
