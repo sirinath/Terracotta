@@ -43,7 +43,7 @@ public class LiteralTypesApplicator extends BaseApplicator {
       tcObject.setLiteralValue(value);
     }
   }
-
+  
   public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
     if (!objectManager.isPortableInstance(pojo)) { return; }
     writer.addLiteralValue(pojo);
