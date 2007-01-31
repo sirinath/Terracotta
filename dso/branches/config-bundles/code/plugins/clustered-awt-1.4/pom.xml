@@ -20,7 +20,7 @@
             <index>false</index>
             <manifest/>
             <manifestEntries>
-              <Bundle-Activator>org.terracotta.plugins.configuration.awt.AWTTerracottaInstrumentation</Bundle-Activator>
+              <Bundle-Activator>org.terracotta.plugins.configuration.awt.AWTTerracottaConfigurator</Bundle-Activator>
               <Bundle-Category>terracotta</Bundle-Category>
               <Bundle-Copyright>Terracotta, Inc. (c) 2003-2007</Bundle-Copyright>
               <Bundle-Description>Terracotta configuration for clustering java.awt.*</Bundle-Description>

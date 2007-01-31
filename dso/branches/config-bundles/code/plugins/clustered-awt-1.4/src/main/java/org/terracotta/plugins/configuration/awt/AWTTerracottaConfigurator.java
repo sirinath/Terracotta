@@ -8,7 +8,7 @@ import org.osgi.framework.ServiceReference;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 
-public final class AWTTerracottaInstrumentation implements BundleActivator {
+public final class AWTTerracottaConfigurator implements BundleActivator {
 
   public void start(final BundleContext context) throws Exception {
     final ServiceReference configHelperRef = context.getServiceReference(StandardDSOClientConfigHelper.class.getName());
