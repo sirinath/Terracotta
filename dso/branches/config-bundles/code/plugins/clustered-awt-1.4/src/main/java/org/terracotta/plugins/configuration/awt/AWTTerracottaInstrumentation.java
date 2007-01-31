@@ -1,4 +1,4 @@
-package org.terracotta.plugins.instrumentation.awt;
+package org.terracotta.plugins.configuration.awt;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
