@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -111,7 +112,7 @@ public class TCTestCase extends TestCase {
   }
 
   protected void doDumpServerDetails() {
-    // NOP - Overridden by subclasses
+  // NOP - Overridden by subclasses
   }
 
   // override this method if you want to do something before your test times out
@@ -122,14 +123,14 @@ public class TCTestCase extends TestCase {
   public void runBare() throws Throwable {
     if (isAllDisabled()) {
       System.out.println("NOTE: ALL tests in " + this.getClass().getName() + " are disabled until "
-                         + this.allDisabledUntil);
+          + this.allDisabledUntil);
       return;
     }
 
     final String testMethod = getName();
     if (isTestDisabled(testMethod)) {
       System.out.println("NOTE: Test method " + testMethod + "() is disabled until "
-                         + this.disabledUntil.get(testMethod));
+          + this.disabledUntil.get(testMethod));
       return;
     }
 
@@ -167,16 +168,16 @@ public class TCTestCase extends TestCase {
   private void scheduleTimeoutTask() throws IOException {
     // enforce some sanity
     final int MINIMUM = 30;
-    long junitTimeout = TestConfigObject.getInstance().getJunitTimeoutInSeconds();
+    long junitTimeout = this.getTimeoutValueInSeconds();
 
     if (junitTimeout < MINIMUM) { throw new IllegalArgumentException("Junit timeout cannot be less than " + MINIMUM
-                                                                     + " seconds"); }
+        + " seconds"); }
 
     final int MIN_THRESH = 15000;
     junitTimeout *= 1000;
     if ((junitTimeout - timeoutThreshold) < MIN_THRESH) {
       System.err.println("ERROR: Cannot apply timeout threshold of " + timeoutThreshold + ", using " + MIN_THRESH
-                         + " instead");
+          + " instead");
       timeoutThreshold = MIN_THRESH;
     }
 
@@ -269,11 +270,43 @@ public class TCTestCase extends TestCase {
   }
 
   /**
+   * Disable ALL tests until the given date. This method should be called in the constructor of your unit test Only
+   * specified platforms ("windows", "linux", "solaris") will take effect.
+   */
+  protected final void disableAllUntil(String theDate, String[] platforms) {
+    List platform_list = Arrays.asList(platforms);
+    try {
+      String platform = TestConfigObject.getInstance().platform();
+      if (platform_list.contains(platform)) {
+        disableAllUntil(parseDate(theDate));
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /**
    * Disable the given test method until the given date. This method should be called in the constructor of your unit
    * test
    */
   protected final void disableTestUntil(String method, String date) {
     this.disabledUntil.put(method, parseDate(date));
+  }
+
+  /**
+   * Disable the given test method until the given date. This method should be called in the constructor of your unit
+   * test. Only specified platforms ("windows", "linux", "solaris") take effect.
+   */
+  protected final void disableTestUntil(String method, String date, String[] platforms) {
+    List platform_list = Arrays.asList(platforms);
+    try {
+      String platform = TestConfigObject.getInstance().platform();
+      if (platform_list.contains(platform)) {
+        this.disabledUntil.put(method, parseDate(date));
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -361,7 +394,7 @@ public class TCTestCase extends TestCase {
     if ((expected == null) != (actual == null)) {
       message = (message == null ? "" : message + ": ");
       fail(message + "Expected was " + (expected == null ? "<null>" : "'" + expected + "'") + ", but actual was "
-           + (actual == null ? "<null>" : "'" + actual + "'"));
+          + (actual == null ? "<null>" : "'" + actual + "'"));
     }
 
     if (expected != null) {
@@ -492,7 +525,7 @@ public class TCTestCase extends TestCase {
   protected synchronized void assertTimeDirection() {
     long currentMillis = System.currentTimeMillis();
     assertTrue("System Clock Moved Backwards! [current=" + currentMillis + ", previous=" + previousSystemMillis + "]",
-               currentMillis >= previousSystemMillis);
+        currentMillis >= previousSystemMillis);
     previousSystemMillis = currentMillis;
   }
 
@@ -500,4 +533,14 @@ public class TCTestCase extends TestCase {
     ThreadDump.dumpThreadsMany(numThreadDumps, dumpInterval);
   }
 
+  /**
+   * Returns the timeout value
+   */
+  public int getTimeoutValueInSeconds() {
+    try {
+      return TestConfigObject.getInstance().getJunitTimeoutInSeconds();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

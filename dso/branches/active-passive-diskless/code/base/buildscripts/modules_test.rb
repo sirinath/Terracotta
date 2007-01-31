@@ -281,16 +281,24 @@ class SubtreeTestRun
         @needs_dso_boot_jar = @use_dso_boot_jar || (buildconfig['build-dso-boot-jar'] =~ /^\s*true\s*$/i)
         @timeout = (config_source["test_timeout"] || buildconfig["timeout"] || DEFAULT_TEST_TIMEOUT_SECONDS.to_s).to_i * 1000
         @extra_jvmargs = []
+        @extra_jvmargs += config_source.as_array('jvmargs') unless config_source.as_array('jvmargs').nil?
         if buildconfig['jvmargs']
-          @extra_jvmargs += buildconfig['jvmargs'].split(/\s*,\s*/)
+          jvmargs = buildconfig['jvmargs'].split(/\s*,\s*/)
+          # Make sure the heap size settings in the buildconfig override the
+          # global heap size settings.
+          jvmargs.each do |jvmarg|
+            if match = /-Xm([sx])/.match(jvmarg)
+              @extra_jvmargs.delete_if { |arg| arg =~ /-Xm#{match[1]}/ }
+            end
+            @extra_jvmargs << jvmarg
+          end
         end
 
         if test_props = buildconfig['test.tc.properties']
           props_file = FilePath.new(@build_results.classes_directory(@subtree), test_props).canonicalize
-          @extra_jvmargs << "'-Dcom.tc.properties=#{props_file.to_s}'"
+          @extra_jvmargs << "-Dcom.tc.properties=#{props_file.to_propertyfile_escaped_s}"
         end
 
-        @extra_jvmargs += config_source.as_array('jvmargs') unless config_source.as_array('jvmargs').nil?
         @jvm = tests_jvm(jvm_set)
     end
 
@@ -706,13 +714,13 @@ END
         out
     end
 
-        # do a "ps auxwwww | grep java"
+    # do a "ps auxwwww | grep java"
     # to be used in monkey environment ONLY
     def ps_grep_java
         ps_cmd = case @build_environment.os_type(:nice)
             when /windows/i: 'pv.exe -l | grep java | grep -v grep'
-            when /linux/i:   'ps auxwwww | grep java | grep -v grep'
             when /solaris/i: '/usr/ucb/ps auxwwww | grep java | grep -v grep'
+            else 'ps auxwwww | grep java | grep -v grep'
         end
 
         begin
