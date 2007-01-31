@@ -10,19 +10,17 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   
   protected
   def make_package(srcdir, destdir, filename, install_name, internal_name)
-    installer_directory = @static_resources.ia_project_directory(@flavor)
-    tmpdir              = FilePath.new(File.dirname(srcdir.to_s), 'tmp').ensure_directory 
+    installer_directory  = @static_resources.ia_project_directory(@flavor)
+    ia_project_directory = FilePath.new(File.dirname(srcdir.to_s), 'tmp').ensure_directory 
     
-    ant.copy(:todir => tmpdir.to_s) do
-      ant.fileset(:dir => installer_directory.to_s, :includes => "#{internal_name.to_s}/**")
+    ant.copy(:todir => ia_project_directory.to_s) do
+      ant.fileset(:dir => "#{installer_directory.to_s}/#{internal_name.to_s}")
     end
 
-    product_directory = FilePath.new(tmpdir, internal_name.to_s)
-    ant.copy(:todir => product_directory.to_s) do
+    ant.copy(:todir => ia_project_directory.to_s) do
       ant.fileset(:dir => installer_directory.to_s, :includes => "common/**")
     end
 
-    ia_project_directory  = FilePath.new(tmpdir, internal_name)
     ia_output_directory   = FilePath.new(ia_project_directory, 'install_build_output')
     ia_contents_directory = FilePath.new(ia_output_directory, 'Application Files')
 
@@ -58,7 +56,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     ant.buildinstaller(:IALocation => BuildEnvironment::IA_LOCATION, :IAProjectFile => project_file.to_s, :failonerror => true)
 
     # TODO: need to make this work for non EXE file outputs from IA
-    installer_output_file  = FilePath.new(ia_output_directory, 'Web_Installers', 'InstData', @build_environment.os_type(:nice).capitalize, 'VM', "install-terracotta-#{internal_name}.exe")
+    installer_output_file  = FilePath.new(ia_output_directory, 'Web_Installers', 'InstData', @build_environment.os_type(:nice).capitalize, 'VM', "install-terracotta.exe")
     installer_package_name = FilePath.new(File.dirname(srcdir.to_s), "#{filename}.exe")
     ant.move(:tofile => installer_package_name, :file => installer_output_file)
   end

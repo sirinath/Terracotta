@@ -81,7 +81,10 @@ public class WelcomeFrame extends HyperlinkFrame {
   }
 
   public static void main(String[] args) {
-    ApplicationManager.parseLAFArgs(args);
+    args = ApplicationManager.parseLAFArgs(args);
+    if(args.length > 0) {
+      System.setProperty("tc.welcome.product", args[0]);
+    }
     WelcomeFrame frame = new WelcomeFrame();
     frame.setResizable(false);
   }
