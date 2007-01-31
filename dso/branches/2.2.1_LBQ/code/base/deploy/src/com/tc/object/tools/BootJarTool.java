@@ -1419,12 +1419,7 @@ public class BootJarTool {
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
                                                         "com.tc.object.applicator.LinkedBlockingQueueApplicator");
-    spec.addMethodAdapter(SerializationUtil.QUEUE_PUT_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter(SerializationUtil.QUEUE_PUT_SIGNATURE));
-    spec.addMethodAdapter(SerializationUtil.OFFER_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter(SerializationUtil.OFFER_SIGNATURE));
-    spec.addMethodAdapter(SerializationUtil.OFFER_TIMEOUT_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter(SerializationUtil.OFFER_TIMEOUT_SIGNATURE));
+
     spec.addMethodAdapter(SerializationUtil.TAKE_SIGNATURE,
                           new JavaUtilConcurrentLinkedBlockingQueueAdapter.TakeAdapter());
     spec.addMethodAdapter(SerializationUtil.POLL_TIMEOUT_SIGNATURE,

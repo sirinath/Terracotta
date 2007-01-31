@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -18,6 +19,8 @@ public class EnumTestApp extends AbstractTransparentApp {
 
   private final DataRoot      dataRoot = new DataRoot();
   private final CyclicBarrier barrier;
+  
+  private State stateRoot;
 
   public EnumTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -27,6 +30,40 @@ public class EnumTestApp extends AbstractTransparentApp {
   public void run() {
     try {
       int index = barrier.await();
+      
+      rootEnumTest(index);
+
+      barrier.await();
+
+      if (index == 0) {
+        stateRoot = State.START;
+      }
+      
+      barrier.await();
+      
+      Assert.assertTrue(stateRoot == State.START);
+      
+      barrier.await();
+
+      if (index == 1) {
+        stateRoot = State.RUN;
+      }
+
+      barrier.await();
+
+      Assert.assertTrue(stateRoot == State.RUN);
+
+      barrier.await();
+
+      for (int i = 0; i < 100; i++) {
+        if (index == 0) {
+          stateRoot = State.START;
+        } else {
+          stateRoot = State.RUN;
+        }
+      }
+
+      barrier.await();
 
       if (index == 0) {
         dataRoot.setState(State.START);
@@ -75,10 +112,32 @@ public class EnumTestApp extends AbstractTransparentApp {
 
       Assert.assertEquals(3, dataRoot.getStates().length);
       Assert.assertTrue(Arrays.equals(State.values(), dataRoot.getStates()));
-
+      
     } catch (Throwable t) {
       notifyError(t);
     }
+  }
+  
+  private void rootEnumTest(int index) throws Exception {
+    if (index == 0) {
+      stateRoot = State.START;
+    }
+    
+    barrier.await();
+    
+    Assert.assertEquals(State.START, stateRoot);
+    
+    barrier.await();
+    
+    if (index == 1) {
+      stateRoot = State.RUN;
+    }
+    
+    barrier.await();
+    
+    Assert.assertEquals(State.RUN, stateRoot);
+    
+    barrier.await();
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -95,6 +154,7 @@ public class EnumTestApp extends AbstractTransparentApp {
 
     spec.addRoot("barrier", "barrier");
     spec.addRoot("dataRoot", "dataRoot");
+    spec.addRoot("stateRoot", "stateRoot", false);
   }
 
   public enum State {

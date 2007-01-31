@@ -40,8 +40,6 @@ public class LiteralTypesApplicator extends BaseApplicator {
       LiteralAction a = (LiteralAction) cursor.getAction();
       Object value = a.getObject();
 
-      Assert.assertEquals(value.getClass().getName(), dna.getTypeName());
-
       tcObject.setLiteralValue(value);
     }
   }
@@ -58,8 +56,6 @@ public class LiteralTypesApplicator extends BaseApplicator {
     cursor.next(encoding);
     LiteralAction a = (LiteralAction) cursor.getAction();
     Object value = a.getObject();
-
-    Assert.assertEquals(value.getClass().getName(), dna.getTypeName());
 
     return value;
   }
