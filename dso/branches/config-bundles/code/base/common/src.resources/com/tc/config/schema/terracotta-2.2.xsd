@@ -907,4 +907,13 @@
       <xs:pattern value="[A-Za-z_][A-Za-z_0-9$]*" />
     </xs:restriction>
   </xs:simpleType>
+  
+  <xs:element name="dso" type="dso-application">
+    <xs:annotation>
+      <xs:documentation>
+        Terracotta Plug-in configuration element
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  
 </xs:schema>

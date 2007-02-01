@@ -630,15 +630,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.setCallConstructorOnLoad(true);
 
     // Autolocking FastHashMap.
-    addIncludePattern("org.apache.commons.collections.FastHashMap*", true);
-    addWriteAutolock("* org.apache.commons.collections.FastHashMap*.*(..)");
-    addReadAutolock(new String[] { "* org.apache.commons.collections.FastHashMap.clone(..)",
-        "* org.apache.commons.collections.FastHashMap*.contains*(..)",
-        "* org.apache.commons.collections.FastHashMap.equals(..)",
-        "* org.apache.commons.collections.FastHashMap.get(..)",
-        "* org.apache.commons.collections.FastHashMap*.hashCode(..)",
-        "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
-        "* org.apache.commons.collections.FastHashMap*.size(..)" });
+//    addIncludePattern("org.apache.commons.collections.FastHashMap*", true);
+//    addWriteAutolock("* org.apache.commons.collections.FastHashMap*.*(..)");
+//    addReadAutolock(new String[] { "* org.apache.commons.collections.FastHashMap.clone(..)",
+//        "* org.apache.commons.collections.FastHashMap*.contains*(..)",
+//        "* org.apache.commons.collections.FastHashMap.equals(..)",
+//        "* org.apache.commons.collections.FastHashMap.get(..)",
+//        "* org.apache.commons.collections.FastHashMap*.hashCode(..)",
+//        "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
+//        "* org.apache.commons.collections.FastHashMap*.size(..)" });
 
     spec = getOrCreateSpec("gnu.trove.THashMap", "com.tc.object.applicator.HashMapApplicator");
     spec.addTHashMapPutLogSpec(SerializationUtil.PUT_SIGNATURE);

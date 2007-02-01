@@ -32,8 +32,8 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
-import com.terracottatech.configV3.Application;
 import com.terracottatech.configV3.ConfigurationModel;
+import com.terracottatech.configV3.DsoApplication;
 import com.terracottatech.configV3.Plugin;
 import com.terracottatech.configV3.Plugins;
 
@@ -131,26 +131,30 @@ public class DSOContextImpl implements DSOContext {
 
       Bundle bundle = osgiRuntime.getBundle(name, version);
       if (bundle != null) {
-        configureInstrumentation(bundle);
+        loadConfiguration(bundle);
       }
     }
   }
 
-  private void configureInstrumentation(Bundle bundle) {
-    String terracottaInstrumentation = (String) bundle.getHeaders().get("Terracotta-Instrumentation");
-    if (terracottaInstrumentation == null) { return; }
+  private void loadConfiguration(Bundle bundle) {
+    String config = (String) bundle.getHeaders().get("Terracotta-Configuration");
+    if (config == null) { 
+      config = "terracotta.xml";
+    }
 
-    URL configUrl = bundle.getResource(terracottaInstrumentation);
-    if (configUrl == null) { return; }
+    URL configUrl = bundle.getEntry(config);
+    if (configUrl == null) { 
+      return;
+    }
 
     InputStream is = null;
     try {
       is = configUrl.openStream();
-      Application application = Application.Factory.parse(is);
+      DsoApplication application = DsoApplication.Factory.parse(is);
       if (application != null) {
         ConfigLoader loader = new ConfigLoader(configHelper, logger);
-        loader.loadDsoConfig(application.getDso());
-        loader.loadSpringConfig(application.getSpring());
+        loader.loadDsoConfig(application);
+        // loader.loadSpringConfig(application.getSpring());
       }
     } catch (IOException e) {
       logger.warn("Unable to read configuration from " + configUrl, e);
