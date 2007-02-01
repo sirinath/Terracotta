@@ -377,6 +377,14 @@ modules:
         - thirdparty
         - legacy-test-tree
 
+plugins:
+  - clustered-apache-struts-1.1:
+      options:
+        compiler_version: 1.4
+      dependencies:
+        - dso-l1
+        - thirdparty
+
 module-groups:
   container:
     - dso-container-tests
