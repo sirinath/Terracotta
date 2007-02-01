@@ -1305,7 +1305,7 @@ public class BootJarTool {
     bytes = doDSOTransform(spec.getClassName(), bytes);
     bootJar.loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
   }
-
+  
   private void addInstrumentedJavaUtilConcurrentHashMap() {
     if (!isAtLeastJDK15()) { return; }
 
@@ -1324,11 +1324,6 @@ public class BootJarTool {
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap",
                                                         "com.tc.object.applicator.ConcurrentHashMapApplicator");
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.SEGMENT_FOR_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.CONTAINS_VALUE_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.SIZE_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.IS_EMPTY_SIGNATURE);
     spec.setHonorTransient(true);
     spec.markPreInstrumented();
     bytes = doDSOTransform(spec.getClassName(), bytes);
