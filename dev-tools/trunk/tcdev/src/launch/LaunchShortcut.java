@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package launch;
 
@@ -36,24 +37,25 @@ import refreshall.Activator;
 
 public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchConfigurationConstants {
 
-  private static final String         Jdk14Home           = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
-  private static final String         Jdk15Home           = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
+  private static final String         Jdk14Home            = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
+  private static final String         Jdk15Home            = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
 
-  private static final String         TESTS_PREP_PROP_LOC = "common" + File.separator + "build.eclipse"
-                                                            + File.separator + "tests.base.classes" + File.separator
-                                                            + "tests-prepared.properties";
+  private static final String         TESTS_PREP_PROP_LOC  = "common" + File.separator + "build.eclipse"
+                                                               + File.separator + "tests.base.classes" + File.separator
+                                                               + "tests-prepared.properties";
   // private static final String BUILD_PATH = "";
-  private static final String         VM_ARGS_COUNT       = "tcbuild.prepared.jvmargs";
-  private static final String         VM_ARG              = "tcbuild.prepared.jvmarg_";
-  private static final String         SYS_PROP_PREFIX     = "tcbuild.prepared.system-property.";
-  private static final String         JVM_VERSION         = "tcbuild.prepared.jvm.version";
-  private static final String         TCBUILD             = "tcbuild";
-  private static final String         CHECK_PREP          = "check_prep";
-  // private static final String BUILD_WITH_14_OPTION = "run-1.4-tests-with-1.5=";
-  private static final byte[]         NEWLINE             = "\n".getBytes();
+  private static final String         VM_ARGS_COUNT        = "tcbuild.prepared.jvmargs";
+  private static final String         VM_ARG               = "tcbuild.prepared.jvmarg_";
+  private static final String         SYS_PROP_PREFIX      = "tcbuild.prepared.system-property.";
+  private static final String         JVM_VERSION          = "tcbuild.prepared.jvm.version";
+  private static final String         TCBUILD              = "tcbuild";
+  private static final String         CHECK_PREP           = "check_prep";
+  private static final String         BUILD_WITH_15_OPTION = "run-1.4-tests-with-1.5=";
+  private static final byte[]         NEWLINE              = "\n".getBytes();
 
   private final IOConsoleOutputStream console;
   private Properties                  argTypes;
+  private File                        prepProps;
 
   public LaunchShortcut() {
     console = Activator.getDefault().getConsoleStream();
@@ -76,7 +78,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     String relativePath = element.getPath().toString();
     String absolutePath = element.getResource().getLocation().toString();
     String basePath = absolutePath.substring(0, absolutePath.length() - relativePath.length() + 1);
-    File prepProps = new File(basePath + TESTS_PREP_PROP_LOC);
+    prepProps = new File(basePath + TESTS_PREP_PROP_LOC);
     String[] parts = relativePath.split("/");
     String module = parts[1];
     String subtree = parts[2];
@@ -97,7 +99,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
                                                               JUnitLaunchDescription description)
       throws LaunchCancelledByUserException {
     if (argTypes == null) throw new RuntimeException(
-                                                     "vmArgs null, this should never happen. JUnit impl must have changed.");
+        "vmArgs null, this should never happen. JUnit impl must have changed.");
 
     try {
       ILaunchConfigurationWorkingCopy wc = super.findOrCreateLaunchConfiguration(mode, registry, description)
@@ -133,13 +135,13 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   private void runCheckPrep(File wkDir, String module, String subtree, String basePath) throws Exception {
     if (!subtree.startsWith("tests.")) throw new IllegalArgumentException("Subtree must start with \"tests.\"");
     if (!(subtree.endsWith("unit") || subtree.endsWith("system"))) throw new IllegalArgumentException(
-                                                                                                      "Subtree must end with \"unit\" or \"system\"");
+        "Subtree must end with \"unit\" or \"system\"");
 
     boolean buildWith15 = true;
     Preferences prefs = Activator.getDefault().getPluginPreferences();
     if (prefs.getBoolean(WorkbenchOptionAction.KEY)) buildWith15 = false;
     int increment = 0;
-    String[] commandLine = new String[4];
+    String[] commandLine = new String[5];
 
     // windows hack
     if (((String) System.getProperty("os.name")).toLowerCase().indexOf("win") != -1) {
@@ -149,7 +151,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     }
     commandLine[increment++] = basePath + TCBUILD; // BUILD_PATH + File.separator +
     commandLine[increment++] = CHECK_PREP;
-    // commandLine[increment++] = BUILD_WITH_14_OPTION + buildWith15;
+    commandLine[increment++] = BUILD_WITH_15_OPTION + buildWith15;
     commandLine[increment++] = module;
     commandLine[increment++] = subtree.substring("tests.".length(), subtree.length());
 
@@ -253,12 +255,24 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   }
 
   private boolean validatePrep(Properties properties, String module, String subtree) {
-    if (!properties.getProperty("tcbuild.prepared.module", "").equals(module)) return false;
-    if (!properties.getProperty("tcbuild.prepared.subtree", "").equals(subtree)) return false;
+
+    if (!properties.getProperty("tcbuild.prepared.module", "").equals(module)) {
+      removeProps();
+      return false;
+    }
+    if (!properties.getProperty("tcbuild.prepared.subtree", "").equals(subtree)) {
+      removeProps();
+      return false;
+    }
     Preferences prefs = Activator.getDefault().getPluginPreferences();
     String jreVersion = properties.getProperty(JVM_VERSION);
     if ((jreVersion.indexOf("1.4") != -1) && (prefs.getBoolean(WorkbenchOptionAction.KEY))) { return false; }
     return true;
+  }
+
+  // there is a race condition here but it will never occur
+  private void removeProps() {
+    if (prepProps.exists()) prepProps.delete();
   }
 
   private void println(final String line) {
