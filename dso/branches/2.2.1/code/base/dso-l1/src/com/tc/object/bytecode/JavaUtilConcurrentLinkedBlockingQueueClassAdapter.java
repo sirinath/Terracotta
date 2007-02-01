@@ -5,6 +5,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.ClassAdapter;
+import com.tc.asm.MethodAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -12,14 +13,20 @@ import com.tc.asm.Opcodes;
 import com.tc.object.SerializationUtil;
 
 public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdapter implements Opcodes {
-  private static final String TC_TAKE_METHOD_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "take";
-  private static final String TC_PUT_METHOD_NAME  = ByteCodeUtil.TC_METHOD_PREFIX + "put";
+  private static final String TC_TAKE_METHOD_NAME    = ByteCodeUtil.TC_METHOD_PREFIX + "take";
+  private static final String TC_PUT_METHOD_NAME     = ByteCodeUtil.TC_METHOD_PREFIX + "put";
+  private static final String TC_EXTRACT_METHOD_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "extract";
+  private static final String TC_EXTRACT_METHOD_DESC = "()Ljava/lang/Object;";
+
+  private static final String GET_ITEM_METHOD_NAME   = "getItem";
+  private static final String GET_ITEM_METHOD_DESC   = "()Ljava/lang/Object;";
 
   public JavaUtilConcurrentLinkedBlockingQueueClassAdapter(ClassVisitor cv) {
     super(cv);
   }
 
   public void visitEnd() {
+    addTCExtractMethod();
     addTCTakeMethod();
     addTCPutMethod();
     addInitMethodCode();
@@ -30,6 +37,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     // Recreating the instrumented method because it is simpler and it performs a little better than
     // injecting code.
+    mv = new NodeMethodAdapter(mv);
     if ("remove".equals(name) && "(Ljava/lang/Object;)Z".equals(desc)) {
       recreateRemoveMethod(mv);
     } else if ("offer".equals(name) && "(Ljava/lang/Object;)Z".equals(desc)) {
@@ -193,7 +201,8 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     mv.visitInsn(ATHROW);
     mv.visitLabel(l8);
     ByteCodeUtil.pushThis(mv);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", "extract", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", TC_EXTRACT_METHOD_NAME,
+                       TC_EXTRACT_METHOD_DESC);
     mv.visitVarInsn(ASTORE, 1);
     Label l10 = new Label();
     mv.visitLabel(l10);
@@ -963,5 +972,62 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     mv.visitInsn(RETURN);
     mv.visitMaxs(0, 0);
     mv.visitEnd();
+  }
+  
+  private void addTCExtractMethod() {
+    MethodVisitor mv = cv.visitMethod(ACC_PRIVATE, TC_EXTRACT_METHOD_NAME, TC_EXTRACT_METHOD_DESC, "()TE;", null);
+    mv.visitCode();
+    Label l0 = new Label();
+    mv.visitLabel(l0);
+    mv.visitLineNumber(144, l0);
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue", "head", "Ljava/util/concurrent/LinkedBlockingQueue$Node;");
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue$Node", "next", "Ljava/util/concurrent/LinkedBlockingQueue$Node;");
+    mv.visitVarInsn(ASTORE, 1);
+    Label l1 = new Label();
+    mv.visitLabel(l1);
+    mv.visitLineNumber(145, l1);
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitVarInsn(ALOAD, 1);
+    mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/LinkedBlockingQueue", "head", "Ljava/util/concurrent/LinkedBlockingQueue$Node;");
+    Label l2 = new Label();
+    mv.visitLabel(l2);
+    mv.visitLineNumber(146, l2);
+    mv.visitVarInsn(ALOAD, 1);
+    mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue$Node", "item", "Ljava/lang/Object;");
+    mv.visitVarInsn(ASTORE, 2);
+    Label l3 = new Label();
+    mv.visitLabel(l3);
+    mv.visitLineNumber(147, l3);
+    mv.visitVarInsn(ALOAD, 1);
+    mv.visitInsn(ACONST_NULL);
+    mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/LinkedBlockingQueue$Node", "item", "Ljava/lang/Object;");
+    Label l4 = new Label();
+    mv.visitLabel(l4);
+    mv.visitLineNumber(148, l4);
+    mv.visitVarInsn(ALOAD, 2);
+    mv.visitInsn(ARETURN);
+    Label l5 = new Label();
+    mv.visitLabel(l5);
+    mv.visitLocalVariable("this", "Ljava/util/concurrent/LinkedBlockingQueue;", "Ljava/util/concurrent/LinkedBlockingQueue<TE;>;", l0, l5, 0);
+    mv.visitLocalVariable("first", "Ljava/util/concurrent/LinkedBlockingQueue$Node;", "Ljava/util/concurrent/LinkedBlockingQueue$Node<TE;>;", l1, l5, 1);
+    mv.visitLocalVariable("x", "Ljava/lang/Object;", "TE;", l3, l5, 2);
+    mv.visitMaxs(2, 3);
+    mv.visitEnd();
+  }
+
+  static class NodeMethodAdapter extends MethodAdapter implements Opcodes {
+    public NodeMethodAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+      if (GETFIELD == opcode && "java/util/concurrent/LinkedBlockingQueue$Node".equals(owner) && "item".equals(name)
+          && "Ljava/lang/Object;".equals(desc)) {
+        mv.visitMethodInsn(INVOKEVIRTUAL, owner, GET_ITEM_METHOD_NAME, GET_ITEM_METHOD_DESC);
+      } else {
+        super.visitFieldInsn(opcode, owner, name, desc);
+      }
+    }
   }
 }
