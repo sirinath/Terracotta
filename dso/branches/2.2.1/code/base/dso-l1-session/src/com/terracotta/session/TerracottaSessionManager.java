@@ -217,6 +217,16 @@ public class TerracottaSessionManager {
     return request;
   }
 
+  public Session findSession(String id) {
+    SessionId sid = idGenerator.makeInstanceFromBrowserId(id);
+
+    SessionData data = store.findSessionDataUnlocked(sid);
+
+    if (data == null) { return null; }
+
+    return new StandardSession(sid, data, eventMgr, contextMgr);
+  }
+
   /**
    * This method always returns a valid session. If data for the requestedSessionId found and is valid, it is returned.
    * Otherwise, we must create a new session id, a new session data, a new sessiono, and cookie the response.
