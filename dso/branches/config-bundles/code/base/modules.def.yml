@@ -384,6 +384,7 @@ plugins:
       dependencies:
         - dso-l1
         - thirdparty
+  - clustered-commons-collections-3.1:
 
 module-groups:
   container:
