@@ -754,7 +754,7 @@ end
         factory, major, minor = %w(factory.name major-version minor-version).map { |key|
           config_source["tc.tests.configuration.appserver.#{key}"]
         }
-        configured_appserver = "#{factory}-#{major}.#{minor}"
+        Registry[:appserver] = configured_appserver = "#{factory}-#{major}.#{minor}"
 
         if appserver_jre = appservers_jre[configured_appserver]
           unless @jvm_set.has?(appserver_jre)

@@ -29,7 +29,7 @@ class BuildSubtree
             jdk = compile_jdk
 
             if build_module.aspectj
-                puts "AspectJ %s/%s..." % [ build_module.name, name ]
+                puts "AspectJ #{build_module.name}/#{name}..."
 
                 # Include the java.lang.System class to get access to Java
                 # system properties
@@ -37,28 +37,29 @@ class BuildSubtree
                 javac_classpath = System.getProperty('java.class.path')
 
                 ant.java(
-                   :jvm => jdk.java.to_s,
-                   :fork => true,
-                   :maxmemory => '256m',
-                   :classpath => javac_classpath,
-                   :classname => "org.aspectj.tools.ajc.Main") do
-                     ant.arg(:value => '-sourceroots')
-                     ant.arg(:value => source_root.to_s)
-                     ant.arg(:value => '-aspectpath')
-                     ant.arg(:value => aspect_libraries(:compile).to_s)
-                     ant.arg(:value => '-classpath')
-                     ant.arg(:value => classpath(build_results, :full, :compile).to_s)
-                     ant.arg(:value => '-d')
-                     ant.arg(:value => build_results.classes_directory(self).to_s)
-                     ant.arg(:value => '-source')
-                     ant.arg(:value => jdk.release)
-                     ant.arg(:value => '-target')
-                     ant.arg(:value => jdk.release)
-                     ant.arg(:value => '-noExit')
-                     ant.arg(:value => '-showWeaveInfo')
+                  :jvm => jdk.java.to_s,
+                  :fork => true,
+                  :resultproperty => 'aspectj.result',
+                  :failonerror => true,
+                  :maxmemory => '256m',
+                  :classpath => javac_classpath,
+                  :classname => "org.aspectj.tools.ajc.Main") do
+                    ant.arg(:value => '-sourceroots')
+                    ant.arg(:value => source_root.to_s)
+                    ant.arg(:value => '-aspectpath')
+                    ant.arg(:value => aspect_libraries(:compile).to_s)
+                    ant.arg(:value => '-classpath')
+                    ant.arg(:value => classpath(build_results, :full, :compile).to_s)
+                    ant.arg(:value => '-d')
+                    ant.arg(:value => build_results.classes_directory(self).to_s)
+                    ant.arg(:value => '-source')
+                    ant.arg(:value => jdk.release)
+                    ant.arg(:value => '-target')
+                    ant.arg(:value => jdk.release)
+                    ant.arg(:value => '-showWeaveInfo')
                 end
             else
-                puts "Compiling %s/%s..." % [ build_module.name, name ]
+                puts "Compiling #{build_module.name}/#{name}..."
 
                 ant.javac(
                     :destdir => build_results.classes_directory(self).to_s,
@@ -101,10 +102,8 @@ class BuildSubtree
     # The JDK that should be used for compiling this subtree.
     def compile_jdk
       if name = Registry[:command_line_config]['jdk']
-STDERR.puts("compile_jdk (from command-line) => #{Registry[:jvm_set][name]}")
         Registry[:jvm_set][name]
       else
-STDERR.puts("compile_jdk (from module def) => #{build_module.jdk}")
         build_module.jdk
       end
     end
@@ -112,16 +111,16 @@ STDERR.puts("compile_jdk (from module def) => #{build_module.jdk}")
     # Creates a 'build data' file at the given location, putting into it a number
     # of properties that specify when, where, and how the code in it was compiled.
     def create_build_data(config_source, build_results, build_environment)
-        File.open(build_data_file(build_results).to_s, "w") do |file|
-            file << "terracotta.build.productname=terracotta\n"
-            file << "terracotta.build.version=%s\n" % build_environment.specified_build_version
-            file << "terracotta.build.host=%s\n" % build_environment.build_hostname
-            file << "terracotta.build.user=%s\n" % build_environment.build_username
-            file << "terracotta.build.timestamp=%s\n" % build_environment.build_timestamp.strftime('%Y%m%d-%H%m%S')
-            file << "terracotta.build.revision=%s\n" % build_environment.current_revision
-            file << "terracotta.build.change-tag=%s\n" % build_environment.current_revision_tag
-            file << "terracotta.build.branch=%s\n" % build_environment.current_branch
-        end
+      File.open(build_data_file(build_results).to_s, "w") do |file|
+        file.puts("terracotta.build.productname=terracotta")
+        file.puts("terracotta.build.version=#{build_environment.specified_build_version}")
+        file.puts("terracotta.build.host=#{build_environment.build_hostname}")
+        file.puts("terracotta.build.user=#{build_environment.build_username}")
+        file.puts("terracotta.build.timestamp=#{build_environment.build_timestamp.strftime('%Y%m%d-%H%m%S')}")
+        file.puts("terracotta.build.revision=#{build_environment.current_revision}")
+        file.puts("terracotta.build.change-tag=#{build_environment.current_revision_tag}")
+        file.puts("terracotta.build.branch=#{build_environment.current_branch}")
+      end
     end
 end
 

@@ -9,6 +9,5 @@
 # in jre.def.yml
 
 tomcat5-5.5.20: J2SE-1.5
-#tomcat5-5.0.28: J2SE-1.5
 weblogic8-8.1.SP5: J2SE-1.4
 weblogic8-8.1.SP6: J2SE-1.4

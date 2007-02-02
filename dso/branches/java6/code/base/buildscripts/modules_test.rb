@@ -622,42 +622,32 @@ END
       config_jre = Registry[:command_line_config]['jdk'] || @buildconfig['jdk']
 
       if requires_container?
-STDERR.puts("#{@subtree} requires container")
         if jvm_set.has?('appserver-jre')
           appserver_jre = jvm_set['appserver-jre']
-STDERR.puts("Found appserver-jre #{appserver_jre}")
         end
 
         if appserver_jre
-STDERR.puts("appserver-jre exists")
           if config_jre
             result = jvm_set[config_jre]
             unless result.version == appserver_jre.version
               raise("JDK specified is incompatible with #{Registry[:appserver]}," +
                     " which requires #{appserver_jre}")
             end
-STDERR.puts("Using configured JDK #{result}")
           else
             result = appserver_jre
-STDERR.puts("Using appserver-jre #{appserver_jre}")
           end
         else
           if config_jre
             result = jvm_set[config_jre]
-STDERR.puts("Using configured JDK #{result}")
           else
             result = @build_module.jdk
-STDERR.puts("Using default module JDK #{result}")
           end
         end
       else
-STDERR.puts("#{@subtree} does not require container")
         if config_jre
           result = jvm_set[config_jre]
-STDERR.puts("Using configured JDK #{result}")
         else
           result = @build_module.jdk
-STDERR.puts("Using default module JDK #{result}")
         end
       end
 
