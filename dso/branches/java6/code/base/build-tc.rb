@@ -16,6 +16,12 @@ require 'open-uri'
 
 require 'buildscripts/autorequire'
 
+# Universally accessible Hash that can be used as a service registry.  This can
+# be useful to avoid passing a bunch of parameters around.  To add a service to
+# the registry, just add an entry to the Hash, such as
+#   Registry[:my_service] = my_service_object
+Registry = Hash.new
+
 # Get all our shared Ruby code.
 #AutoRequire.all_in_directory(File.join("..", "..", "buildsystems", "lib", "ruby", "shared"))
 
@@ -35,10 +41,16 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     def initialize(arguments)
         super(:help, arguments)
 
+        # Figure out which JVMs we're using.
+        find_jvms
+
         # Some more objects we need.
         @build_environment = BuildEnvironment.new(platform, config_source)
         @static_resources = StaticResources.new(basedir)
         @archive_tag = ArchiveTag.new(@build_environment)
+
+        Registry[:build_environment] = @build_environment
+        Registry[:static_resources] = @static_resources
 
         # Load up our modules; allow definition of new modules by setting a configuration
         # property that points to additional module files to load. I believe that right now
@@ -60,9 +72,6 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
         # Load the XMLBeans task, so we can use it to process config files when needed by that target.
         ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
-
-        # Figure out which JVMs we're using.
-        find_jvms
       end
 
       # Prints a help message.
@@ -191,11 +200,17 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     # Runs a distributed test; the rest of the arguments on the command line are passed as arguments
     # to the ControlSetup class.
     def run_disttest
-        jvm = to_jvm(config_source['jvm'] || '1.5', 'tests')
+        if jdk = config_source['jdk']
+          jvm = @jvm_set[jdk]
+        else
+          jvm = @module_set['dso-performance-tests'].subtree('tests.base').tests_jvm(@jvm_set)
+        end
         args = all_remaining_arguments
         args << 'javahome=%s' % jvm.home.to_s unless args.find { |arg| arg.starts_with?('javahome=') }
-        do_run_class(jvm, 'com.tc.simulator.distrunner.ControlSetup', args, config_source.as_array('jvmargs') || [ ],
-            @module_set['dso-performance-tests'].subtree('tests.base'))
+        # do_run_class(jvm, classname, arguments, jvmargs, subtree)
+        do_run_class(jvm, 'com.tc.simulator.distrunner.ControlSetup', args,
+                     config_source.as_array('jvmargs') || [ ],
+                     @module_set['dso-performance-tests'].subtree('tests.base'))
     end
 
     # Runs the 'short' test list. (For a quick 'sanity check' of our software.)
@@ -339,7 +354,11 @@ END
         build_module = @module_set[build_module_name]
         subtree = build_module.subtree(subtree_name)
 
-        jvm = to_jvm(config_source['jvm'] || 'compile-%s' % build_module.compiler_version.to_s, 'compile')
+        if config_jre = config_source['jdk']
+          jvm = @jvm_set[config_jre]
+        else
+          jvm = build_module.jdk
+        end
         arguments = all_remaining_arguments
         jvmargs = config_source.as_array('jvmargs') || [ ]
 
@@ -386,8 +405,11 @@ END
         lib_directory = FilePath.new(home.dir, "common", "lib").ensure_directory
         FileUtils.touch(FilePath.new(lib_directory, "tc.jar").to_s)
 
-        subtree.run_java(ant, 'com.tc.server.TCServerMain', home.dir.to_s, @jvm_set['compile-%s' % build_module.compiler_version],
-            config_source.as_array('jvmargs'), all_remaining_arguments, { 'tc.install-root' => home.dir.to_s }, @build_results, @build_environment)
+        subtree.run_java(ant, 'com.tc.server.TCServerMain', home.dir.to_s,
+                         build_module.jdk, config_source.as_array('jvmargs'),
+                         all_remaining_arguments,
+                         { 'tc.install-root' => home.dir.to_s },
+                         @build_results, @build_environment)
     end
 
     # Re-runs only those tests that failed on the last test run (or on the one specified by
@@ -457,7 +479,7 @@ END
     def create_boot_jar(jvm_spec)
         depends :init, :compile
 
-        jvm = to_jvm(jvm_spec, 'tests')
+        jvm = @jvm_set[jvm_spec]
         output_path = @build_results.tools_home
         output_path = FilePath.new(config_source['dest']) unless config_source['dest'].nil?
         boot_jar = BootJar.new(@build_results, jvm, output_path, @module_set, ant, @platform, @static_resources.dso_boot_jar_config_file)
@@ -487,7 +509,7 @@ END
     def show_config
         puts "Building with configuration:"
         puts "========================================================================"
-        puts ""
+        puts
         puts configuration_summary
     end
 
@@ -496,6 +518,9 @@ END
       # do a whole lot of nothing
     end
 
+def test_find_jvm
+  puts(@jvm_set.find_jvm(:path => '/usr/lib/j2sdk1.5-sun'))
+end
 
     protected
     # Overrides superclass method to provide for implicit targets.
@@ -584,25 +609,6 @@ END
         @archive_tag.to_path("${FILENAME}", "${EXTENSION}")
     end
 
-    # Given a 'JVM key', which can be either a pathname on the filesystem, a string like 'compile-1.4', or
-    # a simple name like '1.4', finds the appropriate JVM. (If it's a simple name like '1.4', uses the
-    # specified default_prefix as a prefix -- e.g., if the default_prefix is 'compile', it will look for
-    # a JVM named 'compile-1.4'.)
-    def to_jvm(jvm_key, default_prefix)
-        if FileTest.directory?(FilePath.new(jvm_key).to_s)
-            jvm = JVM.new(platform, FilePath.new(jvm_key).to_s)
-            jvm.validate("the specified JVM")
-        elsif @jvm_set.has?(jvm_key)
-            jvm = @jvm_set[jvm_key]
-        elsif @jvm_set.has?('%s-%s' % [ default_prefix, jvm_key ])
-            jvm = @jvm_set['%s-%s' % [ default_prefix, jvm_key ]]
-        else
-            raise RuntimeError, "The JVM you specified, '%s', is neither a valid Java home, nor a valid JDK we already know about. We know about JDKs: %s" %
-                [ jvm_key, @jvm_set.keys.join(", ") ]
-        end
-        jvm
-    end
-
     # Runs the given class, using the given JVM, with the given arguments and JVM arguments, against the
     # given subtree.
     def do_run_class(jvm, classname, arguments, jvmargs, subtree)
@@ -674,7 +680,7 @@ END
             else
                 puts "     Tests passed."
             end
-            puts "  Testrun directory: %s" % testrun_results.root_dir.to_s
+            puts "  Testrun directory: #{testrun_results.root_dir}"
             puts ""
         end
     end
@@ -691,8 +697,11 @@ END
         test_runs = { }
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
-            test_runs[subtree] = subtree.test_run(@static_resources, testrun_results, @build_results, @build_environment, config_source,
-                @jvm_set, ant, platform, test_patterns, tests_aggregation_directory)
+            test_runs[subtree] =
+                subtree.test_run(@static_resources, testrun_results,
+                                 @build_results, @build_environment, config_source,
+                                 @jvm_set, ant, platform, test_patterns,
+                                 tests_aggregation_directory)
 
             test_runs[subtree].setUp
         end
@@ -710,51 +719,52 @@ END
     # This is where the 'run-1.4-tests-with-1.5' property comes into play; we assign the
     # 'tests-1.4' JVM to a 1.4 or 1.5 JVM, based on how this property is set.
     def find_jvms
-
         @jvm_set = JVMSet.new
-        compile_14 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.4 code", "1.4.0_0", "1.4.999_999", "jvms.compile-1.4", "JAVA_HOME_14")
-        compile_15 = JVM.from_config(platform, config_source, "the JVM used to compile Java 1.5 code", "1.5.0_0", "1.5.999_999", "jvms.compile-1.5", "JAVA_HOME_15")
 
-        raise RuntimeError, "You must specify a valid 1.4 JVM using the JAVA_HOME_14 configuration property (e.g., via the 'TC_JAVA_HOME_14' environment variable." if compile_14.nil?
-        raise RuntimeError, "You must specify a valid 1.5 JVM using the JAVA_HOME_15 configuration property (e.g., via the 'TC_JAVA_HOME_15' environment variable." if compile_15.nil?
+        jdk_defs = YAML.load_file('jdk.def.yml')
+        jdk_defs.each do |name, attributes|
+          min_version = attributes['min_version']
+          max_version = attributes['max_version']
+          search_names = attributes['env']
 
-        @jvm_set.set('compile-1.4', compile_14)
-        @jvm_set.set('compile-1.5', compile_15)
+          unless min_version && max_version && search_names
+            raise "Invalid JVM specification: #{name}"
+          end
 
-        tests_15 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.5 code", '1.5.0_0', '1.5.999_999', "jvms.tests-1.5", "JAVA_HOME_TESTS_15")
-        if tests_15.nil?
-            @jvm_set.alias('tests-1.5', 'compile-1.5')
-        else
-            @jvm_set.set('tests-1.5', tests_15)
-        end
+          search_names = [search_names].flatten
 
-        run14_tests_with_15 = config_source['run-1.4-tests-with-1.5']
-
-        # here we want to check if an appserver only run swith certain JDK, ie. tomcat55 only runs with jdk15,
-        # weblogic8 only with jdk14
-        #tc.tests.configuration.appserver.factory.name=tomcat5
-        #tc.tests.configuration.appserver.major-version=5.0
-        #tc.tests.configuration.appserver.minor-version=28
-
-        appservers_jdk = YAML::load(File.open("appservers.yml"))
-        theappserver = "%s-%s.%s" % [ config_source["tc.tests.configuration.appserver.factory.name"],
-                              config_source["tc.tests.configuration.appserver.major-version"],
-                              config_source["tc.tests.configuration.appserver.minor-version"] ]
-
-        if appservers_jdk.has_key?(theappserver)
-            run14_tests_with_15 = appservers_jdk[theappserver] == 1.5 ? 'true' : 'false'
-        end
-
-        if run14_tests_with_15 =~ /^\s*true\s*$/i
-            @jvm_set.alias('tests-1.4', 'tests-1.5')
-        else
-            tests_14 = JVM.from_config(platform, config_source, "the JVM used to run tests against Java 1.4 code", '1.4.0_0', '1.5.999_999', "jvms.tests-1.4", "JAVA_HOME_TESTS_14")
-            if tests_14.nil?
-                @jvm_set.alias('tests-1.4', 'compile-1.4')
-            else
-                @jvm_set.set('tests-1.4', tests_14)
+          jvm = JVM.from_config(platform, config_source, name,
+                                min_version, max_version, *search_names)
+          if jvm
+            @jvm_set.set(name, jvm)
+            if aliases = attributes['alias']
+              [aliases].flatten.each do |jvm_alias|
+                @jvm_set.alias(jvm_alias, name)
+              end
             end
+          else
+            msg = "You must specify a valid #{name} JRE using one of the " +
+                  "following configuration properties: " +
+                  search_names.join(', ')
+            raise(msg)
+          end
         end
+
+        appservers_jre = YAML::load_file("appservers.yml")
+        factory, major, minor = %w(factory.name major-version minor-version).map { |key|
+          config_source["tc.tests.configuration.appserver.#{key}"]
+        }
+        configured_appserver = "#{factory}-#{major}.#{minor}"
+
+        if appserver_jre = appservers_jre[configured_appserver]
+          unless @jvm_set.has?(appserver_jre)
+            raise("The entry in appservers.yml for #{configured_appserver} " +
+                  "refers to non-existant JDK #{appserver_jre}")
+          end
+          @jvm_set.alias('appserver-jre', appserver_jre)
+        end
+
+        Registry[:jvm_set] = @jvm_set
     end
 
     # Writes out the given set of keys, and corresponding values, from the given hash to the given
@@ -804,9 +814,8 @@ END
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            'jvm-tests-1.4' => @jvm_set['tests-1.4'].short_description,
-            'jvm-tests-1.5' => @jvm_set['tests-1.5'].short_description,
-
+            'jvm-tests-1.4' => @jvm_set.find_jvm(:version_like => /^1\.4/).short_description,
+            'jvm-tests-1.5' => @jvm_set.find_jvm(:version_like => /^1\.5/).short_description,
         }
 
         # Parameters data.

@@ -1,0 +1,40 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
+# Defines the various JDKs used by the build system.
+#
+# Each JDK specification begins with a unique name that uniquely identifies
+# the JDK version.  After the name come the following attributes:
+#
+#   description: A human-readable description of the JDK and what it is used for
+#   family: A high-level indicator of the version family of the JDK, used only
+#           for error message reporting.
+#   min_version: The minumum JDK version
+#   max_version: The maximum JDK version
+#   config_properties: A list of names of configuration properties that the
+#                      build system uses to locate the JDK installation
+#   alternative: Which JDK specification to use if no matching JDK could be found
+
+J2SE-1.4:
+    min_version: 1.4.0_0
+    max_version: 1.4.999_999
+    env:
+      - J2SE_14
+      - JAVA_HOME_14
+    alias:
+      - tests-1.4
+      - 1.4
+
+J2SE-1.5:
+    min_version: 1.5.0_0
+    max_version: 1.5.999_999
+    env:
+      - J2SE_15
+      - JAVA_HOME_15
+    alias:
+      - tests-1.5
+      - 1.5
+

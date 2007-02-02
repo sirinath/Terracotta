@@ -266,6 +266,7 @@ class SubtreeTestRun
     # copy the result XML files into when we're done running tests.
     def initialize(subtree, static_resources, buildconfig, testrun_results, build_results, build_environment, config_source, jvm_set, ant, platform, test_patterns, aggregation_directory)
         @subtree = subtree
+        @build_module = @subtree.build_module
         @static_resources = static_resources
         @buildconfig = buildconfig
         @testrun_results = testrun_results
@@ -280,8 +281,8 @@ class SubtreeTestRun
         @use_dso_boot_jar = buildconfig['include-dso-boot-jar'] =~ /^\s*true\s*$/i
         @needs_dso_boot_jar = @use_dso_boot_jar || (buildconfig['build-dso-boot-jar'] =~ /^\s*true\s*$/i)
         @timeout = (config_source["test_timeout"] || buildconfig["timeout"] || DEFAULT_TEST_TIMEOUT_SECONDS.to_s).to_i * 1000
-        @extra_jvmargs = []
-        @extra_jvmargs += config_source.as_array('jvmargs') unless config_source.as_array('jvmargs').nil?
+
+        @extra_jvmargs = config_source.as_array('jvmargs') || []
         if buildconfig['jvmargs']
           jvmargs = buildconfig['jvmargs'].split(/\s*,\s*/)
           # Make sure the heap size settings in the buildconfig override the
@@ -298,8 +299,6 @@ class SubtreeTestRun
           props_file = FilePath.new(@build_results.classes_directory(@subtree), test_props).canonicalize
           @extra_jvmargs << "-Dcom.tc.properties=#{props_file.to_propertyfile_escaped_s}"
         end
-
-        @jvm = tests_jvm(jvm_set)
     end
 
     # Returns true if this test run requires a container to run.
@@ -334,7 +333,7 @@ class SubtreeTestRun
             puts "This subtree requires a DSO boot JAR to run tests. Building one."
             module_set = @subtree.build_module.module_set
 
-            boot_jar = BootJar.new(@build_results, @jvm,
+            boot_jar = BootJar.new(@build_results, tests_jvm,
                 @testrun_results.boot_jar_directory(@subtree),
                 module_set, @ant, @platform,
                 @subtree.boot_jar_config_file(@static_resources).to_s)
@@ -347,7 +346,7 @@ class SubtreeTestRun
         end
 
         # This creates the file that TestConfigObject reads.
-        @subtree.create_build_configuration_file(@static_resources, @testrun_results, @build_results, @build_environment, @config_source, boot_jar, @ant, @jvm, all_jvmargs, @timeout)
+        @subtree.create_build_configuration_file(@static_resources, @testrun_results, @build_results, @build_environment, @config_source, boot_jar, @ant, tests_jvm, all_jvmargs, @timeout)
 
         native_library_path = @subtree.native_library_path(@build_results, @build_environment, :full)
 
@@ -452,9 +451,9 @@ class SubtreeTestRun
             file << "tcbuild.prepared.module=%s\n" % @subtree.build_module.name.to_propertyfile_escaped_s
             file << "tcbuild.prepared.subtree=%s\n" % @subtree.name.to_propertyfile_escaped_s
             file << "tcbuild.prepared.cwd=%s\n" % @cwd.to_s.to_propertyfile_escaped_s
-            file << "tcbuild.prepared.jvm.java=%s\n" % @jvm.java.to_s.to_propertyfile_escaped_s
-            file << "tcbuild.prepared.jvm.version=%s\n" % @jvm.actual_version.to_propertyfile_escaped_s
-            file << "tcbuild.prepared.jvm.type=%s\n" % @jvm.actual_type.to_propertyfile_escaped_s
+            file << "tcbuild.prepared.jvm.java=%s\n" % tests_jvm.java.to_s.to_propertyfile_escaped_s
+            file << "tcbuild.prepared.jvm.version=%s\n" % tests_jvm.actual_version.to_propertyfile_escaped_s
+            file << "tcbuild.prepared.jvm.type=%s\n" % tests_jvm.actual_type.to_propertyfile_escaped_s
 
             jvm_args = all_jvmargs
             if container_home = @subtree.container_home || @config_source['tc.tests.configuration.appserver.home']
@@ -501,7 +500,7 @@ class SubtreeTestRun
         puts "And, just FYI (it isn't usually necessary to set these) the buildsystem "
         puts "normally runs tests in %s/%s..." % [ @subtree.build_module.name, @subtree.name ]
         puts "   ...with the current working directory set to '%s'." % @cwd.to_s
-        puts "   ...using the Java command at '%s'." % @jvm.java.to_s
+        puts "   ...using the Java command at '%s'." % tests_jvm.java.to_s
         puts ""
     end
 
@@ -531,7 +530,7 @@ class SubtreeTestRun
         :tempdir => @testrun_results.ant_temp_dir(@subtree).to_s,
         :fork => true,
         :showoutput => true,
-        :jvm => @jvm.java.to_s) {
+        :jvm => tests_jvm.java.to_s) {
             splice_into_ant_junit
 
             # Use our two formatters -- the first for the XML output files, the second for
@@ -610,17 +609,62 @@ END
 
         out += "  Timeout:                     %s milliseconds\n" % @timeout
         out += "  Current working directory:   %s\n" % @cwd.to_s
-        out += "  'java' command:              %s\n\n" % @jvm.java.to_s
+        out += "  'java' command:              %s\n\n" % tests_jvm.java.to_s
         out += "  CLASSPATH:\n\n%s\n\n" % @classpath
 
         out
     end
 
-    private
     # Which JVM should we use for this set of tests?
-    def tests_jvm(jvm_set)
-        jvm_set['tests-%s' % @subtree.build_module.compiler_version]
+    def tests_jvm(jvm_set = Registry[:jvm_set])
+      return @jvm if @jvm
+      result = nil
+      config_jre = Registry[:command_line_config]['jdk'] || @buildconfig['jdk']
+
+      if requires_container?
+STDERR.puts("#{@subtree} requires container")
+        if jvm_set.has?('appserver-jre')
+          appserver_jre = jvm_set['appserver-jre']
+STDERR.puts("Found appserver-jre #{appserver_jre}")
+        end
+
+        if appserver_jre
+STDERR.puts("appserver-jre exists")
+          if config_jre
+            result = jvm_set[config_jre]
+            unless result.version == appserver_jre.version
+              raise("JDK specified is incompatible with #{Registry[:appserver]}," +
+                    " which requires #{appserver_jre}")
+            end
+STDERR.puts("Using configured JDK #{result}")
+          else
+            result = appserver_jre
+STDERR.puts("Using appserver-jre #{appserver_jre}")
+          end
+        else
+          if config_jre
+            result = jvm_set[config_jre]
+STDERR.puts("Using configured JDK #{result}")
+          else
+            result = @build_module.jdk
+STDERR.puts("Using default module JDK #{result}")
+          end
+        end
+      else
+STDERR.puts("#{@subtree} does not require container")
+        if config_jre
+          result = jvm_set[config_jre]
+STDERR.puts("Using configured JDK #{result}")
+        else
+          result = @build_module.jdk
+STDERR.puts("Using default module JDK #{result}")
+        end
+      end
+
+      @jvm = result
     end
+
+  private
 
     # Splice the appropriate elements (CLASSPATH, JVM arguments, system properties,
     # and so on) into Ant.

@@ -4,9 +4,11 @@
 # All rights reserved
 #
 
-# this is where you specify which jdk should be used for
-# certain app server
+# This file allows you to specify which JRE should be used for running tests
+# within a certain container.  The name of the JRE must match one of the entries
+# in jre.def.yml
 
-tomcat5-5.5.20: 1.5
-weblogic8-8.1.SP5: 1.4
-weblogic8-8.1.SP6: 1.4
+tomcat5-5.5.20: J2SE-1.5
+#tomcat5-5.0.28: J2SE-1.5
+weblogic8-8.1.SP5: J2SE-1.4
+weblogic8-8.1.SP6: J2SE-1.4

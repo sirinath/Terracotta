@@ -117,11 +117,12 @@ class TerracottaBuilder
         option_parser.on('--no-ivy') do @no_ivy = true end
         @start_time = Time.now
         @basedir = FilePath.new("").canonicalize
-        puts "Building with base directory: '%s'." % @basedir.to_s
-        puts ""
+        puts("Building with base directory: '#@basedir'.")
+        puts
         @default_target = default_target
         @ant = TerracottaAnt.new
         @platform = CrossPlatform.create_implementation(:ant => @ant)
+        Registry[:platform] = @platform
 
         # The CommandLineConfigSource actually parses its arguments, and returns only the ones
         # that aren't configuration property settings (e.g., of the form 'a=b').
@@ -130,6 +131,8 @@ class TerracottaBuilder
         @internal_config_source = InternalConfigSource.new
 
         @config_source = create_config_source(command_line_source, @internal_config_source)
+        Registry[:config_source] = @config_source
+        Registry[:command_line_config] = command_line_source
 
         @script_results = ScriptResults.new
 
@@ -194,11 +197,10 @@ class TerracottaBuilder
     # that can't be overridden; this can be a useful technique sometimes.)
     def create_config_source(command_line_source, internal_config_source)
         CompositeConfigSource.new([
-        internal_config_source,
-        command_line_source,
-        StandardFileConfigSource.new('build-config'),
-        EnvironmentConfigSource.new(@ant)
-        ])
+            internal_config_source,
+            command_line_source,
+            StandardFileConfigSource.new('build-config'),
+            EnvironmentConfigSource.new(@ant)])
     end
 
     # Returns a summary of all configuration data, as a string, in a form useful for printing out to a user.
