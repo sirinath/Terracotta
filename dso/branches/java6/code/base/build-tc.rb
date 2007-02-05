@@ -405,8 +405,14 @@ END
         lib_directory = FilePath.new(home.dir, "common", "lib").ensure_directory
         FileUtils.touch(FilePath.new(lib_directory, "tc.jar").to_s)
 
+        if config_jre = config_source['jdk']
+          jvm = @jvm_set[config_jre]
+        else
+          jvm = build_module.jdk
+        end
+
         subtree.run_java(ant, 'com.tc.server.TCServerMain', home.dir.to_s,
-                         build_module.jdk, config_source.as_array('jvmargs'),
+                         jvm, config_source.as_array('jvmargs'),
                          all_remaining_arguments,
                          { 'tc.install-root' => home.dir.to_s },
                          @build_results, @build_environment)

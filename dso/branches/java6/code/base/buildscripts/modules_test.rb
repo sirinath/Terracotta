@@ -619,7 +619,7 @@ END
     def tests_jvm(jvm_set = Registry[:jvm_set])
       return @jvm if @jvm
       result = nil
-      config_jre = Registry[:command_line_config]['jdk'] || @buildconfig['jdk']
+      config_jre = Registry[:config_source]['jdk'] || @buildconfig['jdk']
 
       if requires_container?
         if jvm_set.has?('appserver-jre')

@@ -101,7 +101,7 @@ class BuildSubtree
 
     # The JDK that should be used for compiling this subtree.
     def compile_jdk
-      if name = Registry[:command_line_config]['jdk']
+      if name = Registry[:config_source]['jdk']
         Registry[:jvm_set][name]
       else
         build_module.jdk
