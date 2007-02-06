@@ -8,6 +8,9 @@
 # keep track of a set of JVMs, and find various commands from a JVM, specify
 # necessary versions, and so on.
 
+class JvmVersionMismatchException < StandardError
+end
+
 # Represents the version of a JVM. This is typically something like '1.4.2_07', but
 # some JVMs (like IBM's) can be just '1.4.2', too.
 class JavaVersion

@@ -234,7 +234,7 @@ class EnvironmentConfigSource
 
     def [](key)
         key = key.gsub(/[- \.]/, "_")
-        @ant.instance_eval("@env_#{key}")
+        @ant.instance_eval("@env_TC_#{key}") || @ant.instance_eval("@env_#{key}")
     end
 
     def keys

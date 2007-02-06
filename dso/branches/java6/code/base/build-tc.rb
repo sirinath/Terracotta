@@ -72,7 +72,12 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
         # Load the XMLBeans task, so we can use it to process config files when needed by that target.
         ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
-      end
+    end
+    
+    def monkey?
+      config_source = Registry[:config_source]
+      config_source['tc.build-control.cruise-control.monkey-root'] || config_source['fake-monkey']
+    end
 
       # Prints a help message.
       def help
@@ -665,7 +670,7 @@ end
             prepare_and_run_block_on_tests(test_set, testrun_results, Proc.new do |testrun|
                 have_started_at_least_one_test = true
                 testrun.run(@script_results)
-            end)
+            end, testrun_record)
         ensure
             raise unless have_started_at_least_one_test
 
@@ -682,7 +687,7 @@ end
                 puts "     Tests FAILED. See results above."
             elsif testrun_record.total_suites == 0
                 puts "     No tests ran at all! Something's wrong -- check your configuration or call."
-                @script_results.failed("No tests ran at all! Something's wrong -- check your configuration or call.")
+                #@script_results.failed("No tests ran at all! Something's wrong -- check your configuration or call.")
             else
                 puts "     Tests passed."
             end
@@ -699,8 +704,10 @@ end
     # odd/nonsensical leafcutter error messages. (On the other hand, if you can manage to make it work,
     # and you're sure it works in all cases, by all means, go ahead and change it. It certainly is gross
     # the way it is right now.)
-    def prepare_and_run_block_on_tests(test_set, testrun_results, testrun_proc)
+    def prepare_and_run_block_on_tests(test_set, testrun_results, testrun_proc, testrun_record = nil)
         test_runs = { }
+        
+        setUpSet = Set.new
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
             test_runs[subtree] =
@@ -709,16 +716,26 @@ end
                                  @jvm_set, ant, platform, test_patterns,
                                  tests_aggregation_directory)
 
-            test_runs[subtree].setUp
+            begin
+              test_runs[subtree].setUp
+              setUpSet << subtree
+            rescue JvmVersionMismatchException => e
+              if monkey?
+                puts("JVM version mismatch...skipping subtree #{subtree}")
+              else
+                raise
+              end
+            end
         end
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
             begin
-                testrun_proc.call(test_runs[subtree])
+              testrun_proc.call(test_runs[subtree]) if setUpSet.member?(subtree)
             ensure
                 test_runs[subtree].tearDown
             end
         end
+
     end
 
     # Finds the JVMs that we need to use -- one each for compiling and testing, for 1.4 and 1.5.

@@ -258,6 +258,9 @@ class SubtreeTestRun
 
     # The default timeout for tests, in seconds. Currently, this is 15 minutes.
     DEFAULT_TEST_TIMEOUT_SECONDS = 15 * 60
+    
+    attr_accessor :skipped
+    alias skipped? skipped
 
     # Creates a new instance. Most of the parameters should be obvious; they're just references
     # to the obvious instances of the similarly-named classes. buildconfig is the build-configuration
@@ -308,6 +311,7 @@ class SubtreeTestRun
 
     # Does all preparations necessary to run the given set of tests.
     def setUp
+
         @has_tests = @subtree.source_exists
         if @has_tests
             @found_tests = find_tests
@@ -322,6 +326,9 @@ class SubtreeTestRun
             @setUp = true
             return
         end
+
+        # tests_jvm will raise an exception if there is a problem with the JVM configuration
+        tests_jvm
 
         puts "------------------------------------------------------------------------"
         puts "PREPARING to run tests (%s) on subtree '%s/%s'..." % [ @test_patterns.join(", "), @subtree.build_module.name, @subtree.name ]
@@ -619,7 +626,9 @@ END
     def tests_jvm(jvm_set = Registry[:jvm_set])
       return @jvm if @jvm
       result = nil
-      config_jre = Registry[:config_source]['jdk'] || @buildconfig['jdk']
+      config_source = Registry[:config_source]
+      config_jre = config_source['tests-jdk'] || @buildconfig['tests-jdk'] ||
+                   config_source['jdk'] || @buildconfig['jdk']
 
       if requires_container?
         if jvm_set.has?('appserver-jre')
@@ -630,7 +639,8 @@ END
           if config_jre
             result = jvm_set[config_jre]
             unless result.version == appserver_jre.version
-              raise("JDK specified is incompatible with #{Registry[:appserver]}," +
+              raise(JvmVersionMismatchException,
+                    "JDK specified is incompatible with #{Registry[:appserver]}," +
                     " which requires #{appserver_jre}")
             end
           else
@@ -639,6 +649,11 @@ END
         else
           if config_jre
             result = jvm_set[config_jre]
+            if result.version < @build_module.jdk.version
+                raise(JvmVersionMismatchException,
+                  "JDK specified is incompatible with #{@build_module.name}," +
+                  " which requires #{@build_module.jdk}")
+            end
           else
             result = @build_module.jdk
           end
@@ -646,6 +661,11 @@ END
       else
         if config_jre
           result = jvm_set[config_jre]
+            if result.version < @build_module.jdk.version
+                raise(JvmVersionMismatchException,
+                  "JDK specified is incompatible with #{@build_module.name}," +
+                  " which requires #{@build_module.jdk}")
+            end
         else
           result = @build_module.jdk
         end
