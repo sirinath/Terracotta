@@ -11,13 +11,13 @@ import org.apache.xmlbeans.XmlOptions;
 import com.tc.config.Loader;
 import com.tc.object.tools.BootJarSignature;
 import com.tc.servers.ServerSelection;
-import com.terracottatech.configV2.Application;
-import com.terracottatech.configV2.DsoApplication;
-import com.terracottatech.configV2.Server;
-import com.terracottatech.configV2.Servers;
-import com.terracottatech.configV2.TcConfigDocument;
-import com.terracottatech.configV2.WebApplications;
-import com.terracottatech.configV2.TcConfigDocument.TcConfig;
+import com.terracottatech.config.Application;
+import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.Server;
+import com.terracottatech.config.Servers;
+import com.terracottatech.config.TcConfigDocument;
+import com.terracottatech.config.WebApplications;
+import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,7 +43,7 @@ public class ConfigHelper {
   private static final String FS = System.getProperty("file.separator");
   
   private static final String CUSTOM_BOOT_JAR_PATH =
-    TC_INSTALL_DIR+FS+"common"+FS+"lib"+FS+"dso-boot"+FS+getBootJarNameForThisVM();
+    TC_INSTALL_DIR+FS+"lib"+FS+"dso-boot"+FS+getBootJarNameForThisVM();
   
   private static final int DEFAULT_JMX_PORT = 9520;
   

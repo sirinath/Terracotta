@@ -19,9 +19,7 @@ import com.tc.asm.commons.SerialVersionUIDAdder;
 import com.tc.asm.tree.ClassNode;
 import com.tc.asm.tree.InnerClassNode;
 import com.tc.asm.tree.MethodNode;
-import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventListener;
-import com.tc.cluster.Node;
 import com.tc.config.Directories;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
@@ -62,6 +60,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentHashMapSegmentAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
+import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
@@ -289,8 +288,6 @@ public class BootJarTool {
       loadTerracottaClass(Os.class.getName());
       loadTerracottaClass(NIOWorkarounds.class.getName());
       loadTerracottaClass(TCProperties.class.getName());
-      loadTerracottaClass(Cluster.class.getName());
-      loadTerracottaClass(Node.class.getName());
       loadTerracottaClass(ClusterEventListener.class.getName());
 
       // These two classes need to be specified as literal in order to prevent
@@ -1330,11 +1327,6 @@ public class BootJarTool {
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap",
                                                         "com.tc.object.applicator.ConcurrentHashMapApplicator");
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.SEGMENT_FOR_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.CONTAINS_VALUE_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.SIZE_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.IS_EMPTY_SIGNATURE);
     spec.setHonorTransient(true);
     spec.markPreInstrumented();
     bytes = doDSOTransform(spec.getClassName(), bytes);
@@ -1388,6 +1380,7 @@ public class BootJarTool {
   private void addInstrumentedJavaUtilConcurrentLinkedBlockingQueue() {
     if (!isAtLeastJDK15()) { return; }
 
+    // Instrumentation for Itr inner class
     byte[] bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue$Itr");
 
     ClassReader cr = new ClassReader(bytes);
@@ -1399,6 +1392,19 @@ public class BootJarTool {
     bytes = cw.toByteArray();
     bootJar.loadClassIntoJar("java.util.concurrent.LinkedBlockingQueue$Itr", bytes, true);
 
+    // Instrumentation for Node inner class
+    bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue$Node");
+
+    cr = new ClassReader(bytes);
+    cw = new ClassWriter(true);
+
+    cv = new JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter(cw);
+    cr.accept(cv, false);
+
+    bytes = cw.toByteArray();
+    bootJar.loadClassIntoJar("java.util.concurrent.LinkedBlockingQueue$Node", bytes, true);
+
+    // Instrumentation for LinkedBlockingQueue class
     bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue");
 
     cr = new ClassReader(bytes);
@@ -1411,12 +1417,6 @@ public class BootJarTool {
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
                                                         "com.tc.object.applicator.LinkedBlockingQueueApplicator");
-    spec.addMethodAdapter(SerializationUtil.QUEUE_PUT_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter());
-    spec.addMethodAdapter(SerializationUtil.OFFER_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter());
-    spec.addMethodAdapter(SerializationUtil.OFFER_TIMEOUT_SIGNATURE,
-                          new JavaUtilConcurrentLinkedBlockingQueueAdapter.PutAdapter());
     spec.addMethodAdapter(SerializationUtil.TAKE_SIGNATURE,
                           new JavaUtilConcurrentLinkedBlockingQueueAdapter.TakeAdapter());
     spec.addMethodAdapter(SerializationUtil.POLL_TIMEOUT_SIGNATURE,
@@ -1757,7 +1757,7 @@ public class BootJarTool {
   public static void main(String[] args) throws Exception {
     File installDir = getInstallationDir();
     String outputFileOptionMsg = "path to store boot JAR"
-                                 + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/common/lib/dso-boot" : "");
+                                 + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/lib/dso-boot" : "");
     Option targetFileOption = new Option(OUTPUT_FILE_OPTION, true, outputFileOptionMsg);
     targetFileOption.setArgName("file");
     targetFileOption.setLongOpt("output-file");
@@ -1828,7 +1828,7 @@ public class BootJarTool {
     File outputFile;
 
     if (!commandLine.hasOption(OUTPUT_FILE_OPTION)) {
-      File libDir = new File(new File(installDir, "common"), "lib");
+      File libDir = new File(installDir, "lib");
       outputFile = new File(libDir, "dso-boot");
     } else {
       outputFile = new File(commandLine.getOptionValue(OUTPUT_FILE_OPTION)).getAbsoluteFile();

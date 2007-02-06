@@ -54,7 +54,7 @@ module DistributionUtils
 
   def package_filename
     "#{get_config(:short_internal_name).downcase}-" +
-    "#{@build_environment.os_type(:nice).downcase}-" +
+    "#{@build_environment.os_family.downcase}-" +
     "#{@build_environment.processor_type}-" +
     "#{@build_environment.build_username.downcase}-AT-" +
     "#{@build_environment.build_hostname.downcase}-rev" +
@@ -93,8 +93,11 @@ module DistributionUtils
     hash
   end
 
- def docspath(component)
-   suffix = 'docs' unless component[:install_directory].nil?
+ def docspath(component, install_directory=nil)
+   suffix = install_directory unless install_directory.nil?
+   if suffix.nil?
+     suffix = 'docs' unless component[:install_directory].nil?
+   end
    FilePath.new(product_directory, (component[:install_directory] || ''), (suffix || ''))
  end 
 end
