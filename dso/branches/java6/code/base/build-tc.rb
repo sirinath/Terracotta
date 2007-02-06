@@ -820,8 +820,8 @@ end
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            'jvm-tests-1.4' => @jvm_set.find_jvm(:version_like => /^1\.4/).short_description,
-            'jvm-tests-1.5' => @jvm_set.find_jvm(:version_like => /^1\.5/).short_description,
+            'JAVA_HOME_14' => config_source["JAVA_HOME_14"],
+            config_source["JAVA_HOME_15"] =~ /hotspot1\.5/ ? "JAVA_HOME_15" : "JAVA_HOME_16" => config_source["JAVA_HOME_15"]
         }
 
         # Parameters data.
