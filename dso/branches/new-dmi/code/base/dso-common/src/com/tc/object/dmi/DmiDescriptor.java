@@ -66,22 +66,14 @@ public class DmiDescriptor {
            + receiverClassLoaderDesc + "]";
   }
 
-  public static DmiDescriptor readFrom(TCByteBufferInputStream in, DNAEncoding encoding) throws IOException {
+  public static DmiDescriptor readFrom(TCByteBufferInputStream in, DNAEncoding encoding) throws IOException, ClassNotFoundException {
     final String receiverClassName = in.readString();
     final long receiverID = in.readLong();
     final String methodDesc = in.readString();
     final String receiverClassLoaderDesc = in.readString();
-    final int size = in.readInt();
-    final boolean[] isRef = new boolean[size];
-    final Object[] parameters = new Object[size];
-    for (int i = 0; i < isRef.length; i++) {
-      isRef[i] = in.readBoolean();
-      try {
-        parameters[i] = encoding.decode(in);
-      } catch (ClassNotFoundException e) {
-        throw new IOException("Error reading method param: " + e.toString());
-      }
-    }
+    final boolean[] isRef = (boolean[]) encoding.decode(in);
+    final Object[] parameters = (Object[]) encoding.decode(in);
+    
     final DmiDescriptor rv = new DmiDescriptor(receiverID, receiverClassName, receiverClassLoaderDesc, methodDesc,
                                                parameters, isRef);
     return rv;
@@ -92,11 +84,8 @@ public class DmiDescriptor {
     out.writeLong(receiverID);
     out.writeString(methodDesc);
     out.writeString(receiverClassLoaderDesc);
-    out.writeInt(isRef.length);
-    for (int i = 0; i < isRef.length; i++) {
-      out.writeBoolean(isRef[i]);
-      encoding.encode(parameters[i], out);
-    }
+    encoding.encodeArray(isRef, out);
+    encoding.encodeArray(parameters, out);
   }
 
   private static void assertPre(boolean v, String msg) {
