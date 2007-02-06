@@ -35,7 +35,12 @@ class BuildSubtree
                 # system properties
                 include_class('java.lang.System')
                 javac_classpath = System.getProperty('java.class.path')
-
+                
+                STDERR.puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ build_module.jdk.release ~~~~~~~~~~~~~~~~~~~~~"
+                STDERR.puts build_module.jdk.release.to_s
+                STDERR.puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ build_module.jdk.release ~~~~~~~~~~~~~~~~~~~~~"
+                
+                
                 ant.java(
                   :jvm => jdk.java.to_s,
                   :fork => true,
@@ -52,6 +57,10 @@ class BuildSubtree
                     ant.arg(:value => classpath(build_results, :full, :compile).to_s)
                     ant.arg(:value => '-d')
                     ant.arg(:value => build_results.classes_directory(self).to_s)
+                    ant.arg(:value => '-source')
+                    ant.arg(:value => '1.5')
+                    #~ ant.arg(:value => '-target')
+                    #~ ant.arg(:value => build_module.jdk.release)
                     ant.arg(:value => '-showWeaveInfo')
                 end
             else
