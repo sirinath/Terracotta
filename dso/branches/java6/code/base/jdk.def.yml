@@ -30,7 +30,7 @@ J2SE-1.4:
 
 J2SE-1.5:
     min_version: 1.5.0_0
-    max_version: 1.5.999_999
+    max_version: 1.6.999_999
     env:
       - J2SE_15
       - JAVA_HOME_15
