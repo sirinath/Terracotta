@@ -52,10 +52,6 @@ class BuildSubtree
                     ant.arg(:value => classpath(build_results, :full, :compile).to_s)
                     ant.arg(:value => '-d')
                     ant.arg(:value => build_results.classes_directory(self).to_s)
-                    ant.arg(:value => '-source')
-                    ant.arg(:value => build_module.jdk.release)
-                    ant.arg(:value => '-target')
-                    ant.arg(:value => build_module.jdk.release)
                     ant.arg(:value => '-showWeaveInfo')
                 end
             else
