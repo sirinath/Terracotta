@@ -92,6 +92,8 @@ public class TestConfigObject {
 
   private static final String     SYSTEM_PROPERTIES_RESOURCE_NAME  = "/test-system-properties.properties";
 
+  private static final String     PLUGINS_URL_PROPERTY_NAME        = STATIC_PROPERTIES_PREFIX + "plugins.url";
+
   private static TestConfigObject INSTANCE;
 
   private final Properties        properties;
@@ -170,6 +172,9 @@ public class TestConfigObject {
 
     loadEnv();
     loadSystemProperties();
+
+System.out.println("****** TestConfigObject#pluginsUrl(): " + pluginsUrl());
+System.out.println("****** plugins.url property name: " + PLUGINS_URL_PROPERTY_NAME);
 
     int filesRead = 0;
 
@@ -269,7 +274,7 @@ public class TestConfigObject {
     }
     else return osname;
   }
-  
+
   public String dataDirectoryRoot() {
     String out = this.properties.getProperty(DATA_DIRECTORY_ROOT);
     Assert.assertNotBlank(out);
@@ -356,6 +361,10 @@ public class TestConfigObject {
     Assert.assertNotBlank(out);
     assertValidClasspath(out);
     return out;
+  }
+
+  public String pluginsUrl() {
+    return System.getProperty(PLUGINS_URL_PROPERTY_NAME);
   }
 
   public int getJunitTimeoutInSeconds() {
