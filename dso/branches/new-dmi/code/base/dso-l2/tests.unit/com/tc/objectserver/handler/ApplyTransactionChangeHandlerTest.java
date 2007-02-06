@@ -7,6 +7,7 @@ package com.tc.objectserver.handler;
 import com.tc.async.impl.MockSink;
 import com.tc.async.impl.MockStage;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.object.dmi.BufferedDmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.Notify;
@@ -83,7 +84,7 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
     }
     SequenceID sequenceID = new SequenceID(1);
     ServerTransaction tx = new ServerTransactionImpl(batchID, txID, sequenceID, lockIDs, channelID, dnas, serializer,
-                                                     newRoots, txnType, notifies);
+                                                     newRoots, txnType, notifies, new BufferedDmiDescriptor[0]);
     // call handleEvent with the global transaction reporting that it doesn't need an apply...
     assertTrue(lockManager.notifyCalls.isEmpty());
     assertTrue(broadcastSink.queue.isEmpty());

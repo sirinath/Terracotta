@@ -1,9 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.tx;
 
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.object.dmi.BufferedDmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.lockmanager.api.LockID;
@@ -25,22 +27,23 @@ import java.util.Map;
  * @author steve
  */
 public class ServerTransactionImpl implements ServerTransaction {
-  private final ServerTransactionID    serverTxID;
-  private final SequenceID             seqID;
-  private final List                   changes;
-  private final LockID[]               lockIDs;
-  private final TransactionID          txID;
-  private final Map                    newRoots;
-  private final ChannelID              channelID;
-  private final TxnType                transactionType;
-  private final ObjectStringSerializer serializer;
-  private final Collection             notifies;
-  private final Collection             objectIDs;
-  private final TxnBatchID             batchID;
+  private final ServerTransactionID     serverTxID;
+  private final SequenceID              seqID;
+  private final List                    changes;
+  private final LockID[]                lockIDs;
+  private final TransactionID           txID;
+  private final Map                     newRoots;
+  private final ChannelID               channelID;
+  private final TxnType                 transactionType;
+  private final ObjectStringSerializer  serializer;
+  private final Collection              notifies;
+  private final BufferedDmiDescriptor[] dmis;           // <BufferedDmiDescriptor>
+  private final Collection              objectIDs;
+  private final TxnBatchID              batchID;
 
   public ServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                ChannelID channelID, List dnas, ObjectStringSerializer serializer, Map newRoots,
-                               TxnType transactionType, Collection notifies) {
+                               TxnType transactionType, Collection notifies, BufferedDmiDescriptor[] dmis) {
     this.batchID = batchID;
     this.txID = txID;
     this.seqID = sequenceID;
@@ -50,6 +53,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     this.serverTxID = new ServerTransactionID(channelID, txID);
     this.transactionType = transactionType;
     this.notifies = notifies;
+    this.dmis = dmis;
     this.changes = dnas;
     this.serializer = serializer;
     List ids = new ArrayList(changes.size());
@@ -98,6 +102,10 @@ public class ServerTransactionImpl implements ServerTransaction {
   public Collection addNotifiesTo(List list) {
     list.addAll(notifies);
     return list;
+  }
+
+  public BufferedDmiDescriptor[] getDmiDescriptors() {
+    return dmis;
   }
 
   public String toString() {

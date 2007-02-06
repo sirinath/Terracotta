@@ -12,6 +12,7 @@ import com.tc.async.impl.MockSink;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.object.dmi.BufferedDmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
@@ -92,7 +93,7 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     ServerTransaction serverTransaction = new ServerTransactionImpl(batch.batchID, new TransactionID(1),
                                                                     new SequenceID(1), new LockID[0], batch.channelID,
                                                                     dnaList, new ObjectStringSerializer(), newRootsMap,
-                                                                    TxnType.NORMAL, new LinkedList());
+                                                                    TxnType.NORMAL, new LinkedList(), new BufferedDmiDescriptor[0]);
     Collection completedTransactionIDs = new HashSet();
     for (int i = 0; i < 10; i++) {
       completedTransactionIDs.add(new GlobalTransactionID(i));
@@ -135,7 +136,7 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     serverTransaction = new ServerTransactionImpl(batch.batchID, new TransactionID(2), new SequenceID(2),
                                                   new LockID[0], batch.channelID, dnaList,
                                                   new ObjectStringSerializer(), newRootsMap, TxnType.NORMAL,
-                                                  new LinkedList());
+                                                  new LinkedList(), new BufferedDmiDescriptor[0]);
     completedTransactionIDs = new HashSet();
     for (int i = 11; i < 20; i++) {
       completedTransactionIDs.add(new GlobalTransactionID(i));
