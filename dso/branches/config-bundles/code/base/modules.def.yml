@@ -376,15 +376,17 @@ modules:
         - deploy
         - thirdparty
         - legacy-test-tree
-
-plugins:
   - clustered-apache-struts-1.1:
       options:
         compiler_version: 1.4
+        plugin: true
       dependencies:
         - dso-l1
         - thirdparty
   - clustered-commons-collections-3.1:
+      options:
+        compiler_version: 1.4
+        plugin: true
 
 module-groups:
   container:

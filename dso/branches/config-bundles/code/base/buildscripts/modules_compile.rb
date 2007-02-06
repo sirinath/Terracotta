@@ -25,16 +25,15 @@ class BuildSubtree
     def compile(jvm_set, build_results, ant, config_source, build_environment)
         if @source_exists
             build_results.classes_directory(self).ensure_directory
-
             jvm = jvm_set['compile-%s' % build_module.compiler_version]
-            
-            if build_module.aspectj
+
+            if build_module.aspectj?
                 puts "AspectJ %s/%s..." % [ build_module.name, name ]
 
                 # puts "-- %s" % [ ant.get_ant_property('env.CLASSPATH') ]
 
 #                ant.taskdef(
-#                    :name => "iajc", 
+#                    :name => "iajc",
 #                    :classname => "org.aspectj.tools.ant.taskdefs.AjcTask")
 
                 # puts "  AJ %s" % [ aspect_libraries(:compile) ]
@@ -82,10 +81,10 @@ class BuildSubtree
 #                    # :encoding => 'iso-8859-1',
 #                    # :executable => compile_javac(jvm_set).to_s,
 #                    :maxmem => '256m')
-            
+
             else
                 puts "Compiling %s/%s..." % [ build_module.name, name ]
-                
+
                 ant.javac(
                     :destdir => build_results.classes_directory(self).to_s,
                     :debug => true,
@@ -98,20 +97,25 @@ class BuildSubtree
                     :encoding => 'iso-8859-1',
                     :executable => jvm.javac.to_s,
                     :memoryMaximumSize => '256m') {
-                
+
                     ant.src(:path => source_root.to_s) { }
                 }
             end
-            
             if @resources_exists
-                ant.copy(:todir => build_results.classes_directory(self).to_s) {
+                resources_dir = build_results.classes_directory(self).to_s
+                ant.copy(:todir => resources_dir) {
                     ant.fileset(:dir => resource_root.to_s, :includes => '**/*')
                 }
             end
-            
+
             create_build_data(config_source, build_results, build_environment)
         else
-            # puts "(no #{source_root})"
+            if build_module.plugin? && @resources_exists
+                resources_dir = build_results.classes_directory(self).to_s
+                ant.copy(:todir => resources_dir) {
+                    ant.fileset(:dir => resource_root.to_s, :includes => '**/*')
+                }
+            end
         end
     end
 
@@ -126,12 +130,12 @@ class BuildSubtree
     def compile_javac(jvm_set)
         jvm_set['compile-%s' % build_module.compiler_version].javac
     end
-    
+
     # Creates a 'build data' file at the given location, putting into it a number
     # of properties that specify when, where, and how the code in it was compiled.
     def create_build_data(config_source, build_results, build_environment)
         File.open(build_data_file(build_results).to_s, "w") do |file|
-            file << "terracotta.build.productname=terracotta\n" 
+            file << "terracotta.build.productname=terracotta\n"
             file << "terracotta.build.version=%s\n" % build_environment.specified_build_version
             file << "terracotta.build.host=%s\n" % build_environment.build_hostname
             file << "terracotta.build.user=%s\n" % build_environment.build_username
@@ -146,7 +150,21 @@ end
 class BuildModule
     # Compiles the module. All this does is call BuildSubtree#compile on each of the module's
     # subtrees.
-    def compile(*args)
-        @subtrees.each { |subtree| subtree.compile(*args) }
+    def compile(jvm_set, build_results, ant, config_source, build_environment)
+        @subtrees.each { |subtree| subtree.compile(jvm_set, build_results, ant, config_source, build_environment) }
+        if self.plugin?
+            create_plugin_jar(ant, build_results)
+        end
+    end
+
+    # Creates a JAR file for a plugin module and stores it in build/plugins.
+    def create_plugin_jar(ant, build_results)
+      jarfile = FilePath.new(build_results.plugins_home, self.name + ".jar")
+      basedir = FilePath.new(build_results.build_dir, self.name, 'src.classes')
+      manifest = FilePath.new(basedir, "META-INF", "MANIFEST.MF")
+puts("basedir: #{basedir}")
+puts("jarfile: #{jarfile}")
+puts("Manifest file: #{manifest}")
+      ant.jar(:destfile => jarfile.to_s, :basedir => basedir.to_s, :manifest => manifest.to_s)
     end
 end

@@ -149,7 +149,9 @@ end
 # A build module. This represents the largest-scale division of our codebase, like 'common',
 # 'dso-spring', or 'dso-l2'.
 class BuildModule
-    attr_reader :root, :name, :compiler_version, :aspectj, :module_set, :dependencies
+    attr_reader :root, :name, :compiler_version, :aspectj, :plugin, :module_set, :dependencies
+    alias plugin? plugin
+    alias aspectj? aspectj
 
     # Creates a new instance. root_dir is the root directory of the module; module_set is
     # the BuildModuleSet object (see below); data is a hash containing the following
@@ -167,6 +169,7 @@ class BuildModule
         @root = FilePath.new(root_dir, @name).canonicalize
         @compiler_version = data[:compiler_version]
         @aspectj = data[:aspectj] || false
+        @plugin = data[:plugin] || false
         @dependencies = data[:dependencies] || [ ]
 
         assert("Root ('#{@root.to_s}') must be an absolute path") { @root.absolute? }

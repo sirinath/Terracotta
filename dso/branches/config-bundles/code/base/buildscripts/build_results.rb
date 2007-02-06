@@ -103,6 +103,11 @@ class BuildResults
         end
     end
 
+    # The directory to store plugin JAR files.
+    def plugins_home
+      FilePath.new(@build_dir, "plugins").ensure_directory
+    end
+
     # The "server home", which is the working directory we set (and into which we copy certain files required
     # by the server) when we run the Terracotta Server directly from tcbuild. (This is not, and should not be, ever
     # used by tests.)
