@@ -809,6 +809,7 @@ end
     # * *Parameters* is that data which should not affect the results of tests, but which may well be common to many test runs. This is put in the database in a manner that allows us to share it between many monkey runs. (Note that this includes, among other things, hostname -- if two hosts have the same JVM, the same OS, architecture, etc., they really, truly should produce the same results.)
     # * *Extra* data is that data which likely differs between every run of the monkey, and so which is simply stored directly associated with the monkey run. This is things like build date and time, revision number, etc.
     def write_build_info_file
+        
         # Configuration data.
         configuration_data = {
             'host' => @build_environment.build_hostname,
@@ -820,10 +821,15 @@ end
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            'JAVA_HOME_14' => config_source["JAVA_HOME_14"],
-            config_source["JAVA_HOME_15"] =~ /hotspot1\.5/ ? "JAVA_HOME_15" : "JAVA_HOME_16" => config_source["JAVA_HOME_15"]
+            #'jvm-tests-1.4' => @jvm_set.find_jvm(:version_like => /^1\.4/).short_description,
+            #'jvm-tests-1.5' => @jvm_set.find_jvm(:version_like => /^1\.5/).short_description
         }
 
+        @jvm_set.keys.each do | jvm_name |
+            configuaration_data[jvm_name] = @jvm_set[jvm_name]
+        end
+        
+        
         # Parameters data.
         parameters_data = {
           'monkey-name' => config_source['monkey-name']
