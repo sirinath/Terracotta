@@ -826,7 +826,7 @@ end
         }
 
         @jvm_set.keys.each do | jvm_name |
-            configuaration_data[jvm_name] = @jvm_set[jvm_name]
+            configuration_data[jvm_name] = @jvm_set[jvm_name]
         end
         
         
