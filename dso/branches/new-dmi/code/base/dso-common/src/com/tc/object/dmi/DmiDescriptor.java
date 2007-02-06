@@ -7,6 +7,7 @@ package com.tc.object.dmi;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.dna.impl.DNAEncoding;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 
@@ -24,17 +25,17 @@ public class DmiDescriptor {
 
   public DmiDescriptor(long receiverID, String receiverClassName, String receiverClassLoaderDesc, String methodDesc,
                        Object[] parameters, boolean[] isRef) {
-    assertPre(isRef.length == parameters.length, "Mismatched arrays");
+    Assert.pre(receiverClassName != null);
+    Assert.pre(receiverClassLoaderDesc != null);
+    Assert.pre(methodDesc != null && methodDesc.indexOf('(') > 0);
+    Assert.pre(isRef.length == parameters.length);
+    
     this.receiverClassName = receiverClassName;
     this.receiverClassLoaderDesc = receiverClassLoaderDesc;
     this.receiverID = receiverID;
     this.parameters = parameters;
     this.isRef = isRef;
     this.methodDesc = methodDesc;
-  }
-
-  public String getMethodName() {
-    return methodDesc.substring(0, methodDesc.indexOf('('));
   }
 
   public String getReceiverClassName() {
@@ -45,16 +46,24 @@ public class DmiDescriptor {
     return receiverClassLoaderDesc;
   }
 
+  public String getMethodDesc() {
+    return methodDesc;
+  }
+
   public String getParameterDesc() {
     return methodDesc.substring(methodDesc.indexOf('('));
+  }
+
+  public String getMethodName() {
+    return methodDesc.substring(0, methodDesc.indexOf('('));
   }
 
   public long getReceiverID() {
     return receiverID;
   }
 
-  public final boolean isRef(int index) {
-    return isRef[index];
+  public boolean[] getIsRef() {
+    return isRef;
   }
 
   public final Object[] getParameters() {
@@ -66,14 +75,15 @@ public class DmiDescriptor {
            + receiverClassLoaderDesc + "]";
   }
 
-  public static DmiDescriptor readFrom(TCByteBufferInputStream in, DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  public static DmiDescriptor readFrom(TCByteBufferInputStream in, DNAEncoding encoding) throws IOException,
+      ClassNotFoundException {
     final String receiverClassName = in.readString();
     final long receiverID = in.readLong();
     final String methodDesc = in.readString();
     final String receiverClassLoaderDesc = in.readString();
     final boolean[] isRef = (boolean[]) encoding.decode(in);
     final Object[] parameters = (Object[]) encoding.decode(in);
-    
+
     final DmiDescriptor rv = new DmiDescriptor(receiverID, receiverClassName, receiverClassLoaderDesc, methodDesc,
                                                parameters, isRef);
     return rv;
@@ -86,9 +96,5 @@ public class DmiDescriptor {
     out.writeString(receiverClassLoaderDesc);
     encoding.encodeArray(isRef, out);
     encoding.encodeArray(parameters, out);
-  }
-
-  private static void assertPre(boolean v, String msg) {
-    if (!v) throw new AssertionError(msg);
   }
 }
