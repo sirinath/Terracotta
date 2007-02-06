@@ -821,14 +821,9 @@ end
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            #'jvm-tests-1.4' => @jvm_set.find_jvm(:version_like => /^1\.4/).short_description,
-            #'jvm-tests-1.5' => @jvm_set.find_jvm(:version_like => /^1\.5/).short_description
-        }
-
-        @jvm_set.keys.each do | jvm_name |
-            configuration_data[jvm_name] = @jvm_set[jvm_name]
-        end
-        
+            'jvm-tests-1.4' => @jvm_set.find_jvm(:version_like => /^1\.4/).short_description,
+            'jvm-tests-1.5' => @jvm_set.find_jvm(:version_like => /^1\.5/).short_description
+        }        
         
         # Parameters data.
         parameters_data = {
