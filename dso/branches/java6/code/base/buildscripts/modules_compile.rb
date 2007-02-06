@@ -34,12 +34,7 @@ class BuildSubtree
                 # Include the java.lang.System class to get access to Java
                 # system properties
                 include_class('java.lang.System')
-                javac_classpath = System.getProperty('java.class.path')
-                
-                STDERR.puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ build_module.jdk.release ~~~~~~~~~~~~~~~~~~~~~"
-                STDERR.puts build_module.jdk.release.to_s
-                STDERR.puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ build_module.jdk.release ~~~~~~~~~~~~~~~~~~~~~"
-                
+                javac_classpath = System.getProperty('java.class.path')                
                 
                 ant.java(
                   :jvm => jdk.java.to_s,
