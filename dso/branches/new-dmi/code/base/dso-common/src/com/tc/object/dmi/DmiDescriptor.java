@@ -5,37 +5,64 @@
 package com.tc.object.dmi;
 
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutput;
+import com.tc.io.TCByteBufferOutputStream;
+import com.tc.io.TCByteBufferOutputStream.Mark;
+import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.DNAEncoding;
 import com.tc.util.Assert;
+import com.tc.util.Conversion;
 
 import java.io.IOException;
 
 /**
- * Representation of a distributed method call
+ * Representation of a distributed method invocation
  */
 public class DmiDescriptor {
 
-  private final String    receiverClassName;
-  private final long      receiverID;
-  private final String    methodDesc;
-  private final String    receiverClassLoaderDesc;
-  private final boolean[] isRef;
-  private final Object[]  parameters;
+  private final ObjectID receiverID;
+  private final String   receiverClassName;
+  private final String   receiverClassLoaderDesc;
+  private final String   methodName;
+  private final String   paramDesc;
+  private final Object[] parameters;
 
-  public DmiDescriptor(long receiverID, String receiverClassName, String receiverClassLoaderDesc, String methodDesc,
-                       Object[] parameters, boolean[] isRef) {
+  // public static Object[] prepareParameters(Object[] params, LiteralValues literals, ClientObjectManager
+  // objectManager) {
+  // final Object[] rv = new Object[params.length];
+  // for (int i = 0; i < params.length; i++) {
+  // Object param = params[i];
+  // if (literals.isLiteralInstance(param)) {
+  // rv[i] = param;
+  // } else {
+  // rv[i] = objectManager.lookupOrCreate(param).getObjectID();
+  // }
+  // }
+  // }
+
+  public DmiDescriptor(ObjectID receiverID, String receiverClassName, String receiverClassLoaderDesc,
+                       String methodDesc, Object[] parameters) {
+    this(receiverID, receiverClassName, receiverClassLoaderDesc, methodDesc.substring(0, methodDesc.indexOf('(')),
+         methodDesc.substring(methodDesc.indexOf('(')), parameters);
+  }
+
+  /**
+   * @param parameters can contain literals or ObjectID's
+   */
+  public DmiDescriptor(ObjectID receiverID, String receiverClassName, String receiverClassLoaderDesc,
+                       String methodName, String paramDesc, Object[] parameters) {
+    Assert.pre(receiverID != null);
     Assert.pre(receiverClassName != null);
     Assert.pre(receiverClassLoaderDesc != null);
-    Assert.pre(methodDesc != null && methodDesc.indexOf('(') > 0);
-    Assert.pre(isRef.length == parameters.length);
-    
+    Assert.pre(methodName != null);
+    Assert.pre(paramDesc != null);
+    Assert.pre(parameters != null);
+
+    this.receiverID = receiverID;
     this.receiverClassName = receiverClassName;
     this.receiverClassLoaderDesc = receiverClassLoaderDesc;
-    this.receiverID = receiverID;
+    this.methodName = methodName;
+    this.paramDesc = paramDesc;
     this.parameters = parameters;
-    this.isRef = isRef;
-    this.methodDesc = methodDesc;
   }
 
   public String getReceiverClassName() {
@@ -46,24 +73,20 @@ public class DmiDescriptor {
     return receiverClassLoaderDesc;
   }
 
-  public String getMethodDesc() {
-    return methodDesc;
-  }
-
   public String getParameterDesc() {
-    return methodDesc.substring(methodDesc.indexOf('('));
+    return paramDesc;
   }
 
   public String getMethodName() {
-    return methodDesc.substring(0, methodDesc.indexOf('('));
+    return methodName;
   }
 
-  public long getReceiverID() {
+  public ObjectID getReceiverID() {
     return receiverID;
   }
 
-  public boolean[] getIsRef() {
-    return isRef;
+  public static boolean isObjectID(Object o) {
+    return (o instanceof ObjectID);
   }
 
   public final Object[] getParameters() {
@@ -71,30 +94,47 @@ public class DmiDescriptor {
   }
 
   public String toString() {
-    return super.toString() + "[" + receiverClassName + ";  " + receiverID + ";  " + methodDesc + ";  " + ";  "
-           + receiverClassLoaderDesc + "]";
+    return super.toString() + "[" + receiverClassName + ";  " + receiverID + ";  " + methodName + paramDesc + ";  "
+           + ";  " + receiverClassLoaderDesc + "]";
+  }
+
+  /**
+   * Use this method for efficient server-side reading
+   */
+  public static DmiDescriptor readFrom(TCByteBufferInputStream in) throws IOException {
+    // FIXME: this must be optimized, but for now...
+    try {
+      return readFrom(in, new DNAEncoding(DNAEncoding.SERIALIZER));
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e.getMessage());
+    }
   }
 
   public static DmiDescriptor readFrom(TCByteBufferInputStream in, DNAEncoding encoding) throws IOException,
       ClassNotFoundException {
+    final ObjectID receiverId = new ObjectID(in.readLong());
+    final int buffLength = in.readInt();
     final String receiverClassName = in.readString();
-    final long receiverID = in.readLong();
-    final String methodDesc = in.readString();
     final String receiverClassLoaderDesc = in.readString();
-    final boolean[] isRef = (boolean[]) encoding.decode(in);
-    final Object[] parameters = (Object[]) encoding.decode(in);
-
-    final DmiDescriptor rv = new DmiDescriptor(receiverID, receiverClassName, receiverClassLoaderDesc, methodDesc,
-                                               parameters, isRef);
+    final String methodName = in.readString();
+    final String paramDesc = in.readString();
+    final Object[] params = (Object[]) encoding.decode(in);
+    final DmiDescriptor rv = new DmiDescriptor(receiverId, receiverClassName, receiverClassLoaderDesc, methodName,
+                                               paramDesc, params);
     return rv;
   }
 
-  public void writeTo(TCByteBufferOutput out, DNAEncoding encoding) {
+  public void writeTo(TCByteBufferOutputStream out, DNAEncoding encoding) {
+    out.writeLong(receiverID.toLong());
+    final Mark mark = out.mark();
+    out.writeInt(-1);
+    final int start = out.getBytesWritten();
     out.writeString(receiverClassName);
-    out.writeLong(receiverID);
-    out.writeString(methodDesc);
     out.writeString(receiverClassLoaderDesc);
-    encoding.encodeArray(isRef, out);
+    out.writeString(methodName);
+    out.writeString(paramDesc);
     encoding.encodeArray(parameters, out);
+    final int length = out.getBytesWritten() - start;
+    mark.write(Conversion.int2Bytes(length));
   }
 }
