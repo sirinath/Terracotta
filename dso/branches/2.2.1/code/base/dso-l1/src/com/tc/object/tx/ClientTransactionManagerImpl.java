@@ -215,8 +215,11 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
     commit(lockID, topTxn, true);
 
-    lockManager.wait(lockID, call, object, waitListener);
-    createTxAndInitContext();
+    try {
+      lockManager.wait(lockID, call, object, waitListener);
+    } finally {
+      createTxAndInitContext();
+    }
   }
 
   public void notify(String lockName, boolean all, Object object) throws UnlockedSharedObjectException {
