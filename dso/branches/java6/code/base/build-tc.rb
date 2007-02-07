@@ -836,14 +836,14 @@ end
             'platform' => @build_environment.platform,
             'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
-                           config_source['tc.tests.configuration.appserver.minor-version']
-
+                           config_source['tc.tests.configuration.appserver.minor-version'],
+            'tests-jdk' => config_source['tests-jdk'],
+            'JSSE-1.4' => @jvm_set['J2SE-1.4'].short_description,
+            'JSSE-1.5' => @jvm_set['J2SE-1.5'].short_description
             
         }        
         
-        @jvm_set.keys.each do |k|
-            configuration_data[k] = @jvm_set[k]
-        end
+        
         
         # Parameters data.
         parameters_data = {
