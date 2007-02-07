@@ -161,7 +161,7 @@ class BuildModule
     def create_plugin_jar(ant, build_results)
       jarfile = FilePath.new(build_results.plugins_home, self.name + ".jar")
       basedir = FilePath.new(build_results.build_dir, self.name, 'src.classes')
-      manifest = FilePath.new(basedir, "META-INF", "MANIFEST.MF")
+      manifest = FilePath.new(basedir, "MANIFEST.MF")
 puts("basedir: #{basedir}")
 puts("jarfile: #{jarfile}")
 puts("Manifest file: #{manifest}")
