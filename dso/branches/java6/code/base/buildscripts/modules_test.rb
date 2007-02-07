@@ -258,7 +258,7 @@ class SubtreeTestRun
 
     # The default timeout for tests, in seconds. Currently, this is 15 minutes.
     DEFAULT_TEST_TIMEOUT_SECONDS = 15 * 60
-    
+
     attr_accessor :skipped
     alias skipped? skipped
 
@@ -638,7 +638,7 @@ END
         if appserver_jre
           if config_jre
             result = jvm_set[config_jre]
-            unless result.version == appserver_jre.version
+            unless result.version.same_minor_version(appserver_jre.version)
               raise(JvmVersionMismatchException,
                     "JDK specified is incompatible with #{Registry[:appserver]}," +
                     " which requires #{appserver_jre}")
@@ -649,7 +649,7 @@ END
         else
           if config_jre
             result = jvm_set[config_jre]
-            if result.version < @build_module.jdk.version
+            if result.version < @build_module.jdk.version.release_version
                 raise(JvmVersionMismatchException,
                   "JDK specified is incompatible with #{@build_module.name}," +
                   " which requires #{@build_module.jdk}")
@@ -661,7 +661,7 @@ END
       else
         if config_jre
           result = jvm_set[config_jre]
-            if result.version < @build_module.jdk.version
+            if result.version < @build_module.jdk.version.release_version
                 raise(JvmVersionMismatchException,
                   "JDK specified is incompatible with #{@build_module.name}," +
                   " which requires #{@build_module.jdk}")
