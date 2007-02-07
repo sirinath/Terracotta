@@ -838,7 +838,7 @@ end
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            'tests-jdk' => config_source['tests-jdk']
+            'tests-jdk' => @jvm_set['tests-jdk'].short_description
         }        
         
         # Parameters data.
