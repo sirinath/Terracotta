@@ -838,8 +838,12 @@ end
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
                            config_source['tc.tests.configuration.appserver.minor-version'],
 
-            'tests-jdk' => @jvm_set['tests-jdk'].short_description
+            
         }        
+        
+        @jvm_set.keys.each do |k|
+            configuration_data[k] = @jvm_set[k]
+        end
         
         # Parameters data.
         parameters_data = {
