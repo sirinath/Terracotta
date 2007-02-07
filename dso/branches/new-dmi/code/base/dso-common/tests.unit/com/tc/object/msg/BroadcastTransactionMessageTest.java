@@ -14,6 +14,7 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestMessageChannel;
 import com.tc.object.ObjectID;
+import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
@@ -68,7 +69,7 @@ public class BroadcastTransactionMessageTest extends TestCase {
       lookupObjectIDs.add(new ObjectID(i));
     }
     msg.initialize(changes, lookupObjectIDs, serializer, lockIDs, cid, txID, channelID, gtx, txnType, lowGlobalTransactionIDWatermark,
-                   notified, new HashMap());
+                   notified, new HashMap(), new DmiDescriptor[0]);
     msg.dehydrate();
 
     TCByteBuffer[] data = out.toArray();

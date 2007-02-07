@@ -87,7 +87,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
         responseMessage.initialize(prunedChanges, lookupObjectIDs, bcc.getSerializer(), bcc.getLockIDs(),
                                    getNextChangeIDFor(clientID), txnID, committerID, bcc.getGlobalTransactionID(), bcc
                                        .getTransactionType(), bcc.getLowGlobalTransactionIDWatermark(),
-                                   notifiedWaiters, newRoots);
+                                   notifiedWaiters, newRoots, bcc.getDmiDescriptors());
 
         responseMessage.send();
       }

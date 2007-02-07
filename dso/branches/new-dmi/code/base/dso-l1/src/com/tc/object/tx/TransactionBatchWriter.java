@@ -126,7 +126,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     out.writeInt(dmis.size());
     for (Iterator i = dmis.iterator(); i.hasNext();) {
       DmiDescriptor dd = (DmiDescriptor) i.next();
-      dd.writeTo(out);
+      dd.serializeTo(out);
     }
 
     Map changes = txn.getChangeBuffers();

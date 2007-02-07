@@ -5,7 +5,8 @@
 package com.tc.object.dmi;
 
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutputStream;
+import com.tc.io.TCByteBufferOutput;
+import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
 import com.tc.util.Assert;
 
@@ -14,10 +15,10 @@ import java.io.IOException;
 /**
  * Representation of a distributed method invocation
  */
-public class DmiDescriptor {
+public class DmiDescriptor implements TCSerializable {
 
-  private final ObjectID receiverId;
-  private final ObjectID dmiCallId;
+  private ObjectID receiverId;
+  private ObjectID dmiCallId;
 
   // public static Object[] prepareParameters(Object[] params, LiteralValues literals, ClientObjectManager
   // objectManager) {
@@ -31,6 +32,10 @@ public class DmiDescriptor {
   // }
   // }
   // }
+  public DmiDescriptor() {
+    receiverId = null;
+    dmiCallId = null;
+  }
 
   public DmiDescriptor(ObjectID receiverId, ObjectID dmiCallId) {
     Assert.pre(receiverId != null);
@@ -48,15 +53,14 @@ public class DmiDescriptor {
     return dmiCallId;
   }
 
-  public static DmiDescriptor readFrom(TCByteBufferInputStream in) throws IOException {
-    final ObjectID receiverId = new ObjectID(in.readLong());
-    final ObjectID dmiCallId = new ObjectID(in.readLong());
-    final DmiDescriptor rv = new DmiDescriptor(receiverId, dmiCallId);
-    return rv;
+  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
+    receiverId = new ObjectID(serialInput.readLong());
+    dmiCallId = new ObjectID(serialInput.readLong());
+    return this;
   }
 
-  public void writeTo(TCByteBufferOutputStream out) {
-    out.writeLong(receiverId.toLong());
-    out.writeLong(dmiCallId.toLong());
+  public void serializeTo(TCByteBufferOutput serialOutput) {
+    serialOutput.writeLong(receiverId.toLong());
+    serialOutput.writeLong(dmiCallId.toLong());
   }
 }
