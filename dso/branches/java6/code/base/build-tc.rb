@@ -723,7 +723,7 @@ end
               setUpSet << subtree
             rescue JvmVersionMismatchException => e
               if monkey?
-                puts("JVM version mismatch...skipping subtree #{subtree}")
+                STDERR.puts("JVM version mismatch...skipping subtree #{subtree}")
               else
                 raise
               end
