@@ -64,6 +64,14 @@ class JavaVersion
       major == other.major && minor == other.minor
     end
 
+    # Returns a new JavaVersion object that is the same as the major and minor
+    # version of this JavaVersion.  For example, if this JavaVersion object has
+    # version 1.4.2_11, then this method will return a JavaVersion object that
+    # has version 1.4.0.
+    def release_version
+      JavaVersion.new("#{@major}.#{@minor}.0")
+    end
+
     # Returns a number less than zero, zero, or a number greater than zero as this
     # version is less than, exactly equal to, or greater than the other supplied version.
     def <=>(other)
