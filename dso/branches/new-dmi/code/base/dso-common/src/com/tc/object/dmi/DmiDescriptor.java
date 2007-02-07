@@ -4,6 +4,7 @@
  */
 package com.tc.object.dmi;
 
+import com.tc.async.api.EventContext;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
@@ -15,23 +16,11 @@ import java.io.IOException;
 /**
  * Representation of a distributed method invocation
  */
-public class DmiDescriptor implements TCSerializable {
+public class DmiDescriptor implements TCSerializable, EventContext {
 
   private ObjectID receiverId;
   private ObjectID dmiCallId;
 
-  // public static Object[] prepareParameters(Object[] params, LiteralValues literals, ClientObjectManager
-  // objectManager) {
-  // final Object[] rv = new Object[params.length];
-  // for (int i = 0; i < params.length; i++) {
-  // Object param = params[i];
-  // if (literals.isLiteralInstance(param)) {
-  // rv[i] = param;
-  // } else {
-  // rv[i] = objectManager.lookupOrCreate(param).getObjectID();
-  // }
-  // }
-  // }
   public DmiDescriptor() {
     receiverId = null;
     dmiCallId = null;

@@ -41,8 +41,9 @@ import com.tc.object.field.TCFieldFactory;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.ClientGlobalTransactionManagerImpl;
 import com.tc.object.handler.BatchTransactionAckHandler;
-import com.tc.object.handler.LockResponseHandler;
 import com.tc.object.handler.ClientCoordinationHandler;
+import com.tc.object.handler.DmiHandler;
+import com.tc.object.handler.LockResponseHandler;
 import com.tc.object.handler.ReceiveObjectHandler;
 import com.tc.object.handler.ReceiveRootIDHandler;
 import com.tc.object.handler.ReceiveTransactionCompleteHandler;
@@ -248,9 +249,11 @@ public class DistributedObjectClient extends SEDA {
                                                    new ReceiveRootIDHandler(), 1, maxSize);
     Stage receiveObject = stageManager.createStage(ClientConfigurationContext.RECEIVE_OBJECT_STAGE,
                                                    new ReceiveObjectHandler(), 1, maxSize);
+    Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(), 1, maxSize);
+    
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE, new ReceiveTransactionHandler(channel
-            .getChannelIDProvider(), channel.getAcknowledgeTransactionMessageFactory(), gtxManager, sessionManager), 1,
+            .getChannelIDProvider(), channel.getAcknowledgeTransactionMessageFactory(), gtxManager, sessionManager, dmiStage.getSink()), 1,
                      maxSize);
     Stage oidRequestResponse = stageManager.createStage(ClientConfigurationContext.OBJECT_ID_REQUEST_RESPONSE_STAGE,
                                                         remoteIDProvider, 1, maxSize);
