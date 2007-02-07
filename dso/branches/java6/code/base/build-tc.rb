@@ -836,7 +836,7 @@ end
             'platform' => @build_environment.platform,
             'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
-                           config_source['tc.tests.configuration.appserver.minor-version'],
+                           config_source['tc.tests.configuration.appserver.minor-version']
 
             
         }        
