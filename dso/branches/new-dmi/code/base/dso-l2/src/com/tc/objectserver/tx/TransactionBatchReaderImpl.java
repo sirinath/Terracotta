@@ -7,7 +7,7 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ObjectID;
-import com.tc.object.dmi.BufferedDmiDescriptor;
+import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.lockmanager.api.LockID;
@@ -91,9 +91,9 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     }
 
     final int dmiCount  = in.readInt();
-    final BufferedDmiDescriptor[] dmis = new BufferedDmiDescriptor[dmiCount]; 
+    final DmiDescriptor[] dmis = new DmiDescriptor[dmiCount]; 
     for (int i = 0; i < dmiCount; i++) {
-      dmis[i] = BufferedDmiDescriptor.readFrom(in);
+      dmis[i] = DmiDescriptor.readFrom(in);
     }
     
     List dnas = new ArrayList();

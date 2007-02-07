@@ -11,7 +11,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
-import com.tc.object.dmi.BufferedDmiDescriptor;
+import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
@@ -143,7 +143,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     TxnType txnType = TxnType.NORMAL;
     SequenceID sequenceID = new SequenceID(1);
     ServerTransaction tx1 = new ServerTransactionImpl(new TxnBatchID(1), tid1, sequenceID, lockIDs, cid1, dnas,
-                                                      serializer, newRoots, txnType, new LinkedList(), new BufferedDmiDescriptor[0]);
+                                                      serializer, newRoots, txnType, new LinkedList(), new DmiDescriptor[0]);
 
     // Test with one waiter
     transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid2);
@@ -217,7 +217,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     gtxm.clear();
     transactionManager.acknowledgement(cid1, tid2, cid2);
     ServerTransaction tx2 = new ServerTransactionImpl(new TxnBatchID(2), tid2, sequenceID, lockIDs, cid1, dnas,
-                                                      serializer, newRoots, txnType, new LinkedList(), new BufferedDmiDescriptor[0]);
+                                                      serializer, newRoots, txnType, new LinkedList(), new DmiDescriptor[0]);
     txns.clear();
     txns.add(tx2);
     doStages(txns);
