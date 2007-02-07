@@ -73,7 +73,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
         # Load the XMLBeans task, so we can use it to process config files when needed by that target.
         ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
     end
-    
+
     def monkey?
       config_source = Registry[:config_source]
       config_source['tc.build-control.cruise-control.monkey-root'] || config_source['fake-monkey']
@@ -672,7 +672,9 @@ end
                 testrun.run(@script_results)
             end, testrun_record)
         ensure
-            raise unless have_started_at_least_one_test
+            if !have_started_at_least_one_test && !monkey?
+              raise("No tests ran")
+            end
 
             testrun_record.tearDown
 
@@ -706,7 +708,7 @@ end
     # the way it is right now.)
     def prepare_and_run_block_on_tests(test_set, testrun_results, testrun_proc, testrun_record = nil)
         test_runs = { }
-        
+
         setUpSet = Set.new
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
@@ -826,7 +828,7 @@ end
     # * *Parameters* is that data which should not affect the results of tests, but which may well be common to many test runs. This is put in the database in a manner that allows us to share it between many monkey runs. (Note that this includes, among other things, hostname -- if two hosts have the same JVM, the same OS, architecture, etc., they really, truly should produce the same results.)
     # * *Extra* data is that data which likely differs between every run of the monkey, and so which is simply stored directly associated with the monkey run. This is things like build date and time, revision number, etc.
     def write_build_info_file
-        
+
         # Configuration data.
         configuration_data = {
             'host' => @build_environment.build_hostname,
@@ -840,11 +842,11 @@ end
             'tests-jdk' => config_source['tests-jdk'],
             'JSSE-1.4' => @jvm_set['J2SE-1.4'].short_description,
             'JSSE-1.5' => @jvm_set['J2SE-1.5'].short_description
-            
-        }        
-        
-        
-        
+
+        }
+
+
+
         # Parameters data.
         parameters_data = {
           'monkey-name' => config_source['monkey-name']
