@@ -18,20 +18,23 @@ import java.io.IOException;
  */
 public class DmiDescriptor implements TCSerializable, EventContext {
 
-  private ObjectID receiverId;
-  private ObjectID dmiCallId;
+  private ObjectID       receiverId;
+  private ObjectID       dmiCallId;
+  private DmiClassSpec[] classSpecs;
 
   public DmiDescriptor() {
     receiverId = null;
     dmiCallId = null;
   }
 
-  public DmiDescriptor(ObjectID receiverId, ObjectID dmiCallId) {
+  public DmiDescriptor(ObjectID receiverId, ObjectID dmiCallId, DmiClassSpec[] classSpecs) {
     Assert.pre(receiverId != null);
     Assert.pre(dmiCallId != null);
+    Assert.pre(classSpecs != null);
 
     this.receiverId = receiverId;
     this.dmiCallId = dmiCallId;
+    this.classSpecs = classSpecs;
   }
 
   public ObjectID getReceiverId() {
@@ -42,14 +45,30 @@ public class DmiDescriptor implements TCSerializable, EventContext {
     return dmiCallId;
   }
 
-  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
-    receiverId = new ObjectID(serialInput.readLong());
-    dmiCallId = new ObjectID(serialInput.readLong());
+  public DmiClassSpec[] getClassSpecs() {
+    return classSpecs;
+  }
+
+  public Object deserializeFrom(TCByteBufferInputStream in) throws IOException {
+    receiverId = new ObjectID(in.readLong());
+    dmiCallId = new ObjectID(in.readLong());
+    final int size = in.readInt();
+    classSpecs = new DmiClassSpec[size];
+    for (int i = 0; i < classSpecs.length; i++) {
+      final String classLoaderDesc = in.readString();
+      final String className = in.readString();
+      classSpecs[i] = new DmiClassSpec(classLoaderDesc, className);
+    }
     return this;
   }
 
-  public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeLong(receiverId.toLong());
-    serialOutput.writeLong(dmiCallId.toLong());
+  public void serializeTo(TCByteBufferOutput out) {
+    out.writeLong(receiverId.toLong());
+    out.writeLong(dmiCallId.toLong());
+    out.writeInt(classSpecs.length);
+    for (int i = 0; i < classSpecs.length; i++) {
+      out.writeString(classSpecs[i].getClassLoaderDesc());
+      out.writeString(classSpecs[i].getClassName());
+    }
   }
 }

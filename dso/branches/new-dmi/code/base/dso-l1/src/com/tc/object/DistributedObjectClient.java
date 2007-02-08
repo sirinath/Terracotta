@@ -249,7 +249,7 @@ public class DistributedObjectClient extends SEDA {
                                                    new ReceiveRootIDHandler(), 1, maxSize);
     Stage receiveObject = stageManager.createStage(ClientConfigurationContext.RECEIVE_OBJECT_STAGE,
                                                    new ReceiveObjectHandler(), 1, maxSize);
-    Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(), 1, maxSize);
+    Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(manager.getDmiManager()), 1, maxSize);
     
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE, new ReceiveTransactionHandler(channel
