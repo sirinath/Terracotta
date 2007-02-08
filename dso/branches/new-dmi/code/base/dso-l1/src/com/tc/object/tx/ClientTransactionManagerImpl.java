@@ -13,6 +13,7 @@ import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.loaders.Namespace;
@@ -660,6 +661,10 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     int get() {
       return callCount;
     }
+  }
+
+  public void addDmiDescriptor(DmiDescriptor dd) {
+    getTransaction().addDmiDescritor(dd);
   }
 
 }

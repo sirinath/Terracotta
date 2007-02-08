@@ -50,7 +50,7 @@ public class DmiManagerImpl implements DmiManager {
     try {
       checkClassAvailability(classProvider, dd.getClassSpecs());
     } catch (ClassNotFoundException e1) {
-      // FIXME: log 
+      // FIXME: log
       return;
     }
     try {
@@ -62,7 +62,8 @@ public class DmiManagerImpl implements DmiManager {
     }
   }
 
-  private static void invoke(DistributedMethodCall dmc) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+  private static void invoke(DistributedMethodCall dmc) throws IllegalArgumentException, IllegalAccessException,
+      InvocationTargetException {
     final ClassLoader origContextLoader = Thread.currentThread().getContextClassLoader();
     Method m = getMethod(dmc);
     m.setAccessible(true);
@@ -113,10 +114,15 @@ public class DmiManagerImpl implements DmiManager {
   }
 
   private static DmiClassSpec[] getClassSpecs(ClassProvider classProvider, Object receiver, Object[] params) {
+    Assert.pre(classProvider != null);
+    Assert.pre(receiver != null);
+    Assert.pre(params != null);
+
     Set set = new HashSet();
     set.add(getClassSpec(classProvider, receiver));
     for (int i = 0; i < params.length; i++) {
-      set.add(getClassSpec(classProvider, params[i]));
+      final Object p = params[i];
+      if (p != null) set.add(getClassSpec(classProvider, p));
     }
     DmiClassSpec[] rv = new DmiClassSpec[set.size()];
     set.toArray(rv);
