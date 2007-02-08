@@ -101,7 +101,7 @@ class BuildSubtree
                     ant.src(:path => source_root.to_s) { }
                 }
             end
-            
+
             if @resources_exists
                 resources_dir = build_results.classes_directory(self).to_s
                 ant.copy(:todir => resources_dir) {
@@ -111,15 +111,15 @@ class BuildSubtree
 
             create_build_data(config_source, build_results, build_environment)
         else
-          # --- NOTHING TO DO HERE  
+          # --- NOTHING TO DO HERE
         end
-        
+
         # for plugin type modules, there will be a META-INF directory at the top-level
         # we'll copy it over to the resources directory of the compile's output
         if build_module.plugin?
             plugins_metainf_dir = FilePath.new(build_module.root, "META-INF").to_s
-            resources_dir       = build_results.classes_directory(self).to_s
-            ant.copy(:todir => resources_dir) {
+            resources_dir       = FilePath.new(build_results.classes_directory(self), "META-INF").ensure_directory
+            ant.copy(:todir => resources_dir.to_s) {
                 ant.fileset(:dir => plugins_metainf_dir, :includes => '**/*')
             }
         end
