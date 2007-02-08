@@ -24,8 +24,6 @@ import com.tc.object.TraverseTest;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.event.DmiManager;
-import com.tc.object.event.DmiManagerImpl;
-import com.tc.object.event.NullDmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.NullRuntimeLogger;
@@ -160,11 +158,7 @@ public class ManagerImpl implements Manager {
 
     this.optimisticTransactionManager = new OptimisticTransactionManagerImpl(objectManager, txManager);
 
-    if (!objectManager.enableDistributedMethods()) {
-      this.methodCallManager = new NullDmiManager();
-    } else {
-      this.methodCallManager = new DmiManagerImpl(classProvider, objectManager, runtimeLogger);
-    }
+    this.methodCallManager = dso.getDmiManager();
 
     this.shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
         .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(),

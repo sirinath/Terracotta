@@ -21,7 +21,7 @@ public class DmiHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     DmiDescriptor dd = (DmiDescriptor) context;
-
+    
     dmiMgr.invoke(dd);
   }
 

@@ -28,13 +28,13 @@ public class DmiManagerImpl implements DmiManager {
   private final ClientObjectManager objMgr;
   private final RuntimeLogger       runtimeLogger;
 
-  public DmiManagerImpl(ClassProvider classProvider, ClientObjectManager objMgr, RuntimeLogger runtimeLogger) {
-    Assert.pre(classProvider != null);
-    Assert.pre(objMgr != null);
-    Assert.pre(runtimeLogger != null);
-    this.classProvider = classProvider;
-    this.objMgr = objMgr;
-    this.runtimeLogger = runtimeLogger;
+  public DmiManagerImpl(ClassProvider cp, ClientObjectManager om, RuntimeLogger rl) {
+    Assert.pre(cp != null);
+    Assert.pre(om != null);
+    Assert.pre(rl != null);
+    this.classProvider = cp;
+    this.objMgr = om;
+    this.runtimeLogger = rl;
   }
 
   public void distributedInvoke(Object receiver, String method, Object[] params) {

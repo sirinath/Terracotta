@@ -261,10 +261,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public boolean enableDistributedMethods() {
-      throw new ImplementMe();
-    }
-
     public void shutdown() {
       throw new ImplementMe();
     }
