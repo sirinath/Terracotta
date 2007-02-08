@@ -101,6 +101,7 @@ class BuildSubtree
                     ant.src(:path => source_root.to_s) { }
                 }
             end
+            
             if @resources_exists
                 resources_dir = build_results.classes_directory(self).to_s
                 ant.copy(:todir => resources_dir) {
@@ -110,12 +111,17 @@ class BuildSubtree
 
             create_build_data(config_source, build_results, build_environment)
         else
-            if build_module.plugin? && @resources_exists
-                resources_dir = build_results.classes_directory(self).to_s
-                ant.copy(:todir => resources_dir) {
-                    ant.fileset(:dir => resource_root.to_s, :includes => '**/*')
-                }
-            end
+          # --- NOTHING TO DO HERE  
+        end
+        
+        # for plugin type modules, there will be a META-INF directory at the top-level
+        # we'll copy it over to the resources directory of the compile's output
+        if build_module.plugin?
+            plugins_metainf_dir = FilePath.new(build_module.root, "META-INF").to_s
+            resources_dir       = build_results.classes_directory(self).to_s
+            ant.copy(:todir => resources_dir) {
+                ant.fileset(:dir => plugins_metainf_dir, :includes => '**/*')
+            }
         end
     end
 
@@ -159,12 +165,9 @@ class BuildModule
 
     # Creates a JAR file for a plugin module and stores it in build/plugins.
     def create_plugin_jar(ant, build_results)
-      jarfile = FilePath.new(build_results.plugins_home, self.name + ".jar")
-      basedir = FilePath.new(build_results.build_dir, self.name)
+      jarfile  = FilePath.new(build_results.plugins_home, self.name + ".jar")
+      basedir  = FilePath.new(build_results.build_dir, self.name, 'src.classes')
       manifest = FilePath.new(basedir, "META-INF", "MANIFEST.MF")
-puts("basedir: #{basedir}")
-puts("jarfile: #{jarfile}")
-puts("Manifest file: #{manifest}")
       ant.jar(:destfile => jarfile.to_s, :basedir => basedir.to_s, :manifest => manifest.to_s)
     end
 end
