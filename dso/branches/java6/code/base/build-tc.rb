@@ -835,17 +835,22 @@ end
 
         # Configuration data.
         configuration_data = {
-            'host' => @build_environment.build_hostname,
-            'branch' => @build_environment.current_branch,
-            'revision' => @build_environment.current_revision,
-            'target' => config_source['tc.build-control.build.target'],
-            'platform' => @build_environment.platform,
-            'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
-                           config_source['tc.tests.configuration.appserver.major-version'] + "." +
-                           config_source['tc.tests.configuration.appserver.minor-version'],
-            'tests-jdk' => config_source['tests-jdk'],
-            'JSSE-1.4' => @jvm_set['J2SE-1.4'].short_description,
-            'JSSE-1.5' => @jvm_set['J2SE-1.5'].short_description
+            'build-target' => config_source['tc.build-control.build.target'],            
+            
+            'monkey-host' => @build_environment.build_hostname,
+            'monkey-name' => config_source['monkey-name'],
+            'monkey-platform' => @build_environment.platform,
+            
+            'source-branch' => @build_environment.current_branch,
+            'source-revision' => @build_environment.current_revision,            
+            
+            'test-appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
+                                config_source['tc.tests.configuration.appserver.major-version'] + "." +
+                                config_source['tc.tests.configuration.appserver.minor-version'],
+                           
+            'appointed-tests-jdk' => @jvm_set['tests-jdk'].short_description,
+            'jdk-1.4-compile' => @jvm_set['J2SE-1.4'].short_description,
+            'jdk-1.5-compile' => @jvm_set['J2SE-1.5'].short_description
 
         }
 
@@ -853,7 +858,7 @@ end
 
         # Parameters data.
         parameters_data = {
-          'monkey-name' => config_source['monkey-name']
+          # nothing right now  
         }
 
         # Extra data.
@@ -864,7 +869,8 @@ end
         # Test configuration data, which goes in the configuration section.
         test_config_data = { }
         config_source.keys.each do |key|
-            test_config_data[key] = config_source[key] if key =~ /^tc\.tests\.configuration\..*/i
+            next if key =~ /appserver/
+            test_config_data[key] = config_source[key] if key =~ /^tc\.tests\.configuration\..*/i 
         end
 
         File.open(@build_results.build_information_file.to_s, "w") do |file|
