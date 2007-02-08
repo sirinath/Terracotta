@@ -249,27 +249,6 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
         run_tests(test_set) unless @script_results.failed?
     end
 
-    # Refreshes the CruiseControl config; this is called by the monkey so that changes in the
-    # CruiseControl configuration can get automatically picked up. Uses a separate properties
-    # file for overrides that are given on the command line to the Ruby 'monkey' tool, since
-    # otherwise they'll be lost when we regenerate the configuration.
-    def refresh_cruisecontrol_config
-      depends :init
-
-      raise RuntimeError, "You must specify a monkey name via the 'monkey-name' configuration property" if config_source['monkey-name'].nil?
-      command = 'ruby'
-      args = [ FilePath.new(config_source['tc.build-control.cruise-control.monkey-root'], "monkey.rb").canonicalize.to_s, 'generate-config', config_source['monkey-name'], '--source=' + File.join(File.dirname(__FILE__), "..", "..") ]
-
-      overrides_file = config_source['cruise-control.command-line-data-file']
-      unless overrides_file.blank?
-          File.open(overrides_file, "r") do |file|
-              file.each { |line| args << "%s=%s" % [ $1, $2 ] if line =~ /^\s*([^=]+?)\s*=\s*(.*?)\s*$/ }
-          end
-      end
-
-      @platform.exec('ruby', *args)
-   end
-
     # Runs the crash tests. Uses the internal configuration source to set the required property.
     def check_crashtests
         depends :init, :compile
@@ -532,9 +511,9 @@ END
       # do a whole lot of nothing
     end
 
-def test_find_jvm
-  puts(@jvm_set.find_jvm(:path => '/usr/lib/j2sdk1.5-sun'))
-end
+    def test_find_jvm
+      puts(@jvm_set.find_jvm(:path => '/usr/lib/j2sdk1.5-sun'))
+    end
 
     protected
     # Overrides superclass method to provide for implicit targets.
@@ -680,7 +659,9 @@ end
             elsif $!
               raise
             else
-              raise("No tests ran at all! #{config_source['monkey-name']}") unless have_started_at_least_one_test
+              unless monkey?  
+                raise("No tests ran at all! #{config_source['monkey-name']}") unless have_started_at_least_one_test
+              end
             end
 
             testrun_record.tearDown
@@ -716,7 +697,7 @@ end
     def prepare_and_run_block_on_tests(test_set, testrun_results, testrun_proc, testrun_record = nil)
         test_runs = { }
 
-        setUpSet = Set.new
+        failed_setUpSet = Set.new
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
             test_runs[subtree] =
@@ -726,25 +707,22 @@ end
                                  tests_aggregation_directory)
 
             begin
-              test_runs[subtree].setUp
-              setUpSet << subtree
+              test_runs[subtree].setUp              
             rescue JvmVersionMismatchException => e
-              if monkey?
-                STDERR.puts("JVM version mismatch...skipping subtree #{subtree}")
-              else
-                raise
-              end
+              STDERR.puts("#{e.message}...skipping subtree #{subtree}")
+              failed_setUpSet << subtree
             end
         end
 
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
             begin
-              testrun_proc.call(test_runs[subtree]) if setUpSet.member?(subtree)
+              testrun_proc.call(test_runs[subtree]) unless failed_setUpSet.member?(subtree)
             ensure
-                test_runs[subtree].tearDown
+              test_runs[subtree].tearDown
             end
         end
 
+        
     end
 
     # Finds the JVMs that we need to use -- one each for compiling and testing, for 1.4 and 1.5.
