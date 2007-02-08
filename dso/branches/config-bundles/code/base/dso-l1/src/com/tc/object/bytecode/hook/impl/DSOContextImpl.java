@@ -114,7 +114,10 @@ public class DSOContextImpl implements DSOContext {
 
   private void initPlugins(final Plugin[] plugins) throws BundleException {
     for (int pos = 0; pos < plugins.length; ++pos) {
+      String bundle = plugins[pos].getName() + "-" + plugins[pos].getVersion();
+      logger.info("Installing OSGI bundle " + bundle);
       osgiRuntime.installBundle(plugins[pos].getName(), plugins[pos].getVersion());
+      logger.info("Installation of OSGI bundle " + bundle + " successful");
     }
     if (configHelper instanceof StandardDSOClientConfigHelper) {
       final Dictionary serviceProps = new Hashtable();

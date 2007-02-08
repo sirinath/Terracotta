@@ -648,6 +648,9 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    public boolean hasCustomAdapter(String fullName) {
+      throw new ImplementMe();
+    }
   }
 
 }

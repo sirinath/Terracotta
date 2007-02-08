@@ -35,6 +35,15 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
   static {
     System.setProperty(Constants.FRAMEWORK_BOOTDELEGATION, "*");
     System.setProperty(KF_BUNDLESTORAGE_PROP, KF_BUNDLESTORAGE_PROP_DEFAULT);
+/*
+    try {
+      framework = new Framework(null);
+      framework.launch(0);
+    }
+    catch (Exception e) {
+      throw new RuntimeException("Error initializing OSGi framework", e);
+    }
+*/
   }
 
   /**
@@ -42,6 +51,7 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
    */
   public KnopflerfishOSGi(final URL[] bundleRepositories) throws Exception {
     this.bundleRepositories = bundleRepositories;
+    System.setProperty("org.knopflerfish.osgi.registerserviceurlhandler", "false");
     framework = new Framework(null);
     framework.launch(0);
   }

@@ -43,7 +43,9 @@ public final class StrutsTerracottaConfigurator implements BundleActivator {
     spec.setHonorTransient(true);
 
     // Hack for Struts <bean:include> tag
-    configHelper.addCustomAdapter("org.apache.struts.taglib.bean.IncludeTag", IncludeTagAdapter.class);
+    if (!configHelper.hasCustomAdapter("org.apache.struts.taglib.bean.IncludeTag")) {
+      configHelper.addCustomAdapter("org.apache.struts.taglib.bean.IncludeTag", IncludeTagAdapter.class);
+    }
   }
 
 }

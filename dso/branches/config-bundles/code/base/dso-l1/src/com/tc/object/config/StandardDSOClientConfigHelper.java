@@ -1321,8 +1321,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return DEAFULT_INSTRUMENTATION_DESCRIPTOR;
   }
 
-  private boolean hasCustomAdapter(String fullName) {
-    return this.customAdapters.containsKey(fullName);
+  public boolean hasCustomAdapter(String fullName) {
+    return customAdapters.containsKey(fullName);
   }
 
   private String outerClassnameWithoutInner(String fullName) {

@@ -163,4 +163,6 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   public Plugins getPlugins();
 
+  public boolean hasCustomAdapter(String fullName);
+
 }

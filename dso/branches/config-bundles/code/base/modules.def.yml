@@ -381,8 +381,19 @@ modules:
         compiler_version: 1.4
         plugin: true
       dependencies:
+        - aspectwerkz
+        - linked-child-process
+        - common
+        - dso-common
+        - management
+        - dso-common-jdk15
         - dso-l1
+        - dso-l2
+        - simulator
+        - deploy
         - thirdparty
+        - legacy-test-tree
+        - dso-memory-datastore
   - clustered-commons-collections-3.1:
       options:
         compiler_version: 1.4

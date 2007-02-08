@@ -858,6 +858,10 @@ public class HashMapTCTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    public boolean hasCustomAdapter(String fullName) {
+      throw new ImplementMe();
+    }
+
   }
 
   private static class SimpleEntry implements Map.Entry {

@@ -28,6 +28,10 @@ class BuildResults
         @build_dir.delete
     end
 
+    def module_root(the_module)
+      FilePath.new(@build_dir, the_module.name)
+    end
+
     # Returns the root of the classes hierarchy for the given build subtree -- that is, if you
     # want to use classes from the given subtree, this must be on your CLASSPATH.
     #

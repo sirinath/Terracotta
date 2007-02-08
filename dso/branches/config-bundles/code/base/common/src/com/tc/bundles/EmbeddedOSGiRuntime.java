@@ -8,6 +8,8 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import com.tc.config.Directories;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.terracottatech.configV3.Plugins;
 
 import java.io.File;
@@ -19,6 +21,7 @@ import java.util.Dictionary;
  * <a href="http://www.osgi.org/">OSGi web page</a>
  */
 public interface EmbeddedOSGiRuntime {
+  public static final String PLUGINS_URL_PROPERTY_NAME = "tc.tests.configuration.plugins.url";
 
   void installBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
@@ -38,12 +41,28 @@ public interface EmbeddedOSGiRuntime {
   void shutdown() throws BundleException;
 
   static class Factory {
+    private static final TCLogger logger = TCLogging.getLogger(EmbeddedOSGiRuntime.Factory.class);
     public static EmbeddedOSGiRuntime createOSGiRuntime(final Plugins plugins) throws Exception {
+      int extraRepoCount = 1;
+      final String pluginsUrl = System.getProperty(PLUGINS_URL_PROPERTY_NAME);
+      if (pluginsUrl != null) {
+        extraRepoCount++;
+      }
+
+      final URL[] bundleRepositories = new URL[plugins.sizeOfRepositoryArray() + extraRepoCount];
       final File bundleRoot = new File(Directories.getInstallationRoot(), "plugins");
-      final URL[] bundleRepositories = new URL[plugins.sizeOfRepositoryArray() + 1];
       bundleRepositories[0] = bundleRoot.toURL();
-      for (int pos = 1; pos < bundleRepositories.length; ++pos) {
-        bundleRepositories[pos] = new URL(plugins.getRepositoryArray(pos - 1));
+      if (pluginsUrl != null) {
+        bundleRepositories[1] = new URL(pluginsUrl);
+      }
+
+      for (int i = extraRepoCount; i < bundleRepositories.length; i++) {
+        bundleRepositories[i] = new URL(plugins.getRepositoryArray(i - extraRepoCount));
+      }
+
+      logger.info("OSGi Bundle Repositories:");
+      for (int i = 0; i < bundleRepositories.length; i++) {
+        logger.info(bundleRepositories[i]);
       }
       return new KnopflerfishOSGi(bundleRepositories);
     }
