@@ -843,10 +843,10 @@ end
             'source-branch' => @build_environment.current_branch,
             'source-revision' => @build_environment.current_revision,            
             
-            'test-appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
-                                config_source['tc.tests.configuration.appserver.major-version'] + "." +
-                                config_source['tc.tests.configuration.appserver.minor-version'],
-            'test-jvmargs'  => config_source['jvmargs'],
+            'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
+                            config_source['tc.tests.configuration.appserver.major-version'] + "." +
+                            config_source['tc.tests.configuration.appserver.minor-version'],
+            'jvmargs'  => config_source['jvmargs'],
                            
             'appointed-tests-jdk' => @jvm_set['tests-jdk'].short_description,
             'jdk-1.4-compile' => @jvm_set['J2SE-1.4'].short_description,
