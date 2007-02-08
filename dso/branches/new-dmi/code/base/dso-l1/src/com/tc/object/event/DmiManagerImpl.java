@@ -5,11 +5,14 @@
 package com.tc.object.event;
 
 import com.tc.asm.Type;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiClassSpec;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.logging.RuntimeLogger;
 import com.tc.util.Assert;
 import com.tcclient.object.DistributedMethodCall;
 
@@ -19,14 +22,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DmiManagerImpl implements DmiManager {
+  private static final TCLogger     logger = TCLogging.getLogger(DmiManager.class);
+
   private final ClassProvider       classProvider;
   private final ClientObjectManager objMgr;
+  private final RuntimeLogger       runtimeLogger;
 
-  public DmiManagerImpl(ClassProvider classProvider, ClientObjectManager objMgr) {
+  public DmiManagerImpl(ClassProvider classProvider, ClientObjectManager objMgr, RuntimeLogger runtimeLogger) {
     Assert.pre(classProvider != null);
     Assert.pre(objMgr != null);
+    Assert.pre(runtimeLogger != null);
     this.classProvider = classProvider;
     this.objMgr = objMgr;
+    this.runtimeLogger = runtimeLogger;
   }
 
   public void distributedInvoke(Object receiver, String method, Object[] params) {
@@ -40,25 +48,35 @@ public class DmiManagerImpl implements DmiManager {
     final ObjectID receiverId = objMgr.lookupOrCreate(receiver).getObjectID();
     final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc).getObjectID();
     final DmiClassSpec[] classSpecs = getClassSpecs(classProvider, receiver, params);
-    DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs);
-    dd.getClass();
-    // FIXME: add dd to current transaction...
+    final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs);
+    if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(receiver.getClass().getName(), dmc
+        .getMethodName(), dmc.getParameterDesc());
+    objMgr.getTransactionManager().addDmiDescriptor(dd);
   }
 
   public void invoke(DmiDescriptor dd) {
     Assert.pre(dd != null);
     try {
       checkClassAvailability(classProvider, dd.getClassSpecs());
-    } catch (ClassNotFoundException e1) {
-      // FIXME: log
+    } catch (ClassNotFoundException e) {
+      if (logger.isDebugEnabled()) logger.debug("Ignoring distributed method call", e);
+      return;
+    }
+    DistributedMethodCall dmc;
+    try {
+      dmc = (DistributedMethodCall) objMgr.lookupObject(dd.getDmiCallId());
+    } catch (Throwable e) {
+      if (logger.isDebugEnabled()) logger.debug("Ignoring distributed method call", e);
       return;
     }
     try {
-      DistributedMethodCall dmc = (DistributedMethodCall) objMgr.lookupObject(dd.getDmiCallId());
+      if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(dmc.getReceiver().getClass()
+          .getName(), dmc.getMethodName(), dmc.getParameterDesc());
       invoke(dmc);
     } catch (Throwable e) {
-      // drop this call
-      // FIXME: log error
+      runtimeLogger.distributedMethodCallError(dmc.getReceiver().getClass().getName(), dmc.getMethodName(), dmc
+          .getParameterDesc(), e);
+      if (logger.isDebugEnabled()) logger.debug("Ignoring distributed method call", e);
     }
   }
 

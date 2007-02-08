@@ -163,7 +163,7 @@ public class ManagerImpl implements Manager {
     if (!objectManager.enableDistributedMethods()) {
       this.methodCallManager = new NullDmiManager();
     } else {
-      this.methodCallManager = new DmiManagerImpl(classProvider, objectManager);
+      this.methodCallManager = new DmiManagerImpl(classProvider, objectManager, runtimeLogger);
     }
 
     this.shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
