@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.config;
@@ -96,9 +96,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * The standard implementation of {@link DSOClientConfigHelper}.
- */
 public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private static final LiteralValues             literalValues                      = new LiteralValues();
@@ -234,13 +231,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     loader.loadSpringConfig((SpringApplication) springConfig.getBean());
 
     logger.debug("web-applications: " + this.applicationNames);
-
     logger.debug("roots: " + this.roots);
-
     logger.debug("transients: " + this.types);
-
     logger.debug("locks: " + this.locks);
-
     logger.debug("distributed-methods: " + ArrayUtils.toString(this.distributedMethods));
 
     rewriteHashtableAutLockSpecIfNecessary();

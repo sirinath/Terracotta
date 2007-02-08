@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.config;
 
@@ -41,10 +42,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-
 public class ConfigLoader {
   private final DSOClientConfigHelper config;
-  private final TCLogger logger;
+  private final TCLogger              logger;
 
   public ConfigLoader(DSOClientConfigHelper config, TCLogger logger) {
     this.config = config;
@@ -103,7 +103,7 @@ public class ConfigLoader {
   }
 
   public void loadSpringConfig(SpringApplication springApplication) throws ConfigurationSetupException {
-    if(springApplication!=null) {
+    if (springApplication != null) {
       SpringApps[] springApps = springApplication.getJeeApplicationArray();
       for (int i = 0; springApps != null && i < springApps.length; i++) {
         SpringApps springApp = springApps[i];
@@ -113,7 +113,7 @@ public class ConfigLoader {
       }
     }
   }
-  
+
   private void loadSpringApp(SpringApps springApp) throws ConfigurationSetupException {
     // TODO scope the following by app namespace https://jira.terracotta.lan/jira/browse/LKC-2284
     loadLocks(springApp.getLocks());
@@ -124,23 +124,24 @@ public class ConfigLoader {
       config.addApplicationName(springApp.getName()); // enable session support
     }
 
-    if(springApp.getApplicationContexts()!=null) {
+    if (springApp.getApplicationContexts() != null) {
       loadSpringAppContexts(springApp);
     }
   }
-  
-  
+
   private void loadSpringAppContexts(SpringApps springApp) {
     String appName = springApp.getName();
     boolean fastProxy = springApp.getFastProxy();
     SpringAppContext[] applicationContexts = springApp.getApplicationContexts().getApplicationContextArray();
-    for (int i = 0; applicationContexts!=null && i < applicationContexts.length; i++) {
+    for (int i = 0; applicationContexts != null && i < applicationContexts.length; i++) {
       SpringAppContext appContext = applicationContexts[i];
       if (appContext == null) continue;
 
       DSOSpringConfigHelper springConfigHelper = new StandardDSOSpringConfigHelper();
       springConfigHelper.addApplicationNamePattern(appName);
       springConfigHelper.setFastProxyEnabled(fastProxy); // copy flag to all subcontexts
+      springConfigHelper.setRootName(appContext.getRootName());
+      springConfigHelper.setLocationInfoEnabled(appContext.getEnableLocationInfo());
 
       SpringDistributedEvent distributedEventList = appContext.getDistributedEvents();
       if (distributedEventList != null) {
@@ -151,19 +152,19 @@ public class ConfigLoader {
       }
 
       SpringPath pathList = appContext.getPaths();
-      if(pathList!=null) {
+      if (pathList != null) {
         String[] paths = pathList.getPathArray();
-        for (int j = 0; paths!=null && j < paths.length; j++) {
+        for (int j = 0; paths != null && j < paths.length; j++) {
           springConfigHelper.addConfigPattern(paths[j]);
         }
       }
-      
+
       SpringBean springBean = appContext.getBeans();
-      if(springBean!=null) {
+      if (springBean != null) {
         NonDistributedFields[] nonDistributedFields = springBean.getBeanArray();
         for (int j = 0; nonDistributedFields != null && j < nonDistributedFields.length; j++) {
           NonDistributedFields nonDistributedField = nonDistributedFields[j];
-          
+
           String beanName = nonDistributedField.getName();
           springConfigHelper.addBean(beanName);
 
@@ -173,34 +174,33 @@ public class ConfigLoader {
           }
         }
       }
-      
+
       config.addDSOSpringConfig(springConfigHelper);
-    }    
+    }
   }
 
   private ConfigLockLevel getLockLevel(LockLevel.Enum lockLevel) {
-    if(lockLevel==null || LockLevel.WRITE.equals(lockLevel)) {
+    if (lockLevel == null || LockLevel.WRITE.equals(lockLevel)) {
       return ConfigLockLevel.WRITE;
     } else if (LockLevel.CONCURRENT.equals(lockLevel)) {
       return ConfigLockLevel.CONCURRENT;
-    } else if (LockLevel.READ.equals(lockLevel)) {
-      return ConfigLockLevel.READ;
-    }
+    } else if (LockLevel.READ.equals(lockLevel)) { return ConfigLockLevel.READ; }
     throw Assert.failure("Unknown lock level " + lockLevel);
   }
-  
+
   private void loadLocks(Locks lockList) {
     if (lockList == null) return;
 
     Autolock[] autolocks = lockList.getAutolockArray();
-    for (int i = 0; autolocks!=null && i < autolocks.length; i++) {
+    for (int i = 0; autolocks != null && i < autolocks.length; i++) {
       config.addAutolock(autolocks[i].getMethodExpression(), getLockLevel(autolocks[i].getLockLevel()));
     }
-    
+
     NamedLock[] namedLocks = lockList.getNamedLockArray();
-    for (int i = 0; namedLocks!=null && i < namedLocks.length; i++) {
+    for (int i = 0; namedLocks != null && i < namedLocks.length; i++) {
       NamedLock namedLock = namedLocks[i];
-      LockDefinition lockDefinition = new LockDefinition(namedLock.getLockName(), getLockLevel(namedLock.getLockLevel()));
+      LockDefinition lockDefinition = new LockDefinition(namedLock.getLockName(),
+                                                         getLockLevel(namedLock.getLockLevel()));
       lockDefinition.commit();
       config.addLock(namedLock.getMethodExpression(), lockDefinition);
     }
@@ -227,32 +227,31 @@ public class ConfigLoader {
         Include include = includes[i];
         IncludeOnLoad includeOnLoad = new IncludeOnLoad();
         OnLoad onLoad = include.getOnLoad();
-        if(onLoad!=null) {
-          if(onLoad.getExecute()!=null) {
+        if (onLoad != null) {
+          if (onLoad.getExecute() != null) {
             includeOnLoad = new IncludeOnLoad(IncludeOnLoad.EXECUTE, onLoad.getExecute());
-          } else if(onLoad.getMethod()!=null) {
+          } else if (onLoad.getMethod() != null) {
             includeOnLoad = new IncludeOnLoad(IncludeOnLoad.METHOD, onLoad.getMethod());
           }
         }
         config.addInstrumentationDescriptor(new IncludedInstrumentedClass(include.getClassExpression(), include
             .getHonorTransient(), false, includeOnLoad));
       }
-      
+
       String[] excludeArray = instrumentedClasses.getExcludeArray();
-      for (int i = 0; excludeArray!=null && i < excludeArray.length; i++) {
+      for (int i = 0; excludeArray != null && i < excludeArray.length; i++) {
         config.addInstrumentationDescriptor(new ExcludedInstrumentedClass(excludeArray[i]));
       }
     }
   }
-  
+
   private void loadDistributedMethods(DistributedMethods distributedMethods) {
-    if(distributedMethods!=null) {
+    if (distributedMethods != null) {
       String[] methodExpressions = distributedMethods.getMethodExpressionArray();
       for (int i = 0; methodExpressions != null && i < methodExpressions.length; i++) {
         config.addDistributedMethodCall(methodExpressions[i]);
       }
     }
   }
-  
-}
 
+}

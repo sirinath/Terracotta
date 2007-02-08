@@ -24,7 +24,7 @@ module DistributionUtils
   end
 
   def check_if_type_supplied(product_code, flavor)
-    fail 'You need to tell me the type of kit to build: SPR|DSO|TST?'                 if product_code.nil? 
+    fail 'You need to tell me the type of kit to build: DSO?'                         if product_code.nil? 
     fail 'You need to tell me the flavor of the kit to build: OPENSOURCE|ENTERPRISE?' if flavor.nil? 
     @product_code = product_code
     @flavor       = flavor.downcase
@@ -54,7 +54,7 @@ module DistributionUtils
 
   def package_filename
     "#{get_config(:short_internal_name).downcase}-" +
-    "#{@build_environment.os_type(:nice).downcase}-" +
+    "#{@build_environment.os_family.downcase}-" +
     "#{@build_environment.processor_type}-" +
     "#{@build_environment.build_username.downcase}-AT-" +
     "#{@build_environment.build_hostname.downcase}-rev" +
