@@ -74,9 +74,8 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
         ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
     end
 
-    def monkey?
-      config_source = Registry[:config_source]
-      config_source['tc.build-control.cruise-control.monkey-root'] || config_source['fake-monkey']
+    def monkey?      
+      config_source['monkey-name']
     end
 
       # Prints a help message.
@@ -681,7 +680,7 @@ end
             elsif $!
               raise
             else
-              raise("No tests ran at all!") unless have_started_at_least_one_test
+              raise("No tests ran at all! #{config_source['monkey-name']}") unless have_started_at_least_one_test
             end
 
             testrun_record.tearDown
