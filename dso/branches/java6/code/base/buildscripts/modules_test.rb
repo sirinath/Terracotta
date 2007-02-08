@@ -646,7 +646,7 @@ END
         if candidate_jvm.version < min_version || candidate_jvm.version > max_version
           if override
             raise(JvmVersionMismatchException,
-                  "JDK specified is incompatible with #{Registry[:appserver]}, " +
+                  "JDK specified is incompatible with #{Registry[:appserver]},\n " +
                   "which requires minimum version #{min_version} and maximum " +
                   "version #{max_version}")
           else
@@ -656,7 +656,7 @@ END
               candidate_jvm = appserver_candidate_jvm
             else
               raise(JvmVersionMismatchException,
-                    "Could not find JDK compatible with #{Registry[:appserver]}, " +
+                    "Could not find JDK compatible with #{Registry[:appserver]},\n" +
                     "which requires minimum version #{min_version} and maximum " +
                     "version #{max_version}")
             end
@@ -666,7 +666,7 @@ END
       
       if candidate_jvm.version < @build_module.jdk.min_version
         raise(JvmVersionMismatchException,
-              "JDK specified is incompatible with module #{@build_module}, " +
+              "JDK specified is incompatible with module #{@build_module},\n" +
               "which requires minimum version #{@build_module.jdk.min_version}")
       end
       @jvm = candidate_jvm

@@ -659,8 +659,9 @@ END
             elsif $!
               raise
             else
-              unless monkey?  
-                raise("No tests ran at all! #{config_source['monkey-name']}") unless have_started_at_least_one_test
+              unless monkey?                  
+                #raise("No tests ran at all! There might be JDK mismatch exception(s).}") unless testrun_record.total_suites > 0
+                raise Registry[:jdk_exception] if Registry[:jdk_exception]
               end
             end
 
@@ -709,7 +710,8 @@ END
             begin
               test_runs[subtree].setUp              
             rescue JvmVersionMismatchException => e
-              STDERR.puts("#{e.message}...skipping subtree #{subtree}")
+              Registry[:jdk_exception] = e unless Registry[:jdk_exception]
+              STDERR.puts("#{e.message}\n...skipping subtree #{subtree}")
               failed_setUpSet << subtree
             end
         end
