@@ -184,8 +184,12 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     # Runs a single test, as named by its one argument. This is actually a pattern;
     # 'tcbuild check_one *Test' will, in fact, run all tests -- but that's just a weird thing to do...
     def check_one(test)
+      if @skip_compile
+        depends :init
+      else
         depends :init, :compile
-        run_tests(SingleTestSet.new(test))
+      end
+      run_tests(SingleTestSet.new(test))
     end
 
     # Runs all test patterns named in the specified file, which typically would be just a list of
@@ -670,10 +674,14 @@ end
             prepare_and_run_block_on_tests(test_set, testrun_results, Proc.new do |testrun|
                 have_started_at_least_one_test = true
                 testrun.run(@script_results)
-            end, testrun_record)
+              end, testrun_record)
         ensure
-            if !have_started_at_least_one_test && !monkey?
-              raise("No tests ran")
+            if $!.is_a?(JvmVersionMismatchException)
+              raise unless monkey?
+            elsif $!
+              raise
+            else
+              raise("No tests ran at all!") unless have_started_at_least_one_test
             end
 
             testrun_record.tearDown
@@ -775,23 +783,19 @@ end
           end
         end
 
-        appservers_jre = YAML::load_file("appservers.yml")
+        @jvm_set.add_config_jvm('tests-jdk')
+        @jvm_set.add_config_jvm('jdk')
+
+        appserver_compatibility = YAML::load_file("appservers.yml")
+        Registry[:appserver_compatibility] = appserver_compatibility
         factory, major, minor = %w(factory.name major-version minor-version).map { |key|
           config_source["tc.tests.configuration.appserver.#{key}"]
         }
-        Registry[:appserver] = configured_appserver = "#{factory}-#{major}.#{minor}"
-
-        if appserver_jre = appservers_jre[configured_appserver]
-          unless @jvm_set.has?(appserver_jre)
-            raise("The entry in appservers.yml for #{configured_appserver} " +
-                  "refers to non-existant JDK #{appserver_jre}")
-          end
-          @jvm_set.alias('appserver-jre', appserver_jre)
-        end
-
+        Registry[:appserver_generic] = "#{factory}-#{major}"
+        Registry[:appserver] = "#{Registry[:appserver_generic]}.#{minor}"
         Registry[:jvm_set] = @jvm_set
-    end
-
+      end
+      
     # Writes out the given set of keys, and corresponding values, from the given hash to the given
     # file, as XML property elements (as is required by the XML build-information file we generate
     # that CruiseControl reads).

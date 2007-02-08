@@ -625,57 +625,54 @@ END
     # Which JVM should we use for this set of tests?
     def tests_jvm(jvm_set = Registry[:jvm_set])
       return @jvm if @jvm
-      result = nil
-      config_source = Registry[:config_source]
-      config_jre = config_source['tests-jdk'] || @buildconfig['tests-jdk'] ||
-                   config_source['jdk'] || @buildconfig['jdk']
 
-      if requires_container?
-        if jvm_set.has?('appserver-jre')
-          appserver_jre = jvm_set['appserver-jre']
-        end
-
-        if appserver_jre
-          if config_jre
-            result = jvm_set[config_jre]
-            unless result.version.same_minor_version(appserver_jre.version)
-              raise(JvmVersionMismatchException,
-                    "JDK specified is incompatible with #{Registry[:appserver]}," +
-                    " which requires #{appserver_jre}")
-            end
-          else
-            result = appserver_jre
-          end
-        else
-          if config_jre
-            result = jvm_set[config_jre]
-            if result.version < @build_module.jdk.version.release_version
-                raise(JvmVersionMismatchException,
-                  "JDK specified is incompatible with #{@build_module.name}," +
-                  " which requires #{@build_module.jdk}")
-            end
-          else
-            result = @build_module.jdk
-          end
-        end
+      candidate_jvm = jvm_set['tests-jdk'] || jvm_set['jdk'] ||
+                      jvm_set[@buildconfig['tests-jdk']] || jvm_set[@buildconfig['jdk']]
+      if candidate_jvm
+        override = true
       else
-        if config_jre
-          result = jvm_set[config_jre]
-            if result.version < @build_module.jdk.version.release_version
-                raise(JvmVersionMismatchException,
-                  "JDK specified is incompatible with #{@build_module.name}," +
-                  " which requires #{@build_module.jdk}")
-            end
-        else
-          result = @build_module.jdk
-        end
+        candidate_jvm = @build_module.jdk
+        override = false
       end
 
-      @jvm = result
+      if requires_container?
+        current_appserver = Registry[:appserver_generic]
+        compatibility = Registry[:appserver_compatibility][current_appserver] || {
+          'min_version' => JavaVersion::JAVA_MIN_VERSION,
+          'max_version' => JavaVersion::JAVA_MAX_VERSION
+        }
+        min_version = JavaVersion.new(compatibility['min_version'])
+        max_version = JavaVersion.new(compatibility['max_version'])
+        if candidate_jvm.version < min_version || candidate_jvm.version > max_version
+          if override
+            raise(JvmVersionMismatchException,
+                  "JDK specified is incompatible with #{Registry[:appserver]}, " +
+                  "which requires minimum version #{min_version} and maximum " +
+                  "version #{max_version}")
+          else
+            if appserver_candidate_jvm = jvm_set.find_jvm(
+                  :min_version => compatibility['min_version'],
+                  :max_version => compatibility['max_version'])
+              candidate_jvm = appserver_candidate_jvm
+            else
+              raise(JvmVersionMismatchException,
+                    "Could not find JDK compatible with #{Registry[:appserver]}, " +
+                    "which requires minimum version #{min_version} and maximum " +
+                    "version #{max_version}")
+            end
+          end
+        end
+      end
+      
+      if candidate_jvm.version < @build_module.jdk.min_version
+        raise(JvmVersionMismatchException,
+              "JDK specified is incompatible with module #{@build_module}, " +
+              "which requires minimum version #{@build_module.jdk.min_version}")
+      end
+      @jvm = candidate_jvm
     end
 
   private
-
     # Splice the appropriate elements (CLASSPATH, JVM arguments, system properties,
     # and so on) into Ant.
     def splice_into_ant_junit

@@ -14,6 +14,9 @@ end
 # Represents the version of a JVM. This is typically something like '1.4.2_07', but
 # some JVMs (like IBM's) can be just '1.4.2', too.
 class JavaVersion
+    JAVA_MIN_VERSION = '0.0.0'
+    JAVA_MAX_VERSION = '99999.999.999_999'
+
     attr_reader :major, :minor, :patch, :release
 
     # Creates a new representation of a version, as specified by a string. This can
@@ -104,9 +107,6 @@ class JVMSet
         jvm = find_jvm(:path => key) ||
               find_jvm(:name_like => /#{key}/) ||
               find_jvm(:version_like => /#{key}/)
-        unless jvm
-          raise("No JVM for '#{key}'")
-        end
         jvm
       end
     end
@@ -151,8 +151,8 @@ class JVMSet
     # All criteria given are logically ANDed together.
     def find_jvm(criteria)
       name_like = criteria[:name_like] || /.*/
-      min_version = JavaVersion.new(criteria[:min_version] || '0.0.0')
-      max_version = JavaVersion.new(criteria[:max_version] || '99999.999.999_999')
+      min_version = JavaVersion.new(criteria[:min_version] || JavaVersion::JAVA_MIN_VERSION)
+      max_version = JavaVersion.new(criteria[:max_version] || JavaVersion::JAVA_MAX_VERSION)
       path = criteria[:path]
       version_like = criteria[:version_like]
 
@@ -197,6 +197,21 @@ class JVMSet
 
       created_jvm
     end
+    
+    def add_config_jvm(config_jvm_name, build_config = Hash.new)
+      config_source = Registry[:config_source]
+      if config_jvm_value = config_source[config_jvm_name] || build_config[config_jvm_name]
+        if has?(config_jvm_value)
+          self.alias(config_jvm_name, config_jvm_value)
+        else
+          if created_jvm = find_jvm(:path => config_jvm_value)
+            set(config_jvm_name, created_jvm)
+          else
+            raise("Value of '#{config_jvm_name}' is not valid")
+          end
+        end
+      end
+    end
 
     # A human-readable string representation of this JVMSet.
     def to_s
@@ -235,6 +250,14 @@ class JVM
         @max_version = data[:maximum_version]
 
         @actual_version = nil
+    end
+    
+    def min_version
+        JavaVersion.new(@min_version)
+    end
+
+    def max_version
+        JavaVersion.new(@max_version)
     end
 
     # What's the path to the 'java' executable in this JVM? Returns a string.

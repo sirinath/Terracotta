@@ -8,6 +8,11 @@
 # within a certain container.  The name of the JRE must match one of the entries
 # in jre.def.yml
 
-tomcat5-5.5.20: J2SE-1.5
-weblogic8-8.1.SP5: J2SE-1.4
-weblogic8-8.1.SP6: J2SE-1.4
+tomcat5-5.5: 
+    min_version: 1.5.0
+    max_version: 99999.999.999_999    
+
+weblogic8-8.1: 
+    min_version: 1.4.2_11
+    max_version: 1.4.999_999
+    
