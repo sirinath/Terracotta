@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
@@ -26,6 +27,7 @@ import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.util.ClassUtils.ClassSpec;
+import com.terracottatech.configV3.Plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -369,7 +371,7 @@ public class ClassUtilsTest extends TestCase {
     public NewCommonL1Config getNewCommonL1Config() {
       return null;
     }
-    
+
     public boolean shouldBeAdapted(String fullName) {
       return true;
     }
@@ -517,7 +519,7 @@ public class ClassUtilsTest extends TestCase {
     public void addTransientType(String className, String fieldName) {
       throw new ImplementMe();
     }
-    
+
     public String getOnLoadScriptIfDefined(String className) {
       throw new ImplementMe();
     }
@@ -624,7 +626,9 @@ public class ClassUtilsTest extends TestCase {
       return null;
     }
 
-    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
+    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+                                                             InstrumentationLogger lgr, ClassLoader caller,
+                                                             boolean forcePortable) {
       return null;
     }
 
@@ -639,6 +643,11 @@ public class ClassUtilsTest extends TestCase {
     public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
       throw new ImplementMe();
     }
+
+    public Plugins getPlugins() {
+      throw new ImplementMe();
+    }
+
   }
 
 }

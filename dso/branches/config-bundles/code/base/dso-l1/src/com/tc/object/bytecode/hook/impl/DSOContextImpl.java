@@ -90,7 +90,7 @@ public class DSOContextImpl implements DSOContext {
     this.manager = manager;
     weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
         .instrumentationLoggingOptions()));
-    final Plugins plugins = configHelper.getNewCommonL1Config().plugins();
+    final Plugins plugins = configHelper.getPlugins();
     if (plugins != null && plugins.sizeOfPluginArray() > 0) {
       try {
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(plugins);
@@ -136,7 +136,7 @@ public class DSOContextImpl implements DSOContext {
     }
   }
 
-  private void loadConfiguration(Bundle bundle) {
+  private void loadConfiguration(final Bundle bundle) {
     String config = (String) bundle.getHeaders().get("Terracotta-Configuration");
     if (config == null) { 
       config = "terracotta.xml";

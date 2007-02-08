@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.config;
 
@@ -15,6 +16,7 @@ import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
+import com.terracottatech.configV3.Plugins;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -104,7 +106,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   boolean matches(final String expression, final MemberInfo methodInfo);
 
   void addTransient(String className, String fieldName);
-  
+
   public void addTransientType(String className, String fieldName);
 
   public String getOnLoadScriptIfDefined(String className);
@@ -116,7 +118,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   public boolean isUseNonDefaultConstructor(String className);
 
   public void addIncludePattern(String expression);
-  
+
   public NewCommonL1Config getNewCommonL1Config();
 
   // Used for testing
@@ -158,5 +160,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   void addApplicationName(String name);
 
   public void addInstrumentationDescriptor(InstrumentedClass classDesc);
-  
+
+  public Plugins getPlugins();
+
 }

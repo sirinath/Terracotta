@@ -79,6 +79,7 @@ import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
 import com.terracottatech.configV3.DsoApplication;
+import com.terracottatech.configV3.Plugins;
 import com.terracottatech.configV3.SpringApplication;
 
 import java.lang.reflect.Constructor;
@@ -99,6 +100,7 @@ import java.util.Set;
  * The standard implementation of {@link DSOClientConfigHelper}.
  */
 public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
+
   private static final LiteralValues             literalValues                      = new LiteralValues();
 
   private static final TCLogger                  logger                             = CustomerLogging
@@ -154,6 +156,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private int                                    faultCount                         = -1;
 
+  private final Plugins                          plugins;
+
   public StandardDSOClientConfigHelper(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
     this(configSetupManager, true);
@@ -172,6 +176,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     helperLogger = new DSOClientConfigHelperLogger(logger);
     this.classInfoFactory = classInfoFactory;
     this.expressionHelper = eh;
+    plugins = configSetupManager.commonL1Config().plugins() != null ? configSetupManager.commonL1Config().plugins()
+        : Plugins.Factory.newInstance();
 
     permanentExcludesMatcher = new CompoundExpressionMatcher();
     // TODO:: come back and add all possible non-portable/non-adaptable classes here. This is by no means exhaustive !
@@ -630,15 +636,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.setCallConstructorOnLoad(true);
 
     // Autolocking FastHashMap.
-//    addIncludePattern("org.apache.commons.collections.FastHashMap*", true);
-//    addWriteAutolock("* org.apache.commons.collections.FastHashMap*.*(..)");
-//    addReadAutolock(new String[] { "* org.apache.commons.collections.FastHashMap.clone(..)",
-//        "* org.apache.commons.collections.FastHashMap*.contains*(..)",
-//        "* org.apache.commons.collections.FastHashMap.equals(..)",
-//        "* org.apache.commons.collections.FastHashMap.get(..)",
-//        "* org.apache.commons.collections.FastHashMap*.hashCode(..)",
-//        "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
-//        "* org.apache.commons.collections.FastHashMap*.size(..)" });
+    // addIncludePattern("org.apache.commons.collections.FastHashMap*", true);
+    // addWriteAutolock("* org.apache.commons.collections.FastHashMap*.*(..)");
+    // addReadAutolock(new String[] { "* org.apache.commons.collections.FastHashMap.clone(..)",
+    // "* org.apache.commons.collections.FastHashMap*.contains*(..)",
+    // "* org.apache.commons.collections.FastHashMap.equals(..)",
+    // "* org.apache.commons.collections.FastHashMap.get(..)",
+    // "* org.apache.commons.collections.FastHashMap*.hashCode(..)",
+    // "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
+    // "* org.apache.commons.collections.FastHashMap*.size(..)" });
 
     spec = getOrCreateSpec("gnu.trove.THashMap", "com.tc.object.applicator.HashMapApplicator");
     spec.addTHashMapPutLogSpec(SerializationUtil.PUT_SIGNATURE);
@@ -1601,6 +1607,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
     userDefinedBootSpecs.put(className, spec);
+  }
+
+  public Plugins getPlugins() {
+    return plugins;
   }
 
 }

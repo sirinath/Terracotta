@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.bootjar.java.util;
 
@@ -34,6 +35,7 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tx.MockTransactionManager;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
+import com.terracottatech.configV3.Plugins;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -266,7 +268,7 @@ public class HashMapTCTest extends TCTestCase {
     validateValuesIteratorRemove(jmap, tcmap);
   }
 
-  /*********************************************************************************/
+  /** ****************************************************************************** */
 
   public void validateLogicalInvoke(Map tcmap) throws Exception {
 
@@ -478,7 +480,6 @@ public class HashMapTCTest extends TCTestCase {
     assertEquals(tcmap, jmap);
   }
 
-
   void assertSingleMapping(Map map, final Object key, final Object value) {
     Assert.assertFalse(map.isEmpty());
     Assert.assertEquals(1, map.size());
@@ -542,7 +543,7 @@ public class HashMapTCTest extends TCTestCase {
   }
 
   private void populateMapWithHashKey(Map map, int numOfItems) {
-    for (int i=0; i<numOfItems; i++) {
+    for (int i = 0; i < numOfItems; i++) {
       map.put(new HashKey(i), new HashValue(i));
     }
   }
@@ -831,7 +832,9 @@ public class HashMapTCTest extends TCTestCase {
       return null;
     }
 
-    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
+    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+                                                             InstrumentationLogger lgr, ClassLoader caller,
+                                                             boolean forcePortable) {
       return null;
     }
 
@@ -846,10 +849,15 @@ public class HashMapTCTest extends TCTestCase {
     public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
       throw new ImplementMe();
     }
-    
+
     public void addTransientType(String className, String fieldName) {
       throw new ImplementMe();
     }
+
+    public Plugins getPlugins() {
+      throw new ImplementMe();
+    }
+
   }
 
   private static class SimpleEntry implements Map.Entry {
@@ -949,6 +957,5 @@ public class HashMapTCTest extends TCTestCase {
       return super.toString() + ", i: " + i;
     }
   }
-
 
 }
