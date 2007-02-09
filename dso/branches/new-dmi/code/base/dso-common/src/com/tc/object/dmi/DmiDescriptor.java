@@ -18,9 +18,11 @@ import java.io.IOException;
  */
 public class DmiDescriptor implements TCSerializable, EventContext {
 
-  private ObjectID       receiverId;
-  private ObjectID       dmiCallId;
-  private DmiClassSpec[] classSpecs;
+  public static final DmiDescriptor[] EMPTY_ARRAY = new DmiDescriptor[0];
+
+  private ObjectID                    receiverId;
+  private ObjectID                    dmiCallId;
+  private DmiClassSpec[]              classSpecs;
 
   public DmiDescriptor() {
     receiverId = null;

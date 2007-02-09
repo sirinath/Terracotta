@@ -5,10 +5,13 @@
 package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.spec.CyclicBarrierSpec;
+import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractTransparentApp;
@@ -57,13 +60,18 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         model.addObject(new FooObject(), 1, 2, foos, ints, true);
       }
     }
-
     sharedBarrier.barrier();
+    final int actual = model.callCount.get();
+    if (actual != getParticipantCount()) {
+      notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
+    }
   }
 
   public class SharedModel {
-    public void addObject(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
+    public final SynchronizedInt callCount = new SynchronizedInt(0);
 
+    public void addObject(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
+      callCount.increment();
       // Everything in the "foos" array should be non-null
       for (int index = 0; index < foos.length; index++) {
         FooObject[] array = foos[index];
@@ -96,10 +104,10 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     try {
-      TransparencyClassSpec spec = config.getOrCreateSpec(CyclicBarrier.class.getName());
-      config.addWriteAutolock("* " + CyclicBarrier.class.getName() + "*.*(..)");
+      new CyclicBarrierSpec().visit(visitor, config);
+      new SynchronizedIntSpec().visit(visitor, config);
 
-      spec = config.getOrCreateSpec(FooObject.class.getName());
+      TransparencyClassSpec spec = config.getOrCreateSpec(FooObject.class.getName());
       String testClassName = DistributedMethodCallTestApp.class.getName();
       spec = config.getOrCreateSpec(testClassName);
       spec.addTransient("callInitiator");

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.msg;
 
@@ -68,8 +69,8 @@ public class BroadcastTransactionMessageTest extends TestCase {
       notified.add(new LockRequest(new LockID("" + (i + 1)), new ThreadID(i + 1), LockLevel.WRITE));
       lookupObjectIDs.add(new ObjectID(i));
     }
-    msg.initialize(changes, lookupObjectIDs, serializer, lockIDs, cid, txID, channelID, gtx, txnType, lowGlobalTransactionIDWatermark,
-                   notified, new HashMap(), new DmiDescriptor[0]);
+    msg.initialize(changes, lookupObjectIDs, serializer, lockIDs, cid, txID, channelID, gtx, txnType,
+                   lowGlobalTransactionIDWatermark, notified, new HashMap(), DmiDescriptor.EMPTY_ARRAY);
     msg.dehydrate();
 
     TCByteBuffer[] data = out.toArray();

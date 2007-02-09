@@ -143,7 +143,8 @@ public class ServerTransactionManagerImplTest extends TestCase {
     TxnType txnType = TxnType.NORMAL;
     SequenceID sequenceID = new SequenceID(1);
     ServerTransaction tx1 = new ServerTransactionImpl(new TxnBatchID(1), tid1, sequenceID, lockIDs, cid1, dnas,
-                                                      serializer, newRoots, txnType, new LinkedList(), new DmiDescriptor[0]);
+                                                      serializer, newRoots, txnType, new LinkedList(),
+                                                      DmiDescriptor.EMPTY_ARRAY);
 
     // Test with one waiter
     transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid2);
@@ -217,7 +218,8 @@ public class ServerTransactionManagerImplTest extends TestCase {
     gtxm.clear();
     transactionManager.acknowledgement(cid1, tid2, cid2);
     ServerTransaction tx2 = new ServerTransactionImpl(new TxnBatchID(2), tid2, sequenceID, lockIDs, cid1, dnas,
-                                                      serializer, newRoots, txnType, new LinkedList(), new DmiDescriptor[0]);
+                                                      serializer, newRoots, txnType, new LinkedList(),
+                                                      DmiDescriptor.EMPTY_ARRAY);
     txns.clear();
     txns.add(tx2);
     doStages(txns);

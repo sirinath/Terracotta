@@ -94,7 +94,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     TxnType txnType = TxnType.NORMAL;
     SequenceID sequenceID = new SequenceID(1);
     ServerTransaction tx = new ServerTransactionImpl(batchID, txID, sequenceID, lockIDs, channelID, dnas, serializer,
-                                                     newRoots, txnType, new LinkedList(), new DmiDescriptor[0]);
+                                                     newRoots, txnType, new LinkedList(), DmiDescriptor.EMPTY_ARRAY);
 
     assertTrue(transactionBatchManager.batchComponentCompleteCalls.isEmpty());
     assertFalse(transactionBatchManager.isBatchComponentComplete.get());

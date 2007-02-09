@@ -63,7 +63,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     ServerTransaction stxn1 = new ServerTransactionImpl(new TxnBatchID(1), new TransactionID(1), new SequenceID(1),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
     List txns = new ArrayList();
     txns.add(stxn1);
 
@@ -93,7 +94,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     ServerTransaction stxn2 = new ServerTransactionImpl(new TxnBatchID(2), new TransactionID(2), new SequenceID(1),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
 
     txns.clear();
     txns.add(stxn2);
@@ -206,7 +208,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     ServerTransaction stxn1 = new ServerTransactionImpl(new TxnBatchID(1), new TransactionID(1), new SequenceID(1),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
     List txns = new ArrayList();
     txns.add(stxn1);
 
@@ -236,7 +239,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     ServerTransaction stxn2 = new ServerTransactionImpl(new TxnBatchID(2), new TransactionID(2), new SequenceID(1),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
 
     txns.clear();
     txns.add(stxn2);
@@ -313,7 +317,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     ServerTransaction stxn3 = new ServerTransactionImpl(new TxnBatchID(3), new TransactionID(3), new SequenceID(2),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
 
     txns.clear();
     txns.add(stxn3);
@@ -336,13 +341,14 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     assertTrue(stxn3 == aoc.getTxn());
     assertNotNull(aoc);
     assertTrue(coordinator.applySink.queue.isEmpty());
-    
+
     // Next Txn , Object 5, 6
     changes.put(new ObjectID(6), new TestDNA(new ObjectID(6)));
     ServerTransaction stxn4 = new ServerTransactionImpl(new TxnBatchID(4), new TransactionID(4), new SequenceID(3),
                                                         new LockID[0], new ChannelID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
-                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(), new DmiDescriptor[0]);
+                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
+                                                        DmiDescriptor.EMPTY_ARRAY);
 
     txns.clear();
     txns.add(stxn4);
@@ -377,7 +383,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     assertEquals(stxn3.getServerTransactionID(), applied.iterator().next());
     objects = ctc.getObjects();
     assertTrue(objects.size() == 1);
-    
+
     recd = new HashSet();
     for (Iterator i = objects.iterator(); i.hasNext();) {
       tmo = (TestManagedObject) i.next();
