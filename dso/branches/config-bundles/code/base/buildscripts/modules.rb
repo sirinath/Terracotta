@@ -98,7 +98,7 @@ class BuildSubtree
     end
 
     def to_s
-        "<Module subtree: %s/%s>" % [ build_module.name, name ]
+      "<Module subtree: #{build_module.name}/#{name}>"
     end
 
     # Returns a FilePath pointing to the root of this subtree's source (whether it actually
@@ -111,7 +111,7 @@ class BuildSubtree
     # of the test list named basename. This FilePath is returned whether it actually
     # exists or not.
     def test_list_file(basename)
-      FilePath.new(build_module.root, "%s.lists.%s" % [ name, basename ])
+      FilePath.new(build_module.root, "#{name}.lists.#{basename}")
     end
 
     # This returns a PathSet representing the paths to all classes that match any of the
@@ -149,7 +149,7 @@ end
 # A build module. This represents the largest-scale division of our codebase, like 'common',
 # 'dso-spring', or 'dso-l2'.
 class BuildModule
-    attr_reader :root, :name, :compiler_version, :aspectj, :plugin, :module_set, :dependencies
+    attr_reader :root, :name, :jdk, :aspectj, :plugin, :module_set, :dependencies
     alias plugin? plugin
     alias aspectj? aspectj
 
@@ -158,7 +158,7 @@ class BuildModule
     # options:
     #
     # * :name -- the name of this module
-    # * :compiler_version -- something like '1.4' or '1.5'
+    # * :jdk -- The name of a JDK as configured in jdk.def.yml
     # * :dependencies -- an array of the names of the modules this module is declared to be dependent on
     #
     # Note that, unlike a subtree, the root directory of a build module must exist. There's
@@ -167,14 +167,15 @@ class BuildModule
         @module_set = module_set
         @name = data[:name]
         @root = FilePath.new(root_dir, @name).canonicalize
-        @compiler_version = data[:compiler_version]
+        jdk = data[:jdk]
+        assert("JDK must be specified.") { ! jdk.nil? }
+        @jdk = Registry[:jvm_set][jdk]
         @aspectj = data[:aspectj] || false
         @plugin = data[:plugin] || false
         @dependencies = data[:dependencies] || [ ]
 
         assert("Root ('#{@root.to_s}') must be an absolute path") { @root.absolute? }
         assert("Root ('#{@root.to_s}') must exist, and be a directory") { FileTest.directory?(@root.to_s) }
-        assert("Compiler version must be specified.") { ! @compiler_version.nil? }
 
         @subtrees = [ ]
         # Run through all the factories and add a new subtree for each one.
@@ -187,7 +188,7 @@ class BuildModule
     end
 
     def to_s
-        "<Module '%s', at '%s', compiler version '%s', dependent on: %s>" % [ @name, root, compiler_version, @dependencies.join(", ") ]
+      "<Module '#@name', at '#{root}', JDK '#{jdk}', dependent on: %s>" % @dependencies.join(", ")
     end
 
     # The list of build modules (actual BuildModule objects) that this module is dependent upon.

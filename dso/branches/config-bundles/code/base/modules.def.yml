@@ -7,42 +7,42 @@
 modules:
   - linked-child-process:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
   - thirdparty:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
   - common:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - linked-child-process
         - thirdparty
   - aspectwerkz:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - thirdparty
   - dso-common:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
   - dso-common-jdk15:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
       dependencies:
         - common
         - dso-common
   - management:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-common
   - dso-l1:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - thirdparty
@@ -52,7 +52,7 @@ modules:
         - dso-common-jdk15
   - dso-l1-jdk15:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
       dependencies:
         - common
         - thirdparty
@@ -62,7 +62,7 @@ modules:
         - dso-l1
   - dso-l1-session:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-common
@@ -70,10 +70,10 @@ modules:
         - management
   - dso-weblogic-stubs:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
   - dso-l1-weblogic:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - dso-weblogic-stubs
         - common
@@ -84,34 +84,34 @@ modules:
         - aspectwerkz
   - dso-l1-tomcat:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-l1
         - dso-common
   - dso-l1-tomcat50:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-l1
         - dso-l1-session
   - dso-l1-tomcat55:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-l1
         - dso-l1-session
   - dso-memory-datastore:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - dso-common
         - common
   - dso-l2:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-common
@@ -121,7 +121,7 @@ modules:
         - dso-memory-datastore
   - deploy:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - linked-child-process
         - common
@@ -134,7 +134,7 @@ modules:
         - management
   - simulator:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-l1
@@ -144,7 +144,7 @@ modules:
         - deploy
   - ui-configurator:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-common
@@ -155,7 +155,7 @@ modules:
         - aspectwerkz
   - examples:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-l1
@@ -165,7 +165,7 @@ modules:
         - deploy
   - ui-eclipse:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - dso-common
@@ -176,10 +176,10 @@ modules:
         - aspectwerkz
   - installer:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
   - legacy-test-tree:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -195,7 +195,7 @@ modules:
         - thirdparty
   - dso-spring:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - common
         - aspectwerkz
@@ -211,7 +211,7 @@ modules:
         - linked-child-process
   - dso-system-tests:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -229,7 +229,7 @@ modules:
         - dso-memory-datastore
   - dso-alt-boot-jar-tests:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -245,7 +245,7 @@ modules:
         - legacy-test-tree
   - dso-crash-tests:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -264,7 +264,7 @@ modules:
         - dso-memory-datastore
   - dso-tests-jdk15:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
         - common
@@ -282,7 +282,7 @@ modules:
         - management
   - dso-container-tests:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -300,7 +300,7 @@ modules:
         - legacy-test-tree
   - dso-spring-tests:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - common
@@ -319,7 +319,7 @@ modules:
         - dso-container-tests
   - dso-spring-aj:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
         aspectj: true
       dependencies:
         - common
@@ -342,7 +342,7 @@ modules:
         - dso-container-tests
   - dso-spring-crash-tests:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
         - linked-child-process
@@ -361,7 +361,7 @@ modules:
         - legacy-test-tree
   - dso-performance-tests:
       options:
-        compiler_version: 1.5
+        jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
         - common
@@ -378,7 +378,7 @@ modules:
         - legacy-test-tree
   - clustered-apache-struts-1.1:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
         plugin: true
       dependencies:
         - aspectwerkz
@@ -396,7 +396,7 @@ modules:
         - dso-memory-datastore
   - clustered-commons-collections-3.1:
       options:
-        compiler_version: 1.4
+        jdk: J2SE-1.4
         plugin: true
 
 module-groups:
