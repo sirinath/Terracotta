@@ -72,7 +72,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
                                                                                clientID, lookupObjectIDs);
       }
 
-      if (!prunedChanges.isEmpty() || !lookupObjectIDs.isEmpty() || !notifiedWaiters.isEmpty() || !newRoots.isEmpty()) {
+      if (!prunedChanges.isEmpty() || !lookupObjectIDs.isEmpty() || !notifiedWaiters.isEmpty() || !newRoots.isEmpty() || bcc.getDmiDescriptors().length > 0) {
         transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
         if (lookupObjectIDs.size() > 0) {
           // TODO:: Request ID is not used anywhere. RemoveIT.

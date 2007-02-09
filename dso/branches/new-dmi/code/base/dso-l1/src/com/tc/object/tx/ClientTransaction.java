@@ -74,8 +74,6 @@ public interface ClientTransaction {
   
   public void addDmiDescritor(DmiDescriptor dd);
   
-  public boolean hasDmiDescriptors();
-  
   public List getDmiDescriptors();
 
 }

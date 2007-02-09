@@ -181,8 +181,4 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
     return dmis;
   }
 
-  public boolean hasDmiDescriptors() {
-    return !dmis.isEmpty();
-  }
-
 }

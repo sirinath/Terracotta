@@ -37,4 +37,18 @@ public class DmiClassSpec {
     DmiClassSpec that = (DmiClassSpec) obj;
     return this.spec.equals(that.spec);
   }
+  
+  public String toString() {
+    return "DmiClassSpec{loader=" + classLoaderDesc + ", className=" + className + "}";
+  }
+  
+  public static String toString(DmiClassSpec[] specs) {
+    StringBuffer sb = new StringBuffer();
+    sb.append("[");
+    for (int i = 0; i < specs.length; i++) {
+      sb.append(specs[i].toString()).append(",");
+    }
+    sb.append("]");
+    return sb.toString();
+  }
 }

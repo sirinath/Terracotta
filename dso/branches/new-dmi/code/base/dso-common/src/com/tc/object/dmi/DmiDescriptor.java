@@ -49,6 +49,11 @@ public class DmiDescriptor implements TCSerializable, EventContext {
     return classSpecs;
   }
 
+  public String toString() {
+    return "DmiDescriptor{receiverId=" + receiverId + ", dmiCallId=" + dmiCallId + ", ClassSpecs="
+           + DmiClassSpec.toString(classSpecs) + "}";
+  }
+
   public Object deserializeFrom(TCByteBufferInputStream in) throws IOException {
     receiverId = new ObjectID(in.readLong());
     dmiCallId = new ObjectID(in.readLong());

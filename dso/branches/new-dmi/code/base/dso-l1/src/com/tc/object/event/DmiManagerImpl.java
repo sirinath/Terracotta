@@ -23,10 +23,12 @@ import java.util.Set;
 
 public class DmiManagerImpl implements DmiManager {
   private static final TCLogger     logger = TCLogging.getLogger(DmiManager.class);
+  private static final Object       TRUE   = new Object();
 
   private final ClassProvider       classProvider;
   private final ClientObjectManager objMgr;
   private final RuntimeLogger       runtimeLogger;
+  private final ThreadLocal         feedBack;
 
   public DmiManagerImpl(ClassProvider cp, ClientObjectManager om, RuntimeLogger rl) {
     Assert.pre(cp != null);
@@ -35,9 +37,11 @@ public class DmiManagerImpl implements DmiManager {
     this.classProvider = cp;
     this.objMgr = om;
     this.runtimeLogger = rl;
+    this.feedBack = new ThreadLocal();
   }
 
   public void distributedInvoke(Object receiver, String method, Object[] params) {
+    if (feedBack.get() != null) return;
     Assert.pre(receiver != null);
     Assert.pre(method != null);
     Assert.pre(params != null);
@@ -72,11 +76,14 @@ public class DmiManagerImpl implements DmiManager {
     try {
       if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(dmc.getReceiver().getClass()
           .getName(), dmc.getMethodName(), dmc.getParameterDesc());
+      feedBack.set(TRUE);
       invoke(dmc);
     } catch (Throwable e) {
       runtimeLogger.distributedMethodCallError(dmc.getReceiver().getClass().getName(), dmc.getMethodName(), dmc
           .getParameterDesc(), e);
       if (logger.isDebugEnabled()) logger.debug("Ignoring distributed method call", e);
+    } finally {
+      feedBack.set(null);
     }
   }
 

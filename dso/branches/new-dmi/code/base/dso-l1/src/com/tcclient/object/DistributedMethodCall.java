@@ -34,6 +34,9 @@ public class DistributedMethodCall {
   }
 
   public final Object[] getParameters() {
-    return parameters;
+    Object[] rv = new Object[parameters.length];
+    for (int i = 0; i < parameters.length; i++) 
+      rv[i] = parameters[i];
+    return rv;
   }
 }
