@@ -106,7 +106,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
     # Used by every other target, basically.
     def init
-        write_build_info_file
+        write_build_info_file if monkey?
     end
 
     # Download and install dependencies as specified by the various ivy*.xml
@@ -167,9 +167,14 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     # Yeah. That little thing.
     def compile
         depends :init, :resolve_dependencies
-
-        @module_set.each do |build_module|
-            build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
+        
+        if @no_compile          
+          puts "--------------------------------------------------------------------------------"
+          puts "Option --no-compile found! Skipping compiling."
+        else
+          @module_set.each do |build_module|
+              build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
+          end
         end
     end
 
@@ -183,11 +188,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     # Runs a single test, as named by its one argument. This is actually a pattern;
     # 'tcbuild check_one *Test' will, in fact, run all tests -- but that's just a weird thing to do...
     def check_one(test)
-      if @skip_compile
-        depends :init
-      else
-        depends :init, :compile
-      end
+      depends :init, :compile
       run_tests(SingleTestSet.new(test))
     end
 
@@ -653,18 +654,7 @@ END
                 have_started_at_least_one_test = true
                 testrun.run(@script_results)
               end, testrun_record)
-        ensure
-            if $!.is_a?(JvmVersionMismatchException)
-              raise unless monkey?
-            elsif $!
-              raise
-            else
-              unless monkey?                  
-                #raise("No tests ran at all! There might be JDK mismatch exception(s).}") unless testrun_record.total_suites > 0
-                raise Registry[:jdk_exception] if Registry[:jdk_exception]
-              end
-            end
-
+        ensure        
             testrun_record.tearDown
 
             puts "\n\n"
@@ -677,8 +667,7 @@ END
             if testrun_record.failed?
                 puts "     Tests FAILED. See results above."
             elsif testrun_record.total_suites == 0
-                puts "     No tests ran at all! Something's wrong -- check your configuration or call."
-                #@script_results.failed("No tests ran at all! Something's wrong -- check your configuration or call.")
+                puts "     No tests ran."
             else
                 puts "     Tests passed."
             end
@@ -698,8 +687,6 @@ END
     def prepare_and_run_block_on_tests(test_set, testrun_results, testrun_proc, testrun_record = nil)
         test_runs = { }
 
-        failed_setUpSet = Set.new
-
         test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
             test_runs[subtree] =
                 subtree.test_run(@static_resources, testrun_results,
@@ -709,20 +696,25 @@ END
 
             begin
               test_runs[subtree].setUp              
-            rescue JvmVersionMismatchException => e
-              Registry[:jdk_exception] = e unless Registry[:jdk_exception]
-              STDERR.puts("#{e.message}\n...skipping subtree #{subtree}")
-              failed_setUpSet << subtree
-            end
-        end
-
-        test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
-            begin
-              testrun_proc.call(test_runs[subtree]) unless failed_setUpSet.member?(subtree)
+              testrun_proc.call(test_runs[subtree])
+            rescue JvmVersionMismatchException => e              
+              if monkey?
+                STDERR.puts("#{e.message}\n...skipping subtree #{subtree}")
+              else
+                raise e
+              end              
             ensure
               test_runs[subtree].tearDown
             end
         end
+
+        #~ test_set.run_on_subtrees(@module_set) do |subtree, test_patterns|
+            #~ begin
+              #~ testrun_proc.call(test_runs[subtree]) unless failed_setUpSet.member?(subtree)
+            #~ ensure
+              #~ test_runs[subtree].tearDown
+            #~ end
+        #~ end
 
         
     end

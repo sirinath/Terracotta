@@ -259,9 +259,6 @@ class SubtreeTestRun
     # The default timeout for tests, in seconds. Currently, this is 15 minutes.
     DEFAULT_TEST_TIMEOUT_SECONDS = 15 * 60
 
-    attr_accessor :skipped
-    alias skipped? skipped
-
     # Creates a new instance. Most of the parameters should be obvious; they're just references
     # to the obvious instances of the similarly-named classes. buildconfig is the build-configuration
     # hash (see BuildSubtree#buildconfig_properties, above); test_patterns is an array of Ant-style

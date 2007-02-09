@@ -115,7 +115,7 @@ class TerracottaBuilder
     def initialize(default_target, arguments)
         option_parser = OptionParser.new
         option_parser.on('--no-ivy') do @no_ivy = true end
-        option_parser.on('--skip-compile') do @skip_compile = true end
+        option_parser.on('--no-compile') do @no_compile = true end
         @start_time = Time.now
         @basedir = FilePath.new("").canonicalize
         puts("Building with base directory: '#@basedir'.")
