@@ -9,7 +9,7 @@ public class DistributedMethodCallExpressionTest extends TransparentTestBase imp
   private static final int LOOP_ITERATION_COUNT = 1;
   
   public DistributedMethodCallExpressionTest() {
-    disableAllUntil("2007-02-09");
+//    disableAllUntil("2007-02-09");
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
