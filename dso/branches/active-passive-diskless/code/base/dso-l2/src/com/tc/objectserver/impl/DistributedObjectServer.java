@@ -31,6 +31,7 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.groups.TribesGroupManager;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
@@ -589,7 +590,7 @@ public class DistributedObjectServer extends SEDA {
                                                     (DSOChannelManagerMBean) channelManager, serverStats, channelStats,
                                                     instanceMonitor, appEvents);
 
-    stateManager = new StateManagerImpl(consoleLogger, this);
+    stateManager = new StateManagerImpl(consoleLogger, this, new TribesGroupManager());
     stateManager.start();
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
   }
