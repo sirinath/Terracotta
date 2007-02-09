@@ -74,7 +74,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
         ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
     end
 
-    def monkey?      
+    def monkey?
       config_source['monkey-name']
     end
 
@@ -116,8 +116,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
       if (ant_home = ENV['ANT_HOME'])
         if @no_ivy
-          puts "--------------------------------------------------------------------------------"
-          puts "Ivy support disabled.  Skipping dependency resolution."
+          loud_message("Ivy support disabled.  Skipping dependency resolution.")
         else
           puts "--------------------------------------------------------------------------------"
           puts "Resolving dependencies."
@@ -131,8 +130,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
           end
         end
       else
-        puts "--------------------------------------------------------------------------------"
-        puts "ANT_HOME not set. Skipping dependency resolution."
+        loud_message("ANT_HOME not set. Skipping dependency resolution.")
       end
     end
 
@@ -167,10 +165,9 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     # Yeah. That little thing.
     def compile
         depends :init, :resolve_dependencies
-        
-        if @no_compile          
-          puts "--------------------------------------------------------------------------------"
-          puts "Option --no-compile found! Skipping compiling."
+
+        if @no_compile
+          loud_message("--no-compile option found.  Skipping compilation.")
         else
           @module_set.each do |build_module|
               build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
@@ -584,7 +581,20 @@ END
         end
     end
 
-    private
+  private
+
+    # Prints a "loud", very visible message to the console.  This is used for
+    # warning messages that, even while the scroll by quickly on the console,
+    # should call out for the user's attention.
+    def loud_message(message)
+      banner_char = "*"
+      puts(banner_char * 80)
+      puts(banner_char)
+      puts("#{banner_char} #{message}")
+      puts(banner_char)
+      puts(banner_char * 80)
+    end
+
     # The full path to the build archive, including directory.
     def full_build_archive_path
         FilePath.new(build_archive_dir, short_build_archive_path.to_s)
@@ -654,7 +664,7 @@ END
                 have_started_at_least_one_test = true
                 testrun.run(@script_results)
               end, testrun_record)
-        ensure        
+        ensure
             testrun_record.tearDown
 
             puts "\n\n"
@@ -695,14 +705,14 @@ END
                                  tests_aggregation_directory)
 
             begin
-              test_runs[subtree].setUp              
+              test_runs[subtree].setUp
               testrun_proc.call(test_runs[subtree])
-            rescue JvmVersionMismatchException => e              
+            rescue JvmVersionMismatchException => e
               if monkey?
                 STDERR.puts("#{e.message}\n...skipping subtree #{subtree}")
               else
                 raise e
-              end              
+              end
             ensure
               test_runs[subtree].tearDown
             end
@@ -716,7 +726,7 @@ END
             #~ end
         #~ end
 
-        
+
     end
 
     # Finds the JVMs that we need to use -- one each for compiling and testing, for 1.4 and 1.5.
@@ -766,7 +776,7 @@ END
         Registry[:appserver] = "#{Registry[:appserver_generic]}.#{minor}"
         Registry[:jvm_set] = @jvm_set
       end
-      
+
     # Writes out the given set of keys, and corresponding values, from the given hash to the given
     # file, as XML property elements (as is required by the XML build-information file we generate
     # that CruiseControl reads).
@@ -806,20 +816,20 @@ END
 
         # Configuration data.
         configuration_data = {
-            'build-target' => config_source['tc.build-control.build.target'],            
-            
+            'build-target' => config_source['tc.build-control.build.target'],
+
             'monkey-host' => @build_environment.build_hostname,
             'monkey-name' => config_source['monkey-name'],
             'monkey-platform' => @build_environment.platform,
-            
+
             'source-branch' => @build_environment.current_branch,
-            'source-revision' => @build_environment.current_revision,            
-            
+            'source-revision' => @build_environment.current_revision,
+
             'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
                             config_source['tc.tests.configuration.appserver.major-version'] + "." +
                             config_source['tc.tests.configuration.appserver.minor-version'],
             'jvmargs'  => config_source['jvmargs'],
-                           
+
             'appointed-tests-jdk' => @jvm_set['tests-jdk'].short_description,
             'jdk-1.4-compile' => @jvm_set['J2SE-1.4'].short_description,
             'jdk-1.5-compile' => @jvm_set['J2SE-1.5'].short_description
@@ -830,7 +840,7 @@ END
 
         # Parameters data.
         parameters_data = {
-          # nothing right now  
+          # nothing right now
         }
 
         # Extra data.
@@ -842,7 +852,7 @@ END
         test_config_data = { }
         config_source.keys.each do |key|
             next if key =~ /appserver/
-            test_config_data[key] = config_source[key] if key =~ /^tc\.tests\.configuration\..*/i 
+            test_config_data[key] = config_source[key] if key =~ /^tc\.tests\.configuration\..*/i
         end
 
         File.open(@build_results.build_information_file.to_s, "w") do |file|
