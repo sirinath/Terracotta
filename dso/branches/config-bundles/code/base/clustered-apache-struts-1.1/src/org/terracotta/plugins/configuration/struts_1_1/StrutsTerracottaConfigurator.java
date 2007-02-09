@@ -14,6 +14,8 @@ import com.tc.object.config.TransparencyClassSpec;
 
 public final class StrutsTerracottaConfigurator implements BundleActivator {
 
+  private static final String INCLUDE_TAG_CLASSNAME = "org.apache.struts.taglib.bean.IncludeTag";
+
   public void start(final BundleContext context) throws Exception {
     final ServiceReference configHelperRef = context.getServiceReference(StandardDSOClientConfigHelper.class.getName());
     if (configHelperRef != null) {
@@ -42,9 +44,12 @@ public final class StrutsTerracottaConfigurator implements BundleActivator {
     spec = configHelper.getOrCreateSpec("org.apache.struts.action.DynaActionFormClass");
     spec.setHonorTransient(true);
 
-    // Hack for Struts <bean:include> tag
-    if (!configHelper.hasCustomAdapter("org.apache.struts.taglib.bean.IncludeTag")) {
-      configHelper.addCustomAdapter("org.apache.struts.taglib.bean.IncludeTag", IncludeTagAdapter.class);
+    // Hack for Struts <bean:include> tag; when running in tests we need to synchronize as there is a race condition
+    // here. The reason for doing this at all is that you can only ever add one custom class adapter for a given name
+    synchronized (configHelper) {
+      if (!configHelper.hasCustomAdapter(INCLUDE_TAG_CLASSNAME)) {
+        configHelper.addCustomAdapter(INCLUDE_TAG_CLASSNAME, IncludeTagAdapter.class);
+      }
     }
   }
 
