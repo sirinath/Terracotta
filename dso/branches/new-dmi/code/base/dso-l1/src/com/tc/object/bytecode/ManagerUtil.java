@@ -139,8 +139,13 @@ public class ManagerUtil {
     getManager().logicalInvokeWithTransaction(object, lockObject, methodName, params);
   }
 
-  public static void distributedMethodCall(Object receiver, String method, Object[] params) {
+  public static void distributedMethodCallCommit() {
+    return;
+  }
+  
+  public static boolean distributedMethodCall(Object receiver, String method, Object[] params) {
     getManager().distributedMethodCall(receiver, method, params);
+    return true;
   }
 
   public static Object lookupRoot(String name) {
