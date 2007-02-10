@@ -139,6 +139,8 @@ Rakefile = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 # XML
 *.xml = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/xml
 *.dtd = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
+*.xsd = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
+*.xsdconfig = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 
 # Database
 *.sql = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
