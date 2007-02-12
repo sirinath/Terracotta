@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
@@ -142,10 +143,9 @@ public class ManagerUtil {
   public static void distributedMethodCallCommit() {
     getManager().distributedMethodCallCommit();
   }
-  
+
   public static boolean distributedMethodCall(Object receiver, String method, Object[] params) {
-    getManager().distributedMethodCall(receiver, method, params);
-    return true;
+    return getManager().distributedMethodCall(receiver, method, params);
   }
 
   public static Object lookupRoot(String name) {
@@ -387,7 +387,7 @@ public class ManagerUtil {
   public static TCProperties getTCProperties() {
     return getManager().getTCProperites();
   }
-  
+
   public static void addClusterEventListener(ClusterEventListener cel) {
     getManager().addClusterEventListener(cel);
   }

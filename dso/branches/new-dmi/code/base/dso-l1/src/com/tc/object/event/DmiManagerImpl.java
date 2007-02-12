@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class DmiManagerImpl implements DmiManager {
   private static final TCLogger     logger = TCLogging.getLogger(DmiManager.class);
-  private static final Object       TRUE   = new Object();
+  private static final Object       TRUE   = new String("TRUE");
 
   private final ClassProvider       classProvider;
   private final ClientObjectManager objMgr;
@@ -43,8 +43,8 @@ public class DmiManagerImpl implements DmiManager {
   }
 
   public boolean distributedInvoke(Object receiver, String method, Object[] params) {
-    if (feedBack.get() != null) return false;
-    if (nesting.get() != null) return false;
+    if (feedBack.get() != null) { return false; }
+    if (nesting.get() != null) { return false; }
     nesting.set(TRUE);
     Assert.pre(receiver != null);
     Assert.pre(method != null);
@@ -62,9 +62,10 @@ public class DmiManagerImpl implements DmiManager {
     objMgr.getTransactionManager().addDmiDescriptor(dd);
     return true;
   }
-  
+
   public void distributedInvokeCommit() {
-    Assert.pre(nesting.get() != null);
+    if (feedBack.get() != null) { return; }
+    Assert.assertTrue(Thread.currentThread().getName(), nesting.get() != null);
     nesting.set(null);
   }
 

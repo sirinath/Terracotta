@@ -31,6 +31,9 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
   public void run() {
     try {
       runTest();
+      runTestWithNulls();
+      runTestNested();
+      // runTestWithSynchAndNested();
     } catch (Throwable e) {
       notifyError(e);
     }
@@ -40,23 +43,10 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     final boolean callInitiator = sharedBarrier.barrier() == 0;
 
     if (callInitiator) {
+      model.callCount.set(0);
       synchronized (model) {
-        FooObject[][] foos = new FooObject[2][3];
-        for (int i = 0; i < foos.length; i++) {
-          Arrays.fill(foos[i], new FooObject());
-        }
-
-        int count = 0;
-        int[][][] ints = new int[6][8][9];
-        for (int i = 0; i < ints.length; i++) {
-          int[][] array1 = ints[i];
-          for (int j = 0; j < array1.length; j++) {
-            int[] array2 = array1[j];
-            for (int k = 0; k < array2.length; k++) {
-              array2[k] = count++;
-            }
-          }
-        }
+        FooObject[][] foos = makeFooArray();
+        int[][][] ints = makeIntArray();
         model.addObject(new FooObject(), 1, 2, foos, ints, true);
       }
     }
@@ -67,8 +57,70 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
   }
 
+  private void runTestNested() throws Throwable {
+    final boolean callInitiator = sharedBarrier.barrier() == 0;
+
+    if (callInitiator) {
+      model.callCount.set(0);
+      synchronized (model) {
+        FooObject[][] foos = makeFooArray();
+        int[][][] ints = makeIntArray();
+        model.addObjectNested(new FooObject(), 1, 2, foos, ints, true);
+      }
+    }
+    sharedBarrier.barrier();
+    final int actual = model.callCount.get();
+    if (actual != getParticipantCount()) {
+      notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
+    }
+  }
+
+  private void runTestWithNulls() throws Throwable {
+    final boolean callInitiator = sharedBarrier.barrier() == 0;
+
+    if (callInitiator) {
+      model.callCount.set(0);
+      synchronized (model) {
+        model.addObjectWithNulls(null, 1, 2, null, null, true);
+      }
+    }
+    sharedBarrier.barrier();
+    final int actual = model.callCount.get();
+    if (actual != getParticipantCount()) {
+      notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
+    }
+  }
+
+  private static int[][][] makeIntArray() {
+    int[][][] ints = new int[6][8][9];
+    int count = 0;
+    for (int i = 0; i < ints.length; i++) {
+      int[][] array1 = ints[i];
+      for (int j = 0; j < array1.length; j++) {
+        int[] array2 = array1[j];
+        for (int k = 0; k < array2.length; k++) {
+          array2[k] = count++;
+        }
+      }
+    }
+    return ints;
+  }
+
+  private static FooObject[][] makeFooArray() {
+    FooObject[][] foos = new FooObject[2][3];
+    for (int i = 0; i < foos.length; i++) {
+      Arrays.fill(foos[i], new FooObject());
+    }
+    return foos;
+  }
+
   public class SharedModel {
     public final SynchronizedInt callCount = new SynchronizedInt(0);
+
+    public synchronized void addObjectSynched(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b)
+        throws Throwable {
+      this.addObjectSynched(obj, i, d, foos, ints, b);
+    }
 
     public void addObject(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
       callCount.increment();
@@ -94,11 +146,40 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         }
       }
 
-      if (obj == null || i != 1 || d != 2 || !b) {
-        System.out.println("Invalid parameters:" + obj + " i:" + i + " d:" + d + " b:" + b);
-        notifyError("Invalid parameters:" + obj + " i:" + i + " d:" + d + " b:" + b);
-      }
+      checkLiteralParams(i, d, b);
       sharedBarrier2.barrier();
+    }
+
+    public void addObjectWithNulls(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b)
+        throws Throwable {
+      callCount.increment();
+      // all params should be nulls
+      checkReferenceParams(obj, foos, ints, true);
+      checkLiteralParams(i, d, b);
+      sharedBarrier2.barrier();
+    }
+
+    public void addObjectNested(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b)
+        throws Throwable {
+      addObject(obj, i, d, foos, ints, b);
+    }
+
+    private void checkLiteralParams(int i, double d, boolean b) {
+      if (i != 1 || d != 2 || !b) {
+        System.out.println("Invalid parameters: i:" + i + " d:" + d + " b:" + b);
+        notifyError("Invalid parameters: i:" + i + " d:" + d + " b:" + b);
+      }
+    }
+
+    private void checkReferenceParams(Object o, FooObject[][] foos, int[][][] ints, boolean nullExpected) {
+      checkNull(o, nullExpected);
+      checkNull(foos, nullExpected);
+      checkNull(ints, nullExpected);
+    }
+
+    private void checkNull(Object o, boolean nullExpected) {
+      final boolean isNull = o == null;
+      if (isNull != nullExpected) notifyError("Wrong parameter value: null is expected, actual = " + o);
     }
   }
 
@@ -116,10 +197,14 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       spec.addRoot("sharedBarrier", "sharedBarrier");
       spec.addRoot("sharedBarrier2", "sharedBarrier2");
       String methodExpression = "* " + testClassName + "*.*(..)";
-      System.err.println("Adding autolock for: " + methodExpression);
       config.addWriteAutolock(methodExpression);
+      // methodExpression = "* " + DistributedMethodCallTestApp.SharedModel.class.getName() + "*.*(..)";
+      // config.addWriteAutolock(methodExpression);
 
       spec = config.getOrCreateSpec(SharedModel.class.getName());
+      spec.addDistributedMethodCall("addObjectWithNulls", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
+      spec.addDistributedMethodCall("addObjectSynched", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
+      spec.addDistributedMethodCall("addObjectNested", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObject", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
     } catch (Exception e) {
       throw new AssertionError(e);
