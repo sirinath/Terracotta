@@ -29,6 +29,7 @@ public class DmiManagerImpl implements DmiManager {
   private final ClientObjectManager objMgr;
   private final RuntimeLogger       runtimeLogger;
   private final ThreadLocal         feedBack;
+  private final ThreadLocal         nesting;
 
   public DmiManagerImpl(ClassProvider cp, ClientObjectManager om, RuntimeLogger rl) {
     Assert.pre(cp != null);
@@ -38,10 +39,13 @@ public class DmiManagerImpl implements DmiManager {
     this.objMgr = om;
     this.runtimeLogger = rl;
     this.feedBack = new ThreadLocal();
+    this.nesting = new ThreadLocal();
   }
 
-  public void distributedInvoke(Object receiver, String method, Object[] params) {
-    if (feedBack.get() != null) return;
+  public boolean distributedInvoke(Object receiver, String method, Object[] params) {
+    if (feedBack.get() != null) return false;
+    if (nesting.get() != null) return false;
+    nesting.set(TRUE);
     Assert.pre(receiver != null);
     Assert.pre(method != null);
     Assert.pre(params != null);
@@ -56,6 +60,12 @@ public class DmiManagerImpl implements DmiManager {
     if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(receiver.getClass().getName(), dmc
         .getMethodName(), dmc.getParameterDesc());
     objMgr.getTransactionManager().addDmiDescriptor(dd);
+    return true;
+  }
+  
+  public void distributedInvokeCommit() {
+    Assert.pre(nesting.get() != null);
+    nesting.set(null);
   }
 
   public void invoke(DmiDescriptor dd) {
@@ -161,4 +171,5 @@ public class DmiManagerImpl implements DmiManager {
     final String className = obj.getClass().getName();
     return new DmiClassSpec(classLoader, className);
   }
+
 }

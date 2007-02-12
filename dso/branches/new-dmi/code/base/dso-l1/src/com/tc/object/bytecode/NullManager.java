@@ -87,9 +87,15 @@ public final class NullManager implements Manager {
     //
   }
 
-  public final void distributedMethodCall(Object receiver, String method, Object[] params) {
-    //
+  public final boolean distributedMethodCall(Object receiver, String method, Object[] params) {
+    throw new UnsupportedOperationException();
   }
+  
+
+  public void distributedMethodCallCommit() {
+    throw new UnsupportedOperationException();
+  }
+
 
   public final void checkWriteAccess(Object context) {
     //

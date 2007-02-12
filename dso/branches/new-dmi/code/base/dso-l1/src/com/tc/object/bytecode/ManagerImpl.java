@@ -582,16 +582,23 @@ public class ManagerImpl implements Manager {
     return this.objectManager.lookupObject(id);
   }
 
-  public void distributedMethodCall(Object receiver, String method, Object[] params) {
+  public boolean distributedMethodCall(Object receiver, String method, Object[] params) {
     TCObject tco = lookupExistingOrNull(receiver);
 
     try {
       if (tco != null) {
-        this.distributedInvoke(receiver, tco, method, params);
+        return methodCallManager.distributedInvoke(receiver, method, params);
+      } else {
+        return false;
       }
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
+      return false;
     }
+  }
+
+  public void distributedMethodCallCommit() {
+    methodCallManager.distributedInvokeCommit();
   }
 
   public void checkWriteAccess(Object context) {
@@ -638,10 +645,6 @@ public class ManagerImpl implements Manager {
   private static String generateLiteralLockName(Object obj) {
     Assert.assertNotNull(obj);
     return ByteCodeUtil.generateLiteralLockName(obj);
-  }
-
-  private void distributedInvoke(Object receiver, TCObject tcObject, String method, Object[] params) {
-    methodCallManager.distributedInvoke(receiver, method, params);
   }
 
   public boolean isLogical(Object object) {

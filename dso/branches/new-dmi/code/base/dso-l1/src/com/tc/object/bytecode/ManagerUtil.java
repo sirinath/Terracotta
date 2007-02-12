@@ -140,7 +140,7 @@ public class ManagerUtil {
   }
 
   public static void distributedMethodCallCommit() {
-    return;
+    getManager().distributedMethodCallCommit();
   }
   
   public static boolean distributedMethodCall(Object receiver, String method, Object[] params) {
