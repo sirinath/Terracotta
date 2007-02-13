@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.config;
@@ -36,6 +36,7 @@ public final class Loader {
     in.read(data);
     in.close();
     ByteArrayInputStream ain = new ByteArrayInputStream(data);
+    xmlOptions.setDocumentType(com.terracottatech.config.TcConfigDocument.type);
     try {
       return com.terracottatech.config.TcConfigDocument.Factory.parse(ain, xmlOptions);
     } catch (XmlException e) {
