@@ -1,8 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.process;
+
+import org.apache.commons.io.CopyUtils;
+
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,11 +19,14 @@ import java.io.OutputStream;
  */
 public class StreamCopier extends Thread {
 
-  protected final InputStream  in;
-  protected final OutputStream out;
+  private static final TCLogger logger = TCLogging.getLogger(StreamCollector.class);
+
+  protected final InputStream   in;
+  protected final OutputStream  out;
 
   public StreamCopier(InputStream stream, OutputStream out) {
-    if ((stream == null) || (out == null)) { throw new AssertionError("null streams not allowed"); }
+    Assert.assertNotNull(stream);
+    Assert.assertNotNull(out);
 
     this.in = stream;
     this.out = out;
@@ -27,15 +35,10 @@ public class StreamCopier extends Thread {
   }
 
   public void run() {
-    byte[] buf = new byte[4096];
-
     try {
-      int read;
-      while ((read = in.read(buf)) >= 0) {
-        out.write(buf, 0, read);
-      }
+      CopyUtils.copy(this.in, this.out);
     } catch (IOException ioe) {
-      ioe.printStackTrace();
+      logger.warn("Couldn't copy stream", ioe);
     }
   }
 
