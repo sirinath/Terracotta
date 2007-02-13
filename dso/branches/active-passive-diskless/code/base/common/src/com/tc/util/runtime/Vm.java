@@ -53,7 +53,7 @@ public class Vm {
   public static boolean isJDK16() {
     return VERSION.isJDK16();
   }
-
+  
   public static boolean isJRockit() {
     return VERSION.isJRockit();
   }
