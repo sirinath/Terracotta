@@ -33,6 +33,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       runTest();
       runTestWithNulls();
       runTestNested();
+      runTestNonVoid();
       // runTestWithSynchAndNested();
     } catch (Throwable e) {
       notifyError(e);
@@ -48,6 +49,24 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         FooObject[][] foos = makeFooArray();
         int[][][] ints = makeIntArray();
         model.addObject(new FooObject(), 1, 2, foos, ints, true);
+      }
+    }
+    sharedBarrier.barrier();
+    final int actual = model.callCount.get();
+    if (actual != getParticipantCount()) {
+      notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
+    }
+  }
+
+  private void runTestNonVoid() throws Throwable {
+    final boolean callInitiator = sharedBarrier.barrier() == 0;
+
+    if (callInitiator) {
+      model.callCount.set(0);
+      synchronized (model) {
+        FooObject[][] foos = makeFooArray();
+        int[][][] ints = makeIntArray();
+        model.addObjectNonVoid(new FooObject(), 1, 2, foos, ints, true);
       }
     }
     sharedBarrier.barrier();
@@ -122,6 +141,10 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       this.addObjectSynched(obj, i, d, foos, ints, b);
     }
 
+    public String addObjectNonVoid(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
+      addObject(obj, i, d, foos, ints, b);
+      return new String("A-OK");
+    }
     public void addObject(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
       callCount.increment();
       // Everything in the "foos" array should be non-null
@@ -202,6 +225,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       // config.addWriteAutolock(methodExpression);
 
       spec = config.getOrCreateSpec(SharedModel.class.getName());
+      spec.addDistributedMethodCall("addObjectNonVoid", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)java/lang/String;");
       spec.addDistributedMethodCall("addObjectWithNulls", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObjectSynched", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObjectNested", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
