@@ -1,11 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.management;
 
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
@@ -13,9 +15,14 @@ import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.management.beans.object.ObjectManagementMonitorMBean;
 import com.tc.util.PortChooser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -25,8 +32,9 @@ import javax.management.MBeanServerFactory;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
+import javax.management.remote.rmi.RMIJRMPServerImpl;
 
 public class L2Management extends TerracottaManagement {
 
@@ -35,6 +43,7 @@ public class L2Management extends TerracottaManagement {
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final TCServerInfoMBean              tcServerInfo;
   private final ObjectManagementMonitor        objectManagementBean;
+  private final TCLogger                       logger = TCLogging.getLogger(L2Management.class);
 
   public L2Management(TCServerInfoMBean tcServerInfo, L2TVSConfigurationSetupManager configurationSetupManager)
       throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
@@ -68,16 +77,38 @@ public class L2Management extends TerracottaManagement {
       jmxPort = new PortChooser().chooseRandomPort();
     }
     try {
-      JMXServiceURL url = new JMXServiceURL("jmxmp", "localhost", jmxPort);
-      jmxConnectorServer = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mBeanServer);
+      JMXServiceURL url;
+      Map env = new HashMap();
+      String authMsg = "Authentication OFF";
+      String credentialsMsg = "";
+      if (configurationSetupManager.commonl2Config().authentication()) {
+        String pwd = configurationSetupManager.commonl2Config().authenticationPasswordFile();
+        String access = configurationSetupManager.commonl2Config().authenticationAccessFile();
+        if (!new File(pwd).exists()) CustomerLogging.getConsoleLogger().error("Password file does not exist: " + pwd);
+        if (!new File(access).exists()) CustomerLogging.getConsoleLogger().error("Access file does not exist: " + access);
+        env.put("jmx.remote.x.password.file", pwd);
+        env.put("jmx.remote.x.access.file", access);
+        authMsg = "Authentication ON";
+        credentialsMsg = "Credentials: " + configurationSetupManager.commonl2Config().authenticationPasswordFile()
+                         + " " + configurationSetupManager.commonl2Config().authenticationAccessFile();
+      }
+      Registry registry = LocateRegistry.createRegistry(jmxPort);
+      url = new JMXServiceURL("service:jmx:rmi://");
+      RMIJRMPServerImpl server = new RMIJRMPServerImpl(jmxPort, null, null, env);
+      jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
       jmxConnectorServer.start();
-      CustomerLogging.getConsoleLogger().info("JMX Server started. Available at URL[" + url + "]");
+      registry.bind("jmxrmi", server);
+      CustomerLogging.getConsoleLogger().info(
+                                              "JMX Server started. " + authMsg + " - Available at URL["
+                                                  + "service:jmx:rmi:///jndi/rmi://localhost:" + jmxPort + "/jmxrmi"
+                                                  + "]");
+      if (!credentialsMsg.equals("")) CustomerLogging.getConsoleLogger().info(credentialsMsg);
     } catch (BindException be) {
       throw new Exception("Unable to bind JMX server on port " + jmxPort
                           + "; perhaps this port is already in use, or you don't have sufficient privileges?", be);
     }
   }
-
+  
   public synchronized void stop() throws IOException, InstanceNotFoundException, MBeanRegistrationException {
     unregisterMBeans();
     if (jmxConnectorServer != null) {
