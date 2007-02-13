@@ -210,9 +210,6 @@ public class FieldUtils {
 
   private static Object resolveReference(TransparentAccess obj, Field field) {
     // XXX: deal with statics
-    System.out.println("ANTONIO AND NAT: the physically managed obj class is[" + obj.getClass().getName()
-                       + "], the field we are looking for is [" + field.getName() + "] (calling __tc_getmanagedfield("
-                       + fullFieldName(field) + ")");
     return obj.__tc_getmanagedfield(fullFieldName(field));
   }
 
