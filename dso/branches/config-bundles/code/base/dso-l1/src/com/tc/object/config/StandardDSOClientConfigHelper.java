@@ -241,60 +241,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     rewriteHashtableAutLockSpecIfNecessary();
   }
 
-  /*
-  private void addSpringApp(SpringApp springApp, Set appNames, List sLocks) throws ConfigurationSetupException {
-    // TODO scope the following by app namespace https://jira.terracotta.lan/jira/browse/LKC-2284
-    addInstrumentedClasses(springApp.includes());
-    addLocks(sLocks, springApp.locks());
-    addTransientFields(springApp.transientFields());
-
-    if (springApp.sessionSupport()) {
-      appNames.add(springApp.name()); // enable session support
-    }
-
-    AppContext[] appContexts = springApp.appContexts();
-    for (int j = 0; appContexts != null && j < appContexts.length; j++) {
-      AppContext appContext = appContexts[j];
-      if (appContext == null) continue;
-
-      DSOSpringConfigHelper springConfigHelper = new StandardDSOSpringConfigHelper();
-      springConfigHelper.addApplicationNamePattern(springApp.name());
-      springConfigHelper.setFastProxyEnabled(springApp.fastProxy()); // copy flag to all subcontexts
-
-      springConfigHelper.setRootName(appContext.rootName());
-      springConfigHelper.setLocationInfoEnabled(appContext.locationInfoEnabled());
-
-      String[] distributedEvents = appContext.distributedEvents();
-      for (int k = 0; distributedEvents != null && k < distributedEvents.length; k++) {
-        springConfigHelper.addDistributedEvent(distributedEvents[k]);
-      }
-
-      String[] paths = appContext.paths();
-      for (int k = 0; paths != null && k < paths.length; k++) {
-        if (paths[k] != null) {
-          springConfigHelper.addConfigPattern(paths[k]);
-        }
-      }
-
-      SpringContextBean[] beans = appContext.beans();
-      for (int k = 0; beans != null && k < beans.length; k++) {
-        SpringContextBean bean = beans[k];
-        if (bean != null) {
-          springConfigHelper.addBean(bean.name());
-          String[] fields = bean.nonDistributedFields();
-          for (int l = 0; fields != null && l < fields.length; l++) {
-            if (fields[l] != null) {
-              springConfigHelper.excludeField(bean.name(), fields[l]);
-            }
-          }
-        }
-      }
-
-      addDSOSpringConfig(springConfigHelper);
-    }
-  }
-  */
-
   public Portability getPortability() {
     return this.portability;
   }
