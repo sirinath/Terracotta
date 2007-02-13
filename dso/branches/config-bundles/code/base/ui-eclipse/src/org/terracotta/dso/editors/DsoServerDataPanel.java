@@ -7,8 +7,8 @@ import org.dijon.ContainerResource;
 
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
-import com.terracottatech.configV3.DsoServerData;
-import com.terracottatech.configV3.Server;
+import com.terracottatech.config.DsoServerData;
+import com.terracottatech.config.Server;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;

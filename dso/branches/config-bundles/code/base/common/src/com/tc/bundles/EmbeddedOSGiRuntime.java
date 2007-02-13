@@ -10,7 +10,7 @@ import org.osgi.framework.BundleException;
 import com.tc.config.Directories;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.Plugins;
 
 import java.io.File;
 import java.net.URL;
@@ -21,6 +21,7 @@ import java.util.Dictionary;
  * <a href="http://www.osgi.org/">OSGi web page</a>
  */
 public interface EmbeddedOSGiRuntime {
+
   public static final String PLUGINS_URL_PROPERTY_NAME = "tc.tests.configuration.plugins.url";
 
   void installBundle(final String bundleName, final String bundleVersion) throws BundleException;
@@ -28,7 +29,7 @@ public interface EmbeddedOSGiRuntime {
   void startBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
   Bundle getBundle(String bundleName, String bundleVersion);
-  
+
   void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException;
 
   void stopBundle(final String bundleName, final String bundleVersion) throws BundleException;

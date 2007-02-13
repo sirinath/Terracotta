@@ -7,11 +7,11 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.util.Assert;
-import com.terracottatech.configV3.Application;
-import com.terracottatech.configV3.Client;
-import com.terracottatech.configV3.Server;
-import com.terracottatech.configV3.Servers;
-import com.terracottatech.configV3.System;
+import com.terracottatech.config.Application;
+import com.terracottatech.config.Client;
+import com.terracottatech.config.Server;
+import com.terracottatech.config.Servers;
+import com.terracottatech.config.System;
 
 import java.util.ArrayList;
 import java.util.HashMap;

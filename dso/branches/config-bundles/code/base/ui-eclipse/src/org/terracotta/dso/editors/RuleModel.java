@@ -8,9 +8,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.tc.admin.common.XObjectTableModel;
-import com.terracottatech.configV3.ClassExpression;
-import com.terracottatech.configV3.Include;
-import com.terracottatech.configV3.InstrumentedClasses;
+import com.terracottatech.config.ClassExpression;
+import com.terracottatech.config.Include;
+import com.terracottatech.config.InstrumentedClasses;
 
 import java.util.ArrayList;
 

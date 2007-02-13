@@ -10,7 +10,7 @@ import org.xml.sax.SAXException;
 
 import com.tc.config.Loader;
 import com.tc.util.Assert;
-import com.terracottatech.configV3.TcConfigDocument;
+import com.terracottatech.config.TcConfigDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public class TerracottaDomainConfigurationDocumentBeanFactory implements ConfigB
     List errors = new ArrayList();
     XmlOptions options = createXmlOptions(errors, sourceDescription);
     Loader configLoader = new Loader();
-    
+
     TcConfigDocument document = configLoader.parse(in, options);
     document.validate(options);
     return new BeanWithErrors(document, (XmlError[]) errors.toArray(new XmlError[errors.size()]));

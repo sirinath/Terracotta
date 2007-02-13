@@ -78,9 +78,9 @@ import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
-import com.terracottatech.configV3.DsoApplication;
-import com.terracottatech.configV3.Plugins;
-import com.terracottatech.configV3.SpringApplication;
+import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.Plugins;
+import com.terracottatech.config.SpringApplication;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;

@@ -5,7 +5,7 @@
 package com.tc.config.schema;
 
 import com.tc.config.schema.dynamic.FileConfigItem;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.Plugins;
 
 /**
  * Contains methods for L1 DSO.

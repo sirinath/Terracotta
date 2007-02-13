@@ -11,8 +11,8 @@ import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.dynamic.XPathBasedConfigItem;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.util.Assert;
-import com.terracottatech.configV3.ConfigurationModel;
-import com.terracottatech.configV3.System;
+import com.terracottatech.config.ConfigurationModel;
+import com.terracottatech.config.System;
 
 /**
  * The standard implementation of {@link NewSystemConfig}.

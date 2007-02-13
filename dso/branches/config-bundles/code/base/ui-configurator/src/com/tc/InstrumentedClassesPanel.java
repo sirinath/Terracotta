@@ -8,9 +8,9 @@ import org.dijon.ContainerResource;
 
 import com.tc.admin.common.XContainer;
 import com.tc.pattern.PatternHelper;
-import com.terracottatech.configV3.DsoApplication;
-import com.terracottatech.configV3.Include;
-import com.terracottatech.configV3.InstrumentedClasses;
+import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.Include;
+import com.terracottatech.config.InstrumentedClasses;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

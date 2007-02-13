@@ -32,10 +32,10 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
-import com.terracottatech.configV3.ConfigurationModel;
-import com.terracottatech.configV3.DsoApplication;
-import com.terracottatech.configV3.Plugin;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.ConfigurationModel;
+import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.Plugin;
+import com.terracottatech.config.Plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -8,9 +8,9 @@ import org.apache.xmlbeans.XmlException;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
-import com.terracottatech.configV3.Application;
-import com.terracottatech.configV3.TcConfigDocument;
-import com.terracottatech.configV3.TcConfigDocument.TcConfig;
+import com.terracottatech.config.Application;
+import com.terracottatech.config.TcConfigDocument;
+import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.io.IOException;
 import java.io.InputStream;

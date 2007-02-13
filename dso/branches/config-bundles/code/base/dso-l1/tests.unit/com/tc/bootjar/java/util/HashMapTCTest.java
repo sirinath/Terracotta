@@ -35,7 +35,7 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tx.MockTransactionManager;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.Plugins;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

@@ -16,10 +16,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.ext.LexicalHandler;
 
 import com.tc.exception.ImplementMe;
-import com.terracottatech.configV3.Client;
-import com.terracottatech.configV3.DsoClientData;
-import com.terracottatech.configV3.Path;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.Client;
+import com.terracottatech.config.DsoClientData;
+import com.terracottatech.config.Path;
+import com.terracottatech.config.Plugins;
 
 import java.io.File;
 import java.io.InputStream;

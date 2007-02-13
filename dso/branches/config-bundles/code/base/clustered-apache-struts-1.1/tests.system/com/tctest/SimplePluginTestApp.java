@@ -5,7 +5,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractTransparentApp;
-import com.terracottatech.configV3.Plugin;
+import com.terracottatech.config.Plugin;
 
 public class SimplePluginTestApp extends AbstractTransparentApp {
     private static boolean pluginsLoaded = false;

@@ -16,7 +16,7 @@ import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
-import com.terracottatech.configV3.Plugins;
+import com.terracottatech.config.Plugins;
 
 import java.util.Collection;
 import java.util.Iterator;
