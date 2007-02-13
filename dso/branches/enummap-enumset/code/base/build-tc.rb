@@ -314,6 +314,7 @@ END
         # fix XMLBeans (I'm assuming it's their error), we should put this back
         # so we make sure we compile with the right JVM.
         ant.xmlbean(:destfile => dest_jar.to_s,
+            :executable => @jvm_set['J2SE-1.4'].javac.to_s,
             :debug => true, :classpath => @module_set['common'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
             :srcgendir => generated_source_dir.to_s) {
             ant.fileset(:dir => schema_dir.to_s, :includes => '*.xsd,*.xsdconfig')
