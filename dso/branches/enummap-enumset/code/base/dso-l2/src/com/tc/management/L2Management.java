@@ -14,6 +14,7 @@ import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.management.beans.object.ObjectManagementMonitorMBean;
 import com.tc.util.PortChooser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.rmi.registry.LocateRegistry;
@@ -68,7 +69,6 @@ public class L2Management extends TerracottaManagement {
     registerMBeans();
   }
 
-  // service:jmx:rmi:///jndi/rmi://localhost:9519/jmxrmi
   public synchronized void start() throws Exception {
     int jmxPort = configurationSetupManager.commonl2Config().jmxPort().getInt();
     if (jmxPort == 0) {
@@ -77,24 +77,32 @@ public class L2Management extends TerracottaManagement {
     try {
       JMXServiceURL url;
       Map env = new HashMap();
+      String authMsg = "Authentication OFF";
+      String credentialsMsg = "";
       if (configurationSetupManager.commonl2Config().authentication()) {
-        env.put("jmx.remote.x.password.file", configurationSetupManager.commonl2Config().authenticationPasswordFile());
-        env.put("jmx.remote.x.access.file", configurationSetupManager.commonl2Config().authenticationAccessFile());
-//        File javaMgmnt = new File(System.getProperty("java.home") + File.separator + "lib" + File.separator
-//                                  + "management");
-//        env.put("jmx.remote.x.password.file", javaMgmnt + File.separator + "jmxremote.password");
-//        env.put("jmx.remote.x.access.file", javaMgmnt + File.separator + "jmxremote.access");
+        String pwd = configurationSetupManager.commonl2Config().authenticationPasswordFile();
+        String access = configurationSetupManager.commonl2Config().authenticationAccessFile();
+        if (!new File(pwd).exists()) CustomerLogging.getConsoleLogger().error("Password file does not exist: " + pwd);
+        if (!new File(access).exists()) CustomerLogging.getConsoleLogger().error(
+                                                                                 "Access file does not exist: "
+                                                                                     + access);
+        env.put("jmx.remote.x.password.file", pwd);
+        env.put("jmx.remote.x.access.file", access);
+        authMsg = "Authentication ON";
+        credentialsMsg = "Credentials: " + configurationSetupManager.commonl2Config().authenticationPasswordFile()
+                         + " " + configurationSetupManager.commonl2Config().authenticationAccessFile();
       }
-        Registry registry = LocateRegistry.createRegistry(jmxPort);
-        url = new JMXServiceURL("service:jmx:rmi://");
-        RMIJRMPServerImpl server = new RMIJRMPServerImpl(jmxPort, null, null, env);
-        jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
-        jmxConnectorServer.start();
-        registry.bind("jmxrmi", server);
-        CustomerLogging.getConsoleLogger().info(
-                                                "JMX Server started. Available at URL["
-                                                    + "service:jmx:rmi:///jndi/rmi://localhost:" + jmxPort + "/jmxrmi"
-                                                    + "]");
+      Registry registry = LocateRegistry.createRegistry(jmxPort);
+      url = new JMXServiceURL("service:jmx:rmi://");
+      RMIJRMPServerImpl server = new RMIJRMPServerImpl(jmxPort, null, null, env);
+      jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
+      jmxConnectorServer.start();
+      registry.bind("jmxrmi", server);
+      CustomerLogging.getConsoleLogger().info(
+                                              "JMX Server started. " + authMsg + " - Available at URL["
+                                                  + "service:jmx:rmi:///jndi/rmi://localhost:" + jmxPort + "/jmxrmi"
+                                                  + "]");
+      if (!credentialsMsg.equals("")) CustomerLogging.getConsoleLogger().info(credentialsMsg);
     } catch (BindException be) {
       throw new Exception("Unable to bind JMX server on port " + jmxPort
                           + "; perhaps this port is already in use, or you don't have sufficient privileges?", be);
