@@ -34,7 +34,8 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       runTestWithNulls();
       runTestNested();
       runTestNonVoid();
-      // runTestWithSynchAndNested();
+      runTestWithParamChange();
+//       runTestWithSynchAndNested();
     } catch (Throwable e) {
       notifyError(e);
     }
@@ -49,6 +50,24 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         FooObject[][] foos = makeFooArray();
         int[][][] ints = makeIntArray();
         model.addObject(new FooObject(), 1, 2, foos, ints, true);
+      }
+    }
+    sharedBarrier.barrier();
+    final int actual = model.callCount.get();
+    if (actual != getParticipantCount()) {
+      notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
+    }
+  }
+
+  private void runTestWithParamChange() throws Throwable {
+    final boolean callInitiator = sharedBarrier.barrier() == 0;
+
+    if (callInitiator) {
+      model.callCount.set(0);
+      synchronized (model) {
+        FooObject[][] foos = makeFooArray();
+        int[][][] ints = makeIntArray();
+        model.addObjectWithParamChange(new FooObject(), 1, 2, foos, ints, true);
       }
     }
     sharedBarrier.barrier();
@@ -141,10 +160,12 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       this.addObjectSynched(obj, i, d, foos, ints, b);
     }
 
-    public String addObjectNonVoid(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
+    public String addObjectNonVoid(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b)
+        throws Throwable {
       addObject(obj, i, d, foos, ints, b);
       return new String("A-OK");
     }
+
     public void addObject(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b) throws Throwable {
       callCount.increment();
       // Everything in the "foos" array should be non-null
@@ -170,6 +191,40 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       }
 
       checkLiteralParams(i, d, b);
+      sharedBarrier2.barrier();
+    }
+
+    public void addObjectWithParamChange(Object obj, int i, double d, FooObject[][] foos, int[][][] ints, boolean b)
+        throws Throwable {
+      callCount.increment();
+      // Everything in the "foos" array should be non-null
+      for (int index = 0; index < foos.length; index++) {
+        FooObject[] array = foos[index];
+        for (int j = 0; j < array.length; j++) {
+          FooObject foo = array[j];
+          if (foo == null) notifyError("foo == null");
+        }
+      }
+
+      // access all the "ints"
+      int count = 0;
+      for (int index = 0; index < ints.length; index++) {
+        int[][] array1 = ints[index];
+        for (int j = 0; j < array1.length; j++) {
+          int[] array2 = array1[j];
+          for (int k = 0; k < array2.length; k++) {
+            int val = array2[k];
+            if (count++ != val) notifyError("count ++ != val");
+          }
+        }
+      }
+      checkLiteralParams(i, d, b);
+      // now re-assign all params...
+      obj = null;
+      i = -777;
+      foos = null;
+      ints = null;
+      b = !b;
       sharedBarrier2.barrier();
     }
 
@@ -225,8 +280,11 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       // config.addWriteAutolock(methodExpression);
 
       spec = config.getOrCreateSpec(SharedModel.class.getName());
-      spec.addDistributedMethodCall("addObjectNonVoid", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)java/lang/String;");
+      spec.addDistributedMethodCall("addObjectNonVoid",
+                                    "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)java/lang/String;");
       spec.addDistributedMethodCall("addObjectWithNulls", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
+      spec
+          .addDistributedMethodCall("addObjectWithParamChange", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObjectSynched", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObjectNested", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
       spec.addDistributedMethodCall("addObject", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V");
