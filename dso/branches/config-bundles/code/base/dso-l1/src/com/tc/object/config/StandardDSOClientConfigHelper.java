@@ -27,6 +27,8 @@ import com.tc.geronimo.transform.HostGBeanAdapter;
 import com.tc.geronimo.transform.MultiParentClassLoaderAdapter;
 import com.tc.geronimo.transform.ProxyMethodInterceptorAdapter;
 import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
+import com.tc.jboss.transform.MainAdapter;
+import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.object.LiteralValues;
@@ -59,13 +61,13 @@ import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
+import com.tc.object.loaders.NamedLoaderAdapter;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
 import com.tc.tomcat.transform.BootstrapAdapter;
 import com.tc.tomcat.transform.CatalinaAdapter;
 import com.tc.tomcat.transform.ContainerBaseAdapter;
 import com.tc.tomcat.transform.JspWriterImplAdapter;
-import com.tc.tomcat.transform.TomcatLoaderAdapter;
 import com.tc.tomcat.transform.WebAppLoaderAdapter;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
@@ -237,6 +239,58 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     logger.debug("distributed-methods: " + ArrayUtils.toString(this.distributedMethods));
 
     rewriteHashtableAutLockSpecIfNecessary();
+  }
+
+  private void addSpringApp(SpringApp springApp, Set appNames, List sLocks) throws ConfigurationSetupException {
+    // TODO scope the following by app namespace https://jira.terracotta.lan/jira/browse/LKC-2284
+    addInstrumentedClasses(springApp.includes());
+    addLocks(sLocks, springApp.locks());
+    addTransientFields(springApp.transientFields());
+
+    if (springApp.sessionSupport()) {
+      appNames.add(springApp.name()); // enable session support
+    }
+
+    AppContext[] appContexts = springApp.appContexts();
+    for (int j = 0; appContexts != null && j < appContexts.length; j++) {
+      AppContext appContext = appContexts[j];
+      if (appContext == null) continue;
+
+      DSOSpringConfigHelper springConfigHelper = new StandardDSOSpringConfigHelper();
+      springConfigHelper.addApplicationNamePattern(springApp.name());
+      springConfigHelper.setFastProxyEnabled(springApp.fastProxy()); // copy flag to all subcontexts
+
+      springConfigHelper.setRootName(appContext.rootName());
+      springConfigHelper.setLocationInfoEnabled(appContext.locationInfoEnabled());
+
+      String[] distributedEvents = appContext.distributedEvents();
+      for (int k = 0; distributedEvents != null && k < distributedEvents.length; k++) {
+        springConfigHelper.addDistributedEvent(distributedEvents[k]);
+      }
+
+      String[] paths = appContext.paths();
+      for (int k = 0; paths != null && k < paths.length; k++) {
+        if (paths[k] != null) {
+          springConfigHelper.addConfigPattern(paths[k]);
+        }
+      }
+
+      SpringContextBean[] beans = appContext.beans();
+      for (int k = 0; beans != null && k < beans.length; k++) {
+        SpringContextBean bean = beans[k];
+        if (bean != null) {
+          springConfigHelper.addBean(bean.name());
+          String[] fields = bean.nonDistributedFields();
+          for (int l = 0; fields != null && l < fields.length; l++) {
+            if (fields[l] != null) {
+              springConfigHelper.excludeField(bean.name(), fields[l]);
+            }
+          }
+        }
+      }
+
+      addDSOSpringConfig(springConfigHelper);
+    }
   }
 
   public Portability getPortability() {
@@ -675,6 +729,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addCustomAdapter("org.apache.geronimo.tomcat.HostGBean", HostGBeanAdapter.class);
     addCustomAdapter("org.apache.geronimo.tomcat.TomcatClassLoader", TomcatClassLoaderAdapter.class);
 
+    // JBoss adapters
+    addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", UCLAdapter.class);
+    addCustomAdapter("org.jboss.Main", MainAdapter.class);
+    addCustomAdapter("org.jboss.system.server.NoAnnotationURLClassLoader", NamedLoaderAdapter.class);
+
     // TODO for the Event Swing sample only
     ld = new LockDefinition("setTextArea", ConfigLockLevel.WRITE);
     ld.commit();
@@ -948,8 +1007,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addCustomAdapter("org.apache.catalina.startup.Catalina", CatalinaAdapter.class);
     addCustomAdapter("org.apache.catalina.core.ContainerBase", ContainerBaseAdapter.class);
     addCustomAdapter("org.apache.catalina.startup.Bootstrap", BootstrapAdapter.class);
-    addCustomAdapter("org.apache.catalina.loader.WebappClassLoader", TomcatLoaderAdapter.class);
-    addCustomAdapter("org.apache.catalina.loader.StandardClassLoader", TomcatLoaderAdapter.class);
+    addCustomAdapter("org.apache.catalina.loader.WebappClassLoader", NamedLoaderAdapter.class);
+    addCustomAdapter("org.apache.catalina.loader.StandardClassLoader", NamedLoaderAdapter.class);
   }
 
   private void addWeblogicCustomAdapters() {
