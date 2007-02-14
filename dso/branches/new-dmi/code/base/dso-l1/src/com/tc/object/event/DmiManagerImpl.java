@@ -12,6 +12,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiClassSpec;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.util.Assert;
 import com.tcclient.object.DistributedMethodCall;
@@ -22,8 +23,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DmiManagerImpl implements DmiManager {
-  private static final TCLogger     logger = TCLogging.getLogger(DmiManager.class);
-  private static final Object       TRUE   = new String("TRUE");
+  private static final TCLogger     logger   = TCLogging.getLogger(DmiManager.class);
+  private static final String       lockName = "xxxyyyzzz";
+  private static final Object       TRUE     = new Object();
 
   private final ClassProvider       classProvider;
   private final ClientObjectManager objMgr;
@@ -46,26 +48,33 @@ public class DmiManagerImpl implements DmiManager {
     if (feedBack.get() != null) { return false; }
     if (nesting.get() != null) { return false; }
     nesting.set(TRUE);
+
     Assert.pre(receiver != null);
     Assert.pre(method != null);
     Assert.pre(params != null);
-
+    
     final String methodName = method.substring(0, method.indexOf('('));
     final String paramDesc = method.substring(method.indexOf('('));
     final DistributedMethodCall dmc = new DistributedMethodCall(receiver, params, methodName, paramDesc);
-    final ObjectID receiverId = objMgr.lookupOrCreate(receiver).getObjectID();
-    final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc).getObjectID();
-    final DmiClassSpec[] classSpecs = getClassSpecs(classProvider, receiver, params);
-    final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs);
-    if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(receiver.getClass().getName(), dmc
-        .getMethodName(), dmc.getParameterDesc());
-    objMgr.getTransactionManager().addDmiDescriptor(dd);
-    return true;
+    if (runtimeLogger.distributedMethodDebug()) runtimeLogger.distributedMethodCall(receiver.getClass().getName(),
+                                                                                    dmc.getMethodName(), dmc
+                                                                                        .getParameterDesc());
+    objMgr.getTransactionManager().begin(lockName, LockLevel.CONCURRENT);
+    try {
+      final ObjectID receiverId = objMgr.lookupOrCreate(receiver).getObjectID();
+      final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc).getObjectID();
+      final DmiClassSpec[] classSpecs = getClassSpecs(classProvider, receiver, params);
+      final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs);
+      objMgr.getTransactionManager().addDmiDescriptor(dd);
+      return true;
+    } finally {
+      objMgr.getTransactionManager().commit(lockName);
+    }
   }
 
   public void distributedInvokeCommit() {
     if (feedBack.get() != null) { return; }
-    Assert.assertTrue(Thread.currentThread().getName(), nesting.get() != null);
+    Assert.pre(nesting.get() != null);
     nesting.set(null);
   }
 
