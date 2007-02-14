@@ -192,7 +192,8 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     try {
       physicalClassLogger.logVisitMethodBegin(access, name, desc, signature, exceptions);
 
-      if (name.startsWith(ByteCodeUtil.TC_METHOD_PREFIX) || doNotInstrument.contains(name + desc)) {
+      if (name.startsWith(ByteCodeUtil.TC_METHOD_PREFIX) || doNotInstrument.contains(name + desc)
+          || getTransparencyClassSpec().doNotInstrument(name)) {
         if (!getTransparencyClassSpec().hasCustomMethodAdapter(access, name, desc, exceptions)) {
           physicalClassLogger.logVisitMethodIgnoring(name, desc);
           return cv.visitMethod(access, name, desc, signature, exceptions);
