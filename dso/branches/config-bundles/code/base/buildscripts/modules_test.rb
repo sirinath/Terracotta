@@ -356,7 +356,12 @@ class SubtreeTestRun
 
         @jvmargs = [ ]
 
-        plugins_url = "file://#{@build_results.plugins_home.canonicalize}"
+        plugins_path = @build_results.plugins_home.canonicalize.to_s
+
+        # Use a java.io.File object to convert the path into a URL
+        include_class('java.io.File') { 'JavaFile' }
+        plugins_url = JavaFile.new(plugins_path).toURL().to_s
+
         # 'tc.tests.info.property-files' is set so that TestConfigObject knows which file to go read.
         @sysproperties = {
             "tc.base-dir" => @static_resources.root_dir.to_s,
