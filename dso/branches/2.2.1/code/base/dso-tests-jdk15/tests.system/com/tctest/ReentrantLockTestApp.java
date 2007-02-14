@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -67,6 +68,8 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       basicUnsharedLockTesting(unsharedUnfairLock);
       basicLockTesting(root.getUnfairLock());
       lockSyncLockTesting(root.getUnfairLock());
+      tryLockTimeoutTesting(root.getUnfairLock());
+      tryLockTesting(root.getUnfairLock());
 
       // --
       // threadInterruptedLockTesting(root.getUnfairLock());
@@ -78,6 +81,8 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       basicUnsharedLockTesting(unsharedFairLock);
       basicLockTesting(root.getFairLock());
       lockSyncLockTesting(root.getFairLock());
+      tryLockTimeoutTesting(root.getFairLock());
+      tryLockTesting(root.getFairLock());
 
       // --
       // threadInterruptedLockTesting(root.getFairLock());
@@ -259,10 +264,10 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
-  
+
   private void singleNodeTryBeginLockTesting() throws Exception {
     clear();
-    
+
     int index = -1;
     synchronized (root) {
       index = root.getIndex();
@@ -274,20 +279,20 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
         root.setIndex(3);
       }
     }
-    
+
     barrier.await();
-    
+
     if (index == 0) {
       String lockId = "testLock";
       CyclicBarrier localBarrier = new CyclicBarrier(2);
       Thread thread1 = new Thread(new TestTryLockFailRunnable(lockId, localBarrier));
-      
+
       ManagerUtil.beginLock(lockId, LockLevel.WRITE);
       thread1.start();
       localBarrier.await();
       ManagerUtil.commitLock(lockId);
     }
-    
+
     barrier.await();
   }
 
@@ -629,6 +634,332 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
+  
+  private void tryLockTesting(final ReentrantLock lock) throws Exception {
+    clear();
+
+    int index = -1;
+    synchronized (root) {
+      index = root.getIndex();
+      root.setIndex(index + 1);
+    }
+
+    barrier.await();
+
+    if (index == 1) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      final CyclicBarrier threadBarrier = new CyclicBarrier(2);
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          lock.lock();
+          try {
+            threadBarrier.await();
+            threadBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          } finally {
+            lock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            threadBarrier.await();
+            boolean isLocked = lock.tryLock();
+            threadBarrier.await();
+            Assert.assertFalse(isLocked);
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+
+    if (index == 0) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      final CyclicBarrier threadBarrier = new CyclicBarrier(2);
+      final ReentrantLock nonSharedLock = new ReentrantLock();
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          nonSharedLock.lock();
+          try {
+            threadBarrier.await();
+            threadBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          } finally {
+            nonSharedLock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            threadBarrier.await();
+            boolean isLocked = nonSharedLock.tryLock();
+            threadBarrier.await();
+            Assert.assertFalse(isLocked);
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+    
+    if (index == 0) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(2);
+      final ReentrantLock nonSharedLock = new ReentrantLock();
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            boolean isLocked = nonSharedLock.tryLock();
+            Assert.assertTrue(isLocked);
+            nonSharedLock.unlock();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+
+  }
+
+  private void tryLockTimeoutTesting(final ReentrantLock lock) throws Exception {
+    clear();
+
+    int index = -1;
+    synchronized (root) {
+      index = root.getIndex();
+      root.setIndex(index + 1);
+    }
+
+    barrier.await();
+
+    if (index == 1) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          lock.lock();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          } finally {
+            lock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            boolean isLocked = lock.tryLock(4000, TimeUnit.MILLISECONDS);
+            Assert.assertTrue(isLocked);
+            lock.unlock();
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+
+    if (index == 0) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      final ReentrantLock nonSharedLock = new ReentrantLock();
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          nonSharedLock.lock();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          } finally {
+            nonSharedLock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            boolean isLocked = nonSharedLock.tryLock(4, TimeUnit.SECONDS);
+            Assert.assertTrue(isLocked);
+            nonSharedLock.unlock();
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+    
+    if (index == 0) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      final ReentrantLock nonSharedLock = new ReentrantLock();
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          nonSharedLock.lock();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          } finally {
+            nonSharedLock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            boolean isLocked = nonSharedLock.tryLock(TimeUnit.MICROSECONDS.convert(4, TimeUnit.SECONDS), TimeUnit.MICROSECONDS);
+            Assert.assertTrue(isLocked);
+            nonSharedLock.unlock();
+          } catch (InterruptedException e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+
+    if (index == 0) {
+      final CyclicBarrier localBarrier = new CyclicBarrier(3);
+      final CyclicBarrier threadBarrier = new CyclicBarrier(2);
+      final ReentrantLock nonSharedLock = new ReentrantLock();
+      
+      Thread t1 = new Thread(new Runnable() {
+        public void run() {
+          nonSharedLock.lock();
+          try {
+            threadBarrier.await();
+            threadBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          } finally {
+            nonSharedLock.unlock();
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+
+      Thread t2 = new Thread(new Runnable() {
+        public void run() {
+          try {
+            threadBarrier.await();
+            boolean isLocked = nonSharedLock.tryLock(10, TimeUnit.MICROSECONDS);
+            threadBarrier.await();
+            Assert.assertFalse(isLocked);
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+          try {
+            localBarrier.await();
+          } catch (Exception e) {
+            throw new AssertionError(e);
+          }
+        }
+      });
+      t1.start();
+      t2.start();
+      localBarrier.await();
+    }
+
+    barrier.await();
+
+  }
 
   /**
    * This test case provides basic testing to the API of an reentrant lock when an reentrant lock is shared.
@@ -737,7 +1068,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
     spec.addRoot("queue", "queue");
     spec.addRoot("testLockObject", "testLockObject");
   }
-  
+
   private static class TestRunnable1 implements Runnable {
     private ReentrantLock lock;
     private Condition     conditionObject;
@@ -775,29 +1106,29 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       } finally {
         lock.unlock();
         try {
-      barrier2.await();
-    } catch (InterruptedException e) {
-      throw new TCRuntimeException(e);
-    } catch (BrokenBarrierException e) {
-      throw new TCRuntimeException(e);
+          barrier2.await();
+        } catch (InterruptedException e) {
+          throw new TCRuntimeException(e);
+        } catch (BrokenBarrierException e) {
+          throw new TCRuntimeException(e);
         }
       }
     }
   }
-  
+
   private class TestTryLockFailRunnable implements Runnable {
-    private String lockId;
+    private String        lockId;
     private CyclicBarrier barrier;
-    
+
     public TestTryLockFailRunnable(String lockId, CyclicBarrier barrier) {
       this.lockId = lockId;
       this.barrier = barrier;
     }
-    
+
     public void run() {
       try {
         boolean locked = ManagerUtil.tryBeginLock(lockId, LockLevel.WRITE);
-      
+
         Assert.assertFalse(locked);
         this.barrier.await();
       } catch (Exception e) {

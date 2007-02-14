@@ -8,7 +8,6 @@ import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.util.Assert;
 import com.tc.util.UnsafeUtil;
 
 import java.util.ArrayList;
@@ -47,7 +46,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
     initialize();
   }
-  
+
   private void initialize() {
     this.owner = null;
     this.numOfHolds = 0;
@@ -116,28 +115,29 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
   public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
     if (!tryLock()) {
-      long timeoutInNanos = TimeUnit.MICROSECONDS.toNanos(10);
+      Thread currentThread = Thread.currentThread();
+
+      long timeoutInNanos = TimeUnit.NANOSECONDS.convert(10, TimeUnit.MILLISECONDS);
       long totalTimeoutInNanos = unit.toNanos(timeout);
-      long startTimeInNanos = System.nanoTime();
 
       if (timeoutInNanos > totalTimeoutInNanos) {
         timeoutInNanos = totalTimeoutInNanos;
       }
 
       synchronized (lock) {
-        waitingQueue.add(Thread.currentThread());
-        numQueued++;
         boolean locked = false;
 
-        try {
-          while (!locked && totalTimeoutInNanos > 0) {
-            unit.timedWait(lock, timeoutInNanos);
-            totalTimeoutInNanos -= (System.nanoTime() - startTimeInNanos);
-            locked = tryLock();
-          }
-        } finally {
-          waitingQueue.remove(Thread.currentThread());
+        while (!locked && totalTimeoutInNanos > 0) {
+          waitingQueue.add(currentThread);
+          numQueued++;
+
+          TimeUnit.NANOSECONDS.timedWait(lock, timeoutInNanos);
+          totalTimeoutInNanos -= timeoutInNanos;
+
+          waitingQueue.remove(currentThread);
           numQueued--;
+
+          locked = tryLock();
         }
         return locked;
       }
@@ -287,7 +287,6 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     if (!ManagerUtil.isManaged(ReentrantLock.this)
         || !ManagerUtil.isHeldByCurrentThread(ReentrantLock.this, LockLevel.WRITE)) {
       this.lockInUnShared.push(Boolean.TRUE);
-      // isLockedInUnSharedMode = true;
     } else {
       this.lockInUnShared.push(Boolean.FALSE);
     }
@@ -304,7 +303,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
   private int getState() {
     return this.state;
   }
-  
+
   private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
     s.defaultReadObject();
     isFair = s.readBoolean();
@@ -584,7 +583,6 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
     Collection getWaitingThreads(ReentrantLock lock) {
       if (originalLock != lock) throw new IllegalArgumentException("not owner");
-      Assert.assertFalse(ManagerUtil.isManaged(originalLock));
       return waitingThreads;
     }
 
