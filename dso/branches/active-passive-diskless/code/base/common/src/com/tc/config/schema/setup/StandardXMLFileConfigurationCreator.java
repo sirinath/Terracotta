@@ -358,7 +358,7 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
     } catch (XmlException xmle) {
       throw new ConfigurationSetupException("The configuration data in the " + descrip + " does not obey the "
                                             + "Terracotta schema: " + xmle.getLocalizedMessage(), xmle);
-    }
+    } 
   }
 
   public File directoryConfigurationLoadedFrom() {

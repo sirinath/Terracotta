@@ -130,7 +130,7 @@ public final class RequestCountTest extends AbstractAppServerTestCase {
   }
 
   private JMXConnector getJMXConnector() throws IOException {
-    JMXServiceURL jmxServerUrl = new JMXServiceURL("jmxmp", "localhost", getJMXPort());
+    JMXServiceURL jmxServerUrl = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + getJMXPort() + "/jmxrmi");
     JMXConnector jmxConnector = JMXConnectorFactory.newJMXConnector(jmxServerUrl, null);
     jmxConnector.connect();
     return jmxConnector;

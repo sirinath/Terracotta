@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.tx;
 
@@ -21,6 +22,7 @@ import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.session.SessionID;
+import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 
@@ -36,7 +38,7 @@ import java.util.Map.Entry;
  * @author steve
  */
 public class ClientTransactionManagerImpl implements ClientTransactionManager {
-private static final TCLogger          logger        = TCLogging.getLogger(ClientTransactionManagerImpl.class);
+  private static final TCLogger          logger        = TCLogging.getLogger(ClientTransactionManagerImpl.class);
 
   private final ThreadLocal              transaction   = new ThreadLocal() {
                                                          protected synchronized Object initialValue() {
@@ -49,7 +51,7 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
                                                            return new ThreadTransactionLoggingStack();
                                                          }
 
-  };
+                                                       };
 
   private final ClientTransactionFactory txFactory;
   private final RemoteTransactionManager remoteTxManager;
@@ -202,7 +204,8 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
     }
   }
 
-  public void wait(String lockName, WaitInvocation call, Object object) throws UnlockedSharedObjectException, InterruptedException {
+  public void wait(String lockName, WaitInvocation call, Object object) throws UnlockedSharedObjectException,
+      InterruptedException {
     final ClientTransaction topTxn = getTransaction();
 
     LockID lockID = lockManager.lockIDFor(lockName);
@@ -213,8 +216,11 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
 
     commit(lockID, topTxn, true);
 
-    lockManager.wait(lockID, call, object, waitListener);
-    createTxAndInitContext();
+    try {
+      lockManager.wait(lockID, call, object, waitListener);
+    } finally {
+      createTxAndInitContext();
+    }
   }
 
   public void notify(String lockName, boolean all, Object object) throws UnlockedSharedObjectException {
@@ -358,6 +364,19 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
   }
 
   private boolean commit(LockID lockID, ClientTransaction currentTransaction, boolean isWaitContext) {
+    try {
+      return commitInternal(lockID, currentTransaction, isWaitContext);
+    } catch (Throwable t) {
+      remoteTxManager.stopProcessing();
+      Banner.errorBanner("Terracotta client shutting down due to error " + t);
+      logger.error(t);
+      if (t instanceof Error) { throw (Error) t; }
+      if (t instanceof RuntimeException) { throw (RuntimeException) t; }
+      throw new RuntimeException(t);
+    }
+  }
+
+  private boolean commitInternal(LockID lockID, ClientTransaction currentTransaction, boolean isWaitContext) {
     Assert.assertNotNull("transaction", currentTransaction);
 
     try {
@@ -375,7 +394,7 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
         objectManager.addPendingCreateObjectsToTransaction();
       }
 
-      currentTransaction.setAlreadyCommitted(true);
+      currentTransaction.setAlreadyCommitted();
       if (currentTransaction.hasChangesOrNotifies() || hasPendingCreateObjects) {
         if (txMonitor.isEnabled()) {
           currentTransaction.updateMBean(txMonitor);
@@ -619,7 +638,7 @@ private static final TCLogger          logger        = TCLogging.getLogger(Clien
 
   public void enableTransactionLogging() {
     ThreadTransactionLoggingStack txnStack = (ThreadTransactionLoggingStack) txnLogging.get();
-    Assert.assertTrue(txnStack.decrement() >= 0 );
+    Assert.assertTrue(txnStack.decrement() >= 0);
   }
 
   public boolean isTransactionLoggingDisabled() {
