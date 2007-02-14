@@ -63,4 +63,23 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
   }
 
+  public void registerForMessages(Class msgClass, GroupMessageListener listener) {
+    throw new ImplementMe();
+    
+  }
+
+  public void sendAll(GroupMessage msg) throws GroupException {
+    throw new ImplementMe();
+    
+  }
+
+  public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
+    throw new ImplementMe();
+  }
+
+  public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
+    throw new ImplementMe();
+    
+  }
+
 }

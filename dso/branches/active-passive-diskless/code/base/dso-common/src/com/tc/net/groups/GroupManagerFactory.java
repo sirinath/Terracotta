@@ -12,8 +12,7 @@ public class GroupManagerFactory {
 
   public static GroupManager createGroupManager() throws GroupException {
     // Using reflection to avoid weird 1.4 / 1.5 project dependency issues !!
-    //TODO:: Move to isTCK15compliant one trunk is merged
-    if(Vm.isJDK15()) {
+    if(Vm.isJDK15Compliant()) {
       return createTribesGroupManager();
     } else {
       return new SingleNodeGroupManager();

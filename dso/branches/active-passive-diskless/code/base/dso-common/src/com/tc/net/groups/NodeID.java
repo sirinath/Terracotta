@@ -6,7 +6,9 @@ package com.tc.net.groups;
 
 public class NodeID {
 
-  private final String uid;
+  public static final NodeID NULL_ID = new NodeID("NULL-ID");
+
+  private final String       uid;
 
   public NodeID(String uid) {
     this.uid = uid;
@@ -24,7 +26,15 @@ public class NodeID {
     return false;
   }
 
+  public String getID() {
+    return uid;
+  }
+
   public String toString() {
     return "NodeID[" + uid + "]";
+  }
+
+  public boolean isNull() {
+    return NULL_ID.equals(this);
   }
 }
