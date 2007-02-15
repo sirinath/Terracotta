@@ -4,7 +4,8 @@
  */
 package com.tc.net.groups;
 
-import com.tc.exception.ImplementMe;
+import java.util.Collections;
+import java.util.List;
 
 /*
  * This is a simple class that is a dummy group manager. All it does is it treats this one node that it runs in as a
@@ -13,7 +14,13 @@ import com.tc.exception.ImplementMe;
  */
 public class SingleNodeGroupManager implements GroupManager {
 
-  NodeID thisNode;
+  private static final GroupResponse DUMMY_RESPONSE = new GroupResponse() {
+                                                      public List getResponses() {
+                                                        return Collections.EMPTY_LIST;
+                                                      }
+                                                    };
+
+  NodeID                             thisNode;
 
   public NodeID join() throws GroupException {
     if (thisNode != null) { throw new GroupException("Already Joined"); }
@@ -22,22 +29,24 @@ public class SingleNodeGroupManager implements GroupManager {
   }
 
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
-    throw new ImplementMe();
-    
+    // NOP : Since this doesnt talk to the network, this should never get any message
   }
 
-  public void sendAll(GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
-    
+  public void sendAll(GroupMessage msg) {
+    // NOP : No Network, no one to write to
   }
 
-  public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
+  public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) {
+    // NOP : No Network, no one to write to, hen no response too
+    return DUMMY_RESPONSE;
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
-    
+    throw new GroupException("Can't write to Node : " + node + " Node Not found !");
+  }
+
+  public void registerForGroupEvents(GroupEventsListener listener) {
+    // NOP : No network, no one joins or leaves
   }
 
 }

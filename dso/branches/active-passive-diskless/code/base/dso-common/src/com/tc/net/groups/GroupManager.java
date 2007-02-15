@@ -16,4 +16,6 @@ public interface GroupManager {
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException;
 
+  public void registerForGroupEvents(GroupEventsListener listener);
+
 }

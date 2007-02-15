@@ -1,30 +1,44 @@
 package com.tc.net.groups;
 
-
 import org.apache.catalina.tribes.Channel;
 import org.apache.catalina.tribes.ChannelException;
 import org.apache.catalina.tribes.ChannelListener;
 import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.MembershipListener;
+import org.apache.catalina.tribes.ChannelException.FaultyMember;
 import org.apache.catalina.tribes.group.GroupChannel;
 
-import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.GroupException;
-import com.tc.net.groups.GroupManager;
-import com.tc.net.groups.NodeID;
+import com.tc.util.Assert;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TribesGroupManager implements GroupManager, ChannelListener, MembershipListener {
+  private static final TCLogger                           logger           = TCLogging
+                                                                               .getLogger(TribesGroupManager.class);
 
-  private static final TCLogger logger = TCLogging.getLogger(TribesGroupManager.class);
+  private final GroupChannel                              group;
 
-  private final GroupChannel    group;
+  private Member                                          thisMember;
+  private NodeID                                          thisNodeID;
 
-  private Member                thisMember;
-  private NodeID                thisNodeID;
+  private final CopyOnWriteArrayList<GroupEventsListener> groupListeners   = new CopyOnWriteArrayList<GroupEventsListener>();
+  private final Map<NodeID, Member>                       nodes            = Collections
+                                                                               .synchronizedMap(new HashMap<NodeID, Member>());
+  private final Map<String, GroupMessageListener>         messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
+  private final Map<MessageID, GroupResponse>             pendingRequests  = new Hashtable<MessageID, GroupResponse>();
 
   public TribesGroupManager() {
     group = new GroupChannel();
@@ -44,42 +58,185 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
   }
 
+  public void registerForMessages(Class msgClass, GroupMessageListener listener) {
+    GroupMessageListener prev = messageListeners.put(msgClass.getName(), listener);
+    if (prev != null) {
+      logger.warn("Previous listener removed : " + prev);
+    }
+  }
+
   public boolean accept(Serializable msg, Member sender) {
-    throw new ImplementMe();
+    messageReceived(msg, sender);
+    return true;
   }
 
   public void messageReceived(Serializable msg, Member sender) {
-    throw new ImplementMe();
+    GroupMessage gmsg = (GroupMessage) msg;
+    logger.info("Message recd  from : " + sender.getName() + " msg : " + msg);
+    MessageID requestID = gmsg.inResponseTo();
+    if (!requestID.isNull()) {
+      notifyPendingRequests(requestID, gmsg, sender);
+    } else {
+      NodeID from = new NodeID(sender.getName());
+      fireMessageReceivedEvent(from, gmsg);
+    }
+  }
 
+  private void notifyPendingRequests(MessageID requestID, GroupMessage gmsg, Member sender) {
+    GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
+    Assert.assertNotNull(response);
+    response.addResponseFrom(sender, gmsg);
+  }
+
+  private void fireMessageReceivedEvent(NodeID from, GroupMessage msg) {
+    GroupMessageListener listener = messageListeners.get(msg.getClass().getName());
+    if (listener != null) {
+      msg.setMessageOrginator(from);
+      listener.messageReceived(from, msg);
+    } else {
+      String errorMsg = "No Route for " + msg + " from " + from;
+      logger.error(errorMsg);
+      throw new AssertionError(errorMsg);
+    }
+
+  }
+
+  public void registerForGroupEvents(GroupEventsListener listener) {
+    groupListeners.add(listener);
   }
 
   public void memberAdded(Member member) {
-    throw new ImplementMe();
+    NodeID newNode = new NodeID(member.getName());
+    Member old;
+    if ((old = nodes.put(newNode, member)) == null) {
+      fireNodeEvent(newNode, true);
+    } else {
+      logger.warn("Member Added Event called for : " + newNode + " while it is still present in the list of nodes : "
+                  + old + " : " + nodes);
+    }
+  }
 
+  private void fireNodeEvent(NodeID newNode, boolean joined) {
+    Iterator i = groupListeners.iterator();
+    while (i.hasNext()) {
+      GroupEventsListener listener = (GroupEventsListener) i.next();
+      if (joined) {
+        listener.nodeJoined(newNode);
+      } else {
+        listener.nodeLeft(newNode);
+      }
+    }
   }
 
   public void memberDisappeared(Member member) {
-    throw new ImplementMe();
-
+    NodeID node = new NodeID(member.getName());
+    if ((nodes.remove(node)) != null) {
+      fireNodeEvent(node, false);
+    } else {
+      logger.warn("Member Disappered Event called for : " + node + " while it is not present in the list of nodes : "
+                  + nodes);
+    }
+    notifyAnyPendingRequests(member);
   }
 
-  public void registerForMessages(Class msgClass, GroupMessageListener listener) {
-    throw new ImplementMe();
-    
+  private void notifyAnyPendingRequests(Member member) {
+    synchronized (pendingRequests) {
+      for (Iterator i = pendingRequests.values().iterator(); i.hasNext();) {
+        GroupResponseImpl response = (GroupResponseImpl) i.next();
+        response.notifyMemberDead(member);
+      }
+    }
   }
 
   public void sendAll(GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
-    
+    // TODO :: Validate the options flag
+    try {
+      Member m[] = group.getMembers();
+      if (m.length > 0) {
+        group.send(m, msg, Channel.SEND_OPTIONS_DEFAULT);
+      }
+    } catch (ChannelException e) {
+      throw new GroupException(e);
+    }
   }
 
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
+    GroupResponseImpl groupResponse = new GroupResponseImpl();
+    MessageID msgID = msg.getMessageID();
+    GroupResponse old = pendingRequests.put(msgID, groupResponse);
+    Assert.assertNull(old);
+    groupResponse.sendMessage(group, msg);
+    groupResponse.waitForAllResponses();
+    pendingRequests.remove(msgID);
+    return groupResponse;
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
-    throw new ImplementMe();
-    
+    try {
+      Member to[] = new Member[1];
+      to[0] = nodes.get(node);
+      if (to[0] != null) {
+        // TODO :: Validate the options flag
+        group.send(to, msg, Channel.SEND_OPTIONS_DEFAULT);
+      } else {
+        // TODO:: These could be exceptions
+        logger.warn("Node " + node + " not present in the group. Ignoring Message : " + msg);
+      }
+    } catch (ChannelException e) {
+      throw new GroupException(e);
+    }
+  }
+
+  private static class GroupResponseImpl implements GroupResponse {
+
+    HashSet<Member>    waitFor   = new HashSet<Member>();
+    List<GroupMessage> responses = new ArrayList<GroupMessage>();
+
+    public synchronized List getResponses() {
+      Assert.assertTrue(waitFor.isEmpty());
+      return responses;
+    }
+
+    public synchronized void addResponseFrom(Member sender, GroupMessage gmsg) {
+      Assert.assertNotNull(waitFor.remove(sender));
+      responses.add(gmsg);
+      notifyAll();
+    }
+
+    public synchronized void notifyMemberDead(Member member) {
+      waitFor.remove(member);
+      notifyAll();
+    }
+
+    public synchronized void waitForAllResponses() throws GroupException {
+      while (!waitFor.isEmpty()) {
+        try {
+          this.wait();
+        } catch (InterruptedException e) {
+          throw new GroupException(e);
+        }
+      }
+    }
+
+    public synchronized void sendMessage(GroupChannel group, GroupMessage msg) {
+      Member m[] = group.getMembers();
+      waitFor.addAll(Arrays.asList(m));
+      try {
+        if (m.length > 0) {
+          group.send(m, msg, Channel.SEND_OPTIONS_DEFAULT);
+        }
+      } catch (ChannelException e) {
+        logger.error("Error sending msg : " + msg, e);
+        reconsileWaitFor(e);
+      }
+    }
+
+    private void reconsileWaitFor(ChannelException e) {
+      FaultyMember fm[] = e.getFaultyMembers();
+      for (int i = 0; i < fm.length; i++) {
+        waitFor.remove(fm[i].getMember());
+      }
+    }
   }
 
 }

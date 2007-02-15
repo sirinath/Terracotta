@@ -3,11 +3,10 @@
  */
 package com.tc.net.groups;
 
-import java.util.List;
+public interface GroupEventsListener {
 
+  public void nodeJoined(NodeID nodeID);
 
-public interface GroupResponse {
-
-  public List getResponses();
-
+  public void nodeLeft(NodeID nodeID);
+  
 }

@@ -13,8 +13,8 @@ public class ClusterStateMessageFactory {
     return new ClusterStateMessage(ClusterStateMessage.START_ELECTION, e);
   }
 
-  public static GroupMessage createElectionWonMessage(Enrollment e) {
-    return new ClusterStateMessage(ClusterStateMessage.ELECTION_WON, e);
+  public static GroupMessage createElectionResultMessage(Enrollment e) {
+    return new ClusterStateMessage(ClusterStateMessage.ELECTION_RESULT, e);
   }
 
   public static GroupMessage createAbortElectionMessage(GroupMessage initiatingMsg, Enrollment e) {
@@ -31,6 +31,10 @@ public class ClusterStateMessageFactory {
   
   public static GroupMessage createResultAgreedMessage(ClusterStateMessage initiatingMsg, Enrollment e) {
     return new ClusterStateMessage(initiatingMsg.getMessageID(), ClusterStateMessage.RESULT_AGREED, e);
+  }
+
+  public static GroupMessage createElectionWonMessage(Enrollment e) {
+    return new ClusterStateMessage(ClusterStateMessage.ELECTION_WON, e);
   }
 
 }
