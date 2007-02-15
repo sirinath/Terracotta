@@ -657,9 +657,12 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("java.util.BitSet");
     spec.setHonorTransient(false);
 
-    if (Vm.getMajorVersion() >= 5) {
+    if (Vm.isJDK15Compliant()) {
       spec = getOrCreateSpec("java.util.EnumMap");
       spec.setHonorTransient(false);
+      spec = getOrCreateSpec("java.util.EnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
     }
 
     spec = getOrCreateSpec("java.util.Collections");
@@ -733,7 +736,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec.addSupportMethodCreator(new AbstractListMethodCreator());
     spec = getOrCreateSpec("java.util.AbstractSet");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec = getOrCreateSpec("java.util.AbstractSequentialList");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec = getOrCreateSpec("java.util.Dictionary");
@@ -742,7 +744,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
     spec = getOrCreateSpec("java.util.AbstractMap");
     spec.setHonorTransient(true);
-
+    
     // spec = getOrCreateSpec("java.lang.Number");
     // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
     // JVM crashes.
