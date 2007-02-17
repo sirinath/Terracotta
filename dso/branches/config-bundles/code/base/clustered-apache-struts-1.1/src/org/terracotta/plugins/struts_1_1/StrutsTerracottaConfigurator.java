@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package org.terracotta.plugins.configuration.struts_1_1;
+package org.terracotta.plugins.struts_1_1;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;

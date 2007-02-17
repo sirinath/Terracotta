@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bundle-Activator: org.terracotta.plugins.configuration.struts_1_1.StrutsTerracottaConfigurator
+Bundle-Activator: org.terracotta.plugins.struts_1_1.StrutsTerracottaConfigurator
 Bundle-Category: terracotta
 Bundle-Copyright: Terracotta, Inc. (c) 2003-2007
 Bundle-Description: Terracotta configuration for clustering Apache Struts 1.1
