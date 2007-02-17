@@ -10,6 +10,7 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.TraverseTest;
+import com.tc.object.event.DmiManager;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.properties.TCProperties;
 
@@ -77,7 +78,9 @@ public interface Manager {
 
   public void logicalInvokeWithTransaction(Object object, Object lockObject, String methodName, Object[] params);
 
-  public void distributedMethodCall(Object receiver, String method, Object[] params);
+  public boolean distributedMethodCall(Object receiver, String method, Object[] params);
+
+  public void distributedMethodCallCommit();
 
   public Object lookupRoot(String name);
 
@@ -118,5 +121,7 @@ public interface Manager {
   public TCProperties getTCProperites();
 
   public void addClusterEventListener(ClusterEventListener cel);
+
+  public DmiManager getDmiManager();
 
 }

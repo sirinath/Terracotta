@@ -24,6 +24,7 @@ import javax.swing.JTextPane;
 import javax.swing.text.Document;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
+import javax.swing.SwingUtilities;
 
 public class Main 
    extends JFrame implements MessageListener, ActionListener 
@@ -38,7 +39,7 @@ public class Main
       messageManager = new MessageManager();
 
       setDefaultLookAndFeelDecorated(true);
-      addWindowListener(new ExitListener());
+      setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       Container content = getContentPane();
 
       display = new JTextPane();
@@ -46,7 +47,7 @@ public class Main
       display.setEditable(false);
       display.setRequestFocusEnabled(false);
 
-      JTextField input = new JTextField();
+      final JTextField input = new JTextField();
       input.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 9));
       input.addActionListener(this);
       JScrollPane scroll = new JScrollPane(display);
@@ -65,10 +66,11 @@ public class Main
       content.add(input, BorderLayout.SOUTH);
       pack();
 
-      setSize(new Dimension(300, 400));
-      input.requestFocus();
-      setVisible(true);
       this.username = username;
+      setSize(new Dimension(300, 400));
+      setVisible(true);
+      
+      input.requestFocus();
       login();
    }  
   
@@ -179,15 +181,11 @@ public class Main
 
    public static void main(String[] args) 
    {
-     new Main(Main.chatname(args.length == 0 ? "" : args[0]));
-   }
-
-   class ExitListener extends WindowAdapter 
-   {
-      public void windowClosing(WindowEvent event) 
-      {
-         Main.this.logout();
-         System.exit(0);
-      }
+      final String name = args.length == 0 ? "" : args[0];
+      javax.swing.SwingUtilities.invokeLater(new Runnable() {
+         public void run() {
+            new Main(Main.chatname(name));
+         }
+      });
    }
 }

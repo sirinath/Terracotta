@@ -10,6 +10,7 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.TraverseTest;
+import com.tc.object.event.DmiManager;
 import com.tc.properties.TCProperties;
 
 public final class NullManager implements Manager {
@@ -87,7 +88,11 @@ public final class NullManager implements Manager {
     //
   }
 
-  public final void distributedMethodCall(Object receiver, String method, Object[] params) {
+  public final boolean distributedMethodCall(Object receiver, String method, Object[] params) {
+    return true;
+  }
+
+  public void distributedMethodCallCommit() {
     //
   }
 
@@ -218,6 +223,10 @@ public final class NullManager implements Manager {
   }
 
   public void addClusterEventListener(ClusterEventListener cel) {
+    throw new UnsupportedOperationException();
+  }
+
+  public DmiManager getDmiManager() {
     throw new UnsupportedOperationException();
   }
 

@@ -44,7 +44,6 @@ import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.THashMapAdapter;
-import com.tc.object.bytecode.TableModelMethodAdapter;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TreeMapAdapter;
 import com.tc.object.bytecode.UnsafeAdapter;
@@ -340,9 +339,12 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private void doAutoconfig(boolean interrogateBootJar) {
     // Table model stuff
+    addIncludePattern("javax.swing.event.TableModelEvent", true);
+    TransparencyClassSpec spec = getOrCreateSpec("javax.swing.event.TableModelEvent");
+    
     addIncludePattern("javax.swing.table.AbstractTableModel", true);
-    TransparencyClassSpec spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
-    spec.addMethodAdapter(TableModelMethodAdapter.METHOD, new TableModelMethodAdapter());
+    spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
+    spec.addDistributedMethodCall("fireTableChanged", "(Ljavax/swing/event/TableModelEvent;)V");
     spec.addTransient("listenerList");
 
     spec = getOrCreateSpec("javax.swing.table.DefaultTableModel");
@@ -449,6 +451,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.addDistributedMethodCall("fireIntervalRemoved", "(Ljava/lang/Object;II)V");
 
     spec = getOrCreateSpec("java.util.Arrays");
+    spec.addDoNotInstrument("copyOfRange");
+    spec.addDoNotInstrument("copyOf");
+
     spec = getOrCreateSpec("java.util.Arrays$ArrayList");
 
     spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
@@ -491,6 +496,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     spec = getOrCreateSpec("java.util.BitSet");
     spec.setHonorTransient(false);
+
+    if (Vm.isJDK15Compliant()) {
+      spec = getOrCreateSpec("java.util.EnumMap");
+      spec.setHonorTransient(false);
+      spec = getOrCreateSpec("java.util.EnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
+    }
 
     spec = getOrCreateSpec("java.util.Collections");
     spec = getOrCreateSpec("java.util.Collections$EmptyList", "com.tc.object.applicator.ListApplicator");
@@ -558,19 +571,20 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("java.util.AbstractCollection");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
-    spec = getOrCreateSpec("java.util.AbstractMap");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec = getOrCreateSpec("java.util.AbstractList");
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec.addSupportMethodCreator(new AbstractListMethodCreator());
     spec = getOrCreateSpec("java.util.AbstractSet");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec = getOrCreateSpec("java.util.AbstractSequentialList");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec = getOrCreateSpec("java.util.Dictionary");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
+    // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
+    spec = getOrCreateSpec("java.util.AbstractMap");
+    spec.setHonorTransient(true);
+    
     // spec = getOrCreateSpec("java.lang.Number");
     // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
     // JVM crashes.
@@ -933,12 +947,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       addJavaUtilConcurrentFutureTaskSpec();
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
-      spec.setHonorTransient(true);
-      spec.setCallConstructorOnLoad(true);
-      spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-      spec.setHonorTransient(true);
-      spec.setCallConstructorOnLoad(true);
-      spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject");
       spec.setHonorTransient(true);
       spec.setCallConstructorOnLoad(true);
 
