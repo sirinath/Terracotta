@@ -33,13 +33,14 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
   private final TCLogger                consoleLogger;
   private final DistributedObjectServer server;
   private final GroupManager            groupManager;
+  private final ElectionManager         electionMgr;
 
   private final SetOnceFlag             started              = new SetOnceFlag(false);
+  private final Object                  electionLock         = new Object();
 
   private NodeID                        myNodeId;
   private NodeID                        activeNode           = NodeID.NULL_ID;
-  private State                         state                = START_STATE;
-  private ElectionManager               electionMgr;
+  private volatile State                state                = START_STATE;
 
   public StateManagerImpl(TCLogger consoleLogger, DistributedObjectServer server, GroupManager groupManager) {
     this.consoleLogger = consoleLogger;
@@ -58,42 +59,38 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       logger.error("Caught Exception :", e);
       throw new AssertionError(e);
     }
-    logger.info("L2 Node ID = " + myNodeId);
+    info("L2 Node ID = " + myNodeId);
     startElection();
   }
 
   /*
-   * TODO:: If multiple nodes starts up at the same time and joins the cluster and the elected ACTIVE dies before any of
-   * the passive moves to STANDBY mode, then the cluster might be hung. Fix it by sending more info in the ELECTION_WON
-   * message for the first time
+   * XXX:: If ACTIVE dying before any passive moved to STANDBY state, then the cluster is hung and there is no going
+   * around it. If ACTIVE in persistent mode, it can come back and recover the cluster
    */
   private void startElection() {
-    validateElectionStart();
-    runElection();
-  }
-
-  private synchronized void validateElectionStart() {
-    if (state != START_STATE && state != PASSIVE_STANDBY) {
-      // 
-      throw new AssertionError("Cant initiate Election from current state : " + state);
+    synchronized (electionLock) {
+      if (state == START_STATE) {
+        runElection(true);
+      } else if (state == PASSIVE_STANDBY) {
+        runElection(false);
+      } else {
+        info("Ignoring Election request since not in right state");
+      }
     }
   }
 
-  private void runElection() {
-    NodeID winner = electionMgr.runElection(myNodeId);
+  private void runElection(boolean isNew) {
+    NodeID winner = electionMgr.runElection(myNodeId, isNew);
     if (winner == myNodeId) {
       moveToActiveState();
-    } else {
-      // TODO:: Come back and validate if this is needed
-      moveToPassiveState();
     }
   }
 
-  private synchronized void moveToPassiveState() {
+  private synchronized void moveToPassiveState(boolean initialized) {
+    electionMgr.reset();
     if (state == START_STATE) {
-      state = PASSIVE_UNINTIALIZED;
-      electionMgr.reset();
-      consoleLogger.info("Moved to " + state);
+      state = initialized ? PASSIVE_STANDBY : PASSIVE_UNINTIALIZED;
+      info("Moved to " + state, true);
       // TODO:: Start initializing Passive Node
     } else if (state == ACTIVE_COORDINATOR) {
       // TODO:: Support this later
@@ -107,7 +104,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       // TODO :: If state == START_STATE publish cluster ID
       state = ACTIVE_COORDINATOR;
       this.activeNode = this.myNodeId;
-      consoleLogger.info("Becoming " + state);
+      info("Becoming " + state, true);
       electionMgr.declareWinner(this.myNodeId);
       try {
         server.startActiveMode();
@@ -163,8 +160,9 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       throw new AssertionError(state + " Received Abort Election Msg : " + clusterMsg
                                + ". Possible split brain detected ");
     }
-    this.activeNode = clusterMsg.getEnrollment().getNodeID();
-    moveToPassiveState();
+    Enrollment winningEnrollment = clusterMsg.getEnrollment();
+    this.activeNode = winningEnrollment.getNodeID();
+    moveToPassiveState(winningEnrollment.isANewCandidate());
   }
 
   private void handleElectionResultMessage(ClusterStateMessage msg) throws GroupException {
@@ -180,9 +178,9 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       // Force other node to rerun election so that we can abort
       GroupMessage resultConflict = ClusterStateMessageFactory.createResultConflictMessage(msg, EnrollmentFactory
           .createTrumpEnrollment(myNodeId));
-      logger.warn("WARNING :: Active Node = " + activeNode + " , " + state
-                  + " received Election WON message from another node : " + msg + " : Forcing re-election "
-                  + resultConflict);
+      warn("WARNING :: Active Node = " + activeNode + " , " + state
+           + " received ELECTION_RESULT message from another node : " + msg + " : Forcing re-election "
+           + resultConflict);
       groupManager.sendTo(msg.messageFrom(), resultConflict);
     } else {
       electionMgr.handleElectionResultMessage(msg);
@@ -203,7 +201,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       // This is either a new L2 joining a cluster or a renegade L2. Force it to abort
       GroupMessage abortMsg = ClusterStateMessageFactory.createAbortElectionMessage(msg, EnrollmentFactory
           .createTrumpEnrollment(myNodeId));
-      logger.info("Forcing Abort Election for " + msg + " with " + abortMsg);
+      info("Forcing Abort Election for " + msg + " with " + abortMsg);
       groupManager.sendTo(msg.messageFrom(), abortMsg);
     } else {
       electionMgr.handleStartElectionRequest(msg);
@@ -212,8 +210,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
 
   // TODO:: Make it a handler on a stage
   public synchronized void nodeJoined(NodeID nodeID) {
-    logger.info("Node : " + nodeID + " joined the cluster");
-    consoleLogger.info("Node : " + nodeID + " joined the cluster");
+    info("Node : " + nodeID + " joined the cluster", true);
     if (state == ACTIVE_COORDINATOR) {
       // notify new node
       GroupMessage msg = ClusterStateMessageFactory.createElectionWonMessage(EnrollmentFactory
@@ -226,9 +223,42 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     }
   }
 
+  // TODO:: Make it a handler on a stage
   public void nodeLeft(NodeID nodeID) {
-    logger.warn("Node : " + nodeID + " left the cluster");
-    consoleLogger.warn("Node : " + nodeID + " left the cluster");
+    warn("Node : " + nodeID + " left the cluster", true);
+    boolean elect = false;
+    synchronized (this) {
+      if (state != PASSIVE_UNINTIALIZED && state != ACTIVE_COORDINATOR
+          && (activeNode.isNull() || activeNode.equals(nodeID))) {
+        elect = true;
+        activeNode = NodeID.NULL_ID;
+      }
+    }
+    if (elect) {
+      info("Starting Election to determine cluser wide ACTIVE L2");
+      startElection();
+    }
   }
 
+  private void info(String message) {
+    info(message, false);
+  }
+
+  private void info(String message, boolean console) {
+    logger.info(message);
+    if (console) {
+      consoleLogger.info(message);
+    }
+  }
+
+  private void warn(String message) {
+    warn(message, false);
+  }
+
+  private void warn(String message, boolean console) {
+    logger.warn(message);
+    if (console) {
+      consoleLogger.warn(message);
+    }
+  }
 }

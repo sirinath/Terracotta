@@ -9,7 +9,7 @@ import com.tc.net.groups.NodeID;
 
 public interface ElectionManager {
 
-  public NodeID runElection(NodeID myNodeId);
+  public NodeID runElection(NodeID myNodeId, boolean isNew);
 
   public void declareWinner(NodeID myNodeId);
   

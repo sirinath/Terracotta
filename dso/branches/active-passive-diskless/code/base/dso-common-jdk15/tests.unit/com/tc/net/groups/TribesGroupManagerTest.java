@@ -66,8 +66,8 @@ public class TribesGroupManagerTest extends TCTestCase {
 
   private static final class TestMessage extends AbstractGroupMessage {
 
+    // to make serialization sane
     public TestMessage() {
-      // to make serialization sane
       super(0);
     }
     

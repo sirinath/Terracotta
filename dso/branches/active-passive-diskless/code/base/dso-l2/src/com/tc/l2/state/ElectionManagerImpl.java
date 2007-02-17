@@ -133,10 +133,10 @@ public class ElectionManagerImpl implements ElectionManager {
     this.myVote = null;
   }
 
-  public NodeID runElection(NodeID myNodeId) {
+  public NodeID runElection(NodeID myNodeId, boolean isNew) {
     NodeID winnerID;
     try {
-      while ((winnerID = doElection(myNodeId)).isNull()) {
+      while ((winnerID = doElection(myNodeId, isNew)).isNull()) {
         // re-election
         logger.info("Requesting Re-election !!!");
       }
@@ -157,10 +157,10 @@ public class ElectionManagerImpl implements ElectionManager {
     logger.info("Election Started : " + e);
   }
 
-  private NodeID doElection(NodeID myNodeId) throws GroupException {
+  private NodeID doElection(NodeID myNodeId, boolean isNew) throws GroupException {
 
     // Step 1: publish to cluster NodeID, weight and election start
-    Enrollment e = EnrollmentFactory.createEnrollment(myNodeId);
+    Enrollment e = EnrollmentFactory.createEnrollment(myNodeId, isNew);
     electionStarted(e);
 
     GroupMessage msg = createElectionStartedMessage(e);
@@ -173,7 +173,8 @@ public class ElectionManagerImpl implements ElectionManager {
     Enrollment lWinner = computeResult();
     if (lWinner != e) {
       logger.info("Election lost : Winner is : " + lWinner);
-      return lWinner == null ? NodeID.NULL_ID : lWinner.getNodeID();
+      Assert.assertNotNull(lWinner);
+      return lWinner.getNodeID();
     }
     // Step 4 : local host won the election, so notify world for acceptance
     msg = createElectionResultMessage(e);
@@ -198,12 +199,12 @@ public class ElectionManagerImpl implements ElectionManager {
   }
 
   private synchronized Enrollment computeResult() {
-    if (state == ELECTION_COMPLETE) {
+    if (state == ELECTION_IN_PROGRESS) {
+      state = ELECTION_COMPLETE;
+      logger.info("Election Complete : " + votes + " : " + state);
       winner = countVotes();
-      return winner;
-    } else {
-      return null;
     }
+    return winner;
   }
 
   private Enrollment countVotes() {
@@ -231,10 +232,6 @@ public class ElectionManagerImpl implements ElectionManager {
       }
       diff = diff - (System.currentTimeMillis() - start);
     }
-    if (state == ELECTION_IN_PROGRESS) {
-      state = ELECTION_COMPLETE;
-    }
-    logger.info("Election Complete : " + votes + " : " + state);
   }
 
   private GroupMessage createElectionStartedMessage(Enrollment e) {

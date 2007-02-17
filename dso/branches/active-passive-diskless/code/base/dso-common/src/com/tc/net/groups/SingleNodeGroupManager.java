@@ -14,17 +14,19 @@ import java.util.List;
  */
 public class SingleNodeGroupManager implements GroupManager {
 
-  private static final GroupResponse DUMMY_RESPONSE = new GroupResponse() {
-                                                      public List getResponses() {
-                                                        return Collections.EMPTY_LIST;
-                                                      }
-                                                    };
+  private static final GroupResponse DUMMY_RESPONSE  = new GroupResponse() {
+                                                       public List getResponses() {
+                                                         return Collections.EMPTY_LIST;
+                                                       }
+                                                     };
+
+  private static final byte[]        CURRENT_NODE_ID = new byte[] { 36, 24, 32 };
 
   NodeID                             thisNode;
 
   public NodeID join() throws GroupException {
     if (thisNode != null) { throw new GroupException("Already Joined"); }
-    this.thisNode = new NodeID("CurrentNode");
+    this.thisNode = new NodeID("CurrentNode", CURRENT_NODE_ID);
     return this.thisNode;
   }
 

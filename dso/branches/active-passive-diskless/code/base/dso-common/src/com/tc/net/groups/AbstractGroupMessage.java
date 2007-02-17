@@ -10,7 +10,7 @@ import java.io.ObjectOutput;
 
 public abstract class AbstractGroupMessage implements GroupMessage {
 
-  private static long nextID = 0;
+  private static long      nextID           = 0;
 
   private int              type;
   private MessageID        id;
@@ -18,10 +18,10 @@ public abstract class AbstractGroupMessage implements GroupMessage {
 
   private transient NodeID messageOrginator = NodeID.NULL_ID;
 
-//  protected AbstractGroupMessage() {
-//    // To make serialization happy
-//  }
-  
+  // protected AbstractGroupMessage() {
+  // // To make serialization happy
+  // }
+
   protected AbstractGroupMessage(int type) {
     this.type = type;
     id = getNextID();
@@ -33,11 +33,11 @@ public abstract class AbstractGroupMessage implements GroupMessage {
     id = getNextID();
     this.requestID = requestID;
   }
-  
+
   private static final synchronized MessageID getNextID() {
     return new MessageID(nextID++);
   }
-  
+
   public int getType() {
     return type;
   }
@@ -45,11 +45,11 @@ public abstract class AbstractGroupMessage implements GroupMessage {
   public MessageID getMessageID() {
     return id;
   }
-  
+
   public MessageID inResponseTo() {
     return requestID;
   }
-  
+
   public void setMessageOrginator(NodeID n) {
     this.messageOrginator = n;
   }

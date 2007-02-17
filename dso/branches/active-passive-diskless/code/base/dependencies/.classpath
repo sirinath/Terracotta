@@ -99,6 +99,6 @@
 	<classpathentry kind="lib" path="lib/xml-resolver-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/xstream-1.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/catalina-tribes-6.0.9.jar" sourcepath="/home/ssubbiah/java/tomcat/apache-tomcat-6.0.9-src/java"/>
-	<classpathentry kind="lib" path="lib/tomcat-juli-6.0.9.jar"/>
+	<classpathentry kind="lib" path="lib/tomcat-juli-6.0.9.jar" sourcepath="/home/ssubbiah/java/tomcat/tribes"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

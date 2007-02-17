@@ -9,10 +9,9 @@ import java.util.Random;
 
 public class EnrollmentFactory {
 
-  public static Enrollment createEnrollment(NodeID nodeID) {
+  public static Enrollment createEnrollment(NodeID nodeID, boolean isNew) {
     int[] weights = createWeigth();
-    Enrollment e = new Enrollment(nodeID);
-    e.setWeight(weights);
+    Enrollment e = new Enrollment(nodeID, isNew, weights);
     return e;
   }
 
@@ -37,8 +36,7 @@ public class EnrollmentFactory {
 
   public static Enrollment createTrumpEnrollment(NodeID myNodeId) {
     int[] weights = createMaxWeigth();
-    Enrollment e = new Enrollment(myNodeId);
-    e.setWeight(weights);
+    Enrollment e = new Enrollment(myNodeId, false, weights);
     return e;
   }
 

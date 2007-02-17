@@ -13,6 +13,8 @@ import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +42,8 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   private final Map<String, GroupMessageListener>         messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
   private final Map<MessageID, GroupResponse>             pendingRequests  = new Hashtable<MessageID, GroupResponse>();
 
+  private boolean                                         debug            = false;
+
   public TribesGroupManager() {
     group = new GroupChannel();
     group.addChannelListener(this);
@@ -50,7 +54,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     try {
       group.start(Channel.DEFAULT);
       this.thisMember = group.getLocalMember(false);
-      this.thisNodeID = new NodeID(this.thisMember.getName());
+      this.thisNodeID = new NodeID(this.thisMember.getName(), this.thisMember.getUniqueId());
       return this.thisNodeID;
     } catch (ChannelException e) {
       logger.error(e);
@@ -58,7 +62,21 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
   }
 
+  private static void validateExternalizableClass(Class clazz) {
+    String name = clazz.getName();
+    try {
+      Constructor cons = clazz.getDeclaredConstructor(new Class[0]);
+      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) {
+        //
+        throw new AssertionError(name + " : public no arg constructor not found");
+      }
+    } catch (NoSuchMethodException ex) {
+      throw new AssertionError(name + " : public no arg constructor not found");
+    }
+  }
+
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
+    validateExternalizableClass(msgClass);
     GroupMessageListener prev = messageListeners.put(msgClass.getName(), listener);
     if (prev != null) {
       logger.warn("Previous listener removed : " + prev);
@@ -66,26 +84,30 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public boolean accept(Serializable msg, Member sender) {
-    messageReceived(msg, sender);
-    return true;
+    if (msg instanceof GroupMessage) { return true; }
+    logger.warn("Rejecting unknown message : " + msg + " from " + sender.getName());
+    return false;
   }
 
   public void messageReceived(Serializable msg, Member sender) {
     GroupMessage gmsg = (GroupMessage) msg;
-    logger.info("Message recd  from : " + sender.getName() + " msg : " + msg);
+    if (debug) {
+      logger.info(this.thisNodeID + " recd msg " + gmsg.getMessageID() + " From " + sender.getName());
+    }
     MessageID requestID = gmsg.inResponseTo();
-    if (!requestID.isNull()) {
-      notifyPendingRequests(requestID, gmsg, sender);
-    } else {
-      NodeID from = new NodeID(sender.getName());
+    if (requestID.isNull() || !notifyPendingRequests(requestID, gmsg, sender)) {
+      NodeID from = new NodeID(sender.getName(), sender.getUniqueId());
       fireMessageReceivedEvent(from, gmsg);
     }
   }
 
-  private void notifyPendingRequests(MessageID requestID, GroupMessage gmsg, Member sender) {
+  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, Member sender) {
     GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
-    Assert.assertNotNull(response);
-    response.addResponseFrom(sender, gmsg);
+    if (response != null) {
+      response.addResponseFrom(sender, gmsg);
+      return true;
+    }
+    return false;
   }
 
   private void fireMessageReceivedEvent(NodeID from, GroupMessage msg) {
@@ -106,7 +128,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public void memberAdded(Member member) {
-    NodeID newNode = new NodeID(member.getName());
+    NodeID newNode = new NodeID(member.getName(), member.getUniqueId());
     Member old;
     if ((old = nodes.put(newNode, member)) == null) {
       fireNodeEvent(newNode, true);
@@ -129,7 +151,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public void memberDisappeared(Member member) {
-    NodeID node = new NodeID(member.getName());
+    NodeID node = new NodeID(member.getName(), member.getUniqueId());
     if ((nodes.remove(node)) != null) {
       fireNodeEvent(node, false);
     } else {
@@ -149,6 +171,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public void sendAll(GroupMessage msg) throws GroupException {
+    if (debug) {
+      logger.info(this.thisNodeID + " : Sending to ALL : " + msg.getMessageID());
+    }
     // TODO :: Validate the options flag
     try {
       Member m[] = group.getMembers();
@@ -161,6 +186,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
+    if (debug) {
+      logger.info(this.thisNodeID + " : Sending to ALL and Wait for Response : " + msg.getMessageID());
+    }
     GroupResponseImpl groupResponse = new GroupResponseImpl();
     MessageID msgID = msg.getMessageID();
     GroupResponse old = pendingRequests.put(msgID, groupResponse);
@@ -172,6 +200,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
+    if (debug) {
+      logger.info(this.thisNodeID + " : Sending to : " + node + " msg " + msg.getMessageID());
+    }
     try {
       Member to[] = new Member[1];
       to[0] = nodes.get(node);

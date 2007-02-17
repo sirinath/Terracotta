@@ -23,9 +23,8 @@ public class ClusterStateMessage extends AbstractGroupMessage {
 
   private Enrollment      enrollment;
 
+  // To make serialization happy
   public ClusterStateMessage() {
-    // TODO:: come back
-    // To make serialization happy
     super(-1);
   }
 
