@@ -18,30 +18,30 @@ class MessageManager
 	   messages = Collections.synchronizedList(new ArrayList());
 	}
 
-	public synchronized void send(String sender, String message)
+	public void send(String sender, String message)
 	{
 	   Message msg = new Message(sender, message); 
-	   messages.add(msg);
 	   notifyListeners(msg);
 	}
 
 	public void addListener(MessageListener l) 
 	{
-		listeners.add(l);
+	   listeners.add(l);
 	}
 
 	public void removeListener(MessageListener l) 
 	{
-		listeners.remove(l);
+           listeners.remove(l);
 	}
 
-	private void notifyListeners(Message message) 
+	private synchronized void notifyListeners(Message message) 
 	{
-		for (Iterator iterator=listeners.iterator(); iterator.hasNext();) 
-		{
-			MessageListener l = (MessageListener)iterator.next();
-			l.read(message);
-		}
+	   messages.add(message);
+	   for (Iterator iterator=listeners.iterator(); iterator.hasNext();) 
+	   {
+	      MessageListener l = (MessageListener)iterator.next();
+         l.read(message);
+      }
 	}
 	
 	public Message[] getMessages()

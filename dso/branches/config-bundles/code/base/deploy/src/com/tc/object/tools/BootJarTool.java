@@ -145,7 +145,7 @@ import java.util.zip.ZipEntry;
  */
 public class BootJarTool {
   private final static String         OUTPUT_FILE_OPTION           = "o";
-  private final static boolean        WRITE_OUT_TEMP_FILE          = false;
+  private final static boolean        WRITE_OUT_TEMP_FILE          = true;
 
   private static final String         DEFAULT_CONFIG_PATH          = "default-config.xml";
   private static final String         DEFAULT_CONFIG_SPEC          = "tc-config.xml";
@@ -208,6 +208,7 @@ public class BootJarTool {
   public void generateJar() {
     instrumentationLogger = new InstrumentationLoggerImpl(config.getInstrumentationLoggingOptions());
 
+    //bootJarHandler.setOverwriteMode(commandLine.hasOption("x"));
     try {
       bootJarHandler.validateDirectoryExists();
     } catch (BootJarHandlerException e) {
@@ -1436,38 +1437,25 @@ public class BootJarTool {
     bytes = doDSOTransform(spec.getClassName(), bytes);
     bootJar.loadClassIntoJar("java.util.concurrent.LinkedBlockingQueue", bytes, spec.isPreInstrumented());
   }
-
+  
   private void addInstrumentedJavaUtilConcurrentFutureTask() {
 
     if (!isAtLeastJDK15()) { return; }
-
-    byte[] bytes = getSystemBytes("com.tc.util.concurrent.FutureTask");
-    TransparencyClassSpec spec = config.getOrCreateSpec("com.tc.util.concurrent.FutureTask");
+    Map instrumentedContext = new HashMap();
+    
+    TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.FutureTask");
     spec.setHonorTransient(true);
     spec.setCallConstructorOnLoad(true);
     spec.markPreInstrumented();
-    bytes = changePackageAndGetBytes("com.tc.util.concurrent.FutureTask", bytes, "FutureTask",
-                                     "com.tc.util.concurrent", "java.util.concurrent");
-    bootJar.loadClassIntoJar("java.util.concurrent.FutureTask", bytes, spec.isPreInstrumented());
+    changeClassName("java.util.concurrent.FutureTaskTC", "java.util.concurrent.FutureTaskTC", "java.util.concurrent.FutureTask", instrumentedContext);
 
-    // we need to remove this spec once the package name is changed because we no longer
-    // have com.tc.util.concurrent.locks.ReentrantLock and the massageSpec will complain if
-    // we do not remove this spec.
-    config.removeSpec("com.tc.util.concurrent.FutureTask");
+    config.addWriteAutolock("* java.util.concurrent.FutureTask$Sync.*(..)");
 
-    config.addWriteAutolock("* com.tc.util.concurrent.FutureTask$Sync.*(..)");
-
-    bytes = getSystemBytes("com.tc.util.concurrent.FutureTask$Sync");
-    spec = config.getOrCreateSpec("com.tc.util.concurrent.FutureTask$Sync");
+    spec = config.getOrCreateSpec("java.util.concurrent.FutureTask$Sync");
     spec.setHonorTransient(true);
     spec.markPreInstrumented();
     spec.addDistributedMethodCall("managedInnerCancel", "()V");
-    bytes = changePackageAndGetBytes("com.tc.util.concurrent.FutureTask$Sync", bytes, "FutureTask",
-                                     "com.tc.util.concurrent", "java.util.concurrent");
-    bootJar.loadClassIntoJar("java.util.concurrent.FutureTask$Sync", bytes, spec.isPreInstrumented());
-
-    config.removeSpec("com.tc.util.concurrent.FutureTask$Sync");
-
+    changeClassName("java.util.concurrent.FutureTaskTC$Sync", "java.util.concurrent.FutureTaskTC", "java.util.concurrent.FutureTask", instrumentedContext);
   }
 
   private void addInstrumentedJavaUtilCollection() {
@@ -1633,22 +1621,23 @@ public class BootJarTool {
     }
   }
 
-  private void changeClassName(String fullClassNameDots, String classNameDotsToBeChanged, String replacedClassNameDots,
+  private void changeClassName(String fullClassNameDots, String classNameDotsToBeChanged, String classNameDotsReplaced,
                                Map instrumentedContext) {
     byte[] data = getSystemBytes(fullClassNameDots);
     ClassReader cr = new ClassReader(data);
     ClassWriter cw = new ClassWriter(true);
 
+    String replacedClassNameDots = ChangeClassNameRootAdapter.replaceClassName(fullClassNameDots, classNameDotsToBeChanged,
+                                                                               classNameDotsReplaced);
     TransparencyClassAdapter dsoAdapter = config.createDsoClassAdapterFor(cw, replacedClassNameDots,
                                                                           instrumentationLogger, getClass()
                                                                               .getClassLoader(), true);
     ClassVisitor cv = new ChangeClassNameRootAdapter(dsoAdapter, fullClassNameDots, classNameDotsToBeChanged,
-                                                     replacedClassNameDots, instrumentedContext, null);
+                                                     classNameDotsReplaced, instrumentedContext, null);
 
     cr.accept(cv, false);
     data = cw.toByteArray();
-    bootJar.loadClassIntoJar(ChangeClassNameRootAdapter.replaceClassName(fullClassNameDots, classNameDotsToBeChanged,
-                                                                         replacedClassNameDots), data, true);
+    bootJar.loadClassIntoJar(replacedClassNameDots, data, true);
 
   }
 
@@ -1842,14 +1831,20 @@ public class BootJarTool {
     if (outputFile.isDirectory()) {
       outputFile = new File(outputFile, BootJarSignature.getBootJarNameForThisVM());
     }
+    
 
     // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
     // That requirement is no more, but might come back, so I'm leaving at least this much scaffolding in place
     // WAS: systemProvider = new RuntimeJarBytesProvider(...)
-    ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
 
-    new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose)
-        .generateJar();
+       ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
+       new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose)
+           .generateJar();
+
+//File tempOutputFile = File.createTempFile("terracotta", "bootjar.tmp");
+//tempOutputFile.deleteOnExit();
+//
+//com.tc.util.Util.copyFile(tempOutputFile, outputFile);
   }
 
   public static class RuntimeJarBytesProvider implements ClassBytesProvider {

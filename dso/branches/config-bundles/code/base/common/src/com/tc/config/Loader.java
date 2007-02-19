@@ -4,6 +4,7 @@
  */
 package com.tc.config;
 
+import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 
@@ -36,7 +37,9 @@ public final class Loader {
     in.read(data);
     in.close();
     ByteArrayInputStream ain = new ByteArrayInputStream(data);
-    xmlOptions.setDocumentType(com.terracottatech.config.TcConfigDocument.type);
+    SchemaType type = com.terracottatech.config.TcConfigDocument.type;
+    if (xmlOptions == null) xmlOptions = new XmlOptions();
+    xmlOptions.setDocumentType(type);
     try {
       return com.terracottatech.config.TcConfigDocument.Factory.parse(ain, xmlOptions);
     } catch (XmlException e) {
@@ -45,7 +48,8 @@ public final class Loader {
     }
   }
 
-  private synchronized InputStream updateConfig(InputStream in, int index, XmlOptions xmlOptions) throws IOException, XmlException {
+  private synchronized InputStream updateConfig(InputStream in, int index, XmlOptions xmlOptions) throws IOException,
+      XmlException {
     byte[] data = new byte[in.available()];
     in.read(data);
     in.close();
