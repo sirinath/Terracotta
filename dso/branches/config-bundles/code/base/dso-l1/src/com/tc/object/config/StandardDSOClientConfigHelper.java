@@ -80,6 +80,7 @@ import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tcclient.util.DSOUnsafe;
 import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.Plugin;
 import com.terracottatech.config.Plugins;
 import com.terracottatech.config.SpringApplication;
 
@@ -103,8 +104,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private static final TCLogger                  logger                             = CustomerLogging
                                                                                         .getDSOGenericLogger();
-  private static final Class[]                   ADAPTER_CSTR_SIGNATURE             = new Class[] { ClassVisitor.class,
+  private static final Class[]                   CUSTOM_ADAPTER_CSTR_SIGNATURE      = new Class[] { ClassVisitor.class,
       ClassLoader.class                                                            };
+  private static final Class[]                   ADAPTER_CSTR_SIGNATURE             = new Class[] { ClassVisitor.class };
   private static final InstrumentationDescriptor DEAFULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
 
   private final ManagerHelperFactory             mgrHelperFactory                   = new ManagerHelperFactory();
@@ -154,11 +156,24 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private int                                    faultCount                         = -1;
 
-  private final Plugins                          plugins;
+  private PluginSpec[]                           pluginSpecs                        = null;
+
+  private final PluginsContext                   pluginsContext                     = new PluginsContext();
+
+  private final Map                              supplementAdapters                 = new ConcurrentHashMap();
 
   public StandardDSOClientConfigHelper(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
     this(configSetupManager, true);
+  }
+
+  public StandardDSOClientConfigHelper(boolean initializedPluginsOnlyOnce,
+                                       L1TVSConfigurationSetupManager configSetupManager)
+      throws ConfigurationSetupException {
+    this(configSetupManager, true);
+    if (initializedPluginsOnlyOnce) {
+      pluginsContext.initializedPluginsOnlyOnce();
+    }
   }
 
   public StandardDSOClientConfigHelper(L1TVSConfigurationSetupManager configSetupManager, boolean interrogateBootJar)
@@ -174,8 +189,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     helperLogger = new DSOClientConfigHelperLogger(logger);
     this.classInfoFactory = classInfoFactory;
     this.expressionHelper = eh;
-    plugins = configSetupManager.commonL1Config().plugins() != null ? configSetupManager.commonL1Config().plugins()
-        : Plugins.Factory.newInstance();
+    pluginsContext.setPlugins(configSetupManager.commonL1Config().plugins() != null ? configSetupManager
+        .commonL1Config().plugins() : Plugins.Factory.newInstance());
 
     permanentExcludesMatcher = new CompoundExpressionMatcher();
     // TODO:: come back and add all possible non-portable/non-adaptable classes here. This is by no means exhaustive !
@@ -982,9 +997,19 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                      TerracottaServletResponseImplAdapter.class);
   }
 
-  public void addCustomAdapter(String name, Class adapter) {
+  public void addSupplementAdapter(String name, Class adapter) {
     try {
       Constructor cstr = adapter.getConstructor(ADAPTER_CSTR_SIGNATURE);
+      Object prev = this.supplementAdapters.put(name, cstr);
+      Assert.assertNull(prev);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void addCustomAdapter(String name, Class adapter) {
+    try {
+      Constructor cstr = adapter.getConstructor(CUSTOM_ADAPTER_CSTR_SIGNATURE);
       Object prev = this.customAdapters.put(name, cstr);
       Assert.assertNull(prev);
     } catch (Exception e) {
@@ -1401,11 +1426,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return getInstrumentationDescriptorFor(className).getOnLoadMethodIfDefined();
   }
 
-  public boolean isUseNonDefaultConstructor(String className) {
-    if (literalValues.isLiteral(className)) { return true; }
-    TransparencyClassSpec spec = getSpec(className);
-    if (spec == null) { return false; }
-    return spec.isUseNonDefaultConstructor();
+  public Class getTCPeerClass(Class clazz) {
+    if (pluginSpecs != null) {
+      for (int i = 0; i < pluginSpecs.length; i++) {
+        clazz = pluginSpecs[i].getPeerClass(clazz);
+      }
+    }
+    return clazz;
   }
 
   public boolean isDSOSessions(String name) {
@@ -1459,7 +1486,19 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
       ClassAdapter dsoAdapter = new TransparencyClassAdapter(getOrCreateSpec(className), writer, mgrHelper, lgr,
                                                              caller, portability);
+      dsoAdapter = chainWithSupplementAdapter(className, dsoAdapter);
       return new SerialVersionUIDAdder(dsoAdapter);
+    }
+  }
+
+  private ClassAdapter chainWithSupplementAdapter(String className, ClassAdapter parentAdapter) {
+    Constructor cstr = (Constructor) supplementAdapters.get(className);
+    if (cstr == null) { return parentAdapter; }
+
+    try {
+      return (ClassAdapter) cstr.newInstance(new Object[] { parentAdapter });
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -1507,11 +1546,57 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return spec != null && spec.isLogical();
   }
 
-  public String getChangeApplicatorClassNameFor(String className) {
-    TransparencyClassSpec spec = getSpec(className);
-    if (spec == null) return null;
-    return spec.getChangeApplicatorClassName();
+  // TODO: Need to optimize this by identifying the plugin to query instead of querying all the plugins.
+  public boolean isPortablePluginClass(Class clazz) {
+    if (pluginSpecs != null) {
+      for (int i = 0; i < pluginSpecs.length; i++) {
+        if (pluginSpecs[i].isPortableClass(clazz)) { return true; }
+      }
+    }
+    return false;
   }
+
+  public Class getChangeApplicator(Class clazz) {
+    ChangeApplicatorSpec applicatorSpec = null;
+    TransparencyClassSpec spec = getSpec(clazz.getName());
+    if (spec != null) {
+      applicatorSpec = spec.getChangeApplicatorSpec();
+    }
+
+    if (applicatorSpec == null) {
+      if (pluginSpecs != null) {
+        for (int i = 0; i < pluginSpecs.length; i++) {
+          Class applicatorClass = pluginSpecs[i].getChangeApplicatorSpec().getChangeApplicator(clazz);
+          if (applicatorClass != null) { return applicatorClass; }
+        }
+      }
+      return null;
+    }
+    return applicatorSpec.getChangeApplicator(clazz);
+  }
+
+  // TODO: Need to optimize this by identifying the plugin to query instead of querying all the plugins.
+  public boolean isUseNonDefaultConstructor(Class clazz) {
+    String className = clazz.getName();
+    if (literalValues.isLiteral(className)) { return true; }
+    TransparencyClassSpec spec = getSpec(className);
+    if (spec != null) { return spec.isUseNonDefaultConstructor(); }
+    if (pluginSpecs != null) {
+      for (int i = 0; i < pluginSpecs.length; i++) {
+        if (pluginSpecs[i].isUseNonDefaultConstructor(clazz)) { return true; }
+      }
+    }
+    return false;
+  }
+
+  public void setPluginSpecs(PluginSpec[] pluginSpecs) {
+    this.pluginSpecs = pluginSpecs;
+  }
+
+  /*
+   * public String getChangeApplicatorClassNameFor(String className) { TransparencyClassSpec spec = getSpec(className);
+   * if (spec == null) return null; return spec.getChangeApplicatorClassName(); }
+   */
 
   public boolean hasSpec(String className) {
     return getSpec(className) != null;
@@ -1622,8 +1707,46 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     userDefinedBootSpecs.put(className, spec);
   }
 
-  public Plugins getPlugins() {
-    return plugins;
+  public void addNewPlugin(String name, String version) {
+    Plugin newPlugin = pluginsContext.plugins.addNewPlugin();
+    newPlugin.setName(name);
+    newPlugin.setVersion(version);
+  }
+
+  public Plugins getPluginsForInitialization() {
+    return pluginsContext.getPluginsForInitialization();
+  }
+
+  private static class PluginsContext {
+    private boolean alwaysInitializedPlugins = true; // set to false only when in test
+    private boolean pluginsInitialized       = false; // set to true only when in test
+
+    private Plugins plugins;
+
+    // This is used only in test
+    void initializedPluginsOnlyOnce() {
+      this.alwaysInitializedPlugins = false;
+    }
+
+    void setPlugins(Plugins plugins) {
+      this.plugins = plugins;
+    }
+
+    Plugins getPluginsForInitialization() {
+      if (alwaysInitializedPlugins) {
+        return this.plugins;
+      } else {
+        // this could happen only in test
+        synchronized (this) {
+          if (pluginsInitialized) {
+            return Plugins.Factory.newInstance();
+          } else {
+            pluginsInitialized = true;
+            return this.plugins;
+          }
+        }
+      }
+    }
   }
 
 }

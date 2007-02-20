@@ -5,14 +5,9 @@
 package com.tc.object.bytecode.hook.impl;
 
 import org.apache.commons.io.CopyUtils;
-import org.apache.xmlbeans.XmlException;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
 
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
-import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -25,17 +20,14 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.DSOContext;
-import com.tc.object.config.ConfigLoader;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
+import com.tc.plugins.PluginsLoader;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.terracottatech.config.ConfigurationModel;
-import com.terracottatech.config.DsoApplication;
-import com.terracottatech.config.Plugin;
-import com.terracottatech.config.Plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,9 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.Hashtable;
 
 public class DSOContextImpl implements DSOContext {
 
@@ -59,7 +49,6 @@ public class DSOContextImpl implements DSOContext {
   private final DSOClientConfigHelper               configHelper;
   private final Manager                             manager;
   private final WeavingStrategy                     weavingStrategy;
-  private final EmbeddedOSGiRuntime                 osgiRuntime;
 
   /**
    * Creates a "global" DSO Context. This context is appropriate only when there is only one DSO Context that applies to
@@ -90,90 +79,7 @@ public class DSOContextImpl implements DSOContext {
     this.manager = manager;
     weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
         .instrumentationLoggingOptions()));
-    final Plugins plugins = configHelper.getPlugins();
-    if (plugins != null && plugins.sizeOfPluginArray() > 0) {
-      try {
-        osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(plugins);
-      } catch (Exception e) {
-        throw new RuntimeException("Unable to create runtime for plugins", e);
-      }
-      try {
-        initPlugins(plugins.getPluginArray());
-      } catch (BundleException be1) {
-        try {
-          osgiRuntime.shutdown();
-        } catch (BundleException be2) {
-          logger.error("Error shutting down plugin runtime", be2);
-        }
-        throw new RuntimeException("Exception initializing plugins", be1);
-      }
-    } else {
-      osgiRuntime = null;
-    }
-  }
-
-  private void initPlugins(final Plugin[] plugins) throws BundleException {
-    for (int pos = 0; pos < plugins.length; ++pos) {
-      String bundle = plugins[pos].getName() + "-" + plugins[pos].getVersion();
-      logger.info("Installing OSGI bundle " + bundle);
-      osgiRuntime.installBundle(plugins[pos].getName(), plugins[pos].getVersion());
-      logger.info("Installation of OSGI bundle " + bundle + " successful");
-    }
-    if (configHelper instanceof StandardDSOClientConfigHelper) {
-      final Dictionary serviceProps = new Hashtable();
-      serviceProps.put(Constants.SERVICE_VENDOR, "Terracotta, Inc.");
-      serviceProps.put(Constants.SERVICE_DESCRIPTION, "Main point of entry for programmatic access to"
-                                                      + " the Terracotta bytecode instrumentation");
-      osgiRuntime.registerService(configHelper, serviceProps);
-    }
-    for (int pos = 0; pos < plugins.length; ++pos) {
-      String name = plugins[pos].getName();
-      String version = plugins[pos].getVersion();
-
-      osgiRuntime.startBundle(name, version);
-
-      Bundle bundle = osgiRuntime.getBundle(name, version);
-      if (bundle != null) {
-        loadConfiguration(bundle);
-      }
-    }
-  }
-
-  private void loadConfiguration(final Bundle bundle) {
-    String config = (String) bundle.getHeaders().get("Terracotta-Configuration");
-    if (config == null) { 
-      config = "terracotta.xml";
-    }
-
-    URL configUrl = bundle.getEntry(config);
-    if (configUrl == null) { 
-      return;
-    }
-
-    InputStream is = null;
-    try {
-      is = configUrl.openStream();
-      DsoApplication application = DsoApplication.Factory.parse(is);
-      if (application != null) {
-        ConfigLoader loader = new ConfigLoader(configHelper, logger);
-        loader.loadDsoConfig(application);
-        // loader.loadSpringConfig(application.getSpring());
-      }
-    } catch (IOException e) {
-      logger.warn("Unable to read configuration from " + configUrl, e);
-    } catch (XmlException e) {
-      logger.warn("Unable to parse configuration from " + configUrl, e);
-    } catch (ConfigurationSetupException e) {
-      logger.warn("Unable to load configuration from " + configUrl, e);
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ex) {
-          // ignore
-        }
-      }
-    }
+    PluginsLoader.initPlugins(configHelper, false);
   }
 
   private void checkForProperlyInstrumentedBaseClasses() {
@@ -194,7 +100,7 @@ public class DSOContextImpl implements DSOContext {
   /**
    * XXX::NOTE:: ClassLoader checks the returned byte array to see if the class is instrumented or not to maintain the
    * offset.
-   * 
+   *
    * @return new byte array if the class is instrumented and same input byte array if not.
    * @see ClassLoaderPreProcessorImpl
    */

@@ -102,6 +102,7 @@ import com.tc.object.loaders.StandardClassLoaderAdapter;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
+import com.tc.plugins.PluginsLoader;
 import com.tc.properties.TCProperties;
 import com.tc.session.SessionSupport;
 import com.tc.text.Banner;
@@ -177,6 +178,7 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.config);
+    PluginsLoader.initPlugins(this.config, true);
   }
 
   public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassBytesProvider systemProvider) {

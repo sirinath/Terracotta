@@ -135,5 +135,4 @@ public class MockTCClass implements TCClass {
   public String getExtendingClassName() {
     return getName();
   }
-
 }

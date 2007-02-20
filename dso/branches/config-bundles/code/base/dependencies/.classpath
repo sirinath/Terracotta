@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="lib" path="C:/Work/Workspace-svn-main/config/code/base/dependencies/lib/ibatis-sqlmap-2.jar"/>
+	<classpathentry kind="lib" path="C:/Work/Workspace-svn-main/config/code/base/dependencies/lib/ibatis-common-2.jar"/>
+	<classpathentry kind="lib" path="C:/Work/Workspace-svn-main/config/code/base/dependencies/lib/ibatis-dao-2.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

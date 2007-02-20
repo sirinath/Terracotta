@@ -142,6 +142,5 @@ public class TestClassFactory implements TCClassFactory {
     public String getExtendingClassName() {
       return getName();
     }
-
   }
 }

@@ -6,6 +6,8 @@ package com.tc.bundles;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 
 import com.tc.config.Directories;
 import com.tc.logging.TCLogger;
@@ -35,6 +37,12 @@ public interface EmbeddedOSGiRuntime {
   void stopBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
   void uninstallBundle(final String bundleName, final String bundleVersion) throws BundleException;
+  
+  ServiceReference[] getAllServiceReferences(java.lang.String clazz, java.lang.String filter) throws InvalidSyntaxException;
+  
+  Object getService(ServiceReference service);
+  
+  void ungetService(ServiceReference service);
 
   /**
    * This should shut down the OSGi framework itself and all running bundles.
@@ -52,6 +60,8 @@ public interface EmbeddedOSGiRuntime {
 
       final URL[] bundleRepositories = new URL[plugins.sizeOfRepositoryArray() + extraRepoCount];
       final File bundleRoot = new File(Directories.getInstallationRoot(), "plugins");
+      
+      
       bundleRepositories[0] = bundleRoot.toURL();
       if (pluginsUrl != null) {
         bundleRepositories[1] = new URL(pluginsUrl);
@@ -65,7 +75,9 @@ public interface EmbeddedOSGiRuntime {
       for (int i = 0; i < bundleRepositories.length; i++) {
         logger.info(bundleRepositories[i]);
       }
-      return new KnopflerfishOSGi(bundleRepositories);
+      EmbeddedOSGiRuntime osgiRuntime = new KnopflerfishOSGi(bundleRepositories);
+      osgiRuntime.installBundle("plugins-common", "1.0");
+      return osgiRuntime;
     }
   }
 

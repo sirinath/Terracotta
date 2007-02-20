@@ -51,7 +51,12 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   boolean isCallConstructorOnLoad(String className);
 
-  String getChangeApplicatorClassNameFor(String className);
+  //String getChangeApplicatorClassNameFor(String className);
+  Class getChangeApplicator(Class clazz);
+  
+  boolean isPortablePluginClass(Class clazz);
+  
+  void setPluginSpecs(PluginSpec[] pluginSpecs);
 
   TransparencyClassSpec getOrCreateSpec(String className);
 
@@ -107,37 +112,37 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void addTransient(String className, String fieldName);
 
-  public void addTransientType(String className, String fieldName);
+  void addTransientType(String className, String fieldName);
 
-  public String getOnLoadScriptIfDefined(String className);
+  String getOnLoadScriptIfDefined(String className);
 
-  public String getPostCreateMethodIfDefined(String className);
+  String getPostCreateMethodIfDefined(String className);
 
-  public String getOnLoadMethodIfDefined(String className);
+  String getOnLoadMethodIfDefined(String className);
 
-  public boolean isUseNonDefaultConstructor(String className);
+  boolean isUseNonDefaultConstructor(Class clazz);
 
-  public void addIncludePattern(String expression);
+  void addIncludePattern(String expression);
 
-  public NewCommonL1Config getNewCommonL1Config();
+  NewCommonL1Config getNewCommonL1Config();
 
   // Used for testing
-  public void addIncludePattern(String expression, boolean honorTransient);
+  void addIncludePattern(String expression, boolean honorTransient);
 
-  public void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
+  void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
                                 boolean honorVolatile);
 
   // Used for testing and Spring
-  public void addIncludeAndLockIfRequired(String expression, boolean honorTransient,
+  void addIncludeAndLockIfRequired(String expression, boolean honorTransient,
                                           boolean oldStyleCallConstructorOnLoad, boolean honorVolatile,
                                           String lockExpression);
 
   // Used for testing
-  public void addExcludePattern(String expression);
+  void addExcludePattern(String expression);
 
-  public boolean hasIncludeExcludePatterns();
+  boolean hasIncludeExcludePatterns();
 
-  public boolean hasIncludeExcludePattern(String className);
+  boolean hasIncludeExcludePattern(String className);
 
   void addAspectModule(String pattern, String moduleName);
 
@@ -159,10 +164,16 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void addApplicationName(String name);
 
-  public void addInstrumentationDescriptor(InstrumentedClass classDesc);
+  void addInstrumentationDescriptor(InstrumentedClass classDesc);
 
-  public Plugins getPlugins();
+  Plugins getPluginsForInitialization();
+  
+  void addNewPlugin(String name, String version);
 
-  public boolean hasCustomAdapter(String fullName);
+  boolean hasCustomAdapter(String fullName);
+  
+  void addSupplementAdapter(String name, Class adapter);
+  
+  void addCustomAdapter(String name, Class adapter);
 
 }

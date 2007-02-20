@@ -25,6 +25,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.DSOSpringConfigHelper;
 import com.tc.object.config.Lock;
 import com.tc.object.config.LockDefinition;
+import com.tc.object.config.PluginSpec;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
@@ -734,7 +735,7 @@ public class HashMapTCTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public boolean isUseNonDefaultConstructor(String className) {
+    public boolean isUseNonDefaultConstructor(Class clazz) {
       throw new ImplementMe();
     }
 
@@ -859,6 +860,34 @@ public class HashMapTCTest extends TCTestCase {
     }
 
     public boolean hasCustomAdapter(String fullName) {
+      throw new ImplementMe();
+    }
+
+    public Class getChangeApplicator(Class clazz) {
+      throw new ImplementMe();
+    }
+
+    public void setPluginSpecs(PluginSpec[] pluginSpecs) {
+      throw new ImplementMe();
+    }
+
+    public void addNewPlugin(String name, String version) {
+      throw new ImplementMe();
+    }
+
+    public Plugins getPluginsForInitialization() {
+      throw new ImplementMe();
+    }
+
+    public boolean isPortablePluginClass(Class clazz) {
+      throw new ImplementMe();
+    }
+
+    public void addCustomAdapter(String name, Class adapter) {
+      throw new ImplementMe();
+    }
+
+    public void addSupplementAdapter(String name, Class adapter) {
       throw new ImplementMe();
     }
 

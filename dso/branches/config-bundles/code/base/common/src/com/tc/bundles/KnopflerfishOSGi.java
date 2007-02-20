@@ -8,6 +8,8 @@ import org.knopflerfish.framework.Framework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 
 import com.tc.net.util.URLUtil;
 
@@ -76,7 +78,7 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
     framework.startBundle(bundleID);
     info(Message.BUNDLE_STARTED, new Object[] { getSymbolicName(bundleName, bundleVersion) });
   }
-  
+
   public Bundle getBundle(String bundleName, String bundleVersion) {
     return framework.bundles.getBundle(getBundleID(bundleName, bundleVersion));
   }
@@ -84,6 +86,19 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
   public void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException {
     framework.getSystemBundleContext().registerService(serviceObject.getClass().getName(), serviceObject, serviceProps);
     info(Message.SERVICE_REGISTERED, new Object[] { serviceObject.getClass().getName() });
+  }
+
+  public ServiceReference[] getAllServiceReferences(String clazz, java.lang.String filter)
+      throws InvalidSyntaxException {
+    return framework.getSystemBundleContext().getAllServiceReferences(clazz, filter);
+  }
+  
+  public Object getService(ServiceReference service) {
+    return framework.getSystemBundleContext().getService(service);
+  }
+  
+  public void ungetService(ServiceReference service) {
+    framework.getSystemBundleContext().ungetService(service);
   }
 
   public void stopBundle(final String bundleName, final String bundleVersion) throws BundleException {
