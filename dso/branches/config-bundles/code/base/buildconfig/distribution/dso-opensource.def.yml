@@ -91,7 +91,7 @@ bundled_components:
         - ui-configurator
 bundled_plugins:
   - core:
-      install_directory: plugins
+      install_directory: modules
       manifest:
         - clustered-apache-struts-1.1
         - clustered-commons-collections-3.1
