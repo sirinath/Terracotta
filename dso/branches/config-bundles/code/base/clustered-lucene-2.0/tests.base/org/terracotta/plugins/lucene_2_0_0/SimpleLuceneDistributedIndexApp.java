@@ -66,13 +66,6 @@ public final class SimpleLuceneDistributedIndexApp extends AbstractTransparentAp
     config.addIncludePattern(LuceneSampleDataIndex.class.getName());
     String className = SimpleLuceneDistributedIndexApp.class.getName();
     config.addIncludePattern(className);
-    config.addReadAutolock("* org.terracotta.lucene.example.RAMDirectoryExample.get(..)");
-    config.addWriteAutolock("* org.terracotta.lucene.example.RAMDirectoryExample.put(..)");
-    config.addWriteAutolock("* org.apache.lucene.store.RAMDirectory.renameFile(..)");
-    config.addWriteAutolock("* org.apache.lucene.store.RAMDirectory.createOutput(..)");
-    config.addWriteAutolock("* org.apache.lucene.store.RAMDirectory.deleteFile(..)");
-    config.addWriteAutolock("* org.apache.lucene.store.RAMOutputStream.close(..)");
-    config.addWriteAutolock("* org.apache.lucene.store.RAMOutputStream.close(..)");
     config.addWriteAutolock("* " + CyclicBarrier.class.getName() + "*.*(..)");
     config.addWriteAutolock("* " + LuceneSampleDataIndex.class.getName() + "*.*(..)");
     config.addRoot("directory", LuceneSampleDataIndex.class.getName() + ".directory");
