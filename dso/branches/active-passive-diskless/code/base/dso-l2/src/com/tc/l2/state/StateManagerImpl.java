@@ -4,6 +4,10 @@
  */
 package com.tc.l2.state;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
+
+import com.tc.async.api.Sink;
+import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.msg.ClusterStateMessage;
 import com.tc.l2.msg.ClusterStateMessageFactory;
 import com.tc.logging.TCLogger;
@@ -14,38 +18,33 @@ import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.NodeID;
-import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.concurrent.SetOnceFlag;
 
-import java.io.IOException;
+import java.util.Iterator;
 
 public class StateManagerImpl implements StateManager, GroupMessageListener, GroupEventsListener {
 
-  private static final TCLogger         logger               = TCLogging.getLogger(StateManagerImpl.class);
+  private static final TCLogger      logger       = TCLogging.getLogger(StateManagerImpl.class);
 
-  private static final State            ACTIVE_COORDINATOR   = new State("ACTIVE-COORDINATOR");
-  private static final State            PASSIVE_UNINTIALIZED = new State("PASSIVE-UNINITIALIZED");
-  private static final State            PASSIVE_STANDBY      = new State("PASSIVE-STANDBY");
-  private static final State            START_STATE          = new State("START-STATE");
+  private final TCLogger             consoleLogger;
+  private final GroupManager         groupManager;
+  private final ElectionManager      electionMgr;
+  private final Sink                 stateChangeSink;
 
-  private final TCLogger                consoleLogger;
-  private final DistributedObjectServer server;
-  private final GroupManager            groupManager;
-  private final ElectionManager         electionMgr;
+  private final SetOnceFlag          started      = new SetOnceFlag(false);
+  private final CopyOnWriteArrayList listeners    = new CopyOnWriteArrayList();
+  private final Object               electionLock = new Object();
 
-  private final SetOnceFlag             started              = new SetOnceFlag(false);
-  private final Object                  electionLock         = new Object();
+  private NodeID                     myNodeId;
+  private NodeID                     activeNode   = NodeID.NULL_ID;
+  private volatile State             state        = START_STATE;
 
-  private NodeID                        myNodeId;
-  private NodeID                        activeNode           = NodeID.NULL_ID;
-  private volatile State                state                = START_STATE;
-
-  public StateManagerImpl(TCLogger consoleLogger, DistributedObjectServer server, GroupManager groupManager) {
+  public StateManagerImpl(TCLogger consoleLogger, GroupManager groupManager, Sink stateChangeSink) {
     this.consoleLogger = consoleLogger;
-    this.server = server;
     this.groupManager = groupManager;
+    this.stateChangeSink = stateChangeSink;
     this.electionMgr = new ElectionManagerImpl(groupManager);
     this.groupManager.registerForMessages(ClusterStateMessage.class, this);
     this.groupManager.registerForGroupEvents(this);
@@ -86,12 +85,23 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     }
   }
 
+  public void registerForStateChangeEvents(StateChangeListener listener) {
+    listeners.add(listener);
+  }
+
+  public void fireStateChangedEvent(StateChangedEvent sce) {
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      StateChangeListener listener = (StateChangeListener) i.next();
+      listener.l2StateChanged(sce);
+    }
+  }
+
   private synchronized void moveToPassiveState(boolean initialized) {
     electionMgr.reset();
     if (state == START_STATE) {
       state = initialized ? PASSIVE_STANDBY : PASSIVE_UNINTIALIZED;
       info("Moved to " + state, true);
-      // TODO:: Start initializing Passive Node
+      stateChangeSink.add(new StateChangedEvent(START_STATE, state));
     } else if (state == ACTIVE_COORDINATOR) {
       // TODO:: Support this later
       throw new AssertionError("Cant move to " + PASSIVE_UNINTIALIZED + " from " + ACTIVE_COORDINATOR
@@ -102,15 +112,12 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
   private synchronized void moveToActiveState() {
     if (state == START_STATE || state == PASSIVE_STANDBY) {
       // TODO :: If state == START_STATE publish cluster ID
+      StateChangedEvent event = new StateChangedEvent(state, ACTIVE_COORDINATOR);
       state = ACTIVE_COORDINATOR;
       this.activeNode = this.myNodeId;
       info("Becoming " + state, true);
       electionMgr.declareWinner(this.myNodeId);
-      try {
-        server.startActiveMode();
-      } catch (IOException e) {
-        throw new AssertionError(e);
-      }
+      stateChangeSink.add(event);
     } else {
       throw new AssertionError("Cant move to " + ACTIVE_COORDINATOR + " from " + state);
     }

@@ -10,6 +10,7 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Stage;
 import com.tc.async.impl.MockSink;
 import com.tc.exception.ImplementMe;
+import com.tc.l2.api.L2Coordinator;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -253,6 +254,10 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
 
     public TransactionalObjectManager getTransactionalObjectManager() {
       return txnObjectManager;
+    }
+
+    public L2Coordinator getL2Coordinator() {
+      return null;
     }
   }
 

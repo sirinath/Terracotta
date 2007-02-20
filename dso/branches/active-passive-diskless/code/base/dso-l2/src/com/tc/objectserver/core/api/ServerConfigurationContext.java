@@ -5,6 +5,7 @@
 package com.tc.objectserver.core.api;
 
 import com.tc.async.api.ConfigurationContext;
+import com.tc.l2.api.L2Coordinator;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
@@ -43,6 +44,9 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String JMXREMOTE_TUNNEL_STAGE                             = "jmxremote_tunnel_stage";
   public static final String JMXREMOTE_CONNECT_STAGE                            = "jmxremote_connect_stage";
   public static final String RECALL_OBJECTS_STAGE                               = "recall_objects_stage";
+  public static final String L2_STATE_CHANGE_STAGE                              = "l2_state_change_stage";
+
+  public L2Coordinator getL2Coordinator();
 
   public ObjectManager getObjectManager();
 

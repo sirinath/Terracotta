@@ -18,7 +18,8 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
-import com.tc.l2.state.StateManagerImpl;
+import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.ha.L2HACoordinator;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -31,8 +32,6 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.groups.GroupException;
-import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
@@ -204,10 +203,9 @@ public class DistributedObjectServer extends SEDA {
 
   private final TCServerInfoMBean              tcServerInfoMBean;
   private L2Management                         l2Management;
+  private L2Coordinator                        l2Coordinator;
 
   private TCProperties                         l2Properties;
-
-  private StateManagerImpl                     stateManager;
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -242,7 +240,7 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public synchronized void start() throws IOException, DatabaseException, LocationNotCreatedException,
-      FileNotCreatedException, GroupException {
+      FileNotCreatedException {
 
     try {
       startJMXServer();
@@ -577,9 +575,13 @@ public class DistributedObjectServer extends SEDA {
                                                                                                            "Reconnect timer",
                                                                                                            true),
                                                                                            reconnectTimeout, persistent);
+
+    l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager);
+    l2Coordinator.start();
+
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
-                                                 txnObjectManager, clientHandshakeManager, channelStats,
+                                                 txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader());
 
     stageManager.startAll(context);
@@ -593,20 +595,19 @@ public class DistributedObjectServer extends SEDA {
                                                     (DSOChannelManagerMBean) channelManager, serverStats, channelStats,
                                                     instanceMonitor, appEvents);
 
-    stateManager = new StateManagerImpl(consoleLogger, this, GroupManagerFactory.createGroupManager());
-    stateManager.start();
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
   }
 
   public boolean startActiveMode() throws IOException {
     l1Listener.start();
-    consoleLogger.info("DSO Server started as ACTIVE on port " + l1Listener.getBindPort() + ".");
+    consoleLogger.info("Terracotta Server has started up as ACTIVE node on " + l1Listener.getBindPort()
+                       + " successfully, and is now ready for work.");
     return true;
   }
 
   public boolean stopActiveMode() throws TCTimeoutException {
     // TODO:: Make this not take timeout and force stop
-    consoleLogger.info("Stopping ACTIVE DSO Server on port " + l1Listener.getBindPort() + ".");
+    consoleLogger.info("Stopping ACTIVE Terracotta Server on port " + l1Listener.getBindPort() + ".");
     l1Listener.stop(10000);
     l1Listener.getChannelManager().closeAllChannels();
     return true;
