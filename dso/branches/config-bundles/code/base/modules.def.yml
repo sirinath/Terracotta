@@ -425,7 +425,7 @@ modules:
         plugin: true
   - clustered-cglib-2.1.3:
       options:
-        jdk: J2SE-1.5
+        jdk: J2SE-1.4
         plugin: true
       dependencies:
         - plugins-common-1.0
@@ -445,7 +445,7 @@ modules:
         - dso-memory-datastore
   - clustered-iBatis-2.2.0:
       options:
-        jdk: J2SE-1.5
+        jdk: J2SE-1.4
         plugin: true
       dependencies:
         - plugins-common-1.0

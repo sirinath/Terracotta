@@ -7,6 +7,10 @@ package com.tctest;
 public class IBatisSimpleTest extends TransparentTestBase {
   private final static int NODE_COUNT = 2;
   private final static int LOOP_COUNT = 1;
+  
+  public IBatisSimpleTest() {
+    disableAllUntil("2007-02-28");
+  }
 
   public void setUp() throws Exception {
     super.setUp();

@@ -2,6 +2,9 @@
 <ivy-module version="1.0">
   <info organisation="ibiblio" module="clustered-iBatis-2.2.0"/>
   <dependencies>
-	<dependency name="osgi_R4_core" rev="1.0" org="terracotta"/>
+	    <dependency name="ibatis-common" rev="2" org="terracotta"/>
+	    <dependency name="ibatis-dao" rev="2" org="terracotta"/>
+	    <dependency name="ibatis-sqlmap" rev="2" org="terracotta"/>
+	    <dependency name="cglib-nodep" rev="2.1.3" org="terracotta"/>
   </dependencies>
 </ivy-module>

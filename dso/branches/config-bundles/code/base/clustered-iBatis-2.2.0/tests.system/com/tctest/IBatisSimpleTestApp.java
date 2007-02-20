@@ -10,6 +10,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.util.Assert;
 import com.tctest.domain.Account;
 import com.tctest.domain.Customer;
 import com.tctest.runner.AbstractTransparentApp;
@@ -18,7 +19,6 @@ import java.io.Reader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
 
 public class IBatisSimpleTestApp extends AbstractTransparentApp {
   private CyclicBarrier barrier;
@@ -67,16 +67,14 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
 
       if (id == 0) {
         cus = selectCustomerById(0);
-        System.err.println(cus);
 
         shutdownDatabase();
       }
       barrier.barrier();
 
       if (id == 1) {
-        System.err.println(cus.getAccount());
-        System.err.println();
-
+        Account acc = cus.getAccount();
+        Assert.assertEquals("ASI-001", acc.getNumber());
       }
 
       barrier.barrier();
@@ -107,14 +105,6 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
     Connection conn = sqlMapper.getDataSource().getConnection();
     PreparedStatement stmt = conn.prepareStatement("shutdown immediately");
     stmt.execute();
-  }
-
-  public List selectAllAccounts() throws SQLException {
-    return sqlMapper.queryForList("selectAllAccounts");
-  }
-
-  public List selectAllCustomers() throws SQLException {
-    return sqlMapper.queryForList("selectAllCustomers");
   }
 
   public Account selectAccountById(int id) throws SQLException {
