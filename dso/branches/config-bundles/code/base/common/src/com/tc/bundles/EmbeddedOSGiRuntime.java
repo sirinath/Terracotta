@@ -16,7 +16,9 @@ import com.terracottatech.config.Plugins;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Dictionary;
+import java.util.List;
 
 /**
  * The methods named here are pretty standard; if you don't know what they mean please refer to the documentation at the
@@ -30,19 +32,19 @@ public interface EmbeddedOSGiRuntime {
 
   void startBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
-  Bundle getBundle(String bundleName, String bundleVersion);
+  Bundle getBundle(final String bundleName, final String bundleVersion);
 
   void registerService(final Object serviceObject, final Dictionary serviceProps) throws BundleException;
 
   void stopBundle(final String bundleName, final String bundleVersion) throws BundleException;
 
   void uninstallBundle(final String bundleName, final String bundleVersion) throws BundleException;
-  
-  ServiceReference[] getAllServiceReferences(java.lang.String clazz, java.lang.String filter) throws InvalidSyntaxException;
-  
-  Object getService(ServiceReference service);
-  
-  void ungetService(ServiceReference service);
+
+  ServiceReference[] getAllServiceReferences(final String clazz, final String filter) throws InvalidSyntaxException;
+
+  Object getService(final ServiceReference service);
+
+  void ungetService(final ServiceReference service);
 
   /**
    * This should shut down the OSGi framework itself and all running bundles.
@@ -50,25 +52,28 @@ public interface EmbeddedOSGiRuntime {
   void shutdown() throws BundleException;
 
   static class Factory {
+
     private static final TCLogger logger = TCLogging.getLogger(EmbeddedOSGiRuntime.Factory.class);
+
     public static EmbeddedOSGiRuntime createOSGiRuntime(final Plugins plugins) throws Exception {
-      int extraRepoCount = 1;
-      final String pluginsUrl = System.getProperty(PLUGINS_URL_PROPERTY_NAME);
-      if (pluginsUrl != null) {
-        extraRepoCount++;
+      final List prependLocations = new ArrayList();
+      // There are two repositories that we [optionally] prepend: a system property (used by tests) and the installation
+      // root (which is not set when running tests)
+      if (Directories.getInstallationRoot() != null) {
+        prependLocations.add(new File(Directories.getInstallationRoot(), "plugins").toURL());
       }
-
-      final URL[] bundleRepositories = new URL[plugins.sizeOfRepositoryArray() + extraRepoCount];
-      final File bundleRoot = new File(Directories.getInstallationRoot(), "plugins");
-      
-      
-      bundleRepositories[0] = bundleRoot.toURL();
-      if (pluginsUrl != null) {
-        bundleRepositories[1] = new URL(pluginsUrl);
+      if (System.getProperty(PLUGINS_URL_PROPERTY_NAME) != null) {
+        prependLocations.add(new URL(System.getProperty(PLUGINS_URL_PROPERTY_NAME)));
       }
+      final URL[] prependURLs = new URL[prependLocations.size()];
+      prependLocations.toArray(prependURLs);
 
-      for (int i = extraRepoCount; i < bundleRepositories.length; i++) {
-        bundleRepositories[i] = new URL(plugins.getRepositoryArray(i - extraRepoCount));
+      final URL[] bundleRepositories = new URL[plugins.sizeOfRepositoryArray() + prependURLs.length];
+      for (int pos = 0; pos < prependURLs.length; pos++) {
+        bundleRepositories[pos] = prependURLs[pos];
+      }
+      for (int pos = prependURLs.length; pos < bundleRepositories.length; pos++) {
+        bundleRepositories[pos] = new URL(plugins.getRepositoryArray(pos - prependURLs.length));
       }
 
       logger.info("OSGi Bundle Repositories:");
@@ -76,6 +81,7 @@ public interface EmbeddedOSGiRuntime {
         logger.info(bundleRepositories[i]);
       }
       EmbeddedOSGiRuntime osgiRuntime = new KnopflerfishOSGi(bundleRepositories);
+      // The "plugins-common" bundle contains a convenience superclass that some bundles extend
       osgiRuntime.installBundle("plugins-common", "1.0");
       return osgiRuntime;
     }
