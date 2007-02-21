@@ -11,8 +11,8 @@ import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
-import com.tc.object.TraverseTest;
 import com.tc.object.WeakObjectReference;
+import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.lockmanager.api.LockID;
@@ -162,6 +162,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
     public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
       throw new ImplementMe();
     }
+
+    public void addDmiDescriptor(DmiDescriptor d) {
+      throw new ImplementMe();
+    }
   }
 
   private static class ObjMgr implements ClientObjectManager {
@@ -256,10 +260,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public boolean enableDistributedMethods() {
-      throw new ImplementMe();
-    }
-
     public void shutdown() {
       throw new ImplementMe();
     }
@@ -294,10 +294,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
     }
 
     public Object lookupOrCreateRoot(String name, Object obj, boolean dsoFinal) {
-      throw new ImplementMe();
-    }
-
-    public boolean addTraverseTest(TraverseTest additionalTest) {
       throw new ImplementMe();
     }
 

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
@@ -8,7 +9,7 @@ import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
-import com.tc.object.TraverseTest;
+import com.tc.object.event.DmiManager;
 import com.tc.properties.TCProperties;
 
 public final class NullManager implements Manager {
@@ -86,7 +87,11 @@ public final class NullManager implements Manager {
     //
   }
 
-  public final void distributedMethodCall(Object receiver, String method, Object[] params) {
+  public final boolean distributedMethodCall(Object receiver, String method, Object[] params) {
+    return true;
+  }
+
+  public void distributedMethodCallCommit() {
     //
   }
 
@@ -154,10 +159,6 @@ public final class NullManager implements Manager {
     return 0;
   }
 
-  public final boolean addTraverseTest(TraverseTest test) {
-    throw new UnsupportedOperationException();
-  }
-
   public final boolean isHeldByCurrentThread(Object obj, int lockLevel) {
     throw new UnsupportedOperationException();
   }
@@ -217,6 +218,10 @@ public final class NullManager implements Manager {
   }
 
   public void addClusterEventListener(ClusterEventListener cel) {
+    throw new UnsupportedOperationException();
+  }
+
+  public DmiManager getDmiManager() {
     throw new UnsupportedOperationException();
   }
 

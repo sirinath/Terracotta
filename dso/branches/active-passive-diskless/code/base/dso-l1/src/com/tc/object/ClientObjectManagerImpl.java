@@ -4,10 +4,6 @@
  */
 package com.tc.object;
 
-import bsh.EvalError;
-import bsh.Interpreter;
-import bsh.ParseException;
-
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.ChannelIDLogger;
@@ -51,6 +47,8 @@ import java.io.Writer;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,7 +90,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   private final EvictionPolicy                 cache;
   private final Traverser                      traverser;
   private final Traverser                      shareObjectsTraverser;
-  private TraverseTest[]                       traverseTests;
+  private final TraverseTest                   traverseTest;
   private final DSOClientConfigHelper          clientConfiguration;
   private final TCClassFactory                 clazzFactory;
   private final Set                            objectLookupsInProgress = new HashSet();
@@ -123,8 +121,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     this.portability = portability;
     this.logger = new ChannelIDLogger(provider, TCLogging.getLogger(ClientObjectManager.class));
     this.classProvider = classProvider;
-    this.traverseTests = new TraverseTest[1];
-    this.traverseTests[0] = new NewObjectTraverseTest();
+    this.traverseTest = new NewObjectTraverseTest();
     this.traverser = new Traverser(new AddManagedObjectAction(), this);
     this.shareObjectsTraverser = new Traverser(new SharedObjectsAction(), this);
     this.clazzFactory = classFactory;
@@ -196,10 +193,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
   private void assertNotPaused(Object message) {
     if (state == PAUSED) throw new AssertionError(message + ": " + state);
-  }
-
-  public boolean enableDistributedMethods() {
-    return true;
   }
 
   public TraversedReferences getPortableObjects(Class clazz, Object start, TraversedReferences addTo) {
@@ -339,28 +332,23 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
    * This method is created for situations in which a method needs to be taken place when an object moved from
    * non-shared to shared. The method could be an instrumented method. For instance, for ConcurrentHashMap, we need to
    * re-hash the objects already in the map because the hashing algorithm is different when a ConcurrentHashMap is
-   * shared. The rehash method is an instrumented method. This should be executed only once. TODO: Check if using
-   * reflection will be faster.
+   * shared. The rehash method is an instrumented method. This should be executed only once.
    */
   private void executePostCreateMethod(Object pojo) {
+    // This method used to use beanshell, but I changed it to reflection to hopefully avoid a deadlock -- CDV-130
+
     String onLookupMethodName = clientConfiguration.getPostCreateMethodIfDefined(pojo.getClass().getName());
     if (onLookupMethodName != null) {
-      onLookupMethodName = "self." + onLookupMethodName + "()";
       try {
-        Interpreter i = new Interpreter();
-        i.setClassLoader(pojo.getClass().getClassLoader());
-        i.set("self", pojo);
-        i.eval("setAccessibility(true)");
-        i.eval(onLookupMethodName);
-      } catch (ParseException e) { // Error Parsing script.
-        // Use e.getMessage() instead of e.getErrorText() when there is a ParseException because
-        // expectedTokenSequences in ParseException could be null and thus, may throw a NullPointerException when
-        // calling e.getErrorText().
-        logger.warn("Unable to parse OnLoad script: " + pojo.getClass() + " error: " + e.getMessage() + " line: "
-                    + "    stack: " + e.getScriptStackTrace());
-      } catch (EvalError e) { // General Error evaluating script
-        logger.warn("OnLoad execute script failed for: " + pojo.getClass() + " error: " + e.getErrorText() + " line: "
-                    + e.getErrorLineNumber() + "; " + e.getMessage() + "; stack: " + e.getScriptStackTrace());
+        Method m = pojo.getClass().getDeclaredMethod(onLookupMethodName, new Class[] {});
+        m.setAccessible(true);
+        m.invoke(pojo, new Object[] {});
+      } catch (Throwable t) {
+        if (t instanceof InvocationTargetException) {
+          t = t.getCause();
+        }
+        logger.warn("postCreate method (" + onLookupMethodName + ") failed on object of " + pojo.getClass(), t);
+        throw new RuntimeException(t);
       }
     }
   }
@@ -794,25 +782,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
   }
 
-  public synchronized boolean addTraverseTest(TraverseTest additionalTest) {
-    if (additionalTest == null) { throw new AssertionError("null traverse test"); }
-    for (int i = 0; i < this.traverseTests.length; i++) {
-      if (this.traverseTests[i] == additionalTest) {
-        // already here
-        return false;
-      }
-    }
-
-    TraverseTest[] newList = new TraverseTest[this.traverseTests.length + 1];
-    System.arraycopy(this.traverseTests, 0, newList, 0, this.traverseTests.length);
-    newList[newList.length - 1] = additionalTest;
-    this.traverseTests = newList;
-    return true;
-  }
-
   private void addToManagedFromRoot(Object root, NonPortableEventContext context) {
     try {
-      traverser.traverse(root, traverseTests, context);
+      traverser.traverse(root, traverseTest, context);
     } catch (TCNonPortableObjectError e) {
       if (DUMP_OBJECT_HIERARCHY) {
         dumpObjectHierarchy(root);
@@ -837,7 +809,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   }
 
   private void addToSharedFromRoot(Object root, NonPortableEventContext context) {
-    shareObjectsTraverser.traverse(root, traverseTests, context);
+    shareObjectsTraverser.traverse(root, traverseTest, context);
   }
 
   private class AddManagedObjectAction implements TraversalAction {

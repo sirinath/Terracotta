@@ -50,10 +50,6 @@ public class TestClientObjectManager implements ClientObjectManager {
     return true;
   }
 
-  public boolean enableDistributedMethods() {
-    return false;
-  }
-
   public synchronized TCObject lookupOrCreate(Object obj) {
     // System.out.println(this + ".lookupOrCreate(" + obj + ")");
     TCObject rv = lookup(obj);
@@ -198,10 +194,6 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
-  public boolean addTraverseTest(TraverseTest additionalTest) {
-    throw new ImplementMe();
-  }
-
   public TCObject lookupOrShare(Object pojo) {
     throw new ImplementMe();
   }
@@ -226,7 +218,7 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
-  public Object createOrReplaceRoot(String rootName, Object root) {
+  public Object createOrReplaceRoot(String rootName, Object r) {
     throw new ImplementMe();
   }
 }
