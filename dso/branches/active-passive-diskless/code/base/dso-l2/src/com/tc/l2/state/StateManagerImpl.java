@@ -53,6 +53,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
   public void start() {
     started.set();
     try {
+      // TODO:: This should be moved out
       this.myNodeId = groupManager.join();
     } catch (GroupException e) {
       logger.error("Caught Exception :", e);
@@ -108,6 +109,19 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
                                + " at least for now");
     }
   }
+  
+  private synchronized void moveToPassiveStandbyState() {
+    if(state == ACTIVE_COORDINATOR) {
+      // TODO:: Support this later
+      throw new AssertionError("Cant move to " + PASSIVE_STANDBY + " from " + ACTIVE_COORDINATOR
+                               + " at least for now");
+    } else {
+      stateChangeSink.add(new StateChangedEvent(state, PASSIVE_STANDBY));
+      state = PASSIVE_STANDBY;
+      info("Moved to " + state, true);
+    }
+  }
+
 
   private synchronized void moveToActiveState() {
     if (state == START_STATE || state == PASSIVE_STANDBY) {
@@ -120,6 +134,20 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       stateChangeSink.add(event);
     } else {
       throw new AssertionError("Cant move to " + ACTIVE_COORDINATOR + " from " + state);
+    }
+  }
+
+  public synchronized boolean isActiveCoordinator() {
+    return (state == ACTIVE_COORDINATOR);
+  }
+
+  public void moveNodeToPassiveStandby(NodeID nodeID) {
+    GroupMessage msg = ClusterStateMessageFactory.createMoveToPassiveStandbyMessage(EnrollmentFactory
+        .createTrumpEnrollment(myNodeId));
+    try {
+      this.groupManager.sendTo(nodeID, msg);
+    } catch (GroupException e) {
+      logger.error(e);
     }
   }
 
@@ -149,6 +177,9 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
         case ClusterStateMessage.ELECTION_WON:
           handleElectionWonMessage(clusterMsg);
           break;
+        case ClusterStateMessage.MOVE_TO_PASSIVE_STANDBY:
+          handleMoveToPassiveStandbyMessage(clusterMsg);
+          break;
         default:
           throw new AssertionError("This message shouldn't have been routed here : " + clusterMsg);
       }
@@ -159,12 +190,16 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     }
   }
 
+  private void handleMoveToPassiveStandbyMessage(ClusterStateMessage clusterMsg) {
+    moveToPassiveStandbyState();
+  }
+
   private void handleElectionWonMessage(ClusterStateMessage clusterMsg) {
     if (state == ACTIVE_COORDINATOR) {
       // Cant get Election Won from another node : Split brain
       // TODO:: Add some reconcile path
       logger.error(state + " Received Election Won Msg : " + clusterMsg + ". Possible split brain detected ");
-      throw new AssertionError(state + " Received Abort Election Msg : " + clusterMsg
+      throw new AssertionError(state + " Received Election Won Msg : " + clusterMsg
                                + ". Possible split brain detected ");
     }
     Enrollment winningEnrollment = clusterMsg.getEnrollment();

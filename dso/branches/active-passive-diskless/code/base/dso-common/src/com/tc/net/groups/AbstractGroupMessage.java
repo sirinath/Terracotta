@@ -18,10 +18,6 @@ public abstract class AbstractGroupMessage implements GroupMessage {
 
   private transient NodeID messageOrginator = NodeID.NULL_ID;
 
-  // protected AbstractGroupMessage() {
-  // // To make serialization happy
-  // }
-
   protected AbstractGroupMessage(int type) {
     this.type = type;
     id = getNextID();

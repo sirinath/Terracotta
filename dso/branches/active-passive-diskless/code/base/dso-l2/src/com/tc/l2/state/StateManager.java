@@ -5,6 +5,7 @@
 package com.tc.l2.state;
 
 import com.tc.l2.context.StateChangedEvent;
+import com.tc.net.groups.NodeID;
 import com.tc.util.State;
 
 public interface StateManager {
@@ -19,5 +20,9 @@ public interface StateManager {
   public void registerForStateChangeEvents(StateChangeListener listener);
 
   public void fireStateChangedEvent(StateChangedEvent sce);
+
+  public boolean isActiveCoordinator();
+
+  public void moveNodeToPassiveStandby(NodeID nodeID);
   
 }

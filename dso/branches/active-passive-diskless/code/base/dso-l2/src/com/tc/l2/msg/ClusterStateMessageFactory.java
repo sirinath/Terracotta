@@ -9,7 +9,7 @@ import com.tc.net.groups.GroupMessage;
 
 public class ClusterStateMessageFactory {
 
-  public static ClusterStateMessage createElectionStartedMessage(Enrollment e) {
+  public static GroupMessage createElectionStartedMessage(Enrollment e) {
     return new ClusterStateMessage(ClusterStateMessage.START_ELECTION, e);
   }
 
@@ -17,7 +17,7 @@ public class ClusterStateMessageFactory {
     return new ClusterStateMessage(ClusterStateMessage.ELECTION_RESULT, e);
   }
 
-  public static GroupMessage createAbortElectionMessage(GroupMessage initiatingMsg, Enrollment e) {
+  public static GroupMessage createAbortElectionMessage(ClusterStateMessage initiatingMsg, Enrollment e) {
     return new ClusterStateMessage(initiatingMsg.getMessageID(), ClusterStateMessage.ABORT_ELECTION, e);
   }
 
@@ -28,13 +28,17 @@ public class ClusterStateMessageFactory {
   public static GroupMessage createResultConflictMessage(ClusterStateMessage initiatingMsg, Enrollment e) {
     return new ClusterStateMessage(initiatingMsg.getMessageID(), ClusterStateMessage.RESULT_CONFLICT, e);
   }
-  
+
   public static GroupMessage createResultAgreedMessage(ClusterStateMessage initiatingMsg, Enrollment e) {
     return new ClusterStateMessage(initiatingMsg.getMessageID(), ClusterStateMessage.RESULT_AGREED, e);
   }
 
   public static GroupMessage createElectionWonMessage(Enrollment e) {
     return new ClusterStateMessage(ClusterStateMessage.ELECTION_WON, e);
+  }
+
+  public static GroupMessage createMoveToPassiveStandbyMessage(Enrollment e) {
+    return new ClusterStateMessage(ClusterStateMessage.MOVE_TO_PASSIVE_STANDBY, e);
   }
 
 }

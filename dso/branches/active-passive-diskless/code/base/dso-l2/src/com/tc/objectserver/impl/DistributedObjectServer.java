@@ -577,13 +577,13 @@ public class DistributedObjectServer extends SEDA {
                                                                                            reconnectTimeout, persistent);
 
     l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager);
-    l2Coordinator.start();
 
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
                                                  txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader());
 
+    l2Coordinator.start();
     stageManager.startAll(context);
 
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
@@ -600,7 +600,7 @@ public class DistributedObjectServer extends SEDA {
 
   public boolean startActiveMode() throws IOException {
     l1Listener.start();
-    consoleLogger.info("Terracotta Server has started up as ACTIVE node on " + l1Listener.getBindPort()
+    consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;
   }

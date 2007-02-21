@@ -9,12 +9,12 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.ha.L2HACoordinator;
-import com.tc.l2.state.StateManagerImpl;
+import com.tc.l2.state.StateManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 
 public class L2StateChangeHandler extends AbstractEventHandler {
 
-  private StateManagerImpl stateManager;
+  private StateManager stateManager;
 
   public void handleEvent(EventContext context) {
     StateChangedEvent sce = (StateChangedEvent) context;
