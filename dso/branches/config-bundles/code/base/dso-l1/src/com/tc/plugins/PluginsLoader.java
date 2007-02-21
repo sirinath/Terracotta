@@ -25,9 +25,12 @@ import com.terracottatech.config.Plugins;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 public class PluginsLoader {
   private static final TCLogger logger = TCLogging.getLogger(PluginsLoader.class);
@@ -110,8 +113,7 @@ public class PluginsLoader {
   private static void getPluginsCustomApplicatorSpecs(final EmbeddedOSGiRuntime osgiRuntime,
                                                       final DSOClientConfigHelper configHelper)
       throws InvalidSyntaxException {
-    ServiceReference[] serviceReferences = osgiRuntime.getAllServiceReferences(PluginSpec.class.getName(),
-                                                                               null);
+    ServiceReference[] serviceReferences = osgiRuntime.getAllServiceReferences(PluginSpec.class.getName(), null);
     if (serviceReferences == null) { return; }
     PluginSpec[] pluginSpecs = new PluginSpec[serviceReferences.length];
     for (int i = 0; i < serviceReferences.length; i++) {
@@ -121,30 +123,36 @@ public class PluginsLoader {
     configHelper.setPluginSpecs(pluginSpecs);
   }
 
-  private static void loadConfiguration(final DSOClientConfigHelper configHelper, final Bundle bundle) {
+  private static void loadConfiguration(final DSOClientConfigHelper configHelper, final Bundle bundle)
+      throws BundleException {
     String config = (String) bundle.getHeaders().get("Terracotta-Configuration");
     if (config == null) {
       config = "terracotta.xml";
     }
 
-    URL configUrl = bundle.getEntry(config);
-    if (configUrl == null) { return; }
-
-    InputStream is = null;
+    final InputStream is;
     try {
-      is = configUrl.openStream();
+      is = getJarResource(new URL(bundle.getLocation()), config);
+    } catch (MalformedURLException murle) {
+      throw new BundleException("Unable to create URL from: " + bundle.getLocation(), murle);
+    } catch (IOException ioe) {
+      throw new BundleException("Unable to extract " + config + " from URL: " + bundle.getLocation(), ioe);
+    }
+    if (is == null) { return; }
+    try {
       DsoApplication application = DsoApplication.Factory.parse(is);
       if (application != null) {
         ConfigLoader loader = new ConfigLoader(configHelper, logger);
         loader.loadDsoConfig(application);
+        logger.info("Module configuration loaded for " + bundle.getSymbolicName());
         // loader.loadSpringConfig(application.getSpring());
       }
-    } catch (IOException e) {
-      logger.warn("Unable to read configuration from " + configUrl, e);
-    } catch (XmlException e) {
-      logger.warn("Unable to parse configuration from " + configUrl, e);
-    } catch (ConfigurationSetupException e) {
-      logger.warn("Unable to load configuration from " + configUrl, e);
+    } catch (IOException ioe) {
+      logger.warn("Unable to read configuration from bundle: " + bundle.getSymbolicName(), ioe);
+    } catch (XmlException xmle) {
+      logger.warn("Unable to parse configuration from bundle: " + bundle.getSymbolicName(), xmle);
+    } catch (ConfigurationSetupException cse) {
+      logger.warn("Unable to load configuration from bundle: " + bundle.getSymbolicName(), cse);
     } finally {
       if (is != null) {
         try {
@@ -154,6 +162,14 @@ public class PluginsLoader {
         }
       }
     }
+  }
+
+  private static InputStream getJarResource(final URL location, final String resource) throws IOException {
+    final JarInputStream jis = new JarInputStream(location.openStream());
+    for (JarEntry entry = jis.getNextJarEntry(); entry != null; entry = jis.getNextJarEntry()) {
+      if (entry.getName().equals(resource)) { return jis; }
+    }
+    return null;
   }
 
 }
