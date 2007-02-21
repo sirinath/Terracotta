@@ -1,7 +1,5 @@
 package com.tctest.plugins.lucene_2_0_0;
 
-import org.terracotta.plugins.lucene_2_0_0.LuceneDistributedConcurrentLoadTestApp;
-
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
@@ -11,11 +9,11 @@ public class LuceneDistributedConcurrentLoadTest extends TransparentTestBase {
     disableAllUntil("2007-02-28");
   }
 
-
   private static final int TIMEOUT = 10 * 60 * 1000; // 10min;
 
   protected Class getApplicationClass() {
-    return LuceneDistributedConcurrentLoadTestApp.class;
+    // return LuceneDistributedConcurrentLoadTestApp.class;
+    return null;
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
