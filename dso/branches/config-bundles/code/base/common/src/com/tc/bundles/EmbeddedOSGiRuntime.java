@@ -15,6 +15,7 @@ import com.tc.logging.TCLogging;
 import com.terracottatech.config.Plugins;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -59,8 +60,12 @@ public interface EmbeddedOSGiRuntime {
       final List prependLocations = new ArrayList();
       // There are two repositories that we [optionally] prepend: a system property (used by tests) and the installation
       // root (which is not set when running tests)
-      if (Directories.getInstallationRoot() != null) {
-        prependLocations.add(new File(Directories.getInstallationRoot(), "plugins").toURL());
+      try {
+        if (Directories.getInstallationRoot() != null) {
+          prependLocations.add(new File(Directories.getInstallationRoot(), "plugins").toURL());
+        }
+      } catch (FileNotFoundException fnfe) {
+        // Ignore, tc.install-dir is not set so we must be in a test environment
       }
       if (System.getProperty(PLUGINS_URL_PROPERTY_NAME) != null) {
         prependLocations.add(new URL(System.getProperty(PLUGINS_URL_PROPERTY_NAME)));
