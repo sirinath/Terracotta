@@ -42,6 +42,11 @@ public final class LuceneSampleDataIndex {
     }
     directory = new RAMDirectory(indexPath);
   }
+  
+  // This breaks encapsulation and is for tesing purposes only
+  public RAMDirectory publishDirectory() {
+    return directory;
+  }
 
   public Hits query(String queryString) throws IOException, ParseException {
     synchronized (directory) {
