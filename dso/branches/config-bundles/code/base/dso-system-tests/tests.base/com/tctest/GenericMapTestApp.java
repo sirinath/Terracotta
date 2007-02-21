@@ -44,6 +44,12 @@ import java.util.Map.Entry;
 
 public class GenericMapTestApp extends GenericTestApp {
   private final Map nonSharedArrayMap = new HashMap();
+  
+  private static boolean pluginsLoaded = false;
+
+  public static synchronized boolean pluginsLoaded() {
+    return pluginsLoaded;
+  }
 
   public GenericMapTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider, Map.class);
@@ -132,6 +138,8 @@ public class GenericMapTestApp extends GenericTestApp {
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = GenericMapTestApp.class.getName();
     config.addNewPlugin("clustered-commons-collections", "3.1");
+    pluginsLoaded = true;
+    
     config.getOrCreateSpec(testClass);
     String methodExpression = "* " + testClass + "*.*(..)";
     config.addWriteAutolock(methodExpression);

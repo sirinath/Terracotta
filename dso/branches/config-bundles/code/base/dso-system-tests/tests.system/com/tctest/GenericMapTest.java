@@ -16,5 +16,9 @@ public class GenericMapTest extends TransparentTestBase {
   protected Class getApplicationClass() {
     return GenericMapTestApp.class;
   }
+  
+  public void testPluginsLoaded() {
+    assertTrue(true);
+  }
 
 }
