@@ -4,13 +4,12 @@
  */
 package com.tc.l2.objectserver;
 
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.util.State;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,33 +19,29 @@ public class L2ObjectStateManager {
 
   private static final TCLogger logger = TCLogging.getLogger(L2ObjectStateManager.class);
 
-  ConcurrentHashMap             nodes  = new ConcurrentHashMap();
-
-  public void addL2(NodeID nodeID) {
-    nodes.put(nodeID, new L2ObjectState(nodeID));
-  }
-
+  CopyOnWriteArraySet nodes = new CopyOnWriteArraySet();
+  
   public void removeL2(NodeID nodeID) {
-    nodes.remove(nodeID);
+    for (Iterator i = nodes.iterator(); i.hasNext();) {
+      L2ObjectState l2State = (L2ObjectState) i.next();
+      if(nodeID.equals(l2State.nodeID)) {
+        i.remove();
+        return;
+      }
+    }
+    logger.warn("L2State Not found for " + nodeID);
   }
 
-  public int setExistingObjectsList(NodeID nodeID, Set objectIDs, ObjectManager objectManager) {
-    L2ObjectState l2State = (L2ObjectState) nodes.get(nodeID);
-    if (l2State != null) {
-      return l2State.initialize(objectIDs, objectManager);
-    } else {
-      logger.warn("L2 State Object Not found for " + nodeID);
-      return -1;
-    }
+  public int setExistingObjectsList(NodeID nodeID, Set oids, ObjectManager objectManager) {
+    L2ObjectState l2State = new L2ObjectState(nodeID);
+    int missing = l2State.initialize(oids, objectManager);
+    nodes.add(l2State);
+    return missing;
   }
 
   private static final class L2ObjectState {
 
-    private static final State UNINITIALIZED = new State("UNINITIALIZED");
-    private static final State INITIALIZED   = new State("INITIALIZED");
-
     private final NodeID       nodeID;
-    private State              state         = UNINITIALIZED;
     private Set                missingOids;
 
     public L2ObjectState(NodeID nodeID) {
@@ -68,7 +63,6 @@ public class L2ObjectStateManager {
         // message from GC) from previous active reached the other node and not this node and the active crashed
         logger.warn("Object IDs MISSING HERE : " + missingHere.size() + " : " + missingHere);
       }
-      state = INITIALIZED;
       return missingOids.size();
     }
   }

@@ -14,10 +14,12 @@ import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
+import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.util.Assert;
 
+import java.util.Iterator;
 import java.util.Set;
 
 public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupEventsListener, GroupMessageListener {
@@ -38,9 +40,26 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     this.groupManager.registerForMessages(ObjectListSyncMessage.class, this);
   }
 
+  /**
+   * This method is used to sync up all ObjectIDs from the remote ObjectManagers. It is synchronous and after when it
+   * returns nobody is allowed to join the cluster with exisiting objects.
+   */
+  public void sync() {
+    try {
+      GroupResponse gr = groupManager.sendAllAndWaitForResponse(ObjectListSyncMessageFactory
+          .createObjectListSyncRequestMessage());
+      for (Iterator i = gr.getResponses().iterator(); i.hasNext();) {
+        ObjectListSyncMessage msg = (ObjectListSyncMessage) i.next();
+        add2L2StateManager(msg.messageFrom(), msg.getObjectIDs());
+      }
+    } catch (GroupException e) {
+      logger.error(e);
+      throw new AssertionError(e);
+    }
+  }
+
   public void nodeJoined(NodeID nodeID) {
     if (stateManager.isActiveCoordinator()) {
-      l2ObjectStateManager.addL2(nodeID);
       query(nodeID);
     }
   }
@@ -62,8 +81,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
 
   public void messageReceived(NodeID fromNode, GroupMessage msg) {
     if (!(msg instanceof ObjectListSyncMessage)) { throw new AssertionError(
-                                                                           "ReplicatedObjectManagerImpl : Received wrong message type :"
-                                                                               + msg); }
+                                                                            "ReplicatedObjectManagerImpl : Received wrong message type :"
+                                                                                + msg); }
     ObjectListSyncMessage clusterMsg = (ObjectListSyncMessage) msg;
     handleClusterObjectMessage(fromNode, clusterMsg);
   }
@@ -89,18 +108,29 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
 
   private void handleObjectListResponse(NodeID nodeID, ObjectListSyncMessage clusterMsg) {
     Assert.assertTrue(stateManager.isActiveCoordinator());
-    int missingCount = l2ObjectStateManager.setExistingObjectsList(clusterMsg.messageFrom(), clusterMsg.getObjectIDs(), objectManager);
-    if(missingCount == 0) {
-      stateManager.moveNodeToPassiveStandby(nodeID);
+    Set oids = clusterMsg.getObjectIDs();
+    if (!oids.isEmpty()) {
+      logger.error("Nodes joining the cluster after startup shouldnt have any Objects. " + nodeID + " contains "
+                   + oids.size() + " Objects !!!");
+      logger.error("TODO:: Force remote node to Quit !!");
+      // TODO:: Force Quit !!! ACTIVE NEVER QUITS
+    } else {
+      add2L2StateManager(nodeID, oids);
     }
-    //TODO:: initiate lookups
+  }
+
+  private void add2L2StateManager(NodeID nodeID, Set oids) {
+      int missing = l2ObjectStateManager.setExistingObjectsList(nodeID, oids, objectManager);
+      if (missing == 0) {
+        stateManager.moveNodeToPassiveStandby(nodeID);
+      }
+    // TODO:: initiate lookups
   }
 
   private void handleObjectListRequest(NodeID nodeID, ObjectListSyncMessage clusterMsg) throws GroupException {
     Assert.assertFalse(stateManager.isActiveCoordinator());
     Set knownIDs = objectManager.getAllObjectIDs();
-    groupManager.sendTo(nodeID, ObjectListSyncMessageFactory
-        .createObjectListSyncResponseMessage(clusterMsg, knownIDs));
+    groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncResponseMessage(clusterMsg, knownIDs));
   }
 
 }

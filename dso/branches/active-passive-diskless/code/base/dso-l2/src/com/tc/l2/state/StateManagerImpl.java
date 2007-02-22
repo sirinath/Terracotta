@@ -115,10 +115,12 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
       // TODO:: Support this later
       throw new AssertionError("Cant move to " + PASSIVE_STANDBY + " from " + ACTIVE_COORDINATOR
                                + " at least for now");
-    } else {
+    } else if(state != PASSIVE_STANDBY) {
       stateChangeSink.add(new StateChangedEvent(state, PASSIVE_STANDBY));
       state = PASSIVE_STANDBY;
       info("Moved to " + state, true);
+    } else {
+     info("Already in " + state);
     }
   }
 

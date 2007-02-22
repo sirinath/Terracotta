@@ -95,8 +95,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       logger.info(this.thisNodeID + " recd msg " + gmsg.getMessageID() + " From " + sender.getName());
     }
     MessageID requestID = gmsg.inResponseTo();
+    NodeID from = new NodeID(sender.getName(), sender.getUniqueId());
+    gmsg.setMessageOrginator(from);
     if (requestID.isNull() || !notifyPendingRequests(requestID, gmsg, sender)) {
-      NodeID from = new NodeID(sender.getName(), sender.getUniqueId());
       fireMessageReceivedEvent(from, gmsg);
     }
   }
@@ -113,7 +114,6 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   private void fireMessageReceivedEvent(NodeID from, GroupMessage msg) {
     GroupMessageListener listener = messageListeners.get(msg.getClass().getName());
     if (listener != null) {
-      msg.setMessageOrginator(from);
       listener.messageReceived(from, msg);
     } else {
       String errorMsg = "No Route for " + msg + " from " + from;

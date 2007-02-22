@@ -70,6 +70,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
 
   public void l2StateChanged(StateChangedEvent sce) {
     if (sce.movedToActive()) {
+      rObjectManager.sync();
       try {
         server.startActiveMode();
       } catch (IOException e) {
