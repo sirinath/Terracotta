@@ -5,9 +5,13 @@
 package com.tc.admin;
 
 import org.dijon.Button;
+import org.dijon.Container;
 import org.dijon.Dialog;
 import org.dijon.DialogResource;
+import org.dijon.TextField;
 
+import java.awt.BorderLayout;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
@@ -17,24 +21,33 @@ import java.io.InterruptedIOException;
 import java.util.Map;
 
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 public class ConnectDialog extends Dialog {
-  private JMXServiceURL      m_url;
-  private Map                m_env;
-  private long               m_timeout;
-  private ConnectionListener m_listener;
-  private JMXConnector       m_jmxc;
-  private Thread             m_mainThread;
-  private Thread             m_connectThread;
-  private Button             m_cancelButton;
-  private Timer              m_timer;
-  private Exception          m_error;
 
-  public ConnectDialog(JMXServiceURL url, Map env, long timeout, ConnectionListener listener) {
-    super();
+  private JMXServiceURL        m_url;
+  private Map                  m_env;
+  private long                 m_timeout;
+  private ConnectionListener   m_listener;
+  private JMXConnector         m_jmxc;
+  private Thread               m_mainThread;
+  private Thread               m_connectThread;
+  private Timer                m_timer;
+  private Exception            m_error;
+  private Button               m_cancelButton;
+  private final JTextField     m_usernameField;
+  private final JPasswordField m_passwordField;
+  private final Button         m_okButton;
+  private final Button         m_authCancelButton;
+  private final Container      m_emptyPanel;
+  private final Container      m_authPanel;
+
+  public ConnectDialog(Frame parent, JMXServiceURL url, Map env, long timeout, ConnectionListener listener) {
+    super(parent, true);
 
     m_url = url;
     m_env = env;
@@ -43,6 +56,7 @@ public class ConnectDialog extends Dialog {
 
     AdminClientContext acc = AdminClient.getContext();
     load((DialogResource) acc.topRes.child("ConnectDialog"));
+    pack();
 
     m_cancelButton = (Button) findComponent("CancelButton");
     m_cancelButton.addActionListener(new ActionListener() {
@@ -50,7 +64,6 @@ public class ConnectDialog extends Dialog {
         m_cancelButton.setEnabled(false);
         m_mainThread.interrupt();
         m_jmxc = null;
-        m_error = new InterruptedIOException("Interrupted");
         ConnectDialog.this.setVisible(false);
       }
     });
@@ -62,8 +75,65 @@ public class ConnectDialog extends Dialog {
         setVisible(false);
       }
     };
+
+    m_emptyPanel = (Container) findComponent("EmptyPanel");
+    m_emptyPanel.setLayout(new BorderLayout());
+
+    m_authPanel = (Container) AdminClient.getContext().topRes.resolve("AuthPanel");
+    Container credentialsPanel = (Container) m_authPanel.findComponent("CredentialsPanel");
+    m_authPanel.setVisible(false);
+    this.m_usernameField = (JTextField) credentialsPanel.findComponent("UsernameField");
+    this.m_okButton = (Button) m_authPanel.findComponent("OKButton");
+    this.m_authCancelButton = (Button) m_authPanel.findComponent("CancelButton");
+
+    // must be found last because JPasswordField is not a Dijon Component
+    TextField passwordField = (TextField) credentialsPanel.findComponent("PasswordField");
+    Container passwdHolder = new Container();
+    passwdHolder.setLayout(new BorderLayout());
+    passwdHolder.add(m_passwordField = new JPasswordField());
+    credentialsPanel.replaceChild(passwordField, passwdHolder);
+
+    m_okButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        final String username = m_usernameField.getText().trim();
+        final String password = new String(m_passwordField.getPassword()).trim();
+        SwingUtilities.invokeLater(new Thread() {
+          public void run() {
+            ((AuthenticatingJMXConnector) m_jmxc).handleOkClick(username, password);
+          }
+        });
+      }
+    });
+    m_authCancelButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        m_cancelButton.doClick();
+      }
+    });
+
     m_timer = new Timer(delay, taskPerformer);
     m_timer.setRepeats(false);
+  }
+
+  private void disableAuthenticationDialog() {
+    m_usernameField.setEnabled(false);
+    m_passwordField.setEnabled(false);
+    m_emptyPanel.removeAll();
+    m_usernameField.setText("");
+    m_passwordField.setText("");
+    m_authPanel.setVisible(false);
+    m_authCancelButton.setVisible(false);
+    m_cancelButton.setVisible(true);
+    pack();
+  }
+
+  private void enableAuthenticationDialog() {
+    m_emptyPanel.add(m_authPanel);
+    m_cancelButton.setVisible(false);
+    m_authCancelButton.setVisible(true);
+    m_usernameField.setEnabled(true);
+    m_passwordField.setEnabled(true);
+    m_authPanel.setVisible(true);
+    pack();
   }
 
   public void setServiceURL(JMXServiceURL url) {
@@ -142,27 +212,53 @@ public class ConnectDialog extends Dialog {
 
       try {
         m_error = null;
-        m_jmxc = JMXConnectorFactory.newJMXConnector(m_url, m_env);
+        m_jmxc = new AuthenticatingJMXConnector(m_url, m_env);
+        ((AuthenticatingJMXConnector) m_jmxc)
+            .addAuthenticationListener(new AuthenticatingJMXConnector.AuthenticationListener() {
+              public void handleEvent() {
+                enableAuthenticationDialog();
+              }
+            });
+        ((AuthenticatingJMXConnector) m_jmxc)
+            .addCollapseListener(new AuthenticatingJMXConnector.AuthenticationListener() {
+              public void handleEvent() {
+                disableAuthenticationDialog();
+              }
+            });
 
         if (m_jmxc != null && m_error == null) {
           m_connectThread.start();
-          m_connectThread.join(m_timeout);
+          // m_connectThread.join(m_timeout); XXX
+          m_connectThread.join();
         }
       } catch (IOException e) {
         m_error = e;
       } catch (InterruptedException e) {
+        m_connectThread.interrupt();
+        disableAuthenticationDialog();
         m_error = new InterruptedIOException("Interrupted");
+        return;
       }
 
       if (m_error == null && m_connectThread.isAlive()) {
         m_connectThread.interrupt();
         m_error = new InterruptedIOException("Connection timed out");
       }
+
+      if (m_error != null) {
+        m_connectThread.interrupt();
+      }
+
       m_timer.start();
     }
   }
 
   class ConnectThread extends Thread {
+    
+    public ConnectThread() {
+      setDaemon(true);
+    }
+    
     public void run() {
       try {
         m_jmxc.connect(m_env);
