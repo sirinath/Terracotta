@@ -5,6 +5,6 @@
 	    <dependency name="ibatis-common" rev="2" org="terracotta"/>
 	    <dependency name="ibatis-dao" rev="2" org="terracotta"/>
 	    <dependency name="ibatis-sqlmap" rev="2" org="terracotta"/>
-	    <dependency name="cglib-nodep" rev="2.1_3" org="terracotta"/>
+		<dependency name="cglib" rev="nodep-2.1_3"/>
   </dependencies>
 </ivy-module>
