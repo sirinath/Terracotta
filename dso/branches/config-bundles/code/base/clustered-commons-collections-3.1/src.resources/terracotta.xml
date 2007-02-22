@@ -6,48 +6,48 @@
   All rights reserved
 
 -->
-<tc:dso xmlns:tc="http://www.terracotta.org/config">
+<xml-fragment>
 
-  <instrumented-classes>
-    <include>
-      <class-expression>org.apache.commons.collections.FastHashMap*</class-expression>
-      <honor-transient>true</honor-transient>
-    </include>    
-  </instrumented-classes>
+        <instrumented-classes>
+            <include>
+                <class-expression>org.apache.commons.collections.FastHashMap</class-expression>
+                <honor-transient>true</honor-transient>
+            </include>
+        </instrumented-classes>
 
-  <locks>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap*.*(..)</method-expression>
-      <lock-level>write</lock-level>
-    </autolock>
-    
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap.clone(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap*.contains*(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap.equals(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap.get(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap*.hashCode(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap*.isEmpty(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-    <autolock>
-      <method-expression>* org.apache.commons.collections.FastHashMap*.size(..)</method-expression>
-      <lock-level>read</lock-level>
-    </autolock>
-  </locks>
-</tc:dso>
+        <locks>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap*.*(..)</method-expression>
+                <lock-level>write</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap.clone(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap*.contains*(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap.equals(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap.get(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap*.hashCode(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap*.isEmpty(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+            <autolock>
+                <method-expression>* org.apache.commons.collections.FastHashMap*.size(..)</method-expression>
+                <lock-level>read</lock-level>
+            </autolock>
+        </locks>
+
+</xml-fragment>
