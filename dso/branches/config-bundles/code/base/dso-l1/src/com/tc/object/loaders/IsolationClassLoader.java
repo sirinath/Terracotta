@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.loaders;
 
@@ -20,6 +21,7 @@ import java.net.URLClassLoader;
  * specifically in this loader (and consequently within an isolated DSO context)
  */
 public class IsolationClassLoader extends URLClassLoader implements NamedClassLoader {
+
   private static final ClassLoader    SYSTEM_LOADER = ClassLoader.getSystemClassLoader();
 
   private final Manager               manager;
@@ -65,7 +67,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   }
 
   public Class loadClass(String name) throws ClassNotFoundException {
-    if (name.startsWith("com.tc.")) {
+    if (name.startsWith("com.tc.") || name.startsWith("org.terracotta.")) {
       return SYSTEM_LOADER.loadClass(name);
     } else {
       return super.loadClass(name);
@@ -79,4 +81,5 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   public void __tc_setClassLoaderName(String name) {
     throw new AssertionError();
   }
+
 }
