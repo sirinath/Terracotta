@@ -392,7 +392,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       if (inLevel.equals(LockLevel.CONCURRENT)) outLevel = ConfigLockLevel.CONCURRENT;
       else if (inLevel.equals(LockLevel.READ)) outLevel = ConfigLockLevel.READ;
       else if (inLevel.equals(LockLevel.WRITE)) outLevel = ConfigLockLevel.WRITE;
-      else throw Assert.failure("Unknown lock level " + inLevel);
+      else if (inLevel.equals(LockLevel.SYNCHRONOUS_WRITE)) {
+        outLevel = ConfigLockLevel.SYNCHRONOUS_WRITE;
+        System.err.println("********  SYNCHRONOUS_WRITE!!");
+        logger.info("********  SYNCHRONOUS_WRITE!!");
+      } else throw Assert.failure("Unknown lock level " + inLevel);
 
       LockDefinition definition;
       if (configLocks[i].isAutoLock()) {
@@ -506,7 +510,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // Table model stuff
     addIncludePattern("javax.swing.event.TableModelEvent", true);
     TransparencyClassSpec spec = getOrCreateSpec("javax.swing.event.TableModelEvent");
-    
+
     addIncludePattern("javax.swing.table.AbstractTableModel", true);
     spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
     spec.addDistributedMethodCall("fireTableChanged", "(Ljavax/swing/event/TableModelEvent;)V");
@@ -595,7 +599,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
     spec = getOrCreateSpec("javax.swing.tree.DefaultMutableTreeNode");
-    
+
     spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
     ld = new LockDefinition("tctreeLock", ConfigLockLevel.WRITE);
     ld.commit();
@@ -754,7 +758,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
     spec = getOrCreateSpec("java.util.AbstractMap");
     spec.setHonorTransient(true);
-    
+
     // spec = getOrCreateSpec("java.lang.Number");
     // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
     // JVM crashes.

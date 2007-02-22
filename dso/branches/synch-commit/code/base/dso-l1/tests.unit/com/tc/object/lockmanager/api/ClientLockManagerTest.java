@@ -273,17 +273,23 @@ public class ClientLockManagerTest extends TestCase {
     final LockID lockID = new LockID("my lock");
     final ThreadID tx1 = new ThreadID(1);
     final int writeLockLevel = LockLevel.WRITE;
-
+    
     final LockID readLock = new LockID("my read lock");
     final ThreadID tx2 = new ThreadID(2);
     final int readLockLevel = LockLevel.READ;
 
+    final LockID synchWriteLock = new LockID("my synch write lock");
+    final ThreadID tx3 = new ThreadID(1);
+    final int synchWriteLockLevel = LockLevel.SYNCHRONOUS_WRITE;
+    
     Set lockRequests = new HashSet();
     lockRequests.add(new LockRequest(lockID, tx1, writeLockLevel));
     lockRequests.add(new LockRequest(readLock, tx2, readLockLevel));
+    lockRequests.add(new LockRequest(synchWriteLock, tx3, synchWriteLockLevel));
 
     lockManager.lock(lockID, tx1, writeLockLevel);
     lockManager.lock(readLock, tx2, readLockLevel);
+    lockManager.lock(synchWriteLock, tx3, synchWriteLockLevel);
 
     Set s = new HashSet();
     try {
@@ -301,6 +307,7 @@ public class ClientLockManagerTest extends TestCase {
     lockManager.unpause();
     lockManager.unlock(lockID, tx1);
     lockManager.unlock(readLock, tx2);
+    lockManager.unlock(synchWriteLock, tx3);
     pauseAndStart();
     assertEquals(0, lockManager.addAllHeldLocksTo(new HashSet()).size());
   }
