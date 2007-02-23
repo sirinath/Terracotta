@@ -57,6 +57,43 @@ public class ClassUtilsTest extends TestCase {
     // reasonFormatter = newFormatter(printWriter);
   }
 
+  public void testArrayMethods() {
+    assertEquals(int.class, ClassUtils.baseComponetType(int[][][][][].class));
+    assertEquals(Object.class, ClassUtils.baseComponetType(Object[].class));
+
+    try {
+      ClassUtils.baseComponetType(null);
+      fail();
+    } catch (NullPointerException e) {
+      // expected
+    }
+
+    try {
+      ClassUtils.baseComponetType(int.class);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // expected
+    }
+
+    assertEquals(5, ClassUtils.arrayDimensions(int[][][][][].class));
+    assertEquals(1, ClassUtils.arrayDimensions(Object[].class));
+
+    try {
+      ClassUtils.arrayDimensions(null);
+      fail();
+    } catch (NullPointerException e) {
+      // expected
+    }
+
+    try {
+      ClassUtils.arrayDimensions(int.class);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // expected
+    }
+
+  }
+
   public void testNonPortableReason() {
     NonPortableReason reason = null;
     Config config;
