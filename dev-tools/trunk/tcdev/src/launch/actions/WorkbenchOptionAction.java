@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package launch.actions;
 import org.eclipse.core.runtime.Preferences;
@@ -13,7 +13,7 @@ import refreshall.Activator;
 
 public class WorkbenchOptionAction implements IWorkbenchWindowActionDelegate {
 
-	public static final String KEY = "testWith14"; 
+	public static final String TEST_WITH_14_KEY = "testWith14"; 
 	
 	public void dispose() {
 	}
@@ -23,7 +23,7 @@ public class WorkbenchOptionAction implements IWorkbenchWindowActionDelegate {
 
 	public void run(IAction action) {
 		Preferences prefs = Activator.getDefault().getPluginPreferences();
-		prefs.setValue(KEY, action.isChecked());
+		prefs.setValue(TEST_WITH_14_KEY, action.isChecked());
 		Activator.getDefault().savePluginPreferences();
 	}
 

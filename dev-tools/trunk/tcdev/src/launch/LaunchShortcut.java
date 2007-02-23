@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package launch;
@@ -37,12 +37,12 @@ import refreshall.Activator;
 
 public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchConfigurationConstants {
 
-  private static final String         Jdk14Home            = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
-  private static final String         Jdk15Home            = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
+  private static final String         J2SE_14              = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
+  private static final String         J2SE_15              = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
 
   private static final String         TESTS_PREP_PROP_LOC  = "common" + File.separator + "build.eclipse"
-                                                               + File.separator + "tests.base.classes" + File.separator
-                                                               + "tests-prepared.properties";
+                                                             + File.separator + "tests.base.classes" + File.separator
+                                                             + "tests-prepared.properties";
   // private static final String BUILD_PATH = "";
   private static final String         VM_ARGS_COUNT        = "tcbuild.prepared.jvmargs";
   private static final String         VM_ARG               = "tcbuild.prepared.jvmarg_";
@@ -50,7 +50,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   private static final String         JVM_VERSION          = "tcbuild.prepared.jvm.version";
   private static final String         TCBUILD              = "tcbuild";
   private static final String         CHECK_PREP           = "check_prep";
-  private static final String         BUILD_WITH_15_OPTION = "run-1.4-tests-with-1.5=";
+  private static final String         RUN_14_TESTS_WITH_15 = "run-1.4-tests-with-1.5=";
   private static final byte[]         NEWLINE              = "\n".getBytes();
 
   private final IOConsoleOutputStream console;
@@ -99,7 +99,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
                                                               JUnitLaunchDescription description)
       throws LaunchCancelledByUserException {
     if (argTypes == null) throw new RuntimeException(
-        "vmArgs null, this should never happen. JUnit impl must have changed.");
+                                                     "vmArgs null, this should never happen. JUnit impl must have changed.");
 
     try {
       ILaunchConfigurationWorkingCopy wc = super.findOrCreateLaunchConfiguration(mode, registry, description)
@@ -133,13 +133,14 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   }
 
   private void runCheckPrep(File wkDir, String module, String subtree, String basePath) throws Exception {
-    if (!subtree.startsWith("tests.")) throw new IllegalArgumentException("Subtree must start with \"tests.\"");
-    if (!(subtree.endsWith("unit") || subtree.endsWith("system"))) throw new IllegalArgumentException(
-        "Subtree must end with \"unit\" or \"system\"");
+    if (!subtree.startsWith("tests.")) { throw new IllegalArgumentException("Subtree must start with \"tests.\""); }
+    if (!(subtree.endsWith("unit") || subtree.endsWith("system"))) {
+      final IllegalArgumentException iae = new IllegalArgumentException("Subtree must end with \"unit\" or \"system\"");
+      throw iae;
+    }
 
-    boolean buildWith15 = true;
     Preferences prefs = Activator.getDefault().getPluginPreferences();
-    if (prefs.getBoolean(WorkbenchOptionAction.KEY)) buildWith15 = false;
+    final boolean run14TestsWith15 = !prefs.getBoolean(WorkbenchOptionAction.TEST_WITH_14_KEY);
     int increment = 0;
     String[] commandLine = new String[5];
 
@@ -151,15 +152,15 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     }
     commandLine[increment++] = basePath + TCBUILD; // BUILD_PATH + File.separator +
     commandLine[increment++] = CHECK_PREP;
-    commandLine[increment++] = BUILD_WITH_15_OPTION + buildWith15;
+    commandLine[increment++] = RUN_14_TESTS_WITH_15 + run14TestsWith15;
     commandLine[increment++] = module;
     commandLine[increment++] = subtree.substring("tests.".length(), subtree.length());
 
     Map env = System.getenv();
     Map modifiedEnv = new HashMap(env);
-    modifiedEnv.put("JAVA_HOME", Jdk15Home);
-    modifiedEnv.put("TC_JAVA_HOME_14", Jdk14Home);
-    modifiedEnv.put("TC_JAVA_HOME_15", Jdk15Home);
+    modifiedEnv.put("JAVA_HOME", J2SE_15);
+    modifiedEnv.put("J2SE-1.4", J2SE_14);
+    modifiedEnv.put("J2SE-1.5", J2SE_15);
     String[] environment = new String[modifiedEnv.size()];
     Iterator iter = modifiedEnv.entrySet().iterator();
     Map.Entry entry;
@@ -247,7 +248,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
       }
     }
     if (!jreAvailable) {
-      println("Java Version: " + jreVersion + " not available as an installed jre in Eclipse.");
+      println("Java Version: " + jreVersion + " not available as an installed JRE in Eclipse.");
       throw new LaunchCancelledByUserException();
     } else {
       println("Using JRE Version: " + jreVersion);
@@ -266,7 +267,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     }
     Preferences prefs = Activator.getDefault().getPluginPreferences();
     String jreVersion = properties.getProperty(JVM_VERSION);
-    if ((jreVersion.indexOf("1.4") != -1) && (prefs.getBoolean(WorkbenchOptionAction.KEY))) { return false; }
+    if ((jreVersion.indexOf("1.4") != -1) && (prefs.getBoolean(WorkbenchOptionAction.TEST_WITH_14_KEY))) { return false; }
     return true;
   }
 
