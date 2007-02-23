@@ -37,6 +37,8 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   DSOInstrumentationLoggingOptions getInstrumentationLoggingOptions();
 
+  void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException;
+
   Iterator getAllSpecs();
 
   Iterator getAllUserDefinedBootSpecs();

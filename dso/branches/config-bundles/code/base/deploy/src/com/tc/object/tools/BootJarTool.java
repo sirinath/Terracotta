@@ -1834,19 +1834,12 @@ public class BootJarTool {
       outputFile = new File(outputFile, BootJarSignature.getBootJarNameForThisVM());
     }
     
-
     // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
     // That requirement is no more, but might come back, so I'm leaving at least this much scaffolding in place
     // WAS: systemProvider = new RuntimeJarBytesProvider(...)
 
-       ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
-       new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose)
-           .generateJar();
-
-//File tempOutputFile = File.createTempFile("terracotta", "bootjar.tmp");
-//tempOutputFile.deleteOnExit();
-//
-//com.tc.util.Util.copyFile(tempOutputFile, outputFile);
+    ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
+    new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose).generateJar();
   }
 
   public static class RuntimeJarBytesProvider implements ClassBytesProvider {

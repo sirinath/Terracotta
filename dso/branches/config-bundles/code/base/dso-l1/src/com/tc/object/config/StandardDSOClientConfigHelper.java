@@ -63,6 +63,7 @@ import com.tc.object.config.schema.NewSpringApplicationConfig;
 import com.tc.object.loaders.NamedLoaderAdapter;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
+import com.tc.object.tools.BootJarException;
 import com.tc.tomcat.transform.BootstrapAdapter;
 import com.tc.tomcat.transform.CatalinaAdapter;
 import com.tc.tomcat.transform.ContainerBaseAdapter;
@@ -84,6 +85,7 @@ import com.terracottatech.config.Plugin;
 import com.terracottatech.config.Plugins;
 import com.terracottatech.config.SpringApplication;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.text.ParseException;
@@ -1625,6 +1627,43 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
 
     return rv;
+  }
+  
+  public void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException {
+    logger.info("Verifying boot jar contents");
+    int missingCount         = 0;
+    int preInstrumentedCount = 0;
+    int bootJarPopulation    = 0;
+    try {
+      BootJar bootJar   = BootJar.getDefaultBootJarForReading();
+      Set bjClasses     = bootJar.getAllPreInstrumentedClasses();
+      bootJarPopulation = bjClasses.size();
+      for (Iterator i = getAllSpecs(); i.hasNext();) {
+        TransparencyClassSpec classSpec = (TransparencyClassSpec) i.next();
+        String message = "";
+        if (classSpec.isPreInstrumented()) {
+          message = "* " + classSpec.getClassName() + "... ";
+          preInstrumentedCount++;
+          if (bjClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific()) {
+            message += "ok";
+          } else {
+            message += "missing";
+            missingCount++;
+          }
+          logger.info(message);
+        }
+      }
+    } catch (BootJarException bjex) {
+      throw new UnverifiedBootJarException("BootJarException occurred while attempting to verify the contents of the boot jar.", bjex);
+    } catch (IOException ioex) {
+      throw new UnverifiedBootJarException("IOException occurred while attempting to verify the contents of the boot jar.", ioex);
+    }
+    logger.info("Number of classes found in the DSO boot jar:" + bootJarPopulation);
+    logger.info("Number of classes required to be in the DSO boot jar:" + preInstrumentedCount);
+    logger.info("Number of classes found missing in the DSO boot jar:" + missingCount);
+    if (missingCount > 0) {
+      throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount + " pre-instrumented class(es) found missing.");
+    }
   }
 
   public Iterator getAllSpecs() {

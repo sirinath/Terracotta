@@ -21,7 +21,9 @@ import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.config.IncompleteBootJarException;
 import com.tc.object.config.StandardDSOClientConfigHelper;
+import com.tc.object.config.UnverifiedBootJarException;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.plugins.PluginsLoader;
@@ -79,9 +81,34 @@ public class DSOContextImpl implements DSOContext {
     this.manager = manager;
     weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
         .instrumentationLoggingOptions()));
-    PluginsLoader.initPlugins(configHelper, false);
-  }
 
+    PluginsLoader.initPlugins(configHelper, false);
+    checkBootJar();
+  }
+  
+  private void checkBootJar() {
+    try {
+      configHelper.verifyBootJarContents();
+      
+    } catch(UnverifiedBootJarException ubjex) {
+      logger.error(ubjex);
+      StringBuffer msg = new StringBuffer();
+      msg.append("Unable to verify the contents of the bootjar; ");
+      msg.append("Please check the client logs for more information.");
+      throw new RuntimeException(msg.toString());
+    } catch(IncompleteBootJarException ibjex) {
+      logger.error(ibjex);
+      StringBuffer msg = new StringBuffer();
+      msg.append("The DSO boot jar appears to be incomplete --- some pre-instrumented classes ");
+      msg.append("listed in your tc-config is not included in the boot jar file. This could ");
+      msg.append("happen if you've modified your DSO clients' tc-config file to specify additional ");
+      msg.append("classes for inclusion in the boot jar, but forgot to rebuild the boot jar. Or, you ");
+      msg.append("could be a using an older boot jar against a newer Terracotta client installation. ");
+      msg.append("Please check the client logs for the list of classes that were not found in your boot jar.");
+      throw new RuntimeException(msg.toString());
+    }
+  }
+  
   private void checkForProperlyInstrumentedBaseClasses() {
     if (!Manageable.class.isAssignableFrom(HashMap.class)) {
       StringBuffer msg = new StringBuffer();
@@ -100,7 +127,7 @@ public class DSOContextImpl implements DSOContext {
   /**
    * XXX::NOTE:: ClassLoader checks the returned byte array to see if the class is instrumented or not to maintain the
    * offset.
-   *
+   * 
    * @return new byte array if the class is instrumented and same input byte array if not.
    * @see ClassLoaderPreProcessorImpl
    */

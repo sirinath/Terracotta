@@ -607,6 +607,10 @@ public class HashMapTCTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    public void verifyBootJarContents() {
+      throw new ImplementMe();
+    }
+
     public Iterator getAllUserDefinedBootSpecs() {
       throw new ImplementMe();
     }
