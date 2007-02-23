@@ -7,6 +7,7 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
+import com.tc.l2.api.L2Coordinator;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -21,21 +22,19 @@ import com.tc.objectserver.tx.TransactionBatchReaderFactory;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.util.SequenceValidator;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * I'm going to keep this simple at first and block the thread of the Object request if the objects can't be retrieved.
- * I'll make this fancy later
- * 
- * @author steve
- */
 public class ProcessTransactionHandler extends AbstractEventHandler {
   private static final TCLogger            logger = TCLogging.getLogger(ProcessTransactionHandler.class);
+  
+  private L2Coordinator l2Coordinator;
   private TransactionBatchReaderFactory    batchReaderFactory;
+  
   private final TransactionBatchManager    transactionBatchManager;
   private final MessageRecycler            messageRecycler;
   private final SequenceValidator          sequenceValidator;
@@ -58,7 +57,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       Collection completedTxnIds = reader.addAcknowledgedTransactionIDsTo(new HashSet());
       ServerTransaction txn;
 
-      List txns = new LinkedList();
+      List txns = new ArrayList(reader.getNumTxns());
       Set serverTxnIDs = new HashSet();
       ChannelID channelID = reader.getChannelID();
       while ((txn = reader.getNextTransaction()) != null) {
@@ -80,5 +79,6 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
+    l2Coordinator = oscc.getL2Coordinator();
   }
 }
