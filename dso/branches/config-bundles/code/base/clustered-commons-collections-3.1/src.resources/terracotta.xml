@@ -10,7 +10,7 @@
 
         <instrumented-classes>
             <include>
-                <class-expression>org.apache.commons.collections.FastHashMap</class-expression>
+                <class-expression>org.apache.commons.collections.FastHashMap*</class-expression>
                 <honor-transient>true</honor-transient>
             </include>
         </instrumented-classes>

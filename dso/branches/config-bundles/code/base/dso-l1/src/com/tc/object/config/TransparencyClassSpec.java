@@ -75,6 +75,7 @@ public class TransparencyClassSpec {
     this.isLogical = false;
     this.changeApplicatorClassName = null;
     this.changeApplicatorSpec = null;
+    this.changeApplicatorSpec = null;
   }
 
   public TransparencyClassSpec getClassSpec(String clazzName) {
@@ -273,10 +274,6 @@ public class TransparencyClassSpec {
     return changeApplicatorSpec;
   }
 
-  public String getChangeApplicatorClassName() {
-    return changeApplicatorClassName;
-  }
-
   public String getLogicalExtendingClassName() {
     return this.logicalExtendingClassName;
   }
@@ -287,7 +284,8 @@ public class TransparencyClassSpec {
     if (superClassLogicalExtendingClassName == null) {
       superClassLogicalExtendingClassName = superClassSpec.getClassName();
     }
-    this.changeApplicatorClassName = superClassSpec.getChangeApplicatorClassName();
+    this.changeApplicatorClassName = superClassSpec.changeApplicatorClassName;
+    this.changeApplicatorSpec = new DSOChangeApplicatorSpec(superClassSpec.changeApplicatorClassName);
     this.logicalExtendingClassName = superClassLogicalExtendingClassName;
   }
 
