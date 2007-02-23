@@ -102,7 +102,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
           return;
         }
 
-        if (type == LockLevel.READ && isHeldBy(requesterID, LockLevel.READ)) {
+        if (LockLevel.isRead(type) && isHeldBy(requesterID, LockLevel.READ)) {
           // if re-requesting a read lock, we don't need to ask the server
           award(requesterID, type);
           return;

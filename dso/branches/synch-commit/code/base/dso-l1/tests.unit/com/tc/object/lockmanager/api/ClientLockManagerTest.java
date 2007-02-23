@@ -51,12 +51,80 @@ public class ClientLockManagerTest extends TestCase {
     rmtLockManager.setClientLockManager(lockManager);
   }
 
+  public void testSynchronousWriteUnlock() {
+    final LockID lockID_1 = new LockID("1");
+    final LockID lockID_2 = new LockID("2");
+    final ThreadID threadID_1 = new ThreadID(1);
+    final ThreadID threadID_2 = new ThreadID(2);
+
+    rmtLockManager.resetFlushCount();
+
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.lock(lockID_1, threadID_1, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(1, rmtLockManager.getFlushCount());
+
+    rmtLockManager.makeLocksGreedy();
+
+    lockManager.lock(lockID_2, threadID_2, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(1, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_2, threadID_2);
+    assertEquals(2, rmtLockManager.getFlushCount());
+
+    rmtLockManager.resetFlushCount();
+    rmtLockManager.makeLocksNotGreedy();
+  }
+
+  public void testSynchronousWriteWait() {
+
+    final LockID lockID_1 = new LockID("1");
+    final LockID lockID_2 = new LockID("2");
+    final ThreadID threadID_1 = new ThreadID(1);
+    final ThreadID threadID_2 = new ThreadID(2);
+
+    rmtLockManager.resetFlushCount();
+
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.lock(lockID_1, threadID_1, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(0, rmtLockManager.getFlushCount());
+
+    WaitInvocation waitInvocation = new WaitInvocation();
+    NoExceptionLinkedQueue barrier = new NoExceptionLinkedQueue();
+    WaitLockRequest waitLockRequest = new WaitLockRequest(lockID_1, threadID_1, LockLevel.SYNCHRONOUS_WRITE,
+                                                          waitInvocation);
+    LockWaiter waiterThread = new LockWaiter(barrier, waitLockRequest, new Object());
+    waiterThread.start();
+    Object o = barrier.take();
+    assertNotNull(o);
+
+    assertEquals(1, rmtLockManager.getFlushCount());
+
+    rmtLockManager.makeLocksGreedy();
+
+    lockManager.lock(lockID_2, threadID_2, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(1, rmtLockManager.getFlushCount());
+
+    waitInvocation = new WaitInvocation();
+    waitLockRequest = new WaitLockRequest(lockID_2, threadID_2, LockLevel.SYNCHRONOUS_WRITE, waitInvocation);
+    waiterThread = new LockWaiter(barrier, waitLockRequest, new Object());
+    waiterThread.start();
+    o = barrier.take();
+    assertNotNull(o);
+
+    assertEquals(2, rmtLockManager.getFlushCount());
+
+    rmtLockManager.resetFlushCount();
+    rmtLockManager.makeLocksNotGreedy();
+  }
+
   public void testTryLock() {
     class TryLockRemoteLockManager extends TestRemoteLockManager {
       private CyclicBarrier requestBarrier;
       private CyclicBarrier awardBarrier;
 
-      public TryLockRemoteLockManager(SessionProvider sessionProvider, CyclicBarrier requestBarrier, CyclicBarrier awardBarrier) {
+      public TryLockRemoteLockManager(SessionProvider sessionProvider, CyclicBarrier requestBarrier,
+                                      CyclicBarrier awardBarrier) {
         super(sessionProvider);
         this.requestBarrier = requestBarrier;
         this.awardBarrier = awardBarrier;
@@ -273,23 +341,23 @@ public class ClientLockManagerTest extends TestCase {
     final LockID lockID = new LockID("my lock");
     final ThreadID tx1 = new ThreadID(1);
     final int writeLockLevel = LockLevel.WRITE;
-    
+
     final LockID readLock = new LockID("my read lock");
     final ThreadID tx2 = new ThreadID(2);
     final int readLockLevel = LockLevel.READ;
 
-    final LockID synchWriteLock = new LockID("my synch write lock");
-    final ThreadID tx3 = new ThreadID(1);
-    final int synchWriteLockLevel = LockLevel.SYNCHRONOUS_WRITE;
-    
+    // final LockID synchWriteLock = new LockID("my synch write lock");
+    // final ThreadID tx3 = new ThreadID(3);
+    // final int synchWriteLockLevel = LockLevel.SYNCHRONOUS_WRITE;
+
     Set lockRequests = new HashSet();
     lockRequests.add(new LockRequest(lockID, tx1, writeLockLevel));
     lockRequests.add(new LockRequest(readLock, tx2, readLockLevel));
-    lockRequests.add(new LockRequest(synchWriteLock, tx3, synchWriteLockLevel));
+    // lockRequests.add(new LockRequest(synchWriteLock, tx3, synchWriteLockLevel));
 
     lockManager.lock(lockID, tx1, writeLockLevel);
     lockManager.lock(readLock, tx2, readLockLevel);
-    lockManager.lock(synchWriteLock, tx3, synchWriteLockLevel);
+    // lockManager.lock(synchWriteLock, tx3, synchWriteLockLevel);
 
     Set s = new HashSet();
     try {
@@ -307,7 +375,7 @@ public class ClientLockManagerTest extends TestCase {
     lockManager.unpause();
     lockManager.unlock(lockID, tx1);
     lockManager.unlock(readLock, tx2);
-    lockManager.unlock(synchWriteLock, tx3);
+    // lockManager.unlock(synchWriteLock, tx3);
     pauseAndStart();
     assertEquals(0, lockManager.addAllHeldLocksTo(new HashSet()).size());
   }
@@ -695,6 +763,5 @@ public class ClientLockManagerTest extends TestCase {
     public void run() {
       lockManager.lock(lid, tid, lockType);
     }
-
   }
 }
