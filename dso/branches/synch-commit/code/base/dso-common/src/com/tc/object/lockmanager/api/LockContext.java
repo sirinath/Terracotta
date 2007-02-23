@@ -7,6 +7,7 @@ import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 
@@ -30,6 +31,7 @@ public class LockContext implements TCSerializable {
     this.lockID = lockID;
     this.channelID = channelID;
     this.threadID = threadID;
+    Assert.assertFalse(LockLevel.isSynchronous(lockLevel));
     this.lockLevel = lockLevel;
   }
 

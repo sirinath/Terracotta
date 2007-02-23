@@ -9,16 +9,16 @@ import java.util.Iterator;
 
 public class LockLevel {
   // NOTE: The NIL level isn't a valid lock level. It used to indicate the absence of a defined/valid lock level
-  public final static int  NIL_LOCK_LEVEL         = 0;
+  public final static int  NIL_LOCK_LEVEL    = 0;
 
-  public final static int  READ                   = 1;
-  public final static int  WRITE                  = 2;
-  public final static int  CONCURRENT             = 4;
+  public final static int  READ              = 1;
+  public final static int  WRITE             = 2;
+  public final static int  CONCURRENT        = 4;
 
-  private final static int GREEDY                 = 0x80;
-  private final static int SYNCHRONOUS_WRITE_MASK = 0X40;
+  private final static int GREEDY            = 0x80;
+  private final static int SYNCHRONOUS       = 0X40;
 
-  public final static int  SYNCHRONOUS_WRITE      = WRITE | SYNCHRONOUS_WRITE_MASK;
+  public final static int  SYNCHRONOUS_WRITE = WRITE | SYNCHRONOUS;
 
   private LockLevel() {
     // not to be instantiated
@@ -41,12 +41,17 @@ public class LockLevel {
 
   public static boolean isSynchronousWrite(int level) {
     if (level <= 0) return false;
-    return (level & SYNCHRONOUS_WRITE_MASK) == SYNCHRONOUS_WRITE_MASK;
+    return (level & SYNCHRONOUS_WRITE) == SYNCHRONOUS_WRITE;
   }
 
   public static boolean isGreedy(int level) {
     if (level <= 0) return false;
     return (level & GREEDY) == GREEDY;
+  }
+
+  public static boolean isSynchronous(int level) {
+    if (level <= 0) return false;
+    return (level & SYNCHRONOUS) == SYNCHRONOUS;
   }
 
   public static String toString(int level) {
@@ -91,7 +96,6 @@ public class LockLevel {
       case READ:
       case WRITE:
       case CONCURRENT:
-      case SYNCHRONOUS_WRITE:
         return true;
       default:
         return false;
@@ -103,6 +107,14 @@ public class LockLevel {
   }
 
   public static int makeNotGreedy(int level) {
-    return level ^ GREEDY;
+    return level & (~GREEDY);
+  }
+
+  public static int makeSynchronous(int level) {
+    return level | SYNCHRONOUS;
+  }
+  
+  public static int makeNotSynchronous(int level) {
+    return level & (~SYNCHRONOUS);
   }
 }

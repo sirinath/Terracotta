@@ -6,6 +6,7 @@ package com.tc.object.lockmanager.impl;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
@@ -37,8 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.Map.Entry;
 
 public class ClientLock implements WaitTimerCallback, LockFlushCallback {
+
+  private static final TCLogger   logger                   = TCLogging.getLogger(ClientLock.class);
 
   private static final State      RUNNING                  = new State("RUNNING");
   private static final State      PAUSED                   = new State("PAUSED");
@@ -52,15 +56,13 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private final RemoteLockManager remoteLockManager;
   private final WaitTimer         waitTimer;
 
-  private final TCLogger          logger;
   private final Greediness        greediness               = new Greediness();
   private int                     useCount                 = 0;
   private State                   state                    = RUNNING;
   private long                    timeUsed                 = System.currentTimeMillis();
 
-  public ClientLock(TCLogger logger, LockID lockID, RemoteLockManager remoteLockManager, WaitTimer waitTimer) {
+  public ClientLock(LockID lockID, RemoteLockManager remoteLockManager, WaitTimer waitTimer) {
     Assert.assertNotNull(lockID);
-    this.logger = logger;
     this.lockID = lockID;
     this.remoteLockManager = remoteLockManager;
     this.waitTimer = waitTimer;
@@ -75,7 +77,20 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     lock(threadID, type, false);
   }
 
-  private void lock(ThreadID requesterID, int type, boolean noBlock) {
+  private void lock(ThreadID threadID, int type, boolean noBlock) {
+    int lockType = type;
+    if (LockLevel.isSynchronous(type)) {
+      if (!LockLevel.isSynchronousWrite(type)) { throw new AssertionError(
+                                                                          "Only Synchronous WRITE lock is supported now"); }
+      lockType = LockLevel.WRITE;
+    }
+    basicLock(threadID, lockType, noBlock);
+    if (lockType != type) {
+      awardSynchronous(threadID, lockType);
+    }
+  }
+
+  private void basicLock(ThreadID requesterID, int type, boolean noBlock) {
     final Object waitLock;
     final Action action = new Action();
     synchronized (this) {
@@ -175,7 +190,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       }
 
       // Flush
-      if (action.doRemoteLockRequest() || action.doRecallCommit()) {
+      if (action.doRemoteLockRequest() || action.doRecallCommit() || action.doSynchronousCommit()) {
         // debug("unlock - flush - ", id);
         flush();
       }
@@ -197,7 +212,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
             remoteLockManager.releaseLock(lockID, threadID);
           }
         } else {
-          // try again - this could potentially loop forever in a highly contended environment
+          // try again
           changed = true;
           logger.debug(lockID + " :: unlock() : " + threadID + " STATE CHANGED - From = " + action + " To = "
                        + newAction + " - retrying ...");
@@ -216,6 +231,9 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       action.addAction(Action.RECALL_COMMIT);
     } else if (greediness.isGreedy()) {
       action.addAction(Action.AWARD_GREEDY_LOCKS);
+    }
+    if (isLockSynchronouslyHeld(threadID)) {
+      action.addAction(Action.SYNCHRONOUS_COMMIT);
     }
     return action;
   }
@@ -237,7 +255,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       }
 
       // Flush
-      if (action.doRemoteLockRequest() || action.doRecallCommit()) {
+      if (action.doRemoteLockRequest() || action.doRecallCommit() || action.doSynchronousCommit()) {
         flush();
       }
 
@@ -290,6 +308,9 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       action.addAction(Action.RECALL_COMMIT);
     } else if (greediness.isGreedy()) {
       action.addAction(Action.AWARD_GREEDY_LOCKS);
+    }
+    if(isLockSynchronouslyHeld(threadID)) {
+      action.addAction(Action.SYNCHRONOUS_COMMIT);
     }
     return action;
   }
@@ -724,7 +745,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     // debug("award() - BEGIN - ", id, LockLevel.toString(level));
     LockHold holder = (LockHold) this.holders.get(threadID);
     if (holder == null) {
-      holders.put(threadID, new LockHold(logger, this.lockID, level));
+      holders.put(threadID, new LockHold(this.lockID, level));
     } else if (holder.isHolding()) {
       holder.add(level);
     } else {
@@ -735,6 +756,13 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
         logger.warn("Lock in wrong STATE for holder - (" + threadID + ", " + LockLevel.toString(level) + ") - " + this);
         throw er;
       }
+    }
+  }
+
+  private synchronized void awardSynchronous(ThreadID threadID, int lockLevel) {
+    LockHold holder = (LockHold) this.holders.get(threadID);
+    if (holder != null && holder.isHolding() && ((holder.getLevel() & lockLevel) == lockLevel)) {
+      holder.makeLastAwardSynchronous(lockLevel);
     }
   }
 
@@ -759,6 +787,14 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
         // (4)
         return true;
       }
+    }
+    return false;
+  }
+
+  private boolean isLockSynchronouslyHeld(ThreadID threadID) {
+    LockHold holder = (LockHold) this.holders.get(threadID);
+    if (holder != null && holder.isHolding()) {
+      return holder.isLastLockSynchronouslyHeld();
     }
     return false;
   }
@@ -792,9 +828,10 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
    */
   private synchronized Map addRecalledHoldersTo(Map map) {
     Assert.assertTrue(greediness.isRecalled());
-    for (Iterator it = holders.keySet().iterator(); it.hasNext();) {
-      ThreadID id = (ThreadID) it.next();
-      LockHold holder = (LockHold) holders.get(id);
+    for (Iterator it = holders.entrySet().iterator(); it.hasNext();) {
+      Entry e = (Entry) it.next();
+      ThreadID id = (ThreadID) e.getKey();
+      LockHold holder = (LockHold) e.getValue();
       if (!holder.isHolding()) continue;
       if ((greediness.getRecalledLevel() == LockLevel.READ) && LockLevel.isRead(holder.getLevel())) {
         // (3)
@@ -999,14 +1036,12 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     private State                state;
     private final TIntIntHashMap counts  = new TIntIntHashMap();
     private final TIntStack      levels  = new TIntStack();
-    private final TCLogger       logger;
     private final LockID         lockID;
 
-    LockHold(TCLogger logger, LockID lockID, int level) {
+    LockHold(LockID lockID, int level) {
       this.lockID = lockID;
       Assert.eval("Non-discreet level " + level, LockLevel.isDiscrete(level));
       Assert.eval(level != LockLevel.NIL_LOCK_LEVEL);
-      this.logger = logger;
       this.level = level;
       this.levels.push(level);
       this.counts.put(level, 1);
@@ -1050,7 +1085,18 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       return this.counts.get(lockLevel);
     }
 
-    synchronized void add(int lockLevel) {
+    void makeLastAwardSynchronous(int lockLevel) {
+      int lastLevel = this.levels.pop();
+      Assert.assertEquals(lockLevel, lastLevel);
+      this.levels.push(LockLevel.makeSynchronous(lockLevel));
+    }
+
+    boolean isLastLockSynchronouslyHeld() {
+      int lastLevel = this.levels.peek();
+      return LockLevel.isSynchronous(lastLevel);
+    }
+
+    void add(int lockLevel) {
       Assert.eval("Non-discreet level " + lockLevel, LockLevel.isDiscrete(lockLevel));
 
       this.levels.push(lockLevel);
@@ -1067,9 +1113,9 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     /**
      * Returns true if a remote lock release is required. This method does not change the state.
      */
-    synchronized boolean isRemoteUnlockRequired() {
+    boolean isRemoteUnlockRequired() {
       Assert.eval(this.levels.size() > 0);
-      int lastLevel = levels.peek();
+      int lastLevel = LockLevel.makeNotSynchronous(levels.peek());
 
       Assert.eval(this.counts.contains(lastLevel));
       int count = this.counts.get(lastLevel);
@@ -1084,9 +1130,9 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     /**
      * Returns true if a remote lock release is required
      */
-    synchronized boolean removeCurrent() {
+    boolean removeCurrent() {
       Assert.eval(this.levels.size() > 0);
-      int lastLevel = levels.pop();
+      int lastLevel = LockLevel.makeNotSynchronous(levels.pop());
 
       Assert.eval(this.counts.contains(lastLevel));
       int count = this.counts.remove(lastLevel);
@@ -1106,7 +1152,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       return lastLevel == LockLevel.WRITE || this.level == LockLevel.NIL_LOCK_LEVEL;
     }
 
-    synchronized int goToWaitState() {
+    int goToWaitState() {
       Assert.assertTrue(LockLevel.isWrite(this.level));
       Assert.assertTrue(state == HOLDING);
       this.state = WAITING;
@@ -1119,7 +1165,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       return this.server_level;
     }
 
-    synchronized int goToPending() {
+    int goToPending() {
       /*
        * The lock might not be in WAITING state if the server has restarted and the client has been notified again
        * because of a resent of an already applied transaction. The lock could even be in HOLDING state if the resent
@@ -1135,7 +1181,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       return this.server_level;
     }
 
-    synchronized void goToHolding(int slevel) {
+    void goToHolding(int slevel) {
       Assert.assertTrue(slevel == server_level);
       if (state != PENDING) throw new AssertionError("Attempt to to to HOLDING while not PENDING: " + state);
       this.state = HOLDING;
@@ -1238,6 +1284,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
     private static final int RECALL              = 0x02;
     private static final int RECALL_COMMIT       = 0x04;
     private static final int AWARD_GREEDY_LOCKS  = 0x08;
+    private static final int SYNCHRONOUS_COMMIT  = 0x10;
 
     private int              action              = NIL_ACTION;
 
@@ -1261,6 +1308,10 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       return ((action & AWARD_GREEDY_LOCKS) == AWARD_GREEDY_LOCKS);
     }
 
+    boolean doSynchronousCommit() {
+      return ((action & SYNCHRONOUS_COMMIT) == SYNCHRONOUS_COMMIT);
+    }
+
     public boolean equals(Object o) {
       if (!(o instanceof Action)) return false;
       return (((Action) o).action == action);
@@ -1281,6 +1332,7 @@ public class ClientLock implements WaitTimerCallback, LockFlushCallback {
       if (doRecall()) sb.append("RECALL,");
       if (doRecallCommit()) sb.append("RECALL_COMMIT,");
       if (doRemoteLockRequest()) sb.append("REMOTE_LOCK_REQUEST,");
+      if (doSynchronousCommit()) sb.append("SYNCHRONOUS_COMMIT,");
       sb.setLength(sb.length() - 1);
       return sb.toString();
     }
