@@ -159,8 +159,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     Map env = System.getenv();
     Map modifiedEnv = new HashMap(env);
     modifiedEnv.put("JAVA_HOME", J2SE_15);
-    modifiedEnv.put("J2SE-1.4", J2SE_14);
-    modifiedEnv.put("J2SE-1.5", J2SE_15);
+    modifiedEnv.put("J2SE_14", J2SE_14);
+    modifiedEnv.put("J2SE_15", J2SE_15);
     String[] environment = new String[modifiedEnv.size()];
     Iterator iter = modifiedEnv.entrySet().iterator();
     Map.Entry entry;
