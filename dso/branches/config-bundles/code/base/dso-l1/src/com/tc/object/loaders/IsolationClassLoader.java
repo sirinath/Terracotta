@@ -67,7 +67,8 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   }
 
   public Class loadClass(String name) throws ClassNotFoundException {
-    if (name.startsWith("com.tc.") || name.startsWith("org.terracotta.")) {
+    //if (name.startsWith("com.tc.") || name.startsWith("org.terracotta.")) {
+    if (name.startsWith("com.tc.")) {
       return SYSTEM_LOADER.loadClass(name);
     } else {
       return super.loadClass(name);
