@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.restart.system;
 
@@ -23,10 +24,10 @@ import java.io.FileOutputStream;
 
 public class SynchronousCommitClientTerminatingTest extends TransparentTestBase implements TestConfigurator {
 
-  private static final int   NODE_COUNT  = 2;
+  private static final int NODE_COUNT = 2;
 
-  private File               configFile;
-  private int                port;
+  private File             configFile;
+  private int              port;
 
   protected Class getApplicationClass() {
     return ClientTerminatingTestApp.class;
@@ -35,7 +36,7 @@ public class SynchronousCommitClientTerminatingTest extends TransparentTestBase 
   public void setUp() throws Exception {
     TVSConfigurationSetupManagerFactory factory;
     factory = new StandardTVSConfigurationSetupManagerFactory(new String[] {
-        StandardTVSConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, getConfigFile().getAbsolutePath() },
+        StandardTVSConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, getConfigFile(true).getAbsolutePath() },
                                                               true, new FatalIllegalConfigurationChangeHandler());
 
     L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
@@ -48,20 +49,20 @@ public class SynchronousCommitClientTerminatingTest extends TransparentTestBase 
     t.initializeTestRunner();
 
     TransparentAppConfig cfg = t.getTransparentAppConfig();
-    cfg.setAttribute(ClientTerminatingTestApp.CONFIG_FILE, getConfigFile().getAbsolutePath());
+    cfg.setAttribute(ClientTerminatingTestApp.CONFIG_FILE, getConfigFile(true).getAbsolutePath());
     cfg.setAttribute(ClientTerminatingTestApp.PORT_NUMBER, String.valueOf(port));
     cfg.setAttribute(ClientTerminatingTestApp.HOST_NAME, "localhost");
     cfg.setAttribute(ClientTerminatingTestApp.FORCE_KILL, "true");
   }
 
-  private synchronized File getConfigFile() {
+  private synchronized File getConfigFile(boolean isSynchronousWrite) {
     if (configFile == null) {
       try {
         // XXX: ERR! HACK! Will collide eventually
         port = new PortChooser().chooseRandomPort();
 
         configFile = getTempFile("config-file.xml");
-        TerracottaConfigBuilder builder = ClientTerminatingTestApp.createConfig(port);
+        TerracottaConfigBuilder builder = ClientTerminatingTestApp.createConfig(port, isSynchronousWrite);
         FileOutputStream out = new FileOutputStream(configFile);
         CopyUtils.copy(builder.toString(), out);
         out.close();

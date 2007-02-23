@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.restart.system;
 
@@ -23,10 +24,10 @@ import java.io.FileOutputStream;
 
 public class ClientTerminatingTest extends TransparentTestBase implements TestConfigurator {
 
-  private static final int   NODE_COUNT  = 2;
+  private static final int NODE_COUNT = 2;
 
-  private File               configFile;
-  private int                port;
+  private File             configFile;
+  private int              port;
 
   protected Class getApplicationClass() {
     return ClientTerminatingTestApp.class;

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Random;
 
 public class ClientTerminatingTestApp extends AbstractTransparentApp {
-  public static final boolean   DEBUG       = true;
+  public static final boolean   DEBUG       = false;
 
   public static final String    CONFIG_FILE = "config-file";
   public static final String    PORT_NUMBER = "port-number";
@@ -51,7 +51,7 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
 
     String forceKillVal = cfg.getAttribute(FORCE_KILL);
     if (forceKillVal != null && !forceKillVal.equals("")) {
-      debugPrintln("***** setting forceKill to TRUE");
+      debugPrintln("***** setting forceKill to TRUE: " + forceKillVal);
       forceKill = true;
     } else {
       forceKill = false;
@@ -75,7 +75,7 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
         FileUtils.forceMkdir(workingDir);
         System.err.println(this + "Creating Client with args " + id + " , " + toAdd);
         client = new ExtraL1ProcessControl(hostName, port, Client.class, config.getAbsolutePath(), new String[] {
-            "" + id, "" + toAdd, "true" }, workingDir);
+            "" + id, "" + toAdd, "" + forceKill }, workingDir);
         client.start(20000);
         int exitCode = client.waitFor();
         if (exitCode == 0) {
@@ -123,7 +123,15 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
     }
   }
 
+  public boolean getForceKillMode() {
+    return forceKill;
+  }
+
   public static TerracottaConfigBuilder createConfig(int port) {
+    return createConfig(port, false);
+  }
+
+  public static TerracottaConfigBuilder createConfig(int port, boolean isSynchronousWrite) {
     String testClassName = ClientTerminatingTestApp.class.getName();
     String testClassSuperName = AbstractTransparentApp.class.getName();
     String clientClassName = Client.class.getName();
@@ -134,11 +142,19 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
 
     LockConfigBuilder lock1 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
     lock1.setMethodExpression("* " + testClassName + ".run(..)");
-    lock1.setLockLevel(LockConfigBuilder.LEVEL_WRITE);
+    if (isSynchronousWrite) {
+      lock1.setLockLevel(LockConfigBuilder.LEVEL_SYNCHRONOUS_WRITE);
+    } else {
+      lock1.setLockLevel(LockConfigBuilder.LEVEL_WRITE);
+    }
 
     LockConfigBuilder lock2 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
     lock2.setMethodExpression("* " + clientClassName + ".execute(..)");
-    lock2.setLockLevel(LockConfigBuilder.LEVEL_WRITE);
+    if (isSynchronousWrite) {
+      lock2.setLockLevel(LockConfigBuilder.LEVEL_SYNCHRONOUS_WRITE);
+    } else {
+      lock2.setLockLevel(LockConfigBuilder.LEVEL_WRITE);
+    }
 
     out.getApplication().getDSO().setLocks(new LockConfigBuilder[] { lock1, lock2 });
 
@@ -182,7 +198,7 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
 
       boolean shouldForceKill;
       if (args.length == 3 && args[2] != null && !args[2].equals("")) {
-        debugPrintln("***** setting shouldForceKill to TRUE - main");
+        debugPrintln("***** setting shouldForceKill to " + args[2] + " - main");
         shouldForceKill = Boolean.valueOf(args[2]).booleanValue();
       } else {
         debugPrintln("***** setting shouldForceKill to FALSE - main");
@@ -193,7 +209,7 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
       client.execute();
     }
 
-    // Writen so that many transactions are created ...
+    // Written so that many transactions are created ...
     public void execute() {
       List myList = null;
       long count = 0;
