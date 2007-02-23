@@ -1658,9 +1658,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     } catch (IOException ioex) {
       throw new UnverifiedBootJarException("IOException occurred while attempting to verify the contents of the boot jar.", ioex);
     }
-    logger.info("Number of classes found in the DSO boot jar:" + bootJarPopulation);
-    logger.info("Number of classes required to be in the DSO boot jar:" + preInstrumentedCount);
-    logger.info("Number of classes found missing in the DSO boot jar:" + missingCount);
+    logger.info("Number of classes in the DSO boot jar:" + bootJarPopulation);
+    logger.info("Number of classes expected to be in the DSO boot jar:" + preInstrumentedCount);
+    logger.info("Number of classes found missing from the DSO boot jar:" + missingCount);
     if (missingCount > 0) {
       throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount + " pre-instrumented class(es) found missing.");
     }

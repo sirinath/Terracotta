@@ -83,28 +83,27 @@ public class DSOContextImpl implements DSOContext {
         .instrumentationLoggingOptions()));
 
     PluginsLoader.initPlugins(configHelper, false);
-    checkBootJar();
+    validateBootJar();
   }
   
-  private void checkBootJar() {
+  private void validateBootJar() {
     try {
-      configHelper.verifyBootJarContents();
-      
+      configHelper.verifyBootJarContents();   
     } catch(UnverifiedBootJarException ubjex) {
-      logger.error(ubjex);
-      StringBuffer msg = new StringBuffer();
-      msg.append("Unable to verify the contents of the bootjar; ");
+      StringBuffer msg = new StringBuffer(ubjex.getMessage() + " ");
+      msg.append("Unable to verify the contents of the boot jar; ");
       msg.append("Please check the client logs for more information.");
+      logger.error(ubjex);
       throw new RuntimeException(msg.toString());
     } catch(IncompleteBootJarException ibjex) {
-      logger.error(ibjex);
-      StringBuffer msg = new StringBuffer();
+      StringBuffer msg = new StringBuffer(ibjex.getMessage() + " ");
       msg.append("The DSO boot jar appears to be incomplete --- some pre-instrumented classes ");
       msg.append("listed in your tc-config is not included in the boot jar file. This could ");
       msg.append("happen if you've modified your DSO clients' tc-config file to specify additional ");
       msg.append("classes for inclusion in the boot jar, but forgot to rebuild the boot jar. Or, you ");
       msg.append("could be a using an older boot jar against a newer Terracotta client installation. ");
       msg.append("Please check the client logs for the list of classes that were not found in your boot jar.");
+      logger.error(ibjex);
       throw new RuntimeException(msg.toString());
     }
   }
