@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.bootjar.java.util;
 
@@ -264,7 +265,7 @@ public class HashMapTCTest extends TCTestCase {
     validateValuesIteratorRemove(jmap, tcmap);
   }
 
-  /*********************************************************************************/
+  /** ****************************************************************************** */
 
   public void validateLogicalInvoke(Map tcmap) throws Exception {
 
@@ -476,7 +477,6 @@ public class HashMapTCTest extends TCTestCase {
     assertEquals(tcmap, jmap);
   }
 
-
   void assertSingleMapping(Map map, final Object key, final Object value) {
     Assert.assertFalse(map.isEmpty());
     Assert.assertEquals(1, map.size());
@@ -540,7 +540,7 @@ public class HashMapTCTest extends TCTestCase {
   }
 
   private void populateMapWithHashKey(Map map, int numOfItems) {
-    for (int i=0; i<numOfItems; i++) {
+    for (int i = 0; i < numOfItems; i++) {
       map.put(new HashKey(i), new HashValue(i));
     }
   }
@@ -825,8 +825,14 @@ public class HashMapTCTest extends TCTestCase {
       return null;
     }
 
-    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
+    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+                                                             InstrumentationLogger lgr, ClassLoader caller,
+                                                             boolean forcePortable) {
       return null;
+    }
+
+    public void addSynchronousWriteAutolock(String methodPattern) {
+      throw new ImplementMe();
     }
   }
 
@@ -927,6 +933,5 @@ public class HashMapTCTest extends TCTestCase {
       return super.toString() + ", i: " + i;
     }
   }
-
 
 }

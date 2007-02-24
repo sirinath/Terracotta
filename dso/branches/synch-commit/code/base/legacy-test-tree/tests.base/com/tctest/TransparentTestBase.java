@@ -23,7 +23,9 @@ import com.tctest.runner.TransparentAppConfig;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 
@@ -125,6 +127,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   protected abstract Class getApplicationClass();
 
+  protected Map getOptionalAttributes() {
+    return new HashMap();
+  }
+
   String getServerPortProp() {
     return System.getProperty("test.base.server.port");
   }
@@ -135,9 +141,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void initializeTestRunner() throws Exception {
     this.runner = new DistributedTestRunner(this.runnerConfig, configFactory, this.configHelper, getApplicationClass(),
-                                            getApplicationConfigBuilder().newApplicationConfig(),
-                                            this.transparentAppConfig.getClientCount(), this.transparentAppConfig
-                                                .getApplicationInstancePerClientCount(), getStartServer());
+                                            getOptionalAttributes(), getApplicationConfigBuilder()
+                                                .newApplicationConfig(), this.transparentAppConfig.getClientCount(),
+                                            this.transparentAppConfig.getApplicationInstancePerClientCount(),
+                                            getStartServer());
   }
 
   protected boolean canRun() {

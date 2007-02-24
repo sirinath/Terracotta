@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
@@ -614,8 +615,14 @@ public class ClassUtilsTest extends TestCase {
       return null;
     }
 
-    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
+    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+                                                             InstrumentationLogger lgr, ClassLoader caller,
+                                                             boolean forcePortable) {
       return null;
+    }
+
+    public void addSynchronousWriteAutolock(String methodPattern) {
+      throw new ImplementMe();
     }
   }
 
