@@ -13,6 +13,7 @@ import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.exception.ImplementMe;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.config.ConfigLockLevel;
@@ -710,11 +711,7 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public void addCustomAdapter(String name, Class adapter) {
-      throw new ImplementMe();
-    }
-
-    public void addSupplementAdapter(String name, Class adapter) {
+    public void addCustomAdapter(String name, ClassAdapterFactory factory) {
       throw new ImplementMe();
     }
   }

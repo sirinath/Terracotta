@@ -7,6 +7,7 @@ package com.tc.object.config;
 import com.tc.asm.ClassVisitor;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DateMethodAdapter;
 import com.tc.object.bytecode.DistributedMethodCallAdapter;
 import com.tc.object.bytecode.LogicalMethodAdapter;
@@ -60,6 +61,7 @@ public class TransparencyClassSpec {
 
   private String                      postCreateMethod           = null;
   private String                      logicalExtendingClassName  = null;
+  private ClassAdapterFactory         customClassAdapter         = null;
 
   public TransparencyClassSpec(String className, DSOClientConfigHelper configuration, String changeApplicatorClassName) {
     this.configuration = configuration;
@@ -279,6 +281,8 @@ public class TransparencyClassSpec {
   }
 
   public void moveToLogical(TransparencyClassSpec superClassSpec) {
+    System.err.println("### Moving to logical this:" + getClassName() + "; super:" + superClassSpec.getClassName());
+    
     this.isLogical = true;
     String superClassLogicalExtendingClassName = superClassSpec.getLogicalExtendingClassName();
     if (superClassLogicalExtendingClassName == null) {
@@ -501,5 +505,13 @@ public class TransparencyClassSpec {
 
   public void setPostCreateMethod(String postCreateMethod) {
     this.postCreateMethod = postCreateMethod;
+  }
+  
+  public void setCustomClassAdapter(ClassAdapterFactory customClassAdapter) {
+    this.customClassAdapter = customClassAdapter;
+  }
+  
+  public ClassAdapterFactory getCustomClassAdapter() {
+    return customClassAdapter;
   }
 }

@@ -8,15 +8,24 @@ import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
+import com.tc.object.bytecode.ClassAdapterFactory;
 
 
-public class IBatisAddDefaultConstructorAdapter extends ClassAdapter implements Opcodes {
+public class IBatisAddDefaultConstructorAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
   private final static String SQLMAPCLIENT_CLASS_SLASHES = "com/ibatis/sqlmap/engine/impl/SqlMapClientImpl";
   private final static String SIMPLEDATASOURCE_CLASS_SLASHES = "com/ibatis/common/jdbc/SimpleDataSource";
   private String classNameSlashes;
+
+  public IBatisAddDefaultConstructorAdapter() {
+    super(null);
+  }
   
   public IBatisAddDefaultConstructorAdapter(ClassVisitor cv) {
     super(cv);
+  }
+  
+  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+    return new IBatisAddDefaultConstructorAdapter(visitor);
   }
   
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {

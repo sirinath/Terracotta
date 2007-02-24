@@ -10,6 +10,7 @@ import org.terracotta.plugins.configuration.TerracottaPluginConfigurator;
 import org.terracotta.plugins.iBatis_2_2_0.object.config.IBatisChangeApplicatorSpec;
 import org.terracotta.plugins.iBatis_2_2_0.object.config.IBatisPluginSpec;
 
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.PluginSpec;
 import com.tc.object.config.StandardDSOClientConfigHelper;
@@ -131,9 +132,9 @@ public final class IBatisTerracottaConfigurator extends TerracottaPluginConfigur
     
     //addIncludePattern("com.ibatis.sqlmap.engine.accessplan.PropertyAccessPlan", false, false, false);
     
-    configHelper.addSupplementAdapter("com.ibatis.sqlmap.engine.impl.SqlMapClientImpl", IBatisAddDefaultConstructorAdapter.class);
-    configHelper.addSupplementAdapter("com.ibatis.common.jdbc.SimpleDataSource", IBatisAddDefaultConstructorAdapter.class);
-    
+    ClassAdapterFactory factory = new IBatisAddDefaultConstructorAdapter();
+    configHelper.getOrCreateSpec("com.ibatis.sqlmap.engine.impl.SqlMapClientImpl").setCustomClassAdapter(factory);
+    configHelper.getOrCreateSpec("com.ibatis.common.jdbc.SimpleDataSource").setCustomClassAdapter(factory);
   }
   
   protected final void registerPluginSpec(final BundleContext context) {

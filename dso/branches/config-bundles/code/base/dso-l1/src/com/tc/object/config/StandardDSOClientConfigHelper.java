@@ -37,6 +37,7 @@ import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
 import com.tc.object.bytecode.AbstractListMethodCreator;
 import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DSOUnsafeAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
@@ -106,9 +107,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private static final TCLogger                  logger                             = CustomerLogging
                                                                                         .getDSOGenericLogger();
-  private static final Class[]                   CUSTOM_ADAPTER_CSTR_SIGNATURE      = new Class[] { ClassVisitor.class,
-      ClassLoader.class                                                            };
-  private static final Class[]                   ADAPTER_CSTR_SIGNATURE             = new Class[] { ClassVisitor.class };
   private static final InstrumentationDescriptor DEAFULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
 
   private final ManagerHelperFactory             mgrHelperFactory                   = new ManagerHelperFactory();
@@ -161,8 +159,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private PluginSpec[]                           pluginSpecs                        = null;
 
   private final PluginsContext                   pluginsContext                     = new PluginsContext();
-
-  private final Map                              supplementAdapters                 = new ConcurrentHashMap();
 
   public StandardDSOClientConfigHelper(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -646,7 +642,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
     spec = getOrCreateSpec("java.util.WeakHashMap");
-    addCustomAdapter("java.util.WeakHashMap", JavaUtilWeakHashMapAdapter.class);
+    addCustomAdapter("java.util.WeakHashMap", new JavaUtilWeakHashMapAdapter());
 
     addReflectionPreInstrumentedSpec();
 
@@ -708,15 +704,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // END: tomcat stuff
 
     // Geronimo + WebsphereCE stuff
-    addCustomAdapter("org.apache.geronimo.kernel.basic.ProxyMethodInterceptor", ProxyMethodInterceptorAdapter.class);
-    addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", MultiParentClassLoaderAdapter.class);
-    addCustomAdapter("org.apache.geronimo.tomcat.HostGBean", HostGBeanAdapter.class);
-    addCustomAdapter("org.apache.geronimo.tomcat.TomcatClassLoader", TomcatClassLoaderAdapter.class);
+    addCustomAdapter("org.apache.geronimo.kernel.basic.ProxyMethodInterceptor", new ProxyMethodInterceptorAdapter());
+    addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", new MultiParentClassLoaderAdapter());
+    addCustomAdapter("org.apache.geronimo.tomcat.HostGBean", new HostGBeanAdapter());
+    addCustomAdapter("org.apache.geronimo.tomcat.TomcatClassLoader", new TomcatClassLoaderAdapter());
 
     // JBoss adapters
-    addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", UCLAdapter.class);
-    addCustomAdapter("org.jboss.Main", MainAdapter.class);
-    addCustomAdapter("org.jboss.system.server.NoAnnotationURLClassLoader", NamedLoaderAdapter.class);
+    addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", new UCLAdapter());
+    addCustomAdapter("org.jboss.Main", new MainAdapter());
+    addCustomAdapter("org.jboss.system.server.NoAnnotationURLClassLoader", new NamedLoaderAdapter());
 
     // TODO for the Event Swing sample only
     ld = new LockDefinition("setTextArea", ConfigLockLevel.WRITE);
@@ -864,10 +860,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private void addReflectionPreInstrumentedSpec() {
     if (supportSharingThroughReflection) {
       getOrCreateSpec("java.lang.reflect.Field");
-      addCustomAdapter("java.lang.reflect.Field", JavaLangReflectFieldAdapter.class);
+      addCustomAdapter("java.lang.reflect.Field", new JavaLangReflectFieldAdapter());
 
       getOrCreateSpec("java.lang.reflect.Array");
-      addCustomAdapter("java.lang.reflect.Array", JavaLangReflectArrayAdapter.class);
+      addCustomAdapter("java.lang.reflect.Array", new JavaLangReflectArrayAdapter());
     }
   }
 
@@ -941,9 +937,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private void addJDK15PreInstrumentedSpec() {
     if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
       TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
-      addCustomAdapter("sun.misc.Unsafe", UnsafeAdapter.class);
+      addCustomAdapter("sun.misc.Unsafe", new UnsafeAdapter());
       spec = getOrCreateSpec(DSOUnsafe.CLASS_DOTS);
-      addCustomAdapter(DSOUnsafe.CLASS_DOTS, DSOUnsafeAdapter.class);
+      addCustomAdapter(DSOUnsafe.CLASS_DOTS, new DSOUnsafeAdapter());
 
       spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
 
@@ -980,39 +976,29 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   private void addTomcatCustomAdapters() {
-    addCustomAdapter("org.apache.jasper.runtime.JspWriterImpl", JspWriterImplAdapter.class);
-    addCustomAdapter("org.apache.catalina.loader.WebappLoader", WebAppLoaderAdapter.class);
-    addCustomAdapter("org.apache.catalina.startup.Catalina", CatalinaAdapter.class);
-    addCustomAdapter("org.apache.catalina.core.ContainerBase", ContainerBaseAdapter.class);
-    addCustomAdapter("org.apache.catalina.startup.Bootstrap", BootstrapAdapter.class);
-    addCustomAdapter("org.apache.catalina.loader.WebappClassLoader", NamedLoaderAdapter.class);
-    addCustomAdapter("org.apache.catalina.loader.StandardClassLoader", NamedLoaderAdapter.class);
+    addCustomAdapter("org.apache.jasper.runtime.JspWriterImpl", new JspWriterImplAdapter());
+    addCustomAdapter("org.apache.catalina.loader.WebappLoader", new WebAppLoaderAdapter());
+    addCustomAdapter("org.apache.catalina.startup.Catalina", new CatalinaAdapter());
+    addCustomAdapter("org.apache.catalina.core.ContainerBase", new ContainerBaseAdapter());
+    addCustomAdapter("org.apache.catalina.startup.Bootstrap", new BootstrapAdapter());
+    addCustomAdapter("org.apache.catalina.loader.WebappClassLoader", new NamedLoaderAdapter());
+    addCustomAdapter("org.apache.catalina.loader.StandardClassLoader", new NamedLoaderAdapter());
   }
 
   private void addWeblogicCustomAdapters() {
-    addCustomAdapter("weblogic.Server", ServerAdapter.class);
-    addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", GenericClassLoaderAdapter.class);
-    addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", EJBCodeGeneratorAdapter.class);
-    addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", WebAppServletContextAdapter.class);
-    addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", ServletResponseImplAdapter.class);
+    addCustomAdapter("weblogic.Server", new ServerAdapter());
+    addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
+    addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
+    addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
+    addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
     addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
-                     TerracottaServletResponseImplAdapter.class);
+                     new TerracottaServletResponseImplAdapter());
   }
 
-  public void addSupplementAdapter(String name, Class adapter) {
+  public void addCustomAdapter(String name, ClassAdapterFactory factory) {
     try {
-      Constructor cstr = adapter.getConstructor(ADAPTER_CSTR_SIGNATURE);
-      Object prev = this.supplementAdapters.put(name, cstr);
-      Assert.assertNull(prev);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public void addCustomAdapter(String name, Class adapter) {
-    try {
-      Constructor cstr = adapter.getConstructor(CUSTOM_ADAPTER_CSTR_SIGNATURE);
-      Object prev = this.customAdapters.put(name, cstr);
+      // Constructor cstr = adapter.getConstructor(ADAPTER_CSTR_SIGNATURE);
+      Object prev = this.customAdapters.put(name, factory);
       Assert.assertNull(prev);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -1488,19 +1474,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
       ClassAdapter dsoAdapter = new TransparencyClassAdapter(basicGetOrCreateSpec(className, null, false), writer, mgrHelper, lgr,
                                                              caller, portability);
-      dsoAdapter = chainWithSupplementAdapter(className, dsoAdapter);
-      return new SerialVersionUIDAdder(dsoAdapter);
-    }
-  }
-
-  private ClassAdapter chainWithSupplementAdapter(String className, ClassAdapter parentAdapter) {
-    Constructor cstr = (Constructor) supplementAdapters.get(className);
-    if (cstr == null) { return parentAdapter; }
-
-    try {
-      return (ClassAdapter) cstr.newInstance(new Object[] { parentAdapter });
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      ClassAdapterFactory factory = spec.getCustomClassAdapter();
+      ClassVisitor cv;
+      if(factory==null) {
+        cv = dsoAdapter;
+      } else {
+        cv = factory.create(dsoAdapter, caller);
+      }
+      
+      return new SerialVersionUIDAdder(cv);
     }
   }
 
@@ -1528,7 +1510,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       return spec;
     }
   }
-  
+
   public TransparencyClassSpec getOrCreateSpec(String className) {
     return basicGetOrCreateSpec(className, null, true);
   }

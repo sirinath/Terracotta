@@ -48,7 +48,7 @@ public final class StrutsTerracottaConfigurator implements BundleActivator {
     // here. The reason for doing this at all is that you can only ever add one custom class adapter for a given name
     synchronized (configHelper) {
       if (!configHelper.hasCustomAdapter(INCLUDE_TAG_CLASSNAME)) {
-        configHelper.addCustomAdapter(INCLUDE_TAG_CLASSNAME, IncludeTagAdapter.class);
+        configHelper.addCustomAdapter(INCLUDE_TAG_CLASSNAME, new IncludeTagAdapter());
       }
     }
   }

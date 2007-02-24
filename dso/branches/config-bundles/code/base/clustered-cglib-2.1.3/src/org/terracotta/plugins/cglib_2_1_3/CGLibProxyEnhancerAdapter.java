@@ -8,11 +8,20 @@ import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
+import com.tc.object.bytecode.ClassAdapterFactory;
 
-public class CGLibProxyEnhancerAdapter extends ClassAdapter {
+public class CGLibProxyEnhancerAdapter extends ClassAdapter implements ClassAdapterFactory {
 
-  public CGLibProxyEnhancerAdapter(ClassVisitor cv, ClassLoader caller) {
+  public CGLibProxyEnhancerAdapter() {
+    super(null);
+  }
+  
+  private CGLibProxyEnhancerAdapter(ClassVisitor cv, ClassLoader caller) {
     super(cv);
+  }
+  
+  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+    return new CGLibProxyEnhancerAdapter(visitor, loader);
   }
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {

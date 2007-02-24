@@ -18,7 +18,7 @@ import java.util.Hashtable;
 
 public final class CGLibTerracottaConfigurator extends TerracottaPluginConfigurator {
   protected final void addInstrumentation(final StandardDSOClientConfigHelper configHelper) {
-    configHelper.addCustomAdapter("net.sf.cglib.proxy.Enhancer", CGLibProxyEnhancerAdapter.class);
+    configHelper.addCustomAdapter("net.sf.cglib.proxy.Enhancer", new CGLibProxyEnhancerAdapter());
   }
   
   protected final void registerPluginSpec(final BundleContext context) {

@@ -10,6 +10,7 @@ import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.object.Portability;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
@@ -174,8 +175,6 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   boolean hasCustomAdapter(String fullName);
   
-  void addSupplementAdapter(String name, Class adapter);
-  
-  void addCustomAdapter(String name, Class adapter);
+  void addCustomAdapter(String name, ClassAdapterFactory adapterFactory);
 
 }

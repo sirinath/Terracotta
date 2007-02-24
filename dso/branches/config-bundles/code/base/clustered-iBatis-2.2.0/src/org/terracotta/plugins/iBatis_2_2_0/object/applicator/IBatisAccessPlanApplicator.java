@@ -26,7 +26,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * TODO Sep 11, 2006: I, asi, am too lazy to write a single sentence describing what this class is for.
+ * @author Antonio Si
  */
 public class IBatisAccessPlanApplicator extends BaseApplicator {
   private static final String CLASSNAME_FIELD_NAME  = "com.ibatis.sqlmap.engine.accessplan.BaseAccessPlan.className";
