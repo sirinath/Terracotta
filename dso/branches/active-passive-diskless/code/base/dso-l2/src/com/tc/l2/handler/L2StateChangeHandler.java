@@ -8,7 +8,6 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.l2.context.StateChangedEvent;
-import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.state.StateManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 
@@ -24,8 +23,7 @@ public class L2StateChangeHandler extends AbstractEventHandler {
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    L2HACoordinator coordinator = (L2HACoordinator) oscc.getL2Coordinator();
-    this.stateManager = coordinator.getStateManager();
+    this.stateManager = oscc.getL2Coordinator().getStateManager();
   }
 
 }

@@ -4,6 +4,8 @@
  */
 package com.tc.l2.objectserver;
 
+import com.tc.async.api.Sink;
+import com.tc.l2.context.SyncObjectsRequest;
 import com.tc.l2.msg.ObjectListSyncMessage;
 import com.tc.l2.msg.ObjectListSyncMessageFactory;
 import com.tc.l2.state.StateManager;
@@ -16,10 +18,13 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
+import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.util.Assert;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupEventsListener, GroupMessageListener {
@@ -30,12 +35,16 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   private final GroupManager         groupManager;
   private final StateManager         stateManager;
   private final L2ObjectStateManager l2ObjectStateManager;
+  private final Sink                 objectsSyncSink;
 
-  public ReplicatedObjectManagerImpl(GroupManager groupManager, StateManager stateManager, ObjectManager objectManager) {
+  public ReplicatedObjectManagerImpl(GroupManager groupManager, StateManager stateManager,
+                                     L2ObjectStateManager l2ObjectStateManager, ObjectManager objectManager,
+                                     Sink objectsSyncSink) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     this.objectManager = objectManager;
-    this.l2ObjectStateManager = new L2ObjectStateManager();
+    this.objectsSyncSink = objectsSyncSink;
+    this.l2ObjectStateManager = l2ObjectStateManager;
     this.groupManager.registerForGroupEvents(this);
     this.groupManager.registerForMessages(ObjectListSyncMessage.class, this);
   }
@@ -56,6 +65,11 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       logger.error(e);
       throw new AssertionError(e);
     }
+  }
+
+  public void incomingTransactions(CommitTransactionMessage ctm, List txns, Collection serverTxnIDs,
+                                   Collection completedTxnIds) {
+    // TODO
   }
 
   public void nodeJoined(NodeID nodeID) {
@@ -120,11 +134,12 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   private void add2L2StateManager(NodeID nodeID, Set oids) {
-      int missing = l2ObjectStateManager.setExistingObjectsList(nodeID, oids, objectManager);
-      if (missing == 0) {
-        stateManager.moveNodeToPassiveStandby(nodeID);
-      }
-    // TODO:: initiate lookups
+    int missing = l2ObjectStateManager.setExistingObjectsList(nodeID, oids, objectManager);
+    if (missing == 0) {
+      stateManager.moveNodeToPassiveStandby(nodeID);
+    } else {
+      objectsSyncSink.add(new SyncObjectsRequest(nodeID));
+    }
   }
 
   private void handleObjectListRequest(NodeID nodeID, ObjectListSyncMessage clusterMsg) throws GroupException {
@@ -132,5 +147,4 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     Set knownIDs = objectManager.getAllObjectIDs();
     groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncResponseMessage(clusterMsg, knownIDs));
   }
-
 }

@@ -3,8 +3,15 @@
  */
 package com.tc.l2.api;
 
+import com.tc.l2.objectserver.ReplicatedObjectManager;
+import com.tc.l2.state.StateManager;
+
 public interface L2Coordinator {
 
   public void start();
+  
+  public ReplicatedObjectManager getReplicatedObjectManager();
+  
+  public StateManager getStateManager();
 
 }

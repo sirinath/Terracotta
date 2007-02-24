@@ -7,7 +7,7 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -25,16 +25,15 @@ import com.tc.util.SequenceValidator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 public class ProcessTransactionHandler extends AbstractEventHandler {
   private static final TCLogger            logger = TCLogging.getLogger(ProcessTransactionHandler.class);
-  
-  private L2Coordinator l2Coordinator;
+
   private TransactionBatchReaderFactory    batchReaderFactory;
-  
+  private ReplicatedObjectManager          replicatedObjectMgr;
+
   private final TransactionBatchManager    transactionBatchManager;
   private final MessageRecycler            messageRecycler;
   private final SequenceValidator          sequenceValidator;
@@ -65,7 +64,8 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
         txns.add(txn);
         serverTxnIDs.add(txn.getServerTransactionID());
       }
-      messageRecycler.addMessage((CommitTransactionMessageImpl) context, serverTxnIDs);
+      messageRecycler.addMessage( ctm, serverTxnIDs);
+      replicatedObjectMgr.incomingTransactions(ctm, txns, serverTxnIDs, completedTxnIds);
       txnObjectManager.addTransactions(reader.getChannelID(), txns, completedTxnIds);
     } catch (Exception e) {
       logger.error("Error reading transaction batch. : ", e);
@@ -79,6 +79,6 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
-    l2Coordinator = oscc.getL2Coordinator();
+    replicatedObjectMgr = oscc.getL2Coordinator().getReplicatedObjectManager();
   }
 }

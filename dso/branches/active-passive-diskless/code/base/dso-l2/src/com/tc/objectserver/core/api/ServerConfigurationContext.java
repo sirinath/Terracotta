@@ -45,6 +45,7 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String JMXREMOTE_CONNECT_STAGE                            = "jmxremote_connect_stage";
   public static final String RECALL_OBJECTS_STAGE                               = "recall_objects_stage";
   public static final String L2_STATE_CHANGE_STAGE                              = "l2_state_change_stage";
+  public static final String OBJECTS_SYNC_STAGE                                 = "objects_sync_stage";
 
   public L2Coordinator getL2Coordinator();
 

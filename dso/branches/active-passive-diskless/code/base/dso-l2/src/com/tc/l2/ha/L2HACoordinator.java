@@ -8,7 +8,10 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.StateChangedEvent;
+import com.tc.l2.handler.L2ObjectSyncHandler;
 import com.tc.l2.handler.L2StateChangeHandler;
+import com.tc.l2.objectserver.L2ObjectStateManager;
+import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.l2.objectserver.ReplicatedObjectManagerImpl;
 import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
@@ -34,6 +37,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
   private GroupManager                  groupManager;
   private StateManager                  stateManager;
   private ReplicatedObjectManagerImpl   rObjectManager;
+  private L2ObjectStateManager          l2ObjectStateManager;
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager) {
     this.consoleLogger = consoleLogger;
@@ -58,14 +62,23 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
     this.stateManager = new StateManagerImpl(consoleLogger, groupManager, stateChangeSink);
     this.stateManager.registerForStateChangeEvents(this);
 
-    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.server.getContext()
-        .getObjectManager());
+    this.l2ObjectStateManager = new L2ObjectStateManager();
+
+    final Sink objectsSyncSink = stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_STAGE,
+                                                          new L2ObjectSyncHandler(this.l2ObjectStateManager), 1,
+                                                          Integer.MAX_VALUE).getSink();
+    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
+                                                          this.server.getContext().getObjectManager(), objectsSyncSink);
 
     stateManager.start();
   }
 
   public StateManager getStateManager() {
     return stateManager;
+  }
+
+  public ReplicatedObjectManager getReplicatedObjectManager() {
+    return rObjectManager;
   }
 
   public void l2StateChanged(StateChangedEvent sce) {

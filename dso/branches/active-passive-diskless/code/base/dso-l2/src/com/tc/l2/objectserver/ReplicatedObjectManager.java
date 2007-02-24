@@ -4,6 +4,11 @@
  */
 package com.tc.l2.objectserver;
 
+import com.tc.object.msg.CommitTransactionMessage;
+
+import java.util.Collection;
+import java.util.List;
+
 public interface ReplicatedObjectManager {
 
   /**
@@ -11,4 +16,7 @@ public interface ReplicatedObjectManager {
    * returns nobody is allowed to join the cluster with exisiting objects.
    */
   public void sync();
+
+  public void incomingTransactions(CommitTransactionMessage ctm, List txns, Collection serverTxnIDs, Collection completedTxnIds);
+
 }
