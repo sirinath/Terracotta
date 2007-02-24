@@ -83,7 +83,7 @@ public class DSOContextImpl implements DSOContext {
         .instrumentationLoggingOptions()));
 
     PluginsLoader.initPlugins(configHelper, false);
-    //validateBootJar();
+    validateBootJar();
   }
   
   private void validateBootJar() {

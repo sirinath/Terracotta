@@ -1459,7 +1459,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       }
     }
 
-    TransparencyClassAdapter dsoAdapter = new TransparencyClassAdapter(getOrCreateSpec(className), writer, mgrHelper,
+    TransparencyClassAdapter dsoAdapter = new TransparencyClassAdapter(basicGetOrCreateSpec(className, null, false), writer, mgrHelper,
                                                                        lgr, caller, portability);
     return dsoAdapter;
   }
@@ -1486,7 +1486,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         }
       }
 
-      ClassAdapter dsoAdapter = new TransparencyClassAdapter(getOrCreateSpec(className), writer, mgrHelper, lgr,
+      ClassAdapter dsoAdapter = new TransparencyClassAdapter(basicGetOrCreateSpec(className, null, false), writer, mgrHelper, lgr,
                                                              caller, portability);
       dsoAdapter = chainWithSupplementAdapter(className, dsoAdapter);
       return new SerialVersionUIDAdder(dsoAdapter);
@@ -1512,7 +1512,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
-  private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator) {
+  private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator, boolean rememberSpec) {
     synchronized (classSpecs) {
       TransparencyClassSpec spec = getSpec(className);
       if (spec == null) {
@@ -1521,19 +1521,21 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         } else {
           spec = new TransparencyClassSpec(className, this);
         }
-        addSpec(spec);
+        if (rememberSpec) {
+          addSpec(spec);
+        }
       }
       return spec;
     }
   }
-
+  
   public TransparencyClassSpec getOrCreateSpec(String className) {
-    return basicGetOrCreateSpec(className, null);
+    return basicGetOrCreateSpec(className, null, true);
   }
 
   public TransparencyClassSpec getOrCreateSpec(final String className, final String applicator) {
     if (applicator == null) throw new AssertionError();
-    return basicGetOrCreateSpec(className, applicator);
+    return basicGetOrCreateSpec(className, applicator, true);
   }
 
   private void addSpec(TransparencyClassSpec spec) {
