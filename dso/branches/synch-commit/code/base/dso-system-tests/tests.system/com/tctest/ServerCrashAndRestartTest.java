@@ -15,17 +15,16 @@ import com.tc.config.schema.test.LockConfigBuilderImpl;
 import com.tc.config.schema.test.RootConfigBuilderImpl;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 
-public class ClusterMembershipEventTest extends ServerCrashingTestBase {
+public class ServerCrashAndRestartTest extends ServerCrashingTestBase {
 
   private static final int NODE_COUNT = 5;
-    
-  public ClusterMembershipEventTest() {
+
+  public ServerCrashAndRestartTest() {
     super(NODE_COUNT);
-//    this.disableAllUntil("2007-02-27");
   }
 
   protected Class getApplicationClass() {
-    return ClusterMembershipEventTestApp.class;
+    return ServerCrashAndRestartTestApp.class;
   }
 
   protected void createConfig(TerracottaConfigBuilder cb) {
@@ -48,7 +47,6 @@ public class ClusterMembershipEventTest extends ServerCrashingTestBase {
     // roots
     RootConfigBuilder[] roots = new RootConfigBuilder[] { new RootConfigBuilderImpl(getApplicationClass(), "barrier") };
     cb.getApplication().getDSO().setRoots(roots);
-    
   }
 
 }
