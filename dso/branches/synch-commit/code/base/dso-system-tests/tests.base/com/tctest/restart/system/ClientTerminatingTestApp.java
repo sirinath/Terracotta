@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Random;
 
 public class ClientTerminatingTestApp extends AbstractTransparentApp {
-  public static final boolean   DEBUG       = false;
 
   public static final String    CONFIG_FILE = "config-file";
   public static final String    PORT_NUMBER = "port-number";
@@ -51,7 +50,6 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
 
     String forceKillVal = cfg.getAttribute(FORCE_KILL);
     if (forceKillVal != null && !forceKillVal.equals("")) {
-      debugPrintln("***** setting forceKill to TRUE: " + forceKillVal);
       forceKill = true;
     } else {
       forceKill = false;
@@ -117,12 +115,6 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
     return "Controller(" + id + ") :";
   }
 
-  private void debugPrintln(String s) {
-    if (DEBUG) {
-      System.err.println(s);
-    }
-  }
-
   public boolean getForceKillMode() {
     return forceKill;
   }
@@ -185,11 +177,6 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
       this.id = i;
       this.addCount = addCount;
       this.shouldForceKill = shouldForceKill;
-      if (this.shouldForceKill) {
-        debugPrintln("***** setting shouldForceKill to TRUE - constructor - " + this);
-      } else {
-        debugPrintln("***** setting shouldForceKill to FALSE - constructor - " + this);
-      }
     }
 
     public static void main(String args[]) {
@@ -198,10 +185,8 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
 
       boolean shouldForceKill;
       if (args.length == 3 && args[2] != null && !args[2].equals("")) {
-        debugPrintln("***** setting shouldForceKill to " + args[2] + " - main");
         shouldForceKill = Boolean.valueOf(args[2]).booleanValue();
       } else {
-        debugPrintln("***** setting shouldForceKill to FALSE - main");
         shouldForceKill = false;
       }
 
@@ -229,8 +214,6 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
         }
       }
 
-      debugPrintln("shouldForceKill=[" + shouldForceKill + "]");
-
       if (shouldForceKill) {
         System.err.println(this + " killed forceably :" + count);
         Runtime.getRuntime().halt(0);
@@ -244,11 +227,6 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
       return "Client(" + id + ") :";
     }
 
-    private static void debugPrintln(String s) {
-      if (DEBUG) {
-        System.err.println(s);
-      }
-    }
   }
 
 }

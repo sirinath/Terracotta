@@ -18,6 +18,7 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.ArrayList;
@@ -30,19 +31,18 @@ import java.util.List;
 import java.util.Map;
 
 public class ObjectDataRestartTestApp extends AbstractTransparentApp {
-  public static final boolean DEBUG             = false;
-  public static final String  SYNCHRONOUS_WRITE = "synch-write";
+  public static final String SYNCHRONOUS_WRITE = "synch-write";
 
-  private int                 threadCount       = 10;
-  private int                 workSize          = 1 * 100;
-  private int                 testObjectDepth   = 1 * 50;
+  private int                threadCount       = 10;
+  private int                workSize          = 1 * 100;
+  private int                testObjectDepth   = 1 * 50;
   // I had to dial this down considerably because this takes a long time to run.
-  private int                 iterationCount    = 1 * 2;
-  private List                workQueue         = new ArrayList();
-  private Collection          resultSet         = new HashSet();
-  private SynchronizedInt     complete          = new SynchronizedInt(0);
-  private OutputListener      out;
-  private SynchronizedInt     nodes             = new SynchronizedInt(0);
+  private int                iterationCount    = 1 * 2;
+  private List               workQueue         = new ArrayList();
+  private Collection         resultSet         = new HashSet();
+  private SynchronizedInt    complete          = new SynchronizedInt(0);
+  private OutputListener     out;
+  private SynchronizedInt    nodes             = new SynchronizedInt(0);
 
   public ObjectDataRestartTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -124,6 +124,8 @@ public class ObjectDataRestartTestApp extends AbstractTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config, Map optionalAttributes) {
+    DebugUtil.DEBUG = true;
+
     boolean isSynchronousWrite = false;
     if (optionalAttributes.size() > 0) {
       isSynchronousWrite = Boolean.valueOf((String) optionalAttributes.get(ObjectDataRestartTestApp.SYNCHRONOUS_WRITE))
@@ -206,6 +208,8 @@ public class ObjectDataRestartTestApp extends AbstractTransparentApp {
     // IDProvider config
     String nextIDExpression = "* " + idProviderClassname + ".nextID(..)";
     addWriteAutolock(config, isSynchronousWrite, nextIDExpression);
+
+    DebugUtil.DEBUG = false;
   }
 
   private static void addWriteAutolock(DSOClientConfigHelper config, boolean isSynchronousWrite, String methodPattern) {
@@ -218,7 +222,7 @@ public class ObjectDataRestartTestApp extends AbstractTransparentApp {
   }
 
   private static void debugPrintln(String s) {
-    if (DEBUG) {
+    if (DebugUtil.DEBUG) {
       System.err.println(s);
     }
   }
