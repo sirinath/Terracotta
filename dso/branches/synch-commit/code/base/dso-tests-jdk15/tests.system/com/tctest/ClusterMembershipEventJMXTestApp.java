@@ -80,17 +80,32 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
 
   private void runTest() throws Throwable {
     spawnNewClient();
+
+    config.getServerControl().crash();
+    while (config.getServerControl().isRunning()) {
+      Thread.sleep(5000);
+    }
+    config.getServerControl().start(30 * 1000);
+    while (!config.getServerControl().isRunning()) {
+      Thread.sleep(5000);
+    }
+    echo("Server restarted successfully.");
     stage1.await();
-    Assert.assertEquals(2, eventsCount.size());
-    Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeDisconnected"));
-    Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeConnected"));
+    synchronized (eventsCount) {
+      Assert.assertEquals(4, eventsCount.size());
+      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeDisconnected"));
+      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeConnected"));
+      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.thisNodeDisconnected"));
+      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.thisNodeConnected"));
+    }
   }
 
   private void registerMBeanListener() throws Exception {
     List servers = MBeanServerFactory.findMBeanServer(null);
     if (servers.size() == 0) { throw new RuntimeException("No bean server found!"); }
     echo("Servers found: " + servers.size());
-    server = (MBeanServer) servers.get(1);
+    Assert.assertEquals(1, servers.size());
+    server = (MBeanServer) servers.get(0);
 
     // our *star* bean for memebership events
     clusterBean = new ObjectName("com.terracottatech:type=Terracotta Cluster,name=Terracotta Cluster Bean");

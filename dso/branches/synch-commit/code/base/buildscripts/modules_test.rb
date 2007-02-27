@@ -356,11 +356,14 @@ class SubtreeTestRun
 
         @jvmargs = [ ]
 
+        plugins_url = @build_results.plugins_home.to_url
+
         # 'tc.tests.info.property-files' is set so that TestConfigObject knows which file to go read.
         @sysproperties = {
             "tc.base-dir" => @static_resources.root_dir.to_s,
             'java.awt.headless' => true,
-            'tc.tests.info.property-files' => @testrun_results.build_configuration_file(@subtree).to_s
+            'tc.tests.info.property-files' => @testrun_results.build_configuration_file(@subtree).to_s,
+            "#{STATIC_PROPERTIES_PREFIX}plugins.url" => plugins_url
         }
 
         @sysproperties['java.library.path'] = native_library_path.to_s unless native_library_path.to_s.blank?
@@ -483,11 +486,14 @@ class SubtreeTestRun
         puts "The test configuration system will automatically load this file as needed."
 
         extra = ""
-        extra += "  JVM arguments:               %s\n" % all_jvmargs.join(" ") unless all_jvmargs.empty?
+        extra += "  JVM arguments:\n\n"
+
+        unless all_jvmargs.empty?
+            all_jvmargs.each { |key| extra += "%s\n" % [ key ] }
+        end
 
         unless required_system_properties.empty?
-            extra += "  System properties:           \n"
-            required_system_properties.each { |key| extra += "          -D%s=%s\n" % [ key, @sysproperties[key] ] }
+            required_system_properties.each { |key| extra += "-D%s=%s\n" % [ key, @sysproperties[key] ] }
         end
 
         unless extra.blank?
@@ -503,7 +509,7 @@ class SubtreeTestRun
         puts ""
         puts "And, just FYI (it isn't usually necessary to set these) the buildsystem "
         puts "normally runs tests in %s/%s..." % [ @subtree.build_module.name, @subtree.name ]
-        puts "   ...with the current working directory set to '%s'." % @cwd.to_s
+        puts "   ...with the current working directory set to:\n\n%s\n\n" % @cwd.to_s
         puts "   ...using the Java command at '%s'." % tests_jvm.java.to_s
         puts ""
     end

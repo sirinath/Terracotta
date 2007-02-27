@@ -7,6 +7,7 @@ package com.tc.object.config;
 import com.tc.asm.ClassVisitor;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DateMethodAdapter;
 import com.tc.object.bytecode.DistributedMethodCallAdapter;
 import com.tc.object.bytecode.LogicalMethodAdapter;
@@ -47,6 +48,7 @@ public class TransparencyClassSpec {
   private final Map                   codeSpecs                  = new HashMap();
   private final Set                   nonInstrumentedMethods     = Collections.synchronizedSet(new HashSet());
   private String                      changeApplicatorClassName;
+  private ChangeApplicatorSpec        changeApplicatorSpec;
   private boolean                     isLogical;
   private final IncludeOnLoad         onLoad                     = new IncludeOnLoad();
   private boolean                     preInstrumented;
@@ -59,11 +61,13 @@ public class TransparencyClassSpec {
 
   private String                      postCreateMethod           = null;
   private String                      logicalExtendingClassName  = null;
+  private ClassAdapterFactory         customClassAdapter         = null;
 
   public TransparencyClassSpec(String className, DSOClientConfigHelper configuration, String changeApplicatorClassName) {
     this.configuration = configuration;
     this.className = className;
     this.changeApplicatorClassName = changeApplicatorClassName;
+    this.changeApplicatorSpec = new DSOChangeApplicatorSpec(changeApplicatorClassName);
     this.isLogical = true;
   }
 
@@ -72,6 +76,8 @@ public class TransparencyClassSpec {
     this.configuration = configuration;
     this.isLogical = false;
     this.changeApplicatorClassName = null;
+    this.changeApplicatorSpec = null;
+    this.changeApplicatorSpec = null;
   }
 
   public TransparencyClassSpec getClassSpec(String clazzName) {
@@ -266,8 +272,8 @@ public class TransparencyClassSpec {
     return configuration.isDistributedMethodCall(access, className, methodName, description, exceptions);
   }
 
-  public String getChangeApplicatorClassName() {
-    return changeApplicatorClassName;
+  public ChangeApplicatorSpec getChangeApplicatorSpec() {
+    return changeApplicatorSpec;
   }
 
   public String getLogicalExtendingClassName() {
@@ -275,12 +281,15 @@ public class TransparencyClassSpec {
   }
 
   public void moveToLogical(TransparencyClassSpec superClassSpec) {
+    // System.err.println("### Moving to logical this:" + getClassName() + "; super:" + superClassSpec.getClassName());
+
     this.isLogical = true;
     String superClassLogicalExtendingClassName = superClassSpec.getLogicalExtendingClassName();
     if (superClassLogicalExtendingClassName == null) {
       superClassLogicalExtendingClassName = superClassSpec.getClassName();
     }
-    this.changeApplicatorClassName = superClassSpec.getChangeApplicatorClassName();
+    this.changeApplicatorClassName = superClassSpec.changeApplicatorClassName;
+    this.changeApplicatorSpec = new DSOChangeApplicatorSpec(superClassSpec.changeApplicatorClassName);
     this.logicalExtendingClassName = superClassLogicalExtendingClassName;
   }
 
@@ -496,5 +505,13 @@ public class TransparencyClassSpec {
 
   public void setPostCreateMethod(String postCreateMethod) {
     this.postCreateMethod = postCreateMethod;
+  }
+
+  public void setCustomClassAdapter(ClassAdapterFactory customClassAdapter) {
+    this.customClassAdapter = customClassAdapter;
+  }
+
+  public ClassAdapterFactory getCustomClassAdapter() {
+    return customClassAdapter;
   }
 }

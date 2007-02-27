@@ -8,6 +8,8 @@ import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.objectserver.control.ExtraProcessServerControl;
+import com.tc.objectserver.control.ServerControl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
 import com.tc.test.TestConfigObject;
@@ -42,6 +44,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private ApplicationConfigBuilder            possibleApplicationConfigBuilder;
 
   private String                              mode;
+  private ServerControl                       serverControl;
+  private boolean                             controlledCrashMode  = false;
   private ServerCrasher                       crasher;
 
   protected void setUp() throws Exception {
@@ -54,6 +58,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+      serverControl = helper.getServerControl();
     } else {
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(0);
     }
@@ -61,9 +66,25 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.doSetUp(this);
 
     if (isCrashy()) {
-      crasher = new ServerCrasher(helper.getServerCrasherConfig());
+      crasher = new ServerCrasher(serverControl, helper.getServerCrasherConfig().getRestartInterval(), helper
+          .getServerCrasherConfig().isCrashy());
       crasher.startAutocrash();
     }
+  }
+
+  protected final void setUpControlledServer(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
+                                             int serverPort, int adminPort, String configFile) throws Exception {
+    controlledCrashMode = true;
+    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true);
+    setUp(factory, helper);
+  }
+
+  private final void setUp(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper) throws Exception {
+    super.setUp();
+    this.configFactory = factory;
+    this.configHelper = helper;
+    transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
+                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl);
   }
 
   protected synchronized final String mode() {
@@ -85,14 +106,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private boolean isCrashy() {
     return mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART)
            || mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH);
-  }
-
-  protected void setUp(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper) throws Exception {
-    super.setUp();
-    transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
-                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY);
-    configFactory = factory;
-    configHelper = helper;
   }
 
   public DSOClientConfigHelper getConfigHelper() {
@@ -136,7 +149,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected boolean getStartServer() {
-    return getServerPortProp() == null && mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL);
+    return getServerPortProp() == null && mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL)
+           && !controlledCrashMode;
   }
 
   public void initializeTestRunner() throws Exception {
@@ -167,6 +181,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void test() throws Exception {
     if (canRun()) {
+      if (controlledCrashMode) serverControl.start(30 * 1000);
       this.runner.run();
 
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {

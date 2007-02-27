@@ -20,15 +20,17 @@ class BuildEnvironment < Environment
   include_class('java.lang.System') { |p, name| "Java" + name }
 
   # Creates a new instance, given a Platform object and a configuration source.
-    def initialize(platform, config_source)
+    def initialize(platform, config_source, root_dir)
         super(platform)
         @config_source = config_source
         @build_timestamp = Time.now
         begin
-            @svninfo = YAML::load(platform.exec("svn", "info"))        
+            @svninfo = YAML::load(platform.exec("svn", "info", root_dir))
         rescue            
             @svninfo = {}
             @svninfo["Last Changed Rev"] = "00"
+            @svninfo["Last Changed Author"] = "unknown-author"
+            @svninfo["Last Changed Date"] = "unknown-date"
             @svninfo["URL"] = "unknown-url"
         end
     end
@@ -36,6 +38,14 @@ class BuildEnvironment < Environment
     # What's the latest revision on the local source base?
     def current_revision
         @svninfo["Last Changed Rev"]      
+    end
+    
+    def last_changed_author
+      @svninfo["Last Changed Author"]
+    end
+    
+    def last_changed_date
+      @svninfo["Last Changed Date"]
     end
 
   # If the latest revision on the local source base is tagged, return it;
