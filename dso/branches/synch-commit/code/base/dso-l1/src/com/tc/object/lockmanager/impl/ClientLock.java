@@ -62,7 +62,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private volatile State          state                    = RUNNING;
   private long                    timeUsed                 = System.currentTimeMillis();
 
-  ClientLock(TCLogger logger, LockID lockID, RemoteLockManager remoteLockManager, WaitTimer waitTimer) {
+  ClientLock(LockID lockID, RemoteLockManager remoteLockManager, WaitTimer waitTimer) {
     Assert.assertNotNull(lockID);
     this.lockID = lockID;
     this.remoteLockManager = remoteLockManager;
@@ -305,7 +305,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     } else if (greediness.isGreedy()) {
       action.addAction(Action.AWARD_GREEDY_LOCKS);
     }
-    if(isLockSynchronouslyHeld(threadID)) {
+    if (isLockSynchronouslyHeld(threadID)) {
       action.addAction(Action.SYNCHRONOUS_COMMIT);
     }
     return action;
@@ -776,9 +776,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
 
   private boolean isLockSynchronouslyHeld(ThreadID threadID) {
     LockHold holder = (LockHold) this.holders.get(threadID);
-    if (holder != null && holder.isHolding()) {
-      return holder.isLastLockSynchronouslyHeld();
-    }
+    if (holder != null && holder.isHolding()) { return holder.isLastLockSynchronouslyHeld(); }
     return false;
   }
 

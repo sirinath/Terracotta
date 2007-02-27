@@ -9,7 +9,6 @@ import org.apache.commons.io.CopyUtils;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
-import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.util.Assert;
@@ -29,18 +28,30 @@ public class SynchronousCommitClientTerminatingTest extends TransparentTestBase 
   private File             configFile;
   private int              port;
 
+  private int              adminPort;
+
   protected Class getApplicationClass() {
     return ClientTerminatingTestApp.class;
   }
 
   public void setUp() throws Exception {
-    TVSConfigurationSetupManagerFactory factory;
-    factory = new StandardTVSConfigurationSetupManagerFactory(new String[] {
-        StandardTVSConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, getConfigFile(true).getAbsolutePath() },
-                                                              true, new FatalIllegalConfigurationChangeHandler());
+    // XXX: ERR! HACK! Will collide eventually
+    PortChooser pc = new PortChooser();
+    port = pc.chooseRandomPort();
+    adminPort = pc.chooseRandomPort();
+    configFile = getTempFile("config-file.xml");
+    writeConfigFile(true);
+    StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
+                                                                                                          new String[] {
+                                                                                                              StandardTVSConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD,
+                                                                                                              configFile
+                                                                                                                  .getAbsolutePath() },
+                                                                                                          true,
+                                                                                                          new FatalIllegalConfigurationChangeHandler());
 
     L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
-    super.setUp(factory, new StandardDSOClientConfigHelper(manager));
+    setUpControlledServer(factory, new StandardDSOClientConfigHelper(manager), port, adminPort, configFile
+        .getAbsolutePath());
     doSetUp(this);
   }
 
@@ -49,28 +60,21 @@ public class SynchronousCommitClientTerminatingTest extends TransparentTestBase 
     t.initializeTestRunner();
 
     TransparentAppConfig cfg = t.getTransparentAppConfig();
-    cfg.setAttribute(ClientTerminatingTestApp.CONFIG_FILE, getConfigFile(true).getAbsolutePath());
+    cfg.setAttribute(ClientTerminatingTestApp.CONFIG_FILE, configFile.getAbsolutePath());
     cfg.setAttribute(ClientTerminatingTestApp.PORT_NUMBER, String.valueOf(port));
     cfg.setAttribute(ClientTerminatingTestApp.HOST_NAME, "localhost");
     cfg.setAttribute(ClientTerminatingTestApp.FORCE_KILL, "true");
   }
 
-  private synchronized File getConfigFile(boolean isSynchronousWrite) {
-    if (configFile == null) {
-      try {
-        // XXX: ERR! HACK! Will collide eventually
-        port = new PortChooser().chooseRandomPort();
-
-        configFile = getTempFile("config-file.xml");
-        TerracottaConfigBuilder builder = ClientTerminatingTestApp.createConfig(port, isSynchronousWrite);
-        FileOutputStream out = new FileOutputStream(configFile);
-        CopyUtils.copy(builder.toString(), out);
-        out.close();
-      } catch (Exception e) {
-        throw Assert.failure("Can't create config file", e);
-      }
+  private synchronized void writeConfigFile(boolean isSynchronousWrite) {
+    try {
+      TerracottaConfigBuilder builder = ClientTerminatingTestApp.createConfig(port, adminPort, isSynchronousWrite);
+      FileOutputStream out = new FileOutputStream(configFile);
+      CopyUtils.copy(builder.toString(), out);
+      out.close();
+    } catch (Exception e) {
+      throw Assert.failure("Can't create config file", e);
     }
-    return configFile;
   }
 
 }

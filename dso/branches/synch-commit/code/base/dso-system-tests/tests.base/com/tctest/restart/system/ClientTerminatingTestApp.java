@@ -121,10 +121,10 @@ public class ClientTerminatingTestApp extends AbstractTransparentApp {
   }
 
   public static TerracottaConfigBuilder createConfig(int port, int adminPort) {
-    return createConfig(port, false);
+    return createConfig(port, adminPort, false);
   }
 
-  public static TerracottaConfigBuilder createConfig(int port, boolean isSynchronousWrite) {
+  public static TerracottaConfigBuilder createConfig(int port, int adminPort, boolean isSynchronousWrite) {
     String testClassName = ClientTerminatingTestApp.class.getName();
     String testClassSuperName = AbstractTransparentApp.class.getName();
     String clientClassName = Client.class.getName();
