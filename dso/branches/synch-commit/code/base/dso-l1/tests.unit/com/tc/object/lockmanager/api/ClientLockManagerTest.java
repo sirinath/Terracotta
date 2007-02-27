@@ -51,6 +51,55 @@ public class ClientLockManagerTest extends TestCase {
     rmtLockManager.setClientLockManager(lockManager);
   }
 
+  public void testNestedSynchronousWrite() {
+    final LockID lockID_1 = new LockID("1");
+    final LockID lockID_2 = new LockID("2");
+    final ThreadID threadID_1 = new ThreadID(1);
+    final ThreadID threadID_2 = new ThreadID(2);
+
+    rmtLockManager.resetFlushCount();
+
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.lock(lockID_1, threadID_1, LockLevel.WRITE);
+    lockManager.lock(lockID_1, threadID_1, LockLevel.READ);
+    lockManager.lock(lockID_1, threadID_1, LockLevel.SYNCHRONOUS_WRITE);
+    lockManager.lock(lockID_1, threadID_1, LockLevel.WRITE);
+    lockManager.lock(lockID_1, threadID_1, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(1, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(1, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(2, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(2, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_1, threadID_1);
+    assertEquals(3, rmtLockManager.getFlushCount());
+
+    rmtLockManager.resetFlushCount();
+    rmtLockManager.makeLocksGreedy();
+
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.lock(lockID_2, threadID_2, LockLevel.WRITE);
+    lockManager.lock(lockID_2, threadID_2, LockLevel.READ);
+    lockManager.lock(lockID_2, threadID_2, LockLevel.SYNCHRONOUS_WRITE);
+    lockManager.lock(lockID_2, threadID_2, LockLevel.WRITE);
+    lockManager.lock(lockID_2, threadID_2, LockLevel.SYNCHRONOUS_WRITE);
+    assertEquals(0, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_2, threadID_2);
+    assertEquals(1, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_2, threadID_2);
+    assertEquals(1, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_2, threadID_2);
+    assertEquals(2, rmtLockManager.getFlushCount());
+    lockManager.unlock(lockID_2, threadID_2);
+    lockManager.unlock(lockID_2, threadID_2);
+    assertEquals(2, rmtLockManager.getFlushCount());
+    rmtLockManager.resetFlushCount();
+    rmtLockManager.makeLocksNotGreedy();
+  }
+
   public void testSynchronousWriteUnlock() {
     final LockID lockID_1 = new LockID("1");
     final LockID lockID_2 = new LockID("2");
