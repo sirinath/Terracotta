@@ -205,67 +205,9 @@
 
   <xs:complexType name="web-applications">
     <xs:sequence>
-      <xs:element name="web-application" type="web-application-name-expression" maxOccurs="unbounded">
-        <xs:attribute name="synchronous-write" type="synchronous-write" use="optional">
-          <xs:annotation>
-            <xs:documentation>
-              The host that the server runs on. If the host is the
-              same as the name of the server, then you can omit
-              it; otherwise, you must include it.
-            </xs:documentation>
-          </xs:annotation>
-        </xs:attribute>      
-      </xs:element>
+      <xs:element name="web-application" type="web-application-name-expression" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
-  
-  
-  
-  <xs:complexType name="server">
-    <xs:all>
-      <xs:element name="dso-port" type="port" minOccurs="0"
-        default="9510">
-        <xs:annotation>
-          <xs:documentation>
-            On what port should the DSO server listen for
-            connections from DSO clients? This can be any
-            port you like, but note that ports below 1024
-            typically require 'root' privileges to use on
-            Unix-style systems (Linux, Solaris).
-
-            Default:9510
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-    </xs:all>
-/host
-    <xs:attribute name="name" type="non-blank-token"
-      use="required">
-      <xs:annotation>
-        <xs:documentation>
-          The name of the server. The name is required.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="host" type="host" use="optional">
-      <xs:annotation>
-        <xs:documentation>
-          The host that the server runs on. If the host is the
-          same as the name of the server, then you can omit
-          it; otherwise, you must include it.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
-  
-  
-  
-  
-  
-  
-  
-  
-  =============================================
 
   <xs:complexType name="instrumentation-logging">
     <xs:all>
