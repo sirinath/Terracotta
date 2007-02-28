@@ -1,7 +1,8 @@
 @ECHO OFF
 IF NOT EXIST build-tc.rb GOTO no_build_tc
 
-set JRUBY_HOME=%~p0..\..\buildsystems\jruby
+set JRUBY_HOME=%~dp0..\..\buildsystems\jruby
+
 if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
 GOTO has_jruby_home
 
@@ -35,7 +36,7 @@ GOTO run_jruby
 
 :run_jruby
 
-call %JRUBY_HOME%\bin\jruby.bat -Ibuildscripts build-tc.rb %*
+%JRUBY_HOME%\bin\jruby.bat -Ibuildscripts build-tc.rb %*
 set TCBUILD_ERR=%ERRORLEVEL%
 GOTO end
 
@@ -44,5 +45,5 @@ GOTO end
 	GOTO end
 
 :end
-echo tcbuild.bat: exit code is %TCBUILD_ERR%
+REM echo tcbuild.bat: exit code is %TCBUILD_ERR%
 exit /b %TCBUILD_ERR%
