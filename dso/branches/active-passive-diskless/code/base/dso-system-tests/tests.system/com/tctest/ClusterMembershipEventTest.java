@@ -4,68 +4,51 @@
  */
 package com.tctest;
 
-import org.apache.commons.io.CopyUtils;
+import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
-import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
-import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
-import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
-import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
+import com.tc.config.schema.builder.InstrumentedClassConfigBuilder;
+import com.tc.config.schema.builder.LockConfigBuilder;
+import com.tc.config.schema.builder.RootConfigBuilder;
+import com.tc.config.schema.test.InstrumentedClassConfigBuilderImpl;
+import com.tc.config.schema.test.LockConfigBuilderImpl;
+import com.tc.config.schema.test.RootConfigBuilderImpl;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
-import com.tc.object.config.StandardDSOClientConfigHelper;
-import com.tc.util.Assert;
-import com.tc.util.PortChooser;
-import com.tctest.restart.system.ClientTerminatingTestApp;
-import com.tctest.runner.TransparentAppConfig;
 
-import java.io.File;
-import java.io.FileOutputStream;
-
-public class ClusterMembershipEventTest extends TransparentTestBase {
+public class ClusterMembershipEventTest extends ServerCrashingTestBase {
 
   private static final int NODE_COUNT = 5;
-  private int port;
-  private File configFile;
-
-  public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
-    t.initializeTestRunner();
-    TransparentAppConfig cfg = t.getTransparentAppConfig();
-    cfg.setAttribute(ClusterMembershipEventTestApp.CONFIG_FILE, getConfigFile().getAbsolutePath());
-    cfg.setAttribute(ClusterMembershipEventTestApp.PORT_NUMBER, String.valueOf(port));
-    cfg.setAttribute(ClusterMembershipEventTestApp.HOST_NAME, "localhost");
+    
+  public ClusterMembershipEventTest() {
+    super(NODE_COUNT);
+//    this.disableAllUntil("2007-02-27");
   }
 
   protected Class getApplicationClass() {
     return ClusterMembershipEventTestApp.class;
   }
 
-  public void setUp() throws Exception {
-    TVSConfigurationSetupManagerFactory factory;
-    factory = new StandardTVSConfigurationSetupManagerFactory(new String[] {
-        StandardTVSConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, getConfigFile().getAbsolutePath() },
-                                                              true, new FatalIllegalConfigurationChangeHandler());
+  protected void createConfig(TerracottaConfigBuilder cb) {
+    // locks
+    LockConfigBuilder[] locks = new LockConfigBuilder[] {
+        new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK, CyclicBarrier.class, LockConfigBuilder.LEVEL_WRITE),
+        new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK, SynchronizedInt.class, LockConfigBuilder.LEVEL_WRITE),
+        new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK, getApplicationClass(), LockConfigBuilder.LEVEL_WRITE) };
 
-    L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
-    super.setUp(factory, new StandardDSOClientConfigHelper(manager));
-    doSetUp(this);
-  }
+    cb.getApplication().getDSO().setLocks(locks);
 
-  private synchronized File getConfigFile() {
-    if (configFile == null) {
-      try {
-        // XXX: ERR! HACK! Will collide eventually
-        port = new PortChooser().chooseRandomPort();
+    // include classes
+    InstrumentedClassConfigBuilder[] instrClasses = new InstrumentedClassConfigBuilder[] {
+        new InstrumentedClassConfigBuilderImpl(CyclicBarrier.class),
+        new InstrumentedClassConfigBuilderImpl(SynchronizedInt.class),
+        new InstrumentedClassConfigBuilderImpl(getApplicationClass()) };
 
-        configFile = getTempFile("config-file.xml");
-        TerracottaConfigBuilder builder = ClientTerminatingTestApp.createConfig(port);
-        FileOutputStream out = new FileOutputStream(configFile);
-        CopyUtils.copy(builder.toString(), out);
-        out.close();
-      } catch (Exception e) {
-        throw Assert.failure("Can't create config file", e);
-      }
-    }
-    return configFile;
+    cb.getApplication().getDSO().setInstrumentedClasses(instrClasses);
+    
+    // roots
+    RootConfigBuilder[] roots = new RootConfigBuilder[] { new RootConfigBuilderImpl(getApplicationClass(), "barrier") };
+    cb.getApplication().getDSO().setRoots(roots);
+    
   }
 
 }

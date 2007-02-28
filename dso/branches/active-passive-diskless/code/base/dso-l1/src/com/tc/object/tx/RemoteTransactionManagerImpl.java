@@ -4,7 +4,6 @@
  */
 package com.tc.object.tx;
 
-import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
@@ -16,10 +15,12 @@ import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
+import com.tc.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,10 +28,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 /**
  * Sends off committed transactions
- *
+ * 
  * @author steve
  */
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
@@ -59,8 +61,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   private State                            status;
   private final SessionManager             sessionManager;
-  private final TransactionSequencer               sequencer;
-  private final DSOClientMessageChannel            channel;
+  private final TransactionSequencer       sequencer;
+  private final DSOClientMessageChannel    channel;
 
   public RemoteTransactionManagerImpl(TCLogger logger, final TransactionBatchFactory batchFactory,
                                       TransactionBatchAccounting batchAccounting, LockAccounting lockAccounting,
@@ -154,6 +156,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   }
 
   public void flush(LockID lockID) {
+    boolean isInterrupted = false;
     Collection c;
     synchronized (lock) {
       while ((!(c = lockAccounting.getTransactionsFor(lockID)).isEmpty())) {
@@ -166,10 +169,11 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
                         + "ms. # Transactions not yet Acked = " + c.size() + "\n");
           }
         } catch (InterruptedException e) {
-          throw new TCRuntimeException(e);
+          isInterrupted = true;
         }
       }
     }
+    Util.selfInterruptIfNeeded(isInterrupted);
   }
 
   /* This does not block unlike flush() */
@@ -338,8 +342,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   }
 
   public void receivedAcknowledgement(SessionID sessionID, TransactionID txID) {
-    Set completedLocks;
-
+    Map callbacks;
     synchronized (lock) {
       // waitUntilRunning();
       if (!sessionManager.isCurrentSession(sessionID)) {
@@ -347,7 +350,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         return;
       }
 
-      completedLocks = lockAccounting.acknowledge(txID);
+      Set completedLocks = lockAccounting.acknowledge(txID);
 
       TxnBatchID container = batchAccounting.getBatchByTransactionID(txID);
       if (!container.isNull()) {
@@ -366,33 +369,51 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         throw new AssertionError("No batch found for acknowledgement: " + txID);
       }
       lock.notifyAll();
+      callbacks = getLockFlushCallbacks(completedLocks);
+    }
+    fireLockFlushCallbacks(callbacks);
+  }
 
-      // doLockFlushCallbacks() is moved inside the synchronized() block due to a race condition
-      // between flush and recallCommit.
-      doLockFlushCallbacks(completedLocks);
+  /*
+   * Never fire callbacks while holding lock
+   */
+  private void fireLockFlushCallbacks(Map callbacks) {
+    if (callbacks.isEmpty()) return;
+    for (Iterator i = callbacks.entrySet().iterator(); i.hasNext();) {
+      Entry e = (Entry) i.next();
+      LockID lid = (LockID) e.getKey();
+      LockFlushCallback callback = (LockFlushCallback) e.getValue();
+      callback.transactionsForLockFlushed(lid);
     }
   }
 
-  private void doLockFlushCallbacks(Set completedLocks) {
-    // Do callback
+  private Map getLockFlushCallbacks(Set completedLocks) {
+    Map callbacks = Collections.EMPTY_MAP;
     if (!completedLocks.isEmpty() && !lockFlushCallbacks.isEmpty()) {
       for (Iterator i = completedLocks.iterator(); i.hasNext();) {
-        LockID lid = (LockID) i.next();
-        LockFlushCallback callback = (LockFlushCallback) lockFlushCallbacks.remove(lid);
+        Object lid = i.next();
+        Object callback = lockFlushCallbacks.remove(lid);
         if (callback != null) {
-          callback.transactionsForLockFlushed(lid);
+          if (callbacks == Collections.EMPTY_MAP) {
+            callbacks = new HashMap();
+          }
+          callbacks.put(lid, callback);
         }
       }
     }
+    return callbacks;
   }
 
   private void waitUntilRunning() {
-    while (status != RUNNING)
+    boolean isInterrupted = false;
+    while (status != RUNNING) {
       try {
         lock.wait();
       } catch (InterruptedException e) {
-        throw new TCRuntimeException(e);
+        isInterrupted = true;
       }
+    }
+    Util.selfInterruptIfNeeded(isInterrupted);
   }
 
   // This method exists so that both these (resending and unpausing) should happen in

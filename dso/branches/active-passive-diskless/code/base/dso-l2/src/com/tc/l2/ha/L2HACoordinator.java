@@ -8,7 +8,9 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.StateChangedEvent;
+import com.tc.l2.handler.L2ObjectSyncDehydrateHandler;
 import com.tc.l2.handler.L2ObjectSyncHandler;
+import com.tc.l2.handler.L2ObjectSyncSendHandler;
 import com.tc.l2.handler.L2StateChangeHandler;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.objectserver.ReplicatedObjectManager;
@@ -36,7 +38,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
 
   private GroupManager                  groupManager;
   private StateManager                  stateManager;
-  private ReplicatedObjectManagerImpl   rObjectManager;
+  private ReplicatedObjectManager       rObjectManager;
   private L2ObjectStateManager          l2ObjectStateManager;
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager) {
@@ -67,6 +69,12 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
     final Sink objectsSyncSink = stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_STAGE,
                                                           new L2ObjectSyncHandler(this.l2ObjectStateManager), 1,
                                                           Integer.MAX_VALUE).getSink();
+    stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE,
+                                                          new L2ObjectSyncDehydrateHandler(), 1,
+                                                          Integer.MAX_VALUE);
+    stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE,
+                                                          new L2ObjectSyncSendHandler(this.l2ObjectStateManager), 1,
+                                                          Integer.MAX_VALUE);
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
                                                           this.server.getContext().getObjectManager(), objectsSyncSink);
 

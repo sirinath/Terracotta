@@ -95,6 +95,7 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.dna.impl.ProxyInstance;
 import com.tc.object.field.TCField;
+import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
@@ -102,6 +103,7 @@ import com.tc.object.loaders.StandardClassLoaderAdapter;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
+import com.tc.plugins.PluginsLoader;
 import com.tc.properties.TCProperties;
 import com.tc.session.SessionSupport;
 import com.tc.text.Banner;
@@ -177,6 +179,7 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.config);
+    PluginsLoader.initPlugins(this.config, true);
   }
 
   public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassBytesProvider systemProvider) {
@@ -249,6 +252,8 @@ public class BootJarTool {
       loadTerracottaClass(EnumerationWrapper.class.getName());
       loadTerracottaClass(NamedClassLoader.class.getName());
       loadTerracottaClass(TransparentAccess.class.getName());
+      loadTerracottaClass(BytecodeProvider.class.getName());
+
       loadTerracottaClass(Manageable.class.getName());
       loadTerracottaClass(Clearable.class.getName());
       loadTerracottaClass(Manager.class.getName());
@@ -266,7 +271,6 @@ public class BootJarTool {
       loadTerracottaClass(SessionsHelper.class.getName());
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
-      loadTerracottaClass(Util.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
@@ -289,6 +293,7 @@ public class BootJarTool {
       loadTerracottaClass(ExceptionWrapperImpl.class.getName());
       loadTerracottaClass(TraverseTest.class.getName());
       loadTerracottaClass(Os.class.getName());
+      loadTerracottaClass(Util.class.getName());
       loadTerracottaClass(NIOWorkarounds.class.getName());
       loadTerracottaClass(TCProperties.class.getName());
       loadTerracottaClass(ClusterEventListener.class.getName());
@@ -1437,12 +1442,12 @@ public class BootJarTool {
     bytes = doDSOTransform(spec.getClassName(), bytes);
     bootJar.loadClassIntoJar("java.util.concurrent.LinkedBlockingQueue", bytes, spec.isPreInstrumented());
   }
-  
+
   private void addInstrumentedJavaUtilConcurrentFutureTask() {
 
     if (!isAtLeastJDK15()) { return; }
     Map instrumentedContext = new HashMap();
-    
+
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.FutureTask");
     spec.setHonorTransient(true);
     spec.setCallConstructorOnLoad(true);
@@ -1831,20 +1836,13 @@ public class BootJarTool {
     if (outputFile.isDirectory()) {
       outputFile = new File(outputFile, BootJarSignature.getBootJarNameForThisVM());
     }
-    
 
     // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
     // That requirement is no more, but might come back, so I'm leaving at least this much scaffolding in place
     // WAS: systemProvider = new RuntimeJarBytesProvider(...)
 
-       ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
-       new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose)
-           .generateJar();
-
-//File tempOutputFile = File.createTempFile("terracotta", "bootjar.tmp");
-//tempOutputFile.deleteOnExit();
-//
-//com.tc.util.Util.copyFile(tempOutputFile, outputFile);
+    ClassBytesProvider systemProvider = new ClassLoaderBytesProvider(ClassLoader.getSystemClassLoader());
+    new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemProvider, !verbose).generateJar();
   }
 
   public static class RuntimeJarBytesProvider implements ClassBytesProvider {

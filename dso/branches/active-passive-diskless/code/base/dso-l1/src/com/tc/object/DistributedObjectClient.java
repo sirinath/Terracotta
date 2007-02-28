@@ -179,8 +179,7 @@ public class DistributedObjectClient extends SEDA {
     channel = new DSOClientMessageChannelImpl(communicationsManager.createClientChannel(sessionProvider, -1,
                                                                                         serverHost, serverPort, 10000,
                                                                                         connectionInfoItem));
-    // XXX: pass along channel somehow?
-    this.runtimeLogger = new RuntimeLoggerImpl(config, channel);
+    this.runtimeLogger = new RuntimeLoggerImpl(config);
 
     logger.debug("Created channel.");
 
@@ -247,7 +246,7 @@ public class DistributedObjectClient extends SEDA {
     stageManager.setLoggerProvider(cidLoggerProvider);
 
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
-                                                  new LockResponseHandler(), 1, maxSize);
+                                                  new LockResponseHandler(sessionManager), 1, maxSize);
     Stage receiveRootID = stageManager.createStage(ClientConfigurationContext.RECEIVE_ROOT_ID_STAGE,
                                                    new ReceiveRootIDHandler(), 1, maxSize);
     Stage receiveObject = stageManager.createStage(ClientConfigurationContext.RECEIVE_OBJECT_STAGE,
@@ -402,7 +401,7 @@ public class DistributedObjectClient extends SEDA {
   public SessionMonitorMBean getSessionMonitorMBean() {
     return l1Management.findSessionMonitorMBean();
   }
-  
+
   public DmiManager getDmiManager() {
     return dmiManager;
   }

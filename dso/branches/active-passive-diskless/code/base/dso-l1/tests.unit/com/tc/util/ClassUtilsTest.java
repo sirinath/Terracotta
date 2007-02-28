@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
@@ -7,10 +8,12 @@ import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.reflect.MemberInfo;
+import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.exception.ImplementMe;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.config.ConfigLockLevel;
@@ -18,12 +21,15 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.DSOSpringConfigHelper;
 import com.tc.object.config.Lock;
 import com.tc.object.config.LockDefinition;
+import com.tc.object.config.PluginSpec;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
+import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.util.ClassUtils.ClassSpec;
+import com.terracottatech.config.Plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -50,6 +56,43 @@ public class ClassUtilsTest extends TestCase {
     // stringWriter = new StringWriter();
     // printWriter = new PrintWriter(stringWriter);
     // reasonFormatter = newFormatter(printWriter);
+  }
+
+  public void testArrayMethods() {
+    assertEquals(int.class, ClassUtils.baseComponetType(int[][][][][].class));
+    assertEquals(Object.class, ClassUtils.baseComponetType(Object[].class));
+
+    try {
+      ClassUtils.baseComponetType(null);
+      fail();
+    } catch (NullPointerException e) {
+      // expected
+    }
+
+    try {
+      ClassUtils.baseComponetType(int.class);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // expected
+    }
+
+    assertEquals(5, ClassUtils.arrayDimensions(int[][][][][].class));
+    assertEquals(1, ClassUtils.arrayDimensions(Object[].class));
+
+    try {
+      ClassUtils.arrayDimensions(null);
+      fail();
+    } catch (NullPointerException e) {
+      // expected
+    }
+
+    try {
+      ClassUtils.arrayDimensions(int.class);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // expected
+    }
+
   }
 
   public void testNonPortableReason() {
@@ -364,6 +407,10 @@ public class ClassUtilsTest extends TestCase {
 
     final Set isNeverAdaptable = new HashSet();
 
+    public NewCommonL1Config getNewCommonL1Config() {
+      return null;
+    }
+
     public boolean shouldBeAdapted(String fullName) {
       return true;
     }
@@ -385,6 +432,10 @@ public class ClassUtilsTest extends TestCase {
     }
 
     public Iterator getAllSpecs() {
+      throw new ImplementMe();
+    }
+
+    public void verifyBootJarContents() {
       throw new ImplementMe();
     }
 
@@ -508,6 +559,10 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    public void addTransientType(String className, String fieldName) {
+      throw new ImplementMe();
+    }
+
     public String getOnLoadScriptIfDefined(String className) {
       throw new ImplementMe();
     }
@@ -516,7 +571,7 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public boolean isUseNonDefaultConstructor(String className) {
+    public boolean isUseNonDefaultConstructor(Class clazz) {
       throw new ImplementMe();
     }
 
@@ -614,8 +669,50 @@ public class ClassUtilsTest extends TestCase {
       return null;
     }
 
-    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr, ClassLoader caller, boolean forcePortable) {
+    public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+                                                             InstrumentationLogger lgr, ClassLoader caller,
+                                                             boolean forcePortable) {
       return null;
+    }
+
+    public void addApplicationName(String name) {
+      throw new ImplementMe();
+    }
+
+    public void addInstrumentationDescriptor(InstrumentedClass classDesc) {
+      throw new ImplementMe();
+    }
+
+    public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
+      throw new ImplementMe();
+    }
+
+    public boolean hasCustomAdapter(String fullName) {
+      throw new ImplementMe();
+    }
+
+    public Class getChangeApplicator(Class clazz) {
+      throw new ImplementMe();
+    }
+
+    public void setPluginSpecs(PluginSpec[] pluginSpecs) {
+      throw new ImplementMe();
+    }
+
+    public void addNewPlugin(String name, String version) {
+      throw new ImplementMe();
+    }
+
+    public Plugins getPluginsForInitialization() {
+      return null;
+    }
+
+    public boolean isPortablePluginClass(Class clazz) {
+      return false;
+    }
+
+    public void addCustomAdapter(String name, ClassAdapterFactory factory) {
+      throw new ImplementMe();
     }
   }
 
