@@ -2594,11 +2594,13 @@ public class ConfigurationHelper {
   // Validation support
   
   public void validateAll() {
-    validateLocks();
-    validateRoots();
-    validateTransientFields();
-    validateInstrumentedClasses();
-    validateBootJarClasses();
+    if(getConfig() != null) {
+      validateLocks();
+      validateRoots();
+      validateTransientFields();
+      validateInstrumentedClasses();
+      validateBootJarClasses();
+    }
   }
   
   private static String LOCK_PROBLEM_MARKER = "org.terracotta.dso.LockMethodProblemMarker";
@@ -3339,7 +3341,8 @@ public class ConfigurationHelper {
   }
   
   private Roots getRoots() {
-    return ensureDsoApplication().getRoots();
+    DsoApplication dsoApp = getDsoApplication();
+    return dsoApp != null ? dsoApp.getRoots() : null;
   }
   
   private Roots ensureRoots() {

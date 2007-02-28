@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
+import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
@@ -63,10 +64,17 @@ public class ConfigurationDelegate extends JavaLaunchDelegate
         tracker.startServer(javaProject, plugin.getAnyServerName(project));
       }
       
-      IPath      configPath       = configFile.getLocation();
-      String     configProp       = " -Dtc.config=\"" + toOSString(configPath) + "\"";
-      String     jreContainerPath = wc.getAttribute(ATTR_JRE_CONTAINER_PATH, (String)null);
-      String     bootJarName      = BootJarHelper.getHelper().getBootJarName(jreContainerPath);
+      IPath  configPath = configFile.getLocation();
+      String configProp = " -Dtc.config=\"" + toOSString(configPath) + "\"";
+      
+      String portablePath = null;
+      IPath jrePath = JavaRuntime.computeJREEntry(javaProject).getPath();
+      if(jrePath != null) {
+        portablePath = jrePath.toPortableString();
+      }
+
+      String jreContainerPath = wc.getAttribute(ATTR_JRE_CONTAINER_PATH, portablePath);
+      String bootJarName      = BootJarHelper.getHelper().getBootJarName(jreContainerPath);
       
       if(bootJarName == null || bootJarName.length() == 0) {
         IVMInstall vmInstall = getVMInstall(wc);
@@ -84,7 +92,7 @@ public class ConfigurationDelegate extends JavaLaunchDelegate
       IFile localBootJar = project.getFile(bootJarName);
       IPath bootPath;
       
-      testEnsureBootJar(plugin, javaProject, localBootJar);
+      testEnsureBootJar(plugin, javaProject, localBootJar, jreContainerPath);
       
       if(localBootJar.exists()) {
         bootPath = localBootJar.getLocation();
@@ -135,7 +143,8 @@ public class ConfigurationDelegate extends JavaLaunchDelegate
   private void testEnsureBootJar(
     final TcPlugin     plugin,
     final IJavaProject javaProject,
-    final IFile        bootJar)
+    final IFile        bootJar,
+    final String       jreContainerPath)
   {
     IProject            project                 = javaProject.getProject();
     ConfigurationHelper configHelper            = plugin.getConfigurationHelper(project);
@@ -154,6 +163,7 @@ public class ConfigurationDelegate extends JavaLaunchDelegate
         Display.getDefault().syncExec(new Runnable() {
           public void run() {
             BuildBootJarAction bbja = new BuildBootJarAction(javaProject);
+            bbja.setJREContainerPath(jreContainerPath);
             bbja.run(null);
           }
         });
