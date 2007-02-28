@@ -208,6 +208,10 @@
       <xs:element name="web-application" type="web-application-name-expression" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
+  
+  <xs:complexType name="web-application">
+    <xs:attribute name="synchronous-write" type="xs:boolean" use="optional" />
+  </xs:complexType>
 
   <xs:complexType name="instrumentation-logging">
     <xs:all>
