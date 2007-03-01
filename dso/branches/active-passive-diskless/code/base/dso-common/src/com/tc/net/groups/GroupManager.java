@@ -18,4 +18,6 @@ public interface GroupManager {
 
   public void registerForGroupEvents(GroupEventsListener listener);
 
+  public void zapNode(NodeID nodeID);
+
 }

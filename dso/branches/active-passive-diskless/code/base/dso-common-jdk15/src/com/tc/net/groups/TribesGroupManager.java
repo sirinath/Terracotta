@@ -218,6 +218,12 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
   }
 
+  public void zapNode(NodeID nodeID) {
+    logger.warn("TODO::Zapping node : " + nodeID);
+    //TODO:: Implement this
+  }
+
+
   private static class GroupResponseImpl implements GroupResponse {
 
     HashSet<Member>    waitFor   = new HashSet<Member>();
@@ -269,5 +275,4 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       }
     }
   }
-
 }

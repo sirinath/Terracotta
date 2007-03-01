@@ -51,4 +51,8 @@ public class SingleNodeGroupManager implements GroupManager {
     // NOP : No network, no one joins or leaves
   }
 
+  public void zapNode(NodeID nodeID) {
+    // what node ?
+  }
+
 }

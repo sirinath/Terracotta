@@ -43,10 +43,12 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
 
   // TODO:: Remove ChannelID from this interface
   public void makePending(ChannelID channelID, Collection ids) {
+    this.isPending = true;
   }
 
   // TODO:: Remove ChannelID from this interface
   public void setResults(ChannelID chID, Collection ids, ObjectManagerLookupResults results) {
+    this.isPending = false;
     this.result = results;
     nextSink.add(this);
   }
@@ -71,7 +73,26 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   }
 
   public void close() {
-    //TODO::change state
+    // TODO::change state
+  }
+
+  public ObjectStringSerializer getObjectSerializer() {
+    Assert.assertNotNull(serializer);
+    return serializer;
+  }
+
+  public TCByteBuffer[] getSerializedDNAs() {
+    Assert.assertNotNull(dnas);
+    return dnas;
+  }
+
+  public int getDNACount() {
+    Assert.assertTrue(dnaCount > 0);
+    return dnaCount;
+  }
+
+  public boolean hasMore() {
+    return more;
   }
 
 }

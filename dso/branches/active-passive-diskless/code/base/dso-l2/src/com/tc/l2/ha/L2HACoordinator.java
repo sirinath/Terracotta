@@ -89,6 +89,10 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
     return rObjectManager;
   }
 
+  public GroupManager getGroupManager() {
+    return groupManager;
+  }
+
   public void l2StateChanged(StateChangedEvent sce) {
     if (sce.movedToActive()) {
       rObjectManager.sync();

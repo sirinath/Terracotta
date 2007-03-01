@@ -5,6 +5,7 @@ package com.tc.l2.api;
 
 import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.l2.state.StateManager;
+import com.tc.net.groups.GroupManager;
 
 public interface L2Coordinator {
 
@@ -13,5 +14,7 @@ public interface L2Coordinator {
   public ReplicatedObjectManager getReplicatedObjectManager();
   
   public StateManager getStateManager();
+
+  public GroupManager getGroupManager();
 
 }

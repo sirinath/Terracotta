@@ -11,7 +11,6 @@ import com.tc.async.api.Sink;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.context.SyncObjectsRequest;
 import com.tc.l2.objectserver.L2ObjectStateManager;
-import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.objectserver.api.ObjectManager;
@@ -19,7 +18,6 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 
 public class L2ObjectSyncHandler extends AbstractEventHandler {
 
-  private ReplicatedObjectManager    replicatedObjectMgr;
   private final L2ObjectStateManager l2ObjectStateMgr;
   private ObjectManager              objectManager;
   private Sink dehydrateSink;
@@ -52,7 +50,6 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.replicatedObjectMgr = oscc.getL2Coordinator().getReplicatedObjectManager();
     this.objectManager = oscc.getObjectManager();
     this.dehydrateSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE).getSink();
   }

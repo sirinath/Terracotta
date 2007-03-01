@@ -78,8 +78,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
   }
 
+  // Query current state of the other L2
   private void query(NodeID nodeID) {
-    // Query current state of the other L2
     try {
       groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncRequestMessage());
     } catch (GroupException e) {
@@ -126,8 +126,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     if (!oids.isEmpty()) {
       logger.error("Nodes joining the cluster after startup shouldnt have any Objects. " + nodeID + " contains "
                    + oids.size() + " Objects !!!");
-      logger.error("TODO:: Force remote node to Quit !!");
-      // TODO:: Force Quit !!! ACTIVE NEVER QUITS
+      logger.error("Forcing node to Quit !!");
+      groupManager.zapNode(nodeID);
     } else {
       add2L2StateManager(nodeID, oids);
     }
