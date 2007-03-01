@@ -1,7 +1,8 @@
 @ECHO OFF
 IF NOT EXIST build-tc.rb GOTO no_build_tc
 
-set JRUBY_HOME=%~p0..\..\buildsystems\jruby
+set JRUBY_HOME=%~dp0..\..\buildsystems\jruby
+
 if NOT EXIST "%JRUBY_HOME%" GOTO install_jruby
 GOTO has_jruby_home
 
@@ -29,7 +30,7 @@ GOTO end
 :located_java_home
 
 echo --------------------------------------------------------------------------------
-echo RUNNING TCBUILD"
+echo RUNNING TCBUILD -- tcbuild.bat
 
 GOTO run_jruby
 
@@ -44,5 +45,5 @@ GOTO end
 	GOTO end
 
 :end
-echo tcbuild.bat: exit code is %TCBULD_ERR%
+REM echo tcbuild.bat: exit code is %TCBUILD_ERR%
 exit /b %TCBUILD_ERR%

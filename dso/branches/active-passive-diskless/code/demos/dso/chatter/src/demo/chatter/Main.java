@@ -10,9 +10,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 
 import javax.management.MBeanServer;
@@ -22,6 +19,7 @@ import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -36,16 +34,16 @@ import javax.swing.text.StyleConstants;
 
 public class Main extends JFrame implements ActionListener, ChatterDisplay {
 	/** roots * */
-	private ChatManager	chatManager	= new ChatManager();
+	private ChatManager			chatManager	= new ChatManager();
 
-	private JTextPane	display		= new JTextPane();
-	private User		user;
+	private JTextPane			display		= new JTextPane();
+	private User				user;
+	private DefaultListModel	listModel	= new DefaultListModel();
 
 	public Main() {
 		try {
 			String nodeId = registerForNotifications();
 			user = new User(nodeId, this);
-			login();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -63,8 +61,9 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		input.addActionListener(this);
 		JScrollPane scroll = new JScrollPane(display);
 		Random r = new Random();
-		JLabel buddy = new JLabel(user.getName(), new ImageIcon("images/buddy"
-				+ r.nextInt(10) + ".gif"), JLabel.LEFT);
+		JLabel buddy = new JLabel(user.getName(),
+					  new ImageIcon(getClass().getResource("/images/buddy" + r.nextInt(10) + ".gif")),
+					  JLabel.LEFT);
 		buddy.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 16));
 		buddy.setVerticalTextPosition(JLabel.CENTER);
 		JPanel buddypanel = new JPanel();
@@ -73,7 +72,7 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		buddypanel.add(buddy, BorderLayout.CENTER);
 
 		JPanel buddyListPanel = new JPanel();
-		JList buddyList = new JList(chatManager.getListModel());
+		JList buddyList = new JList(listModel);
 		buddyListPanel.add(buddyList);
 
 		content.setLayout(new BorderLayout());
@@ -89,6 +88,15 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 
 		input.requestFocus();
 
+		populateCurrentUsers();
+		login();
+	}
+
+	private void populateCurrentUsers() {
+		Object[] currentUsers = chatManager.getCurrentUsers();
+		for (int i = 0; i < currentUsers.length; i++) {
+			listModel.addElement(new String(((User)currentUsers[i]).getName()));
+		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -118,10 +126,6 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 
 	public static void echo(String msg) {
 		System.err.println(msg);
-	}
-
-	public void doNewUser(String nodeId) {
-
 	}
 
 	public static void main(String[] args) {
@@ -193,7 +197,7 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 			public void handleNotification(Notification notification,
 					Object handback) {
 				String nodeId = notification.getMessage();
-
+				echo("received msg: " + notification);
 				if (notification.getType().endsWith("nodeDisconnected")) {
 					handleDisconnectedUser(nodeId);
 				}
@@ -206,8 +210,14 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		return (server.getAttribute(clusterBean, "NodeId")).toString();
 	}
 
-	private void handleDisconnectedUser(String nodeId) {
-		chatManager.removeUser(nodeId);
+	public void handleDisconnectedUser(String nodeId) {
+		String username = chatManager.removeUser(nodeId);
+		listModel.removeElement(username);
+	}
+
+	public void handleNewUser(String username) {
+		echo("Adding user: " + username);
+		listModel.addElement(username);
 	}
 
 	public void updateMessage(final String username, final String message) {
@@ -227,7 +237,8 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 							StyleConstants.setForeground(style, Color.GRAY);
 						}
 						StyleConstants.setBold(style, true);
-						doc.insertString(doc.getLength(), username + ": ", style);
+						doc.insertString(doc.getLength(), username + ": ",
+								style);
 					}
 
 					StyleConstants.setBold(style, false);
@@ -240,7 +251,6 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 				}
 			}
 		});
-
 
 	}
 

@@ -31,13 +31,17 @@ class TestRunResults
         root_dir.ensure_directory
         
         # create symlink to latest testrun, must have Cygwin on Windows for this to work
-        unixpath = root_dir.to_s.gsub(/\\/, "/")
-        if ENV['OS'] =~ /(Windows)|(CYGWIN)/i            
-            unixpath = `cygpath -l -w #{unixpath}`.gsub(/\\/, "/")
-            unixpath = `cygpath -u #{unixpath}`.strip
+        # detect if we're in unix or cygwin env
+        uname = `uname 2>&1`
+        unless $? != 0      
+          unixpath = root_dir.to_s.gsub(/\\/, "/")
+          if ENV['OS'] =~ /(Windows)|(CYGWIN)/i 
+              unixpath = `cygpath -l -w #{unixpath}`.gsub(/\\/, "/")
+              unixpath = `cygpath -u #{unixpath}`.strip
+          end
+                    
+          link=`rm testrun-latest; ln -s #{unixpath} testrun-latest`        
         end
-                  
-        link=`rm testrun-latest; ln -s #{unixpath} testrun-latest`
         
         TestRunResults.new(root_dir)
     end
