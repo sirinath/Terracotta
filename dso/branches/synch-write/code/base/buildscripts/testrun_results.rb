@@ -14,6 +14,7 @@
 # already been put on disk (i.e., by running the tests); the only thing it knows
 # is where the XML result files should go, not any of the other stuff this class
 # knows.
+
 class TestRunResults
     # Creates a TestRunResults object for the next free testrun directory in the
     # build-results directory (usually 'build').
@@ -30,17 +31,11 @@ class TestRunResults
         raise RuntimeError, "Unable to find an empty testing directory! We tried directories in '%s' named from 'testrun-%04d' to 'testrun-%04d', but they all existed (?!?)." % [ @build_dir.to_s, 0, 1000 ] if root_dir.nil?
         root_dir.ensure_directory
         
-        # create symlink to latest testrun, must have Cygwin on Windows for this to work
-        # detect if we're in unix or cygwin env
-        uname = `uname 2>&1`
-        unless $? != 0      
+        # create symlink to latest testrun
+        unless ENV['OS'] =~ /windows/i          
           unixpath = root_dir.to_s.gsub(/\\/, "/")
-          if ENV['OS'] =~ /(Windows)|(CYGWIN)/i 
-              unixpath = `cygpath -l -w #{unixpath}`.gsub(/\\/, "/")
-              unixpath = `cygpath -u #{unixpath}`.strip
-          end
-                    
-          link=`rm testrun-latest; ln -s #{unixpath} testrun-latest`        
+          `rm testrun-latest` if File.exist?("testrun-latest")
+          link=`ln -s #{unixpath} testrun-latest`        
         end
         
         TestRunResults.new(root_dir)
