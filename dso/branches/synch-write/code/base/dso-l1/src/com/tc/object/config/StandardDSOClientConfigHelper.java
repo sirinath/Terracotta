@@ -15,6 +15,7 @@ import com.tc.asm.Opcodes;
 import com.tc.asm.commons.SerialVersionUIDAdder;
 import com.tc.aspectwerkz.expression.ExpressionContext;
 import com.tc.aspectwerkz.expression.ExpressionVisitor;
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.ConstructorInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
@@ -393,7 +394,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // Table model stuff
     addIncludePattern("javax.swing.event.TableModelEvent", true);
     TransparencyClassSpec spec = getOrCreateSpec("javax.swing.event.TableModelEvent");
-
+    
     addIncludePattern("javax.swing.table.AbstractTableModel", true);
     spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
     spec.addDistributedMethodCall("fireTableChanged", "(Ljavax/swing/event/TableModelEvent;)V");
@@ -482,7 +483,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
     spec = getOrCreateSpec("javax.swing.tree.DefaultMutableTreeNode");
-
+    
     spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
     ld = new LockDefinition("tctreeLock", ConfigLockLevel.WRITE);
     ld.commit();
@@ -641,7 +642,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
     spec = getOrCreateSpec("java.util.AbstractMap");
     spec.setHonorTransient(true);
-
+    
     // spec = getOrCreateSpec("java.lang.Number");
     // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
     // JVM crashes.
@@ -1349,7 +1350,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     locks = result;
   }
 
-  public boolean shouldBeAdapted(String fullClassName) {
+  public boolean shouldBeAdapted(ClassInfo classInfo) {
+    String fullClassName = classInfo.getName();
     Boolean cache = readAdaptableCache(fullClassName);
     if (cache != null) { return cache.booleanValue(); }
 
@@ -1363,7 +1365,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     if (isLogical(outerClassname)) {
       // We make inner classes of logical classes not instrumented while logical
       // bases are instrumented...UNLESS there is a explicit spec for said inner class
-      boolean adaptable = (getSpec(fullClassName)) != null || outerClassname.equals(fullClassName);
+      boolean adaptable = getSpec(fullClassName) != null || outerClassname.equals(fullClassName);
       return cacheIsAdaptable(fullClassName, adaptable);
     }
 
@@ -1474,9 +1476,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return false;
   }
 
-  public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className,
+  public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, ClassInfo classInfo,
                                                            InstrumentationLogger lgr, ClassLoader caller,
                                                            final boolean forcePortable) {
+    String className = classInfo.getName();
     ManagerHelper mgrHelper = mgrHelperFactory.createHelper();
     TransparencyClassSpec spec = getOrCreateSpec(className);
 
@@ -1488,42 +1491,42 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       }
     }
 
-    TransparencyClassAdapter dsoAdapter = new TransparencyClassAdapter(basicGetOrCreateSpec(className, null, false),
-                                                                       writer, mgrHelper, lgr, caller, portability);
-    return dsoAdapter;
+    return new TransparencyClassAdapter(classInfo, basicGetOrCreateSpec(className, null, false), writer, mgrHelper,
+                                        lgr, caller, portability);
   }
 
-  public ClassAdapter createClassAdapterFor(ClassWriter writer, String className, InstrumentationLogger lgr,
+  public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                             ClassLoader caller) {
-    return this.createClassAdapterFor(writer, className, lgr, caller, false);
+    return this.createClassAdapterFor(writer, classInfo, lgr, caller, false);
   }
 
-  public ClassAdapter createClassAdapterFor(ClassWriter writer, String className, InstrumentationLogger lgr,
+  public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                             ClassLoader caller, final boolean forcePortable) {
-    ClassAdapterFactory adapter = (ClassAdapterFactory) this.customAdapters.get(className);
+    ClassAdapterFactory adapter = (ClassAdapterFactory) this.customAdapters.get(classInfo.getName());
     if (adapter != null) {
       return adapter.create(writer, caller);
     } else {
       ManagerHelper mgrHelper = mgrHelperFactory.createHelper();
-      TransparencyClassSpec spec = getOrCreateSpec(className);
+      TransparencyClassSpec spec = getOrCreateSpec(classInfo.getName());
 
       if (forcePortable) {
         if (spec.getInstrumentationAction() == TransparencyClassSpec.NOT_SET) {
           spec.setInstrumentationAction(TransparencyClassSpec.PORTABLE);
         } else {
-          logger.info("Not making " + className + " forcefully portable");
+          logger.info("Not making " + classInfo.getName() + " forcefully portable");
         }
       }
 
-      ClassAdapter dsoAdapter = new TransparencyClassAdapter(spec, writer, mgrHelper, lgr, caller, portability);
+      ClassAdapter dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, mgrHelper, lgr, caller,
+                                                             portability);
       ClassAdapterFactory factory = spec.getCustomClassAdapter();
       ClassVisitor cv;
-      if (factory == null) {
+      if(factory==null) {
         cv = dsoAdapter;
       } else {
         cv = factory.create(dsoAdapter, caller);
       }
-
+      
       return new SerialVersionUIDAdder(cv);
     }
   }
@@ -1646,15 +1649,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     return rv;
   }
-
+  
   public void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException {
     logger.info("Verifying boot jar contents...");
-    int missingCount = 0;
+    int missingCount         = 0;
     int preInstrumentedCount = 0;
-    int bootJarPopulation = 0;
+    int bootJarPopulation    = 0;
     try {
-      BootJar bootJar = BootJar.getDefaultBootJarForReading();
-      Set bjClasses = bootJar.getAllPreInstrumentedClasses();
+      BootJar bootJar   = BootJar.getDefaultBootJarForReading();
+      Set bjClasses     = bootJar.getAllPreInstrumentedClasses();
       bootJarPopulation = bjClasses.size();
       for (Iterator i = getAllSpecs(); i.hasNext();) {
         TransparencyClassSpec classSpec = (TransparencyClassSpec) i.next();
@@ -1676,15 +1679,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                            "BootJarException occurred while attempting to verify the contents of the boot jar.",
                                            bjex);
     } catch (IOException ioex) {
-      throw new UnverifiedBootJarException(
-                                           "IOException occurred while attempting to verify the contents of the boot jar.",
-                                           ioex);
+      throw new UnverifiedBootJarException("IOException occurred while attempting to verify the contents of the boot jar.", ioex);
     }
     logger.info("Number of classes in the DSO boot jar:" + bootJarPopulation);
     logger.info("Number of classes expected to be in the DSO boot jar:" + preInstrumentedCount);
     logger.info("Number of classes found missing from the DSO boot jar:" + missingCount);
-    if (missingCount > 0) { throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount
-                                                                 + " pre-instrumented class(es) found missing."); }
+    if (missingCount > 0) {
+      throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount + " pre-instrumented class(es) found missing.");
+    }
   }
 
   public Iterator getAllSpecs() {

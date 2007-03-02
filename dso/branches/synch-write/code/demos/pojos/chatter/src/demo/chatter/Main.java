@@ -33,16 +33,26 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 
 public class Main extends JFrame implements ActionListener, ChatterDisplay {
+	private static final String CHATTER_SYSTEM = "SYSTEM";
+
 	private final ChatManager chatManager = new ChatManager();
+
 	private final JTextPane display = new JTextPane();
+
 	private User user;
 
 	private final DefaultListModel listModel = new DefaultListModel();
+
+	private final JList buddyList = new JList(listModel);
+
+	private boolean isServerDown = false;
 
 	public Main() {
 		try {
 			final String nodeId = registerForNotifications();
 			user = new User(nodeId, this);
+			populateCurrentUsers();
+			login();
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
@@ -51,28 +61,30 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final Container content = getContentPane();
 
-		display.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 9));
+		display.setFont(new Font("Andale Mono", Font.PLAIN, 9));
 		display.setEditable(false);
 		display.setRequestFocusEnabled(false);
 
 		final JTextField input = new JTextField();
-		input.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 9));
+		input.setFont(new Font("Andale Mono", Font.PLAIN, 9));
 		input.addActionListener(this);
 		final JScrollPane scroll = new JScrollPane(display);
 		final Random r = new Random();
-		final JLabel buddy = new JLabel(user.getName(),
-				new ImageIcon(getClass().getResource(
-						"/images/buddy" + r.nextInt(10) + ".gif")), JLabel.LEFT);
-		buddy.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 16));
-		buddy.setVerticalTextPosition(JLabel.CENTER);
+		final JLabel avatar = new JLabel(user.getName() + " (node id: "
+				+ user.getNodeId() + ")", new ImageIcon(getClass().getResource(
+				"/images/buddy" + r.nextInt(10) + ".gif")), JLabel.LEFT);
+		avatar.setForeground(Color.WHITE);
+		avatar.setFont(new Font("Georgia", Font.PLAIN, 16));
+		avatar.setVerticalTextPosition(JLabel.CENTER);
 		final JPanel buddypanel = new JPanel();
-		buddypanel.setBackground(Color.WHITE);
+		buddypanel.setBackground(Color.DARK_GRAY);
 		buddypanel.setLayout(new BorderLayout());
-		buddypanel.add(buddy, BorderLayout.CENTER);
+		buddypanel.add(avatar, BorderLayout.CENTER);
 
 		final JPanel buddyListPanel = new JPanel();
-		final JList buddyList = new JList(listModel);
+		buddyListPanel.setBackground(Color.WHITE);
 		buddyListPanel.add(buddyList);
+		buddyList.setFont(new Font("Andale Mono", Font.BOLD, 9));
 
 		content.setLayout(new BorderLayout());
 		content.add(buddypanel, BorderLayout.NORTH);
@@ -82,13 +94,9 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		pack();
 
 		setTitle("Chatter: " + user.getName());
-		setSize(new Dimension(300, 400));
+		setSize(new Dimension(600, 400));
 		setVisible(true);
-
 		input.requestFocus();
-
-		populateCurrentUsers();
-		login();
 	}
 
 	private void populateCurrentUsers() {
@@ -97,49 +105,109 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 			listModel
 					.addElement(new String(((User) currentUsers[i]).getName()));
 		}
+		//this.repaint();
 	}
 
 	public void actionPerformed(final ActionEvent e) {
 		final JTextField input = (JTextField) e.getSource();
 		final String message = input.getText();
 		input.setText("");
-		final Thread sender = new Thread(new Runnable() {
+		(new Thread() {
 			public void run() {
 				chatManager.send(user, message);
 			}
-		});
-		sender.start();
+		}).start();
+
+		if (isServerDown) {
+			updateMessage(user.getName(), message, true);
+		}
 	}
 
 	void login() {
-		final Message[] messages = chatManager.getMessages();
-		for (int i = 0; i < messages.length; i++) {
-			user.newMessage(messages[i]);
-		}
-
+		// Uncomment this section if you want incoming clients
+		// to see the history of messages.
+		// --- CODE BEGINS HERE ---
+		//final Message[] messages = chatManager.getMessages();
+		//for (int i = 0; i < messages.length; i++) {
+		//	user.newMessage(messages[i]);
+		//}
+		// --- CODE ENDS HERE ---
 		synchronized (chatManager) {
-			echo("registering: " + user + ", nodeId: " + user.getNodeId());
 			chatManager.registerUser(user);
 		}
-
 	}
 
-	public static void echo(final String msg) {
-		System.err.println(msg);
-	}
-
-	public static void main(final String[] args) {
-
+	public void handleConnectedServer() {
+		isServerDown = false;
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				new Main();
+				Main.this.buddyList.setVisible(true);
+				Main.this.buddyList.setEnabled(true);
+			}
+		});
+	}
+
+	public void handleDisconnectedServer() {
+		isServerDown = true;
+		updateMessage("The server is down; all of your messages will be queued until the server goes back up again.");
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				Main.this.buddyList.setVisible(false);
+				Main.this.buddyList.setEnabled(false);
+			}
+		});
+	}
+
+	public void handleDisconnectedUser(final String nodeId) {
+		final String username = chatManager.removeUser(nodeId);
+		listModel.removeElement(username);
+	}
+
+	public void handleNewUser(final String username) {
+		listModel.addElement(username);
+	}
+
+	private void updateMessage(final String message) {
+		updateMessage(CHATTER_SYSTEM, message, true);
+	}
+
+	public void updateMessage(final String username, final String message, final boolean isOwnMessage) {
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					final Document doc = display.getDocument();
+					final Style style = display.addStyle("Style", null);
+
+					if (isOwnMessage) {
+						StyleConstants.setItalic(style, true);
+						StyleConstants.setForeground(style, Color.LIGHT_GRAY);
+						StyleConstants.setFontSize(style, 9);
+					}
+
+					if (username.equals(CHATTER_SYSTEM)) {
+						StyleConstants.setItalic(style, true);
+						StyleConstants.setForeground(style, Color.RED);
+					} else {
+						StyleConstants.setBold(style, true);
+						doc.insertString(doc.getLength(), username + ": ",
+								style);
+					}
+
+					StyleConstants.setBold(style, false);
+					doc.insertString(doc.getLength(), message, style);
+					doc.insertString(doc.getLength(), "\n", style);
+
+					display.setCaretPosition(doc.getLength());
+				} catch (final javax.swing.text.BadLocationException ble) {
+					System.err.println(ble.getMessage());
+				}
 			}
 		});
 	}
 
 	/**
 	 * Registers this client for JMX notifications.
-	 * 
+	 *
 	 * @returns This clients Node ID
 	 */
 	private String registerForNotifications() throws Exception {
@@ -197,8 +265,12 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 			public void handleNotification(Notification notification,
 					Object handback) {
 				String nodeId = notification.getMessage();
-				echo("received msg: " + notification);
-				if (notification.getType().endsWith("nodeDisconnected")) {
+				if (notification.getType().endsWith("thisNodeConnected")) {
+					handleConnectedServer();
+				}
+				if (notification.getType().endsWith("thisNodeDisconnected")) {
+					handleDisconnectedServer();
+				} else if (notification.getType().endsWith("nodeDisconnected")) {
 					handleDisconnectedUser(nodeId);
 				}
 			}
@@ -210,47 +282,11 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay {
 		return (server.getAttribute(clusterBean, "NodeId")).toString();
 	}
 
-	public void handleDisconnectedUser(final String nodeId) {
-		final String username = chatManager.removeUser(nodeId);
-		listModel.removeElement(username);
-	}
-
-	public void handleNewUser(final String username) {
-		echo("Adding user: " + username);
-		listModel.addElement(username);
-	}
-
-	public void updateMessage(final String username, final String message) {
+	public static void main(final String[] args) {
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				try {
-					final Document doc = display.getDocument();
-					final Style style = display.addStyle("Style", null);
-
-					if (user.getName().equals(username)) {
-						StyleConstants.setItalic(style, true);
-						StyleConstants.setForeground(style, Color.LIGHT_GRAY);
-						StyleConstants.setFontSize(style, 9);
-					} else {
-						if (user.equals(username)) {
-							StyleConstants.setItalic(style, true);
-							StyleConstants.setForeground(style, Color.GRAY);
-						}
-						StyleConstants.setBold(style, true);
-						doc.insertString(doc.getLength(), username + ": ",
-								style);
-					}
-
-					StyleConstants.setBold(style, false);
-					doc.insertString(doc.getLength(), message, style);
-					doc.insertString(doc.getLength(), "\n", style);
-
-					display.setCaretPosition(doc.getLength());
-				} catch (final javax.swing.text.BadLocationException ble) {
-					System.err.println(ble.getMessage());
-				}
+				new Main();
 			}
 		});
-
 	}
 }
