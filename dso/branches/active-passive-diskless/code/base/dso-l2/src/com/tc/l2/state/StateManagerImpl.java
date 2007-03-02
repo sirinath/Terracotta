@@ -144,6 +144,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
   }
 
   public void moveNodeToPassiveStandby(NodeID nodeID) {
+    logger.info("Requesting node " + nodeID + " to move to " + PASSIVE_STANDBY);
     GroupMessage msg = ClusterStateMessageFactory.createMoveToPassiveStandbyMessage(EnrollmentFactory
         .createTrumpEnrollment(myNodeId));
     try {

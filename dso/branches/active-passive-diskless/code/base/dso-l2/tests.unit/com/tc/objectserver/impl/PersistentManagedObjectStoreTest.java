@@ -154,5 +154,9 @@ public class PersistentManagedObjectStoreTest extends TestCase {
       }
     }
 
+    public Map loadRootNamesToIDs() {
+      return null;
+    }
+
   }
 }

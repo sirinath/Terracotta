@@ -4,37 +4,46 @@
  */
 package com.tc.l2.msg;
 
+import com.tc.async.api.EventContext;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.object.ObjectID;
+import com.tc.object.dna.impl.ObjectDNAImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
-public class TransactionMessage extends AbstractGroupMessage {
+public class ObjectSyncMessage extends AbstractGroupMessage implements EventContext {
 
   public static final int        MANAGED_OBJECT_SYNC_TYPE = 0;
-  
+
   private Set                    oids;
   private int                    dnaCount;
   private TCByteBuffer[]         dnas;
   private ObjectStringSerializer serializer;
+  private Map                    rootsMap;
 
-  public TransactionMessage() {
+  public ObjectSyncMessage() {
     // Make serialization happy
     super(-1);
   }
 
-  public TransactionMessage(int type) {
+  public ObjectSyncMessage(int type) {
     super(type);
   }
 
@@ -42,27 +51,59 @@ public class TransactionMessage extends AbstractGroupMessage {
     Assert.assertEquals(MANAGED_OBJECT_SYNC_TYPE, msgType);
     readObjectIDS(in);
     dnaCount = in.readInt();
+    readRootsMap(in);
     readSerializer(in);
     this.dnas = readByteBuffers(in);
-    throw new AssertionError("Summa");
   }
 
   protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
     Assert.assertEquals(MANAGED_OBJECT_SYNC_TYPE, msgType);
     writeObjectIDS(out);
     out.writeInt(dnaCount);
+    writeRootsMap(out);
     writeSerializer(out);
     writeByteBuffers(out, dnas);
+    recycle(dnas);
+    dnas = null;
+  }
+
+  private void writeRootsMap(ObjectOutput out) throws IOException {
+    out.writeInt(rootsMap.size());
+    for (Iterator i = rootsMap.entrySet().iterator(); i.hasNext();) {
+      Entry e = (Entry) i.next();
+      out.writeUTF((String) e.getKey());
+      out.writeLong(((ObjectID)e.getValue()).toLong());
+    }
+  }
+  
+  private void readRootsMap(ObjectInput in) throws IOException {
+    int size = in.readInt();
+    if(size == 0) {
+      this.rootsMap = Collections.EMPTY_MAP;
+    } else {
+      this.rootsMap = new HashMap(size);
+      for (int i = 0; i < size; i++) {
+        this.rootsMap.put(in.readUTF(), new ObjectID(in.readLong()));
+      }
+    }
+  }
+
+
+  private void recycle(TCByteBuffer[] buffers) {
+    for (int i = 0; i < buffers.length; i++) {
+      buffers[i].recycle();
+    }
   }
 
   private void writeSerializer(ObjectOutput out) throws IOException {
     TCByteBufferOutputStream tcbo = new TCByteBufferOutputStream();
     serializer.serializeTo(tcbo);
     writeByteBuffers(out, tcbo.toArray());
+    tcbo.recycle();
   }
 
   private void readSerializer(ObjectInput in) throws IOException {
-    TCByteBuffer buffers[]  = readByteBuffers(in);
+    TCByteBuffer buffers[] = readByteBuffers(in);
     serializer = new ObjectStringSerializer();
     serializer.deserializeFrom(new TCByteBufferInputStream(buffers));
   }
@@ -74,10 +115,10 @@ public class TransactionMessage extends AbstractGroupMessage {
       int length = in.readInt();
       byte bytes[] = new byte[length];
       int start = 0;
-      while(length > 0) {
+      while (length > 0) {
         int read = in.read(bytes, start, length);
-        start+=read;
-        length-=read;
+        start += read;
+        length -= read;
       }
       buffers[i] = TCByteBufferFactory.wrap(bytes);
     }
@@ -110,11 +151,51 @@ public class TransactionMessage extends AbstractGroupMessage {
     }
   }
 
-  public void initialize(Set dnaOids, int count, TCByteBuffer[] serializedDNAs, ObjectStringSerializer objectSerializer) {
+  public void initialize(Set dnaOids, int count, TCByteBuffer[] serializedDNAs,
+                         ObjectStringSerializer objectSerializer, Map roots) {
     this.oids = dnaOids;
     this.dnaCount = count;
     this.dnas = serializedDNAs;
     this.serializer = objectSerializer;
+    this.rootsMap = roots;
+  }
+
+  public int getDnaCount() {
+    return dnaCount;
+  }
+
+  public Set getOids() {
+    return oids;
+  }
+
+  public ObjectStringSerializer getSerializer() {
+    return serializer;
+  }
+
+  public Map getRootsMap() {
+    return rootsMap;
+  }
+
+  /**
+   * This method calls returns a list of DNAs that can be applied to ManagedObjects. This method could only be called
+   * once. It throws an AssertionError if you ever call this twice
+   */
+  public List getDNAs() {
+    Assert.assertNotNull(this.dnas);
+    TCByteBufferInputStream toi = new TCByteBufferInputStream(this.dnas);
+    ArrayList objectDNAs = new ArrayList(dnaCount);
+    for (int i = 0; i < dnaCount; i++) {
+      ObjectDNAImpl dna = new ObjectDNAImpl(serializer, false);
+      try {
+        dna.deserializeFrom(toi);
+      } catch (IOException e) {
+        throw new AssertionError(e);
+      }
+      Assert.assertFalse(dna.isDelta());
+      objectDNAs.add(dna);
+    }
+    this.dnas = null;
+    return objectDNAs;
   }
 
 }

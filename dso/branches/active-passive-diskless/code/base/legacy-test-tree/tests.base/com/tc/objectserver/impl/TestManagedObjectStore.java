@@ -10,6 +10,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinter;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public class TestManagedObjectStore implements ManagedObjectStore {
@@ -84,6 +85,10 @@ public class TestManagedObjectStore implements ManagedObjectStore {
 
   public long nextObjectIDBatch(int batchSize) {
     throw new RuntimeException("Implement me!");
+  }
+
+  public Map getRootNamesToIDsMap() {
+    return null;
   }
 
 }

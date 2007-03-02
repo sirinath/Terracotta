@@ -28,8 +28,10 @@ import com.tc.util.ObjectIDSet2;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase implements ManagedObjectPersistor {
@@ -154,6 +156,25 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       cursor = rootDB.openCursor(pt2nt(tx), rootDBCursorConfig);
       while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
         rv.add(getStringData(key));
+      }
+      cursor.close();
+      tx.commit();
+    } catch (Throwable t) {
+      throw new DBException(t);
+    }
+    return rv;
+  }
+
+  public Map loadRootNamesToIDs() {
+    Map rv = new HashMap();
+    Cursor cursor = null;
+    try {
+      PersistenceTransaction tx = ptp.newTransaction();
+      DatabaseEntry key = new DatabaseEntry();
+      DatabaseEntry value = new DatabaseEntry();
+      cursor = rootDB.openCursor(pt2nt(tx), rootDBCursorConfig);
+      while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+        rv.put(getStringData(key),getObjectIDData(value));
       }
       cursor.close();
       tx.commit();

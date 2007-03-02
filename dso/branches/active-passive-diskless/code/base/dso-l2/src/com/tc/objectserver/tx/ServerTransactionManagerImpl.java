@@ -152,16 +152,26 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     final TransactionID txnID = txn.getTransactionID();
     final List changes = txn.getChanges();
 
-    // There could potentically be a small leak if the clients crash and then shutdownClient() called before
-    // apply() is called. Will create a TransactionAccount which will never get removed.
-    TransactionAccount ci = getOrCreateTransactionAccount(channelID);
+    TransactionAccount ci;
+    if (txn.isPassive()) {
+      ci = getOrCreateNullTransactionAccount(channelID);
+    } else {
+      // There could potentically be a small leak if the clients crash and then shutdownClient() called before
+      // apply() is called. Will create a TransactionAccount which will never get removed.
+      ci = getOrCreateTransactionAccount(channelID);
+    }
     ci.applyStarted(txnID);
 
     for (Iterator i = changes.iterator(); i.hasNext();) {
-      DNA change = new VersionizedDNAWrapper((DNA) i.next(), gtxID.toLong(), true);
+      DNA orgDNA = (DNA) i.next();
+      long version = orgDNA.getVersion();
+      if (version == DNA.NULL_VERSION) {
+        version = gtxID.toLong();
+      }
+      DNA change = new VersionizedDNAWrapper(orgDNA, version, true);
       ManagedObject mo = (ManagedObject) objects.get(change.getObjectID());
       mo.apply(change, txnID, includeIDs, instanceMonitor);
-      if (!change.isDelta()) {
+      if (!change.isDelta() && !txn.isPassive()) {
         // Only New objects reference are added here
         stateManager.addReference(txn.getChannelID(), mo.getID());
       }
@@ -178,7 +188,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       }
     }
     transactionRateCounter.increment();
-    channelStats.notifyTransaction(channelID);
+    if (!channelID.isNull()) channelStats.notifyTransaction(channelID);
 
   }
 
@@ -231,12 +241,30 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private TransactionAccount getOrCreateTransactionAccount(ChannelID clientID) {
     synchronized (transactionAccounts) {
       TransactionAccount ta = (TransactionAccount) transactionAccounts.get(clientID);
-      if (ta == null) {
-        transactionAccounts.put(clientID, (ta = new TransactionAccount(clientID)));
+      if ((ta == null) || (ta instanceof NullTransactionAccount)) {
+        Object old = transactionAccounts.put(clientID, (ta = new TransactionAccountImpl(clientID)));
+        if(old != null ) {
+          logger.info("Transaction Account changed from : " + old + " to " + ta);
+        }
       }
       return ta;
     }
   }
+  
+  private TransactionAccount getOrCreateNullTransactionAccount(ChannelID clientID) {
+    synchronized (transactionAccounts) {
+      TransactionAccount ta = (TransactionAccount) transactionAccounts.get(clientID);
+      if ((ta == null) || (ta instanceof TransactionAccountImpl)) {
+        Object old = transactionAccounts.put(clientID, (ta = new NullTransactionAccount(clientID)));
+        if(old != null ) {
+          logger.info("Transaction Account changed from : " + old + " to " + ta);
+        }
+      }
+      return ta;
+      
+    }
+  }
+
 
   private TransactionAccount getTransactionAccount(ChannelID clientID) {
     return (TransactionAccount) transactionAccounts.get(clientID);

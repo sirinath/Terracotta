@@ -9,6 +9,7 @@ import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet2;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public interface ManagedObjectPersistor {
@@ -34,5 +35,7 @@ public interface ManagedObjectPersistor {
   public void deleteAllObjectsByID(PersistenceTransaction tx, Collection ids);
   
   public void prettyPrint(PrettyPrinter out);
+
+  public Map loadRootNamesToIDs();
 
 }

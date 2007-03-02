@@ -8,11 +8,13 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.context.SyncObjectsRequest;
-import com.tc.l2.msg.TransactionMessage;
-import com.tc.l2.msg.TransactionMessageFactory;
+import com.tc.l2.msg.ObjectSyncMessage;
+import com.tc.l2.msg.ObjectSyncMessageFactory;
 import com.tc.l2.objectserver.L2ObjectStateManager;
+import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupException;
@@ -25,6 +27,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
 
   private final L2ObjectStateManager objectStateManager;
   private GroupManager               groupManager;
+  private StateManager               stateManager;
 
   private Sink                       syncRequestSink;
 
@@ -35,8 +38,12 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) {
     if (context instanceof ManagedObjectSyncContext) {
       ManagedObjectSyncContext mosc = (ManagedObjectSyncContext) context;
-      if (sendObjects(mosc) && mosc.hasMore()) {
-        syncRequestSink.add(new SyncObjectsRequest(mosc.getNodeID()));
+      if (sendObjects(mosc)) {
+        if (mosc.hasMore()) {
+          syncRequestSink.add(new SyncObjectsRequest(mosc.getNodeID()));
+        } else {
+          stateManager.moveNodeToPassiveStandby(mosc.getNodeID());
+        }
       }
     } else {
       throw new AssertionError("Unknown context type : " + context.getClass().getName() + " : " + context);
@@ -45,10 +52,11 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
 
   private boolean sendObjects(ManagedObjectSyncContext mosc) {
     objectStateManager.close(mosc);
-    TransactionMessage msg = TransactionMessageFactory.createTransactionMessageFrom(mosc);
+    ObjectSyncMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
     try {
       this.groupManager.sendTo(mosc.getNodeID(), msg);
-      logger.info("Sent " + mosc.getDNACount() + " objects to " + mosc.getNodeID());
+      logger.info("Sent " + mosc.getDNACount() + " objects to " + mosc.getNodeID() + " roots = "
+                  + mosc.getRootsMap().size());
       return true;
     } catch (GroupException e) {
       logger.error("Removing " + mosc.getNodeID() + " from group because of Exception :", e);
@@ -60,7 +68,9 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.groupManager = oscc.getL2Coordinator().getGroupManager();
+    L2Coordinator l2Coordinator = oscc.getL2Coordinator();
+    this.groupManager = l2Coordinator.getGroupManager();
+    this.stateManager = l2Coordinator.getStateManager();
     this.syncRequestSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_STAGE).getSink();
   }
 

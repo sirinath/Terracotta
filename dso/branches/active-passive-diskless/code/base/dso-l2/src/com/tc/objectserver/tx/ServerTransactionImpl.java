@@ -120,4 +120,8 @@ public class ServerTransactionImpl implements ServerTransaction {
   public TxnBatchID getBatchID() {
     return batchID;
   }
+
+  public boolean isPassive() {
+    return false;
+  }
 }

@@ -10,6 +10,7 @@ import com.tc.text.PrettyPrintable;
 import com.tc.util.sequence.ObjectIDSequence;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public interface ManagedObjectStore extends ManagedObjectProvider, ObjectIDSequence, PrettyPrintable {
@@ -45,5 +46,7 @@ public interface ManagedObjectStore extends ManagedObjectProvider, ObjectIDSeque
   public void shutdown();
 
   public boolean inShutdown();
+
+  public Map getRootNamesToIDsMap();
 
 }

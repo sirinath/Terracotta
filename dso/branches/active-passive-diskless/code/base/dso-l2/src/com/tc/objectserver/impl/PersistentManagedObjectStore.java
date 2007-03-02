@@ -14,6 +14,7 @@ import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet2;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public class PersistentManagedObjectStore implements ManagedObjectStore {
@@ -46,6 +47,11 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
 
   public ObjectID getRootID(String name) {
     return objectPersistor.loadRootID(name);
+  }
+  
+
+  public Map getRootNamesToIDsMap() {
+    return objectPersistor.loadRootNamesToIDs();
   }
 
   public boolean containsObject(ObjectID id) {

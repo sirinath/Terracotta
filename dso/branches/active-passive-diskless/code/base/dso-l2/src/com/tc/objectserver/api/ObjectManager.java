@@ -14,6 +14,7 @@ import com.tc.text.PrettyPrintable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -82,6 +83,8 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
    * @return
    */
   public Iterator getRoots();
+  
+  public Map getRootNamesToIDsMap();
 
   public void createRoot(String name, ObjectID id);
 

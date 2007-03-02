@@ -14,6 +14,9 @@ import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.util.Assert;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,6 +26,7 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   private final Set                  oids;
   private final boolean              more;
   private final Sink                 nextSink;
+  private final Map                  rootsMap;
 
   private boolean                    isPending = false;
   private ObjectManagerLookupResults result;
@@ -35,6 +39,15 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
     this.oids = oids;
     this.more = more;
     this.nextSink = sink;
+    this.rootsMap = Collections.EMPTY_MAP;
+  }
+
+  public ManagedObjectSyncContext(NodeID nodeID, HashMap rootsMap, boolean more, Sink sink) {
+    this.nodeID = nodeID;
+    this.oids = new HashSet(rootsMap.values());
+    this.more = more;
+    this.nextSink = sink;
+    this.rootsMap = rootsMap;
   }
 
   public boolean isPendingRequest() {
@@ -55,6 +68,10 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
 
   public Set getOIDs() {
     return oids;
+  }
+  
+  public Map getRootsMap() {
+    return rootsMap;
   }
 
   public Map getObjects() {

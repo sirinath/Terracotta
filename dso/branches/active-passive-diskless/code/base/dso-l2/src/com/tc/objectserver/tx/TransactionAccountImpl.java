@@ -20,11 +20,11 @@ import java.util.Set;
  * transaction.
  * 
  */
-public class TransactionAccount {
+public class TransactionAccountImpl implements TransactionAccount {
   final ChannelID   clientID;
   private final Map waitees = Collections.synchronizedMap(new HashMap());
 
-  public TransactionAccount(ChannelID clientID) {
+  public TransactionAccountImpl(ChannelID clientID) {
     this.clientID = clientID;
   }
 
