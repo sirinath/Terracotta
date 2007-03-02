@@ -1,14 +1,20 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package refreshall;
 
+import java.io.IOException;
+
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
-import org.eclipse.ui.console.IOConsole;
-import org.eclipse.ui.console.IOConsoleOutputStream;
+import org.eclipse.ui.console.MessageConsole;
+import org.eclipse.ui.console.MessageConsoleStream;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -17,23 +23,41 @@ import org.osgi.framework.BundleContext;
  */
 public class Activator extends AbstractUIPlugin {
 
+  public enum ConsoleStream {
+
+    DEFAULT, STDOUT, STDERR;
+
+    public MessageConsoleStream stream() {
+      return stream;
+    }
+
+    private MessageConsoleStream stream;
+    private Color                color;
+
+  }
+
   // The plug-in ID
-  public static final String    PLUGIN_ID = "RefreshAll";
+  public static final String PLUGIN_ID = "org.terracotta.tcdev";
 
   // The shared instance
-  private static Activator      plugin;
+  private static Activator   plugin;
 
-  private IOConsole             console;
+  private static final RGB   BLACK     = new RGB(0, 0, 0);
+  private static final RGB   BLUE      = new RGB(0, 0, 255);
+  private static final RGB   RED       = new RGB(255, 0, 0);
 
-  private IOConsoleOutputStream consoleStream;
+  private MessageConsole     console;
 
   public Activator() {
     plugin = this;
   }
 
   public void start(BundleContext context) throws Exception {
-    console = new IOConsole("TCBuild", null);
-    consoleStream = console.newOutputStream();
+    console = new MessageConsole("Terracotta build system", null);
+    final Device device = console.getFont() != null ? console.getFont().getDevice() : null;
+    initStream(ConsoleStream.DEFAULT, device, BLACK);
+    initStream(ConsoleStream.STDOUT, device, BLUE);
+    initStream(ConsoleStream.STDERR, device, RED);
     final IConsoleManager mgr = ConsolePlugin.getDefault().getConsoleManager();
     mgr.addConsoles(new IConsole[] { console });
     super.start(context);
@@ -44,7 +68,25 @@ public class Activator extends AbstractUIPlugin {
     final IConsoleManager mgr = ConsolePlugin.getDefault().getConsoleManager();
     mgr.removeConsoles(new IConsole[] { console });
     console = null;
+    destroyStream(ConsoleStream.DEFAULT);
+    destroyStream(ConsoleStream.STDOUT);
+    destroyStream(ConsoleStream.STDERR);
     super.stop(context);
+  }
+
+  private void initStream(final ConsoleStream consoleStream, final Device device, final RGB rgb) {
+    consoleStream.color = new Color(device, rgb);
+    consoleStream.stream = console.newMessageStream();
+    consoleStream.stream.setActivateOnWrite(true);
+    consoleStream.stream.setColor(consoleStream.color);
+  }
+
+  private void destroyStream(final ConsoleStream consoleStream) throws IOException {
+    consoleStream.stream().setColor(null);
+    consoleStream.stream.close();
+    consoleStream.color.dispose();
+    consoleStream.color = null;
+    consoleStream.stream = null;
   }
 
   public static Activator getDefault() {
@@ -53,10 +95,6 @@ public class Activator extends AbstractUIPlugin {
 
   public static ImageDescriptor getImageDescriptor(String path) {
     return imageDescriptorFromPlugin(PLUGIN_ID, path);
-  }
-
-  public IOConsoleOutputStream getConsoleStream() {
-    return consoleStream;
   }
 
 }
