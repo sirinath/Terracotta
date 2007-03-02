@@ -747,6 +747,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     if (holder != null && holder.isHolding() && ((holder.getLevel() & lockLevel) == lockLevel)) {
       holder.makeLastAwardSynchronous(lockLevel);
       System.err.println("********* SYNCHRONOUS WRITE!");
+      logger.info("********* SYNCHRONOUS WRITE!");
     }
   }
 
