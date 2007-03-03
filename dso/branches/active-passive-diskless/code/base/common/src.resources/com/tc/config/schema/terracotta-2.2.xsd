@@ -199,16 +199,32 @@
 
   <xs:complexType name="distributed-methods">
     <xs:sequence>
-      <xs:element name="method-expression" type="method-name-expression" maxOccurs="unbounded" />
+      <xs:element name="method-expression" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="method-name-expression">
+              <xs:attribute name="run-on-all-nodes" type="xs:boolean" use="optional" default="true"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="web-applications">
     <xs:sequence>
-      <xs:element name="web-application" type="web-application-name-expression" maxOccurs="unbounded" />
+      <xs:element name="web-application" type="web-application" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
-
+  
+  <xs:complexType name="web-application">
+    <xs:simpleContent>
+      <xs:extension base="web-application-name-expression">
+        <xs:attribute name="synchronous-write" type="xs:boolean" use="optional" default="false" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  
   <xs:complexType name="instrumentation-logging">
     <xs:all>
       <xs:element name="class" type="xs:boolean" minOccurs="0" default="false" />
@@ -302,12 +318,12 @@
     </xs:all>
   </xs:complexType>
 
-  <xs:complexType name="plugin">
+  <xs:complexType name="module">
     <xs:annotation>
       <xs:documentation>
-        Identifies a plugin/version to use, this plugin must be located
+        Identifies a module/version to use, this module must be located
         in either a) the default repository shipped with Terracotta or
-        b) one of the repositories listed in the <![CDATA[<plugins>]]>
+        b) one of the repositories listed in the <![CDATA[<module>]]>
         section.
       </xs:documentation>
     </xs:annotation>
@@ -315,10 +331,10 @@
     <xs:attribute name="version" type="xs:string" />
   </xs:complexType>
 
-  <xs:complexType name="plugins">
+  <xs:complexType name="modules">
     <xs:sequence maxOccurs="unbounded">
       <xs:element name="repository" type="xs:anyURI" minOccurs="0" />
-      <xs:element name="plugin" type="plugin" minOccurs="0" />
+      <xs:element name="module" type="module" minOccurs="0" />
     </xs:sequence>
   </xs:complexType>
 
@@ -581,11 +597,11 @@
       </xs:documentation>
     </xs:annotation>
     <xs:all>
-      <xs:element name="plugins" type="plugins"
+      <xs:element name="modules" type="modules"
         minOccurs="0">
         <xs:annotation>
           <xs:documentation>
-            This section contains the list of plugins to use in
+            This section contains the list of modules to use in
             the client.
           </xs:documentation>
         </xs:annotation>

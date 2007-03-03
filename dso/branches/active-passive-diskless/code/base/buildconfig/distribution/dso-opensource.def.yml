@@ -8,7 +8,7 @@ bundled_jres:
       install_directory: jre
       version: 1.5.0_10
 bundled_demos:
-  - dso:
+  - pojos:
       install_directory: samples/pojos
       manifest:
         - chatter
@@ -89,7 +89,7 @@ bundled_components:
         - management
         - thirdparty
         - ui-configurator
-bundled_plugins:
+bundled_modules:
   - core:
       install_directory: modules
       manifest:

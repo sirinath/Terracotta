@@ -356,14 +356,14 @@ class SubtreeTestRun
 
         @jvmargs = [ ]
 
-        plugins_url = @build_results.plugins_home.to_url
+        modules_url = @build_results.modules_home.to_url
 
         # 'tc.tests.info.property-files' is set so that TestConfigObject knows which file to go read.
         @sysproperties = {
             "tc.base-dir" => @static_resources.root_dir.to_s,
             'java.awt.headless' => true,
             'tc.tests.info.property-files' => @testrun_results.build_configuration_file(@subtree).to_s,
-            "#{STATIC_PROPERTIES_PREFIX}plugins.url" => plugins_url
+            "#{STATIC_PROPERTIES_PREFIX}modules.url" => modules_url
         }
 
         @sysproperties['java.library.path'] = native_library_path.to_s unless native_library_path.to_s.blank?
@@ -389,10 +389,13 @@ class SubtreeTestRun
         # overwrite them as they go; this way, it's positive, instead of negative, feedback -- we only
         # count the test as having passed if we *know* it passed, rather than only counting it as
         # having failed if we *know* it failed. Much better.
-        puts "Writing out 'did-not-run' XML files for the %d test(s) in %s/%s..." % [ @found_tests.size, @subtree.build_module.name, @subtree.name ]
+        puts "Writing out 'did-not-run' XML files for the #{@found_tests.size} " +
+             "test(s) in #{@subtree.build_module.name}/#{@subtree.name}..."
         @found_tests.each do |found_test|
             class_name = @build_results.class_name_for_class_file(@subtree, found_test)
-            create_did_not_run_file(class_name, @testrun_results.results_file(@subtree, class_name)) unless FilePath.new(found_test).filename =~ /\$/
+            unless FilePath.new(found_test).filename =~ /\$/
+              create_did_not_run_file(class_name, @testrun_results.results_file(@subtree, class_name))
+            end
         end
 
         # Grep for current java processes for debugging
@@ -415,7 +418,7 @@ class SubtreeTestRun
     #
     # It's also just a bad idea in the case of running tests in Eclipse, the use of this variable
     # is commented out below; there is a comment there.
-    NON_CLASSPATH_LOADABLE_SYSTEM_PROPERTIES = [ 'java.library.path', 'tc.config', 'tc.dso.globalmode', "#{STATIC_PROPERTIES_PREFIX}plugins.url" ]
+    NON_CLASSPATH_LOADABLE_SYSTEM_PROPERTIES = [ 'java.library.path', 'tc.config', 'tc.dso.globalmode', "#{STATIC_PROPERTIES_PREFIX}modules.url" ]
 
     # Prepares to have tests in this tree run externally (i.e., but Eclipse). This mostly just
     # sets up a properties file that contains a list of system properties for TestConfigObject
@@ -817,16 +820,10 @@ END
     # do a "ps auxwwww | grep java"
     # to be used in monkey environment ONLY
     def ps_grep_java
-        ps_cmd = case @build_environment.os_type(:nice)
-            when /windows/i: 'pv.exe -l | grep java | grep -v grep'
-            when /solaris/i: '/usr/ucb/ps auxwwww | grep java | grep -v grep'
-            else 'ps auxwwww | grep java | grep -v grep'
-        end
-
-        begin
-            java_processes = `#{ps_cmd}`
-        rescue
-            java_processes = ''
+        java_processes = case @build_environment.os_type(:nice)
+            when /windows/i: Registry[:platform].exec("#{Registry[:basedir]}/common/lib.tests.base.native/Windows/pv.exe", "-l").grep(/java/).to_s
+            when /solaris/i: `/usr/ucb/ps auxwwww | grep java | grep -v grep`
+            else `ps auxwwww | grep java | grep -v grep`
         end
         java_processes
     end

@@ -7,6 +7,7 @@ package com.tc.object.config;
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.object.Portability;
@@ -17,7 +18,7 @@ import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
-import com.terracottatech.config.Plugins;
+import com.terracottatech.config.Modules;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,7 +31,7 @@ import java.util.Map;
  */
 public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
-  boolean shouldBeAdapted(String fullName);
+  boolean shouldBeAdapted(ClassInfo classInfo);
 
   boolean isNeverAdaptable(String fullName);
 
@@ -44,22 +45,24 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   Iterator getAllUserDefinedBootSpecs();
 
-  TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, String className, InstrumentationLogger lgr,
-                                                    ClassLoader caller, final boolean forcePortable);
+  TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, ClassInfo classInfo,
+                                                    InstrumentationLogger lgr, ClassLoader caller,
+                                                    final boolean forcePortable);
 
-  ClassAdapter createClassAdapterFor(ClassWriter writer, String className, InstrumentationLogger lgr, ClassLoader caller);
+  ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
+                                     ClassLoader caller);
 
-  ClassAdapter createClassAdapterFor(ClassWriter writer, String className, InstrumentationLogger lgr,
+  ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller, boolean disableSuperClassTypeChecking);
 
   boolean isCallConstructorOnLoad(String className);
 
-  //String getChangeApplicatorClassNameFor(String className);
+  // String getChangeApplicatorClassNameFor(String className);
   Class getChangeApplicator(Class clazz);
-  
-  boolean isPortablePluginClass(Class clazz);
-  
-  void setPluginSpecs(PluginSpec[] pluginSpecs);
+
+  boolean isPortableModuleClass(Class clazz);
+
+  void setModuleSpecs(ModuleSpec[] pluginSpecs);
 
   TransparencyClassSpec getOrCreateSpec(String className);
 
@@ -135,12 +138,11 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   void addIncludePattern(String expression, boolean honorTransient);
 
   void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
-                                boolean honorVolatile);
+                         boolean honorVolatile);
 
   // Used for testing and Spring
-  void addIncludeAndLockIfRequired(String expression, boolean honorTransient,
-                                          boolean oldStyleCallConstructorOnLoad, boolean honorVolatile,
-                                          String lockExpression);
+  void addIncludeAndLockIfRequired(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
+                                   boolean honorVolatile, String lockExpression);
 
   // Used for testing
   void addExcludePattern(String expression);
@@ -157,7 +159,9 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   Collection getDSOSpringConfigs();
 
-  void addDistributedMethodCall(String methodExpression);
+  void addDistributedMethodCall(String string);
+
+  void addDistributedMethodCall(DistributedMethodSpec dms);
 
   Portability getPortability();
 
@@ -169,14 +173,19 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void addApplicationName(String name);
 
+  void addSynchronousWriteApplication(String name);
+
   void addInstrumentationDescriptor(InstrumentedClass classDesc);
 
-  Plugins getPluginsForInitialization();
-  
-  void addNewPlugin(String name, String version);
+  Modules getModulesForInitialization();
+
+  void addNewModule(String name, String version);
 
   boolean hasCustomAdapter(String fullName);
-  
+
   void addCustomAdapter(String name, ClassAdapterFactory adapterFactory);
+
+  int getSessionLockType(String appName);
+
 
 }

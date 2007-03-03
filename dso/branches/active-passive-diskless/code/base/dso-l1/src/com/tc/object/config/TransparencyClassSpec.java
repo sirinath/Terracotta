@@ -5,6 +5,7 @@
 package com.tc.object.config;
 
 import com.tc.asm.ClassVisitor;
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
@@ -85,9 +86,9 @@ public class TransparencyClassSpec {
     return configuration.getSpec(name);
   }
 
-  public boolean hasPhysicallyPortableSpecs(String clazzName) {
-    String name = clazzName.replace('/', '.');
-    return configuration.shouldBeAdapted(name) && !configuration.isLogical(name)
+  public boolean hasPhysicallyPortableSpecs(ClassInfo classInfo) {
+    String name = classInfo.getName();
+    return configuration.shouldBeAdapted(classInfo) && !configuration.isLogical(name)
            && (configuration.getSpec(name) != null)
            && (configuration.getSpec(name).getInstrumentationAction() != ADAPTABLE);
   }
@@ -159,19 +160,22 @@ public class TransparencyClassSpec {
   }
 
   public TransparencyClassSpec addDistributedMethodCall(String methodName, String description) {
+    return addDistributedMethodCall(methodName, description, true);
+  }
+
+  public TransparencyClassSpec addDistributedMethodCall(String methodName, String description, boolean runOnAllNodes) {
     if ("<init>".equals(methodName) || "<clinit>".equals(methodName)) { throw new AssertionError(
                                                                                                  "Initializers of class "
                                                                                                      + className
                                                                                                      + " cannot be participated in distrbuted method call and are ignored."); }
-
     StringBuffer sb = new StringBuffer("* ");
     sb.append(className);
     sb.append(".");
     sb.append(methodName);
     String arguments = ByteCodeUtil.methodDescriptionToMethodArgument(description);
     sb.append(arguments);
-    configuration.addDistributedMethodCall(sb.toString());
-
+    final DistributedMethodSpec dms = new DistributedMethodSpec(sb.toString(), runOnAllNodes);
+    configuration.addDistributedMethodCall(dms);
     return this;
   }
 
@@ -281,8 +285,6 @@ public class TransparencyClassSpec {
   }
 
   public void moveToLogical(TransparencyClassSpec superClassSpec) {
-    // System.err.println("### Moving to logical this:" + getClassName() + "; super:" + superClassSpec.getClassName());
-
     this.isLogical = true;
     String superClassLogicalExtendingClassName = superClassSpec.getLogicalExtendingClassName();
     if (superClassLogicalExtendingClassName == null) {

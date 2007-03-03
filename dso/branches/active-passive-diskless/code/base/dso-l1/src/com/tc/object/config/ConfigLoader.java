@@ -34,7 +34,9 @@ import com.terracottatech.config.SpringBean;
 import com.terracottatech.config.SpringDistributedEvent;
 import com.terracottatech.config.SpringPath;
 import com.terracottatech.config.TransientFields;
+import com.terracottatech.config.WebApplication;
 import com.terracottatech.config.WebApplications;
+import com.terracottatech.config.DistributedMethods.MethodExpression;
 
 import java.text.ParseException;
 import java.util.Arrays;
@@ -72,9 +74,12 @@ public class ConfigLoader {
 
       WebApplications webApplicationsList = dsoApplication.getWebApplications();
       if (webApplicationsList != null && webApplicationsList.getWebApplicationArray() != null) {
-        String[] webApplications = webApplicationsList.getWebApplicationArray();
+        WebApplication[] webApplications = webApplicationsList.getWebApplicationArray();
         for (int i = 0; i < webApplications.length; i++) {
-          config.addApplicationName(webApplications[i]);
+          config.addApplicationName(webApplications[i].getStringValue());
+          if (webApplications[i].getSynchronousWrite()) {
+            config.addSynchronousWriteApplication(webApplications[i].getStringValue());
+          }
         }
       }
 
@@ -184,11 +189,9 @@ public class ConfigLoader {
       return ConfigLockLevel.WRITE;
     } else if (LockLevel.CONCURRENT.equals(lockLevel)) {
       return ConfigLockLevel.CONCURRENT;
-    } else if (LockLevel.READ.equals(lockLevel)) { 
-      return ConfigLockLevel.READ; 
-      } else if (LockLevel.SYNCHRONOUS_WRITE.equals(lockLevel)) {
-        return ConfigLockLevel.SYNCHRONOUS_WRITE;
-      }
+    } else if (LockLevel.READ.equals(lockLevel)) {
+      return ConfigLockLevel.READ;
+    } else if (LockLevel.SYNCHRONOUS_WRITE.equals(lockLevel)) { return ConfigLockLevel.SYNCHRONOUS_WRITE; }
     throw Assert.failure("Unknown lock level " + lockLevel);
   }
 
@@ -251,9 +254,11 @@ public class ConfigLoader {
 
   private void loadDistributedMethods(DistributedMethods distributedMethods) {
     if (distributedMethods != null) {
-      String[] methodExpressions = distributedMethods.getMethodExpressionArray();
+      MethodExpression[] methodExpressions = distributedMethods.getMethodExpressionArray();
       for (int i = 0; methodExpressions != null && i < methodExpressions.length; i++) {
-        config.addDistributedMethodCall(methodExpressions[i]);
+        final MethodExpression me = methodExpressions[i];
+        final DistributedMethodSpec dms = new DistributedMethodSpec(me.getStringValue(), me.getRunOnAllNodes());
+        config.addDistributedMethodCall(dms);
       }
     }
   }
