@@ -25,6 +25,10 @@ public class DistributedEventsLoadTest extends AbstractDeploymentTest {
   private static final String  BEAN_NAME                     = "eventManager";
   
   private Deployment           deployment;
+    
+  public DistributedEventsLoadTest() {
+    disableAllUntil("2007-05-01");
+  }
 
   protected void setUp() throws Exception {
     super.setUp();
