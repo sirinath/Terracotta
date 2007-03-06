@@ -11,12 +11,12 @@ import com.tc.async.api.Sink;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.context.SyncObjectsRequest;
-import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.ObjectSyncMessageFactory;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -52,7 +52,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
 
   private boolean sendObjects(ManagedObjectSyncContext mosc) {
     objectStateManager.close(mosc);
-    ObjectSyncMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
+    AbstractGroupMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
     try {
       this.groupManager.sendTo(mosc.getNodeID(), msg);
       logger.info("Sent " + mosc.getDNACount() + " objects to " + mosc.getNodeID() + " roots = "

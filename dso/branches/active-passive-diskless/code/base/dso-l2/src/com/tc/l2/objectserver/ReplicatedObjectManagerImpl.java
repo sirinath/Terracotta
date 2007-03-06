@@ -19,13 +19,10 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
-import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.util.Assert;
 
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupEventsListener, GroupMessageListener {
@@ -67,11 +64,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       logger.error(e);
       throw new AssertionError(e);
     }
-  }
-
-  public void incomingTransactions(CommitTransactionMessage ctm, List txns, Collection serverTxnIDs,
-                                   Collection completedTxnIds) {
-    // TODO
   }
 
   public void nodeJoined(NodeID nodeID) {
@@ -154,5 +146,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     Assert.assertFalse(stateManager.isActiveCoordinator());
     Set knownIDs = objectManager.getAllObjectIDs();
     groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncResponseMessage(clusterMsg, knownIDs));
+  }
+
+  public boolean relayTransactions() {
+    return true;
   }
 }

@@ -20,9 +20,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class L2ObjectStateManager {
+public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
 
-  private static final TCLogger logger = TCLogging.getLogger(L2ObjectStateManager.class);
+  private static final TCLogger logger = TCLogging.getLogger(L2ObjectStateManagerImpl.class);
 
   CopyOnWriteArrayMap           nodes  = new CopyOnWriteArrayMap();
 
@@ -34,14 +34,14 @@ public class L2ObjectStateManager {
   }
 
   public int setExistingObjectsList(NodeID nodeID, Set oids, ObjectManager objectManager) {
-    L2ObjectState l2State = new L2ObjectState(nodeID);
+    L2ObjectStateimpl l2State = new L2ObjectStateimpl(nodeID);
     nodes.put(nodeID, l2State);
     int missing = l2State.initialize(oids, objectManager);
     return missing;
   }
 
   public ManagedObjectSyncContext getSomeObjectsToSyncContext(NodeID nodeID, int count, Sink sink) {
-    L2ObjectState l2State = (L2ObjectState) nodes.get(nodeID);
+    L2ObjectStateimpl l2State = (L2ObjectStateimpl) nodes.get(nodeID);
     if (l2State != null) {
       return l2State.getSomeObjectsToSyncContext(count, sink);
     } else {
@@ -51,7 +51,7 @@ public class L2ObjectStateManager {
   }
 
   public void close(ManagedObjectSyncContext mosc) {
-    L2ObjectState l2State = (L2ObjectState) nodes.get(mosc.getNodeID());
+    L2ObjectStateimpl l2State = (L2ObjectStateimpl) nodes.get(mosc.getNodeID());
     if (l2State != null) {
       l2State.close(mosc);
     } else {
@@ -59,7 +59,11 @@ public class L2ObjectStateManager {
     }
   }
 
-  private static final class L2ObjectState {
+  public L2ObjectState[] getL2ObjectStates() {
+    return (L2ObjectState[]) nodes.valuesArray();
+  }
+
+  private static final class L2ObjectStateimpl implements L2ObjectState {
 
     private final NodeID             nodeID;
     // XXX:: Tracking just the missing Oids is better in terms of memory overhead, but this might lead to difficult race
@@ -71,24 +75,24 @@ public class L2ObjectStateManager {
 
     private static final State       UNINITIALIZED  = new State("UNINITALIZED");
     private static final State       NOT_IN_SYNC    = new State("NOT_IN_SYNC");
-    private static final State       INITIALIZED    = new State("INITALIZED");
+    private static final State       IN_SYNC        = new State("IN_SYNC");
 
     private ManagedObjectSyncContext syncingContext = null;
 
-    public L2ObjectState(NodeID nodeID) {
+    public L2ObjectStateimpl(NodeID nodeID) {
       this.nodeID = nodeID;
     }
 
-    public synchronized void close(ManagedObjectSyncContext mosc) {
+    private synchronized void close(ManagedObjectSyncContext mosc) {
       Assert.assertTrue(mosc == syncingContext);
       mosc.close();
       if (missingOids.isEmpty()) {
-        state = INITIALIZED;
+        state = IN_SYNC;
       }
       syncingContext = null;
     }
 
-    public synchronized ManagedObjectSyncContext getSomeObjectsToSyncContext(int count, Sink sink) {
+    private synchronized ManagedObjectSyncContext getSomeObjectsToSyncContext(int count, Sink sink) {
       Assert.assertTrue(state == NOT_IN_SYNC);
       Assert.assertNull(syncingContext);
       if (isRootsMissing()) { return getMissingRootsSynccontext(sink); }
@@ -115,7 +119,7 @@ public class L2ObjectStateManager {
       return !this.missingRoots.isEmpty();
     }
 
-    public synchronized int initialize(Set oidsFromL2, ObjectManager objectManager) {
+    private synchronized int initialize(Set oidsFromL2, ObjectManager objectManager) {
       this.missingOids = objectManager.getAllObjectIDs();
       this.missingRoots = objectManager.getRootNamesToIDsMap();
       int objectCount = missingOids.size();
@@ -136,12 +140,20 @@ public class L2ObjectStateManager {
       }
       int missingCount = missingOids.size();
       if (missingCount == 0) {
-        state = INITIALIZED;
+        state = IN_SYNC;
       } else {
         state = NOT_IN_SYNC;
       }
       notifyAll();
       return missingCount;
+    }
+
+    public NodeID getNodeID() {
+      return nodeID;
+    }
+
+    public synchronized boolean isInSync() {
+      return (state == IN_SYNC);
     }
   }
 }

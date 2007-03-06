@@ -6,9 +6,7 @@ package com.tc.l2.msg;
 
 import com.tc.async.api.EventContext;
 import com.tc.bytes.TCByteBuffer;
-import com.tc.bytes.TCByteBufferFactory;
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectDNAImpl;
@@ -52,7 +50,7 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements EventCont
     readObjectIDS(in);
     dnaCount = in.readInt();
     readRootsMap(in);
-    readSerializer(in);
+    serializer = readObjectStringSerializer(in);
     this.dnas = readByteBuffers(in);
   }
 
@@ -61,7 +59,7 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements EventCont
     writeObjectIDS(out);
     out.writeInt(dnaCount);
     writeRootsMap(out);
-    writeSerializer(out);
+    writeObjectStringSerializer(out,serializer);
     writeByteBuffers(out, dnas);
     recycle(dnas);
     dnas = null;
@@ -92,46 +90,6 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements EventCont
   private void recycle(TCByteBuffer[] buffers) {
     for (int i = 0; i < buffers.length; i++) {
       buffers[i].recycle();
-    }
-  }
-
-  private void writeSerializer(ObjectOutput out) throws IOException {
-    TCByteBufferOutputStream tcbo = new TCByteBufferOutputStream();
-    serializer.serializeTo(tcbo);
-    writeByteBuffers(out, tcbo.toArray());
-    tcbo.recycle();
-  }
-
-  private void readSerializer(ObjectInput in) throws IOException {
-    TCByteBuffer buffers[] = readByteBuffers(in);
-    serializer = new ObjectStringSerializer();
-    serializer.deserializeFrom(new TCByteBufferInputStream(buffers));
-  }
-
-  private TCByteBuffer[] readByteBuffers(ObjectInput in) throws IOException {
-    int size = in.readInt();
-    TCByteBuffer buffers[] = new TCByteBuffer[size];
-    for (int i = 0; i < buffers.length; i++) {
-      int length = in.readInt();
-      byte bytes[] = new byte[length];
-      int start = 0;
-      while (length > 0) {
-        int read = in.read(bytes, start, length);
-        start += read;
-        length -= read;
-      }
-      buffers[i] = TCByteBufferFactory.wrap(bytes);
-    }
-    return buffers;
-  }
-
-  private void writeByteBuffers(ObjectOutput out, TCByteBuffer[] buffers) throws IOException {
-    out.writeInt(buffers.length);
-    for (int i = 0; i < buffers.length; i++) {
-      TCByteBuffer buffer = buffers[i];
-      int length = buffer.limit();
-      out.writeInt(length);
-      out.write(buffer.array(), buffer.arrayOffset(), length);
     }
   }
 

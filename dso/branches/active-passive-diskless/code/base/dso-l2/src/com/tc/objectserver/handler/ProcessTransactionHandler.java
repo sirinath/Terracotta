@@ -7,6 +7,8 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
+import com.tc.async.api.Sink;
+import com.tc.l2.context.InComingTransactionContext;
 import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -39,6 +41,8 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
   private final SequenceValidator          sequenceValidator;
   private final TransactionalObjectManager txnObjectManager;
 
+  private Sink txnRelaySink;
+
   public ProcessTransactionHandler(TransactionBatchManager transactionBatchManager,
                                    TransactionalObjectManager txnObjectManager, SequenceValidator sequenceValidator,
                                    MessageRecycler messageRecycler) {
@@ -64,8 +68,10 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
         txns.add(txn);
         serverTxnIDs.add(txn.getServerTransactionID());
       }
-      messageRecycler.addMessage( ctm, serverTxnIDs);
-      replicatedObjectMgr.incomingTransactions(ctm, txns, serverTxnIDs, completedTxnIds);
+      messageRecycler.addMessage(ctm, serverTxnIDs);
+      if (replicatedObjectMgr.relayTransactions()) {
+        txnRelaySink.add(new InComingTransactionContext(ctm, txns,serverTxnIDs));
+      }
       txnObjectManager.addTransactions(reader.getChannelID(), txns, completedTxnIds);
     } catch (Exception e) {
       logger.error("Error reading transaction batch. : ", e);
@@ -80,5 +86,6 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
     replicatedObjectMgr = oscc.getL2Coordinator().getReplicatedObjectManager();
+    txnRelaySink = oscc.getStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE).getSink();
   }
 }
