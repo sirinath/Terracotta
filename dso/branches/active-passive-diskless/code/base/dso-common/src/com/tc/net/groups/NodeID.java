@@ -4,6 +4,7 @@
  */
 package com.tc.net.groups;
 
+import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.util.Assert;
 
 import java.io.Externalizable;
@@ -20,6 +21,8 @@ public class NodeID implements Externalizable {
   private String              name;
   private byte[]              uid;
 
+  private transient int       hash;
+
   public NodeID() {
     // satisfy serialization
     this.name = UNINITIALIZED;
@@ -31,11 +34,14 @@ public class NodeID implements Externalizable {
   }
 
   public int hashCode() {
-    int hash = 27;
+    if (hash != 0) return hash;
+    int lhash = 27;
     for (int i = uid.length - 1; i >= 0; i--) {
-      hash = 31 * hash + uid[i];
+      lhash = 31 * lhash + uid[i];
     }
-    return hash;
+    hash = lhash;
+    
+    return lhash;
   }
 
   public boolean equals(Object o) {
@@ -84,5 +90,14 @@ public class NodeID implements Externalizable {
     for (int i = length - 1; i >= 0; i--) {
       out.writeByte(this.uid[i]);
     }
+  }
+
+  /**
+   * HACK::FIXME::TODO This method is a quick hack to brick NodeIDs to ChannelIDs. This mapping is only valid for the
+   * current VM. The ChannelIDs are given out in the range -100 to Integer.MIN_VALUE to not clash with the regular
+   * client channelID. This definitely needs some cleanup
+   */
+  public ChannelID toChannelID() {
+    return NodeIDChannelIDConverter.getChannelIDFor(this);
   }
 }

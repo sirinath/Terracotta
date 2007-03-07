@@ -12,7 +12,11 @@ import com.tc.l2.handler.L2ObjectSyncDehydrateHandler;
 import com.tc.l2.handler.L2ObjectSyncHandler;
 import com.tc.l2.handler.L2ObjectSyncSendHandler;
 import com.tc.l2.handler.L2StateChangeHandler;
+import com.tc.l2.handler.ServerTransactionAckHandler;
 import com.tc.l2.handler.TransactionRelayHandler;
+import com.tc.l2.msg.ObjectSyncMessage;
+import com.tc.l2.msg.RelayedCommitTransactionMessage;
+import com.tc.l2.msg.ServerTxnAckMessage;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.objectserver.L2ObjectStateManagerImpl;
 import com.tc.l2.objectserver.ReplicatedObjectManager;
@@ -72,16 +76,20 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
                                                           new L2ObjectSyncHandler(this.l2ObjectStateManager), 1,
                                                           Integer.MAX_VALUE).getSink();
     stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE,
-                                                          new L2ObjectSyncDehydrateHandler(), 1,
-                                                          Integer.MAX_VALUE);
+                             new L2ObjectSyncDehydrateHandler(), 1, Integer.MAX_VALUE);
     stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE,
-                                                          new L2ObjectSyncSendHandler(this.l2ObjectStateManager), 1,
-                                                          Integer.MAX_VALUE);
+                             new L2ObjectSyncSendHandler(this.l2ObjectStateManager), 1, Integer.MAX_VALUE);
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE,
-                                                          new TransactionRelayHandler(this.l2ObjectStateManager), 1,
-                                                          Integer.MAX_VALUE);
+                             new TransactionRelayHandler(this.l2ObjectStateManager), 1, Integer.MAX_VALUE);
+    final Sink ackProcessingStage = stageManager
+        .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
+                     new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
                                                           this.server.getContext().getObjectManager(), objectsSyncSink);
+
+    this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
+    this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
+    this.groupManager.routeMessages(ServerTxnAckMessage.class, ackProcessingStage);
 
     stateManager.start();
   }

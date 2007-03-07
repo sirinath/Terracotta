@@ -4,6 +4,8 @@
  */
 package com.tc.net.groups;
 
+import com.tc.async.api.Sink;
+
 public interface GroupManager {
 
   public NodeID join() throws GroupException;
@@ -14,6 +16,8 @@ public interface GroupManager {
 
   public void registerForMessages(Class msgClass, GroupMessageListener listener);
 
+  public void routeMessages(Class msgClass, Sink sink);
+  
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException;
 
   public void registerForGroupEvents(GroupEventsListener listener);

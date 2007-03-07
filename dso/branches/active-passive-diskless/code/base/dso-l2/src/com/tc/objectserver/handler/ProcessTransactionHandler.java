@@ -8,7 +8,7 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
-import com.tc.l2.context.InComingTransactionContext;
+import com.tc.l2.context.IncomingTransactionContext;
 import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -18,6 +18,7 @@ import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.MessageRecycler;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransaction;
+import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReader;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
@@ -41,7 +42,9 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
   private final SequenceValidator          sequenceValidator;
   private final TransactionalObjectManager txnObjectManager;
 
-  private Sink txnRelaySink;
+  private Sink                             txnRelaySink;
+
+  private ServerTransactionManager         transactionManager;
 
   public ProcessTransactionHandler(TransactionBatchManager transactionBatchManager,
                                    TransactionalObjectManager txnObjectManager, SequenceValidator sequenceValidator,
@@ -61,7 +64,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       ServerTransaction txn;
 
       List txns = new ArrayList(reader.getNumTxns());
-      Set serverTxnIDs = new HashSet();
+      Set serverTxnIDs = new HashSet(reader.getNumTxns());
       ChannelID channelID = reader.getChannelID();
       while ((txn = reader.getNextTransaction()) != null) {
         sequenceValidator.setCurrent(channelID, txn.getClientSequenceID());
@@ -70,9 +73,13 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       }
       messageRecycler.addMessage(ctm, serverTxnIDs);
       if (replicatedObjectMgr.relayTransactions()) {
-        txnRelaySink.add(new InComingTransactionContext(ctm, txns,serverTxnIDs));
+        // TODO:: change it to become event based
+        transactionManager.incomingTransactions(channelID, serverTxnIDs, true);
+        txnRelaySink.add(new IncomingTransactionContext(channelID, ctm, txns, serverTxnIDs));
+      } else {
+        transactionManager.incomingTransactions(channelID, serverTxnIDs, false);
       }
-      txnObjectManager.addTransactions(reader.getChannelID(), txns, completedTxnIds);
+      txnObjectManager.addTransactions(channelID, txns, completedTxnIds);
     } catch (Exception e) {
       logger.error("Error reading transaction batch. : ", e);
       MessageChannel c = ctm.getChannel();
@@ -85,6 +92,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     super.initialize(context);
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
+    transactionManager = oscc.getTransactionManager();
     replicatedObjectMgr = oscc.getL2Coordinator().getReplicatedObjectManager();
     txnRelaySink = oscc.getStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE).getSink();
   }

@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 public class ServerTransactionManagerImpl implements ServerTransactionManager, ServerTransactionManagerMBean {
@@ -109,19 +110,19 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     fireAddResentTransactionIDsEvent(stxIDs);
   }
 
-  public void addWaitingForAcknowledgement(ChannelID waiter, TransactionID requestID, ChannelID waitee) {
+  public void addWaitingForAcknowledgement(ChannelID waiter, TransactionID txnID, ChannelID waitee) {
     TransactionAccount ci = getOrCreateTransactionAccount(waiter);
-    ci.addWaitee(waitee, requestID);
+    ci.addWaitee(waitee, txnID);
   }
 
   // For testing
-  public boolean isWaiting(ChannelID waiter, TransactionID requestID) {
+  public boolean isWaiting(ChannelID waiter, TransactionID txnID) {
     TransactionAccount c = getTransactionAccount(waiter);
-    return c != null && c.hasWaitees(requestID);
+    return c != null && c.hasWaitees(txnID);
   }
 
-  private void acknowledge(ChannelID waiter, TransactionID requestID) {
-    final ServerTransactionID serverTxnID = new ServerTransactionID(waiter, requestID);
+  private void acknowledge(ChannelID waiter, TransactionID txnID) {
+    final ServerTransactionID serverTxnID = new ServerTransactionID(waiter, txnID);
     fireTransactionCompleteEvent(serverTxnID);
     if (!gtxm.needsApply(serverTxnID)) {
       // the GlobalTransactionID can by null if the server crashed before the global transaction was stored. We only
@@ -130,7 +131,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void acknowledgement(ChannelID waiter, TransactionID requestID, ChannelID waitee) {
+  public void acknowledgement(ChannelID waiter, TransactionID txnID, ChannelID waitee) {
 
     TransactionAccount transactionAccount = getTransactionAccount(waiter);
     if (transactionAccount == null) {
@@ -140,8 +141,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       return;
     }
 
-    if (transactionAccount.removeWaitee(waitee, requestID)) {
-      acknowledge(waiter, requestID);
+    if (transactionAccount.removeWaitee(waitee, txnID)) {
+      acknowledge(waiter, txnID);
     }
   }
 
@@ -214,27 +215,54 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
+  public void incomingTransactions(ChannelID cid, Set serverTxnIDs, boolean relayed) {
+    TransactionAccount ci = getOrCreateTransactionAccount(cid);
+    for (Iterator i = serverTxnIDs.iterator(); i.hasNext();) {
+      final ServerTransactionID txnId = (ServerTransactionID) i.next();
+      final TransactionID txnID = txnId.getClientTransactionID();
+      if (!relayed) {
+        ci.relayTransactionComplete(txnID);
+      }
+    }
+    fireIncomingTransactionsEvent(cid, serverTxnIDs);
+  }
+
+  public void transactionsRelayed(ChannelID channelID, Set serverTxnIDs) {
+    TransactionAccount ci = getOrCreateTransactionAccount(channelID);
+    if (ci == null) {
+      logger.warn("transactionsRelayed(): TransactionAccount not found for " + channelID);
+      return;
+    }
+    for (Iterator i = serverTxnIDs.iterator(); i.hasNext();) {
+      final ServerTransactionID txnId = (ServerTransactionID) i.next();
+      final TransactionID txnID = txnId.getClientTransactionID();
+      if (ci.relayTransactionComplete(txnID)) {
+        acknowledge(channelID, txnID);
+      }
+    }
+  }
+
   public void committed(Collection txnsIds) {
     for (Iterator i = txnsIds.iterator(); i.hasNext();) {
       final ServerTransactionID txnId = (ServerTransactionID) i.next();
       final ChannelID waiter = txnId.getChannelID();
-      final TransactionID requestID = txnId.getClientTransactionID();
+      final TransactionID txnID = txnId.getClientTransactionID();
 
       TransactionAccount ci = getTransactionAccount(waiter);
-      if (ci != null && ci.applyCommitted(requestID)) {
-        acknowledge(waiter, requestID);
+      if (ci != null && ci.applyCommitted(txnID)) {
+        acknowledge(waiter, txnID);
       }
 
-      // TODO :: Move this outside the loop
+      // TODO :: Move this to apply() and not commit(). Also check out DEV-473
       fireTransactionAppliedEvent(txnId);
     }
   }
 
-  public void broadcasted(ChannelID waiter, TransactionID requestID) {
+  public void broadcasted(ChannelID waiter, TransactionID txnID) {
     TransactionAccount ci = getTransactionAccount(waiter);
 
-    if (ci != null && ci.broadcastCompleted(requestID)) {
-      acknowledge(waiter, requestID);
+    if (ci != null && ci.broadcastCompleted(txnID)) {
+      acknowledge(waiter, txnID);
     }
   }
 
@@ -243,28 +271,27 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       TransactionAccount ta = (TransactionAccount) transactionAccounts.get(clientID);
       if ((ta == null) || (ta instanceof NullTransactionAccount)) {
         Object old = transactionAccounts.put(clientID, (ta = new TransactionAccountImpl(clientID)));
-        if(old != null ) {
+        if (old != null) {
           logger.info("Transaction Account changed from : " + old + " to " + ta);
         }
       }
       return ta;
     }
   }
-  
+
   private TransactionAccount getOrCreateNullTransactionAccount(ChannelID clientID) {
     synchronized (transactionAccounts) {
       TransactionAccount ta = (TransactionAccount) transactionAccounts.get(clientID);
       if ((ta == null) || (ta instanceof TransactionAccountImpl)) {
         Object old = transactionAccounts.put(clientID, (ta = new NullTransactionAccount(clientID)));
-        if(old != null ) {
+        if (old != null) {
           logger.info("Transaction Account changed from : " + old + " to " + ta);
         }
       }
       return ta;
-      
+
     }
   }
-
 
   private TransactionAccount getTransactionAccount(ChannelID clientID) {
     return (TransactionAccount) transactionAccounts.get(clientID);
@@ -293,6 +320,21 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   public void addTransactionListener(ServerTransactionListener listener) {
     if (listener == null) { throw new IllegalArgumentException("listener cannot be null"); }
     this.txnEventListeners.add(listener);
+  }
+
+  private void fireIncomingTransactionsEvent(ChannelID cid, Set serverTxnIDs) {
+    for (Iterator iter = txnEventListeners.iterator(); iter.hasNext();) {
+      try {
+        ServerTransactionListener listener = (ServerTransactionListener) iter.next();
+        listener.incomingTransactions(cid, serverTxnIDs);
+      } catch (Exception e) {
+        if (logger.isDebugEnabled()) {
+          logger.debug(e);
+        } else {
+          logger.warn("Exception in Txn complete event callback: " + e.getMessage());
+        }
+      }
+    }
   }
 
   private void fireTransactionCompleteEvent(ServerTransactionID stxID) {
@@ -354,5 +396,4 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       }
     }
   }
-
 }

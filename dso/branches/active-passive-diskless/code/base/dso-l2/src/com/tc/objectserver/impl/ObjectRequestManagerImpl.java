@@ -57,6 +57,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     return;
   }
 
+  public void incomingTransactions(ChannelID cid, Set serverTxnIDs) {
+    return;
+  }
+
   public void clearAllTransactionsFor(ChannelID client) {
     synchronized (this) {
       if (resentTransactionIDs.isEmpty()) return;

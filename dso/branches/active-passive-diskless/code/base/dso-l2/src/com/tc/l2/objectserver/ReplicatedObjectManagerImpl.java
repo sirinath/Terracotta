@@ -8,7 +8,6 @@ import com.tc.async.api.Sink;
 import com.tc.l2.context.SyncObjectsRequest;
 import com.tc.l2.msg.ObjectListSyncMessage;
 import com.tc.l2.msg.ObjectListSyncMessageFactory;
-import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -45,7 +44,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     this.l2ObjectStateManager = l2ObjectStateManager;
     this.groupManager.registerForGroupEvents(this);
     this.groupManager.registerForMessages(ObjectListSyncMessage.class, this);
-    this.groupManager.registerForMessages(ObjectSyncMessage.class, this);
   }
 
   /**
@@ -87,13 +85,12 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
   }
 
+  //TODO::Verify that message order is maintained.
+  //TODO::Few of these messages should end up going to a different manager (ReplicatedTxnManager ?)
   public void messageReceived(NodeID fromNode, GroupMessage msg) {
     if (msg instanceof ObjectListSyncMessage) {
       ObjectListSyncMessage clusterMsg = (ObjectListSyncMessage) msg;
       handleClusterObjectMessage(fromNode, clusterMsg);
-    } else if (msg instanceof ObjectSyncMessage) {
-      ObjectSyncMessage syncMsg = (ObjectSyncMessage) msg;
-      objectsSyncSink.add(syncMsg);
     } else {
       throw new AssertionError("ReplicatedObjectManagerImpl : Received wrong message type :" + msg.getClass().getName()
                                + " : " + msg);
@@ -148,6 +145,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncResponseMessage(clusterMsg, knownIDs));
   }
 
+  /**
+   * TODO:: This method could be more intellegent to return true only when there are passives involved
+   */
   public boolean relayTransactions() {
     return true;
   }

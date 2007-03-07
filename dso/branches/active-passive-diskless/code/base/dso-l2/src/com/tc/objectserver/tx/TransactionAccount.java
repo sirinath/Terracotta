@@ -31,4 +31,6 @@ public interface TransactionAccount {
 
   public abstract Set requestersWaitingFor(ChannelID waitee);
 
+  public abstract boolean relayTransactionComplete(TransactionID requestID);
+
 }

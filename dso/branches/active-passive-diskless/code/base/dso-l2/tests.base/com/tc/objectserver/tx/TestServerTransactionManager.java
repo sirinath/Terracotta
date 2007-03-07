@@ -108,4 +108,12 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
+  public void incomingTransactions(ChannelID channelID, Set serverTxnIDs, boolean relayed) {
+    throw new ImplementMe();
+  }
+
+  public void transactionsRelayed(ChannelID channelID, Set serverTxnIDs) {
+    throw new ImplementMe();
+  }
+
 }

@@ -11,12 +11,13 @@ import com.tc.async.api.Sink;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.context.SyncObjectsRequest;
+import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.ObjectSyncMessageFactory;
+import com.tc.l2.msg.ServerTxnAckMessage;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -45,14 +46,26 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
           stateManager.moveNodeToPassiveStandby(mosc.getNodeID());
         }
       }
+    } else if(context instanceof ServerTxnAckMessage) {
+      ServerTxnAckMessage txnMsg = (ServerTxnAckMessage) context;
+      sendAcks(txnMsg);
     } else {
       throw new AssertionError("Unknown context type : " + context.getClass().getName() + " : " + context);
     }
   }
 
+  private void sendAcks(ServerTxnAckMessage ackMsg) {
+    try {
+      this.groupManager.sendTo(ackMsg.getDestinationID(), ackMsg);
+    } catch (GroupException e) {
+      logger.error("ERROR sending ACKS: Caught exception while sending message to ACTIVE", e);
+      // ZAP or Not to ZAP is the question ?
+    }
+  }
+
   private boolean sendObjects(ManagedObjectSyncContext mosc) {
     objectStateManager.close(mosc);
-    AbstractGroupMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
+    ObjectSyncMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
     try {
       this.groupManager.sendTo(mosc.getNodeID(), msg);
       logger.info("Sent " + mosc.getDNACount() + " objects to " + mosc.getNodeID() + " roots = "

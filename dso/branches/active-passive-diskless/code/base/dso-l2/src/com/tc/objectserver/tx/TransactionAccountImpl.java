@@ -113,6 +113,14 @@ public class TransactionAccountImpl implements TransactionAccount {
     }
   }
 
+  public boolean relayTransactionComplete(TransactionID requestID) {
+    TransactionRecord transactionRecord = getOrCreateRecord(requestID);
+    synchronized (transactionRecord) {
+      transactionRecord.relayTransactionComplete();
+      return checkCompleted(requestID, transactionRecord);
+    }
+  }
+
   public boolean hasWaitees(TransactionID requestID) {
     TransactionRecord record = getRecord(requestID);
     if (record == null) return false;
@@ -126,7 +134,7 @@ public class TransactionAccountImpl implements TransactionAccount {
     synchronized (waitees) {
       for (Iterator i = new HashSet(waitees.keySet()).iterator(); i.hasNext();) {
         TransactionID requester = (TransactionID) i.next();
-        // if (((Set) waitees.get(requester)).contains(waitee)) {
+        // if (((Set) waitees.get(requester)).contains(waitee))
         if (getRecord(requester).contains(waitee)) {
           requesters.add(requester);
         }
@@ -142,4 +150,5 @@ public class TransactionAccountImpl implements TransactionAccount {
     }
     return false;
   }
+
 }

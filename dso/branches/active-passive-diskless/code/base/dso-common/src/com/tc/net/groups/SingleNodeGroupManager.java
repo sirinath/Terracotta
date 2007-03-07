@@ -4,6 +4,8 @@
  */
 package com.tc.net.groups;
 
+import com.tc.async.api.Sink;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -31,6 +33,10 @@ public class SingleNodeGroupManager implements GroupManager {
   }
 
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
+    // NOP : Since this doesnt talk to the network, this should never get any message
+  }
+
+  public void routeMessages(Class msgClass, Sink sink) {
     // NOP : Since this doesnt talk to the network, this should never get any message
   }
 

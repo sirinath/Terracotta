@@ -8,10 +8,9 @@ import com.tc.object.msg.CommitTransactionMessage;
 
 public class RelayedCommitTransactionMessageFactory {
 
-  public static RelayedCommitTransactionMessage createRelayedCommitTransactionMessage(
-                                                                                      CommitTransactionMessage commitTransactionMessage) {
-    RelayedCommitTransactionMessage msg = new RelayedCommitTransactionMessage(commitTransactionMessage.getBatchData(),
-                                                                              commitTransactionMessage.getSerializer());
+  public static RelayedCommitTransactionMessage createRelayedCommitTransactionMessage(CommitTransactionMessage commitMsg) {
+    RelayedCommitTransactionMessage msg = new RelayedCommitTransactionMessage(commitMsg.getChannelID(), commitMsg
+        .getBatchData(), commitMsg.getSerializer());
     return msg;
   }
 

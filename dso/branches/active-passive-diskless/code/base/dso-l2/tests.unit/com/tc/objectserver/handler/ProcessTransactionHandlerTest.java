@@ -11,12 +11,14 @@ import com.tc.async.api.Stage;
 import com.tc.async.impl.MockSink;
 import com.tc.exception.ImplementMe;
 import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.msg.RelayedCommitTransactionMessage;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.NullMessageRecycler;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.net.DSOChannelManager;
@@ -198,8 +200,12 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
 
   private final class TestTransactionBatchReaderFactory implements TransactionBatchReaderFactory {
 
-    public TransactionBatchReader newTransactionBatchReader(EventContext ctxt) {
+    public TransactionBatchReader newTransactionBatchReader(CommitTransactionMessage ctxt) {
       return (TransactionBatchReader) batchReader.get();
+    }
+
+    public TransactionBatchReader newTransactionBatchReader(RelayedCommitTransactionMessage commitMessage) {
+      throw new ImplementMe();
     }
 
   }

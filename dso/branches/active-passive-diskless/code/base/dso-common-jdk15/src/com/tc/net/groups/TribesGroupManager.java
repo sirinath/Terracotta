@@ -8,6 +8,8 @@ import org.apache.catalina.tribes.MembershipListener;
 import org.apache.catalina.tribes.ChannelException.FaultyMember;
 import org.apache.catalina.tribes.group.GroupChannel;
 
+import com.tc.async.api.EventContext;
+import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
@@ -75,12 +77,23 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
   }
 
+  private static void validateEventClass(Class clazz) {
+    if(!EventContext.class.isAssignableFrom(clazz)) {
+      throw new AssertionError(clazz + " does not implement interface " + EventContext.class.getName());
+    }
+  }
+
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
     validateExternalizableClass(msgClass);
     GroupMessageListener prev = messageListeners.put(msgClass.getName(), listener);
     if (prev != null) {
       logger.warn("Previous listener removed : " + prev);
     }
+  }
+
+  public void routeMessages(Class msgClass, Sink sink) {
+    validateEventClass(msgClass);
+    registerForMessages(msgClass, new RouteGroupMessagesToSink(msgClass.getName(), sink));
   }
 
   public boolean accept(Serializable msg, Member sender) {

@@ -52,4 +52,8 @@ public class NullTransactionAccount implements TransactionAccount {
   public boolean skipApplyAndCommit(TransactionID requestID) {
     return false;
   }
+
+  public boolean relayTransactionComplete(TransactionID requestID) {
+    return false;
+  }
 }
