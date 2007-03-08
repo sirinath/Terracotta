@@ -7,8 +7,10 @@ package com.tc.object.bytecode;
 import com.tc.asm.Type;
 import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventListener;
+import com.tc.lang.StartupHelper;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
@@ -148,20 +150,29 @@ public class ManagerImpl implements Manager {
   }
 
   private void startClient() {
-    this.dso = new DistributedObjectClient(this.config, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class))), classProvider, this.connectionComponents, this, cluster);
-    this.dso.start();
-    this.objectManager = dso.getObjectManager();
-    this.txManager = dso.getTransactionManager();
-    this.runtimeLogger = dso.getRuntimeLogger();
+    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(TCLogging
+        .getLogger(DistributedObjectClient.class)));
 
-    this.optimisticTransactionManager = new OptimisticTransactionManagerImpl(objectManager, txManager);
+    StartupAction action = new StartupHelper.StartupAction() {
+      public void execute() throws Throwable {
+        dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster);
+        dso.start();
+        objectManager = dso.getObjectManager();
+        txManager = dso.getTransactionManager();
+        runtimeLogger = dso.getRuntimeLogger();
 
-    this.methodCallManager = dso.getDmiManager();
+        optimisticTransactionManager = new OptimisticTransactionManagerImpl(objectManager, txManager);
 
-    this.shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
-        .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(),
-                                                     connectionComponents);
+        methodCallManager = dso.getDmiManager();
+
+        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
+            .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(),
+                                                    connectionComponents);
+      }
+    };
+
+    StartupHelper startupHelper = new StartupHelper(group, action);
+    startupHelper.startUp();
   }
 
   public void stop() {
@@ -492,20 +503,8 @@ public class ManagerImpl implements Manager {
     return tryBegin(lockID, type, null, null);
   }
 
-  public int heldCount(Object obj, int lockLevel) {
-    if (obj == null) { throw new NullPointerException("heldCount called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.heldCount(generateAutolockName(tco), lockLevel);
-    } else {
-      return this.txManager.heldCount(generateLiteralLockName(obj), lockLevel);
-    }
-  }
-
   public boolean isHeldByCurrentThread(Object obj, int lockLevel) {
-    if (obj == null) { throw new NullPointerException("heldCount called on a null object"); }
+    if (obj == null) { throw new NullPointerException("isHeldByCurrentThread called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
 
@@ -577,16 +576,16 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Object lookupObject(ObjectID id) {
+  public Object lookupObject(ObjectID id) throws ClassNotFoundException {
     return this.objectManager.lookupObject(id);
   }
 
-  public boolean distributedMethodCall(Object receiver, String method, Object[] params) {
+  public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     TCObject tco = lookupExistingOrNull(receiver);
 
     try {
       if (tco != null) {
-        return methodCallManager.distributedInvoke(receiver, method, params);
+        return methodCallManager.distributedInvoke(receiver, method, params, runOnAllNodes);
       } else {
         return false;
       }
@@ -681,7 +680,7 @@ public class ManagerImpl implements Manager {
     this.optimisticTransactionManager.begin();
   }
 
-  public void optimisticCommit() {
+  public void optimisticCommit() throws ClassNotFoundException {
     this.optimisticTransactionManager.commit();
   }
 

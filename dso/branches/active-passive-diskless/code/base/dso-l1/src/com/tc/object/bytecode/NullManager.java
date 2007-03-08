@@ -87,7 +87,7 @@ public final class NullManager implements Manager {
     //
   }
 
-  public final boolean distributedMethodCall(Object receiver, String method, Object[] params) {
+  public final boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     return true;
   }
 
@@ -141,10 +141,6 @@ public final class NullManager implements Manager {
 
   public final boolean isLocked(Object obj) {
     return false;
-  }
-
-  public final int heldCount(Object obj, int lockLevel) {
-    return 0;
   }
 
   public final int queueLength(Object obj) {

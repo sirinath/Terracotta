@@ -159,10 +159,6 @@ public class TransparencyClassSpec {
     return this;
   }
 
-  public TransparencyClassSpec addDistributedMethodCall(String methodName, String description) {
-    return addDistributedMethodCall(methodName, description, true);
-  }
-
   public TransparencyClassSpec addDistributedMethodCall(String methodName, String description, boolean runOnAllNodes) {
     if ("<init>".equals(methodName) || "<clinit>".equals(methodName)) { throw new AssertionError(
                                                                                                  "Initializers of class "
@@ -268,12 +264,9 @@ public class TransparencyClassSpec {
   }
 
   private MethodAdapter getMethodAdapter(int access, String methodName, String description, String[] exceptions) {
-    if (isDistributedMethodCall(access, methodName, description, exceptions)) { return new DistributedMethodCallAdapter(); }
-    return (MethodAdapter) methodAdapters.get(methodName + description);
-  }
-
-  private boolean isDistributedMethodCall(int access, String methodName, String description, String[] exceptions) {
-    return configuration.isDistributedMethodCall(access, className, methodName, description, exceptions);
+    DistributedMethodSpec dms = configuration.getDmiSpec(access, className, methodName, description, exceptions);
+    if (dms == null) return (MethodAdapter) methodAdapters.get(methodName + description);
+    return new DistributedMethodCallAdapter(dms.runOnAllNodes());
   }
 
   public ChangeApplicatorSpec getChangeApplicatorSpec() {

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.applicator;
 
@@ -14,7 +15,6 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.impl.DNAEncoding;
-import com.tc.object.field.TCFieldFactory;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.object.tx.optimistic.TCObjectClone;
 import com.tc.util.Assert;
@@ -49,7 +49,7 @@ public class HashSetApplicator extends BaseApplicator {
     }
   }
 
-  protected void apply(ClientObjectManager objectManager, Set set, int method, Object[] params) {
+  protected void apply(ClientObjectManager objectManager, Set set, int method, Object[] params) throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.ADD:
         Object v = getValue(params);
@@ -71,7 +71,7 @@ public class HashSetApplicator extends BaseApplicator {
     }
   }
 
-  private List getObjectParams(ClientObjectManager objectManager, Object[] params) {
+  private List getObjectParams(ClientObjectManager objectManager, Object[] params) throws ClassNotFoundException {
     List retParams = new ArrayList(params.length);
 
     for (int i = 0; i < params.length; i++) {
@@ -112,10 +112,6 @@ public class HashSetApplicator extends BaseApplicator {
       }
     }
     return addTo;
-  }
-
-  private boolean isPortableReference(Class c) {
-    return TCFieldFactory.isReferenceClass(c);
   }
 
   public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {

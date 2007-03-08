@@ -30,7 +30,7 @@ class TerracottaAnt < Builder::AntBuilder
     # which we use. (The ant-contrib JAR must therefore be in the CLASSPATH of the JVM
     # running JRuby here.)
     def initialize
-        super
+        super(:debug => false)
         taskdef(:name => 'propertyselector', :classname => 'net.sf.antcontrib.property.PropertySelector')
     end
 
@@ -96,7 +96,7 @@ class TerracottaBuilder
         option_parser.on('--no-ivy') do @no_ivy = true end
         option_parser.on('--no-compile') do @no_compile = true end
         @start_time = Time.now
-        @basedir = FilePath.new("").canonicalize
+        @basedir = FilePath.new(File.dirname(File.expand_path(__FILE__)), "..").canonicalize
         Registry[:basedir] = @basedir
         puts("Building with base directory: '#@basedir'.")
         puts
@@ -134,7 +134,9 @@ class TerracottaBuilder
         rescue => e
             # This makes sure that any kind of arbitrary exception from the rest of the
             # buildsystem gets correctly reported as a failure.
-            @script_results.failed("Received exception from the build system: %s\n%s" % [ e.to_s, e.backtrace.join("\n     ") ])
+            message = "Received exception from the build system: #{e} [#{e.class}]\n" +
+                      e.backtrace.join("\n     ")
+            @script_results.failed(message)
         end
 
         end_time = Time.now

@@ -23,18 +23,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DmiManagerImpl implements DmiManager {
-  private static final TCLogger     logger       = TCLogging.getLogger(DmiManager.class);
-  private static final String       lockName     = "@DistributedMethodCall";
-  private static final Object       TRUE         = new Object();
+  private static final TCLogger     logger   = TCLogging.getLogger(DmiManager.class);
+  private static final String       lockName = "@DistributedMethodCall";
+  private static final Object       TRUE     = new Object();
 
   private final ClassProvider       classProvider;
   private final ClientObjectManager objMgr;
   private final RuntimeLogger       runtimeLogger;
   private final ThreadLocal         feedBack;
   private final ThreadLocal         nesting;
-
-  private long                      dmiOriginCnt = 0;
-  private long                      dmiReceivCnt = 0;
 
   public DmiManagerImpl(ClassProvider cp, ClientObjectManager om, RuntimeLogger rl) {
     Assert.pre(cp != null);
@@ -47,7 +44,7 @@ public class DmiManagerImpl implements DmiManager {
     this.nesting = new ThreadLocal();
   }
 
-  public boolean distributedInvoke(Object receiver, String method, Object[] params) {
+  public boolean distributedInvoke(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     if (feedBack.get() != null) { return false; }
     if (nesting.get() != null) { return false; }
     nesting.set(TRUE);
@@ -55,12 +52,6 @@ public class DmiManagerImpl implements DmiManager {
     Assert.pre(receiver != null);
     Assert.pre(method != null);
     Assert.pre(params != null);
-
-    {
-      dmiOriginCnt++;
-      System.err.println("=== DmiManagerImpl.distributedInvoke [" + System.identityHashCode(this) 
-                         + "] -> dmiOriginCnt=" + dmiOriginCnt);
-    }
 
     final String methodName = method.substring(0, method.indexOf('('));
     final String paramDesc = method.substring(method.indexOf('('));
@@ -72,7 +63,7 @@ public class DmiManagerImpl implements DmiManager {
       final ObjectID receiverId = objMgr.lookupOrCreate(receiver).getObjectID();
       final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc).getObjectID();
       final DmiClassSpec[] classSpecs = getClassSpecs(classProvider, receiver, params);
-      final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs);
+      final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs, runOnAllNodes);
       objMgr.getTransactionManager().addDmiDescriptor(dd);
       return true;
     } finally {
@@ -88,11 +79,6 @@ public class DmiManagerImpl implements DmiManager {
 
   public void invoke(DmiDescriptor dd) {
     Assert.pre(dd != null);
-    {
-      dmiReceivCnt++;
-      System.err.println("=== DmiManagerImpl.invoke [" + System.identityHashCode(this)
-                         + "] -> dmiReceivCnt=" + dmiReceivCnt);
-    }
 
     try {
       checkClassAvailability(classProvider, dd.getClassSpecs());
