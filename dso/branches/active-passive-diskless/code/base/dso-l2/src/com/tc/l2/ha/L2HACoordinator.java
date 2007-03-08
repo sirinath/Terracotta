@@ -7,6 +7,7 @@ package com.tc.l2.ha;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.api.ReplicatedClusterStateManager;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.handler.L2ObjectSyncDehydrateHandler;
 import com.tc.l2.handler.L2ObjectSyncHandler;
@@ -46,6 +47,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
   private StateManager                  stateManager;
   private ReplicatedObjectManager       rObjectManager;
   private L2ObjectStateManager          l2ObjectStateManager;
+  private ReplicatedClusterStateManager rClusterStateMgr;
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager) {
     this.consoleLogger = consoleLogger;
@@ -86,6 +88,8 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
                                                           this.server.getContext().getObjectManager(), objectsSyncSink);
+    
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager);
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
@@ -96,6 +100,10 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
 
   public StateManager getStateManager() {
     return stateManager;
+  }
+
+  public ReplicatedClusterStateManager getReplicatedClusterStateManager() {
+    return rClusterStateMgr;
   }
 
   public ReplicatedObjectManager getReplicatedObjectManager() {

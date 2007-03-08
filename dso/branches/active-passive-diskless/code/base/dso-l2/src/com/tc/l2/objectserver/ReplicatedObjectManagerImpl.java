@@ -86,7 +86,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   //TODO::Verify that message order is maintained.
-  //TODO::Few of these messages should end up going to a different manager (ReplicatedTxnManager ?)
   public void messageReceived(NodeID fromNode, GroupMessage msg) {
     if (msg instanceof ObjectListSyncMessage) {
       ObjectListSyncMessage clusterMsg = (ObjectListSyncMessage) msg;
