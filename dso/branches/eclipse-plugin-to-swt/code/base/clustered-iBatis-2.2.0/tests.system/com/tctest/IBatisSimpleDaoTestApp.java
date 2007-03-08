@@ -27,10 +27,6 @@ import java.sql.PreparedStatement;
 public class IBatisSimpleDaoTestApp extends AbstractTransparentApp {
   private CyclicBarrier  barrier;
 
-  /**
-   * SqlMapClient instances are thread safe, so you only need one. In this case, we'll use a static singleton. So sue
-   * me. ;-)
-   */
   private AccountDAO     accountDAO, dao;
 
   private CustomerDAO    customerDAO;
@@ -86,7 +82,13 @@ public class IBatisSimpleDaoTestApp extends AbstractTransparentApp {
       if (id == 0) {
         Account acc = cus.getAccount();
         Assert.assertEquals("ASI-001", acc.getNumber());
+
+        synchronized (customerDAO) {
+          dropAllTables();
+        }
       }
+
+      barrier.barrier();
 
     } catch (Throwable e) {
       e.printStackTrace(System.err);
@@ -96,8 +98,7 @@ public class IBatisSimpleDaoTestApp extends AbstractTransparentApp {
 
   private void setupDatabase() throws Exception {
     try {
-      Reader reader = Resources.getResourceAsReader("com/tctest/DAOMap.xml");
-      DaoManager daoManager = DaoManagerBuilder.buildDaoManager(reader);
+      DaoManager daoManager = connectDatabase();
       dao = (AccountDAO) daoManager.getDao(AccountDAO.class);
 
       Connection conn = getConnection(daoManager, dao);
@@ -112,11 +113,28 @@ public class IBatisSimpleDaoTestApp extends AbstractTransparentApp {
       accountDAO = dao;
       customerDAO = (CustomerDAO) daoManager.getDao(CustomerDAO.class);
 
-      reader.close();
+      //reader.close();
 
     } catch (Exception e) {
       e.printStackTrace(System.err);
     }
+  }
+  
+  private DaoManager connectDatabase() throws Exception {
+    Reader reader = Resources.getResourceAsReader("com/tctest/DAOMap.xml");
+    DaoManager daoManager = DaoManagerBuilder.buildDaoManager(reader);
+    reader.close();
+    return daoManager;
+  }
+
+  private void dropAllTables() throws Exception {
+    DaoManager daoManager = connectDatabase();
+    CustomerDAO dao = (CustomerDAO) daoManager.getDao(CustomerDAO.class);
+    Connection conn = getConnection(daoManager, dao);
+    PreparedStatement stmt = conn.prepareStatement("drop table ACCOUNT");
+    stmt.execute();
+    stmt = conn.prepareStatement("drop table CUSTOMER");
+    stmt.execute();
   }
 
   private void shutdownDatabase() throws Exception {
@@ -136,13 +154,10 @@ public class IBatisSimpleDaoTestApp extends AbstractTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    System.err.println("Visiting visitL1DSOConfig");
     String testClass = IBatisSimpleDaoTestApp.class.getName();
 
     config.getOrCreateSpec(testClass).addRoot("barrier", "barrier").addRoot("cus", "cus").addRoot("list", "list")
         .addRoot("customerDAO", "customerDAO").addRoot("accountDAO", "accountDAO");
-    // config.getOrCreateSpec(testClass).addRoot("barrier",
-    // "barrier").addRoot("accountDAO", "accountDAO");
 
     config.addWriteAutolock("* " + testClass + "*.*(..)");
     config.addIncludePattern("com.tctest.domain.*");
