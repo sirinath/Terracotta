@@ -21,15 +21,7 @@ public class ServerCrashAndRestartTestApp extends ServerCrashingAppBase implemen
   private final CyclicBarrier barrier          = new CyclicBarrier(initialNodeCount);
   private String              thisNode;
 
-  public void run() {
-    try {
-      runTest();
-    } catch (Throwable t) {
-      notifyError(t);
-    }
-  }
-
-  private void runTest() throws Throwable {
+  public void runTest() throws Throwable {
     ManagerUtil.addClusterEventListener(this);
     final boolean isMasterNode = barrier.barrier() == 0;
     if (isMasterNode) {

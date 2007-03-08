@@ -4,18 +4,14 @@
  */
 package com.tctest;
 
-import org.apache.commons.io.FileUtils;
-
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
 import com.tc.cluster.ClusterEventListener;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.objectserver.control.ExtraL1ProcessControl;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 
-import java.io.File;
 import java.util.HashSet;
 
 public class ClusterMembershipEventTestApp extends ServerCrashingAppBase implements ClusterEventListener {
@@ -35,15 +31,7 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
   private final HashSet         nodes            = new HashSet();
   private String                thisNode;
 
-  public void run() {
-    try {
-      runTest();
-    } catch (Throwable t) {
-      notifyError(t);
-    }
-  }
-
-  private void runTest() throws Throwable {
+  public void runTest() throws Throwable {
     ManagerUtil.addClusterEventListener(this);
     check(1, thisNodeConCnt.get(), "thisNodeConnected");
     waitForNodes(initialNodeCount);
@@ -78,7 +66,7 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
 
     if (isMasterNode) {
       // master node blocks until new client exists...
-      spawnNewClient();
+      spawnNewClient("0", L1Client.class);
     }
     barrier.barrier();
     System.err.println("### stage 4 [new client disconnected]: thisNode=" + thisNode + ", threadId="
@@ -162,23 +150,6 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
     public static void main(String args[]) {
       // nothing to do
     }
-  }
-
-  private ExtraL1ProcessControl spawnNewClient() throws Exception {
-    final String hostName = getHostName();
-    final int port = getPort();
-    final File configFile = new File(getConfigFilePath());
-    File workingDir = new File(configFile.getParentFile(), "client-0");
-    FileUtils.forceMkdir(workingDir);
-
-    ExtraL1ProcessControl client = new ExtraL1ProcessControl(hostName, port, L1Client.class, configFile
-        .getAbsolutePath(), new String[0], workingDir);
-    client.start(20000);
-    client.mergeSTDERR();
-    client.mergeSTDOUT();
-    client.waitFor();
-    System.err.println("\n### Started New Client");
-    return client;
   }
 
 }

@@ -39,7 +39,7 @@ public class ClientTerminatingTestApp extends ServerCrashingAppBase {
     }
   }
 
-  public void run() {
+  public void runTest() throws Throwable {
     List myList = new ArrayList();
     synchronized (queue) {
       if (id != -1) { throw new AssertionError("Only one controller per Instance allowed. Check the Execution count"); }
