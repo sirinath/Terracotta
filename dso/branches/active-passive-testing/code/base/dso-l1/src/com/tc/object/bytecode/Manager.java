@@ -50,7 +50,7 @@ public interface Manager {
 
   public void commitLock(String lockName);
 
-  public Object lookupObject(ObjectID id);
+  public Object lookupObject(ObjectID id) throws ClassNotFoundException;
 
   public TCObject lookupExistingOrNull(Object obj);
 
@@ -92,15 +92,13 @@ public interface Manager {
 
   public void optimisticBegin();
 
-  public void optimisticCommit();
+  public void optimisticCommit() throws ClassNotFoundException;
 
   public void optimisticRollback();
 
   public boolean isLocked(Object obj);
 
   public boolean tryMonitorEnter(Object obj, int type);
-
-  public int heldCount(Object obj, int lockLevel);
 
   public boolean isHeldByCurrentThread(Object obj, int lockLevel);
 

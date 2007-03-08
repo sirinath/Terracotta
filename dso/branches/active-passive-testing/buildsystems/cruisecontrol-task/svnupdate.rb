@@ -17,7 +17,7 @@ class SvnUpdate
     build_archive_dir = "/shares/monkeyoutput"
 
     if ENV['OS'] =~ /win/i
-      @topdir=`cygpath -u #{@topdir}`
+      @topdir=`cygpath -u #{@topdir}`.chomp
       build_archive_dir = "o:"
     end
 
@@ -37,16 +37,17 @@ class SvnUpdate
   end
 
   def svn_update_with_error_tolerant(revision)
-    msg=''
+    msg = ''
+    command = "svn update -r#{revision} --non-interactive '#{@topdir}' 2>&1"
     3.downto(1) do
-      log("svn update #{@topdir} -r #{revision} --non-interactive 2>&1")
-      msg=`svn update #{@topdir} -r #{revision} --non-interactive 2>&1`
+      log(command)
+      msg = `#{command}`
       log(msg)
       return if $? == 0
       log("sleep 5 min after svn error")
       sleep(5*60)
-      log("svn cleanup #{@topdir}")
-      `svn cleanup #{@topdir}`
+      log("svn cleanup '#{@topdir}'")
+      `svn cleanup '#{@topdir}'`
     end
     fail(msg)
   end
@@ -84,13 +85,17 @@ class SvnUpdate
         log("general-monkey - updating to HEAD")
         svn_update_with_error_tolerant("HEAD")
         exit(0)
-      elsif current_rev <= current_good_rev
+      elsif current_rev < current_good_rev
         log("not general-monkey - updating to #{current_good_rev}")
         svn_update_with_error_tolerant(current_good_rev)
+        exit(0)
+      elsif current_rev == current_good_rev
+        log("current_rev == currently_good_rev - no svn update needed")
         exit(0)
       else # I have a revision that is greater than a good known reivision, so I sleep and wait
         log("sleep 5 min waiting for good rev")
         sleep(5*60)
+        log("awaken")
       end
     end
   end
