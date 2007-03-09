@@ -4,7 +4,7 @@
  */
 package com.tc.l2.state;
 
-import com.tc.l2.msg.ClusterStateMessage;
+import com.tc.l2.msg.L2StateMessage;
 import com.tc.net.groups.NodeID;
 
 public interface ElectionManager {
@@ -13,11 +13,11 @@ public interface ElectionManager {
 
   public void declareWinner(NodeID myNodeId);
   
-  public void handleStartElectionRequest(ClusterStateMessage msg);
+  public void handleStartElectionRequest(L2StateMessage msg);
 
-  public void handleElectionAbort(ClusterStateMessage msg);
+  public void handleElectionAbort(L2StateMessage msg);
 
-  public void handleElectionResultMessage(ClusterStateMessage msg);
+  public void handleElectionResultMessage(L2StateMessage msg);
 
   public void reset();
 

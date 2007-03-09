@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-public class ClusterStateMessage extends AbstractGroupMessage {
+public class L2StateMessage extends AbstractGroupMessage {
 
   public static final int START_ELECTION          = 0; // Sent during the start of an election by the initiator
   public static final int ELECTION_RESULT         = 1; // Sen at the end of an election by the initiator
@@ -25,16 +25,16 @@ public class ClusterStateMessage extends AbstractGroupMessage {
   private Enrollment      enrollment;
 
   // To make serialization happy
-  public ClusterStateMessage() {
+  public L2StateMessage() {
     super(-1);
   }
 
-  public ClusterStateMessage(int type, Enrollment e) {
+  public L2StateMessage(int type, Enrollment e) {
     super(type);
     this.enrollment = e;
   }
 
-  public ClusterStateMessage(MessageID requestID, int type, Enrollment e) {
+  public L2StateMessage(MessageID requestID, int type, Enrollment e) {
     super(type, requestID);
     this.enrollment = e;
   }

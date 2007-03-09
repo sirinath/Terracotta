@@ -9,9 +9,13 @@ import com.tc.net.groups.GroupManager;
 public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager {
 
   private final GroupManager groupManager;
+  private ClusterState state;
 
   public ReplicatedClusterStateManagerImpl(GroupManager groupManager) {
     this.groupManager = groupManager;
   }
   
+  private static final class ClusterState {
+    
+  }
 }

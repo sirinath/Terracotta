@@ -4,8 +4,8 @@
  */
 package com.tc.l2.state;
 
-import com.tc.l2.msg.ClusterStateMessage;
-import com.tc.l2.msg.ClusterStateMessageFactory;
+import com.tc.l2.msg.L2StateMessage;
+import com.tc.l2.msg.L2StateMessageFactory;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupException;
@@ -43,8 +43,8 @@ public class ElectionManagerImpl implements ElectionManager {
     this.groupManager = groupManager;
   }
 
-  public synchronized void handleStartElectionRequest(ClusterStateMessage msg) {
-    Assert.assertEquals(ClusterStateMessage.START_ELECTION, msg.getType());
+  public synchronized void handleStartElectionRequest(L2StateMessage msg) {
+    Assert.assertEquals(L2StateMessage.START_ELECTION, msg.getType());
     if (state == ELECTION_IN_PROGRESS) {
       // Another node is also joining in the election process
       // Cast its vote and notify my vote
@@ -67,8 +67,8 @@ public class ElectionManagerImpl implements ElectionManager {
     }
   }
 
-  public synchronized void handleElectionAbort(ClusterStateMessage msg) {
-    Assert.assertEquals(ClusterStateMessage.ABORT_ELECTION, msg.getType());
+  public synchronized void handleElectionAbort(L2StateMessage msg) {
+    Assert.assertEquals(L2StateMessage.ABORT_ELECTION, msg.getType());
     if (state == ELECTION_IN_PROGRESS) {
       // An existing ACTIVE Node has forced election to quit
       Assert.assertNotNull(myVote);
@@ -78,11 +78,11 @@ public class ElectionManagerImpl implements ElectionManager {
     }
   }
 
-  public synchronized void handleElectionResultMessage(ClusterStateMessage msg) {
-    Assert.assertEquals(ClusterStateMessage.ELECTION_RESULT, msg.getType());
+  public synchronized void handleElectionResultMessage(L2StateMessage msg) {
+    Assert.assertEquals(L2StateMessage.ELECTION_RESULT, msg.getType());
     if (state == ELECTION_COMPLETE && !this.winner.equals(msg.getEnrollment())) {
       // conflict
-      GroupMessage resultConflict = ClusterStateMessageFactory.createResultConflictMessage(msg, this.winner);
+      GroupMessage resultConflict = L2StateMessageFactory.createResultConflictMessage(msg, this.winner);
       logger.warn("WARNING :: Election result conflict : Winner local = " + this.winner + " :  remote winner = "
                   + msg.getEnrollment());
       try {
@@ -95,7 +95,7 @@ public class ElectionManagerImpl implements ElectionManager {
       // Agree to the result and abort the election
       basicAbort(msg);
     }
-    GroupMessage resultAgreed = ClusterStateMessageFactory.createResultAgreedMessage(msg, msg.getEnrollment());
+    GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(msg, msg.getEnrollment());
     logger.info("Agreed with Election Result from " + msg.messageFrom() + " : " + resultAgreed);
     try {
       groupManager.sendTo(msg.messageFrom(), resultAgreed);
@@ -104,7 +104,7 @@ public class ElectionManagerImpl implements ElectionManager {
     }
   }
 
-  private void basicAbort(ClusterStateMessage msg) {
+  private void basicAbort(L2StateMessage msg) {
     this.winner = msg.getEnrollment();
     reset();
     logger.info("Aborted Election : Winner is : " + this.winner);
@@ -180,11 +180,11 @@ public class ElectionManagerImpl implements ElectionManager {
     msg = createElectionResultMessage(e);
     GroupResponse responses = groupManager.sendAllAndWaitForResponse(msg);
     for (Iterator i = responses.getResponses().iterator(); i.hasNext();) {
-      ClusterStateMessage response = (ClusterStateMessage) i.next();
+      L2StateMessage response = (L2StateMessage) i.next();
       Assert.assertEquals(msg.getMessageID(), response.inResponseTo());
-      if (response.getType() == ClusterStateMessage.RESULT_AGREED) {
+      if (response.getType() == L2StateMessage.RESULT_AGREED) {
         Assert.assertEquals(e, response.getEnrollment());
-      } else if (response.getType() == ClusterStateMessage.RESULT_CONFLICT) {
+      } else if (response.getType() == L2StateMessage.RESULT_CONFLICT) {
         logger.info("Result Conflict: Local Result : " + e + " From : " + response.messageFrom() + " Result : "
                     + response.getEnrollment());
         return NodeID.NULL_ID;
@@ -235,19 +235,19 @@ public class ElectionManagerImpl implements ElectionManager {
   }
 
   private GroupMessage createElectionStartedMessage(Enrollment e) {
-    return ClusterStateMessageFactory.createElectionStartedMessage(e);
+    return L2StateMessageFactory.createElectionStartedMessage(e);
   }
 
   private GroupMessage createElectionWonMessage(Enrollment e) {
-    return ClusterStateMessageFactory.createElectionWonMessage(e);
+    return L2StateMessageFactory.createElectionWonMessage(e);
   }
 
   private GroupMessage createElectionResultMessage(Enrollment e) {
-    return ClusterStateMessageFactory.createElectionResultMessage(e);
+    return L2StateMessageFactory.createElectionResultMessage(e);
   }
 
-  private GroupMessage createElectionStartedMessage(ClusterStateMessage msg, Enrollment e) {
-    return ClusterStateMessageFactory.createElectionStartedMessage(msg, e);
+  private GroupMessage createElectionStartedMessage(L2StateMessage msg, Enrollment e) {
+    return L2StateMessageFactory.createElectionStartedMessage(msg, e);
   }
 
 }

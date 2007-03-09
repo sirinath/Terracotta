@@ -8,8 +8,8 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 import com.tc.async.api.Sink;
 import com.tc.l2.context.StateChangedEvent;
-import com.tc.l2.msg.ClusterStateMessage;
-import com.tc.l2.msg.ClusterStateMessageFactory;
+import com.tc.l2.msg.L2StateMessage;
+import com.tc.l2.msg.L2StateMessageFactory;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupEventsListener;
@@ -46,7 +46,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     this.groupManager = groupManager;
     this.stateChangeSink = stateChangeSink;
     this.electionMgr = new ElectionManagerImpl(groupManager);
-    this.groupManager.registerForMessages(ClusterStateMessage.class, this);
+    this.groupManager.registerForMessages(L2StateMessage.class, this);
     this.groupManager.registerForGroupEvents(this);
   }
 
@@ -145,7 +145,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
 
   public void moveNodeToPassiveStandby(NodeID nodeID) {
     logger.info("Requesting node " + nodeID + " to move to " + PASSIVE_STANDBY);
-    GroupMessage msg = ClusterStateMessageFactory.createMoveToPassiveStandbyMessage(EnrollmentFactory
+    GroupMessage msg = L2StateMessageFactory.createMoveToPassiveStandbyMessage(EnrollmentFactory
         .createTrumpEnrollment(myNodeId));
     try {
       this.groupManager.sendTo(nodeID, msg);
@@ -158,29 +158,29 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
    * Message Listener Interface, TODO::move to a stage
    */
   public synchronized void messageReceived(NodeID fromNode, GroupMessage msg) {
-    if (!(msg instanceof ClusterStateMessage)) { throw new AssertionError(
+    if (!(msg instanceof L2StateMessage)) { throw new AssertionError(
                                                                           "StateManagerImpl : Received wrong message type :"
                                                                               + msg); }
-    ClusterStateMessage clusterMsg = (ClusterStateMessage) msg;
+    L2StateMessage clusterMsg = (L2StateMessage) msg;
     handleClusterStateMessage(clusterMsg);
   }
 
-  private void handleClusterStateMessage(ClusterStateMessage clusterMsg) {
+  private void handleClusterStateMessage(L2StateMessage clusterMsg) {
     try {
       switch (clusterMsg.getType()) {
-        case ClusterStateMessage.START_ELECTION:
+        case L2StateMessage.START_ELECTION:
           handleStartElectionRequest(clusterMsg);
           break;
-        case ClusterStateMessage.ABORT_ELECTION:
+        case L2StateMessage.ABORT_ELECTION:
           handleElectionAbort(clusterMsg);
           break;
-        case ClusterStateMessage.ELECTION_RESULT:
+        case L2StateMessage.ELECTION_RESULT:
           handleElectionResultMessage(clusterMsg);
           break;
-        case ClusterStateMessage.ELECTION_WON:
+        case L2StateMessage.ELECTION_WON:
           handleElectionWonMessage(clusterMsg);
           break;
-        case ClusterStateMessage.MOVE_TO_PASSIVE_STANDBY:
+        case L2StateMessage.MOVE_TO_PASSIVE_STANDBY:
           handleMoveToPassiveStandbyMessage(clusterMsg);
           break;
         default:
@@ -193,11 +193,11 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     }
   }
 
-  private void handleMoveToPassiveStandbyMessage(ClusterStateMessage clusterMsg) {
+  private void handleMoveToPassiveStandbyMessage(L2StateMessage clusterMsg) {
     moveToPassiveStandbyState();
   }
 
-  private void handleElectionWonMessage(ClusterStateMessage clusterMsg) {
+  private void handleElectionWonMessage(L2StateMessage clusterMsg) {
     if (state == ACTIVE_COORDINATOR) {
       // Cant get Election Won from another node : Split brain
       // TODO:: Add some reconcile path
@@ -210,18 +210,18 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     moveToPassiveState(winningEnrollment.isANewCandidate());
   }
 
-  private void handleElectionResultMessage(ClusterStateMessage msg) throws GroupException {
+  private void handleElectionResultMessage(L2StateMessage msg) throws GroupException {
     if (activeNode.equals(msg.getEnrollment().getNodeID())) {
       Assert.assertFalse(NodeID.NULL_ID.equals(activeNode));
       // This wouldnt normally happen, but we agree - so ack
-      GroupMessage resultAgreed = ClusterStateMessageFactory.createResultAgreedMessage(msg, msg.getEnrollment());
+      GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(msg, msg.getEnrollment());
       logger.info("Agreed with Election Result from " + msg.messageFrom() + " : " + resultAgreed);
       groupManager.sendTo(msg.messageFrom(), resultAgreed);
     } else if (state == ACTIVE_COORDINATOR || !activeNode.isNull()) {
       // This shouldn't happen normally, but is possible when there is some weird network error where A sees B,
       // B sees A/C and C sees B and A is active and C is trying to run election
       // Force other node to rerun election so that we can abort
-      GroupMessage resultConflict = ClusterStateMessageFactory.createResultConflictMessage(msg, EnrollmentFactory
+      GroupMessage resultConflict = L2StateMessageFactory.createResultConflictMessage(msg, EnrollmentFactory
           .createTrumpEnrollment(myNodeId));
       warn("WARNING :: Active Node = " + activeNode + " , " + state
            + " received ELECTION_RESULT message from another node : " + msg + " : Forcing re-election "
@@ -232,7 +232,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     }
   }
 
-  private void handleElectionAbort(ClusterStateMessage clusterMsg) {
+  private void handleElectionAbort(L2StateMessage clusterMsg) {
     if (state == ACTIVE_COORDINATOR) {
       // Cant get Abort back to ACTIVE, if so then there is a split brain
       logger.error(state + " Received Abort Election  Msg : Possible split brain detected ");
@@ -241,10 +241,10 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     electionMgr.handleElectionAbort(clusterMsg);
   }
 
-  private void handleStartElectionRequest(ClusterStateMessage msg) throws GroupException {
+  private void handleStartElectionRequest(L2StateMessage msg) throws GroupException {
     if (state == ACTIVE_COORDINATOR) {
       // This is either a new L2 joining a cluster or a renegade L2. Force it to abort
-      GroupMessage abortMsg = ClusterStateMessageFactory.createAbortElectionMessage(msg, EnrollmentFactory
+      GroupMessage abortMsg = L2StateMessageFactory.createAbortElectionMessage(msg, EnrollmentFactory
           .createTrumpEnrollment(myNodeId));
       info("Forcing Abort Election for " + msg + " with " + abortMsg);
       groupManager.sendTo(msg.messageFrom(), abortMsg);
@@ -258,7 +258,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
     info("Node : " + nodeID + " joined the cluster", true);
     if (state == ACTIVE_COORDINATOR) {
       // notify new node
-      GroupMessage msg = ClusterStateMessageFactory.createElectionWonMessage(EnrollmentFactory
+      GroupMessage msg = L2StateMessageFactory.createElectionWonMessage(EnrollmentFactory
           .createTrumpEnrollment(this.myNodeId));
       try {
         groupManager.sendTo(nodeID, msg);
