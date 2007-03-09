@@ -436,7 +436,7 @@ public class TcPlugin extends AbstractUIPlugin
         }
         description.setNatureIds((String[])natureList.toArray(new String[0]));
         project.setDescription(description, monitor);
-        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+        project.refreshLocal(IResource.DEPTH_ZERO, monitor);
         monitor.worked(1);
         
         monitor.beginTask("Closing configuration editor", 4);

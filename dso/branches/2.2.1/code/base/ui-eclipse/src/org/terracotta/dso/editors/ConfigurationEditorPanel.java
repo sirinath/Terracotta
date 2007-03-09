@@ -24,6 +24,12 @@ public class ConfigurationEditorPanel extends Container {
   
   public ConfigurationEditorPanel() {
     super();
+
+    /*
+     * TODO: for some unknown reason this is required under Linux GTK
+     * or else the ConfigEditor Swing panels have white backgrounds. [gkeim]
+     */
+    setOpaque(true);
   }
 
   public static void ensureXmlObject(JComponent comp) {
