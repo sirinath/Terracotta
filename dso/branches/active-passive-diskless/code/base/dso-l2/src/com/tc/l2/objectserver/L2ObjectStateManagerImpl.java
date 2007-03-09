@@ -36,8 +36,18 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
   }
 
   public int setExistingObjectsList(NodeID nodeID, Set oids, ObjectManager objectManager) {
-    L2ObjectStateimpl l2State = new L2ObjectStateimpl(nodeID);
-    nodes.put(nodeID, l2State);
+    L2ObjectStateimpl l2State;
+    synchronized (nodes) {
+      if (nodes.containsKey(nodeID)) {
+        logger.warn("State Object already present for " + nodeID + " Not adding a new state");
+        l2State = (L2ObjectStateimpl) nodes.get(nodeID);
+        logger.warn("Exisiting state contains missing object count : " + l2State.missingOids.size()
+                    + " current number : " + oids.size());
+        return l2State.missingOids.size();
+      }
+      l2State = new L2ObjectStateimpl(nodeID);
+      nodes.put(nodeID, l2State);
+    }
     int missing = l2State.initialize(oids, objectManager);
     return missing;
   }

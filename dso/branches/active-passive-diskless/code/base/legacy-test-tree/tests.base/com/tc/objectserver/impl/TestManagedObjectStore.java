@@ -1,8 +1,10 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
 
+import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
@@ -84,7 +86,11 @@ public class TestManagedObjectStore implements ManagedObjectStore {
   }
 
   public long nextObjectIDBatch(int batchSize) {
-    throw new RuntimeException("Implement me!");
+    throw new ImplementMe();
+  }
+
+  public void setNextAvailableObjectID(long startID) {
+    throw new ImplementMe();
   }
 
   public Map getRootNamesToIDsMap() {

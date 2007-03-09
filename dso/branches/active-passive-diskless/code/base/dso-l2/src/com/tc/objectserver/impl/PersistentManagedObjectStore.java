@@ -33,6 +33,10 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     return rv;
   }
 
+  public void setNextAvailableObjectID(long startID) {
+    this.objectPersistor.setNextAvailableObjectID(startID);
+  }
+
   public void addNewRoot(PersistenceTransaction tx, String rootName, ObjectID id) {
     objectPersistor.addRoot(tx, rootName, id);
   }

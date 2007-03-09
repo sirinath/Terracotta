@@ -88,8 +88,8 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
                                                           this.server.getContext().getObjectManager(), objectsSyncSink);
-    
-    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager);
+
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, server.getManagedObjectStore());
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
@@ -116,6 +116,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
 
   public void l2StateChanged(StateChangedEvent sce) {
     if (sce.movedToActive()) {
+      rClusterStateMgr.sync();
       rObjectManager.sync();
       try {
         server.startActiveMode();

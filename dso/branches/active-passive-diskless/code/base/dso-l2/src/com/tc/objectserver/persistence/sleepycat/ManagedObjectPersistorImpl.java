@@ -70,6 +70,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return objectIDSequence.nextBatch(batchSize);
   }
 
+  public void setNextAvailableObjectID(long startID) {
+    objectIDSequence.setNext(startID);
+  }
+
   public void addRoot(PersistenceTransaction tx, String name, ObjectID id) {
     validateID(id);
     OperationStatus status = null;

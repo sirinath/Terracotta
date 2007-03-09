@@ -10,6 +10,7 @@ import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinter;
+import com.tc.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -128,6 +129,11 @@ public class InMemoryManagedObjectStore implements ManagedObjectStore {
     long rv = objectIDSequence;
     objectIDSequence += batchSize;
     return rv;
+  }
+
+  public void setNextAvailableObjectID(long startID) {
+    Assert.assertTrue(startID >= objectIDSequence);
+    objectIDSequence = startID;
   }
 
   public void setTransientData(ManagedObjectStateFactory stateFactory) {

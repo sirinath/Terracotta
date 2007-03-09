@@ -154,8 +154,6 @@ import com.tc.util.TCTimeoutException;
 import com.tc.util.TCTimerImpl;
 import com.tc.util.io.FileUtils;
 import com.tc.util.sequence.BatchSequence;
-import com.tc.util.sequence.ObjectIDSequence;
-import com.tc.util.sequence.ObjectIDSequenceProvider;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
 import com.tc.util.startuplock.FileNotCreatedException;
@@ -331,7 +329,6 @@ public class DistributedObjectServer extends SEDA {
     persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
     PersistenceTransactionProvider nullPersistenceTransactionProvider = new NullPersistenceTransactionProvider();
     PersistenceTransactionProvider transactionStorePTP;
-    ObjectIDSequence objectIDSequenceProvider;
     if (persistent) {
       // XXX: This construction/initialization order is pretty lame. Perhaps
       // making the sequence provider its own
@@ -346,12 +343,10 @@ public class DistributedObjectServer extends SEDA {
 
       transactionPersistor = persistor.getTransactionPersistor();
       transactionStorePTP = persistenceTransactionProvider;
-      objectIDSequenceProvider = objectStore;
     } else {
       transactionPersistor = new NullTransactionPersistor();
       transactionStorePTP = nullPersistenceTransactionProvider;
       globalTransactionIDSequence = new SimpleSequence();
-      objectIDSequenceProvider = new ObjectIDSequenceProvider(1000);
     }
 
     clientStateStore = persistor.getClientStatePersistor();
@@ -502,7 +497,7 @@ public class DistributedObjectServer extends SEDA {
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
                              new RespondToObjectRequestHandler(), 4, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
-                                                new RequestObjectIDBatchHandler(objectIDSequenceProvider), 1,
+                                                new RequestObjectIDBatchHandler(objectStore), 1,
                                                 maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
                                                     new TransactionAcknowledgementHandler(), 1, maxStageSize);
@@ -577,7 +572,7 @@ public class DistributedObjectServer extends SEDA {
                                                                                                .getStage(
                                                                                                          ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
                                                                                                .getSink(),
-                                                                                           objectIDSequenceProvider,
+                                                                                           objectStore,
                                                                                            new TCTimerImpl(
                                                                                                            "Reconnect timer",
                                                                                                            true),
@@ -717,6 +712,10 @@ public class DistributedObjectServer extends SEDA {
     if (startupLock != null) {
       startupLock.release();
     }
+  }
+  
+  public ManagedObjectStore getManagedObjectStore() {
+    return objectStore;
   }
 
   public ServerConfigurationContext getContext() {

@@ -26,6 +26,8 @@ public interface ManagedObjectPersistor {
 
   public long nextObjectIDBatch(int batchSize);
 
+  public void setNextAvailableObjectID(long startID);
+  
   public ObjectIDSet2 getAllObjectIDs();
 
   public void saveObject(PersistenceTransaction tx, ManagedObject managedObject);

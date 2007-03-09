@@ -5,4 +5,8 @@ package com.tc.l2.api;
 
 public interface ReplicatedClusterStateManager {
 
+  public void publishNextAvailableObjectID(long l);
+
+  public void sync();
+
 }
