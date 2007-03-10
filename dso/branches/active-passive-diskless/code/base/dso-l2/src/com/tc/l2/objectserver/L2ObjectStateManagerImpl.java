@@ -28,6 +28,13 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
 
   CopyOnWriteArrayMap           nodes  = new CopyOnWriteArrayMap();
 
+  public void addL2(NodeID nodeID) {
+    Object l2State = nodes.put(nodeID, new L2ObjectStateimpl(nodeID));
+    if (l2State != null) {
+      logger.warn("An old exisiting L2State found for " + nodeID + " L2State : " + l2State);
+    }
+  }
+
   public void removeL2(NodeID nodeID) {
     Object l2State = nodes.remove(nodeID);
     if (l2State == null) {
@@ -36,20 +43,14 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
   }
 
   public int setExistingObjectsList(NodeID nodeID, Set oids, ObjectManager objectManager) {
-    L2ObjectStateimpl l2State;
-    synchronized (nodes) {
-      if (nodes.containsKey(nodeID)) {
-        logger.warn("State Object already present for " + nodeID + " Not adding a new state");
-        l2State = (L2ObjectStateimpl) nodes.get(nodeID);
-        logger.warn("Exisiting state contains missing object count : " + l2State.missingOids.size()
-                    + " current number : " + oids.size());
-        return l2State.missingOids.size();
-      }
-      l2State = new L2ObjectStateimpl(nodeID);
-      nodes.put(nodeID, l2State);
+    L2ObjectStateimpl l2State = (L2ObjectStateimpl) nodes.get(nodeID);
+    if (l2State != null) {
+      int missing = l2State.initialize(oids, objectManager);
+      return missing;
+    } else {
+      logger.warn("L2State Not found for " + nodeID);
+      return Integer.MAX_VALUE;
     }
-    int missing = l2State.initialize(oids, objectManager);
-    return missing;
   }
 
   public ManagedObjectSyncContext getSomeObjectsToSyncContext(NodeID nodeID, int count, Sink sink) {

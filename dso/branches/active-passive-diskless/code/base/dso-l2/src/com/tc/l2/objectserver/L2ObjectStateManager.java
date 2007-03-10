@@ -13,6 +13,8 @@ import java.util.Set;
 
 public interface L2ObjectStateManager {
 
+  public void addL2(NodeID nodeID);
+
   public void removeL2(NodeID nodeID);
 
   public int setExistingObjectsList(NodeID nodeID, Set oids, ObjectManager objectManager);
@@ -22,5 +24,4 @@ public interface L2ObjectStateManager {
   public void close(ManagedObjectSyncContext mosc);
   
   public List getL2ObjectStates();
-
 }

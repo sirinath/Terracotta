@@ -4,6 +4,8 @@
  */
 package com.tc.l2.objectserver;
 
+import com.tc.net.groups.NodeID;
+
 public interface ReplicatedObjectManager {
 
   /**
@@ -13,5 +15,7 @@ public interface ReplicatedObjectManager {
   public void sync();
 
   public boolean relayTransactions();
+
+  public void query(NodeID nodeID);
 
 }

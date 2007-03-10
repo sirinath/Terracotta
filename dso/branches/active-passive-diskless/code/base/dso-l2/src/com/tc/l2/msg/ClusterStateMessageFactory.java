@@ -19,4 +19,9 @@ public class ClusterStateMessageFactory {
     return response;
   }
 
+  public static GroupMessage createClusterStateMessage(ClusterState state) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.COMPLETE_STATE, state);
+    return msg;
+  }
+
 }

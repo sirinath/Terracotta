@@ -3,10 +3,14 @@
  */
 package com.tc.l2.api;
 
+import com.tc.net.groups.NodeID;
+
 public interface ReplicatedClusterStateManager {
 
   public void publishNextAvailableObjectID(long l);
 
   public void sync();
+
+  public void publishClusterState(NodeID nodeID);
 
 }

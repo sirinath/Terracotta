@@ -78,9 +78,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   }
 
   private static void validateEventClass(Class clazz) {
-    if(!EventContext.class.isAssignableFrom(clazz)) {
-      throw new AssertionError(clazz + " does not implement interface " + EventContext.class.getName());
-    }
+    if (!EventContext.class.isAssignableFrom(clazz)) { throw new AssertionError(clazz
+                                                                                + " does not implement interface "
+                                                                                + EventContext.class.getName()); }
   }
 
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
@@ -200,13 +200,13 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
     if (debug) {
-      logger.info(this.thisNodeID + " : Sending to ALL and Wait for Response : " + msg.getMessageID());
+      logger.info(this.thisNodeID + " : Sending to ALL and Waiting for Response : " + msg.getMessageID());
     }
     GroupResponseImpl groupResponse = new GroupResponseImpl();
     MessageID msgID = msg.getMessageID();
     GroupResponse old = pendingRequests.put(msgID, groupResponse);
     Assert.assertNull(old);
-    groupResponse.sendMessage(group, msg);
+    groupResponse.sendAll(group, msg);
     groupResponse.waitForAllResponses();
     pendingRequests.remove(msgID);
     return groupResponse;
@@ -231,11 +231,32 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
   }
 
-  public void zapNode(NodeID nodeID) {
-    logger.warn("TODO::Zapping node : " + nodeID);
-    //TODO:: Implement this
+  public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) throws GroupException {
+    if (debug) {
+      logger.info(this.thisNodeID + " : Sending to " + nodeID + " and Waiting for Response : " + msg.getMessageID());
+    }
+    GroupResponseImpl groupResponse = new GroupResponseImpl();
+    MessageID msgID = msg.getMessageID();
+    Member to[] = new Member[1];
+    to[0] = nodes.get(nodeID);
+    if (to[0] != null) {
+      GroupResponse old = pendingRequests.put(msgID, groupResponse);
+      Assert.assertNull(old);
+      groupResponse.sendTo(group, msg, to);
+      groupResponse.waitForAllResponses();
+      pendingRequests.remove(msgID);
+    } else {
+      String errorMsg = "Node " + nodeID + " not present in the group. Ignoring Message : " + msg;
+      logger.error(errorMsg);
+      throw new GroupException(errorMsg);
+    }
+    return groupResponse.getResponse(0);
   }
 
+  public void zapNode(NodeID nodeID) {
+    logger.warn("TODO::Zapping node : " + nodeID);
+    // TODO:: Implement this
+  }
 
   private static class GroupResponseImpl implements GroupResponse {
 
@@ -245,6 +266,24 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     public synchronized List getResponses() {
       Assert.assertTrue(waitFor.isEmpty());
       return responses;
+    }
+
+    public GroupMessage getResponse(int index) {
+      Assert.assertTrue(waitFor.isEmpty());
+      Assert.assertTrue(index < responses.size());
+      return responses.get(0);
+    }
+
+    public synchronized void sendTo(GroupChannel group, GroupMessage msg, Member[] m) {
+      waitFor.addAll(Arrays.asList(m));
+      try {
+        if (m.length > 0) {
+          group.send(m, msg, Channel.SEND_OPTIONS_DEFAULT);
+        }
+      } catch (ChannelException e) {
+        logger.error("Error sending msg : " + msg, e);
+        reconsileWaitFor(e);
+      }
     }
 
     public synchronized void addResponseFrom(Member sender, GroupMessage gmsg) {
@@ -268,17 +307,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       }
     }
 
-    public synchronized void sendMessage(GroupChannel group, GroupMessage msg) {
+    public synchronized void sendAll(GroupChannel group, GroupMessage msg) {
       Member m[] = group.getMembers();
-      waitFor.addAll(Arrays.asList(m));
-      try {
-        if (m.length > 0) {
-          group.send(m, msg, Channel.SEND_OPTIONS_DEFAULT);
-        }
-      } catch (ChannelException e) {
-        logger.error("Error sending msg : " + msg, e);
-        reconsileWaitFor(e);
-      }
+      sendTo(group, msg, m);
     }
 
     private void reconsileWaitFor(ChannelException e) {
@@ -288,4 +319,5 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       }
     }
   }
+
 }

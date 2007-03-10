@@ -15,6 +15,7 @@ import java.io.ObjectOutput;
 public class ClusterStateMessage extends AbstractGroupMessage {
 
   public static final int OBJECT_ID         = 0x00;
+  public static final int COMPLETE_STATE    = 0xF0;
   public static final int OPERATION_SUCCESS = 0xFF;
 
   private ClusterState    state;
@@ -39,6 +40,10 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         state = new ClusterState();
         state.setNextAvailableObjectID(in.readLong());
         break;
+      case COMPLETE_STATE:
+        state = new ClusterState();
+        state.setNextAvailableObjectID(in.readLong());
+        break;
       case OPERATION_SUCCESS:
         break;
       default:
@@ -49,6 +54,9 @@ public class ClusterStateMessage extends AbstractGroupMessage {
   protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
     switch (msgType) {
       case OBJECT_ID:
+        out.writeLong(state.getNextAvailableObjectID());
+        break;
+      case COMPLETE_STATE:
         out.writeLong(state.getNextAvailableObjectID());
         break;
       case OPERATION_SUCCESS:

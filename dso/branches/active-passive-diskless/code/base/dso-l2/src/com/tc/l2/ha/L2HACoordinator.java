@@ -27,15 +27,17 @@ import com.tc.l2.state.StateManager;
 import com.tc.l2.state.StateManagerImpl;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.groups.GroupEventsListener;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupManagerFactory;
+import com.tc.net.groups.NodeID;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
 
 import java.io.IOException;
 
-public class L2HACoordinator implements L2Coordinator, StateChangeListener {
+public class L2HACoordinator implements L2Coordinator, StateChangeListener, GroupEventsListener {
 
   private static final TCLogger         logger = TCLogging.getLogger(L2HACoordinator.class);
 
@@ -86,14 +88,16 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
     final Sink ackProcessingStage = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
-    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, this.stateManager, this.l2ObjectStateManager,
-                                                          this.server.getContext().getObjectManager(), objectsSyncSink);
+    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
+                                                          server.getContext().getObjectManager(), objectsSyncSink);
 
-    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, server.getManagedObjectStore());
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, server.getManagedObjectStore());
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(ServerTxnAckMessage.class, ackProcessingStage);
+    
+    this.groupManager.registerForGroupEvents(this);
 
     stateManager.start();
   }
@@ -126,6 +130,20 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener {
     } else {
       // TODO:// handle
       logger.info("Recd. " + sce + " ! Ignoring for now !!!!");
+    }
+  }
+
+  public void nodeJoined(NodeID nodeID) {
+    if (stateManager.isActiveCoordinator()) {
+      l2ObjectStateManager.addL2(nodeID);
+      rClusterStateMgr.publishClusterState(nodeID);
+      rObjectManager.query(nodeID);
+    }
+  }
+
+  public void nodeLeft(NodeID nodeID) {
+    if (stateManager.isActiveCoordinator()) {
+      l2ObjectStateManager.removeL2(nodeID);
     }
   }
 

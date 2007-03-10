@@ -52,6 +52,12 @@ public class SingleNodeGroupManager implements GroupManager {
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
     throw new GroupException("Can't write to Node : " + node + " Node Not found !");
   }
+  
+  public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) {
+    // Comeback
+    return null;
+  }
+
 
   public void registerForGroupEvents(GroupEventsListener listener) {
     // NOP : No network, no one joins or leaves

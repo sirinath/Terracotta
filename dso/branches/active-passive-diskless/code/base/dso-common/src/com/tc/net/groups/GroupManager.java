@@ -14,11 +14,13 @@ public interface GroupManager {
 
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException;
 
+  public void sendTo(NodeID node, GroupMessage msg) throws GroupException;
+  
+  public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) throws GroupException;
+  
   public void registerForMessages(Class msgClass, GroupMessageListener listener);
 
   public void routeMessages(Class msgClass, Sink sink);
-  
-  public void sendTo(NodeID node, GroupMessage msg) throws GroupException;
 
   public void registerForGroupEvents(GroupEventsListener listener);
 

@@ -11,7 +11,6 @@ import com.tc.l2.msg.ObjectListSyncMessageFactory;
 import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.GroupEventsListener;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
@@ -24,7 +23,7 @@ import com.tc.util.Assert;
 import java.util.Iterator;
 import java.util.Set;
 
-public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupEventsListener, GroupMessageListener {
+public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupMessageListener {
 
   private static final TCLogger      logger = TCLogging.getLogger(ReplicatedObjectManagerImpl.class);
 
@@ -42,7 +41,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     this.objectManager = objectManager;
     this.objectsSyncSink = objectsSyncSink;
     this.l2ObjectStateManager = l2ObjectStateManager;
-    this.groupManager.registerForGroupEvents(this);
     this.groupManager.registerForMessages(ObjectListSyncMessage.class, this);
   }
 
@@ -64,24 +62,12 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
   }
 
-  public void nodeJoined(NodeID nodeID) {
-    if (stateManager.isActiveCoordinator()) {
-      query(nodeID);
-    }
-  }
-
   // Query current state of the other L2
-  private void query(NodeID nodeID) {
+  public void query(NodeID nodeID) {
     try {
       groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncRequestMessage());
     } catch (GroupException e) {
       logger.error("Error Writting Msg : ", e);
-    }
-  }
-
-  public void nodeLeft(NodeID nodeID) {
-    if (stateManager.isActiveCoordinator()) {
-      l2ObjectStateManager.removeL2(nodeID);
     }
   }
 
