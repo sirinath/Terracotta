@@ -21,16 +21,15 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class IBatisSimpleTestApp extends AbstractTransparentApp {
-  private CyclicBarrier barrier;
+  private CyclicBarrier  barrier;
 
-  /**
-   * SqlMapClient instances are thread safe, so you only need one. In this case,
-   * we'll use a static singleton. So sue me. ;-)
-   */
-  private SqlMapClient sqlMapper;
+  private SqlMapClient   sqlMapper;
 
-  private Customer cus;
-  
+  private Customer       cus;
+
+  private final Object   sharedLock    = new Object();
+  private boolean        tablesDropped = false;
+
   private static boolean pluginsLoaded = false;
 
   public static synchronized boolean pluginsLoaded() {
@@ -46,51 +45,62 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
     try {
       int id = barrier.barrier();
 
-      if (id == 0) {
+      try {
 
-        setupDatabaseResource();
-        
-        Account acc = new Account();
-        acc.setNumber("ASI-001");
-        insertAccount(acc);
-        Customer cus = new Customer();
-        cus.setEmailAddress("asi@yahoo.com");
-        cus.setFirstName("Antonio");
-        cus.setLastName("Si");
-        cus.setAccount(acc);
-        insertCustomer(cus);
-        
+        if (id == 0) {
 
+          setupDatabaseResource();
+
+          Account acc = new Account();
+          acc.setNumber("ASI-001");
+          insertAccount(acc);
+          Customer cus = new Customer();
+          cus.setEmailAddress("asi@yahoo.com");
+          cus.setFirstName("Antonio");
+          cus.setLastName("Si");
+          cus.setAccount(acc);
+          insertCustomer(cus);
+
+        }
+
+        barrier.barrier();
+
+        if (id == 0) {
+          Customer cus1 = selectCustomerById(0);
+          cus = cus1;
+
+          shutdownDatabase();
+        }
+        barrier.barrier();
+
+        if (id == 1) {
+          Account acc = cus.getAccount();
+          Assert.assertEquals("ASI-001", acc.getNumber());
+
+          shutdownDatabase();
+        }
+
+        barrier.barrier();
+
+      } finally {
+        synchronized (sharedLock) {
+          if (!tablesDropped) {
+            tablesDropped = true;
+            dropAllTables();
+            shutdownDatabase();
+          }
+        }
       }
-
-      barrier.barrier();
-
-      if (id == 0) {
-        cus = selectCustomerById(0);
-
-        shutdownDatabase();
-      }
-      barrier.barrier();
-
-      if (id == 1) {
-        Account acc = cus.getAccount();
-        Assert.assertEquals("ASI-001", acc.getNumber());
-      }
-
-      barrier.barrier();
 
     } catch (Throwable e) {
-      e.printStackTrace(System.err);
+      notifyError(e);
     }
 
   }
 
   private void setupDatabaseResource() throws Exception {
-    Reader reader = Resources.getResourceAsReader("com/tctest/SqlMapConfig.xml");
-    sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader);
-    reader.close();
+    sqlMapper = connectDatabase();
 
-    
     Connection conn = sqlMapper.getDataSource().getConnection();
     PreparedStatement stmt = conn
         .prepareStatement("create table ACCOUNT (acc_id int not null, acc_number varchar(80) null, constraint pk_acc_id primary key (acc_id))");
@@ -101,14 +111,34 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
     stmt.execute();
   }
 
-  private void shutdownDatabase() throws Exception {
+  private SqlMapClient connectDatabase() throws Exception {
+    Reader reader = Resources.getResourceAsReader("com/tctest/SqlMapConfig.xml");
+    SqlMapClient sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader);
+    reader.close();
+
+    return sqlMapper;
+  }
+
+  private void dropAllTables() throws Exception {
+    SqlMapClient sqlMapper = this.sqlMapper;
+    if (sqlMapper == null) {
+      sqlMapper = connectDatabase();
+    }
     Connection conn = sqlMapper.getDataSource().getConnection();
-    PreparedStatement stmt = conn.prepareStatement("shutdown immediately");
+    PreparedStatement stmt = conn.prepareStatement("drop table ACCOUNT");
+    stmt.execute();
+    stmt = conn.prepareStatement("drop table CUSTOMER");
     stmt.execute();
   }
 
-  public Account selectAccountById(int id) throws SQLException {
-    return (Account) sqlMapper.queryForObject("selectAccountById", new Integer(id));
+  private void shutdownDatabase() throws Exception {
+    SqlMapClient sqlMapper = this.sqlMapper;
+    if (sqlMapper == null) {
+      sqlMapper = connectDatabase();
+    }
+    Connection conn = sqlMapper.getDataSource().getConnection();
+    PreparedStatement stmt = conn.prepareStatement("shutdown immediately");
+    stmt.execute();
   }
 
   public Customer selectCustomerById(int id) throws SQLException {
@@ -123,26 +153,17 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
     sqlMapper.insert("insertCustomer", customer);
   }
 
-  public void updateAccount(Account account) throws SQLException {
-    sqlMapper.update("updateAccount", account);
-  }
-
-  public void deleteAccount(int id) throws SQLException {
-    sqlMapper.delete("deleteAccount", new Integer(id));
-  }
-
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = IBatisSimpleTestApp.class.getName();
 
-    config.getOrCreateSpec(testClass) 
-        .addRoot("barrier", "barrier") 
-        .addRoot("cus", "cus");
+    config.getOrCreateSpec(testClass).addRoot("barrier", "barrier").addRoot("cus", "cus").addRoot("sharedLock",
+                                                                                                  "sharedLock").addRoot("tablesDropped", "tablesDropped");
 
     config.addWriteAutolock("* " + testClass + "*.*(..)");
     config.addIncludePattern("com.tctest.domain.Account");
     config.addIncludePattern("com.tctest.domain.Customer");
     new CyclicBarrierSpec().visit(visitor, config);
-    
+
     config.addNewModule("clustered-cglib", "2.1.3");
     config.addNewModule("clustered-iBatis", "2.2.0");
     pluginsLoaded = true;

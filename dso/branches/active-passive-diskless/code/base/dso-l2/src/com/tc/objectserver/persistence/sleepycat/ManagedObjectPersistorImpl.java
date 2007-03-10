@@ -1,7 +1,10 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.persistence.sleepycat;
+
+import EDU.oswego.cs.dl.util.concurrent.CountDown;
 
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.je.Cursor;
@@ -24,7 +27,7 @@ import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPer
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.SyncObjectIdSet;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -131,21 +134,16 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return rv;
   }
 
-  public ObjectIDSet2 getAllObjectIDs() {
-    ObjectIDSet2 rv = new ObjectIDSet2();
-    Cursor cursor = null;
+  public SyncObjectIdSet getAllObjectIDs() {
+    CountDown latch = new CountDown(1);
+    SyncObjectIdSet rv = new SyncObjectIdSet();
+    Thread t = new Thread(new ObjectIdReader(rv, latch), "ObjectIdReaderThread");
+    t.setDaemon(true);
+    t.start();
     try {
-      PersistenceTransaction tx = ptp.newTransaction();
-      cursor = objectDB.openCursor(pt2nt(tx), objectDBCursorConfig);
-      DatabaseEntry key = new DatabaseEntry();
-      DatabaseEntry value = new DatabaseEntry();
-      while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
-        rv.add(new ObjectID(Conversion.bytes2Long(key.getData())));
-      }
-      cursor.close();
-      tx.commit();
-    } catch (Throwable t) {
-      throw new DBException(t);
+      latch.acquire();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
     return rv;
   }
@@ -377,4 +375,35 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     out = out.duplicateAndIndent();
     out.println("db: " + objectDB);
   }
+
+  class ObjectIdReader implements Runnable {
+    private final SyncObjectIdSet set;
+    private final CountDown       locked;
+
+    public ObjectIdReader(SyncObjectIdSet set, CountDown locked) {
+      this.set = set;
+      this.locked = locked;
+    }
+
+    public void run() {
+      try {
+        set.startPopulating();
+        locked.release();
+        PersistenceTransaction tx = ptp.newTransaction();
+        Cursor cursor = objectDB.openCursor(pt2nt(tx), objectDBCursorConfig);
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+          set.add(new ObjectID(Conversion.bytes2Long(key.getData())));
+        }
+        cursor.close();
+        tx.commit();
+      } catch (Throwable t) {
+        throw new DBException(t);
+      } finally {
+        set.stopPopulating();
+      }
+    }
+  }
+
 }

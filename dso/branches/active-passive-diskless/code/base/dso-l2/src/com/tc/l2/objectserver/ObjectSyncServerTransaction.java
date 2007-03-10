@@ -77,6 +77,13 @@ public class ObjectSyncServerTransaction implements ServerTransaction {
   public Collection getObjectIDs() {
     return oids;
   }
+  
+  /*
+   * All objects contained in ObjectSync Message are new Objects for the passive
+   */
+  public Set getNewObjectIDs() {
+    return oids;
+  }
 
   public ObjectStringSerializer getSerializer() {
     return serializer;

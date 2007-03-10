@@ -11,6 +11,7 @@ import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
+import com.tc.util.SyncObjectIdSet;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -72,9 +73,11 @@ public class InMemoryManagedObjectStore implements ManagedObjectStore {
     removeAllObjectsByID(tx, objectIds);
   }
 
-  public synchronized Set getAllObjectIDs() {
+  public synchronized SyncObjectIdSet getAllObjectIDs() {
     assertNotInShutdown();
-    return new HashSet(this.managed.keySet());
+    SyncObjectIdSet rv = new SyncObjectIdSet();
+    rv.addAll(managed.keySet());
+    return rv;
   }
 
   public synchronized int getObjectCount() {

@@ -6,7 +6,7 @@ package com.tc.objectserver.persistence.api;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.text.PrettyPrinter;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.SyncObjectIdSet;
 
 import java.util.Collection;
 import java.util.Map;
@@ -28,7 +28,7 @@ public interface ManagedObjectPersistor {
 
   public void setNextAvailableObjectID(long startID);
   
-  public ObjectIDSet2 getAllObjectIDs();
+  public SyncObjectIdSet getAllObjectIDs();
 
   public void saveObject(PersistenceTransaction tx, ManagedObject managedObject);
 

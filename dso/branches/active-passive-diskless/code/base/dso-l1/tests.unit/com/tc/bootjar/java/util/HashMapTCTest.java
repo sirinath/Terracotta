@@ -590,7 +590,7 @@ public class HashMapTCTest extends TCTestCase {
       return false;
     }
 
-    public boolean isNeverAdaptable(String fullName) {
+    public boolean isNeverAdaptable(ClassInfo classInfo) {
       return true;
     }
 
@@ -606,12 +606,12 @@ public class HashMapTCTest extends TCTestCase {
       return null;
     }
 
-    public Iterator getAllSpecs() {
+    public TransparencyClassSpec[] getAllSpecs() {
       throw new ImplementMe();
     }
 
     public void verifyBootJarContents() {
-      throw new ImplementMe();
+      //
     }
 
     public Iterator getAllUserDefinedBootSpecs() {
@@ -762,7 +762,7 @@ public class HashMapTCTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public boolean hasIncludeExcludePattern(String className) {
+    public boolean hasIncludeExcludePattern(ClassInfo classInfo) {
       throw new ImplementMe();
     }
 
@@ -903,6 +903,10 @@ public class HashMapTCTest extends TCTestCase {
     }
 
     public void addDistributedMethodCall(DistributedMethodSpec dms) {
+      throw new ImplementMe();
+    }
+
+    public Class getTCPeerClass(Class clazz) {
       throw new ImplementMe();
     }
 

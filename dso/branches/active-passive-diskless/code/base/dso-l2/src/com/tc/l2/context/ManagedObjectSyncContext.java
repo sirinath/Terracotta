@@ -7,13 +7,11 @@ package com.tc.l2.context;
 import com.tc.async.api.Sink;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.net.groups.NodeID;
-import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.util.Assert;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +26,6 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   private final Sink                 nextSink;
   private final Map                  rootsMap;
 
-  private boolean                    isPending = false;
   private ObjectManagerLookupResults result;
   private TCByteBuffer[]             dnas;
   private int                        dnaCount;
@@ -50,23 +47,12 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
     this.rootsMap = rootsMap;
   }
 
-  public boolean isPendingRequest() {
-    return this.isPending;
-  }
-
-  // TODO:: Remove ChannelID from this interface
-  public void makePending(ChannelID channelID, Collection ids) {
-    this.isPending = true;
-  }
-
-  // TODO:: Remove ChannelID from this interface
-  public void setResults(ChannelID chID, Collection ids, ObjectManagerLookupResults results) {
-    this.isPending = false;
+  public void setResults(ObjectManagerLookupResults results) {
     this.result = results;
     nextSink.add(this);
   }
 
-  public Set getOIDs() {
+  public Set getLookupIDs() {
     return oids;
   }
   
@@ -111,5 +97,10 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   public boolean hasMore() {
     return more;
   }
+
+  public Set getNewObjectIDs() {
+    return Collections.EMPTY_SET;
+  }
+
 
 }

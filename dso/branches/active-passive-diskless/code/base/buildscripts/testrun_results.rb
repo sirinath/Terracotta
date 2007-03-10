@@ -32,10 +32,9 @@ class TestRunResults
         root_dir.ensure_directory
         
         # create symlink to latest testrun
-        unless ENV['OS'] =~ /windows/i          
-          unixpath = root_dir.to_s.gsub(/\\/, "/")
-          `rm testrun-latest` if File.exist?("testrun-latest")
-          link=`ln -s #{unixpath} testrun-latest`        
+        unless ENV['OS'] =~ /windows/i
+          `rm testrun-latest`
+          `ln -s -f #{root_dir.to_s} testrun-latest`          
         end
         
         TestRunResults.new(root_dir)

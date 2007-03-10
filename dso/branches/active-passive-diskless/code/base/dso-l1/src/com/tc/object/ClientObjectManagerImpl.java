@@ -495,9 +495,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
         Assert.assertFalse(dna.isDelta());
         obj.hydrate(dna, false);
       } catch (ClassNotFoundException e) {
+        logger.warn("Exception: ", e);
         throw e;
       } finally {
-        removeCreationInProgress(id);
+        if (obj != null) removeCreationInProgress(id);
       }
       basicAddLocal(obj);
     }
@@ -574,7 +575,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return !(pojo instanceof Class) && literals.isLiteralInstance(pojo);
   }
 
-  private Object lookupOrCreateRoot(String rootName, Object root, boolean dsoFinal, boolean noDepth) throws ClassNotFoundException {
+  private Object lookupOrCreateRoot(String rootName, Object root, boolean dsoFinal, boolean noDepth)
+      throws ClassNotFoundException {
     if (root != null) {
       // this will throw an exception if root is not portable
       this.checkPortabilityOfRoot(root, rootName, root.getClass());
