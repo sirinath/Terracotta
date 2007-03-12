@@ -433,7 +433,7 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public Iterator getAllSpecs() {
+    public TransparencyClassSpec[] getAllSpecs() {
       throw new ImplementMe();
     }
 
@@ -726,6 +726,10 @@ public class ClassUtilsTest extends TestCase {
     }
 
     public void addDistributedMethodCall(DistributedMethodSpec dms) {
+      throw new ImplementMe();
+    }
+
+    public Class getTCPeerClass(Class clazz) {
       throw new ImplementMe();
     }
   }

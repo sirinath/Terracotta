@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
 
@@ -10,7 +11,7 @@ import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransaction;
 import com.tc.text.PrettyPrinter;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.SyncObjectIdSet;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.ArrayList;
@@ -95,7 +96,7 @@ public class PersistentManagedObjectStoreTest extends TestCase {
     public final NoExceptionLinkedQueue loadByObjectIDCalls = new NoExceptionLinkedQueue();
     public final Map                    map;
     public boolean                      closeCalled         = false;
-    public ObjectIDSet2                 allObjectIDs        = new ObjectIDSet2();
+    public SyncObjectIdSet              allObjectIDs        = new SyncObjectIdSet();
 
     public TestManagedObjectPersistor(Map map) {
       this.map = map;
@@ -144,7 +145,7 @@ public class PersistentManagedObjectStoreTest extends TestCase {
       throw new RuntimeException("Implement Me");
     }
 
-    public ObjectIDSet2 getAllObjectIDs() {
+    public SyncObjectIdSet getAllObjectIDs() {
       return allObjectIDs;
     }
 

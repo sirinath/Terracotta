@@ -606,12 +606,12 @@ public class HashMapTCTest extends TCTestCase {
       return null;
     }
 
-    public Iterator getAllSpecs() {
+    public TransparencyClassSpec[] getAllSpecs() {
       throw new ImplementMe();
     }
 
     public void verifyBootJarContents() {
-      throw new ImplementMe();
+      //
     }
 
     public Iterator getAllUserDefinedBootSpecs() {
@@ -903,6 +903,10 @@ public class HashMapTCTest extends TCTestCase {
     }
 
     public void addDistributedMethodCall(DistributedMethodSpec dms) {
+      throw new ImplementMe();
+    }
+
+    public Class getTCPeerClass(Class clazz) {
       throw new ImplementMe();
     }
 
