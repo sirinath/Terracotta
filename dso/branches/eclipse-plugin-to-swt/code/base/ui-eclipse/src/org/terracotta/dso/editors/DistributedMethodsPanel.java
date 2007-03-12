@@ -7,15 +7,16 @@ import org.dijon.Button;
 import org.dijon.ContainerResource;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.swt.widgets.Shell;
 import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.MethodChooser;
+import org.terracotta.dso.editors.chooser.SWTMethodChooser;
 
 import com.tc.admin.common.XTable;
 import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.DistributedMethods.MethodExpression;
 
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -61,11 +62,28 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel
     m_addButton = (Button)findComponent("AddDistributedMethodButton");
     m_addListener = new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
-        MethodChooser chsr = getMethodChooser();
+        TcPlugin.getStandardDisplay().asyncExec(new Runnable() { // XXX REMOVE THIS
+          public void run() {
+            Shell shell = TcPlugin.getStandardDisplay().getActiveShell();
+            SWTMethodChooser chooser = new SWTMethodChooser(shell, "Method Chooser", "Enter AspectWerkz Method Expression", m_project);
+            
+//            dialog.addValueListener(new AddModuleDialog.ValueListener() {
+//              public void setValues(String name, String version) {
+//                if (!name.trim().equals("") || !version.trim().equals("")) {
+//                  internalAddModule(name, version);
+//                }
+//              }
+//            });
+            chooser.open();
+          }
+        });
         
-        chsr.setup(m_project);
-        chsr.center(DistributedMethodsPanel.this.getAncestorOfClass(java.awt.Frame.class));
-        chsr.setVisible(true);
+        
+//        MethodChooser chsr = getMethodChooser();
+//        
+//        chsr.setup(m_project);
+//        chsr.center(DistributedMethodsPanel.this.getAncestorOfClass(java.awt.Frame.class));
+//        chsr.setVisible(true);
       }
     };
 
@@ -82,31 +100,32 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel
     };
   }
 
-  private MethodChooser getMethodChooser() {
-    if(m_methodChooser == null) {
-      Frame owner = (Frame)getAncestorOfClass(Frame.class);
-      
-      m_methodChooser = new MethodChooser(owner);
-      m_methodChooser.setListener(new MethodChooserListener());
-    }
-    
-    return m_methodChooser;
-  }
-
-  class MethodChooserListener implements ActionListener {
-    public void actionPerformed(ActionEvent ae) {
-      String[] exprs = m_methodChooser.getMethodExpressions();
-      String   expr;
-      
-      for(int i = 0; i < exprs.length; i++) {
-        expr = exprs[i];
-        
-        if(expr != null && (expr = expr.trim()) != null && expr.length() > 0) {
-          internalAddDistributed(exprs[i]);
-        }
-      }
-    }
-  }
+  // TODO: use this code !!!
+//  private MethodChooser getMethodChooser() {
+//    if(m_methodChooser == null) {
+//      Frame owner = (Frame)getAncestorOfClass(Frame.class);
+//      
+//      m_methodChooser = new MethodChooser(owner);
+//      m_methodChooser.setListener(new MethodChooserListener());
+//    }
+//    
+//    return m_methodChooser;
+//  }
+//
+//  class MethodChooserListener implements ActionListener {
+//    public void actionPerformed(ActionEvent ae) {
+//      String[] exprs = m_methodChooser.getMethodExpressions();
+//      String   expr;
+//      
+//      for(int i = 0; i < exprs.length; i++) {
+//        expr = exprs[i];
+//        
+//        if(expr != null && (expr = expr.trim()) != null && expr.length() > 0) {
+//          internalAddDistributed(exprs[i]);
+//        }
+//      }
+//    }
+//  }
   
   public boolean hasAnySet() {
     return m_distributedMethods != null &&
