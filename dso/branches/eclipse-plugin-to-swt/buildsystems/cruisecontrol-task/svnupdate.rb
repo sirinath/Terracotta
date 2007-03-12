@@ -59,7 +59,7 @@ class SvnUpdate
         currently_good_rev = f.gets.to_i
       end
     rescue
-      currently_good_rev = 0
+      currently_good_rev = -1
     end
     currently_good_rev
   end
@@ -81,7 +81,7 @@ class SvnUpdate
       log("curr: #{current_rev}")
       log("good: #{current_good_rev}")
 
-      if @monkey_name == "general-monkey"
+      if @monkey_name == "general-monkey" || current_good_rev == -1
         log("general-monkey - updating to HEAD")
         svn_update_with_error_tolerant("HEAD")
         exit(0)

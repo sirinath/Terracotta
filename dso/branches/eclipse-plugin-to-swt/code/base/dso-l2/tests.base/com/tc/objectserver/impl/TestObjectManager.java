@@ -20,6 +20,7 @@ import com.tc.objectserver.core.impl.TestManagedObject;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinter;
+import com.tc.util.SyncObjectIdSet;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.Collection;
@@ -46,35 +47,31 @@ public class TestObjectManager implements ObjectManager {
     throw new ImplementMe();
   }
 
-  public boolean lookupObjectsAndSubObjectsFor(ChannelID channelID, Collection ids,
-                                               ObjectManagerResultsContext context, int maxCount) {
-    return basicLookup(channelID, ids, context, maxCount);
+  public boolean lookupObjectsAndSubObjectsFor(ChannelID channelID, ObjectManagerResultsContext context, int maxCount) {
+    return basicLookup(channelID, context, maxCount);
   }
 
   public LinkedQueue lookupObjectForCreateIfNecessaryContexts = new LinkedQueue();
 
-  public boolean lookupObjectsForCreateIfNecessary(ChannelID channelID, Collection ids,
-                                                   ObjectManagerResultsContext context) {
-    Object[] args = new Object[] { channelID, ids, context };
+  public boolean lookupObjectsForCreateIfNecessary(ChannelID channelID, ObjectManagerResultsContext context) {
+    Object[] args = new Object[] { channelID, context };
     try {
       lookupObjectForCreateIfNecessaryContexts.put(args);
     } catch (InterruptedException e) {
       throw new TCRuntimeException(e);
     }
-    return basicLookup(channelID, ids, context, -1);
+    return basicLookup(channelID, context, -1);
   }
 
-  private boolean basicLookup(ChannelID channelID, Collection ids, ObjectManagerResultsContext context, int i) {
-    if (makePending) {
-      context.makePending(channelID, ids);
-    } else {
-      context.setResults(channelID, ids, new ObjectManagerLookupResultsImpl(createLookResults(ids)));
+  private boolean basicLookup(ChannelID channelID, ObjectManagerResultsContext context, int i) {
+    if (!makePending) {
+      context.setResults(new ObjectManagerLookupResultsImpl(createLookResults(context.getLookupIDs())));
     }
     return !makePending;
   }
 
   public void processPending(Object[] args) {
-    basicLookup((ChannelID) args[0], (Collection) args[1], (ObjectManagerResultsContext) args[2], -1);
+    basicLookup((ChannelID) args[0], (ObjectManagerResultsContext) args[1], -1);
   }
 
   private Map createLookResults(Collection ids) {
@@ -173,8 +170,8 @@ public class TestObjectManager implements ObjectManager {
     return new HashSet();
   }
 
-  public Set getAllObjectIDs() {
-    return new HashSet();
+  public SyncObjectIdSet getAllObjectIDs() {
+    return new SyncObjectIdSet();
   }
 
   public Object getLock() {

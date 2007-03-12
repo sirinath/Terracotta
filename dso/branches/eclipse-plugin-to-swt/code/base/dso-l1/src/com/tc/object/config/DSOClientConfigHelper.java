@@ -41,7 +41,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException;
 
-  Iterator getAllSpecs();
+  TransparencyClassSpec[] getAllSpecs();
 
   Iterator getAllUserDefinedBootSpecs();
 
@@ -185,5 +185,6 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   int getSessionLockType(String appName);
 
+  Class getTCPeerClass(Class clazz);
 
 }
