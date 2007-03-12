@@ -11,9 +11,9 @@ import com.tc.config.schema.test.InstrumentedClassConfigBuilderImpl;
 import com.tc.config.schema.test.LockConfigBuilderImpl;
 import com.tc.config.schema.test.RootConfigBuilderImpl;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
+import com.tctest.ServerCrashingAppBase;
 import com.tctest.ServerCrashingTestBase;
 import com.tctest.restart.system.ClientTerminatingTestApp.Client;
-import com.tctest.runner.AbstractTransparentApp;
 
 public class ClientTerminatingTest extends ServerCrashingTestBase {
 
@@ -35,11 +35,11 @@ public class ClientTerminatingTest extends ServerCrashingTestBase {
 
   protected void createConfig(TerracottaConfigBuilder cb) {
     String testClassName = ClientTerminatingTestApp.class.getName();
-    String testClassSuperName = AbstractTransparentApp.class.getName();
+    String testClassSuperName = ServerCrashingAppBase.class.getName();
     String clientClassName = Client.class.getName();
 
     LockConfigBuilder lock1 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
-    lock1.setMethodExpression("* " + testClassName + ".run(..)");
+    lock1.setMethodExpression("* " + testClassName + ".runTest(..)");
     setLockLevel(lock1);
 
     LockConfigBuilder lock2 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
