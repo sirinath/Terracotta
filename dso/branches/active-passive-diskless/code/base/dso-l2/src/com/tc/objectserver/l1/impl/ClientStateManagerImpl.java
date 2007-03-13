@@ -126,6 +126,10 @@ public class ClientStateManagerImpl implements ClientStateManager {
   public synchronized Set addReferences(ChannelID channelID, Set oids) {
     ClientState cs = getOrCreateClientState(channelID);
     Set refs = cs.getReferences();
+    if(refs.isEmpty()) {
+      refs.addAll(oids);
+      return oids;
+    }
     Set newReferences = new HashSet();
     for (Iterator i = oids.iterator(); i.hasNext();) {
       Object oid = i.next();

@@ -48,8 +48,10 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   }
 
   private void syncOIDSequence() {
-    if (state.getNextAvailableObjectID() != -1) {
-      this.oidSequenceProvider.setNextAvailableObjectID(state.getNextAvailableObjectID());
+    long nextOID = state.getNextAvailableObjectID();
+    if (nextOID != -1) {
+      logger.info("Setting the Next Available OID to " + nextOID);
+      this.oidSequenceProvider.setNextAvailableObjectID(nextOID);
     }
   }
 

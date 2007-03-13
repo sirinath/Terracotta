@@ -8,7 +8,6 @@ import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.msg.ClientHandshakeMessage;
@@ -117,9 +116,7 @@ public class ServerClientHandshakeManager {
       this.sequenceValidator.initSequence(handshake.getChannelID(), handshake.getTransactionSequenceIDs());
       this.transactionManager.setResentTransactionIDs(handshake.getChannelID(), handshake.getResentTransactionIDs());
 
-      for (Iterator i = handshake.getObjectIDs().iterator(); i.hasNext();) {
-        clientStateManager.addReference(channelID, (ObjectID) i.next());
-      }
+      clientStateManager.addReferences(channelID, handshake.getObjectIDs());
 
       for (Iterator i = handshake.getLockContexts().iterator(); i.hasNext();) {
         LockContext ctxt = (LockContext) i.next();

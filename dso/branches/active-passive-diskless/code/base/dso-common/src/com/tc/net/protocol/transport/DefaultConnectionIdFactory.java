@@ -10,7 +10,6 @@ public class DefaultConnectionIdFactory implements ConnectionIdFactory {
 
   private long         sequence;
 
-//  private final String serverID = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // This got to be 32 chars hex string
   private final String serverID = UUID.getUUID().toString();
 
   public synchronized ConnectionID nextConnectionId() {
