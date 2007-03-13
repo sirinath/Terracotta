@@ -39,6 +39,7 @@ import com.tc.net.protocol.tcm.HydrateHandler;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.transport.ConnectionIdFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
@@ -125,6 +126,7 @@ import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullTransactionPersistor;
 import com.tc.objectserver.persistence.impl.PersistentBatchSequenceProvider;
 import com.tc.objectserver.persistence.impl.TransactionStoreImpl;
+import com.tc.objectserver.persistence.sleepycat.ConnectionIdFactoryImpl;
 import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFactory;
 import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.DBException;
@@ -161,6 +163,7 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -367,8 +370,6 @@ public class DistributedObjectServer extends SEDA {
     clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class), clientStateStore);
     final Set previouslyConnectedClients = new HashSet(clientStateManager.getAllClientIDs());
 
-    Set initialConnectionIDs = clientStateStore.loadConnectionIDs();
-
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.garbageCollectionEnabled());
     boolean gcEnabled = l2DSOConfig.garbageCollectionEnabled().getBoolean();
     logger.debug("GC enabled: " + gcEnabled);
@@ -415,13 +416,15 @@ public class DistributedObjectServer extends SEDA {
     } else {
       logger.warn("CacheManager is Disabled");
     }
+    
+    ConnectionIdFactory connectionIdFactory = new ConnectionIdFactoryImpl(clientStateStore);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
     l1Listener = communicationsManager.createListener(sessionProvider,
                                                       new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, serverPort),
-                                                      true, initialConnectionIDs, clientStateStore
-                                                          .getConnectionIDFactory(), httpSink);
+                                                      true,connectionIdFactory, 
+                                                           httpSink);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
@@ -601,7 +604,8 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public boolean startActiveMode() throws IOException {
-    l1Listener.start();
+    //TODO::comeback
+    l1Listener.start(Collections.EMPTY_SET);
     consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;

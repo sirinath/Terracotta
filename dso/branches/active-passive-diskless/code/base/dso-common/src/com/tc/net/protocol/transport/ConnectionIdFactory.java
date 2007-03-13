@@ -3,9 +3,13 @@
  */
 package com.tc.net.protocol.transport;
 
+import java.util.Set;
+
 
 public interface ConnectionIdFactory {
 
   public ConnectionID nextConnectionId();
+  
+  public Set loadConnectionIDs();
 
 }

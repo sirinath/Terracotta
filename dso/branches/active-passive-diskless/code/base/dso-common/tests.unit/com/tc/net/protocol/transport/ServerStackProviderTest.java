@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -10,6 +11,7 @@ import com.tc.net.protocol.StackNotFoundException;
 import com.tc.net.protocol.transport.MockTransportHandshakeMessageFactory.CallContext;
 import com.tc.test.TCTestCase;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,6 +42,10 @@ public class ServerStackProviderTest extends TCTestCase {
     this.connectionIdFactory = new ConnectionIdFactory() {
       public ConnectionID nextConnectionId() {
         return connId;
+      }
+
+      public Set loadConnectionIDs() {
+        return Collections.EMPTY_SET;
       }
     };
 

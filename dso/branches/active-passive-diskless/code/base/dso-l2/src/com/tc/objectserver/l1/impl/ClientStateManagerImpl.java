@@ -182,7 +182,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     if ((clientState = (ClientStateImpl) clientStates.get(clientID)) == null) {
       clientState = new ClientStateImpl(clientID);
       clientStates.put(clientID, clientState);
-      store.saveClientState(clientState);
+      store.saveClientState(clientState.getClientID());
     }
     return clientState;
   }

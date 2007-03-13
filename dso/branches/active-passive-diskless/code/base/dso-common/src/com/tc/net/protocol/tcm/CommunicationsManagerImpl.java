@@ -190,31 +190,31 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    * Creates a network listener with a default network stack.
    */
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
-                                        boolean transportDisconnectRemovesChannel, Set initialConnectionIDs,
+                                        boolean transportDisconnectRemovesChannel, 
                                         ConnectionIdFactory connectionIdFactory) {
-    return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, initialConnectionIDs,
+    return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, 
                           connectionIdFactory, true);
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress address,
-                                        boolean transportDisconnectRemovesChannel, Set initialConnectionIDs,
+                                        boolean transportDisconnectRemovesChannel, 
                                         ConnectionIdFactory connectionIDFactory, Sink httpSink) {
-    return createListener(sessionProvider, address, transportDisconnectRemovesChannel, initialConnectionIDs,
+    return createListener(sessionProvider, address, transportDisconnectRemovesChannel, 
                           connectionIDFactory, true, httpSink);
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
-                                        boolean transportDisconnectRemovesChannel, Set initialConnectionIDs,
+                                        boolean transportDisconnectRemovesChannel, 
                                         ConnectionIdFactory connectionIdFactory, boolean reuseAddr) {
-    return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, initialConnectionIDs,
+    return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, 
                           connectionIdFactory, reuseAddr, new NullSink());
   }
 
   /**
    * Creates a network listener with a default network stack.
    */
-  public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
-                                        boolean transportDisconnectRemovesChannel, Set initialConnectionIDs,
+  private NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
+                                        boolean transportDisconnectRemovesChannel, 
                                         ConnectionIdFactory connectionIdFactory, boolean reuseAddr, Sink httpSink) {
     if (shutdown.isSet()) { throw new IllegalStateException("Comms manger shut down"); }
 
@@ -230,7 +230,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
     final ChannelManagerImpl channelManager = new ChannelManagerImpl(transportDisconnectRemovesChannel, channelFactory);
 
-    return new NetworkListenerImpl(addr, this, channelManager, msgFactory, msgRouter, reuseAddr, initialConnectionIDs,
+    return new NetworkListenerImpl(addr, this, channelManager, msgFactory, msgRouter, reuseAddr, 
                                    connectionIdFactory, httpSink);
   }
 

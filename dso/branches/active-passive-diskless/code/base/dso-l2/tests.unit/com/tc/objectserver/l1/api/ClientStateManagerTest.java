@@ -6,12 +6,12 @@ package com.tc.objectserver.l1.api;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.TestDNA;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
+import com.tc.objectserver.persistence.api.PersistentSequence;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,9 +128,9 @@ public class ClientStateManagerTest extends TestCase {
       return clients.iterator();
     }
 
-    public void saveClientState(ClientState clientState) {
-      saveContexts.add(clientState.getClientID());
-      clients.add(clientState.getClientID());
+    public void saveClientState(ChannelID cid) {
+      saveContexts.add(cid);
+      clients.add(cid);
     }
 
     public void deleteClientState(ChannelID id) {
@@ -138,9 +138,8 @@ public class ClientStateManagerTest extends TestCase {
       clients.remove(id);
     }
 
-    public ConnectionIdFactory getConnectionIDFactory() {
-      // TODO Auto-generated method stub
-      return null;
+    public PersistentSequence getConnectionIDSequence() {
+      throw new ImplementMe();
     }
 
     public Set loadConnectionIDs() {
