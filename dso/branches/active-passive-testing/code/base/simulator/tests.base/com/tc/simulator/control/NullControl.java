@@ -18,4 +18,12 @@ public class NullControl implements Control {
     return true;
   }
 
+  public void notifyMutationComplete() {
+    return;
+  }
+
+  public boolean waitForMutationComplete(long timeout) throws InterruptedException {
+    return true;
+  }
+
 }

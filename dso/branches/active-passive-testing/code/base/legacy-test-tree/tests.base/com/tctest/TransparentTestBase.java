@@ -33,19 +33,20 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int                     DEFAULT_CLIENT_COUNT = 2;
-  public static final int                     DEFAULT_INTENSITY    = 10;
+  public static final int                     DEFAULT_CLIENT_COUNT    = 2;
+  public static final int                     DEFAULT_INTENSITY       = 10;
+  public static final int                     DEFAULT_VALIDATOR_COUNT = 0;
 
   private TVSConfigurationSetupManagerFactory configFactory;
   private DSOClientConfigHelper               configHelper;
   protected DistributedTestRunner             runner;
-  private DistributedTestRunnerConfig         runnerConfig         = new DistributedTestRunnerConfig();
+  private DistributedTestRunnerConfig         runnerConfig            = new DistributedTestRunnerConfig();
   private TransparentAppConfig                transparentAppConfig;
   private ApplicationConfigBuilder            possibleApplicationConfigBuilder;
 
   private String                              mode;
   private ServerControl                       serverControl;
-  private boolean                             controlledCrashMode  = false;
+  private boolean                             controlledCrashMode     = false;
   private ServerCrasher                       crasher;
 
   protected void setUp() throws Exception {
@@ -84,7 +85,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.configFactory = factory;
     this.configHelper = helper;
     transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
-                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl);
+                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl, DEFAULT_VALIDATOR_COUNT);
   }
 
   protected synchronized final String mode() {
@@ -154,11 +155,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public void initializeTestRunner() throws Exception {
+    initializeTestRunner(false);
+  }
+
+  public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
     this.runner = new DistributedTestRunner(this.runnerConfig, configFactory, this.configHelper, getApplicationClass(),
                                             getOptionalAttributes(), getApplicationConfigBuilder()
                                                 .newApplicationConfig(), this.transparentAppConfig.getClientCount(),
                                             this.transparentAppConfig.getApplicationInstancePerClientCount(),
-                                            getStartServer());
+                                            getStartServer(), isMutateValidateTest, this.transparentAppConfig
+                                                .getValidatorCount());
   }
 
   protected boolean canRun() {

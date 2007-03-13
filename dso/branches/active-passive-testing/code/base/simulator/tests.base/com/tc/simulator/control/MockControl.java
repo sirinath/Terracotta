@@ -33,4 +33,12 @@ public class MockControl implements Control {
     return waitForAllCompleteResult;
   }
 
+  public void notifyMutationComplete() {
+    throw new AssertionError("This method should be implemented");
+  }
+
+  public boolean waitForMutationComplete(long timeout) throws InterruptedException {
+    throw new AssertionError("This method should be implemented");
+  }
+
 }

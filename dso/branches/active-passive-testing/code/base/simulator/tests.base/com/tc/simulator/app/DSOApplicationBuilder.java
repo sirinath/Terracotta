@@ -32,6 +32,10 @@ public class DSOApplicationBuilder implements ApplicationBuilder {
     this.classloader = classloader;
   }
   
+  public void setAppConfigAttribute(String key, String value) {
+    applicationConfig.setAttribute(key, value);
+  }
+  
   // XXX:: Adding more debugs to figure out the OOME in Primitive ArrayTest.
   TCLogger logger = TCLogging.getLogger(DSOApplicationBuilder.class);
   public Application newApplication(String applicationId, ListenerProvider listenerProvider)
@@ -46,6 +50,9 @@ public class DSOApplicationBuilder implements ApplicationBuilder {
       this.applicationConstructor = this.applicationClass.getConstructor(new Class[] { String.class,
           applicationConfigClass, listenerProviderClass });
       logger.info("Before new Instance is created...");
+      
+      logger.info("*******  appConfig=[" + applicationConfig.toString() + "]");
+      
       return (Application) this.applicationConstructor.newInstance(new Object[] { applicationId,
           this.applicationConfig, listenerProvider });
     } catch (Throwable t) {

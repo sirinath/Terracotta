@@ -5,6 +5,7 @@ package com.tctest;
 
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.MockStatsListener;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListener;
@@ -35,6 +36,10 @@ public class ConcurrentLockSystemTestAppTest extends TestCase {
 
       public StatsListener newStatsListener(Properties properties) {
         return new MockStatsListener();
+      }
+
+      public MutationCompletionListener getMutationCompletionListener() {
+        return null;
       }
       
     });

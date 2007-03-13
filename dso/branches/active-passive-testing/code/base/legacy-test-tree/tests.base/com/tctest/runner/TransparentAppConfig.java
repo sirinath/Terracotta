@@ -23,14 +23,22 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   private int                     intensity;
   private int                     clientCount;
   private int                     applicationInstancePerClientCount = 1;
+  private int                     validatorCount;
 
-  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount, int intensity, ServerControl serverControl) {
+  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount,
+                              int intensity, ServerControl serverControl) {
+    this(applicationClassname, idGenerator, clientCount, intensity, serverControl, 0);
+  }
+
+  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount,
+                              int intensity, ServerControl serverControl, int validatorCount) {
     this.applicationClassname = applicationClassname;
     this.idGenerator = idGenerator;
     if (clientCount < 1) throw new AssertionError("Client count must be greater than 0");
     this.clientCount = clientCount;
     this.intensity = intensity;
     this.serverControl = serverControl;
+    this.validatorCount = validatorCount;
   }
 
   public void setAttribute(String key, String value) {
@@ -98,4 +106,12 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
     return serverControl;
   }
 
+  public int getValidatorCount() {
+    return this.validatorCount;
+  }
+  
+  public TransparentAppConfig setValidatorCount(int count) {
+    validatorCount = count;
+    return this;
+  }
 }

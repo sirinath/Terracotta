@@ -10,8 +10,15 @@ public interface Control {
   
   public void notifyComplete();
   
+  public void notifyMutationComplete();
+  
   /**
    * Returns true if all participants completed in time.
    */
   public boolean waitForAllComplete(long timeout) throws InterruptedException;
+
+  /**
+   * Returns true if all participants completed in time.
+   */
+  public boolean waitForMutationComplete(long timeout) throws InterruptedException;
 }

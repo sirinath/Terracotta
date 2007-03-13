@@ -4,6 +4,7 @@
 package com.tcsimulator.listener;
 
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListener;
@@ -15,10 +16,12 @@ public final class ApplicationListenerProvider implements ListenerProvider {
   private final OutputListener       outputListener;
   private final ResultsListener      resultsListener;
   private final StatsListenerFactory statsListenerFactory;
+  private final MutationCompletionListener mutationCompletionListener;
 
-  public ApplicationListenerProvider(OutputListener ol, ResultsListener rl, StatsListenerFactory statsListenerFactory) {
+  public ApplicationListenerProvider(OutputListener ol, ResultsListener rl, MutationCompletionListener mcl, StatsListenerFactory statsListenerFactory) {
     this.outputListener = ol;
     this.resultsListener = rl;
+    this.mutationCompletionListener = mcl;
     this.statsListenerFactory = statsListenerFactory;
   }
 
@@ -32,6 +35,10 @@ public final class ApplicationListenerProvider implements ListenerProvider {
 
   public StatsListener newStatsListener(Properties properties) {
     return statsListenerFactory.newStatsListener(properties);
+  }
+
+  public MutationCompletionListener getMutationCompletionListener() {
+    return mutationCompletionListener;
   }
 
 }

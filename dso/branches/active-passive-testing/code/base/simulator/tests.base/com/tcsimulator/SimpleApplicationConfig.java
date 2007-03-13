@@ -46,4 +46,8 @@ public class SimpleApplicationConfig implements ApplicationConfig {
   public ServerControl getServerControl() {
     throw new AssertionError();
   }
+
+  public int getValidatorCount() {
+    throw new AssertionError();
+  }
 }

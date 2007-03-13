@@ -11,6 +11,7 @@ import com.tc.simulator.distrunner.ArgException;
 import com.tc.simulator.distrunner.ArgParser;
 import com.tc.simulator.distrunner.SpecFactoryImpl;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListener;
@@ -78,6 +79,10 @@ public class LongrunningGCTestAppCLI {
 
     public StatsListener newStatsListener(Properties properties) {
       return new TestAppStatsListenerObject(properties);
+    }
+
+    public MutationCompletionListener getMutationCompletionListener() {
+      throw new AssertionError("This method needs to be implemented");
     }
 
   }

@@ -13,6 +13,8 @@ public interface TransparentTestIface {
   public TransparentAppConfig getTransparentAppConfig();
 
   public void initializeTestRunner() throws Exception;
+  
+  void initializeTestRunner(boolean isMutateValidateTest) throws Exception;
 
   public TVSConfigurationSetupManagerFactory getConfigFactory();
 

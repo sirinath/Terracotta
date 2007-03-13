@@ -5,6 +5,7 @@ package com.tctest.restart.system;
 
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.MockStatsListener;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListener;
@@ -38,6 +39,10 @@ public class ObjectDataRestartTestAppTest extends TestCase {
 
       public StatsListener newStatsListener(Properties properties) {
         return new MockStatsListener();
+      }
+
+      public MutationCompletionListener getMutationCompletionListener() {
+        return null;
       }
       
     });

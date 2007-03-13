@@ -1,10 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.simulator.container;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.simulator.app.Application;
 import com.tc.simulator.app.ApplicationBuilder;
 import com.tc.simulator.app.ApplicationInstantiationException;
@@ -12,6 +15,7 @@ import com.tc.simulator.app.ErrorContext;
 import com.tc.simulator.app.GlobalIdGenerator;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.control.TCBrokenBarrierException;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListenerFactory;
@@ -26,21 +30,34 @@ import java.util.List;
 
 public final class Container implements Runnable {
 
-  private final ContainerConfig    config;
-  private final ContainerState     containerState;
-  private final GlobalIdGenerator  idGenerator;
-  private final Control            control;
-  private final ResultsListener    resultsListener;
-  private final ApplicationBuilder applicationBuilder;
-  private final String             globalId;
+  private final ContainerConfig            config;
+  private final ContainerState             containerState;
+  private final GlobalIdGenerator          idGenerator;
+  private final Control                    control;
+  private final ResultsListener            resultsListener;
+  private final ApplicationBuilder         applicationBuilder;
+  private final String                     globalId;
+  private final boolean                    isMutateValidateTest;
+  private final boolean                    isMutator;
+  private final MutationCompletionListener mutationCompletionListener;
 
   public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
                    Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder) {
+    this(config, containerStateFactory, idGenerator, control, resultsListener, applicationBuilder, false, true, null);
+  }
+
+  public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
+                   Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder,
+                   boolean isMutateValidateTest, boolean isMutator,
+                   MutationCompletionListener mutationCompletionListener) {
     this.config = config;
     this.idGenerator = idGenerator;
     this.control = control;
     this.resultsListener = resultsListener;
     this.applicationBuilder = applicationBuilder;
+    this.isMutateValidateTest = isMutateValidateTest;
+    this.isMutator = isMutator;
+    this.mutationCompletionListener = mutationCompletionListener;
     this.globalId = this.idGenerator.nextId() + "";
 
     this.containerState = containerStateFactory.newContainerState(this.globalId);
@@ -52,6 +69,58 @@ public final class Container implements Runnable {
    * Make applications go.
    */
   public synchronized void run() {
+    if (isMutateValidateTest) {
+      logger.info("*******  isMutateValidateTest=["+isMutateValidateTest+"]");
+      runMutateValidateTest();
+    } else {
+      runRegularTest();
+    }
+  }
+
+  private synchronized void runMutateValidateTest() {
+    Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
+
+    SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
+    try {
+      if (!validateConfig()) return;
+
+      logger.info("***** config is alright");
+      
+      if (isMutator) {
+        logger.info("******* isMutator=["+isMutator+"]");
+        if (!waitForStart()) return;
+      } else {
+        if (!waitForMutationComplete()) return;
+      }
+
+      // TODO: fix this to work with multiple instances
+      if (config.getApplicationInstanceCount() != 1) { throw new AssertionError(
+                                                                                "We don't support multiple L1 instances per container"); }
+      Control applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.config
+          .getApplicationInstanceCount());
+      ContainerExecutionInstance containerExecution = new ContainerExecutionInstance();
+
+      logger.info("****** about to start an instance of app");
+      
+      startInstances(containerExecution, applicationControl);
+
+      if (!waitForAllComplete(applicationControl)) return;
+      notifyResult(containerExecution);
+
+    } catch (Throwable t) {
+      notifyError("Unexpected error executing application.", t);
+    } finally {
+      isRunning.set(false);
+      control.notifyComplete();
+      try {
+        this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  private synchronized void runRegularTest() {
     Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
 
     SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
@@ -118,10 +187,22 @@ public final class Container implements Runnable {
     return rv;
   }
 
+  private boolean waitForMutationComplete() throws InterruptedException {
+    boolean rv = false;
+    println("Waiting for all mutators to finish...");
+    this.control.waitForMutationComplete(config.getApplicationExecutionTimeout());
+    rv = true;
+    println("Done waiting for all containers to start.");
+    return rv;
+  }
+
   /*********************************************************************************************************************
    * Private stuff
    */
 
+//TODO: remove...  for debugging
+  TCLogger logger = TCLogging.getLogger(Container.class);
+  
   private ApplicationExecutionInstance newExecutionInstance(ContainerExecutionInstance containerExecution,
                                                             Control applicationControl)
       throws ApplicationInstantiationException {
@@ -129,10 +210,18 @@ public final class Container implements Runnable {
     System.err.println("Creating new execution instance: " + appId);
     OutputListener outputListener = this.containerState.newOutputListener();
     ApplicationExecutionInstance executionInstance = new ApplicationExecutionInstance(containerExecution,
-                                                                                      applicationControl, this.containerState);
+                                                                                      applicationControl,
+                                                                                      this.containerState);
 
     ApplicationListenerProvider appListeners = new ApplicationListenerProvider(outputListener, executionInstance,
+                                                                               this.mutationCompletionListener,
                                                                                this.containerState);
+    
+    if (isMutateValidateTest) {
+      logger.info("****** Container:  appId=[" + appId + "] isMutator=[" + isMutator + "] isMutateValidateTest=[" + isMutateValidateTest+ "]");
+      applicationBuilder.setAppConfigAttribute(appId, "" + isMutator);
+    }
+    
     Application application = applicationBuilder.newApplication(appId, appListeners);
     executionInstance.setApplication(application);
 
@@ -254,7 +343,7 @@ public final class Container implements Runnable {
     private final Control                    applicationControl;
     private Application                      application;
     private Object                           result;
-    private final StatsListenerFactory              statsListenerFactory;
+    private final StatsListenerFactory       statsListenerFactory;
 
     ApplicationExecutionInstance(ContainerExecutionInstance containerExecution, Control control,
                                  StatsListenerFactory statsListenerFactory) {
@@ -268,7 +357,8 @@ public final class Container implements Runnable {
     }
 
     void start() {
-      ApplicationRunner runner = newApplicationRunner(applicationControl, this, this.application, this.statsListenerFactory);
+      ApplicationRunner runner = newApplicationRunner(applicationControl, this, this.application,
+                                                      this.statsListenerFactory);
 
       ClassLoader loader = application.getClass().getClassLoader();
       Thread thread = new Thread(runner);

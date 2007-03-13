@@ -8,5 +8,6 @@ package com.tc.simulator.listener;
 public interface ListenerProvider extends StatsListenerFactory {
   public OutputListener getOutputListener();
   public ResultsListener getResultsListener();
+  public MutationCompletionListener getMutationCompletionListener();
 
 }

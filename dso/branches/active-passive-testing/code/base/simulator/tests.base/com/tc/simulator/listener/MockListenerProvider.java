@@ -30,4 +30,8 @@ public class MockListenerProvider implements ListenerProvider {
     return statsListener;
   }
 
+  public MutationCompletionListener getMutationCompletionListener() {
+    throw new AssertionError("This method needs to be implemented");
+  }
+
 }
