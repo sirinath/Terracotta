@@ -8,8 +8,13 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -22,8 +27,14 @@ import org.terracotta.ui.util.SWTUtil;
 
 public class SWTMethodChooser extends MessageDialog {
 
-  private final Shell    m_parentShell;
-  private final IProject m_project;
+  private static final String EXPLORE = "Explore...";
+  private static final String ADD     = "Add";
+  private final Shell         m_parentShell;
+  private final IProject      m_project;
+  private Shell               m_shell;
+  private boolean             m_isAddButton;
+  private SelectionListener   m_exploreListener;
+  private SelectionListener   m_addListener;
 
   public SWTMethodChooser(Shell shell, String title, String message, IProject project) {
     super(shell, title, null, message, MessageDialog.NONE, new String[] {
@@ -35,8 +46,9 @@ public class SWTMethodChooser extends MessageDialog {
 
   protected void configureShell(Shell shell) {
     super.configureShell(shell);
-    shell.setSize(400, 250);
-    SWTUtil.placeDialogInCenter(m_parentShell, shell);
+    m_shell = shell;
+    m_shell.setSize(400, 250);
+    SWTUtil.placeDialogInCenter(m_parentShell, m_shell);
   }
 
   protected Control createCustomArea(Composite parent) {
@@ -44,11 +56,44 @@ public class SWTMethodChooser extends MessageDialog {
     return parent;
   }
 
-  private void registerListeners(MethodChooserLayout layout) {
-    layout.m_selectButton.addSelectionListener(new SelectionAdapter() {
+  private void registerListeners(final MethodChooserLayout layout) {
+    layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         SWTMethodNavigator dialog = new SWTMethodNavigator(getShell(), "Select Method", m_project);
         dialog.open();
+      }
+    });
+    m_addListener = new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        layout.m_list.add(layout.m_selectField.getText());
+        layout.m_selectField.setText("");
+      }
+    };
+    layout.m_selectField.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        if (((Text) e.widget).getText().trim().equals("")) {
+          layout.m_exploreButton.removeSelectionListener(m_addListener);
+          layout.m_exploreButton.addSelectionListener(m_exploreListener);
+          layout.m_exploreButton.setText(EXPLORE);
+          SWTUtil.applyDefaultButtonSize(layout.m_exploreButton);
+          m_shell.setDefaultButton(getButton(IDialogConstants.OK_ID));
+          m_isAddButton = false;
+        } else if (!m_isAddButton) {
+          layout.m_exploreButton.removeSelectionListener(m_exploreListener);
+          layout.m_exploreButton.addSelectionListener(m_addListener);
+          layout.m_exploreButton.setText(ADD);
+          SWTUtil.applyDefaultButtonSize(layout.m_exploreButton);
+          m_shell.setDefaultButton(layout.m_exploreButton);
+          m_isAddButton = true;
+        }
+      }
+    });
+    layout.m_list.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.keyCode == SWT.DEL || e.keyCode == SWT.BS) {
+          int[] selected = ((List) e.getSource()).getSelectionIndices();
+          layout.m_list.remove(selected);
+        }
       }
     });
   }
@@ -76,7 +121,7 @@ public class SWTMethodChooser extends MessageDialog {
   private static class MethodChooserLayout {
 
     final Text   m_selectField;
-    final Button m_selectButton;
+    final Button m_exploreButton;
     final List   m_list;
     GridData     m_gridData;
 
@@ -94,9 +139,9 @@ public class SWTMethodChooser extends MessageDialog {
       this.m_selectField = new Text(comp, SWT.SINGLE | SWT.BORDER);
       m_selectField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-      this.m_selectButton = new Button(comp, SWT.PUSH);
-      m_selectButton.setText("Select...");
-      SWTUtil.applyDefaultButtonSize(m_selectButton);
+      this.m_exploreButton = new Button(comp, SWT.PUSH);
+      m_exploreButton.setText(EXPLORE);
+      SWTUtil.applyDefaultButtonSize(m_exploreButton);
 
       this.m_list = new List(comp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
       m_gridData = new GridData(GridData.FILL_BOTH);

@@ -5,8 +5,17 @@
 package org.terracotta.dso.editors.chooser;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.internal.ui.JavaWorkbenchAdapter;
 import org.eclipse.jdt.ui.JavaElementLabelProvider;
-import org.eclipse.jdt.ui.StandardJavaElementContentProvider;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -15,7 +24,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.model.IWorkbenchAdapter;
+import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.terracotta.ui.util.SWTUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SWTMethodNavigator extends MessageDialog {
 
@@ -60,17 +74,17 @@ public class SWTMethodNavigator extends MessageDialog {
   }
 
   private void registerListeners(MethodChooserLayout layout) {
-    layout.m_viewer.setContentProvider(new StandardJavaElementContentProvider());
+    layout.m_viewer.setContentProvider(new JavaMethodContentProvider());
     layout.m_viewer.setLabelProvider(new JavaElementLabelProvider());
-    layout.m_viewer.setInput("root");
-//    IJavaProject jproj = JavaCore.create(m_project);
-//    try {
-//      layout.m_viewer.setInput(jproj.getPackageFragmentRoots());
-//    } catch (Exception e) {
-//      throw new RuntimeException(e);
-//    }
+    IJavaProject jproj = JavaCore.create(m_project);
+    try {
+      IJavaElement root = jproj.getPackageFragmentRoots()[0].getParent();
+      layout.m_viewer.setInput(root);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
-  
+
   // XXX: use okPressed();
   // protected void buttonPressed(int buttonId) {
   // if (buttonId == IDialogConstants.OK_ID) {
@@ -91,26 +105,37 @@ public class SWTMethodNavigator extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
+  private class JavaMethodContentProvider extends WorkbenchContentProvider {
+    protected IWorkbenchAdapter getAdapter(Object element) {
+      return new JavaWorkbenchAdapter() {
+        public Object[] getChildren(Object javaElement) {
+          List list = new ArrayList();
+          Object[] children = super.getChildren(javaElement);
+          for (int i = 0; i < children.length; i++) {
+            if (children[i] instanceof IPackageFragment || children[i] instanceof ICompilationUnit
+                || children[i] instanceof IType || children[i] instanceof IPackageFragmentRoot
+                || children[i] instanceof IClassFile || children[i] instanceof IMethod) {
+              if (!(children[i] instanceof IPackageFragment && super.getChildren(children[i]).length == 0)) {
+                list.add(children[i]);
+              }
+            }
+          }
+          return list.toArray();
+        }
+      };
+    }
+  }
+
+  // --------------------------------------------------------------------------------
+
   private static class MethodChooserLayout {
 
     final TreeViewer m_viewer;
     GridData         m_gridData;
 
     private MethodChooserLayout(Composite parent) {
-      // Composite comp = new Composite(parent, SWT.NONE);
-      //
-      // GridLayout gridLayout = new GridLayout();
-      // gridLayout.numColumns = 0;
-      // gridLayout.marginWidth = 0;
-      // gridLayout.marginHeight = 0;
-      // comp.setLayout(gridLayout);
-      // comp.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-      // this.m_list = new List(comp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
-      //Tree tree = new Tree(parent, SWT.SINGLE | );
       this.m_viewer = new TreeViewer(parent);
-      // IJavaProject project = TcPlugin.getDefault().
-      
+      m_viewer.getTree().setLayoutData(new GridData(GridData.FILL_BOTH));
     }
   }
 }
