@@ -60,7 +60,7 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
         System.out.println("***** " + validationArray.get(i));
         
         boolean val = myArrayTestRoot[(i + 1) % myArrayTestRoot.length].equals(validationArray.get(i));
-        if (!val) { throw new AssertionError("Expecting <" + myArrayTestRoot[(i + 1) % myArrayTestRoot.length]
+        if (!val) { notifyError("Expecting <" + myArrayTestRoot[(i + 1) % myArrayTestRoot.length]
                                              + "> but got <" + validationArray.get(i) + ">"); }
       }
     }

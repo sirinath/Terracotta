@@ -219,7 +219,7 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
     } else if (executionTimedOut) {
       System.err.println("EXECUTION TIMED OUT; timeout=" + this.config.executionTimeout());
       return false;
-    } else if (results.size() != containers.length) {
+    } else if (results.size() != (containers.length + validatorContainers.length)) {
       System.err.println(results.size() + " results present, EXPECTING " + containers.length);
       return false;
     } else {

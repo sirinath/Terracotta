@@ -28,7 +28,7 @@ public class ControlImpl implements Control {
   private CountDown           mutationCompleteCount;
 
   public ControlImpl(int parties) {
-    this(parties, NOT_SET);
+    this(parties, parties);
   }
 
   public ControlImpl(int startParties, int completeParties) {
@@ -37,10 +37,18 @@ public class ControlImpl implements Control {
 
   // Mutate-validate tests should use this constructor.
   public ControlImpl(int mutatorCount, boolean isMutateValidateTest, int validatorCount) {
-    this(mutatorCount, NOT_SET, isMutateValidateTest, validatorCount);
+    this(mutatorCount, mutatorCount + validatorCount, isMutateValidateTest, validatorCount);
   }
 
   public ControlImpl(int startParties, int completeParties, boolean isMutateValidateTest, int validatorCount) {
+    if (completeParties != (startParties + validatorCount)) { throw new AssertionError(
+                                                                                       "completeParties["
+                                                                                           + this.completeParties
+                                                                                           + "] does not equal startParties["
+                                                                                           + this.startParties
+                                                                                           + "] + validatorCount["
+                                                                                           + this.validatorCount + "]"); }
+
     this.startParties = startParties;
     this.startBarrier = new CyclicBarrier(startParties);
 
@@ -50,14 +58,12 @@ public class ControlImpl implements Control {
     this.isMutateValidateTest = isMutateValidateTest;
 
     if (this.isMutateValidateTest) {
-      
-      System.err.println("******* isMutateValidateTest=["+isMutateValidateTest+"]");
-      
+
+      System.err.println("******* isMutateValidateTest=[" + isMutateValidateTest + "]");
+      System.err.println("####### completeParties=[" + completeParties + "]");
+
       if (completeParties == NOT_SET) {
-        this.completeParties = completeParties + validatorCount;
-      } else if (completeParties != (this.startParties + this.validatorCount)) {
-        throw new AssertionError("completeParties[" + this.completeParties + "] does not equal startParties["
-                                 + this.startParties + "] + validatorCount[" + this.validatorCount + "]");
+        this.completeParties = startParties + validatorCount;
       } else {
         this.completeParties = completeParties;
       }
@@ -67,6 +73,7 @@ public class ControlImpl implements Control {
       this.completeParties = completeParties;
     }
 
+    System.err.println("####### this.completeParties=[" + this.completeParties + "]");
     this.countdown = new CountDown(this.completeParties);
   }
 
@@ -136,9 +143,9 @@ public class ControlImpl implements Control {
     }
   }
 
-  //TODO: remove debug statement
+  // TODO: remove debug statement
   public void notifyComplete() {
-    System.err.println("*******  countdown called:  control=["+toString()+"]");
+    System.err.println("*******  countdown called:  control=[" + toString() + "]");
     this.countdown.release();
   }
 
