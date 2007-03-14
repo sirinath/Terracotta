@@ -14,6 +14,7 @@ import org.terracotta.dso.editors.chooser.MethodChooser;
 import org.terracotta.dso.editors.chooser.SWTMethodChooser;
 
 import com.tc.admin.common.XTable;
+import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.DistributedMethods.MethodExpression;
@@ -66,7 +67,14 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel implements
                 Shell shell = TcPlugin.getStandardDisplay().getActiveShell();
                 SWTMethodChooser chooser = new SWTMethodChooser(shell, "Method Chooser",
                     "Enter AspectWerkz Method Expression", m_project);
-
+                chooser.addValueListener(new UpdateEventListener() {
+                  public void handleUpdate(Object arg) {
+                    String[] values = (String[]) arg;
+                    for (int i = 0; i < values.length; i++) {
+                      internalAddDistributed(values[i]);
+                    }
+                  }
+                });
                 // dialog.addValueListener(new AddModuleDialog.ValueListener() {
                 // public void setValues(String name, String version) {
                 // if (!name.trim().equals("") || !version.trim().equals("")) {

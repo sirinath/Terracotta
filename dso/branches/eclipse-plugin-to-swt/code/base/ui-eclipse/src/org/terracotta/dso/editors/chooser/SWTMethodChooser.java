@@ -25,16 +25,21 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.util.event.EventMulticaster;
+import com.tc.util.event.UpdateEventListener;
+
 public class SWTMethodChooser extends MessageDialog {
 
-  private static final String EXPLORE = "Explore...";
-  private static final String ADD     = "Add";
-  private final Shell         m_parentShell;
-  private final IProject      m_project;
-  private Shell               m_shell;
-  private boolean             m_isAddButton;
-  private SelectionListener   m_exploreListener;
-  private SelectionListener   m_addListener;
+  private static final String    EXPLORE = "Explore...";
+  private static final String    ADD     = "Add";
+  private final Shell            m_parentShell;
+  private final IProject         m_project;
+  private final EventMulticaster m_valueListener;
+  private Shell                  m_shell;
+  private boolean                m_isAddButton;
+  private SelectionListener      m_exploreListener;
+  private SelectionListener      m_addListener;
+  private MethodChooserLayout    m_layout;
 
   public SWTMethodChooser(Shell shell, String title, String message, IProject project) {
     super(shell, title, null, message, MessageDialog.NONE, new String[] {
@@ -42,6 +47,7 @@ public class SWTMethodChooser extends MessageDialog {
       IDialogConstants.CANCEL_LABEL }, 0);
     m_parentShell = shell;
     m_project = project;
+    m_valueListener = new EventMulticaster();
   }
 
   protected void configureShell(Shell shell) {
@@ -52,7 +58,7 @@ public class SWTMethodChooser extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    registerListeners(new MethodChooserLayout(parent));
+    registerListeners(m_layout = new MethodChooserLayout(parent));
     return parent;
   }
 
@@ -60,6 +66,14 @@ public class SWTMethodChooser extends MessageDialog {
     layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         SWTMethodNavigator dialog = new SWTMethodNavigator(getShell(), "Select Method", m_project);
+        dialog.addValueListener(new UpdateEventListener() {
+          public void handleUpdate(Object arg) {
+            String[] values = (String[]) arg;
+            for (int i = 0; i < values.length; i++) {
+              layout.m_list.add(values[i]);
+            }
+          }
+        });
         dialog.open();
       }
     });
@@ -93,28 +107,22 @@ public class SWTMethodChooser extends MessageDialog {
         if (e.keyCode == SWT.DEL || e.keyCode == SWT.BS) {
           int[] selected = ((List) e.getSource()).getSelectionIndices();
           layout.m_list.remove(selected);
+          layout.m_selectField.forceFocus();
         }
       }
     });
   }
 
-  // XXX: use okPressed();
-  // protected void buttonPressed(int buttonId) {
-  // if (buttonId == IDialogConstants.OK_ID) {
-  // if (m_valueListener != null) m_valueListener.setValues(m_moduleName.getText(), m_moduleVersion.getText());
-  // }
-  // super.buttonPressed(buttonId);
-  // }
-  //
-  // public void addValueListener(ValueListener listener) {
-  // this.m_valueListener = listener;
-  // }
-  //
-  // // --------------------------------------------------------------------------------
-  //
-  // public static interface ValueListener {
-  // void setValues(String name, String version);
-  // }
+  protected void buttonPressed(int buttonId) {
+    if (buttonId == IDialogConstants.OK_ID) {
+      m_valueListener.fireUpdateEvent(m_layout.m_list.getItems());
+    }
+    super.buttonPressed(buttonId);
+  }
+
+  public void addValueListener(UpdateEventListener listener) {
+    m_valueListener.addListener(listener);
+  }
 
   // --------------------------------------------------------------------------------
 
