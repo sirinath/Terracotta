@@ -16,43 +16,32 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
-import com.tc.util.sequence.ObjectIDSequence;
 
 import java.util.Iterator;
 
 public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager, GroupMessageListener {
 
-  private static final TCLogger  logger = TCLogging.getLogger(ReplicatedClusterStateManagerImpl.class);
+  private static final TCLogger logger = TCLogging.getLogger(ReplicatedClusterStateManagerImpl.class);
 
-  private final GroupManager     groupManager;
-  private final ClusterState     state  = new ClusterState();
+  private final GroupManager    groupManager;
+  private final ClusterState    state;
 
-  private final ObjectIDSequence oidSequenceProvider;
-
-  private final StateManager     stateManager;
+  private final StateManager    stateManager;
 
   public ReplicatedClusterStateManagerImpl(GroupManager groupManager, StateManager stateManager,
-                                           ObjectIDSequence oidSequenceProvider) {
+                                           ClusterState clusterState) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
-    this.oidSequenceProvider = oidSequenceProvider;
+    state = clusterState;
     groupManager.registerForMessages(ClusterStateMessage.class, this);
   }
 
   public synchronized void sync() {
     // Sync state to internal DB
-    syncOIDSequence();
+    state.syncInternal();
 
     // Sync state to external passive servers
     publishToAll(ClusterStateMessageFactory.createClusterStateMessage(state));
-  }
-
-  private void syncOIDSequence() {
-    long nextOID = state.getNextAvailableObjectID();
-    if (nextOID != -1) {
-      logger.info("Setting the Next Available OID to " + nextOID);
-      this.oidSequenceProvider.setNextAvailableObjectID(nextOID);
-    }
   }
 
   public synchronized void publishClusterState(NodeID nodeID) {
@@ -115,11 +104,11 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
     try {
       switch (msg.getType()) {
         case ClusterStateMessage.OBJECT_ID:
-          state.setNextAvailableObjectID(msg.getClusterState().getNextAvailableObjectID());
+          state.setNextAvailableObjectID(msg.getNextAvailableObjectID());
           sendOKResponse(fromNode, msg);
           break;
         case ClusterStateMessage.COMPLETE_STATE:
-          state.setNextAvailableObjectID(msg.getClusterState().getNextAvailableObjectID());
+          state.setNextAvailableObjectID(msg.getNextAvailableObjectID());
           sendOKResponse(fromNode, msg);
           break;
         default:
@@ -135,22 +124,4 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
     groupManager.sendTo(fromNode, ClusterStateMessageFactory.createOKResponse(msg));
   }
 
-  public static final class ClusterState {
-
-    private long nextAvailObjectID = -1;
-
-    public void setNextAvailableObjectID(long nextAvailOID) {
-      if (nextAvailOID < nextAvailObjectID) {
-        // Could happen when two actives fight it out. Dont want to assert, let the state manager fight it out.
-        logger.error("Trying to set Next Available ObjectID to a lesser value : known = " + nextAvailObjectID
-                     + " new value = " + nextAvailOID + " IGNORING");
-        return;
-      }
-      this.nextAvailObjectID = nextAvailOID;
-    }
-
-    public long getNextAvailableObjectID() {
-      return nextAvailObjectID;
-    }
-  }
 }

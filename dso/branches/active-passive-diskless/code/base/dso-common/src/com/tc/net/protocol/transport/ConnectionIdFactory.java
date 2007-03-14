@@ -11,5 +11,7 @@ public interface ConnectionIdFactory {
   public ConnectionID nextConnectionId();
   
   public Set loadConnectionIDs();
+  
+  public void setUID(String clusterID);
 
 }

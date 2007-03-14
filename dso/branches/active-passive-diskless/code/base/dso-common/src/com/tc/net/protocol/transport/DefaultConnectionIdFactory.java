@@ -11,20 +11,24 @@ import java.util.Set;
 
 public class DefaultConnectionIdFactory implements ConnectionIdFactory {
 
-  private long         sequence;
+  private long   sequence;
 
-  private final String serverID = UUID.getUUID().toString();
+  private String uid = UUID.getUUID().toString();
 
   public synchronized ConnectionID nextConnectionId() {
-    return new ConnectionID(sequence++, serverID);
+    return new ConnectionID(sequence++, uid);
   }
 
-  public String getServerID() {
-    return serverID;
+  public String getUID() {
+    return uid;
   }
 
   public Set loadConnectionIDs() {
     return Collections.EMPTY_SET;
+  }
+
+  public void setUID(String clusterID) {
+    uid = clusterID;
   }
 
 }

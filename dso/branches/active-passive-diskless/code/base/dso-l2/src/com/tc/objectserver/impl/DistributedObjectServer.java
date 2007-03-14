@@ -163,7 +163,6 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -208,6 +207,8 @@ public class DistributedObjectServer extends SEDA {
   private L2Coordinator                        l2Coordinator;
 
   private TCProperties                         l2Properties;
+
+  private ConnectionIdFactoryImpl connectionIdFactory;
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -417,7 +418,7 @@ public class DistributedObjectServer extends SEDA {
       logger.warn("CacheManager is Disabled");
     }
     
-    ConnectionIdFactory connectionIdFactory = new ConnectionIdFactoryImpl(clientStateStore);
+    connectionIdFactory = new ConnectionIdFactoryImpl(clientStateStore);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
@@ -581,7 +582,7 @@ public class DistributedObjectServer extends SEDA {
                                                                                                            true),
                                                                                            reconnectTimeout, persistent);
 
-    l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager);
+    l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore());
 
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
@@ -604,8 +605,7 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public boolean startActiveMode() throws IOException {
-    //TODO::comeback
-    l1Listener.start(Collections.EMPTY_SET);
+    l1Listener.start(connectionIdFactory.loadConnectionIDs());
     consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;
@@ -716,6 +716,10 @@ public class DistributedObjectServer extends SEDA {
     if (startupLock != null) {
       startupLock.release();
     }
+  }
+  
+  public ConnectionIdFactory getConnectionIdFactory() {
+    return connectionIdFactory;
   }
   
   public ManagedObjectStore getManagedObjectStore() {

@@ -33,6 +33,10 @@ public class ConnectionIdFactoryImpl implements ConnectionIdFactory {
     ConnectionID rv = new ConnectionID(clientID, uid);
     return rv;
   }
+  
+  public void setUID(String clusterID) {
+    this.uid = clusterID;
+  }
 
   public Set loadConnectionIDs() {
     Set connections = new HashSet();

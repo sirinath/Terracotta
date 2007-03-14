@@ -34,6 +34,7 @@ import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.groups.NodeID;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
+import com.tc.objectserver.persistence.api.PersistentMapStore;
 
 import java.io.IOException;
 
@@ -44,6 +45,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   private final TCLogger                consoleLogger;
   private final DistributedObjectServer server;
   private final StageManager            stageManager;
+  private final PersistentMapStore      clusterStateStore;
 
   private GroupManager                  groupManager;
   private StateManager                  stateManager;
@@ -51,10 +53,14 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   private L2ObjectStateManager          l2ObjectStateManager;
   private ReplicatedClusterStateManager rClusterStateMgr;
 
-  public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager) {
+  private ClusterState clusterState;
+
+  public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
+                         PersistentMapStore clusterStateStore) {
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.stageManager = stageManager;
+    this.clusterStateStore = clusterStateStore;
   }
 
   public void start() {
@@ -68,6 +74,8 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   private void basicStart() throws GroupException {
 
+    this.clusterState = new ClusterState(this.clusterStateStore, server.getManagedObjectStore(), server.getConnectionIdFactory());
+    
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
     this.groupManager = GroupManagerFactory.createGroupManager();
@@ -88,15 +96,15 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     final Sink ackProcessingStage = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
-    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
-                                                          server.getContext().getObjectManager(), objectsSyncSink);
+    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager, server
+        .getContext().getObjectManager(), objectsSyncSink);
 
-    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, server.getManagedObjectStore());
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState);
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(ServerTxnAckMessage.class, ackProcessingStage);
-    
+
     this.groupManager.registerForGroupEvents(this);
 
     stateManager.start();
@@ -119,6 +127,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   }
 
   public void l2StateChanged(StateChangedEvent sce) {
+    clusterState.setCurrentState(sce.getCurrentState());
     if (sce.movedToActive()) {
       rClusterStateMgr.sync();
       rObjectManager.sync();

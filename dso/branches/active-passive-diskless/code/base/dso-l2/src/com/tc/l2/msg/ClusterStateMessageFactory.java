@@ -4,7 +4,7 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.l2.ha.ReplicatedClusterStateManagerImpl.ClusterState;
+import com.tc.l2.ha.ClusterState;
 import com.tc.net.groups.GroupMessage;
 
 public class ClusterStateMessageFactory {

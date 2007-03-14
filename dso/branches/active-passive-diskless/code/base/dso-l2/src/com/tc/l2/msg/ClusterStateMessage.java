@@ -4,7 +4,7 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.l2.ha.ReplicatedClusterStateManagerImpl.ClusterState;
+import com.tc.l2.ha.ClusterState;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.MessageID;
 
@@ -17,8 +17,10 @@ public class ClusterStateMessage extends AbstractGroupMessage {
   public static final int OBJECT_ID         = 0x00;
   public static final int COMPLETE_STATE    = 0xF0;
   public static final int OPERATION_SUCCESS = 0xFF;
-
-  private ClusterState    state;
+  
+  private transient ClusterState state;
+  
+  private long nextAvailableObjectID;
 
   // To make serialization happy
   public ClusterStateMessage() {
@@ -37,12 +39,10 @@ public class ClusterStateMessage extends AbstractGroupMessage {
   protected void basicReadExternal(int msgType, ObjectInput in) throws IOException {
     switch (msgType) {
       case OBJECT_ID:
-        state = new ClusterState();
-        state.setNextAvailableObjectID(in.readLong());
+        nextAvailableObjectID = in.readLong();
         break;
       case COMPLETE_STATE:
-        state = new ClusterState();
-        state.setNextAvailableObjectID(in.readLong());
+        nextAvailableObjectID = in.readLong();
         break;
       case OPERATION_SUCCESS:
         break;
@@ -65,9 +65,9 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         throw new AssertionError("Unknown type : " + msgType);
     }
   }
-
-  public ClusterState getClusterState() {
-    return state;
+  
+  public long getNextAvailableObjectID() {
+    return nextAvailableObjectID;
   }
 
 }

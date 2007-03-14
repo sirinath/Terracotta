@@ -21,6 +21,14 @@ public class StateChangedEvent implements EventContext {
   public boolean movedToActive() {
     return to == StateManager.ACTIVE_COORDINATOR;
   }
+  
+  public State getCurrentState() {
+    return to;
+  }
+  
+  public State getOldState() {
+    return from;
+  }
 
   public String toString() {
     return "StateChangedEvent [ " + from + " - > " + to + " ]";

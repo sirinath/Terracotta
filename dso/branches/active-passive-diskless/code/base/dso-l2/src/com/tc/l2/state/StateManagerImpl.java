@@ -64,7 +64,7 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
   }
 
   /*
-   * XXX:: If ACTIVE dying before any passive moved to STANDBY state, then the cluster is hung and there is no going
+   * XXX:: If ACTIVE went dead before any passive moved to STANDBY state, then the cluster is hung and there is no going
    * around it. If ACTIVE in persistent mode, it can come back and recover the cluster
    */
   private void startElection() {
@@ -109,21 +109,19 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
                                + " at least for now");
     }
   }
-  
+
   private synchronized void moveToPassiveStandbyState() {
-    if(state == ACTIVE_COORDINATOR) {
+    if (state == ACTIVE_COORDINATOR) {
       // TODO:: Support this later
-      throw new AssertionError("Cant move to " + PASSIVE_STANDBY + " from " + ACTIVE_COORDINATOR
-                               + " at least for now");
-    } else if(state != PASSIVE_STANDBY) {
+      throw new AssertionError("Cant move to " + PASSIVE_STANDBY + " from " + ACTIVE_COORDINATOR + " at least for now");
+    } else if (state != PASSIVE_STANDBY) {
       stateChangeSink.add(new StateChangedEvent(state, PASSIVE_STANDBY));
       state = PASSIVE_STANDBY;
       info("Moved to " + state, true);
     } else {
-     info("Already in " + state);
+      info("Already in " + state);
     }
   }
-
 
   private synchronized void moveToActiveState() {
     if (state == START_STATE || state == PASSIVE_STANDBY) {
@@ -158,9 +156,8 @@ public class StateManagerImpl implements StateManager, GroupMessageListener, Gro
    * Message Listener Interface, TODO::move to a stage
    */
   public synchronized void messageReceived(NodeID fromNode, GroupMessage msg) {
-    if (!(msg instanceof L2StateMessage)) { throw new AssertionError(
-                                                                          "StateManagerImpl : Received wrong message type :"
-                                                                              + msg); }
+    if (!(msg instanceof L2StateMessage)) { throw new AssertionError("StateManagerImpl : Received wrong message type :"
+                                                                     + msg); }
     L2StateMessage clusterMsg = (L2StateMessage) msg;
     handleClusterStateMessage(clusterMsg);
   }

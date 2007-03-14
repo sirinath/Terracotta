@@ -47,6 +47,10 @@ public class ServerStackProviderTest extends TCTestCase {
       public Set loadConnectionIDs() {
         return Collections.EMPTY_SET;
       }
+
+      public void setUID(String clusterID) {
+        //NOP
+      }
     };
 
     transportFactory = new MockMessageTransportFactory();
