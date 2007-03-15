@@ -473,6 +473,10 @@ public class LargeGraphTestApp implements Application, ApplicationConfigBuilder 
         throw new AssertionError();
       }
 
+      public int getGlobalValidatorCount() {
+        throw new AssertionError();
+      }
+
     };
   }
 }

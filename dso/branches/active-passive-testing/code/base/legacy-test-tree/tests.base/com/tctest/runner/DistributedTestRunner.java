@@ -28,7 +28,6 @@ import com.tc.simulator.container.ContainerConfig;
 import com.tc.simulator.container.ContainerResult;
 import com.tc.simulator.container.ContainerStateFactory;
 import com.tc.simulator.control.Control;
-import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tcsimulator.ControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
@@ -42,7 +41,7 @@ import java.util.Map;
 /**
  * Takes an application configuration and some parameters and runs a single-vm, multi-node (multi-classloader) test.
  */
-public class DistributedTestRunner implements ResultsListener, MutationCompletionListener {
+public class DistributedTestRunner implements ResultsListener {
 
   private final boolean                             startServer;
 
@@ -76,8 +75,6 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
   private final int                                 validatorCount;
 
   private Container[]                               validatorContainers;
-
-  private DistributedTestRunner                     mutationCompletionListener;
 
   /**
    * @param applicationClass Class of the application to be executed. It should implement the static method required by
@@ -116,13 +113,11 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
 
     this.containers = new Container[clientCount];
 
-    mutationCompletionListener = this;
     boolean mutator = true;
-
     for (int i = 0; i < containers.length; i++) {
       containers[i] = new Container(this.containerConfig, this.containerStateFactory, this.globalIdGenerator,
                                     this.control, this.resultsListeners[i], this.applicationBuilders[i],
-                                    this.isMutatorValidatorTest, mutator, mutationCompletionListener);
+                                    this.isMutatorValidatorTest, mutator);
     }
     createValidators();
     L2TVSConfigurationSetupManager manager = configFactory.createL2TVSConfigurationSetupManager(null);
@@ -132,25 +127,22 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
   }
 
   private void createValidators() {
-    if (isMutatorValidatorTest) {
-      boolean isMutator = false;
-      validatorContainers = new Container[validatorCount];
-
-      for (int i = 0; i < validatorContainers.length; i++) {
-        validatorContainers[i] = new Container(this.containerConfig, this.containerStateFactory,
-                                               this.globalIdGenerator, this.control,
-                                               this.resultsListeners[i + this.clientCount],
-                                               this.applicationBuilders[i + this.clientCount], isMutatorValidatorTest,
-                                               isMutator, mutationCompletionListener);
-      }
+    boolean isMutator = false;
+    validatorContainers = new Container[validatorCount];
+    for (int i = 0; i < validatorContainers.length; i++) {
+      validatorContainers[i] = new Container(this.containerConfig, this.containerStateFactory, this.globalIdGenerator,
+                                             this.control, this.resultsListeners[i + this.clientCount],
+                                             this.applicationBuilders[i + this.clientCount], isMutatorValidatorTest,
+                                             isMutator);
     }
   }
 
   public void run() {
     try {
-      
-      System.err.println("***** control=["+control.toString()+"]");
-      
+
+      // TODO: remove this
+      System.err.println("***** control=[" + control.toString() + "]");
+
       Thread statsOutputPrinterThread = new Thread(this.statsOutputPrinter);
       statsOutputPrinterThread.setDaemon(true);
       statsOutputPrinterThread.start();
@@ -171,7 +163,7 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
       }
 
       if (isMutatorValidatorTest) {
-        
+
         final boolean mutationComplete = this.control.waitForMutationComplete(config.executionTimeout());
 
         if (!mutationComplete) {
@@ -278,7 +270,7 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
   }
 
   private Control newContainerControl() {
-    return new ControlImpl(this.clientCount, isMutatorValidatorTest, validatorCount);
+    return new ControlImpl(this.clientCount, validatorCount);
   }
 
   private ResultsListener[] newResultsListeners(int count) {
@@ -291,7 +283,7 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
 
   private ApplicationBuilder[] newApplicationBuilders(int count) throws Exception {
     ApplicationBuilder[] rv = new ApplicationBuilder[count];
-    
+
     for (int i = 0; i < rv.length; i++) {
       L1TVSConfigurationSetupManager l1ConfigManager = this.configFactory.createL1TVSConfigurationSetupManager();
       l1ConfigManager.setupLogging();
@@ -339,5 +331,9 @@ public class DistributedTestRunner implements ResultsListener, MutationCompletio
    */
   public void notifyMutationComplete() {
     control.notifyMutationComplete();
+  }
+
+  public void waitForMutationComplete() throws Exception {
+    control.waitForMutationComplete(containerConfig.getApplicationExecutionTimeout());
   }
 }

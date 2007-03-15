@@ -15,66 +15,50 @@ import com.tc.object.config.spec.CountDownSpec;
 import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.control.TCBrokenBarrierException;
+import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.util.TCTimeoutException;
 
-public class ControlImpl implements Control {
-  private static final int    NOT_SET = -1;
-  private final int           startParties;
+public class ControlImpl implements Control, MutationCompletionListener {
+  private final int           mutatorCount;
   private final int           completeParties;
   private final CyclicBarrier startBarrier;
   private final CountDown     countdown;
-  private final boolean       isMutateValidateTest;
   private final int           validatorCount;
   private CountDown           mutationCompleteCount;
+  private final Control       testWideControl;
+  private long                executionTimeout;
 
-  public ControlImpl(int parties) {
-    this(parties, parties);
+  public ControlImpl(int mutatorCount) {
+    this(mutatorCount, 0);
   }
 
-  public ControlImpl(int startParties, int completeParties) {
-    this(startParties, completeParties, false, 0);
+  // used to create container-wide control
+  public ControlImpl(int mutatorCount, Control testWideControl) {
+    this(mutatorCount, 0, testWideControl);
   }
 
-  // Mutate-validate tests should use this constructor.
-  public ControlImpl(int mutatorCount, boolean isMutateValidateTest, int validatorCount) {
-    this(mutatorCount, mutatorCount + validatorCount, isMutateValidateTest, validatorCount);
+  // used to create test-wide control
+  public ControlImpl(int mutatorCount, int validatorCount) {
+    this(mutatorCount, validatorCount, null);
   }
 
-  public ControlImpl(int startParties, int completeParties, boolean isMutateValidateTest, int validatorCount) {
-    if (completeParties != (startParties + validatorCount)) { throw new AssertionError(
-                                                                                       "completeParties["
-                                                                                           + this.completeParties
-                                                                                           + "] does not equal startParties["
-                                                                                           + this.startParties
-                                                                                           + "] + validatorCount["
-                                                                                           + this.validatorCount + "]"); }
+  public ControlImpl(int mutatorCount, int validatorCount, Control testWideControl) {
+    if (mutatorCount < 0 || validatorCount < 0) { throw new AssertionError(
+                                                                           "MutatorCount and validatorCount must be non-negative numbers!  mutatorCount=["
+                                                                               + mutatorCount + "] validatorCount=["
+                                                                               + validatorCount + "]"); }
 
-    this.startParties = startParties;
-    this.startBarrier = new CyclicBarrier(startParties);
-
-    mutationCompleteCount = new CountDown(startParties);
+    this.executionTimeout = -1;
+    this.testWideControl = testWideControl;
+    this.mutatorCount = mutatorCount;
     this.validatorCount = validatorCount;
+    this.completeParties = mutatorCount + validatorCount;
+    // TODO: remove
+    System.err.println("####### completeParties=[" + completeParties + "]");
 
-    this.isMutateValidateTest = isMutateValidateTest;
-
-    if (this.isMutateValidateTest) {
-
-      System.err.println("******* isMutateValidateTest=[" + isMutateValidateTest + "]");
-      System.err.println("####### completeParties=[" + completeParties + "]");
-
-      if (completeParties == NOT_SET) {
-        this.completeParties = startParties + validatorCount;
-      } else {
-        this.completeParties = completeParties;
-      }
-    } else if (completeParties == NOT_SET) {
-      this.completeParties = startParties;
-    } else {
-      this.completeParties = completeParties;
-    }
-
-    System.err.println("####### this.completeParties=[" + this.completeParties + "]");
-    this.countdown = new CountDown(this.completeParties);
+    startBarrier = new CyclicBarrier(mutatorCount);
+    mutationCompleteCount = new CountDown(mutatorCount);
+    countdown = new CountDown(this.completeParties);
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -103,10 +87,9 @@ public class ControlImpl implements Control {
   }
 
   public String toString() {
-    return getClass().getName() + "[ startParties=" + startParties + ", completeParties=" + completeParties
+    return getClass().getName() + "[ mutatorCount=" + mutatorCount + ", completeParties=" + completeParties
            + ", startBarrier=" + startBarrier + ", countdown=" + countdown + ", mutationCompleteCount="
-           + mutationCompleteCount + ", isMutateValidateTest=" + isMutateValidateTest + ", validatorCount="
-           + validatorCount + " ]";
+           + mutationCompleteCount + ", validatorCount=" + validatorCount + " ]";
   }
 
   public void waitForStart(long timeout) throws InterruptedException, TCBrokenBarrierException, TCTimeoutException {
@@ -127,6 +110,9 @@ public class ControlImpl implements Control {
     mutationCompleteCount.release();
   }
 
+  /*
+   * Control interface method
+   */
   public boolean waitForMutationComplete(long timeout) throws InterruptedException {
     if (timeout < 0) {
       while (true) {
@@ -136,8 +122,23 @@ public class ControlImpl implements Control {
       }
     }
     try {
-      boolean rv = this.mutationCompleteCount.attempt(timeout);
+      boolean rv = mutationCompleteCount.attempt(timeout);
       return rv;
+    } catch (InterruptedException e) {
+      throw e;
+    }
+  }
+
+  /*
+   * MutationCompletionListener interface method -- called by applications
+   */
+  public void waitForMutationCompleteTestWide() throws Exception {
+    try {
+      if (testWideControl == null) { throw new AssertionError(
+                                                              "Application should be calling this on container-wide control, not test-wide control."); }
+      checkExecutionTimeout(executionTimeout);
+      boolean rv = testWideControl.waitForMutationComplete(executionTimeout);
+      if (!rv) { throw new RuntimeException("Wait on MutationCompletionCount did not pass:  executionTimeout=[" + executionTimeout + "] "); }
     } catch (InterruptedException e) {
       throw e;
     }
@@ -165,4 +166,13 @@ public class ControlImpl implements Control {
     }
   }
 
+  public void setExecutionTimeout(long timeout) {
+    checkExecutionTimeout(timeout);
+    executionTimeout = timeout;
+  }
+
+  private void checkExecutionTimeout(long timeout) {
+    if (timeout < 0) { throw new AssertionError("Execution timeout should be a non-negative number:  timeout=["
+                                                + timeout + "]"); }
+  }
 }

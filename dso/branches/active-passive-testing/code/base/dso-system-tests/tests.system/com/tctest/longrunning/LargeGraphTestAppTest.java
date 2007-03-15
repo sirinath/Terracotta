@@ -60,6 +60,10 @@ public class LargeGraphTestAppTest extends TestCase {
         throw new AssertionError();
       }
 
+      public int getGlobalValidatorCount() {
+        throw new AssertionError();
+      }
+
     };
     listeners = new MockListenerProvider();
     listeners.outputListener = new MockOutputListener();

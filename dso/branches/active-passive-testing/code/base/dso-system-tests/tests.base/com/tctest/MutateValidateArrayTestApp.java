@@ -15,9 +15,9 @@ import java.util.List;
 
 public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparentApp {
 
-  private String[] myArrayTestRoot;
-  private List validationArray;
-  private int      iterationCount;
+  private String[]     myArrayTestRoot;
+  private List         validationArray;
+  private int          iterationCount;
   private final String appId;
 
   public MutateValidateArrayTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -27,20 +27,6 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
     iterationCount = 3;
     validationArray = new ArrayList();
   }
-
-  // used by validators
-//  public MutateValidateArrayTestApp() {
-//    super();
-//    myArrayTestRoot = new String[] {};
-//
-//    if (myArrayTestRoot.length != 3) { throw new AssertionError("myArrayTestRoot is not as expected: "
-//                                                                + myArrayTestRoot); }
-//
-//    validationArray = new String[] {};
-//
-//    iterationCount = validationArray.length;
-//    if (iterationCount != 10) { throw new AssertionError("validationArray is not as expected: " + validationArray); }
-//  }
 
   protected void mutate() throws Throwable {
     synchronized (validationArray) {
@@ -55,13 +41,15 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
 
   protected void validate() throws Throwable {
     synchronized (validationArray) {
-      for (int i = 0; i < iterationCount * getParticipantCount() ; i++) {
+      for (int i = 0; i < iterationCount * getParticipantCount(); i++) {
         System.out.println("****** appId[" + appId + "]:   index=[" + i + "]");
         System.out.println("***** " + validationArray.get(i));
-        
+
         boolean val = myArrayTestRoot[(i + 1) % myArrayTestRoot.length].equals(validationArray.get(i));
-        if (!val) { notifyError("Expecting <" + myArrayTestRoot[(i + 1) % myArrayTestRoot.length]
-                                             + "> but got <" + validationArray.get(i) + ">"); }
+        if (!val) {
+          notifyError("Expecting <" + myArrayTestRoot[(i + 1) % myArrayTestRoot.length] + "> but got <"
+                      + validationArray.get(i) + ">");
+        }
       }
     }
   }
@@ -76,8 +64,4 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
     spec.addRoot("validationArray", "validationArray");
   }
 
-//  public static void main(String[] args) throws Throwable {
-//    MutateValidateArrayTestApp app = new MutateValidateArrayTestApp();
-//    app.doValidate();
-//  }
 }

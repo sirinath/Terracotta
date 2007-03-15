@@ -8,19 +8,21 @@ import com.tc.objectserver.control.ServerControl;
 
 public interface ApplicationConfig {
 
-  public String getApplicationClassname();
+  String getApplicationClassname();
 
-  public void setAttribute(String key, String value);
+  void setAttribute(String key, String value);
 
-  public String getAttribute(String key);
+  String getAttribute(String key);
 
-  public int getGlobalParticipantCount();
+  int getGlobalParticipantCount();
 
-  public int getIntensity();
+  int getIntensity();
 
-  public ServerControl getServerControl();
+  ServerControl getServerControl();
 
-  public ApplicationConfig copy();
+  ApplicationConfig copy();
 
   int getValidatorCount();
+
+  int getGlobalValidatorCount();
 }

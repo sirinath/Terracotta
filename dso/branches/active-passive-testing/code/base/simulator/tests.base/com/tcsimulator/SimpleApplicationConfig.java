@@ -50,4 +50,8 @@ public class SimpleApplicationConfig implements ApplicationConfig {
   public int getValidatorCount() {
     throw new AssertionError();
   }
+
+  public int getGlobalValidatorCount() {
+    throw new AssertionError();
+  }
 }

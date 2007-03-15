@@ -51,6 +51,7 @@ public class DSOApplicationBuilder implements ApplicationBuilder {
           applicationConfigClass, listenerProviderClass });
       logger.info("Before new Instance is created...");
       
+      //TODO: remove
       logger.info("*******  appConfig=[" + applicationConfig.toString() + "]");
       
       return (Application) this.applicationConstructor.newInstance(new Object[] { applicationId,

@@ -19,7 +19,6 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   private final GlobalIdGenerator idGenerator;
   private final Map               extraConfigAttributes             = new HashMap();
   private final ServerControl     serverControl;
-  // private int globalParticipantCount;
   private int                     intensity;
   private int                     clientCount;
   private int                     applicationInstancePerClientCount = 1;
@@ -88,6 +87,19 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
     return this.applicationClassname;
   }
 
+  public int getGlobalValidatorCount() {
+    return (clientCount + validatorCount) * applicationInstancePerClientCount;
+  }
+
+  public int getValidatorCount() {
+    return this.validatorCount;
+  }
+
+  public TransparentAppConfig setValidatorCount(int count) {
+    validatorCount = count;
+    return this;
+  }
+
   // ApplicationConfigBuilder interface...
 
   public void visitClassLoaderConfig(DSOClientConfigHelper config) {
@@ -104,14 +116,5 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
 
   public ServerControl getServerControl() {
     return serverControl;
-  }
-
-  public int getValidatorCount() {
-    return this.validatorCount;
-  }
-  
-  public TransparentAppConfig setValidatorCount(int count) {
-    validatorCount = count;
-    return this;
   }
 }

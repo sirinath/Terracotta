@@ -76,10 +76,14 @@ public class ApplicationConfigImpl implements ApplicationConfig {
   }
   
   public ApplicationConfig copy() {
-    return new ApplicationConfigImpl(applicatonClassname, intensity, globalParticipantCount);
+    return new ApplicationConfigImpl(applicatonClassname, intensity, globalParticipantCount, validatorCount);
   }
 
   public ServerControl getServerControl() {
     throw new UnsupportedOperationException("not implemented, should not be used");
+  }
+
+  public int getGlobalValidatorCount() {
+    throw new AssertionError("This method needs to be implemented");
   }
 }

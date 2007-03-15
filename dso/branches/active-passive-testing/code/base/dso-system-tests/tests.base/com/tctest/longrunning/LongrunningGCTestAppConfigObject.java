@@ -59,4 +59,8 @@ public class LongrunningGCTestAppConfigObject implements LongrunningGCTestAppCon
   public int getValidatorCount() {
     throw new AssertionError();
   }
+
+  public int getGlobalValidatorCount() {
+    throw new AssertionError();
+  }
 }

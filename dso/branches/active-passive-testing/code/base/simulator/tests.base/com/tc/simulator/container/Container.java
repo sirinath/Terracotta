@@ -40,16 +40,16 @@ public final class Container implements Runnable {
   private final boolean                    isMutateValidateTest;
   private final boolean                    isMutator;
   private final MutationCompletionListener mutationCompletionListener;
+  private final ControlImpl                applicationControl;
 
   public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
                    Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder) {
-    this(config, containerStateFactory, idGenerator, control, resultsListener, applicationBuilder, false, true, null);
+    this(config, containerStateFactory, idGenerator, control, resultsListener, applicationBuilder, false, true);
   }
 
   public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
                    Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder,
-                   boolean isMutateValidateTest, boolean isMutator,
-                   MutationCompletionListener mutationCompletionListener) {
+                   boolean isMutateValidateTest, boolean isMutator) {
     this.config = config;
     this.idGenerator = idGenerator;
     this.control = control;
@@ -57,8 +57,12 @@ public final class Container implements Runnable {
     this.applicationBuilder = applicationBuilder;
     this.isMutateValidateTest = isMutateValidateTest;
     this.isMutator = isMutator;
-    this.mutationCompletionListener = mutationCompletionListener;
     this.globalId = this.idGenerator.nextId() + "";
+
+    applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.control);
+    applicationControl.setExecutionTimeout(this.config.getApplicationExecutionTimeout());
+    
+    mutationCompletionListener = applicationControl;
 
     this.containerState = containerStateFactory.newContainerState(this.globalId);
     Assert.assertNoNullElements(new Object[] { this.config, this.idGenerator, this.control, this.resultsListener,
@@ -69,42 +73,64 @@ public final class Container implements Runnable {
    * Make applications go.
    */
   public synchronized void run() {
-    if (isMutateValidateTest) {
-      logger.info("*******  isMutateValidateTest=["+isMutateValidateTest+"]");
-      runMutateValidateTest();
-    } else {
-      runRegularTest();
-    }
+    logger.info("*******  isMutateValidateTest=[" + isMutateValidateTest + "]");
+    runMutateValidateTest();
   }
 
+//  private synchronized void runRegularTest() {
+//    Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
+//    
+//    SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
+//    try {
+//      if (!validateConfig()) return;
+//      if (!waitForStart()) return;
+//      ContainerExecutionInstance containerExecution = new ContainerExecutionInstance();
+//      
+//      startInstances(containerExecution);
+//      
+//      if (!waitForAllComplete()) return;
+//      notifyResult(containerExecution);
+//    } catch (Throwable t) {
+//      notifyError("Unexpected error executing application.", t);
+//    } finally {
+//      isRunning.set(false);
+//      this.control.notifyComplete();
+//      try {
+//        this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
+//      } catch (InterruptedException e) {
+//        e.printStackTrace();
+//      }
+//    }
+//  }
   private synchronized void runMutateValidateTest() {
     Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
 
     SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
     try {
       if (!validateConfig()) return;
-
+      // TODO: remove
       logger.info("***** config is alright");
-      
+
       if (isMutator) {
-        logger.info("******* isMutator=["+isMutator+"]");
+        // TODO: remove
+        logger.info("******* isMutator=[" + isMutator + "]");
         if (!waitForStart()) return;
       } else {
-        if (!waitForMutationComplete()) return;
+        if (!waitForMutationCompleteTestWide()) return;
       }
 
-      // TODO: fix this to work with multiple instances
-      if (config.getApplicationInstanceCount() != 1) { throw new AssertionError(
-                                                                                "We don't support multiple L1 instances per container"); }
-      Control applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.config
-          .getApplicationInstanceCount());
       ContainerExecutionInstance containerExecution = new ContainerExecutionInstance();
 
-      logger.info("****** about to start an instance of app");
-      
-      startInstances(containerExecution, applicationControl);
+      startInstances(containerExecution);
 
-      if (!waitForAllComplete(applicationControl)) return;
+      if (isMutateValidateTest && isMutator) {
+        // wait for all app instances have completed mutation
+        if (!waitForMutationComplete()) return;
+        control.notifyMutationComplete();
+      }
+
+      if (!waitForAllComplete()) return;
+
       notifyResult(containerExecution);
 
     } catch (Throwable t) {
@@ -112,34 +138,6 @@ public final class Container implements Runnable {
     } finally {
       isRunning.set(false);
       control.notifyComplete();
-      try {
-        this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  private synchronized void runRegularTest() {
-    Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
-
-    SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
-    try {
-      if (!validateConfig()) return;
-      if (!waitForStart()) return;
-      Control applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.config
-          .getApplicationInstanceCount());
-      ContainerExecutionInstance containerExecution = new ContainerExecutionInstance();
-
-      startInstances(containerExecution, applicationControl);
-
-      if (!waitForAllComplete(applicationControl)) return;
-      notifyResult(containerExecution);
-    } catch (Throwable t) {
-      notifyError("Unexpected error executing application.", t);
-    } finally {
-      isRunning.set(false);
-      this.control.notifyComplete();
       try {
         this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
       } catch (InterruptedException e) {
@@ -187,12 +185,12 @@ public final class Container implements Runnable {
     return rv;
   }
 
-  private boolean waitForMutationComplete() throws InterruptedException {
+  private boolean waitForMutationCompleteTestWide() throws InterruptedException {
     boolean rv = false;
-    println("Waiting for all mutators to finish...");
+    println("Waiting for all containers to finish mutation...");
     this.control.waitForMutationComplete(config.getApplicationExecutionTimeout());
     rv = true;
-    println("Done waiting for all containers to start.");
+    println("Done waiting for all containers to finish mutation.");
     return rv;
   }
 
@@ -200,11 +198,10 @@ public final class Container implements Runnable {
    * Private stuff
    */
 
-//TODO: remove...  for debugging
+  // TODO: remove... for debugging
   TCLogger logger = TCLogging.getLogger(Container.class);
-  
-  private ApplicationExecutionInstance newExecutionInstance(ContainerExecutionInstance containerExecution,
-                                                            Control applicationControl)
+
+  private ApplicationExecutionInstance newExecutionInstance(ContainerExecutionInstance containerExecution)
       throws ApplicationInstantiationException {
     String appId = this.idGenerator.nextId() + "";
     System.err.println("Creating new execution instance: " + appId);
@@ -216,12 +213,13 @@ public final class Container implements Runnable {
     ApplicationListenerProvider appListeners = new ApplicationListenerProvider(outputListener, executionInstance,
                                                                                this.mutationCompletionListener,
                                                                                this.containerState);
-    
+
     if (isMutateValidateTest) {
-      logger.info("****** Container:  appId=[" + appId + "] isMutator=[" + isMutator + "] isMutateValidateTest=[" + isMutateValidateTest+ "]");
+      logger.info("****** Container:  appId=[" + appId + "] isMutator=[" + isMutator + "] isMutateValidateTest=["
+                  + isMutateValidateTest + "]");
       applicationBuilder.setAppConfigAttribute(appId, "" + isMutator);
     }
-    
+
     Application application = applicationBuilder.newApplication(appId, appListeners);
     executionInstance.setApplication(application);
 
@@ -232,20 +230,19 @@ public final class Container implements Runnable {
     System.out.println("Container: " + msg);
   }
 
-  private void startInstances(ContainerExecutionInstance containerExecution, Control applicationControl)
-      throws ApplicationInstantiationException {
+  private void startInstances(ContainerExecutionInstance containerExecution) throws ApplicationInstantiationException {
     println("Starting application execution...");
     for (int i = 0; i < config.getApplicationInstanceCount(); i++) {
       println("exeution " + (i + 1) + " of " + config.getApplicationInstanceCount());
-      ApplicationExecutionInstance executionInstance = newExecutionInstance(containerExecution, applicationControl);
+      ApplicationExecutionInstance executionInstance = newExecutionInstance(containerExecution);
       containerExecution.addExecution(executionInstance);
       executionInstance.start();
     }
     println("All application executions are started.");
   }
 
-  private boolean waitForAllComplete(Control applicationControl) throws InterruptedException {
-    println("Waiting for all containers to complete.  Timeout: " + config.getApplicationExecutionTimeout());
+  private boolean waitForAllComplete() throws InterruptedException {
+    println("Waiting for all applications to complete.  Timeout: " + config.getApplicationExecutionTimeout());
     if (!applicationControl.waitForAllComplete(config.getApplicationExecutionTimeout())) {
       resultsListener.notifyExecutionTimeout();
       notifyFailure();
@@ -253,6 +250,18 @@ public final class Container implements Runnable {
       return false;
     }
     println("Application execution completed.");
+    return true;
+  }
+
+  private boolean waitForMutationComplete() throws InterruptedException {
+    println("Waiting for all applications to finish mutation.  Timeout: " + config.getApplicationExecutionTimeout());
+    if (!applicationControl.waitForMutationComplete(config.getApplicationExecutionTimeout())) {
+      resultsListener.notifyExecutionTimeout();
+      notifyFailure();
+      println("Application execution timed out.");
+      return false;
+    }
+    println("Application mutation completed.");
     return true;
   }
 
@@ -280,7 +289,7 @@ public final class Container implements Runnable {
     this.resultsListener.notifyResult(new ContainerResult(containerExecution));
   }
 
-  private ApplicationRunner newApplicationRunner(Control applicationControl, ResultsListener appRunnerResultsListener,
+  private ApplicationRunner newApplicationRunner(Control appControl, ResultsListener appRunnerResultsListener,
                                                  Application application, StatsListenerFactory statsListenerFactory) {
 
     ApplicationRunnerConfig exeConfig = new ApplicationRunnerConfig() {
@@ -289,8 +298,8 @@ public final class Container implements Runnable {
       }
     };
 
-    ApplicationRunner runner = new ApplicationRunner(exeConfig, applicationControl, appRunnerResultsListener,
-                                                     application, statsListenerFactory);
+    ApplicationRunner runner = new ApplicationRunner(exeConfig, appControl, appRunnerResultsListener, application,
+                                                     statsListenerFactory);
 
     return runner;
   }
@@ -340,7 +349,7 @@ public final class Container implements Runnable {
 
   final class ApplicationExecutionInstance implements ResultsListener {
     private final ContainerExecutionInstance containerExecution;
-    private final Control                    applicationControl;
+    private final Control                    appControl;
     private Application                      application;
     private Object                           result;
     private final StatsListenerFactory       statsListenerFactory;
@@ -348,7 +357,7 @@ public final class Container implements Runnable {
     ApplicationExecutionInstance(ContainerExecutionInstance containerExecution, Control control,
                                  StatsListenerFactory statsListenerFactory) {
       this.containerExecution = containerExecution;
-      this.applicationControl = control;
+      this.appControl = control;
       this.statsListenerFactory = statsListenerFactory;
     }
 
@@ -357,8 +366,7 @@ public final class Container implements Runnable {
     }
 
     void start() {
-      ApplicationRunner runner = newApplicationRunner(applicationControl, this, this.application,
-                                                      this.statsListenerFactory);
+      ApplicationRunner runner = newApplicationRunner(appControl, this, this.application, this.statsListenerFactory);
 
       ClassLoader loader = application.getClass().getClassLoader();
       Thread thread = new Thread(runner);
