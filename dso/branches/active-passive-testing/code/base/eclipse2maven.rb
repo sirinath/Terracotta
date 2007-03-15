@@ -8,7 +8,11 @@ ART_2_GRP = {
 }
 
 POM_DEF = <<POM
-<project>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>parent</artifactId>
@@ -66,7 +70,10 @@ end
 def find_projects( proj_dir_set, dir_name )
 	# check if contains a .project and .classpath
 	if File.exist?( "#{dir_name}/.classpath" ) and File.exist?( "#{dir_name}/.project" )
-		proj_dir_set.add( dir_name )
+		if dir_name =~ /^.*\/common$/
+		else
+			proj_dir_set.add( dir_name )
+		end
 	else
 		Dir.foreach( dir_name ) { |current_dir_name|
 			next if current_dir_name =~ /^\.(\.)?$/
@@ -98,7 +105,7 @@ begin
 						version = ""
 						artifactId = path.scan( /(.*?)\-\d.*?$/ ).join.to_s
 						version = path.scan( /.*?\-(\d.*?)\.jar$/ ).join.to_s
-						project.add Dependency.new( nil, artifactId, version )
+						project.add Dependency.new( nil, artifactId, version ) unless version.nil? or version.length == 0
 					end
 				end
 				# other projects

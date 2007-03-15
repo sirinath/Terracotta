@@ -1,6 +1,11 @@
-<project>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <groupId>org.terracotta</groupId>
   <artifactId>parent</artifactId>
+  <packaging>pom</packaging>
   <version>2.3-SNAPSHOT</version>
 
   <modules>
@@ -9,7 +14,7 @@
     <module>clustered-cglib-2.1.3</module>
     <module>clustered-commons-collections-3.1</module>
     <module>clustered-iBatis-2.2.0</module>
-    <module>clustered-lucene-2.2.0</module>
+    <module>clustered-lucene-2.0.0</module>
     <module>common</module>
     <module>deploy</module>
     <module>dso-alt-boot-jar-tests</module>
@@ -40,7 +45,7 @@
     <module>linked-child-process</module>
     <module>management</module>
     <module>modules-common-1.0</module>
-    <module>services-tests</module>
+    <!--module>services-tests</module-->
     <module>simulator</module>
     <module>thirdparty</module>
     <module>ui-configurator</module>
@@ -229,11 +234,11 @@
         <artifactId>modules-common-1.0</artifactId>
         <version>${tcVersion}</version>
       </dependency>
-      <dependency>
+      <!--dependency>
         <groupId>org.terracotta</groupId>
         <artifactId>services-tests</artifactId>
         <version>${tcVersion}</version>
-      </dependency>
+      </dependency-->
       <dependency>
         <groupId>org.terracotta</groupId>
         <artifactId>simulator</artifactId>
@@ -260,4 +265,49 @@
   <properties>
     <tcVersion>2.3-SNAPSHOT</tcVersion>
   </properties>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>tests.unit</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src.resources</directory>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>tests.unit.resources</directory>
+      </testResource>
+    </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>tests.base</source>
+                <source>tests.unit</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

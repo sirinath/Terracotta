@@ -4,9 +4,12 @@
  */
 package com.tc.util;
 
+import java.lang.reflect.Method;
 import java.text.ParseException;
 
 public class ClassUtils {
+
+  private static final Class METHOD_CLASS = Method.class;
 
   public static ClassSpec parseFullyQualifiedFieldName(String fieldName) throws ParseException {
     ClassSpecImpl rv = new ClassSpecImpl();
@@ -44,6 +47,10 @@ public class ClassUtils {
     if (superClass == null) return false;
     if (((c.getModifiers() & 0x00004000) != 0) && "java.lang.Enum".equals(superClass.getName())) { return true; }
     return false;
+  }
+
+  public static boolean isPortableReflectionClass(Class c) {
+    return METHOD_CLASS == c;
   }
 
   public interface ClassSpec {
