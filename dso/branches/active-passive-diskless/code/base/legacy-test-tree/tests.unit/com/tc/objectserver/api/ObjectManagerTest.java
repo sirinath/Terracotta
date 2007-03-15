@@ -731,6 +731,10 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertEquals(lookedUpViaLookup.getObjectReferences(), lookedUpViaLookupObjectsForCreateIfNecessary
         .getObjectReferences());
 
+    // to work around timing problem with this test, let's look up some object id...
+    // this should block this thread until trasaction reading all object ids from bdb completes,
+    // at which point, it's ok to close the DB
+    persistor.getManagedObjectPersistor().getAllObjectIDs().size();
     store.shutdown();
     persistor.close();
   }

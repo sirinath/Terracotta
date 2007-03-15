@@ -216,9 +216,14 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 	 */
 	private String registerForNotifications() throws Exception {
 		final java.util.List servers = MBeanServerFactory.findMBeanServer(null);
-		final MBeanServer server = (MBeanServer) servers.get(0);
+		if (servers.size() == 0) {
+		   System.err.println("WARNING: No JMX servers found, unable to register for notifications.");
+		   return "0";
+		}
+		   
+		final MBeanServer server = (MBeanServer)servers.get(0);
 		final ObjectName clusterBean = new ObjectName(
-				"com.terracottatech:type=Terracotta Cluster,name=Terracotta Cluster Bean");
+				"org.terracotta:type=Terracotta Cluster,name=Terracotta Cluster Bean");
 		final ObjectName delegateName = ObjectName
 				.getInstance("JMImplementation:type=MBeanServerDelegate");
 		final java.util.List clusterBeanBag = new java.util.ArrayList();

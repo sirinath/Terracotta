@@ -130,11 +130,15 @@ public class Main {
     * Registers this client for JMX notifications. 
     * @returns This clients Node ID
     */
-   private String registerForNotifications() 
-      throws Exception {
-      java.util.List servers              = MBeanServerFactory.findMBeanServer(null);
+   private String registerForNotifications() throws Exception {
+      java.util.List servers = MBeanServerFactory.findMBeanServer(null);
+		if (servers.size() == 0) {
+		   System.err.println("WARNING: No JMX servers found, unable to register for notifications.");
+		   return "0";
+		}
+		
       MBeanServer server                  = (MBeanServer)servers.get(0);
-      final ObjectName clusterBean        = new ObjectName("com.terracottatech:type=Terracotta Cluster,name=Terracotta Cluster Bean");
+      final ObjectName clusterBean        = new ObjectName("org.terracotta:type=Terracotta Cluster,name=Terracotta Cluster Bean");
       ObjectName delegateName             = ObjectName.getInstance("JMImplementation:type=MBeanServerDelegate");
       final java.util.List   clusterBeanBag   = new java.util.ArrayList();
       

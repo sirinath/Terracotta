@@ -11,9 +11,11 @@ import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tc.util.runtime.Vm;
 import com.tctest.domain.Account;
 import com.tctest.domain.Customer;
 import com.tctest.runner.AbstractTransparentApp;
+import com.tctest.server.HSqlDBServer;
 
 import java.io.Reader;
 import java.sql.Connection;
@@ -21,24 +23,24 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class IBatisSimpleTestApp extends AbstractTransparentApp {
-  private CyclicBarrier  barrier;
+  private CyclicBarrier barrier;
 
-  private SqlMapClient   sqlMapper;
+  private SqlMapClient  sqlMapper;
 
-  private Customer       cus;
-
-  private final Object   sharedLock    = new Object();
-  private boolean        tablesDropped = false;
-
-  private static boolean pluginsLoaded = false;
-
-  public static synchronized boolean pluginsLoaded() {
-    return pluginsLoaded;
-  }
+  private Customer      cus;
+  private HSqlDBServer  dbServer = null;
 
   public IBatisSimpleTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
+    if (Vm.isJDK16()) {
+      // A workaround for perhaps an iBatis bug for jdk 1.6
+      try {
+        Class.forName("org.hsqldb.jdbcDriver");
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   public void run() {
@@ -68,27 +70,19 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
         if (id == 0) {
           Customer cus1 = selectCustomerById(0);
           cus = cus1;
-
-          shutdownDatabase();
         }
         barrier.barrier();
 
         if (id == 1) {
           Account acc = cus.getAccount();
           Assert.assertEquals("ASI-001", acc.getNumber());
-
-          shutdownDatabase();
         }
 
         barrier.barrier();
 
       } finally {
-        synchronized (sharedLock) {
-          if (!tablesDropped) {
-            tablesDropped = true;
-            dropAllTables();
-            shutdownDatabase();
-          }
+        if (id == 0) {
+          shutdownDatabase();
         }
       }
 
@@ -112,6 +106,9 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
   }
 
   private SqlMapClient connectDatabase() throws Exception {
+    dbServer = new HSqlDBServer();
+    dbServer.start();
+
     Reader reader = Resources.getResourceAsReader("com/tctest/SqlMapConfig.xml");
     SqlMapClient sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader);
     reader.close();
@@ -119,26 +116,8 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
     return sqlMapper;
   }
 
-  private void dropAllTables() throws Exception {
-    SqlMapClient sqlMapper = this.sqlMapper;
-    if (sqlMapper == null) {
-      sqlMapper = connectDatabase();
-    }
-    Connection conn = sqlMapper.getDataSource().getConnection();
-    PreparedStatement stmt = conn.prepareStatement("drop table ACCOUNT");
-    stmt.execute();
-    stmt = conn.prepareStatement("drop table CUSTOMER");
-    stmt.execute();
-  }
-
   private void shutdownDatabase() throws Exception {
-    SqlMapClient sqlMapper = this.sqlMapper;
-    if (sqlMapper == null) {
-      sqlMapper = connectDatabase();
-    }
-    Connection conn = sqlMapper.getDataSource().getConnection();
-    PreparedStatement stmt = conn.prepareStatement("shutdown immediately");
-    stmt.execute();
+    dbServer.stop();
   }
 
   public Customer selectCustomerById(int id) throws SQLException {
@@ -156,8 +135,7 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = IBatisSimpleTestApp.class.getName();
 
-    config.getOrCreateSpec(testClass).addRoot("barrier", "barrier").addRoot("cus", "cus").addRoot("sharedLock",
-                                                                                                  "sharedLock").addRoot("tablesDropped", "tablesDropped");
+    config.getOrCreateSpec(testClass).addRoot("barrier", "barrier").addRoot("cus", "cus");
 
     config.addWriteAutolock("* " + testClass + "*.*(..)");
     config.addIncludePattern("com.tctest.domain.Account");
@@ -166,7 +144,6 @@ public class IBatisSimpleTestApp extends AbstractTransparentApp {
 
     config.addNewModule("clustered-cglib", "2.1.3");
     config.addNewModule("clustered-iBatis", "2.2.0");
-    pluginsLoaded = true;
   }
 
 }

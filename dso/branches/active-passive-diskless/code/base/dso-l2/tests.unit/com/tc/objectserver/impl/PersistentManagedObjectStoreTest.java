@@ -13,6 +13,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransaction;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.SyncObjectIdSet;
+import com.tc.util.SyncObjectIdSetImpl;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.ArrayList;
@@ -97,7 +98,7 @@ public class PersistentManagedObjectStoreTest extends TestCase {
     public final NoExceptionLinkedQueue loadByObjectIDCalls = new NoExceptionLinkedQueue();
     public final Map                    map;
     public boolean                      closeCalled         = false;
-    public SyncObjectIdSet              allObjectIDs        = new SyncObjectIdSet();
+    public SyncObjectIdSet              allObjectIDs        = new SyncObjectIdSetImpl();
 
     public TestManagedObjectPersistor(Map map) {
       this.map = map;
