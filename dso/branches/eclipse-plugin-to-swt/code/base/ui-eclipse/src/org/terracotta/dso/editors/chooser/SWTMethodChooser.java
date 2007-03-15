@@ -71,6 +71,7 @@ public class SWTMethodChooser extends MessageDialog {
             String[] values = (String[]) arg;
             for (int i = 0; i < values.length; i++) {
               layout.m_list.add(values[i]);
+              layout.m_list.forceFocus();
             }
           }
         });

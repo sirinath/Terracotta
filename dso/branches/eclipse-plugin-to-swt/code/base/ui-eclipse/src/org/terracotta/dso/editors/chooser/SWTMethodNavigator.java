@@ -19,8 +19,11 @@ import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.ui.JavaWorkbenchAdapter;
 import org.eclipse.jdt.internal.ui.packageview.ClassPathContainer;
 import org.eclipse.jdt.internal.ui.packageview.PackageExplorerContentProvider;
+import org.eclipse.jdt.internal.ui.packageview.PackageExplorerLabelProvider;
 import org.eclipse.jdt.internal.ui.packageview.WorkingSetAwareJavaElementSorter;
-import org.eclipse.jdt.ui.JavaElementLabelProvider;
+import org.eclipse.jdt.internal.ui.viewsupport.AppearanceAwareLabelProvider;
+import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -52,6 +55,7 @@ public class SWTMethodNavigator extends MessageDialog {
   private final IProject         m_project;
   private final EventMulticaster m_valueListener;
   private final List             m_selectedValues;
+  private MethodChooserLayout    m_layout;
 
   public SWTMethodNavigator(Shell shell, String title, IProject project) {
     super(shell, title, null, null, MessageDialog.NONE, new String[] {
@@ -89,13 +93,16 @@ public class SWTMethodNavigator extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    initLayout(new MethodChooserLayout(parent));
+    initLayout(m_layout = new MethodChooserLayout(parent));
     return parent;
   }
 
   private void initLayout(final MethodChooserLayout layout) {
-    layout.m_viewer.setContentProvider(new JavaHierarchyContentProvider());
-    layout.m_viewer.setLabelProvider(new JavaElementLabelProvider());
+    JavaHierarchyContentProvider contentProvider;
+    layout.m_viewer.setContentProvider(contentProvider = new JavaHierarchyContentProvider());
+    layout.m_viewer.setLabelProvider(new PackageExplorerLabelProvider(AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
+        | JavaElementLabels.P_COMPRESSED | JavaElementLabels.ALL_CATEGORY,
+        AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS | JavaElementImageProvider.SMALL_ICONS, contentProvider));
     layout.m_viewer.setSorter(new WorkingSetAwareJavaElementSorter());
     IJavaProject jproj = JavaCore.create(m_project);
     IJavaElement root = jproj.getJavaModel();
@@ -135,6 +142,7 @@ public class SWTMethodNavigator extends MessageDialog {
   }
 
   protected void buttonPressed(int buttonId) {
+    tearDown();
     if (buttonId == IDialogConstants.OK_ID) {
       m_valueListener.fireUpdateEvent(m_selectedValues.toArray(new String[0]));
     }
@@ -143,6 +151,12 @@ public class SWTMethodNavigator extends MessageDialog {
 
   public void addValueListener(UpdateEventListener listener) {
     m_valueListener.addListener(listener);
+  }
+  
+  private void tearDown() {
+    m_layout.m_viewer.getTree().setRedraw(false);
+    m_layout.m_viewer.getTree().setEnabled(false);
+    m_layout.m_viewer.getTree().removeAll();
   }
 
   // --------------------------------------------------------------------------------
