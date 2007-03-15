@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#if test ! -f build-tc.rb; then
-#	echo "$0: No 'build-tc.rb' script found. Run this from a directory with a valid 'build-tc.rb' script."
-#fi
-
 if test -z "${JAVA_HOME}"; then
 	JAVA_HOME="${TC_JAVA_HOME_15}"
 	export JAVA_HOME
@@ -22,6 +18,6 @@ fi
 
 	echo ""
 	echo "--------------------------------------------------------------------------------"
-	echo "RUNNING TCBUILD"
+	echo "RUNNING ECLIPSE2MAVEN"
 	echo ""
-	exec /bin/sh "${JRUBY_HOME}/bin/jruby" -Ibuildscripts buildscripts/build-tc.rb "$@"
+	exec /bin/sh "${JRUBY_HOME}/bin/jruby" eclipse2maven.rb "$@"
