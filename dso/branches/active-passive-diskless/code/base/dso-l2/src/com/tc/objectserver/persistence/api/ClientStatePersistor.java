@@ -6,13 +6,13 @@ package com.tc.objectserver.persistence.api;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.objectserver.persistence.impl.ClientNotFoundException;
 
-import java.util.Iterator;
+import java.util.Set;
 
 public interface ClientStatePersistor {
 
   public PersistentSequence getConnectionIDSequence();
 
-  public Iterator loadClientIDs();
+  public Set loadClientIDs();
 
   public boolean containsClient(ChannelID id);
 

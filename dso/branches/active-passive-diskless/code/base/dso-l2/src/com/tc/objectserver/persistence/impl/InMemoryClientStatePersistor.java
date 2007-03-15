@@ -9,8 +9,8 @@ import com.tc.objectserver.persistence.api.PersistentSequence;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class InMemoryClientStatePersistor implements ClientStatePersistor {
 
@@ -21,9 +21,9 @@ public class InMemoryClientStatePersistor implements ClientStatePersistor {
     return this.connectionIDSequence;
   }
 
-  public Iterator loadClientIDs() {
+  public Set loadClientIDs() {
     synchronized (clients) {
-      return new HashSet(clients.keySet()).iterator();
+      return new HashSet(clients.keySet());
     }
   }
 

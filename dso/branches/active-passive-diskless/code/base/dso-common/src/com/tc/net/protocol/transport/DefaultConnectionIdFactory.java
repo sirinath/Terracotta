@@ -4,6 +4,7 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.exception.ImplementMe;
 import com.tc.util.UUID;
 
 import java.util.Collections;
@@ -19,16 +20,17 @@ public class DefaultConnectionIdFactory implements ConnectionIdFactory {
     return new ConnectionID(sequence++, uid);
   }
 
-  public String getUID() {
-    return uid;
-  }
-
   public Set loadConnectionIDs() {
     return Collections.EMPTY_SET;
   }
 
-  public void setUID(String clusterID) {
-    uid = clusterID;
+  public void init(String clusterID, long nextAvailChannelID, Set connections) {
+    throw new ImplementMe();
+  }
+
+
+  public void registerForNewConnectionIDEvents(ConnectionIdFactoryListener listener) {
+    throw new ImplementMe();
   }
 
 }

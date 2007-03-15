@@ -29,7 +29,7 @@ public class ElectionManagerImpl implements ElectionManager {
   private static final State    ELECTION_IN_PROGRESS = new State("Election-In-Progress");
 
   private static final long     ELECTION_TIME        = TCPropertiesImpl.getProperties()
-                                                         .getLong("l2.electionmanager.electionTimePeriod");
+                                                         .getLong("l2.ha.electionmanager.electionTimePeriod");
 
   private final GroupManager    groupManager;
   private State                 state                = INIT;

@@ -163,8 +163,8 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -368,8 +368,7 @@ public class DistributedObjectServer extends SEDA {
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
-    clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class), clientStateStore);
-    final Set previouslyConnectedClients = new HashSet(clientStateManager.getAllClientIDs());
+    clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.garbageCollectionEnabled());
     boolean gcEnabled = l2DSOConfig.garbageCollectionEnabled().getBoolean();
@@ -431,6 +430,7 @@ public class DistributedObjectServer extends SEDA {
 
     DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager());
     channelManager.addEventListener(cteh);
+    channelManager.addEventListener(connectionIdFactory);
 
     ChannelStats channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
 
@@ -569,7 +569,6 @@ public class DistributedObjectServer extends SEDA {
                                                                                            objectManager,
                                                                                            sequenceValidator,
                                                                                            clientStateManager,
-                                                                                           previouslyConnectedClients,
                                                                                            lockManager,
                                                                                            transactionManager,
                                                                                            stageManager
@@ -605,7 +604,9 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public boolean startActiveMode() throws IOException {
-    l1Listener.start(connectionIdFactory.loadConnectionIDs());
+    Set existingConnections = Collections.unmodifiableSet(connectionIdFactory.loadConnectionIDs());
+    context.getClientHandshakeManager().setStarting(existingConnections);
+    l1Listener.start(existingConnections);
     consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;

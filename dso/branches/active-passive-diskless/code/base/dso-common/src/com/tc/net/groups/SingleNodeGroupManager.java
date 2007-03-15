@@ -20,6 +20,10 @@ public class SingleNodeGroupManager implements GroupManager {
                                                        public List getResponses() {
                                                          return Collections.EMPTY_LIST;
                                                        }
+
+                                                       public GroupMessage getResponse(NodeID nodeID) {
+                                                         return null;
+                                                       }
                                                      };
 
   private static final byte[]        CURRENT_NODE_ID = new byte[] { 36, 24, 32 };
@@ -52,12 +56,11 @@ public class SingleNodeGroupManager implements GroupManager {
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
     throw new GroupException("Can't write to Node : " + node + " Node Not found !");
   }
-  
+
   public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) {
     // Comeback
     return null;
   }
-
 
   public void registerForGroupEvents(GroupEventsListener listener) {
     // NOP : No network, no one joins or leaves

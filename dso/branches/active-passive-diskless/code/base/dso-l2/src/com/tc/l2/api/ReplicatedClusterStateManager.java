@@ -9,7 +9,7 @@ public interface ReplicatedClusterStateManager {
 
   public void publishNextAvailableObjectID(long l);
 
-  public void sync();
+  public void goActiveAndSyncState();
 
   public void publishClusterState(NodeID nodeID);
 

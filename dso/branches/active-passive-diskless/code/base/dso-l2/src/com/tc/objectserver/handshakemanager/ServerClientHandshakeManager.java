@@ -8,6 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.msg.ClientHandshakeMessage;
@@ -43,10 +44,10 @@ public class ServerClientHandshakeManager {
   private final Sink                     lockResponseSink;
   private final long                     reconnectTimeout;
   private final ObjectManager            objectManager;
-  private final Set                      existingUnconnectedClients;
   private final DSOChannelManager        channelManager;
   private final TCLogger                 logger;
   private final SequenceValidator        sequenceValidator;
+  private final Set                      existingUnconnectedClients        = new HashSet();
   private final ServerTransactionManager transactionManager;
   private final ObjectIDSequence         oidSequence;
   private final Set                      clientsRequestingObjectIDSequence = new HashSet();
@@ -54,10 +55,9 @@ public class ServerClientHandshakeManager {
 
   public ServerClientHandshakeManager(TCLogger logger, DSOChannelManager channelManager, ObjectManager objectManager,
                                       SequenceValidator sequenceValidator, ClientStateManager clientStateManager,
-                                      Set existingUnconnectedClients, LockManager lockManager,
-                                      ServerTransactionManager transactionManager, Sink lockResponseSink,
-                                      ObjectIDSequence oidSequence, TCTimer timer, long reconnectTimeout,
-                                      boolean persistent) {
+                                      LockManager lockManager, ServerTransactionManager transactionManager,
+                                      Sink lockResponseSink, ObjectIDSequence oidSequence, TCTimer timer,
+                                      long reconnectTimeout, boolean persistent) {
     this.logger = logger;
     this.channelManager = channelManager;
     this.objectManager = objectManager;
@@ -71,8 +71,6 @@ public class ServerClientHandshakeManager {
     this.timer = timer;
     this.persistent = persistent;
     this.reconnectTimerTask = new ReconnectTimerTask(this, timer);
-    this.existingUnconnectedClients = existingUnconnectedClients;
-    if (existingUnconnectedClients.isEmpty()) start();
   }
 
   public synchronized boolean isStarting() {
@@ -88,9 +86,7 @@ public class ServerClientHandshakeManager {
     logger.info("Client connected " + channelID);
     synchronized (this) {
       logger.debug("Handling client handshake...");
-      if (state == INIT) {
-        setStarting();
-      } else if (state == STARTED) {
+      if (state == STARTED) {
         if (handshake.getObjectIDs().size() > 0) {
           //
           throw new ClientHandshakeException(
@@ -134,7 +130,7 @@ public class ServerClientHandshakeManager {
         LockContext ctxt = (LockContext) i.next();
         if (ctxt.noBlock()) {
           lockManager.tryRequestLock(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(), ctxt.getLockLevel(),
-                                  lockResponseSink);
+                                     lockResponseSink);
         } else {
           lockManager.requestLock(ctxt.getLockID(), ctxt.getChannelID(), ctxt.getThreadID(), ctxt.getLockLevel(),
                                   lockResponseSink);
@@ -206,11 +202,18 @@ public class ServerClientHandshakeManager {
     state = STARTED;
   }
 
-  private synchronized void setStarting() {
+  public synchronized void setStarting(Set existingConnections) {
     assertInit();
     state = STARTING;
-    logger.info("Starting reconnect window: " + this.reconnectTimeout + " ms.");
-    timer.schedule(reconnectTimerTask, this.reconnectTimeout);
+    if (existingConnections.isEmpty()) {
+      start();
+    } else {
+      for (Iterator i = existingConnections.iterator(); i.hasNext();) {
+        existingUnconnectedClients.add(new ChannelID(((ConnectionID)i.next()).getChannelID()));
+      }
+      logger.info("Starting reconnect window: " + this.reconnectTimeout + " ms.");
+      timer.schedule(reconnectTimerTask, this.reconnectTimeout);
+    }
   }
 
   private void assertInit() {

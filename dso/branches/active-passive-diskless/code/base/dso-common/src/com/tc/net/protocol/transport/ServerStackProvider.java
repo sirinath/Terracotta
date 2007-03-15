@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -127,7 +128,15 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
    * A client disconnected.
    */
   public void notifyTransportDisconnected(MessageTransport transport) {
+    close(transport.getConnectionId());
     this.connectionPolicy.clientDisconnected();
+  }
+
+  private void close(ConnectionID connectionId) {
+    NetworkStackHarness harness = removeNetworkStack(connectionId);
+    if (harness == null) {
+      logger.warn("Receive a transport closed event from a transport that isn't in the map :" + connectionId);
+    }
   }
 
   public void notifyTransportConnectAttempt(MessageTransport transport) {
@@ -139,8 +148,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
    * transport from the map of managed stacks.
    */
   public void notifyTransportClosed(MessageTransport transport) {
-    NetworkStackHarness harness = removeNetworkStack(transport.getConnectionId());
-    Assert.assertNotNull("Shouldn't receive a transport closed event from a transport that isn't in the map", harness);
+    close(transport.getConnectionId());
   }
 
   /*********************************************************************************************************************
@@ -190,9 +198,10 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
           handleSyn((SynMessage) message);
         } catch (StackNotFoundException e) {
           handleHandshakeError(new TransportHandshakeErrorContext(
-                                                                  "Unable to find communications stack. " + e.getMessage() +
-                                                                  ". This is usually caused by a client from a prior run trying to illegally reconnect to the server." +
-                                                                  " While that client is being rejected, everything else should proceed as normal. ",
+                                                                  "Unable to find communications stack. "
+                                                                      + e.getMessage()
+                                                                      + ". This is usually caused by a client from a prior run trying to illegally reconnect to the server."
+                                                                      + " While that client is being rejected, everything else should proceed as normal. ",
                                                                   e));
         }
       }

@@ -23,7 +23,6 @@ import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPer
 import com.tc.util.Conversion;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 class ClientStatePersistorImpl extends SleepycatPersistorBase implements ClientStatePersistor {
@@ -64,7 +63,7 @@ class ClientStatePersistorImpl extends SleepycatPersistorBase implements ClientS
     }
   }
 
-  public synchronized Iterator loadClientIDs() {
+  public synchronized Set loadClientIDs() {
     Set set = new HashSet();
     Cursor cursor;
     try {
@@ -79,7 +78,7 @@ class ClientStatePersistorImpl extends SleepycatPersistorBase implements ClientS
       e.printStackTrace();
       throw new DBException(e);
     }
-    return set.iterator();
+    return set;
   }
 
   public synchronized void saveClientState(ChannelID clientID) {

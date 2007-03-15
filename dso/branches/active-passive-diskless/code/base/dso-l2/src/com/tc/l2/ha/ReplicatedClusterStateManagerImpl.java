@@ -16,10 +16,16 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
+import com.tc.net.protocol.transport.ConnectionID;
+import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIdFactoryListener;
+import com.tc.util.Assert;
+import com.tc.util.UUID;
 
 import java.util.Iterator;
 
-public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager, GroupMessageListener {
+public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager, GroupMessageListener,
+    ConnectionIdFactoryListener {
 
   private static final TCLogger logger = TCLogging.getLogger(ReplicatedClusterStateManagerImpl.class);
 
@@ -29,14 +35,17 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   private final StateManager    stateManager;
 
   public ReplicatedClusterStateManagerImpl(GroupManager groupManager, StateManager stateManager,
-                                           ClusterState clusterState) {
+                                           ClusterState clusterState, ConnectionIdFactory factory) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     state = clusterState;
     groupManager.registerForMessages(ClusterStateMessage.class, this);
+    factory.registerForNewConnectionIDEvents(this);
   }
 
-  public synchronized void sync() {
+  public synchronized void goActiveAndSyncState() {
+    generateClusterIDIfNeeded();
+
     // Sync state to internal DB
     state.syncInternal();
 
@@ -44,12 +53,19 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
     publishToAll(ClusterStateMessageFactory.createClusterStateMessage(state));
   }
 
+  private void generateClusterIDIfNeeded() {
+    if (state.getClusterID() == null) {
+      // This is the first time an L2 goes active in the cluster of L2s. Generate a new clusterID. this will stick.
+      state.setClusterID(UUID.getUUID().toString());
+    }
+  }
+
   public synchronized void publishClusterState(NodeID nodeID) {
 
     try {
       ClusterStateMessage msg = (ClusterStateMessage) groupManager
           .sendToAndWaitForResponse(nodeID, ClusterStateMessageFactory.createClusterStateMessage(state));
-      validateResponse(msg);
+      validateResponse(nodeID, msg);
     } catch (GroupException e) {
       logger.error("Error plublishing cluster state : " + nodeID + " terminating it");
       groupManager.zapNode(nodeID);
@@ -57,11 +73,11 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
 
   }
 
-  private void validateResponse(ClusterStateMessage msg) {
-    if (msg.getType() != ClusterStateMessage.OPERATION_SUCCESS) {
-      logger.error("Recd wrong response from : " + msg.messageFrom() + " : msg = " + msg
+  private void validateResponse(NodeID nodeID, ClusterStateMessage msg) {
+    if (msg == null || msg.getType() != ClusterStateMessage.OPERATION_SUCCESS) {
+      logger.error("Recd wrong response from : " + nodeID + " : msg = " + msg
                    + " while publishing Next Available ObjectID: Killing the node");
-      groupManager.zapNode(msg.messageFrom());
+      groupManager.zapNode(nodeID);
     }
   }
 
@@ -71,13 +87,24 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
     publishToAll(ClusterStateMessageFactory.createNextAvailableObjectIDMessage(state));
   }
 
+  public synchronized void connectionCreated(ConnectionID connectionID) {
+    Assert.assertTrue(stateManager.isActiveCoordinator());
+    state.addNewConnection(connectionID);
+    publishToAll(ClusterStateMessageFactory.createNewConnectionCreatedMessage(connectionID));
+  }
+
+  public synchronized void connectionDestroyed(ConnectionID connectionID) {
+    Assert.assertTrue(stateManager.isActiveCoordinator());
+    state.removeConnection(connectionID);
+    publishToAll(ClusterStateMessageFactory.createConnectionDestroyedMessage(connectionID));
+  }
+
   private void publishToAll(GroupMessage message) {
     try {
-      GroupResponse gr = groupManager.sendAllAndWaitForResponse(ClusterStateMessageFactory
-          .createNextAvailableObjectIDMessage(state));
+      GroupResponse gr = groupManager.sendAllAndWaitForResponse(message);
       for (Iterator i = gr.getResponses().iterator(); i.hasNext();) {
         ClusterStateMessage msg = (ClusterStateMessage) i.next();
-        validateResponse(msg);
+        validateResponse(msg.messageFrom(), msg);
       }
     } catch (GroupException e) {
       // TODO:: Is this extreme ?
@@ -101,27 +128,16 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
                   + " while I am the cluster co-ordinator. This is bad. Ignoring the message");
       return;
     }
-    try {
-      switch (msg.getType()) {
-        case ClusterStateMessage.OBJECT_ID:
-          state.setNextAvailableObjectID(msg.getNextAvailableObjectID());
-          sendOKResponse(fromNode, msg);
-          break;
-        case ClusterStateMessage.COMPLETE_STATE:
-          state.setNextAvailableObjectID(msg.getNextAvailableObjectID());
-          sendOKResponse(fromNode, msg);
-          break;
-        default:
-          throw new AssertionError("This message shouldn't have been routed here : " + msg);
-      }
-    } catch (GroupException e) {
-      logger.error("Error handling message : " + msg, e);
-      throw new AssertionError(e);
-    }
+    msg.initState(state);
+    sendOKResponse(fromNode, msg);
   }
 
-  private void sendOKResponse(NodeID fromNode, ClusterStateMessage msg) throws GroupException {
-    groupManager.sendTo(fromNode, ClusterStateMessageFactory.createOKResponse(msg));
+  private void sendOKResponse(NodeID fromNode, ClusterStateMessage msg) {
+    try {
+      groupManager.sendTo(fromNode, ClusterStateMessageFactory.createOKResponse(msg));
+    } catch (GroupException e) {
+      logger.error("Error handling message : " + msg, e);
+    }
   }
 
 }

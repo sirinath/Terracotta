@@ -99,7 +99,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager, server
         .getContext().getObjectManager(), objectsSyncSink);
 
-    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState);
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState, server.getConnectionIdFactory());
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
@@ -129,7 +129,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   public void l2StateChanged(StateChangedEvent sce) {
     clusterState.setCurrentState(sce.getCurrentState());
     if (sce.movedToActive()) {
-      rClusterStateMgr.sync();
+      rClusterStateMgr.goActiveAndSyncState();
       rObjectManager.sync();
       try {
         server.startActiveMode();

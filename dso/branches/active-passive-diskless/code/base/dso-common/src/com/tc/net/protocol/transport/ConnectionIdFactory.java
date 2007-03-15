@@ -12,6 +12,8 @@ public interface ConnectionIdFactory {
   
   public Set loadConnectionIDs();
   
-  public void setUID(String clusterID);
+  public void registerForNewConnectionIDEvents(ConnectionIdFactoryListener listener);
+
+  public void init(String clusterID, long nextAvailChannelID, Set connections);
 
 }

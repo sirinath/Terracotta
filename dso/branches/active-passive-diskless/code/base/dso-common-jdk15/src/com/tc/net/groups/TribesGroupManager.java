@@ -250,7 +250,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       logger.error(errorMsg);
       throw new GroupException(errorMsg);
     }
-    return groupResponse.getResponse(0);
+    return groupResponse.getResponse(nodeID);
   }
 
   public void zapNode(NodeID nodeID) {
@@ -268,10 +268,13 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       return responses;
     }
 
-    public GroupMessage getResponse(int index) {
+    public GroupMessage getResponse(NodeID nodeID) {
       Assert.assertTrue(waitFor.isEmpty());
-      Assert.assertTrue(index < responses.size());
-      return responses.get(0);
+      for (Iterator<GroupMessage> i = responses.iterator(); i.hasNext();) {
+        GroupMessage msg = i.next();
+        if(nodeID.equals(msg.messageFrom())) return msg;
+      }
+      return null;
     }
 
     public synchronized void sendTo(GroupChannel group, GroupMessage msg, Member[] m) {

@@ -11,7 +11,6 @@ import com.tc.net.protocol.StackNotFoundException;
 import com.tc.net.protocol.transport.MockTransportHandshakeMessageFactory.CallContext;
 import com.tc.test.TCTestCase;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,19 +38,7 @@ public class ServerStackProviderTest extends TCTestCase {
 
     this.harnessFactory = new MockStackHarnessFactory();
     this.harnessFactory.harness = this.harness;
-    this.connectionIdFactory = new ConnectionIdFactory() {
-      public ConnectionID nextConnectionId() {
-        return connId;
-      }
-
-      public Set loadConnectionIDs() {
-        return Collections.EMPTY_SET;
-      }
-
-      public void setUID(String clusterID) {
-        //NOP
-      }
-    };
+    this.connectionIdFactory = new TestConnectionIDFactory();
 
     transportFactory = new MockMessageTransportFactory();
     transportHandshakeMessageFactory = new MockTransportHandshakeMessageFactory();
@@ -235,6 +222,14 @@ public class ServerStackProviderTest extends TCTestCase {
       fail("was not virgin and had connId, but should not exist in provider");
     } catch (StackNotFoundException e) {
       // expected
+    }
+  }
+  
+  private class TestConnectionIDFactory extends DefaultConnectionIdFactory {
+
+    public synchronized ConnectionID nextConnectionId() {
+      connId = super.nextConnectionId();
+      return connId;
     }
   }
 
