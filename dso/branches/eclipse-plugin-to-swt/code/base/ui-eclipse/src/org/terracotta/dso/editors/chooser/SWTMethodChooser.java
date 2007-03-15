@@ -58,11 +58,11 @@ public class SWTMethodChooser extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    registerListeners(m_layout = new MethodChooserLayout(parent));
+    initLayout(m_layout = new MethodChooserLayout(parent));
     return parent;
   }
 
-  private void registerListeners(final MethodChooserLayout layout) {
+  private void initLayout(final MethodChooserLayout layout) {
     layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         SWTMethodNavigator dialog = new SWTMethodNavigator(getShell(), "Select Method", m_project);

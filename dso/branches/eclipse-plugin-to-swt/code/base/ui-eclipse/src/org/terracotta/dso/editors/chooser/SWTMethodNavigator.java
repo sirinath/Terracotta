@@ -14,8 +14,12 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.internal.core.JarPackageFragmentRoot;
 import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.ui.JavaWorkbenchAdapter;
+import org.eclipse.jdt.internal.ui.packageview.ClassPathContainer;
+import org.eclipse.jdt.internal.ui.packageview.PackageExplorerContentProvider;
+import org.eclipse.jdt.internal.ui.packageview.WorkingSetAwareJavaElementSorter;
 import org.eclipse.jdt.ui.JavaElementLabelProvider;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -85,13 +89,14 @@ public class SWTMethodNavigator extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    registerListeners(new MethodChooserLayout(parent));
+    initLayout(new MethodChooserLayout(parent));
     return parent;
   }
 
-  private void registerListeners(final MethodChooserLayout layout) {
+  private void initLayout(final MethodChooserLayout layout) {
     layout.m_viewer.setContentProvider(new JavaHierarchyContentProvider());
     layout.m_viewer.setLabelProvider(new JavaElementLabelProvider());
+    layout.m_viewer.setSorter(new WorkingSetAwareJavaElementSorter());
     IJavaProject jproj = JavaCore.create(m_project);
     IJavaElement root = jproj.getJavaModel();
     layout.m_viewer.setInput(root);
@@ -121,8 +126,8 @@ public class SWTMethodNavigator extends MessageDialog {
 
     layout.m_viewer.addFilter(new ViewerFilter() {
       public boolean select(Viewer viewer, Object parentElement, Object element) {
-        if (element instanceof IJavaProject || element instanceof IPackageFragment
-            || element instanceof ICompilationUnit || element instanceof IType
+        if (element instanceof ClassPathContainer || element instanceof IJavaProject
+            || element instanceof IPackageFragment || element instanceof ICompilationUnit || element instanceof IType
             || element instanceof IPackageFragmentRoot || element instanceof IClassFile || element instanceof IMethod) { return true; }
         return false;
       }
@@ -142,44 +147,48 @@ public class SWTMethodNavigator extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
-  private class JavaHierarchyContentProvider extends WorkbenchContentProvider {
-    protected IWorkbenchAdapter getAdapter(Object element) {
-      return new JavaWorkbenchAdapter() {
-        
-        public Object[] getChildren(Object javaElement) {
-          List subset = null;
-          boolean isSubset = false;
-          boolean defaultPackageRoot = false;
-          Object[] children = super.getChildren(javaElement);
-          for (int i = 0; i < children.length; i++) {
-            System.out.println(children[i]);// XXX
-            if (children[i] instanceof PackageFragmentRoot
-                && ((PackageFragmentRoot) children[i]).readableName().equals("")) {
-              System.out.println(((PackageFragmentRoot) children[i]).readableName());
-              defaultPackageRoot = true;
-            }
-            if ((children[i] instanceof IPackageFragment && super.getChildren(children[i]).length == 0)
-                || defaultPackageRoot) {
-              if (!isSubset) {
-                subset = new ArrayList();
-                for (int j = 0; j <= i; j++) {
-                  subset.add(children[j]);
+  private class JavaHierarchyContentProvider extends PackageExplorerContentProvider {
+
+    private final WorkbenchContentProvider m_workbench;
+
+    public JavaHierarchyContentProvider() {
+      super(true);
+      this.m_workbench = new WorkbenchContentProvider() {
+        protected IWorkbenchAdapter getAdapter(Object element) {
+          return new JavaWorkbenchAdapter() {
+            public Object[] getChildren(Object parentElement) {
+              List subset = new ArrayList();
+              Object[] children = super.getChildren(parentElement);
+              for (int i = 0; i < children.length; i++) {
+                if (!(children[i] instanceof IPackageFragment && super.getChildren(children[i]).length == 0)
+                    && !(children[i] instanceof PackageFragmentRoot && !(children[i] instanceof JarPackageFragmentRoot))) {
+                  subset.add(children[i]);
                 }
-                isSubset = true;
               }
-            } else if (isSubset) subset.add(children[i]);
-            if (defaultPackageRoot) {
-              Object[] defaultPackageRootChildren = super.getChildren(children[i]);
-              for (int j = 0; j < defaultPackageRootChildren.length; j++) {
-                System.out.println(defaultPackageRootChildren[i]);// XXX
-                subset.add(defaultPackageRootChildren[i]);
-              }
-              defaultPackageRoot = false;
+              return subset.toArray();
             }
-          }
-          return (isSubset) ? subset.toArray() : children;
+          };
         }
       };
+    }
+
+    public Object[] getChildren(Object parentElement) {
+      List subset = new ArrayList();
+      Object[] children = super.getChildren(parentElement);
+      for (int i = 0; i < children.length; i++) {
+        if (children[i] instanceof JarPackageFragmentRoot) {
+          Object[] workbenchElements = m_workbench.getChildren(((IJavaElement) children[i]).getParent());
+          return workbenchElements;
+        }
+        if (children[i].getClass().getName().equals("org.eclipse.jdt.internal.core.JarPackageFragment")) {
+          Object[] workbenchElements = m_workbench.getChildren(parentElement);
+          return workbenchElements;
+        }
+        if (!(children[i] instanceof IPackageFragment && super.getChildren(children[i]).length == 0)) {
+          subset.add(children[i]);
+        }
+      }
+      return subset.toArray();
     }
   }
 
