@@ -15,7 +15,9 @@
   Very few of the elements in this configuration file are required; they are
   marked with a (REQUIRED) notation.
 -->
-<tc:tc-config xmlns:tc="http://www.terracotta.org/config">
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.terracotta.org/schema/terracotta-3.xsd">
 
   <!-- The 'system' section contains configuration data that affects the
      entire Terracotta system as a whole; things like whether to activate
@@ -108,6 +110,15 @@
          Default: 9510
       -->
       <dso-port>9510</dso-port>
+
+      <!-- On what port should the server listen for connections from the
+         Terracotta administration console? This can be any port you
+         like, but note that ports below 1024 typically require 'root'
+         privileges to use on Un*x-style systems (Linux, Solaris).
+        
+         Default: 9520
+      -->
+      <jmx-port>9520</jmx-port>
 
       <!-- Configuration data for DSO that's specific to the DSO server. -->
       <dso>
