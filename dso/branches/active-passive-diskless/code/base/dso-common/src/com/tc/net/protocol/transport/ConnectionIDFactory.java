@@ -6,13 +6,13 @@ package com.tc.net.protocol.transport;
 import java.util.Set;
 
 
-public interface ConnectionIdFactory {
+public interface ConnectionIDFactory {
 
   public ConnectionID nextConnectionId();
   
   public Set loadConnectionIDs();
   
-  public void registerForNewConnectionIDEvents(ConnectionIdFactoryListener listener);
+  public void registerForConnectionIDEvents(ConnectionIDFactoryListener listener);
 
   public void init(String clusterID, long nextAvailChannelID, Set connections);
 

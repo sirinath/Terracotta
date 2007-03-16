@@ -7,7 +7,7 @@ package com.tc.net.protocol.tcm;
 import com.tc.async.api.Sink;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCListener;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -28,14 +28,14 @@ class NetworkListenerImpl implements NetworkListener {
   private boolean                         started;
   private final TCMessageFactory          msgFactory;
   private final boolean                   reuseAddr;
-  private final ConnectionIdFactory       connectionIdFactory;
+  private final ConnectionIDFactory       connectionIdFactory;
   private final Sink                      httpSink;
 
   // this cstr is intentionally not public, only the Comms Manager should be
   // creating them
   NetworkListenerImpl(TCSocketAddress addr, CommunicationsManagerImpl commsMgr, ChannelManagerImpl channelManager,
                       TCMessageFactory msgFactory, TCMessageRouter router, boolean reuseAddr,
-                      ConnectionIdFactory connectionIdFactory, Sink httpSink) {
+                      ConnectionIDFactory connectionIdFactory, Sink httpSink) {
     this.commsMgr = commsMgr;
     this.channelManager = channelManager;
     this.addr = addr;

@@ -23,7 +23,7 @@ import com.tc.net.protocol.NetworkStackHarness;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.transport.ClientMessageTransport;
 import com.tc.net.protocol.transport.ConnectionID;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportFactory;
@@ -191,21 +191,21 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel, 
-                                        ConnectionIdFactory connectionIdFactory) {
+                                        ConnectionIDFactory connectionIdFactory) {
     return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, 
                           connectionIdFactory, true);
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress address,
                                         boolean transportDisconnectRemovesChannel, 
-                                        ConnectionIdFactory connectionIDFactory, Sink httpSink) {
+                                        ConnectionIDFactory connectionIDFactory, Sink httpSink) {
     return createListener(sessionProvider, address, transportDisconnectRemovesChannel, 
                           connectionIDFactory, true, httpSink);
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel, 
-                                        ConnectionIdFactory connectionIdFactory, boolean reuseAddr) {
+                                        ConnectionIDFactory connectionIdFactory, boolean reuseAddr) {
     return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, 
                           connectionIdFactory, reuseAddr, new NullSink());
   }
@@ -215,7 +215,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   private NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel, 
-                                        ConnectionIdFactory connectionIdFactory, boolean reuseAddr, Sink httpSink) {
+                                        ConnectionIDFactory connectionIdFactory, boolean reuseAddr, Sink httpSink) {
     if (shutdown.isSet()) { throw new IllegalStateException("Comms manger shut down"); }
 
     // The idea here is that someday we might want to pass in a custom channel factory. The reason you might want to do
@@ -235,7 +235,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   }
 
   TCListener createCommsListener(TCSocketAddress addr, final ServerMessageChannelFactory channelFactory,
-                                 boolean resueAddr, Set initialConnectionIDs, ConnectionIdFactory connectionIdFactory,
+                                 boolean resueAddr, Set initialConnectionIDs, ConnectionIDFactory connectionIdFactory,
                                  Sink httpSink) throws IOException {
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {

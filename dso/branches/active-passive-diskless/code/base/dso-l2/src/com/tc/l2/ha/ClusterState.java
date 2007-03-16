@@ -7,7 +7,7 @@ package com.tc.l2.ha;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.transport.ConnectionID;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.util.Assert;
 import com.tc.util.State;
@@ -25,7 +25,7 @@ public class ClusterState {
 
   private final PersistentMapStore  clusterStateStore;
   private final ObjectIDSequence    oidSequence;
-  private final ConnectionIdFactory connectionIdFactory;
+  private final ConnectionIDFactory connectionIdFactory;
 
   private final Set                 connections        = new HashSet();
   private long                      nextAvailObjectID  = -1;
@@ -34,7 +34,7 @@ public class ClusterState {
   private String                    clusterID;
 
   public ClusterState(PersistentMapStore clusterStateStore, ObjectIDSequence oidSequence,
-                      ConnectionIdFactory connectionIdFactory) {
+                      ConnectionIDFactory connectionIdFactory) {
     this.clusterStateStore = clusterStateStore;
     this.oidSequence = oidSequence;
     this.connectionIdFactory = connectionIdFactory;

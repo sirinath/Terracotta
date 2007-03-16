@@ -10,7 +10,7 @@ import com.tc.util.UUID;
 import java.util.Collections;
 import java.util.Set;
 
-public class DefaultConnectionIdFactory implements ConnectionIdFactory {
+public class DefaultConnectionIdFactory implements ConnectionIDFactory {
 
   private long   sequence;
 
@@ -29,7 +29,7 @@ public class DefaultConnectionIdFactory implements ConnectionIdFactory {
   }
 
 
-  public void registerForNewConnectionIDEvents(ConnectionIdFactoryListener listener) {
+  public void registerForConnectionIDEvents(ConnectionIDFactoryListener listener) {
     throw new ImplementMe();
   }
 

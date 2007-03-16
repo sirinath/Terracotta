@@ -6,7 +6,7 @@ package com.tc.net.protocol.tcm;
 
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.session.NullSessionManager;
@@ -46,7 +46,7 @@ public class NetworkListenerTest extends TestCase {
   public void testBindException() throws Exception {
     assertTrue(commsMgr.getAllListeners().length == 0);
 
-    ConnectionIdFactory cidf = new DefaultConnectionIdFactory();
+    ConnectionIDFactory cidf = new DefaultConnectionIdFactory();
     SessionProvider sessionProvider = new NullSessionManager();
     NetworkListener lsnr = commsMgr.createListener(sessionProvider, new TCSocketAddress(0), true, cidf, false);
 

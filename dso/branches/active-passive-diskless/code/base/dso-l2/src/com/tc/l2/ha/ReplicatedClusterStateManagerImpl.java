@@ -17,15 +17,15 @@ import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.transport.ConnectionID;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
-import com.tc.net.protocol.transport.ConnectionIdFactoryListener;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
 import com.tc.util.Assert;
 import com.tc.util.UUID;
 
 import java.util.Iterator;
 
 public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager, GroupMessageListener,
-    ConnectionIdFactoryListener {
+    ConnectionIDFactoryListener {
 
   private static final TCLogger logger = TCLogging.getLogger(ReplicatedClusterStateManagerImpl.class);
 
@@ -35,12 +35,12 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   private final StateManager    stateManager;
 
   public ReplicatedClusterStateManagerImpl(GroupManager groupManager, StateManager stateManager,
-                                           ClusterState clusterState, ConnectionIdFactory factory) {
+                                           ClusterState clusterState, ConnectionIDFactory factory) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     state = clusterState;
     groupManager.registerForMessages(ClusterStateMessage.class, this);
-    factory.registerForNewConnectionIDEvents(this);
+    factory.registerForConnectionIDEvents(this);
   }
 
   public synchronized void goActiveAndSyncState() {
@@ -87,13 +87,13 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
     publishToAll(ClusterStateMessageFactory.createNextAvailableObjectIDMessage(state));
   }
 
-  public synchronized void connectionCreated(ConnectionID connectionID) {
+  public synchronized void connectionIDCreated(ConnectionID connectionID) {
     Assert.assertTrue(stateManager.isActiveCoordinator());
     state.addNewConnection(connectionID);
     publishToAll(ClusterStateMessageFactory.createNewConnectionCreatedMessage(connectionID));
   }
 
-  public synchronized void connectionDestroyed(ConnectionID connectionID) {
+  public synchronized void connectionIDDestroyed(ConnectionID connectionID) {
     Assert.assertTrue(stateManager.isActiveCoordinator());
     state.removeConnection(connectionID);
     publishToAll(ClusterStateMessageFactory.createConnectionDestroyedMessage(connectionID));

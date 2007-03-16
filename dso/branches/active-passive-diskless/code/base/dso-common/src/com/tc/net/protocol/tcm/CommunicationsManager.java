@@ -8,7 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.object.session.SessionProvider;
 
 /**
@@ -41,13 +41,13 @@ public interface CommunicationsManager {
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel,
-                                        ConnectionIdFactory connectionIdFactory);
+                                        ConnectionIDFactory connectionIdFactory);
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel,
-                                        ConnectionIdFactory connectionIdFactory, boolean reuseAddress);
+                                        ConnectionIDFactory connectionIdFactory, boolean reuseAddress);
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress address,
                                         boolean transportDisconnectRemovesChannel,
-                                        ConnectionIdFactory connectionIDFactory, Sink httpSink);
+                                        ConnectionIDFactory connectionIDFactory, Sink httpSink);
 }

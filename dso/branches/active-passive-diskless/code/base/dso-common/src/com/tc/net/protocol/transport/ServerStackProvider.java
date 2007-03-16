@@ -32,7 +32,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
   private final NetworkStackHarnessFactory       harnessFactory;
   private final ServerMessageChannelFactory      channelFactory;
   private final TransportHandshakeMessageFactory handshakeMessageFactory;
-  private final ConnectionIdFactory              connectionIdFactory;
+  private final ConnectionIDFactory              connectionIdFactory;
   private final ConnectionPolicy                 connectionPolicy;
   private final WireProtocolAdaptorFactory       wireProtocolAdaptorFactory;
   private final MessageTransportFactory          messageTransportFactory;
@@ -44,7 +44,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
                              ServerMessageChannelFactory channelFactory,
                              MessageTransportFactory messageTransportFactory,
                              TransportHandshakeMessageFactory handshakeMessageFactory,
-                             ConnectionIdFactory connectionIdFactory, ConnectionPolicy connectionPolicy,
+                             ConnectionIDFactory connectionIdFactory, ConnectionPolicy connectionPolicy,
                              WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
     this.messageTransportFactory = messageTransportFactory;
     this.connectionPolicy = connectionPolicy;

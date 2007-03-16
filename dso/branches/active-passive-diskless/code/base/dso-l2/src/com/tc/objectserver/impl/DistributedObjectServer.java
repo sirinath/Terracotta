@@ -39,7 +39,7 @@ import com.tc.net.protocol.tcm.HydrateHandler;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
@@ -126,7 +126,7 @@ import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullTransactionPersistor;
 import com.tc.objectserver.persistence.impl.PersistentBatchSequenceProvider;
 import com.tc.objectserver.persistence.impl.TransactionStoreImpl;
-import com.tc.objectserver.persistence.sleepycat.ConnectionIdFactoryImpl;
+import com.tc.objectserver.persistence.sleepycat.ConnectionIDFactoryImpl;
 import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFactory;
 import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.DBException;
@@ -208,7 +208,7 @@ public class DistributedObjectServer extends SEDA {
 
   private TCProperties                         l2Properties;
 
-  private ConnectionIdFactoryImpl connectionIdFactory;
+  private ConnectionIDFactoryImpl connectionIdFactory;
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -417,7 +417,7 @@ public class DistributedObjectServer extends SEDA {
       logger.warn("CacheManager is Disabled");
     }
     
-    connectionIdFactory = new ConnectionIdFactoryImpl(clientStateStore);
+    connectionIdFactory = new ConnectionIDFactoryImpl(clientStateStore);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
@@ -719,7 +719,7 @@ public class DistributedObjectServer extends SEDA {
     }
   }
   
-  public ConnectionIdFactory getConnectionIdFactory() {
+  public ConnectionIDFactory getConnectionIdFactory() {
     return connectionIdFactory;
   }
   

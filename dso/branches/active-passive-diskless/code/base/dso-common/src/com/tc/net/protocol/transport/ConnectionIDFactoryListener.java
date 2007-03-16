@@ -4,10 +4,10 @@
  */
 package com.tc.net.protocol.transport;
 
-public interface ConnectionIdFactoryListener {
+public interface ConnectionIDFactoryListener {
 
-  public void connectionCreated(ConnectionID connectionID);
+  public void connectionIDCreated(ConnectionID connectionID);
 
-  public void connectionDestroyed(ConnectionID connectionID);
+  public void connectionIDDestroyed(ConnectionID connectionID);
 
 }

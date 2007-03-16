@@ -9,8 +9,8 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.transport.ConnectionID;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
-import com.tc.net.protocol.transport.ConnectionIdFactoryListener;
+import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.api.PersistentSequence;
@@ -22,14 +22,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class ConnectionIdFactoryImpl implements ConnectionIdFactory, DSOChannelManagerEventListener {
+public class ConnectionIDFactoryImpl implements ConnectionIDFactory, DSOChannelManagerEventListener {
 
   private final ClientStatePersistor clientStateStore;
   private final PersistentSequence   connectionIDSequence;
   private String                     uid;
   private List                       listeners = new CopyOnWriteArrayList();
 
-  public ConnectionIdFactoryImpl(ClientStatePersistor clientStateStore) {
+  public ConnectionIDFactoryImpl(ClientStatePersistor clientStateStore) {
     this.clientStateStore = clientStateStore;
     this.connectionIDSequence = clientStateStore.getConnectionIDSequence();
     this.uid = connectionIDSequence.getUID();
@@ -47,15 +47,15 @@ public class ConnectionIdFactoryImpl implements ConnectionIdFactory, DSOChannelM
 
   private void fireCreationEvent(ConnectionID rv) {
     for (Iterator i = listeners.iterator(); i.hasNext();) {
-      ConnectionIdFactoryListener listener = (ConnectionIdFactoryListener) i.next();
-      listener.connectionCreated(rv);
+      ConnectionIDFactoryListener listener = (ConnectionIDFactoryListener) i.next();
+      listener.connectionIDCreated(rv);
     }
   }
 
   private void fireDestroyedEvent(ConnectionID connectionID) {
     for (Iterator i = listeners.iterator(); i.hasNext();) {
-      ConnectionIdFactoryListener listener = (ConnectionIdFactoryListener) i.next();
-      listener.connectionDestroyed(connectionID);
+      ConnectionIDFactoryListener listener = (ConnectionIDFactoryListener) i.next();
+      listener.connectionIDDestroyed(connectionID);
     }
   }
 
@@ -80,7 +80,7 @@ public class ConnectionIdFactoryImpl implements ConnectionIdFactory, DSOChannelM
     return connections;
   }
 
-  public void registerForNewConnectionIDEvents(ConnectionIdFactoryListener listener) {
+  public void registerForConnectionIDEvents(ConnectionIDFactoryListener listener) {
     listeners.add(listener);
   }
 

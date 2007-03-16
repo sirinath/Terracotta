@@ -21,7 +21,7 @@ public class ServerStackProviderTest extends TCTestCase {
   private MockNetworkStackHarness              harness;
   private MockTransportHandshakeMessageFactory transportHandshakeMessageFactory;
   private ConnectionID                         connId;
-  private ConnectionIdFactory                  connectionIdFactory;
+  private ConnectionIDFactory                  connectionIdFactory;
   private TestConnectionPolicy                 connectionPolicy;
   private TestWireProtocolAdaptorFactory       wpaFactory;
   private MockMessageTransportFactory          transportFactory;

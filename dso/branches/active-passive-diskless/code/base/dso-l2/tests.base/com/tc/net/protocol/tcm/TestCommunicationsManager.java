@@ -9,7 +9,7 @@ import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.protocol.transport.ConnectionIdFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.object.session.SessionProvider;
 
 public class TestCommunicationsManager implements CommunicationsManager {
@@ -36,13 +36,13 @@ public class TestCommunicationsManager implements CommunicationsManager {
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel,
-                                        ConnectionIdFactory connectionIdFactory) {
+                                        ConnectionIDFactory connectionIdFactory) {
     throw new ImplementMe();
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel,
-                                        ConnectionIdFactory connectionIdFactory, boolean reuseAddress) {
+                                        ConnectionIDFactory connectionIdFactory, boolean reuseAddress) {
     throw new ImplementMe();
   }
 
@@ -51,7 +51,7 @@ public class TestCommunicationsManager implements CommunicationsManager {
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress address, boolean b,
-                                        ConnectionIdFactory connectionIDFactory, Sink httpSink) {
+                                        ConnectionIDFactory connectionIDFactory, Sink httpSink) {
     throw new ImplementMe();
   }
 
