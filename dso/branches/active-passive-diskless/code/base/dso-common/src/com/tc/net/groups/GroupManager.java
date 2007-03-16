@@ -9,6 +9,8 @@ import com.tc.async.api.Sink;
 public interface GroupManager {
 
   public NodeID join() throws GroupException;
+  
+  public NodeID getLocalNodeID() throws GroupException;
 
   public void sendAll(GroupMessage msg) throws GroupException;
 

@@ -32,6 +32,7 @@ import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.groups.NodeID;
+import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
@@ -44,8 +45,6 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   private final TCLogger                consoleLogger;
   private final DistributedObjectServer server;
-  private final StageManager            stageManager;
-  private final PersistentMapStore      clusterStateStore;
 
   private GroupManager                  groupManager;
   private StateManager                  stateManager;
@@ -53,29 +52,30 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   private L2ObjectStateManager          l2ObjectStateManager;
   private ReplicatedClusterStateManager rClusterStateMgr;
 
-  private ClusterState clusterState;
+  private ClusterState                  clusterState;
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
-                         PersistentMapStore clusterStateStore) {
+                         PersistentMapStore clusterStateStore, ObjectManager objectManager) {
     this.consoleLogger = consoleLogger;
     this.server = server;
-    this.stageManager = stageManager;
-    this.clusterStateStore = clusterStateStore;
+    init(stageManager, clusterStateStore, objectManager);
   }
 
-  public void start() {
+  private void init(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager) {
     try {
-      basicStart();
+      basicInit(stageManager, clusterStateStore, objectManager);
     } catch (GroupException e) {
       logger.error(e);
       throw new AssertionError(e);
     }
   }
 
-  private void basicStart() throws GroupException {
+  private void basicInit(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager)
+      throws GroupException {
 
-    this.clusterState = new ClusterState(this.clusterStateStore, server.getManagedObjectStore(), server.getConnectionIdFactory());
-    
+    this.clusterState = new ClusterState(clusterStateStore, server.getManagedObjectStore(), server
+        .getConnectionIdFactory());
+
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
     this.groupManager = GroupManagerFactory.createGroupManager();
@@ -96,18 +96,29 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     final Sink ackProcessingStage = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
-    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager, server
-        .getContext().getObjectManager(), objectsSyncSink);
+    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
+                                                          objectManager, objectsSyncSink);
 
-    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState, server.getConnectionIdFactory());
+    this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState, server
+        .getConnectionIdFactory());
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(ServerTxnAckMessage.class, ackProcessingStage);
 
     this.groupManager.registerForGroupEvents(this);
+  }
 
-    stateManager.start();
+  public void start() {
+    NodeID myNodeId;
+    try {
+      myNodeId = groupManager.join();
+    } catch (GroupException e) {
+      logger.error("Caught Exception :", e);
+      throw new AssertionError(e);
+    }
+    logger.info("This L2 Node ID = " + myNodeId);
+    stateManager.startElection();
   }
 
   public StateManager getStateManager() {
@@ -144,7 +155,6 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   public void nodeJoined(NodeID nodeID) {
     if (stateManager.isActiveCoordinator()) {
-      l2ObjectStateManager.addL2(nodeID);
       rClusterStateMgr.publishClusterState(nodeID);
       rObjectManager.query(nodeID);
     }

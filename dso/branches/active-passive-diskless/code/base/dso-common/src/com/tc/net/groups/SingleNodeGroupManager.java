@@ -31,10 +31,16 @@ public class SingleNodeGroupManager implements GroupManager {
   NodeID                             thisNode;
 
   public NodeID join() throws GroupException {
-    if (thisNode != null) { throw new GroupException("Already Joined"); }
+    if (thisNode != null) { throw new GroupException("Already Joined !"); }
     this.thisNode = new NodeID("CurrentNode", CURRENT_NODE_ID);
     return this.thisNode;
   }
+  
+  public NodeID getLocalNodeID() throws GroupException {
+    if (thisNode == null) { throw new GroupException("Not Joined yet !"); }
+    return this.thisNode;
+  }
+
 
   public void registerForMessages(Class msgClass, GroupMessageListener listener) {
     // NOP : Since this doesnt talk to the network, this should never get any message

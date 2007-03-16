@@ -116,7 +116,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   private void add2L2StateManager(NodeID nodeID, Set oids) {
-    int missing = l2ObjectStateManager.setExistingObjectsList(nodeID, oids, objectManager);
+    int missing = l2ObjectStateManager.addL2WithObjectIDs(nodeID, oids, objectManager);
     if (missing == 0) {
       stateManager.moveNodeToPassiveStandby(nodeID);
     } else {

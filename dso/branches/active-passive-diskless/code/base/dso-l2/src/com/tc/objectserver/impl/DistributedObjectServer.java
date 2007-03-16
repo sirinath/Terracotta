@@ -20,6 +20,7 @@ import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
+import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -173,7 +174,7 @@ import javax.management.NotCompliantMBeanException;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- *
+ * 
  * @author steve
  */
 public class DistributedObjectServer extends SEDA {
@@ -208,7 +209,7 @@ public class DistributedObjectServer extends SEDA {
 
   private TCProperties                         l2Properties;
 
-  private ConnectionIDFactoryImpl connectionIdFactory;
+  private ConnectionIDFactoryImpl              connectionIdFactory;
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -416,15 +417,14 @@ public class DistributedObjectServer extends SEDA {
     } else {
       logger.warn("CacheManager is Disabled");
     }
-    
+
     connectionIdFactory = new ConnectionIDFactoryImpl(clientStateStore);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
     l1Listener = communicationsManager.createListener(sessionProvider,
                                                       new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, serverPort),
-                                                      true,connectionIdFactory, 
-                                                           httpSink);
+                                                      true, connectionIdFactory, httpSink);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
@@ -501,8 +501,7 @@ public class DistributedObjectServer extends SEDA {
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
                              new RespondToObjectRequestHandler(), 4, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
-                                                new RequestObjectIDBatchHandler(objectStore), 1,
-                                                maxStageSize);
+                                                new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
                                                     new TransactionAcknowledgementHandler(), 1, maxStageSize);
     Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.CLIENT_HANDSHAKE_STAGE,
@@ -581,14 +580,20 @@ public class DistributedObjectServer extends SEDA {
                                                                                                            true),
                                                                                            reconnectTimeout, persistent);
 
-    l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore());
+    boolean networkedHA = l2Properties.getBoolean("ha.network.enabled");
+    if (networkedHA) {
+      logger.info("L2 Networked HA Enabled ");
+      l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
+                                          objectManager);
+    } else {
+      l2Coordinator = new L2HADisabledCooridinator();
+    }
 
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
                                                  txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader());
 
-    l2Coordinator.start();
     stageManager.startAll(context);
 
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
@@ -601,6 +606,13 @@ public class DistributedObjectServer extends SEDA {
                                                     instanceMonitor, appEvents);
 
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
+    
+    if (networkedHA) {
+      l2Coordinator.start();
+    } else {
+      // In non-network enabled HA, Only active server reached here.
+      startActiveMode();
+    }
   }
 
   public boolean startActiveMode() throws IOException {
@@ -718,11 +730,11 @@ public class DistributedObjectServer extends SEDA {
       startupLock.release();
     }
   }
-  
+
   public ConnectionIDFactory getConnectionIdFactory() {
     return connectionIdFactory;
   }
-  
+
   public ManagedObjectStore getManagedObjectStore() {
     return objectStore;
   }

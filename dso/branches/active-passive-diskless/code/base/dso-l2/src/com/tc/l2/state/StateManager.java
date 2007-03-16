@@ -15,7 +15,7 @@ public interface StateManager {
   public static final State PASSIVE_STANDBY      = new State("PASSIVE-STANDBY");
   public static final State START_STATE          = new State("START-STATE");
 
-  public void start();
+  public void startElection();
 
   public void registerForStateChangeEvents(StateChangeListener listener);
 

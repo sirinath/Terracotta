@@ -8,6 +8,7 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.async.api.Stage;
 import com.tc.l2.context.IncomingTransactionContext;
 import com.tc.l2.objectserver.ReplicatedObjectManager;
 import com.tc.logging.TCLogger;
@@ -94,6 +95,9 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     batchReaderFactory = oscc.getTransactionBatchReaderFactory();
     transactionManager = oscc.getTransactionManager();
     replicatedObjectMgr = oscc.getL2Coordinator().getReplicatedObjectManager();
-    txnRelaySink = oscc.getStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE).getSink();
+    Stage relayStage = oscc.getStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE);
+    if (relayStage != null) {
+      txnRelaySink = relayStage.getSink();
+    }
   }
 }

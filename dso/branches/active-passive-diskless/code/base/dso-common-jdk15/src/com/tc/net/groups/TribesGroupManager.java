@@ -63,6 +63,13 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
       throw new GroupException(e);
     }
   }
+  
+  public NodeID getLocalNodeID() throws GroupException {
+    if(this.thisNodeID == null) {
+      throw new GroupException("Node hasnt joined the group yet !");
+    }
+    return this.thisNodeID;
+  }
 
   private static void validateExternalizableClass(Class clazz) {
     String name = clazz.getName();

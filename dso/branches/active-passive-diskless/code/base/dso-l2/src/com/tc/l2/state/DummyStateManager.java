@@ -25,7 +25,7 @@ public class DummyStateManager implements StateManager {
     // Noop
   }
 
-  public void start() {
+  public void startElection() {
     // Nop
   }
 
