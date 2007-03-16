@@ -100,7 +100,7 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
       removeChannel(channel);
     } else if (ChannelEventType.TRANSPORT_DISCONNECTED_EVENT.matches(event)) {
       if (this.transportDisconnectRemovesChannel) {
-        removeChannel(channel);
+        channel.close();
       }
     } else if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
       fireChannelCreatedEvent(channel);

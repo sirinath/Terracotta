@@ -11,12 +11,10 @@ import com.tc.objectserver.core.api.TestDNA;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
 import com.tc.objectserver.managedobject.BackReferences;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import junit.framework.TestCase;
@@ -88,10 +86,5 @@ public class ClientStateManagerTest extends TestCase {
     clients.remove(new ChannelID(50));
     stateManager.shutdownClient(new ChannelID(50));
 
-
-    // a new client state manager should initialize itself with existing clients
-    Map clientMap = new HashMap();
-    new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class), clientMap);
-    assertEquals(clientMap.keySet(), clients);
   }
 }

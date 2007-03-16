@@ -128,15 +128,18 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
    * A client disconnected.
    */
   public void notifyTransportDisconnected(MessageTransport transport) {
-    close(transport.getConnectionId());
-    this.connectionPolicy.clientDisconnected();
+    // Currenly we dont care about this event here. In AbstractMessageChannel in the server, this event closes the
+    // channel
+    // so effectively a disconnected transport means a closed channel in the server. When we later implement clients
+    // reconnect
+    // this will change and this will trigger a reconnect window for that client here.
   }
 
   private void close(ConnectionID connectionId) {
     NetworkStackHarness harness = removeNetworkStack(connectionId);
-    if (harness == null) {
-      logger.warn("Receive a transport closed event from a transport that isn't in the map :" + connectionId);
-    }
+    if (harness == null) { throw new AssertionError(
+                                                    "Receive a transport closed event for a transport that isn't in the map :"
+                                                        + connectionId); }
   }
 
   public void notifyTransportConnectAttempt(MessageTransport transport) {
@@ -149,6 +152,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
    */
   public void notifyTransportClosed(MessageTransport transport) {
     close(transport.getConnectionId());
+    this.connectionPolicy.clientDisconnected();
   }
 
   /*********************************************************************************************************************

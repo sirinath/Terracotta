@@ -9,8 +9,10 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Stage;
 import com.tc.async.impl.MockSink;
+import com.tc.async.impl.MockStage;
 import com.tc.exception.ImplementMe;
 import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.l2.msg.RelayedCommitTransactionMessage;
 import com.tc.logging.TCLogger;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -37,6 +39,7 @@ import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionImpl;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.objectserver.tx.TestServerTransactionManager;
 import com.tc.objectserver.tx.TestTransactionBatchManager;
 import com.tc.objectserver.tx.TestTransactionalStageCoordinator;
 import com.tc.objectserver.tx.TransactionBatchReader;
@@ -50,6 +53,7 @@ import com.tc.util.SequenceValidator;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,6 +71,8 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
   private SequenceValidator                 sequenceValidator;
   private TransactionalObjectManager        txnObjectManager;
   private TestTransactionalStageCoordinator txnStageCoordinator;
+  public L2Coordinator                      l2Coordinator;
+  public TestServerTransactionManager       transactionMgr;
 
   public void setUp() throws Exception {
     objectManager = new TestObjectManager();
@@ -80,6 +86,8 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
                                             new NullMessageRecycler());
 
     transactionBatchReaderFactory = new TestTransactionBatchReaderFactory();
+    transactionMgr = new TestServerTransactionManager();
+    l2Coordinator = new L2HADisabledCooridinator();
     cctxt = new TestServerConfigurationContext();
     batchReader = new SynchronizedRef(null);
     handler.initialize(cctxt);
@@ -121,6 +129,11 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     // there shouldn't be any more calls in the queue
     assertTrue(transactionBatchManager.defineBatchContexts.isEmpty());
 
+    // check to see if incomingTransactions are called on transactionMgr
+    Object[] incomingCallContext = (Object[]) transactionMgr.incomingTxnContexts.remove(0);
+    assertNotNull(incomingCallContext);
+    assertTrue(transactionMgr.incomingTxnContexts.isEmpty());
+
     // make sure that a lookup context is put into the lookup queue
     MockSink lookupSink = txnStageCoordinator.lookupSink;
     assertFalse(lookupSink.queue.isEmpty());
@@ -157,6 +170,11 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     objectManager.makePending = true;
     handler.handleEvent(null);
     assertFalse(lookupSink.queue.isEmpty());
+
+    // check to see if incomingTransactions are called on transactionMgr
+    incomingCallContext = (Object[]) transactionMgr.incomingTxnContexts.remove(0);
+    assertNotNull(incomingCallContext);
+    assertTrue(transactionMgr.incomingTxnContexts.isEmpty());
 
     context = (EventContext) lookupSink.queue.remove(0);
     assertNotNull(context);
@@ -212,6 +230,8 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
 
   private final class TestServerConfigurationContext implements ServerConfigurationContext {
 
+    public Map sinks = new HashMap();
+
     public ObjectManager getObjectManager() {
       return objectManager;
     }
@@ -229,7 +249,7 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     }
 
     public ServerTransactionManager getTransactionManager() {
-      return null;
+      return transactionMgr;
     }
 
     public ManagedObjectStore getObjectStore() {
@@ -245,7 +265,10 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     }
 
     public Stage getStage(String name) {
-      throw new ImplementMe();
+      if (!sinks.containsKey(name)) {
+        sinks.put(name, new MockStage(name));
+      }
+      return (Stage) sinks.get(name);
     }
 
     public TCLogger getLogger(Class clazz) {
@@ -265,7 +288,7 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     }
 
     public L2Coordinator getL2Coordinator() {
-      return null;
+      return l2Coordinator;
     }
   }
 

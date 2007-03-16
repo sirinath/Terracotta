@@ -137,6 +137,12 @@ public class ServerStackProviderTest extends TCTestCase {
     assertEquals(0, connectionPolicy.clientDisconnected);
     provider.notifyTransportDisconnected(transport);
 
+    // transport disconnect event doesnt close client
+    assertEquals(0, connectionPolicy.clientDisconnected);
+    
+    //send transport close event
+    provider.notifyTransportClosed(transport);
+    
     // make sure that the connection policy is decremented
     assertEquals(1, connectionPolicy.clientDisconnected);
 

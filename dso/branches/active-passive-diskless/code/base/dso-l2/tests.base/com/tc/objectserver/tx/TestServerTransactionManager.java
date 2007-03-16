@@ -13,6 +13,7 @@ import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public final NoExceptionLinkedQueue shutdownClientCalls = new NoExceptionLinkedQueue();
+  public final ArrayList incomingTxnContexts = new ArrayList();
 
   public void shutdownClient(ChannelID deadClient) {
     shutdownClientCalls.put(deadClient);
@@ -109,7 +111,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public void incomingTransactions(ChannelID channelID, Set serverTxnIDs, boolean relayed) {
-    throw new ImplementMe();
+    incomingTxnContexts.add(new Object[] { channelID, serverTxnIDs, Boolean.valueOf(relayed) } );
   }
 
   public void transactionsRelayed(ChannelID channelID, Set serverTxnIDs) {
