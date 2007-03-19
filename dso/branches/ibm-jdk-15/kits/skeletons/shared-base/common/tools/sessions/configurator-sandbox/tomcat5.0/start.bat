@@ -38,14 +38,14 @@ rem --------------------------------------------------------------------
 if "%2" == "nodso" goto runCatalina
 
 set TC_CONFIG_PATH=%SANDBOX%\tomcat5.5\tc-config.xml
-call "%TC_INSTALL_DIR%\bin\dso-env.bat" -q
+call "%TC_INSTALL_DIR%\bin\dso-env.bat" -q "%TC_CONFIG%"
 
 if %ERRORLEVEL% NEQ 0 goto end
 
-set JAVA_OPTS=%JAVA_OPTS% %TC_JAVA_OPTS%
-set JAVA_OPTS=%JAVA_OPTS% -Dwebserver.log.name=%1
-set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote
-set JAVA_OPTS=%JAVA_OPTS% -Dtc.node-name=tomcat-%1
+set OPTS=%TC_JAVA_OPTS% -Dwebserver.log.name=%1
+set OPTS=%OPTS% -Dcom.sun.management.jmxremote
+set OPTS=%OPTS% -Dtc.node-name=tomcat-%1
+set JAVA_OPTS=%OPTS% %JAVA_OPTS%
 
 :runCatalina
 

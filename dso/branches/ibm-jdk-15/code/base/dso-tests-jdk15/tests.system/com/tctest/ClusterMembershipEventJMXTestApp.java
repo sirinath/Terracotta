@@ -79,8 +79,6 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
   }
 
   private void runTest() throws Throwable {
-    spawnNewClient();
-
     config.getServerControl().crash();
     while (config.getServerControl().isRunning()) {
       Thread.sleep(5000);
@@ -90,13 +88,13 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
       Thread.sleep(5000);
     }
     echo("Server restarted successfully.");
+    spawnNewClient();
     stage1.await();
     synchronized (eventsCount) {
-      Assert.assertEquals(4, eventsCount.size());
-      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeDisconnected"));
-      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.nodeConnected"));
-      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.thisNodeDisconnected"));
-      Assert.assertTrue(eventsCount.containsKey("com.tc.cluster.event.thisNodeConnected"));
+      Assert.assertTrue("nodeDisconnected", eventsCount.containsKey("com.tc.cluster.event.nodeDisconnected"));
+      Assert.assertTrue("nodeConnected", eventsCount.containsKey("com.tc.cluster.event.nodeConnected"));
+      Assert.assertTrue("thisNodeDisconnected", eventsCount.containsKey("com.tc.cluster.event.thisNodeDisconnected"));
+      Assert.assertTrue("thisNodeConnected", eventsCount.containsKey("com.tc.cluster.event.thisNodeConnected"));
     }
   }
 

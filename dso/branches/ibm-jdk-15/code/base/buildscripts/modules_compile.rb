@@ -78,6 +78,14 @@ class BuildSubtree
             end
 
             create_build_data(config_source, build_results, build_environment)
+
+            if self.build_module.module?
+              build_src_dir = FilePath.new(
+                  build_results.classes_directory(self), 'src')
+              ant.copy(:todir => build_src_dir.to_s) {
+                ant.fileset(:dir => source_root.to_s)
+              }
+            end
         end
 
         if @resources_exists
@@ -112,7 +120,7 @@ class BuildSubtree
       File.open(build_data_file(build_results).to_s, "w") do |file|
         file.puts("terracotta.build.productname=terracotta")
         file.puts("terracotta.build.version=#{build_environment.specified_build_version}")
-        file.puts("terracotta.build.designation=#{build_environment.specified_build_designation}")
+        # file.puts("terracotta.build.designation=#{build_environment.specified_build_designation}")
         file.puts("terracotta.build.host=#{build_environment.build_hostname}")
         file.puts("terracotta.build.user=#{build_environment.build_username}")
         file.puts("terracotta.build.timestamp=#{build_environment.build_timestamp.strftime('%Y%m%d-%H%m%S')}")

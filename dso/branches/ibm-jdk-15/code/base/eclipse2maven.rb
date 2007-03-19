@@ -1,10 +1,15 @@
 require 'rexml/document'
 require 'set'
 
+SKIP_ARTIFACT_LIST = [
+	'common',
+]
+
 ART_2_GRP = {
 	'treemap-tc'=>'org.terracotta',
-	'jfreechart'=>'jfreechart',
+	'jfreechart'=>'jfree',
 	'jmxremote'=>'jmxremote',
+	'jmock-cglib'=>'jmock',
 }
 
 POM_DEF = <<POM
@@ -41,7 +46,7 @@ class Project
 		unless @deps.nil? or @deps.empty?
 			dep_str = "<dependencies>\n"
 			@deps.each { |dep|
-				dep_str += dep.to_s
+				dep_str += dep.to_s_versionless
 			}
 			dep_str += "  </dependencies>"
 		else
@@ -57,13 +62,20 @@ class Dependency
 		@groupId = ART_2_GRP[ artifactId ] if @groupId.nil?
 		@groupId = artifactId if @groupId.nil?
 		@artifactId, @version = artifactId, version
+		@version = "${tcVersion}" if version == ""
 	end
 	def to_s
-		str = "    <dependency>\n"
-		str += "      <groupId>#{@groupId.to_s}</groupId>\n"
-		str += "      <artifactId>#{@artifactId.to_s}</artifactId>\n"
-		str += "      <version>#{@version.to_s}</version>\n" unless @version.nil? or @version.length == 0
-		str += "    </dependency>\n"
+		str = "      <dependency>\n"
+		str += "        <groupId>#{@groupId.to_s}</groupId>\n"
+		str += "        <artifactId>#{@artifactId.to_s}</artifactId>\n"
+		str += "        <version>#{@version.to_s}</version>\n"
+		str += "      </dependency>\n"
+	end
+	def to_s_versionless
+		str = "      <dependency>\n"
+		str += "        <groupId>#{@groupId.to_s}</groupId>\n"
+		str += "        <artifactId>#{@artifactId.to_s}</artifactId>\n"
+		str += "      </dependency>\n"
 	end
 end
 
@@ -85,6 +97,8 @@ end
 begin
 	proj_dir_set = find_projects( Set.new, File.expand_path( ARGV.length < 1 ? "." : ARGV[0] ) )
 
+	all_deps = Array.new
+
 	proj_dir_set.each { |project_dir|
 		File.open( "#{project_dir}/.classpath" ) { |file|
 			project_name = project_dir[ project_dir.rindex('/')+1, project_dir.length-1 ]
@@ -102,7 +116,11 @@ begin
 						version = ""
 						artifactId = path.scan( /(.*?)\-\d.*?$/ ).join.to_s
 						version = path.scan( /.*?\-(\d.*?)\.jar$/ ).join.to_s
-						project.add Dependency.new( nil, artifactId, version )
+						unless version.nil? or version.length == 0
+							dep = Dependency.new( nil, artifactId, version )
+							project.add dep
+							all_deps.push dep.to_s
+						end
 					end
 				end
 				# other projects
@@ -112,16 +130,29 @@ begin
 						path = path.to_s
 						if path[0] == 47
 							path = path[ path.rindex('/')+1, path.length-1 ].to_s
-							project.add Dependency.new( "org.terracotta", path, "" )
+							dep = Dependency.new( "org.terracotta", path, "" )
+							project.add dep
+							all_deps.push dep.to_s
 						end
 					end
 				end
+				all_deps.push Dependency.new( "org.terracotta", project_name, "" ).to_s
 			}
 
 			#write out to file...
+			next if SKIP_ARTIFACT_LIST.include?( project_name )
+#			File.delete( "#{project_dir}/pom.xml" )
 			File.open( "#{project_dir}/pom.xml", File::CREAT|File::RDWR|File::TRUNC ) { |pom_file|
 				pom_file.write( project.generate_pom )
 			}
 		}
+	}
+
+	all_deps.uniq!
+	all_deps.sort!
+
+	puts "      <!-- parent pom dep list -->"
+	all_deps.each { |dep_str|
+		puts dep_str
 	}
 end

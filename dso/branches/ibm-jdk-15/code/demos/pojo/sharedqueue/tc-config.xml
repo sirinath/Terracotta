@@ -6,7 +6,9 @@
   All rights reserved.
 
 -->
-<tc:tc-config xmlns:tc="http://www.terracotta.org/config">
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.terracotta.org/schema/terracotta-3.xsd">
   <!-- Server is colocated with client and DSO is listening on
        default port (9510). -->
   <servers>
@@ -40,22 +42,12 @@
 
       <!-- These methods (originating from local objects) operates on objects declared as shared. This 
            section tells DSO to assume a lock on those objects for the duration of the call; essentially this
-           section declares that all methods found in the 'demo.inventory.Main' class should assume the 
+           section declares that all methods found in the 'demo.sharedqueue.Main' class should assume the 
            behavior described -->
       <locks>
         <autolock>
           <method-expression>* *..*.*(..)</method-expression>
         </autolock>
-        <named-lock>
-          <lock-name>WorkerSetHealth</lock-name>
-          <method-expression>* demo.sharedqueue.Worker.setHealth(..)</method-expression>
-          <lock-level>write</lock-level>
-        </named-lock>
-        <named-lock>
-          <lock-name>WorkerExpire</lock-name>
-          <method-expression>* demo.sharedqueue.Worker.expire(..)</method-expression>
-          <lock-level>read</lock-level>
-        </named-lock>
       </locks>
 
       <!-- We declare the following fields from the 'demo.sharedqueue.Queue' class

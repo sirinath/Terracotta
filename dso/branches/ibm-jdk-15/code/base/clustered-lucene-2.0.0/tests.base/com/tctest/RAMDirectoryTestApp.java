@@ -16,6 +16,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Hit;
 import org.apache.lucene.search.Hits;
 
+import com.tc.util.Assert;
+import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -23,6 +25,10 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
+/**
+ * RAMDirectory clustering test
+ * @author jgalang
+ */
 public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 
 	static final int EXPECTED_THREAD_COUNT = 2;
@@ -33,51 +39,44 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 
 	private final StandardAnalyzer analyzer;
 
+	/**
+	 * Inject Lucene 2.0.0 configuration, and instrument this test class
+	 * @param visitor
+	 * @param config
+	 */
 	public static void visitL1DSOConfig(final ConfigVisitor visitor,
 			final DSOClientConfigHelper config) {
-		config.addNewModule("clustered-lucene", "2.0.0");
+	    config.addNewModule("clustered-lucene", "2.0.0");
+		config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
 
-		final String testClass = RAMDirectoryTestApp.class.getName();
-		config.addIncludePattern(testClass + "$*");
-
+	    final String testClass = RAMDirectoryTestApp.class.getName();
 		final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
-		final java.lang.reflect.Field[] fields = RAMDirectoryTestApp.class
-				.getDeclaredFields();
-		for (int pos = 0; pos < fields.length; ++pos) {
-			final Class fieldType = fields[pos].getType();
-			if (fieldType == CyclicBarrier.class
-					|| fieldType == RAMDirectory.class) {
-				spec.addRoot(fields[pos].getName(), fields[pos].getName());
-			}
-		}
+		spec.addRoot("barrier", "barrier");
+		spec.addRoot("clusteredDirectory", "clusteredDirectory");
 	}
 
 	public RAMDirectoryTestApp(final String appId, final ApplicationConfig cfg,
 			final ListenerProvider listenerProvider) {
 		super(appId, cfg, listenerProvider);
-		barrier = new CyclicBarrier(getParticipantCount());
 		clusteredDirectory = new RAMDirectory();
 		analyzer = new StandardAnalyzer();
+		barrier = new CyclicBarrier(getParticipantCount());
 	}
-
+	
+	/**
+	 * Test that the data written in the clustered RAMDirectory
+	 * by one node, becomes available in the other.
+	 */
 	protected void runTest() throws Throwable {
 		if (barrier.await() == 0) {
-			addDataToMap(2);
+			addDataToMap("DATA1");
 			letOtherNodeProceed();
 			waitForPermissionToProceed();
-			verifyEntries(4);
-			removeDataFromMap(2);
-			letOtherNodeProceed();
-			waitForPermissionToProceed();
-			verifyEntries(0);
+			verifyEntries("DATA2");
 		} else {
 			waitForPermissionToProceed();
-			verifyEntries(2);
-			addDataToMap(2);
-			letOtherNodeProceed();
-			waitForPermissionToProceed();
-			verifyEntries(2);
-			// clusteredFastHashMap.clear();
+			verifyEntries("DATA1");
+			addDataToMap("DATA2");
 			letOtherNodeProceed();
 		}
 		barrier.await();
@@ -95,28 +94,15 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 		barrier.await();
 	}
 
-	private void addDataToMap(final int count) {
-		for (int pos = 0; pos < count; ++pos) {
-			// clusteredFastHashMap.put(new Object(), new Object());
-		}
-	}
-
-	private void removeDataFromMap(final int count) {
-		// for (int pos = 0; pos < count; ++pos) {
-		// clusteredFastHashMap.remove(clusteredFastHashMap.keySet()
-		// .iterator().next());
-		// }
-	}
-
-	private void verifyEntries(final int count) {
-		// Assert.assertEquals(count, clusteredFastHashMap.size());
-		// Assert.assertEquals(count, clusteredFastHashMap.keySet().size());
-		// Assert.assertEquals(count, clusteredFastHashMap.values().size());
-	}
-
-	private void put(final String key, final String value) throws Exception {
+	/**
+	 * Add datum to RAMDirectory
+	 * @param value The datum to add
+	 * @throws Throwable
+	 */
+	private void addDataToMap(final String value)
+			throws Throwable {
 		final Document doc = new Document();
-		doc.add(new Field("key", key, Field.Store.YES, Field.Index.TOKENIZED));
+		doc.add(new Field("key", value, Field.Store.YES, Field.Index.TOKENIZED));
 		doc.add(new Field("value", value, Field.Store.YES,
 				Field.Index.TOKENIZED));
 
@@ -129,11 +115,16 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 		}
 	}
 
-	private String get(final String key) throws Exception {
-		final StringBuffer rv = new StringBuffer();
+	/**
+	 * Attempt to retrieve datum from RAMDirectory. 
+	 * @param value The datum to retrieve
+	 * @throws Exception
+	 */
+	private void verifyEntries(final String value) throws Exception {
+		final StringBuffer data = new StringBuffer();
 		synchronized (clusteredDirectory) {
 			final QueryParser parser = new QueryParser("key", this.analyzer);
-			final Query query = parser.parse(key);
+			final Query query = parser.parse(value);
 			BooleanQuery.setMaxClauseCount(100000);
 			final IndexSearcher is = new IndexSearcher(this.clusteredDirectory);
 			final Hits hits = is.search(query);
@@ -141,10 +132,9 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 			for (Iterator i = hits.iterator(); i.hasNext();) {
 				final Hit hit = (Hit) i.next();
 				final Document document = hit.getDocument();
-				rv.append(document.get("key") + "=" + document.get("value")
-						+ System.getProperty("line.separator"));
+				data.append(document.get("value"));
 			}
 		}
-		return rv.toString();
+		Assert.assertEquals(value, data.toString());
 	}
 }
