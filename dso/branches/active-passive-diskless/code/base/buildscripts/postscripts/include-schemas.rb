@@ -11,14 +11,14 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   
   def getXSDFileAndVersion(srcdir)
     xsd_file = nil
-    Dir.entries(srcdir).each do |f|
-      xsd_file = FilePath.new(srcdir, f) if f =~ /\.xsd$/i
+    version = "1"
+    Dir.entries(srcdir.to_s).each do |f|
+      if f =~ /terracotta-(\d+)\.xsd/i
+        xsd_file = FilePath.new(srcdir, f)
+        version = $1
+      end
     end
     raise("Cannot find any schema file in #{srcdir}") if xsd_file.nil?
-    version = "1"
-    if xsd_file =~ /terracotta-(\d+)\.xsd/
-      version = $1
-    end
     return xsd_file, version
   end
   
