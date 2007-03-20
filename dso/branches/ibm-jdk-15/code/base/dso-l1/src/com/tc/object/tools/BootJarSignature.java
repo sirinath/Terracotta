@@ -20,6 +20,7 @@ public class BootJarSignature {
   private static final String OS_SOLARIS_X86      = "solaris-x86";
 
   private static final String VM_VENDOR_SUN       = "hotspot";
+  private static final String VM_VENDOR_IBM       = "ibm";
   private static final String VM_VENDOR_BEA       = "jrockit";
 
   private final String        signature;
@@ -55,6 +56,7 @@ public class BootJarSignature {
 
     if (vendor.toLowerCase().startsWith("bea ")) { return VM_VENDOR_BEA; }
     if (vendor.toLowerCase().startsWith("apple ")) { return VM_VENDOR_SUN; }
+    if (vendor.equals("IBM Corporation")) { return VM_VENDOR_IBM; }
     if (vendor.toLowerCase().startsWith("sun ")) {
       final Vm.Version vmVersion;
       try {
