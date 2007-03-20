@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-Category: terracotta
+Bundle-Copyright: Terracotta, Inc. (c) 2003-2007
+Bundle-Description: Terracotta configuration for Sun AWT 1.4/1.5
+Bundle-ManifestVersion: 2
+Bundle-Name: Terracotta Configuration for the (Sun) JDK Abstract Windowing Toolkit [1.4, 1.5]
+Bundle-RequiredExecutionEnvironment: J2SE-1.4
+Bundle-SymbolicName: org.terracotta.modules.sunjdk.awt_1.4_1.5
+Bundle-Vendor: Terracotta, Inc.
+Bundle-Version: 1.0.0
