@@ -386,10 +386,6 @@ modules:
         - common
         - dso-l1
         - thirdparty
-  - awt-sunjdk-1.4-1.5:
-      options:
-        jdk: J2SE-1.4
-        module: true
   - clustered-apache-struts-1.1:
       options:
         jdk: J2SE-1.4
