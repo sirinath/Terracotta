@@ -24,7 +24,7 @@ class SvnUpdate
     @svninfo = YAML::load(`svn info #{@topdir}`)
     @branch  = get_branch()
 
-    @good_rev_file = File.join(build_archive_dir, @branch, "good_rev.txt")
+    @good_rev_file = File.join(build_archive_dir, "general-monkey", @branch, "good_rev.txt")
 
     clean_up_temp_dir
   end
