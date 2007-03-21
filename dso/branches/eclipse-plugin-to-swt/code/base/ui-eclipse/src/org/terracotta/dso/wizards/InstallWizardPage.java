@@ -3,24 +3,21 @@
  */
 package org.terracotta.dso.wizards;
 
+import org.dijon.Button;
+import org.dijon.Container;
+import org.dijon.DictionaryResource;
+import org.dijon.TextField;
+import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.awt.SWT_AWT;
+import org.eclipse.swt.widgets.Composite;
+
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JFileChooser;
-
-import org.eclipse.jface.wizard.WizardPage;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.awt.SWT_AWT;
-import org.eclipse.swt.widgets.Composite;
-
-import org.dijon.Button;
-import org.dijon.Container;
-import org.dijon.DictionaryResource;
-import org.dijon.TextField;
-
-import org.terracotta.dso.TcPlugin;
 
 /**
  * This is not currently being used but if we decide the plugin needs to support
@@ -45,7 +42,7 @@ public class InstallWizardPage extends WizardPage {
   }
 
   public void createControl(Composite parent) {
-    DictionaryResource topRes    = TcPlugin.getDefault().getResources();
+    DictionaryResource topRes    = null; // TcPlugin.getDefault().getResources();TODO:
     Container          panel     = (Container)topRes.resolve("PropertyPanel");
     Composite          composite = new Composite(parent, SWT.EMBEDDED);
 

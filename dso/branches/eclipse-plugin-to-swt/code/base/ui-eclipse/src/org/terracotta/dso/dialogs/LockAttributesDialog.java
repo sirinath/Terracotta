@@ -6,7 +6,6 @@ package org.terracotta.dso.dialogs;
 import org.dijon.ButtonGroup;
 import org.dijon.Container;
 import org.dijon.ContainerResource;
-import org.dijon.DictionaryResource;
 import org.dijon.TextField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -18,7 +17,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.terracotta.dso.PatternHelper;
-import org.terracotta.dso.TcPlugin;
 
 import com.tc.admin.common.XAbstractAction;
 import com.terracottatech.config.LockLevel;
@@ -47,10 +45,11 @@ public class LockAttributesDialog extends MessageDialog {
   
   private static final String ENTER_CMD = "ENTER";
   
-  static {
-    DictionaryResource topRes = TcPlugin.getDefault().getResources();
-    m_panelRes = (ContainerResource)topRes.findComponent("LockAttributesPanel"); 
-  }
+//  TODO:
+//  static {
+//    DictionaryResource topRes = TcPlugin.getDefault().getResources();
+//    m_panelRes = (ContainerResource)topRes.findComponent("LockAttributesPanel"); 
+//  }
   
   public LockAttributesDialog(Shell parentShell, IJavaElement element) {
     super(parentShell, "Specify Named-Lock Attributes", null,

@@ -8,7 +8,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.dijon.DictionaryResource;
 import org.eclipse.core.commands.common.EventManager;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -171,7 +170,7 @@ public class TcPlugin extends AbstractUIPlugin
              TcPluginStatusConstants
 {
   private static TcPlugin        m_plugin;
-  private DictionaryResource     m_topRes;
+//  private DictionaryResource     m_topRes;
   private Loader                 m_configLoader;
   private CompilationUnitVisitor m_compilationUnitVisitor;
   private ResourceListener       m_resourceListener;
@@ -182,8 +181,6 @@ public class TcPlugin extends AbstractUIPlugin
   private BootClassHelper        m_bootClassHelper;
   
   public  static final String PLUGIN_ID     = "org.terracotta.dso";
-  private static final String RESOURCE_FILE = "Resources.xml";
-  
   public static final String DEFAULT_CONFIG_FILENAME = "tc-config.xml";
   public static final String DEFAULT_SERVER_OPTIONS  = "-Xms256m -Xmx256m";
   
@@ -270,19 +267,6 @@ public class TcPlugin extends AbstractUIPlugin
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     } catch(Exception e) {
       /**/
-    }
-    
-    InputStream is = null;
-    try {
-      is       = getClass().getResourceAsStream(RESOURCE_FILE);
-      m_topRes = DictionaryResource.load(is);
-      is       = null;
-    } catch(Exception e) {
-      throw new RuntimeException("Error loading resource file '"+RESOURCE_FILE+"'", e);
-    } finally {
-      if(is != null) {
-        IOUtils.closeQuietly(is);
-      }
     }
 
     JavaCore.addElementChangedListener(
@@ -372,10 +356,6 @@ public class TcPlugin extends AbstractUIPlugin
       new TcPlugin();
     }
     return m_plugin;
-  }
-
-  public DictionaryResource getResources() {
-    return m_topRes;
   }
 
   public void setup(IProject project, String configFilePath, String serverOpts) {

@@ -24,10 +24,11 @@ public class ExceptionDialog extends Dialog {
   private XTextField m_messageText;
   private XButton    m_closeButton;
   
-  static {
-    m_dialogRes =
-      TcPlugin.getDefault().getResources().findDialog("ExceptionDialog"); 
-  }
+//  TODO:
+//  static {
+//    m_dialogRes =
+//      TcPlugin.getDefault().getResources().findDialog("ExceptionDialog"); 
+//  }
   
   public ExceptionDialog() {
     super(m_dialogRes);

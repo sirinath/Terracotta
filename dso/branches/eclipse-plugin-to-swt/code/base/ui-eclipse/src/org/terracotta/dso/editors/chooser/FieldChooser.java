@@ -37,7 +37,7 @@ public class FieldChooser extends Dialog {
 
   static {
     TcPlugin plugin = TcPlugin.getDefault();
-    DictionaryResource topRes = plugin.getResources();
+    DictionaryResource topRes = null; //plugin.getResources(); TODO:
 
     m_res = (DialogResource) topRes.find("FieldChooser");
   }

@@ -31,6 +31,15 @@ public final class SWTUtil {
   // cannot instantiate
   }
 
+  public static Composite getAncestorOfClass(Class clazz, Composite comp) {
+    if (comp.getClass().equals(clazz)) return comp;
+    Composite current = comp;
+    while ((current = comp.getParent()) != null) {
+      if (current.getClass().equals(clazz)) return current;
+    }
+    return null;
+  }
+
   public static int textColumnsToPixels(Text text, int columns) {
     GC gc = new GC(text);
     FontMetrics fm = gc.getFontMetrics();
@@ -112,7 +121,7 @@ public final class SWTUtil {
           boolean visible = false;
           final TableItem item = table.getItem(index);
           for (int i = 0; i < indices.length; i++) {
-            Rectangle rect = item.getBounds(i);
+            Rectangle rect = item.getBounds(indices[i]);
             if (rect.contains(pt)) {
               final int column = indices[i];
               final Text text = new Text(table, SWT.NONE);
@@ -138,8 +147,8 @@ public final class SWTUtil {
               };
               text.addListener(SWT.FocusOut, textListener);
               text.addListener(SWT.Traverse, textListener);
-              editor.setEditor(text, item, i);
-              text.setText(item.getText(i));
+              editor.setEditor(text, item, indices[i]);
+              text.setText(item.getText(indices[i]));
               text.selectAll();
               text.setFocus();
               return;
