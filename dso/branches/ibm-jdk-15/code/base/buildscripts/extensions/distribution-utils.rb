@@ -5,6 +5,7 @@
 #
 
 module DistributionUtils
+
   def exec_section(name)
     get_spec(name, []).each do |section|
       (section[:install_directories] || [(section[:install_directory] || '')]).each do |directory|
@@ -55,8 +56,7 @@ module DistributionUtils
   def package_filename
     "#{get_config(:short_internal_name).downcase}-" +
     "#{@build_environment.os_family.downcase}-" +
-    "#{@build_environment.processor_type}-" +
-    "#{@build_environment.build_username.downcase}-AT-" +
+    "#{@build_environment.processor_type}-" +    
     "#{@build_environment.build_hostname.downcase}-rev" +
     "#{@build_environment.current_revision}" 
   end
@@ -80,7 +80,6 @@ module DistributionUtils
   def get_config(symbol, default=nil)
     case symbol
     when :version           then @config[symbol.to_s] || @build_environment.specified_build_version
-    when :designation       then @config[symbol.to_s] || @build_environment.specified_build_designation
     when :package_directory then @config[symbol.to_s] || "#{get_config(:root_directory)}-#{get_config(:version)}"
     else
       out = @config[symbol.to_s] || default
