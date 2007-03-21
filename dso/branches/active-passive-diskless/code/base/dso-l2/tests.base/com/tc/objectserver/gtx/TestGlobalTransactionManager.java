@@ -47,7 +47,7 @@ public final class TestGlobalTransactionManager implements ServerGlobalTransacti
     }
   }
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID stxnID) {
+  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
     return new GlobalTransactionID(idSequence++);
   }
 
@@ -76,5 +76,9 @@ public final class TestGlobalTransactionManager implements ServerGlobalTransacti
 
   public void incomingTransactions(ChannelID cid, Set serverTxnIDs) {
     throw new ImplementMe();
+  }
+
+  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
+    return new GlobalTransactionID(idSequence++);
   }
 }

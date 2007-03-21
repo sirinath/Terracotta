@@ -13,7 +13,6 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
-import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.tx.ServerTransactionID;
@@ -56,7 +55,6 @@ public class ServerTransactionManagerImplTest extends TestCase {
   private Counter                          transactionRateCounter;
   private TestChannelStats                 channelStats;
   private TestGlobalTransactionManager     gtxm;
-  private int                              idsequence;
   private ObjectInstanceMonitor            imo;
 
   protected void setUp() throws Exception {
@@ -236,8 +234,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
       ServerTransaction tx = (ServerTransaction) iter.next();
 
       // apply stage
-      transactionManager.apply(new GlobalTransactionID(idsequence++), tx, Collections.EMPTY_MAP, new BackReferences(),
-                               imo);
+      transactionManager.apply(tx, Collections.EMPTY_MAP, new BackReferences(), imo);
       assertTrue(action.clientID == null && action.txID == null);
       // release
       transactionManager.release(null, Collections.EMPTY_SET, Collections.EMPTY_MAP);

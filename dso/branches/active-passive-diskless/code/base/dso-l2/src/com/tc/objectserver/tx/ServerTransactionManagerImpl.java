@@ -124,11 +124,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private void acknowledge(ChannelID waiter, TransactionID txnID) {
     final ServerTransactionID serverTxnID = new ServerTransactionID(waiter, txnID);
     fireTransactionCompleteEvent(serverTxnID);
-    if (!gtxm.needsApply(serverTxnID)) {
-      // the GlobalTransactionID can by null if the server crashed before the global transaction was stored. We only
-      // want to accept acknowledgements for the global transaction id that we actually persisted.
-      action.acknowledgeTransaction(serverTxnID);
-    }
+    action.acknowledgeTransaction(serverTxnID);
   }
 
   public void acknowledgement(ChannelID waiter, TransactionID txnID, ChannelID waitee) {
@@ -146,12 +142,15 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void apply(GlobalTransactionID gtxID, ServerTransaction txn, Map objects, BackReferences includeIDs,
-                    ObjectInstanceMonitor instanceMonitor) {
+  public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
+                                   ObjectInstanceMonitor instanceMonitor) {
 
     final ChannelID channelID = txn.getChannelID();
     final TransactionID txnID = txn.getTransactionID();
     final List changes = txn.getChanges();
+
+    // TODO:: Fix for passive
+    GlobalTransactionID gtxID = gtxm.createGlobalTransactionID(txn.getServerTransactionID());
 
     TransactionAccount ci;
     if (txn.isPassive()) {
@@ -191,6 +190,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     transactionRateCounter.increment();
     if (!channelID.isNull()) channelStats.notifyTransaction(channelID);
 
+    return gtxID;
   }
 
   public void skipApplyAndCommit(ServerTransaction txn) {

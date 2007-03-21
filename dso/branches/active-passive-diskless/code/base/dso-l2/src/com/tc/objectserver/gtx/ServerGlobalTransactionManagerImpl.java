@@ -9,6 +9,7 @@ import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.TransactionStore;
+import com.tc.util.Assert;
 import com.tc.util.SequenceValidator;
 
 import java.util.Collection;
@@ -43,10 +44,6 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     return (gtx == null);
   }
 
-  private void assertNull(ServerTransactionID stxID, GlobalTransactionDescriptor gtx) {
-    if (gtx != null) throw new TransactionCommittedError("Transaction Already exists : " + stxID);
-  }
-
   public void completeTransactions(PersistenceTransaction tx, Collection collection) {
     if(collection.isEmpty()) return;
     transactionStore.removeAllByServerTransactionID(tx, collection);
@@ -54,8 +51,7 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
 
   public void commit(PersistenceTransaction persistenceTransaction, ServerTransactionID stxID) {
     GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
-    assertNull(stxID, desc);
-    desc = transactionStore.createTransactionDescriptor(stxID);
+    Assert.assertNotNull(desc);
     transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);
   }
 
@@ -74,8 +70,13 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     }
   }
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID stxnID) {
-    return transactionStore.createGlobalTransactionID(stxnID);
+  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
+    return transactionStore.getGlobalTransactionID(stxnID);
+  }
+
+  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
+    GlobalTransactionDescriptor gdesc = transactionStore.createTransactionDescriptor(serverTransactionID);
+    return gdesc.getGlobalTransactionID();
   }
 
   public synchronized void addResentServerTransactionIDs(Collection stxIDs) {

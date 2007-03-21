@@ -40,6 +40,8 @@ public interface ServerGlobalTransactionManager extends GlobalTransactionManager
   
   public void shutdownClient(ChannelID channelID);
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID stxnID);
+  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID);
+
+  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID);
 
 }

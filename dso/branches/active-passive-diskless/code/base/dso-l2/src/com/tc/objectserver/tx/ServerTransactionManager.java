@@ -58,7 +58,7 @@ public interface ServerTransactionManager {
    * 
    * @return The results of the transaction apply
    */
-  public void apply(GlobalTransactionID gtxID, ServerTransaction txn, Map objects, BackReferences includeIDs,
+  public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
                     ObjectInstanceMonitor instanceMonitor);
   
   /**

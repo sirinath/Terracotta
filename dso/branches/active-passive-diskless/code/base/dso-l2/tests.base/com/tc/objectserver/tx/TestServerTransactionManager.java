@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.tx;
 
@@ -29,7 +30,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public final NoExceptionLinkedQueue shutdownClientCalls = new NoExceptionLinkedQueue();
-  public final ArrayList incomingTxnContexts = new ArrayList();
+  public final ArrayList              incomingTxnContexts = new ArrayList();
 
   public void shutdownClient(ChannelID deadClient) {
     shutdownClientCalls.put(deadClient);
@@ -78,7 +79,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public void committed(Set txnset) {
-    //NOP
+    // NOP
   }
 
   public void broadcasted(ChannelID waiter, TransactionID requestID) {
@@ -97,13 +98,14 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     // NOP
   }
 
-  public void apply(GlobalTransactionID gtxID, ServerTransaction txn, Map objects, BackReferences includeIDs,
-                    ObjectInstanceMonitor instanceMonitor) {
+  public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
+                                   ObjectInstanceMonitor instanceMonitor) {
     // NOP
+    return GlobalTransactionID.NULL_ID;
   }
 
   public void committed(Collection tx) {
-    //NOP
+    // NOP
   }
 
   public void release(PersistenceTransaction ptx, Collection objects, Map newRoots) {
@@ -111,7 +113,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public void incomingTransactions(ChannelID channelID, Set serverTxnIDs, boolean relayed) {
-    incomingTxnContexts.add(new Object[] { channelID, serverTxnIDs, Boolean.valueOf(relayed) } );
+    incomingTxnContexts.add(new Object[] { channelID, serverTxnIDs, Boolean.valueOf(relayed) });
   }
 
   public void transactionsRelayed(ChannelID channelID, Set serverTxnIDs) {
