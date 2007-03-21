@@ -7,7 +7,6 @@ import org.apache.xmlbeans.XmlObject;
 
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XSpinner;
-import org.terracotta.dso.editors.ConfigurationEditorPanel;
 
 import java.awt.event.ActionEvent;
 
@@ -33,12 +32,13 @@ public class XmlIntegerSpinner extends XSpinner
   }
   
   protected void ensureXmlObject() {
-    ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
-      getAncestorOfClass(ConfigurationEditorPanel.class, this);
-    
-    if(parent != null) {
-      parent.ensureXmlObject();
-    }
+//    TODO:
+//    ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
+//      getAncestorOfClass(ConfigurationEditorPanel.class, this);
+//    
+//    if(parent != null) {
+//      parent.ensureXmlObject();
+//    }
   }
   
   private SpinnerNumberModel getSpinnerNumberModel() {

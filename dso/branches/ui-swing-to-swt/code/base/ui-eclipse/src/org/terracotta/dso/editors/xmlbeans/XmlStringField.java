@@ -4,12 +4,10 @@
 package org.terracotta.dso.editors.xmlbeans;
 
 import org.apache.xmlbeans.XmlObject;
-
 import org.dijon.Separator;
 
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XTextField;
-import org.terracotta.dso.editors.ConfigurationEditorPanel;
 
 import java.awt.event.ActionEvent;
 
@@ -44,12 +42,13 @@ public class XmlStringField extends XTextField
   }
   
   protected void ensureXmlObject() {
-    ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
-      getAncestorOfClass(ConfigurationEditorPanel.class, this);
-    
-    if(parent != null) {
-      parent.ensureXmlObject();
-    }
+//    TODO:
+//    ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
+//      getAncestorOfClass(ConfigurationEditorPanel.class, this);
+//    
+//    if(parent != null) {
+//      parent.ensureXmlObject();
+//    }
   }
   
   public void init(Class parentType, String elementName) {

@@ -10,7 +10,6 @@ import org.dijon.DialogResource;
 import org.dijon.Label;
 import org.dijon.PagedView;
 
-import org.terracotta.dso.TcPlugin;
 import com.tc.admin.common.XTextField;
 import com.tc.admin.common.XTextPane;
 import com.terracottatech.config.Include;
@@ -38,9 +37,10 @@ public class OnLoadDialog extends Dialog {
   private static final String CALL_VIEW    = "Call";
   private static final String EXECUTE_VIEW = "Execute";
   
-  static {
-    m_dialogRes = TcPlugin.getDefault().getResources().findDialog("OnLoadDialog"); 
-  }
+//  TODO:
+//  static {
+//    m_dialogRes = TcPlugin.getDefault().getResources().findDialog("OnLoadDialog"); 
+//  }
 
   public OnLoadDialog(Frame frame) {
     super(frame);
