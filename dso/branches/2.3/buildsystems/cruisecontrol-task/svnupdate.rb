@@ -32,9 +32,9 @@ class SvnUpdate
   def get_branch    
     branch = case @svninfo['URL']
       when /trunk/: branch="trunk"
-      when /branches\/private\/([^\/]+)\//: $1
-      when /branches\/([^\/]+)\//: $1
-      when /tags\/([^\/]+)\//: $1
+      when /branches\/private\/([^\/]+)/: $1
+      when /branches\/([^\/]+)/: $1
+      when /tags\/([^\/]+)/: $1
       else fail("Can't determine which branch I'm operating on")
     end
   end
