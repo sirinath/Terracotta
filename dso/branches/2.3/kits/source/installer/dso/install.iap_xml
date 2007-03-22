@@ -601,16 +601,6 @@ You may cancel this installation at any time by clicking the 'Cancel' button.]]>
 										</object>
 									</method>
 									<method name="addElement">
-										<object class="com.zerog.ia.installer.util.VariablePropertyData" objectID="84c613688bd5">
-											<property name="propertyValue">
-												<string><![CDATA[$terracotta.build.designation$]]></string>
-											</property>
-											<property name="propertyName">
-												<string><![CDATA[$TC_DESIGNATION$]]></string>
-											</property>
-										</object>
-									</method>
-									<method name="addElement">
 										<object class="com.zerog.ia.installer.util.VariablePropertyData" objectID="08b3e70ca986">
 											<property name="propertyValue">
 												<string><![CDATA[terracotta-]]></string>
@@ -630,7 +620,7 @@ You may cancel this installation at any time by clicking the 'Cancel' button.]]>
 								<string><![CDATA[$USER_MAGIC_FOLDER_1$]]></string>
 							</property>
 							<property name="value">
-								<string><![CDATA[$USER_INSTALL_DIR$$/$$SHORT_NAME$$TC_VERSION$-$TC_DESIGNATION$]]></string>
+								<string><![CDATA[$USER_INSTALL_DIR$$/$$SHORT_NAME$$TC_VERSION$]]></string>
 							</property>
 						</object>
 					</method>
@@ -691,7 +681,7 @@ You may cancel this installation at any time by clicking the 'Cancel' button.]]>
 								<string><![CDATA[$USER_MAGIC_FOLDER_3$]]></string>
 							</property>
 							<property name="value">
-								<string><![CDATA[$USER_INSTALL_DIR$$/$terracotta-$TC_VERSION$-$TC_DESIGNATION$]]></string>
+								<string><![CDATA[$USER_INSTALL_DIR$$/$terracotta-$TC_VERSION$]]></string>
 							</property>
 						</object>
 					</method>
@@ -1266,7 +1256,7 @@ You may cancel this installation at any time by clicking the 'Cancel' button.]]>
 								<string><![CDATA[$USER_MAGIC_FOLDER_2$]]></string>
 							</property>
 							<property name="value">
-								<string><![CDATA[$WIN_PROGRAMS_MENU$$/$Terracotta $TC_VERSION$-$TC_DESIGNATION$]]></string>
+								<string><![CDATA[$WIN_PROGRAMS_MENU$$/$Terracotta $TC_VERSION$]]></string>
 							</property>
 							<rules logicalOperation="AND">
 								<object class="com.zerog.ia.installer.rules.CompareVariable" objectID="569bda6aa6c8">
@@ -4558,13 +4548,13 @@ and any path to a file to read from that file]]></string>
 												<boolean>false</boolean>
 											</property>
 											<property name="sourcePath">
-												<string><![CDATA[$IA_PROJECT_DIR$\install_build_output\Application Files\terracotta-2.3.0]]></string>
+												<string><![CDATA[$IA_PROJECT_DIR$\install_build_output\Application Files\terracotta]]></string>
 											</property>
 											<property name="shouldUninstall">
 												<boolean>true</boolean>
 											</property>
 											<property name="destinationName">
-												<string><![CDATA[$SHORT_NAME$$TC_VERSION$-$TC_DESIGNATION$]]></string>
+												<string><![CDATA[$SHORT_NAME$$TC_VERSION$]]></string>
 											</property>
 											<property name="removeRecursively">
 												<boolean>true</boolean>
