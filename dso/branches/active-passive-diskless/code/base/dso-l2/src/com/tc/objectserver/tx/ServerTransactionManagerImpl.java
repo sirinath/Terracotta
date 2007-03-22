@@ -145,12 +145,13 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
                                    ObjectInstanceMonitor instanceMonitor) {
 
+    final ServerTransactionID stxnID = txn.getServerTransactionID();
     final ChannelID channelID = txn.getChannelID();
     final TransactionID txnID = txn.getTransactionID();
     final List changes = txn.getChanges();
 
     // TODO:: Fix for passive
-    GlobalTransactionID gtxID = gtxm.createGlobalTransactionID(txn.getServerTransactionID());
+    GlobalTransactionID gtxID = gtxm.createGlobalTransactionID(stxnID);
 
     TransactionAccount ci;
     if (txn.isPassive()) {
@@ -190,6 +191,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     transactionRateCounter.increment();
     if (!channelID.isNull()) channelStats.notifyTransaction(channelID);
 
+    fireTransactionAppliedEvent(stxnID);
     return gtxID;
   }
 
@@ -253,8 +255,6 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
         acknowledge(waiter, txnID);
       }
 
-      // TODO :: Move this to apply() and not commit(). Also check out DEV-473
-      fireTransactionAppliedEvent(txnId);
     }
   }
 
