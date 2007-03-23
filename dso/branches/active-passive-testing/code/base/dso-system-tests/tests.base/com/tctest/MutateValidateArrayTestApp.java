@@ -24,7 +24,7 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
     super(appId, cfg, listenerProvider);
     this.appId = appId;
     myArrayTestRoot = new String[] { "hee", "hoo", "haa" };
-    iterationCount = 3;
+    iterationCount = 300;
     validationArray = new ArrayList();
   }
 

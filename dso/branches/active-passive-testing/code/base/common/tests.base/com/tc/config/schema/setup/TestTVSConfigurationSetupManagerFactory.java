@@ -303,7 +303,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
     newL2.setDsoPort(dsoPort);
     newL2.setJmxPort(jmxPort);
-    
+
     newL2.setData(BOGUS_FILENAME);
     newL2.setLogs(BOGUS_FILENAME);
   }

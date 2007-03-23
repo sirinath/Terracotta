@@ -47,6 +47,10 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
       System.out.println("***** appId[" + appId + "]: mutate stage complete");
     }
 
+    System.out.println("***** appId[" + appId + "]:  before sleep [" + System.currentTimeMillis() + "]ms");
+    Thread.sleep(10000);
+    System.out.println("***** appId[" + appId + "]:  after sleep [" + System.currentTimeMillis() + "]ms");
+    
     notifyValidationStart();
     System.out.println("***** appId[" + appId + "]: notified mutate-listener... waiting for validat stage to start");
     waitForValidationStart();

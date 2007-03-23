@@ -304,16 +304,8 @@ public class DistributedTestRunner implements ResultsListener {
 
     for (int i = 0; i < rv.length; i++) {
       L1TVSConfigurationSetupManager l1ConfigManager;
-//      if (isActivePassiveTest) {
-//        if (!(configFactory instanceof TestTVSConfigurationSetupManagerFactory)) { throw new AssertionError(
-//                                                                                                            "Config factory is not an instance of TestTVSConfigurationSetupManagerFactory as expected"); }
-//        l1ConfigManager = ((TestTVSConfigurationSetupManagerFactory) configFactory)
-//            .createL1TVSConfigurationSetupManager(serverManager.getDsoPorts());
-//      } else {
-        l1ConfigManager = this.configFactory.createL1TVSConfigurationSetupManager();
-//      }
+      l1ConfigManager = this.configFactory.createL1TVSConfigurationSetupManager();
       l1ConfigManager.setupLogging();
-
       PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(l1ConfigManager);
       rv[i] = new DSOApplicationBuilder(this.configHelper, this.applicationConfig, components);
     }
