@@ -1,5 +1,6 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.config.schema.setup;
 
@@ -138,6 +139,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
   public static final int                MODE_DISTRIBUTED_CONFIG = 1;
 
   private final TestConfigBeanSet        beanSet;
+  private final TestConfigBeanSet        l1_beanSet;
 
   private final TestConfigurationCreator l1ConfigurationCreator;
   private final TestConfigurationCreator l2ConfigurationCreator;
@@ -158,14 +160,15 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     super(illegalConfigurationChangeHandler);
 
     this.beanSet = new TestConfigBeanSet();
+    this.l1_beanSet = new TestConfigBeanSet();
 
     this.l2ConfigurationCreator = new TestConfigurationCreator(this.beanSet, true);
 
     this.mode = mode;
     if (mode == MODE_CENTRALIZED_CONFIG) {
-      this.l1ConfigurationCreator = new TestConfigurationCreator(this.beanSet, true);
+      this.l1ConfigurationCreator = new TestConfigurationCreator(this.l1_beanSet, true);
     } else if (mode == MODE_DISTRIBUTED_CONFIG) {
-      this.l1ConfigurationCreator = new TestConfigurationCreator(this.beanSet, false);
+      this.l1ConfigurationCreator = new TestConfigurationCreator(this.l1_beanSet, false);
     } else {
       throw Assert.failure("Unknown mode: " + mode);
     }
@@ -185,7 +188,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     L2TVSConfigurationSetupManager sampleL2Manager;
 
     try {
-      sampleL1Manager = this.createL1TVSConfigurationSetupManager(new TestConfigurationCreator(this.beanSet, true));
+      sampleL1Manager = this.createL1TVSConfigurationSetupManager(new TestConfigurationCreator(this.l1_beanSet, true));
       sampleL2Manager = this.createL2TVSConfigurationSetupManager(null);
     } catch (ConfigurationSetupException cse) {
       throw Assert.failure("Huh?", cse);
@@ -209,18 +212,18 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
   private static final String BOGUS_FILENAME = "nonexistent-directory-SHOULD-NEVER-EXIST/../";
 
   private void applyDefaultTestConfig() {
-//    // Use a license that lets us do anything.
-//    try {
-//      String path = getEverythingLicensePath();
-//      ((SettableConfigItem) systemConfig().licenseLocation()).setValue(path);
-//    } catch (IOException ioe) {
-//      throw Assert.failure("Unable to fetch data directory root to find license for tests.", ioe);
-//    }
-//
-//    ((SettableConfigItem) systemConfig().licenseType()).setValue(LicenseType.PRODUCTION);
-//
-//    // Make servers use dynamic ports, by default.
-//    ((SettableConfigItem) l2DSOConfig().listenPort()).setValue(0);
+    // // Use a license that lets us do anything.
+    // try {
+    // String path = getEverythingLicensePath();
+    // ((SettableConfigItem) systemConfig().licenseLocation()).setValue(path);
+    // } catch (IOException ioe) {
+    // throw Assert.failure("Unable to fetch data directory root to find license for tests.", ioe);
+    // }
+    //
+    // ((SettableConfigItem) systemConfig().licenseType()).setValue(LicenseType.PRODUCTION);
+    //
+    // // Make servers use dynamic ports, by default.
+    // ((SettableConfigItem) l2DSOConfig().listenPort()).setValue(0);
     ((SettableConfigItem) l2CommonConfig().jmxPort()).setValue(0);
 
     // We also set the data and log directories to strings that shouldn't be valid on any platform: you need to set
@@ -269,8 +272,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
   private Object proxify(Class theClass, XmlObject[] destObjects, Object realImplementation, String xpathPrefix) {
     return Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { theClass },
-                                  new TestConfigObjectInvocationHandler(theClass, destObjects, realImplementation,
-                                                                        xpathPrefix));
+        new TestConfigObjectInvocationHandler(theClass, destObjects, realImplementation, xpathPrefix));
   }
 
   private Object proxify(Class theClass, XmlObject destObject, Object realImplementation, String xpathPrefix) {
@@ -293,15 +295,15 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     return (NewL1DSOConfig) proxify(NewL1DSOConfig.class, this.beanSet.clientBean(), this.sampleL1DSO, "dso");
   }
 
-  public void addServerConfig(String name) {
-    Server newL2 = this.beanSet.serversBean().addNewServer();
+  public void addServerToL1Config(String name, int dsoPort, int jmxPort) {
+    Server newL2 = this.l1_beanSet.serversBean().addNewServer();
 
     newL2.setName(name);
     newL2.setHost("localhost");
 
-    newL2.setDsoPort(0);
-    newL2.setJmxPort(0);
-
+    newL2.setDsoPort(dsoPort);
+    newL2.setJmxPort(jmxPort);
+    
     newL2.setData(BOGUS_FILENAME);
     newL2.setLogs(BOGUS_FILENAME);
   }
@@ -358,11 +360,25 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
   }
 
   public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager() throws ConfigurationSetupException {
-    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator);
+    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator, null);
+  }
+
+  public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(int[] dsoPorts)
+      throws ConfigurationSetupException {
+    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator, dsoPorts);
   }
 
   public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(TestConfigurationCreator configCreator)
       throws ConfigurationSetupException {
+    return createL1TVSConfigurationSetupManager(configCreator, null);
+  }
+
+  public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(TestConfigurationCreator configCreator,
+                                                                             int[] dsoPorts)
+      throws ConfigurationSetupException {
+    if (mode == MODE_CENTRALIZED_CONFIG && dsoPorts != null) { throw new AssertionError(
+        "DSO ports should not be passed in when creating a centralized config"); }
+
     if (mode == MODE_CENTRALIZED_CONFIG) {
       StringBuffer l2sSpec = new StringBuffer();
 
@@ -382,16 +398,17 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
       System.setProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME, l2sSpec.toString());
     }
 
-    return new StandardL1TVSConfigurationSetupManager(configCreator, this.defaultValueProvider,
-                                                      this.xmlObjectComparator, this.illegalChangeHandler);
+    StandardL1TVSConfigurationSetupManager configSetupManager = new StandardL1TVSConfigurationSetupManager(
+        configCreator, this.defaultValueProvider, this.xmlObjectComparator, this.illegalChangeHandler, dsoPorts);
+
+    return configSetupManager;
   }
 
   public L2TVSConfigurationSetupManager createL2TVSConfigurationSetupManager(String l2Identifier)
       throws ConfigurationSetupException {
     String effectiveL2Identifier = l2Identifier == null ? this.defaultL2Identifier : l2Identifier;
     return new StandardL2TVSConfigurationSetupManager(this.l2ConfigurationCreator, effectiveL2Identifier,
-                                                      this.defaultValueProvider, this.xmlObjectComparator,
-                                                      this.illegalChangeHandler);
+        this.defaultValueProvider, this.xmlObjectComparator, this.illegalChangeHandler);
   }
 
 }

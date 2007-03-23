@@ -13,6 +13,8 @@ public interface Control {
 
   void notifyMutationComplete();
 
+  void notifyValidationStart();
+
   /**
    * Returns true if all participants completed in time.
    */
@@ -22,4 +24,9 @@ public interface Control {
    * Returns true if all participants completed in time.
    */
   boolean waitForMutationComplete(long timeout) throws InterruptedException;
+
+  /**
+   * Returns true if all participants completed in time.
+   */
+  boolean waitForValidationStart(long timeout) throws InterruptedException;
 }

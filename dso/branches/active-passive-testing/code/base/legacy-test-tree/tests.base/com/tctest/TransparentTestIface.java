@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -10,17 +11,16 @@ import com.tctest.runner.TransparentAppConfig;
 
 public interface TransparentTestIface {
 
-  public TransparentAppConfig getTransparentAppConfig();
+  TransparentAppConfig getTransparentAppConfig();
 
-  public void initializeTestRunner() throws Exception;
-  
+  void initializeTestRunner() throws Exception;
+
   void initializeTestRunner(boolean isMutateValidateTest) throws Exception;
 
-  public TVSConfigurationSetupManagerFactory getConfigFactory();
+  TVSConfigurationSetupManagerFactory getConfigFactory();
 
-  public DSOClientConfigHelper getConfigHelper();
+  DSOClientConfigHelper getConfigHelper();
 
-  public DistributedTestRunnerConfig getRunnerConfig();
+  DistributedTestRunnerConfig getRunnerConfig();
 
-  
 }

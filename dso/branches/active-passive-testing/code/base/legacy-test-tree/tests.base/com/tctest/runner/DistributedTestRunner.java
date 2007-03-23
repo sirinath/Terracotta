@@ -29,6 +29,7 @@ import com.tc.simulator.container.ContainerResult;
 import com.tc.simulator.container.ContainerStateFactory;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.listener.ResultsListener;
+import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tcsimulator.ControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
 import com.tcsimulator.listener.QueuePrinter;
@@ -71,8 +72,9 @@ public class DistributedTestRunner implements ResultsListener {
   private final Map                                 optionalAttributes;
 
   private final boolean                             isMutatorValidatorTest;
-
   private final int                                 validatorCount;
+  private final boolean                             isActivePassiveTest;
+  private final ActivePassiveServerManager          serverManager;
 
   private Container[]                               validatorContainers;
 
@@ -87,8 +89,8 @@ public class DistributedTestRunner implements ResultsListener {
   public DistributedTestRunner(DistributedTestRunnerConfig config, TVSConfigurationSetupManagerFactory configFactory,
                                DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
                                ApplicationConfig applicationConfig, int clientCount, int applicationInstanceCount,
-                               boolean startServer, boolean isMutatorValidatorTest, int validatorCount)
-      throws Exception {
+                               boolean startServer, boolean isMutatorValidatorTest, int validatorCount,
+                               boolean isActivePassiveTest, ActivePassiveServerManager serverManager) throws Exception {
     this.optionalAttributes = optionalAttributes;
     this.clientCount = clientCount;
     this.applicationInstanceCount = applicationInstanceCount;
@@ -98,6 +100,8 @@ public class DistributedTestRunner implements ResultsListener {
     this.configHelper = configHelper;
     this.isMutatorValidatorTest = isMutatorValidatorTest;
     this.validatorCount = validatorCount;
+    this.isActivePassiveTest = isActivePassiveTest;
+    this.serverManager = serverManager;
     this.globalIdGenerator = new TestGlobalIdGenerator();
     this.applicationClass = applicationClass;
     this.applicationConfig = applicationConfig;
@@ -130,10 +134,9 @@ public class DistributedTestRunner implements ResultsListener {
     boolean isMutator = false;
     validatorContainers = new Container[validatorCount];
     for (int i = 0; i < validatorContainers.length; i++) {
-      validatorContainers[i] = new Container(this.containerConfig, this.containerStateFactory, this.globalIdGenerator,
-                                             this.control, this.resultsListeners[i + this.clientCount],
-                                             this.applicationBuilders[i + this.clientCount], isMutatorValidatorTest,
-                                             isMutator);
+      validatorContainers[i] = new Container(containerConfig, containerStateFactory, globalIdGenerator, control,
+                                             resultsListeners[i + clientCount], applicationBuilders[i + clientCount],
+                                             isMutatorValidatorTest, isMutator);
     }
   }
 
@@ -162,8 +165,8 @@ public class DistributedTestRunner implements ResultsListener {
         new Thread(containers[i]).start();
       }
 
+      // wait for all mutators to finish before starting the validators
       if (isMutatorValidatorTest) {
-
         final boolean mutationComplete = this.control.waitForMutationComplete(config.executionTimeout());
 
         if (!mutationComplete) {
@@ -172,6 +175,15 @@ public class DistributedTestRunner implements ResultsListener {
 
         for (int i = 0; i < validatorContainers.length; i++) {
           new Thread(validatorContainers[i]).start();
+        }
+
+        if (isActivePassiveTest && serverManager.crashActiveServerAfterMutate()) {
+          // TODO: remove this debugginh message
+          Thread.sleep(3000);
+          System.err.println("***** DTR: Crashing active server");
+          serverManager.crashActive();
+          System.err.println("***** DTR: Notifying the test-wide control");
+          control.notifyValidationStart();
         }
       }
 
@@ -270,7 +282,13 @@ public class DistributedTestRunner implements ResultsListener {
   }
 
   private Control newContainerControl() {
-    return new ControlImpl(this.clientCount, validatorCount);
+    boolean crashActiveServerAfterMutate;
+    if (isActivePassiveTest) {
+      crashActiveServerAfterMutate = serverManager.crashActiveServerAfterMutate();
+    } else {
+      crashActiveServerAfterMutate = false;
+    }
+    return new ControlImpl(this.clientCount, validatorCount, crashActiveServerAfterMutate);
   }
 
   private ResultsListener[] newResultsListeners(int count) {
@@ -285,8 +303,17 @@ public class DistributedTestRunner implements ResultsListener {
     ApplicationBuilder[] rv = new ApplicationBuilder[count];
 
     for (int i = 0; i < rv.length; i++) {
-      L1TVSConfigurationSetupManager l1ConfigManager = this.configFactory.createL1TVSConfigurationSetupManager();
+      L1TVSConfigurationSetupManager l1ConfigManager;
+//      if (isActivePassiveTest) {
+//        if (!(configFactory instanceof TestTVSConfigurationSetupManagerFactory)) { throw new AssertionError(
+//                                                                                                            "Config factory is not an instance of TestTVSConfigurationSetupManagerFactory as expected"); }
+//        l1ConfigManager = ((TestTVSConfigurationSetupManagerFactory) configFactory)
+//            .createL1TVSConfigurationSetupManager(serverManager.getDsoPorts());
+//      } else {
+        l1ConfigManager = this.configFactory.createL1TVSConfigurationSetupManager();
+//      }
       l1ConfigManager.setupLogging();
+
       PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(l1ConfigManager);
       rv[i] = new DSOApplicationBuilder(this.configHelper, this.applicationConfig, components);
     }
@@ -326,14 +353,4 @@ public class DistributedTestRunner implements ResultsListener {
     this.server.dump();
   }
 
-  /*********************************************************************************************************************
-   * MutationCompletionListener interface
-   */
-  public void notifyMutationComplete() {
-    control.notifyMutationComplete();
-  }
-
-  public void waitForMutationComplete() throws Exception {
-    control.waitForMutationComplete(containerConfig.getApplicationExecutionTimeout());
-  }
 }

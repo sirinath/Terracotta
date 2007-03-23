@@ -19,7 +19,7 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
   protected final int            mutatorCount;
   private final boolean          isMutator;
   private final ListenerProvider listenerProvider;
-  private final String appId;
+  private final String           appId;
 
   public AbstractMutateValidateTransparentApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -46,16 +46,29 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
       waitForMutationComplete();
       System.out.println("***** appId[" + appId + "]: mutate stage complete");
     }
+
+    notifyValidationStart();
+    System.out.println("***** appId[" + appId + "]: notified mutate-listener... waiting for validat stage to start");
+    waitForValidationStart();
+
     System.out.println("***** appId[" + appId + "]: starting validate");
     validate();
     System.out.println("***** appId[" + appId + "]: finished validate");
   }
 
-  protected void notifyMutationComplete() {
+  private final void waitForValidationStart() throws Exception {
+    listenerProvider.getMutationCompletionListener().waitForValidationStartTestWide();
+  }
+
+  private final void notifyMutationComplete() {
     listenerProvider.getMutationCompletionListener().notifyMutationComplete();
   }
 
-  protected void waitForMutationComplete() throws Exception {
+  private final void notifyValidationStart() {
+    listenerProvider.getMutationCompletionListener().notifyValidationStart();
+  }
+
+  private final void waitForMutationComplete() throws Exception {
     listenerProvider.getMutationCompletionListener().waitForMutationCompleteTestWide();
   }
 

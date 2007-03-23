@@ -6,6 +6,7 @@ package com.tctest;
 
 import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
+import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.objectserver.control.ExtraProcessServerControl;
@@ -13,6 +14,8 @@ import com.tc.objectserver.control.ServerControl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
 import com.tc.test.TestConfigObject;
+import com.tc.test.activepassive.ActivePassiveServerConfigCreator;
+import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.restart.RestartTestEnvironment;
 import com.tc.test.restart.RestartTestHelper;
 import com.tc.test.restart.ServerCrasher;
@@ -33,21 +36,25 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int                     DEFAULT_CLIENT_COUNT    = 2;
-  public static final int                     DEFAULT_INTENSITY       = 10;
-  public static final int                     DEFAULT_VALIDATOR_COUNT = 0;
+  public static final int                     DEFAULT_CLIENT_COUNT         = 2;
+  public static final int                     DEFAULT_INTENSITY            = 10;
+  public static final int                     DEFAULT_VALIDATOR_COUNT      = 0;
 
   private TVSConfigurationSetupManagerFactory configFactory;
   private DSOClientConfigHelper               configHelper;
   protected DistributedTestRunner             runner;
-  private DistributedTestRunnerConfig         runnerConfig            = new DistributedTestRunnerConfig();
+  private DistributedTestRunnerConfig         runnerConfig                 = new DistributedTestRunnerConfig();
   private TransparentAppConfig                transparentAppConfig;
   private ApplicationConfigBuilder            possibleApplicationConfigBuilder;
 
   private String                              mode;
   private ServerControl                       serverControl;
-  private boolean                             controlledCrashMode     = false;
+  private boolean                             controlledCrashMode          = false;
   private ServerCrasher                       crasher;
+
+  // for active-passive tests
+  private ActivePassiveServerManager          serverManager;
+  private boolean                             crashActiveServerAfterMutate = false;
 
   protected void setUp() throws Exception {
     setUp(configFactory(), configHelper());
@@ -60,6 +67,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                                                 RestartTestEnvironment.PROD_MODE));
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
       serverControl = helper.getServerControl();
+    } else if (isActivePassive()) {
+      setUpActivePassiveServers();
     } else {
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(0);
     }
@@ -71,6 +80,19 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
           .getServerCrasherConfig().isCrashy());
       crasher.startAutocrash();
     }
+  }
+
+  private final void setUpActivePassiveServers() throws Exception {
+    controlledCrashMode = true;
+    serverManager = new ActivePassiveServerManager(mode()
+        .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), new PortChooser(),
+                                                   ActivePassiveServerConfigCreator.DEV_MODE, TestConfigObject
+                                                       .getInstance(), runnerConfig.startTimeout());
+    crashActiveServerAfterMutate = serverManager.crashActiveServerAfterMutate();
+
+    if (!(configFactory instanceof TestTVSConfigurationSetupManagerFactory)) { throw new AssertionError(
+                                                                                                        "configFactory is not an instance of TestTVSConfigurationSetupManagerFactory as expected"); }
+    serverManager.addServersToConfig((TestTVSConfigurationSetupManagerFactory) configFactory);
   }
 
   protected final void setUpControlledServer(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
@@ -85,7 +107,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.configFactory = factory;
     this.configHelper = helper;
     transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
-                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl, DEFAULT_VALIDATOR_COUNT);
+                                                    DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl,
+                                                    DEFAULT_VALIDATOR_COUNT);
   }
 
   protected synchronized final String mode() {
@@ -107,6 +130,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private boolean isCrashy() {
     return mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART)
            || mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH);
+  }
+
+  private boolean isActivePassive() {
+    return mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE);
   }
 
   public DSOClientConfigHelper getConfigHelper() {
@@ -159,18 +186,19 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
-    this.runner = new DistributedTestRunner(this.runnerConfig, configFactory, this.configHelper, getApplicationClass(),
+    this.runner = new DistributedTestRunner(runnerConfig, configFactory, configHelper, getApplicationClass(),
                                             getOptionalAttributes(), getApplicationConfigBuilder()
-                                                .newApplicationConfig(), this.transparentAppConfig.getClientCount(),
-                                            this.transparentAppConfig.getApplicationInstancePerClientCount(),
-                                            getStartServer(), isMutateValidateTest, this.transparentAppConfig
-                                                .getValidatorCount());
+                                                .newApplicationConfig(), transparentAppConfig.getClientCount(),
+                                            transparentAppConfig.getApplicationInstancePerClientCount(),
+                                            getStartServer(), isMutateValidateTest, transparentAppConfig
+                                                .getValidatorCount(), isActivePassive(), serverManager);
   }
 
   protected boolean canRun() {
     return (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL) && canRunNormal())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH) && canRunCrash())
-           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART) && canRunRestart());
+           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART) && canRunRestart())
+           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive());
   }
 
   protected boolean canRunNormal() {
@@ -185,9 +213,17 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return false;
   }
 
+  protected boolean canRunActivePassive() {
+    return false;
+  }
+
   public void test() throws Exception {
     if (canRun()) {
-      if (controlledCrashMode) serverControl.start(30 * 1000);
+      if (controlledCrashMode && !isActivePassive()) {
+        serverControl.start(30 * 1000);
+      } else if (controlledCrashMode) {
+        serverManager.startServers();
+      }
       this.runner.run();
 
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {

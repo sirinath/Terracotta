@@ -7,6 +7,10 @@ package com.tc.simulator.listener;
 public interface MutationCompletionListener {
 
   void notifyMutationComplete();
+  
+  void notifyValidationStart();
 
   void waitForMutationCompleteTestWide() throws Exception;
+
+  void waitForValidationStartTestWide() throws Exception;
 }

@@ -39,6 +39,14 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                 XmlObjectComparator xmlObjectComparator,
                                                 IllegalConfigurationChangeHandler illegalConfigChangeHandler)
       throws ConfigurationSetupException {
+    this(configurationCreator, defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler, null);
+  }
+
+  public StandardL1TVSConfigurationSetupManager(ConfigurationCreator configurationCreator,
+                                                DefaultValueProvider defaultValueProvider,
+                                                XmlObjectComparator xmlObjectComparator,
+                                                IllegalConfigurationChangeHandler illegalConfigChangeHandler,
+                                                int[] dsoPorts) throws ConfigurationSetupException {
     super(defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler);
 
     Assert.assertNotNull(configurationCreator);
@@ -48,16 +56,14 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
     loadedFromTrustedSource = this.configurationCreator.loadedFromTrustedSource();
 
     commonL1Config = new NewCommonL1ConfigObject(createContext(clientBeanRepository(), null));
-    l2ConfigForL1 = new L2ConfigForL1Object(createContext(serversBeanRepository(), null),
-                                            createContext(systemBeanRepository(), null));
+    l2ConfigForL1 = new L2ConfigForL1Object(createContext(serversBeanRepository(), null), createContext(
+        systemBeanRepository(), null), dsoPorts);
     dsoL1Config = new NewL1DSOConfigObject(createContext(new ChildBeanRepository(clientBeanRepository(),
-                                                                                 DsoClientData.class,
-                                                                                 new ChildBeanFetcher() {
-                                                                                   public XmlObject getChild(
-                                                                                                             XmlObject parent) {
-                                                                                     return ((Client) parent).getDso();
-                                                                                   }
-                                                                                 }), null));
+        DsoClientData.class, new ChildBeanFetcher() {
+          public XmlObject getChild(XmlObject parent) {
+            return ((Client) parent).getDso();
+          }
+        }), null));
 
   }
 

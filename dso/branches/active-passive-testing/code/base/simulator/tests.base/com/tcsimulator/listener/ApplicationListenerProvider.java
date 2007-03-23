@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tcsimulator.listener;
 
@@ -13,15 +14,16 @@ import com.tc.simulator.listener.StatsListenerFactory;
 import java.util.Properties;
 
 public final class ApplicationListenerProvider implements ListenerProvider {
-  private final OutputListener       outputListener;
-  private final ResultsListener      resultsListener;
-  private final StatsListenerFactory statsListenerFactory;
+  private final OutputListener             outputListener;
+  private final ResultsListener            resultsListener;
+  private final StatsListenerFactory       statsListenerFactory;
   private final MutationCompletionListener mutationCompletionListener;
 
-  public ApplicationListenerProvider(OutputListener ol, ResultsListener rl, MutationCompletionListener mcl, StatsListenerFactory statsListenerFactory) {
-    this.outputListener = ol;
-    this.resultsListener = rl;
-    this.mutationCompletionListener = mcl;
+  public ApplicationListenerProvider(OutputListener ol, ResultsListener rl, MutationCompletionListener mcl,
+                                     StatsListenerFactory statsListenerFactory) {
+    outputListener = ol;
+    resultsListener = rl;
+    mutationCompletionListener = mcl;
     this.statsListenerFactory = statsListenerFactory;
   }
 

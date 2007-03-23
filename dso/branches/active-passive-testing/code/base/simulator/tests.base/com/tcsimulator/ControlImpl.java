@@ -22,43 +22,54 @@ public class ControlImpl implements Control, MutationCompletionListener {
   private final int           mutatorCount;
   private final int           completeParties;
   private final CyclicBarrier startBarrier;
+  private final CountDown     validationStartCount;
   private final CountDown     countdown;
   private final int           validatorCount;
-  private CountDown           mutationCompleteCount;
   private final Control       testWideControl;
+  private final boolean       crashActiveServerAfterMutate;
+
+  private CountDown           mutationCompleteCount;
   private long                executionTimeout;
 
   public ControlImpl(int mutatorCount) {
-    this(mutatorCount, 0);
+    this(mutatorCount, 0, false);
   }
 
   // used to create container-wide control
   public ControlImpl(int mutatorCount, Control testWideControl) {
-    this(mutatorCount, 0, testWideControl);
+    this(mutatorCount, 0, testWideControl, false);
   }
 
   // used to create test-wide control
-  public ControlImpl(int mutatorCount, int validatorCount) {
-    this(mutatorCount, validatorCount, null);
+  public ControlImpl(int mutatorCount, int validatorCount, boolean crashActiveServerAfterMutate) {
+    this(mutatorCount, validatorCount, null, crashActiveServerAfterMutate);
   }
 
-  public ControlImpl(int mutatorCount, int validatorCount, Control testWideControl) {
+  public ControlImpl(int mutatorCount, int validatorCount, Control testWideControl, boolean crashActiveServerAfterMutate) {
     if (mutatorCount < 0 || validatorCount < 0) { throw new AssertionError(
                                                                            "MutatorCount and validatorCount must be non-negative numbers!  mutatorCount=["
                                                                                + mutatorCount + "] validatorCount=["
                                                                                + validatorCount + "]"); }
 
-    this.executionTimeout = -1;
+    executionTimeout = -1;
     this.testWideControl = testWideControl;
+    this.crashActiveServerAfterMutate = crashActiveServerAfterMutate;
     this.mutatorCount = mutatorCount;
     this.validatorCount = validatorCount;
-    this.completeParties = mutatorCount + validatorCount;
+    completeParties = mutatorCount + validatorCount;
     // TODO: remove
     System.err.println("####### completeParties=[" + completeParties + "]");
 
-    startBarrier = new CyclicBarrier(mutatorCount);
-    mutationCompleteCount = new CountDown(mutatorCount);
-    countdown = new CountDown(this.completeParties);
+    startBarrier = new CyclicBarrier(this.mutatorCount);
+    mutationCompleteCount = new CountDown(this.mutatorCount);
+    countdown = new CountDown(completeParties);
+
+    // "1" indicates the server
+    if (this.crashActiveServerAfterMutate) {
+      validationStartCount = new CountDown(completeParties + 1);
+    } else {
+      validationStartCount = new CountDown(completeParties);
+    }
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -89,7 +100,8 @@ public class ControlImpl implements Control, MutationCompletionListener {
   public String toString() {
     return getClass().getName() + "[ mutatorCount=" + mutatorCount + ", completeParties=" + completeParties
            + ", startBarrier=" + startBarrier + ", countdown=" + countdown + ", mutationCompleteCount="
-           + mutationCompleteCount + ", validatorCount=" + validatorCount + " ]";
+           + mutationCompleteCount + ", validatorCount=" + validatorCount + " ]" + ", crashActiveServerAfterMutate=["
+           + crashActiveServerAfterMutate + "]";
   }
 
   public void waitForStart(long timeout) throws InterruptedException, TCBrokenBarrierException, TCTimeoutException {
@@ -108,6 +120,14 @@ public class ControlImpl implements Control, MutationCompletionListener {
 
   public void notifyMutationComplete() {
     mutationCompleteCount.release();
+  }
+
+  public void notifyValidationStart() {
+    // TODO: remove this debugging comments
+    System.err.println("********  validation.release() called:  init=[" + validationStartCount.initialCount()
+                       + "] before=[" + validationStartCount.currentCount() + "]");
+    validationStartCount.release();
+    System.err.println("******* validation.release() called:  after=[" + validationStartCount.currentCount() + "]");
   }
 
   /*
@@ -129,6 +149,25 @@ public class ControlImpl implements Control, MutationCompletionListener {
     }
   }
 
+  public boolean waitForValidationStart(long timeout) throws InterruptedException {
+    // TODO: remove debugging comments
+    System.err.println("*******  waitForValidationStart:  validationStartCount=[" + validationStartCount.currentCount()
+                       + "]");
+    if (timeout < 0) {
+      while (true) {
+        synchronized (this) {
+          wait();
+        }
+      }
+    }
+    try {
+      boolean rv = validationStartCount.attempt(timeout);
+      return rv;
+    } catch (InterruptedException e) {
+      throw e;
+    }
+  }
+
   /*
    * MutationCompletionListener interface method -- called by applications
    */
@@ -138,14 +177,28 @@ public class ControlImpl implements Control, MutationCompletionListener {
                                                               "Application should be calling this on container-wide control, not test-wide control."); }
       checkExecutionTimeout(executionTimeout);
       boolean rv = testWideControl.waitForMutationComplete(executionTimeout);
-      if (!rv) { throw new RuntimeException("Wait on MutationCompletionCount did not pass:  executionTimeout=[" + executionTimeout + "] "); }
+      if (!rv) { throw new RuntimeException("Wait on MutationCompletionCount did not pass:  executionTimeout=["
+                                            + executionTimeout + "] "); }
     } catch (InterruptedException e) {
       throw e;
     }
   }
 
-  // TODO: remove debug statement
+  public void waitForValidationStartTestWide() throws Exception {
+    try {
+      if (testWideControl == null) { throw new AssertionError(
+                                                              "Application should be calling this on container-wide control, not test-wide control."); }
+      checkExecutionTimeout(executionTimeout);
+      boolean rv = testWideControl.waitForValidationStart(executionTimeout);
+      if (!rv) { throw new RuntimeException("Wait on ValidationStartCount did not pass:  executionTimeout=["
+                                            + executionTimeout + "] "); }
+    } catch (InterruptedException e) {
+      throw e;
+    }
+  }
+
   public void notifyComplete() {
+    // TODO: remove debug statement
     System.err.println("*******  countdown called:  control=[" + toString() + "]");
     this.countdown.release();
   }
@@ -175,4 +228,5 @@ public class ControlImpl implements Control, MutationCompletionListener {
     if (timeout < 0) { throw new AssertionError("Execution timeout should be a non-negative number:  timeout=["
                                                 + timeout + "]"); }
   }
+
 }

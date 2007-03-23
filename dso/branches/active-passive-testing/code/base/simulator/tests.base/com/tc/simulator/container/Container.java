@@ -61,7 +61,7 @@ public final class Container implements Runnable {
 
     applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.control);
     applicationControl.setExecutionTimeout(this.config.getApplicationExecutionTimeout());
-    
+
     mutationCompletionListener = applicationControl;
 
     this.containerState = containerStateFactory.newContainerState(this.globalId);
@@ -73,36 +73,9 @@ public final class Container implements Runnable {
    * Make applications go.
    */
   public synchronized void run() {
+    // TODO: fix this message
     logger.info("*******  isMutateValidateTest=[" + isMutateValidateTest + "]");
-    runMutateValidateTest();
-  }
 
-//  private synchronized void runRegularTest() {
-//    Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
-//    
-//    SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
-//    try {
-//      if (!validateConfig()) return;
-//      if (!waitForStart()) return;
-//      ContainerExecutionInstance containerExecution = new ContainerExecutionInstance();
-//      
-//      startInstances(containerExecution);
-//      
-//      if (!waitForAllComplete()) return;
-//      notifyResult(containerExecution);
-//    } catch (Throwable t) {
-//      notifyError("Unexpected error executing application.", t);
-//    } finally {
-//      isRunning.set(false);
-//      this.control.notifyComplete();
-//      try {
-//        this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
-//      } catch (InterruptedException e) {
-//        e.printStackTrace();
-//      }
-//    }
-//  }
-  private synchronized void runMutateValidateTest() {
     Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
 
     SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
@@ -123,10 +96,14 @@ public final class Container implements Runnable {
 
       startInstances(containerExecution);
 
-      if (isMutateValidateTest && isMutator) {
-        // wait for all app instances have completed mutation
-        if (!waitForMutationComplete()) return;
-        control.notifyMutationComplete();
+      if (isMutateValidateTest) {
+        if (isMutator) {
+          // wait for all app instances to complete mutation
+          if (!waitForMutationComplete()) return;
+          control.notifyMutationComplete();
+        }
+        if (!waitForValidationStart()) return;
+        control.notifyValidationStart();
       }
 
       if (!waitForAllComplete()) return;
@@ -262,6 +239,19 @@ public final class Container implements Runnable {
       return false;
     }
     println("Application mutation completed.");
+    return true;
+  }
+
+  private boolean waitForValidationStart() throws InterruptedException {
+    println("Waiting for all applications/participants to be ready to begin validation.  Timeout: "
+            + config.getApplicationExecutionTimeout());
+    if (!applicationControl.waitForValidationStart(config.getApplicationExecutionTimeout())) {
+      resultsListener.notifyExecutionTimeout();
+      notifyFailure();
+      println("Application execution timed out.");
+      return false;
+    }
+    println("Application ready to start validation.");
     return true;
   }
 
