@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode.hook;
 
@@ -12,6 +13,7 @@ import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
+import com.tc.util.runtime.Vm;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +32,7 @@ public class ClassLoaderPreProcessorImpl {
   private final static String DEFINECLASS1_METHOD_NAME = "defineClass1";
   private final static String DEFINECLASS2_METHOD_NAME = "defineClass2";
 
-  private static final String DESC_CORE                = "Ljava/lang/String;[BIILjava/security/ProtectionDomain;";
+  private static final String DESC_CORE                = "Ljava/lang/String;[BIILjava/lang/Object;";
   private static final String DESC_PREFIX              = "(" + DESC_CORE;
   private static final String DESC_HELPER              = "(Ljava/lang/ClassLoader;" + DESC_CORE + ")[B";
 
@@ -53,7 +55,7 @@ public class ClassLoaderPreProcessorImpl {
   public byte[] preProcess(byte[] classLoaderBytecode) {
     try {
       ClassWriter cw = new ClassWriter(true);
-      ClassLoaderVisitor cv = new ClassLoaderVisitor(cw);
+      ClassVisitor cv = Vm.isIBM() ? (ClassVisitor) new IBMClassLoaderAdapter(cw) : new ClassLoaderVisitor(cw);
       ClassReader cr = new ClassReader(classLoaderBytecode);
       cr.accept(cv, false);
       return cw.toByteArray();
@@ -61,6 +63,62 @@ public class ClassLoaderPreProcessorImpl {
       System.err.println("failed to patch ClassLoader:");
       e.printStackTrace();
       return classLoaderBytecode;
+    }
+  }
+
+  static class IBMClassLoaderAdapter extends ClassAdapter implements Opcodes {
+
+    public IBMClassLoaderAdapter(ClassVisitor cv) {
+      super(cv);
+    }
+
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+      return new DefineClassCallAdapter(super.visitMethod(access, name, desc, signature, exceptions), access, name,
+                                        desc);
+    }
+
+    public void visitEnd() {
+      MethodVisitor mv = super.visitMethod(ACC_PRIVATE | ACC_SYNTHETIC, "__tc_defineClassImpl",
+                                           "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;", null, null);
+      mv.visitCode();
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitVarInsn(ALOAD, 1);
+      mv.visitVarInsn(ALOAD, 2);
+      mv.visitVarInsn(ILOAD, 3);
+      mv.visitVarInsn(ILOAD, 4);
+      mv.visitVarInsn(ALOAD, 5);
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Pre",
+                         DESC_HELPER);
+      mv.visitVarInsn(ASTORE, 2);
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitVarInsn(ALOAD, 1);
+      mv.visitVarInsn(ALOAD, 2);
+      mv.visitVarInsn(ILOAD, 3);
+      mv.visitVarInsn(ILOAD, 4);
+      mv.visitVarInsn(ALOAD, 5);
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassLoader", "defineClassImpl",
+                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;");
+      mv.visitInsn(ARETURN);
+      mv.visitMaxs(0, 0);
+      mv.visitEnd();
+
+      super.visitEnd();
+    }
+
+    private static class DefineClassCallAdapter extends MethodAdapter implements Opcodes {
+
+      public DefineClassCallAdapter(MethodVisitor visitor, int access, String name, String desc) {
+        super(visitor);
+      }
+
+      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+
+        if ("java/lang/ClassLoader".equals(owner) && "defineClassImpl".equals(name)) {
+          name = "__tc_defineClassImpl";
+        }
+
+        super.visitMethodInsn(opcode, owner, name, desc);
+      }
     }
   }
 
