@@ -53,9 +53,13 @@ public class Vm {
   public static boolean isJDK16() {
     return VERSION.isJDK16();
   }
-  
+
   public static boolean isJDK15Compliant() {
     return VERSION.isJDK15() || VERSION.isJDK16();
+  }
+
+  public static boolean isIBM() {
+    return VERSION.isIBM();
   }
 
   public static boolean isJRockit() {
@@ -75,16 +79,20 @@ public class Vm {
     private final int     major;
     private final int     minor;
     private final String  patch;
+    private final boolean isIBM;
     private final boolean isJRockit;
 
     public Version(final Properties properties) throws UnknownJvmVersionException {
       this(properties.getProperty("java.version", "<error: java.version not specified in properties>"), properties
           .getProperty("jrockit.version") != null
-          || properties.getProperty("java.vm.name", "").toLowerCase().indexOf("jrockit") >= 0);
+          || properties.getProperty("java.vm.name", "").toLowerCase().indexOf("jrockit") >= 0, properties.getProperty(
+          "java.vendor", "").equals("IBM Corporation"));
     }
 
-    public Version(final String vendorVersion, final boolean isJRockit) throws UnknownJvmVersionException {
+    public Version(final String vendorVersion, final boolean isJRockit, final boolean isIBM)
+        throws UnknownJvmVersionException {
       this.vendorVersion = vendorVersion;
+      this.isIBM = isIBM;
       this.isJRockit = isJRockit;
       final Matcher versionMatcher = JVM_VERSION_PATTERN.matcher(vendorVersion);
       if (versionMatcher.matches()) {
@@ -126,6 +134,10 @@ public class Vm {
 
     public boolean isJDK16() {
       return mega == 1 && major == 6;
+    }
+
+    public boolean isIBM() {
+      return isIBM;
     }
 
     public boolean isJRockit() {
