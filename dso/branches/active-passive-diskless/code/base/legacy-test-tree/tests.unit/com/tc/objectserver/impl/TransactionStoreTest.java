@@ -19,11 +19,13 @@ import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.sequence.Sequence;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TransactionStoreTest extends TCTestCase {
@@ -249,6 +251,46 @@ public class TransactionStoreTest extends TCTestCase {
     assertSame(ptx, args[0]);
     assertSame(gtx2, args[1]);
   }
+  
+  public void testSameGIDAssignedOnRestart() throws Exception {
+    int initialMin = 200;
+    int initialMax = 300;
+    int laterMax = 400;
+    persistor = new TestTransactionPersistor();
+    store = new TransactionStoreImpl(persistor, persistor);
+    Map sid2Gid = new HashMap();
+    for (int i = initialMin; i < initialMax; i++) {
+      ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
+      GlobalTransactionDescriptor desc = store.createTransactionDescriptor(stxid);
+      store.commitTransactionDescriptor(null, desc);
+      assertEquals(stxid, desc.getServerTransactionID());
+      sid2Gid.put(stxid, desc);
+    }
+
+    //RESTART
+    store = new TransactionStoreImpl(persistor, persistor);
+    
+    //test if we get the same gid
+    GlobalTransactionID maxID = GlobalTransactionID.NULL_ID;
+    for (int i = initialMin; i < initialMax; i++) {
+      ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
+      GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) sid2Gid.get(stxid);
+      assertEquals(desc, store.getTransactionDescriptor(stxid));
+      assertEquals(desc.getGlobalTransactionID(), store.getGlobalTransactionID(stxid));
+      if(desc.getGlobalTransactionID().toLong() > maxID.toLong()) {
+        maxID = desc.getGlobalTransactionID();
+      }
+    }
+    
+    // create more
+    for (int i = initialMax; i < laterMax; i++) {
+      ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
+      GlobalTransactionDescriptor desc;
+      store.commitTransactionDescriptor(null, desc = store.createTransactionDescriptor(stxid));
+      assertTrue(maxID.toLong() < desc.getGlobalTransactionID().toLong());
+    }
+  }
+  
 
   private static final class TestTransactionPersistor implements TransactionPersistor, Sequence {
 

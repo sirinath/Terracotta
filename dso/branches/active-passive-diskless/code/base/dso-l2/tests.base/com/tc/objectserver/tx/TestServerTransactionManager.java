@@ -8,7 +8,6 @@ import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.tx.TransactionID;
-import com.tc.object.tx.TxnBatchID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
@@ -16,13 +15,11 @@ import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class TestServerTransactionManager implements ServerTransactionManager {
 
-  public Map                          txns      = new HashMap();
   public final NoExceptionLinkedQueue skipCalls = new NoExceptionLinkedQueue();
 
   public TestServerTransactionManager() {
@@ -49,37 +46,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
-  public void defineBatch(ChannelID channelID, TxnBatchID batchID, int count) {
-    throw new ImplementMe();
-  }
-
-  public boolean startProgress(ChannelID channelID, TransactionID transactionID) {
-    throw new ImplementMe();
-  }
-
-  public boolean needsApply(ChannelID channelID, TransactionID transactionID) {
-    throw new ImplementMe();
-  }
-
-  public void completeTransactions(Collection collection) {
-    throw new ImplementMe();
-
-  }
-
   public void dump() {
     throw new ImplementMe();
-  }
-
-  public void apply(GlobalTransactionID gtxID, ServerTransaction txn, Map objects, BackReferences includeIDs) {
-    this.txns.put(txn, objects);
-  }
-
-  public void release(PersistenceTransaction ptx, Set objects, Map newRoots) {
-    throw new ImplementMe();
-  }
-
-  public void committed(Set txnset) {
-    // NOP
   }
 
   public void broadcasted(ChannelID waiter, TransactionID requestID) {
@@ -90,11 +58,11 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     skipCalls.put(txn);
   }
 
-  public void setResentTransactionIDs(ChannelID channelID, Collection transactionIDs) {
+  public void addTransactionListener(ServerTransactionListener listener) {
     // NOP
   }
-
-  public void addTransactionListener(ServerTransactionListener listener) {
+  
+  public void removeTransactionListener(ServerTransactionListener listener) {
     // NOP
   }
 

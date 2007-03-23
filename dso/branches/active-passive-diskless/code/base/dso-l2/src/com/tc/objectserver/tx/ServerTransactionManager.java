@@ -85,9 +85,9 @@ public interface ServerTransactionManager {
    */
   public void skipApplyAndCommit(ServerTransaction txn);
 
-  public void setResentTransactionIDs(ChannelID channelID, Collection transactionIDs);
-  
   public void addTransactionListener(ServerTransactionListener listener);
+
+  public void removeTransactionListener(ServerTransactionListener listener);
 
   public void incomingTransactions(ChannelID channelID, Set serverTxnIDs, boolean relayed);
 

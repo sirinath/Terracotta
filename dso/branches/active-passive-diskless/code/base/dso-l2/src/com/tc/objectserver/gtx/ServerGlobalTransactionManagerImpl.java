@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.gtx;
 
@@ -13,16 +14,13 @@ import com.tc.util.Assert;
 import com.tc.util.SequenceValidator;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransactionManager {
 
   private final TransactionStore               transactionStore;
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final SequenceValidator              sequenceValidator;
-  private final Set                            resentServerTransactionIDs = new HashSet();
 
   public ServerGlobalTransactionManagerImpl(SequenceValidator sequenceValidator, TransactionStore transactionStore,
                                             PersistenceTransactionProvider ptxp) {
@@ -45,7 +43,7 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
   }
 
   public void completeTransactions(PersistenceTransaction tx, Collection collection) {
-    if(collection.isEmpty()) return;
+    if (collection.isEmpty()) return;
     transactionStore.removeAllByServerTransactionID(tx, collection);
   }
 
@@ -62,12 +60,8 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     }
   }
 
-  public synchronized GlobalTransactionID getLowGlobalTransactionIDWatermark() {
-    if (resentServerTransactionIDs.isEmpty()) {
-      return transactionStore.getLeastGlobalTransactionID();
-    } else {
-      return GlobalTransactionID.NULL_ID;
-    }
+  public GlobalTransactionID getLowGlobalTransactionIDWatermark() {
+    return transactionStore.getLeastGlobalTransactionID();
   }
 
   public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
@@ -79,29 +73,4 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     return gdesc.getGlobalTransactionID();
   }
 
-  public synchronized void addResentServerTransactionIDs(Collection stxIDs) {
-    resentServerTransactionIDs.addAll(stxIDs);
-  }
-
-  // TODO :: can be optimized to unregister once the set becomes size 0.
-  public synchronized void transactionCompleted(ServerTransactionID stxID) {
-    resentServerTransactionIDs.remove(stxID);
-  }
-
-  public void clearAllTransactionsFor(ChannelID client) {
-    for (Iterator iter = resentServerTransactionIDs.iterator(); iter.hasNext();) {
-      ServerTransactionID stxID = (ServerTransactionID) iter.next();
-      if (stxID.getChannelID().equals(client)) {
-        iter.remove();
-      }
-    }
-  }
-
-  public void transactionApplied(ServerTransactionID stxID) {
-    return;
-  }
-
-  public void incomingTransactions(ChannelID cid, Set serverTxnIDs) {
-    return;
-  }
 }

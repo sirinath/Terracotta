@@ -566,7 +566,6 @@ public class DistributedObjectServer extends SEDA {
                                                                                            sequenceValidator,
                                                                                            clientStateManager,
                                                                                            lockManager,
-                                                                                           transactionManager,
                                                                                            stageManager
                                                                                                .getStage(
                                                                                                          ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)

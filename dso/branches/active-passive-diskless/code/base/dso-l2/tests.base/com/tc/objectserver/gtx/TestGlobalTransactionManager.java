@@ -3,7 +3,6 @@
  */
 package com.tc.objectserver.gtx;
 
-import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.tx.ServerTransactionID;
@@ -56,26 +55,6 @@ public final class TestGlobalTransactionManager implements ServerGlobalTransacti
     while (!completeTransactionsContexts.isEmpty()) {
       completeTransactionsContexts.take();
     }
-  }
-
-  public void addResentServerTransactionIDs(Collection stxIDs) {
-    throw new ImplementMe();
-  }
-
-  public void transactionCompleted(ServerTransactionID stxID) {
-    throw new ImplementMe();
-  }
-
-  public void clearAllTransactionsFor(ChannelID client) {
-    throw new ImplementMe();
-  }
-
-  public void transactionApplied(ServerTransactionID stxID) {
-    throw new ImplementMe();
-  }
-
-  public void incomingTransactions(ChannelID cid, Set serverTxnIDs) {
-    throw new ImplementMe();
   }
 
   public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
