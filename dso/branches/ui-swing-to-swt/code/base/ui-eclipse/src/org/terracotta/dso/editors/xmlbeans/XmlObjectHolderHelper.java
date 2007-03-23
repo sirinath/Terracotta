@@ -8,13 +8,9 @@ import org.apache.xmlbeans.SchemaStringEnumEntry;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.StringEnumAbstractBase;
 import org.apache.xmlbeans.XmlAnySimpleType;
-import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlInteger;
 import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlToken;
-
-import org.dijon.Label;
 
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
@@ -23,13 +19,12 @@ import java.util.StringTokenizer;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.xml.namespace.QName;
 
 // TODO: assign all static values to instance variable instead of constant
 // reflection-based lookup.  Examples include: isRequired, hasDefault, defaultText.
 
-public class XmlObjectHolderHelper {
+public final class XmlObjectHolderHelper {
   private XmlObject      m_parent;
   private Class          m_parentType;
   private SchemaType     m_parentSchemaType;
@@ -46,6 +41,23 @@ public class XmlObjectHolderHelper {
   
   private static final Class[]  NO_PARAMS = new Class[0];
   private static final Object[] NO_ARGS   = new Object[0];
+  
+  public XmlObjectHolderHelper(Class parentType, String elementName) {
+    m_parentType  = parentType;
+    m_elementName = elementName;
+    m_fieldName   = convertElementName(elementName);
+    
+    // this is here because some elementNames ("class") don't cleanly map to
+    // their fieldName ("Class1")
+    if(Character.isDigit(elementName.charAt(elementName.length()-1))) {
+      m_elementName = elementName.substring(0, elementName.length()-1);
+    }
+    
+    m_parentSchemaType   = null;
+    m_schemaProperty     = null;
+    m_propertySchemaType = null;
+    m_defaultStringValue = null;
+  }
 
   public XmlObject getParent() {
     return m_parent;
@@ -61,23 +73,6 @@ public class XmlObjectHolderHelper {
   
   public String getFieldName() {
     return m_fieldName;
-  }
-  
-  public void init(Class parentType, String elementName) {
-    m_parentType  = parentType;
-    m_elementName = elementName;
-    m_fieldName   = convertElementName(elementName);
-    
-    // this is here because some elementNames ("class") don't cleanly map to
-    // their fieldName ("Class1")
-    if(Character.isDigit(elementName.charAt(elementName.length()-1))) {
-      m_elementName = elementName.substring(0, elementName.length()-1);
-    }
-    
-    m_parentSchemaType   = null;
-    m_schemaProperty     = null;
-    m_propertySchemaType = null;
-    m_defaultStringValue = null;
   }
 
   public void setup(XmlObject parent) {
@@ -334,39 +329,39 @@ public class XmlObjectHolderHelper {
     return m_problemIcon;
   }
 
-  public void validateXmlObject(JComponent component) {
-    XmlObject xmlObject = getXmlObject();
-    String    tip       = null;
-    Icon      icon      = null;
-    Label     label     = (Label)component.getClientProperty("labeledBy");
-    
-    if(xmlObject != null) {
-      ArrayList  errors = new ArrayList();
-      XmlOptions opts   = new XmlOptions();
-      
-      opts.setErrorListener(errors);
-      if(!xmlObject.validate(opts)) {
-        StringBuffer sb = new StringBuffer("<html><ul>");
-        
-        for(int i = 0; i < errors.size(); i++) {
-          sb.append("<li>");
-          sb.append(((XmlError)errors.get(i)).getMessage());
-          sb.append("</li>");          
-        }
-        sb.append("</ul></html>");
-        tip = sb.toString();
-        
-        if(label != null) {
-          icon = getProblemIcon();
-        }
-      }
-    }
-
-    component.setToolTipText(tip);
-    if(label != null) {
-      label.setIcon(icon);
-    }
-  }
+//  public void validateXmlObject(Composite comp) {
+//    XmlObject xmlObject = getXmlObject();
+//    String    tip       = null;
+//    Icon      icon      = null;
+//    Label     label     = (Label)component.getClientProperty("labeledBy");
+//    
+//    if(xmlObject != null) {
+//      ArrayList  errors = new ArrayList();
+//      XmlOptions opts   = new XmlOptions();
+//      
+//      opts.setErrorListener(errors);
+//      if(!xmlObject.validate(opts)) {
+//        StringBuffer sb = new StringBuffer("<html><ul>");
+//        
+//        for(int i = 0; i < errors.size(); i++) {
+//          sb.append("<li>");
+//          sb.append(((XmlError)errors.get(i)).getMessage());
+//          sb.append("</li>");          
+//        }
+//        sb.append("</ul></html>");
+//        tip = sb.toString();
+//        
+//        if(label != null) {
+//          icon = getProblemIcon();
+//        }
+//      }
+//    }
+//
+//    component.setToolTipText(tip);
+//    if(label != null) {
+//      label.setIcon(icon);
+//    }
+//  }
 
   public synchronized void addXmlObjectStructureListener(XmlObjectStructureListener listener) {
     if(listener != null) {

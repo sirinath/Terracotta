@@ -5,21 +5,23 @@
 package org.terracotta.dso.editors.xmlbeans;
 
 import org.apache.xmlbeans.XmlObject;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 
 import com.tc.admin.common.XAbstractAction;
-import com.tc.admin.common.XCheckBox;
 
 import java.awt.event.ActionEvent;
 
-public class XmlBooleanToggle extends XCheckBox implements XmlObjectHolder {
+public class XmlBooleanToggle extends Button implements XmlObjectHolder {
   private XmlObjectHolderHelper m_helper;
   private boolean               m_listening;
 
-  public XmlBooleanToggle() {
-    super();
-    m_helper = new XmlObjectHolderHelper();
-    getActionMap().put(RESET, new ResetAction());
-    getInputMap().put(RESET_STROKE, RESET);
+  public XmlBooleanToggle(Composite parent, Class parentClass, String elementName) {
+    super(parent, SWT.CHECK);
+    m_helper = new XmlObjectHolderHelper(parentClass, elementName);
+//    getActionMap().put(RESET, new ResetAction());
+//    getInputMap().put(RESET_STROKE, RESET);
   }
 
   protected void ensureXmlObject() {
@@ -32,17 +34,13 @@ public class XmlBooleanToggle extends XCheckBox implements XmlObjectHolder {
 //    }
   }
 
-  public void init(Class parentClass, String elementName) {
-    m_helper.init(parentClass, elementName);
-  }
-
-  public void setup(XmlObject parent) {
+  public void init(XmlObject parent) {
     m_listening = false;
     m_helper.setup(parent);
-    setSelected(booleanValue());
-    if (isSet()) {
-      m_helper.validateXmlObject(this);
-    }
+    setSelection(booleanValue());
+//    if (isSet()) {
+//      m_helper.validateXmlObject(this);
+//    }
     m_listening = true;
   }
 
@@ -50,13 +48,13 @@ public class XmlBooleanToggle extends XCheckBox implements XmlObjectHolder {
     if (m_listening) {
       set();
     }
-    super.fireActionPerformed(ae);
+//    super.fireActionPerformed(ae);
   }
 
   public void tearDown() {
     m_helper.tearDown();
     m_listening = false;
-    setSelected(false);
+    setSelection(false);
   }
 
   public boolean booleanValue() {
@@ -72,20 +70,20 @@ public class XmlBooleanToggle extends XCheckBox implements XmlObjectHolder {
   }
 
   public void set() {
-    boolean isSelected = isSelected();
+    boolean isSelected = getSelection();
     String s = Boolean.toString(isSelected);
 
     ensureXmlObject();
     m_helper.set(s);
-    setSelected(isSelected);
-    m_helper.validateXmlObject(this);
+    setSelection(isSelected);
+//    m_helper.validateXmlObject(this);
   }
 
   public void unset() {
     if (!isRequired()) {
       m_listening = false;
       m_helper.unset();
-      setSelected(m_helper.defaultBoolean());
+      setSelection(m_helper.defaultBoolean());
       m_listening = true;
     }
   }

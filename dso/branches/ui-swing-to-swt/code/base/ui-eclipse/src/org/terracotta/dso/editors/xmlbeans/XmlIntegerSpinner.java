@@ -4,31 +4,38 @@
 package org.terracotta.dso.editors.xmlbeans;
 
 import org.apache.xmlbeans.XmlObject;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Spinner;
 
 import com.tc.admin.common.XAbstractAction;
-import com.tc.admin.common.XSpinner;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.JFormattedTextField;
 import javax.swing.SpinnerNumberModel;
 
-public class XmlIntegerSpinner extends XSpinner
+public class XmlIntegerSpinner extends Spinner
   implements XmlObjectHolder
 {
   private XmlObjectHolderHelper m_helper;
   private boolean               m_listening;
 
-  public XmlIntegerSpinner() {
-    super();
-    m_helper = new XmlObjectHolderHelper();
+  public XmlIntegerSpinner(Composite parent, int style, Class parentClass, String elementName) {
+    super(parent, style);
+    m_helper = new XmlObjectHolderHelper(parentClass, elementName);
+    // TODO:
+//    setModel(new SpinnerNumberModel(m_helper.defaultIntegerValue(),
+//        m_helper.minInclusive(),
+//        m_helper.maxInclusive(),
+//        new Integer(1)));
     
-    getActionMap().put(RESET, new ResetAction());
-    getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(RESET_STROKE, RESET);
+//    getActionMap().put(RESET, new ResetAction());
+//    getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(RESET_STROKE, RESET);
   }
 
   private JFormattedTextField getTextField() {
-    return ((DefaultEditor)getEditor()).getTextField();    
+//    return ((DefaultEditor)getEditor()).getTextField();
+    return null; // XXX
   }
   
   protected void ensureXmlObject() {
@@ -42,7 +49,8 @@ public class XmlIntegerSpinner extends XSpinner
   }
   
   private SpinnerNumberModel getSpinnerNumberModel() {
-    return (SpinnerNumberModel)getModel();
+//    return (SpinnerNumberModel)getModel();
+    return null; // XXX
   }
   
   private void setSpinnerValue(Number value) {
@@ -57,25 +65,17 @@ public class XmlIntegerSpinner extends XSpinner
     m_listening = false;
     m_helper.setup(parent);
     setSpinnerValue(integerValue());
-    if(isSet()) {
-      m_helper.validateXmlObject(this);
-    }
+//    if(isSet()) {
+//      m_helper.validateXmlObject(this);
+//    }
     m_listening = true;
-  }
-
-  public void init(Class parentClass, String elementName) {
-    m_helper.init(parentClass, elementName);
-    setModel(new SpinnerNumberModel(m_helper.defaultIntegerValue(),
-                                    m_helper.minInclusive(),
-                                    m_helper.maxInclusive(),
-                                    new Integer(1)));
   }
 
   protected void fireStateChanged() {
     if(m_listening) {
       set();
     }
-    super.fireStateChanged();
+//    super.fireStateChanged();
   }
   
   public void tearDown() {
@@ -102,7 +102,7 @@ public class XmlIntegerSpinner extends XSpinner
     ensureXmlObject();
     m_helper.set(Integer.toString(iVal));
     setSpinnerValue(new Integer(iVal));
-    m_helper.validateXmlObject(this);
+//    m_helper.validateXmlObject(this);
   }
   
   public void unset() {

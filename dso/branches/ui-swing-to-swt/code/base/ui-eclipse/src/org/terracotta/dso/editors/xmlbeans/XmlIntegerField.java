@@ -3,12 +3,14 @@
  */
 package org.terracotta.dso.editors.xmlbeans;
 
+import org.eclipse.swt.widgets.Composite;
+
 import java.text.NumberFormat;
 import java.text.ParseException;
 
 public class XmlIntegerField extends XmlStringField {
-  public XmlIntegerField() {
-    super();
+  public XmlIntegerField(Composite parent, int style, Class parentType, String elementName) {
+    super(parent, style, parentType, elementName);
   }
   
   public void set() {

@@ -4,27 +4,25 @@
  */
 package org.terracotta.ui.util;
 
-import org.eclipse.core.resources.IProject;
-
-import java.util.EventListener;
+import com.tc.util.event.UpdateEventListener;
 
 /**
  * NOTE: All Implementing Methods Must be Synchronized
  */
-public interface EclipseComponentModel {
+public interface SWTComponentModel {
 
   /**
-   * Initializes data for this model - creates a memento which stores data and references as member fields (with no
+   * Initializes data for this model - creates a state object which stores data and references as member fields - no
    * accessor methods).
    */
-  void init(IProject project);
+  void init(Object data);
 
   /**
    * Type arguments should be defined as <tt>public static final</tt> member fields of the implementing class
    */
-  void addListener(EventListener listener, int type);
+  void addListener(UpdateEventListener listener, int type);
 
-  void removeListener(EventListener listener);
+  void removeListener(UpdateEventListener listener, int type);
 
   /**
    * Clears state information. This will set both <tt>isInit()</tt> and <tt>isActive()</tt> to <tt>false</tt>

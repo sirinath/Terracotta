@@ -23,17 +23,15 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
-import org.terracotta.ui.util.EclipseComponentModel;
+import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
-import java.util.EventListener;
-
-public final class ServersPanel extends ConfigurationEditorPanel implements ConfigurationEditorRoot,
-    EclipseComponentModel {
+public final class ServersPanel extends ConfigurationEditorPanel implements ConfigurationEditorRoot, SWTComponentModel {
 
   private static final String DEFAULT_NAME     = "dev";
   private static final String DEFAULT_HOST     = "localhost";
@@ -58,11 +56,11 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
     createListeners();
   }
 
-  public synchronized void addListener(EventListener listener, int type) {
+  public synchronized void addListener(UpdateEventListener listener, int type) {
   // not implemented
   }
 
-  public synchronized void removeListener(EventListener listener) {
+  public synchronized void removeListener(UpdateEventListener listener, int type) {
   // not implemented
   }
 
@@ -122,21 +120,17 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
     return item;
   }
 
-  public synchronized boolean isInit() {
-    return m_state != null;
-  }
-
   public synchronized boolean isActive() {
     return m_isActive;
   }
 
-  public synchronized void init(IProject project) {
+  public synchronized void init(Object data) {
     synchronized (m_stateLock) {
-      if (isActive() && m_state.project == project) return;
+      if (isActive() && m_state.project == (IProject) data) return;
       TcPlugin plugin = TcPlugin.getDefault();
       disable();
       m_state = new State();
-      m_state.project = project;
+      m_state.project = (IProject) data;
       m_state.config = plugin.getConfiguration(m_state.project);
       m_state.servers = m_state.config != null ? m_state.config.getServers() : null;
     }

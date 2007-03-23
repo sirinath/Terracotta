@@ -21,9 +21,9 @@ public class XmlStringEnumCombo extends XComboBox
   
   public XmlStringEnumCombo() {
     super();
-    m_helper = new XmlObjectHolderHelper();
-    getActionMap().put(RESET, new ResetAction());
-    getInputMap().put(RESET_STROKE, RESET);
+//    m_helper = new XmlObjectHolderHelper();
+//    getActionMap().put(RESET, new ResetAction());
+//    getInputMap().put(RESET_STROKE, RESET);
   }
   
   protected void ensureXmlObject() {
@@ -37,7 +37,7 @@ public class XmlStringEnumCombo extends XComboBox
   }
   
   public void init(Class parentType, String elementName) {
-    m_helper.init(parentType, elementName);
+//    m_helper.init(parentType, elementName);
     setModel(new DefaultComboBoxModel(m_helper.getEnumValues()));
   }
 
@@ -45,9 +45,9 @@ public class XmlStringEnumCombo extends XComboBox
     m_listening = false;
     m_helper.setup(parent);
     setSelectedItem(enumValue());
-    if(isSet()) {
-      m_helper.validateXmlObject(this);
-    }
+//    if(isSet()) {
+//      m_helper.validateXmlObject(this);
+//    }
     m_listening = true;
   }
 
@@ -90,7 +90,7 @@ public class XmlStringEnumCombo extends XComboBox
     ensureXmlObject();
     m_helper.set(s);
     setSelectedItem(item);
-    m_helper.validateXmlObject(this);
+//    m_helper.validateXmlObject(this);
   }
   
   public void unset() {

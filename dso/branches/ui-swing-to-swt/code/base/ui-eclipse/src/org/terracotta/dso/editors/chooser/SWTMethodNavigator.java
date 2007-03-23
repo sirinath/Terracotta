@@ -43,6 +43,7 @@ import org.terracotta.dso.PatternHelper;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.EventMulticaster;
+import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
 import java.util.ArrayList;
@@ -144,7 +145,7 @@ public class SWTMethodNavigator extends MessageDialog {
   protected void buttonPressed(int buttonId) {
     tearDown();
     if (buttonId == IDialogConstants.OK_ID) {
-      m_valueListener.fireUpdateEvent(m_selectedValues.toArray(new String[0]));
+      m_valueListener.fireUpdateEvent(new UpdateEvent(m_selectedValues.toArray(new String[0])));
     }
     super.buttonPressed(buttonId);
   }

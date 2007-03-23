@@ -1,83 +1,64 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.dso.editors.xmlbeans;
 
 import org.apache.xmlbeans.XmlObject;
-import org.dijon.Separator;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Text;
 
-import com.tc.admin.common.XAbstractAction;
-import com.tc.admin.common.XTextField;
-
-import java.awt.event.ActionEvent;
-
-import javax.swing.JPopupMenu;
-
-public class XmlStringField extends XTextField
-  implements XmlObjectHolder
-{
+public class XmlStringField extends Text implements XmlObjectHolder {
   private XmlObjectHolderHelper m_helper;
   private boolean               m_listening;
 
-  public XmlStringField() {
-    super();
-    m_helper = new XmlObjectHolderHelper();
-    getActionMap().put(RESET, new ResetAction());
-    getInputMap().put(RESET_STROKE, RESET);
+  public XmlStringField(Composite parent, int style, Class parentType, String elementName) {
+    super(parent, style);
+    m_helper = new XmlObjectHolderHelper(parentType, elementName);
+    MenuItem item = new MenuItem(getMenu(), SWT.NONE);
+    item.setText(RESET);
+    item.setAccelerator(RESET_STROKE);
+    item.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent selectionevent) {
+        unset();
+      }
+    });
   }
 
-  protected JPopupMenu createPopup() {
-    JPopupMenu popup = super.createPopup();
-    
-    if(popup == null) {
-      popup = new JPopupMenu();
-    }
-    else {
-      popup.add(new Separator());
-    }
-    
-    popup.add(new ResetAction());
-    
-    return popup;
-  }
-  
   protected void ensureXmlObject() {
-//    TODO:
-//    ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
-//      getAncestorOfClass(ConfigurationEditorPanel.class, this);
-//    
-//    if(parent != null) {
-//      parent.ensureXmlObject();
-//    }
+  // TODO:
+  // ConfigurationEditorPanel parent = (ConfigurationEditorPanel)
+  // getAncestorOfClass(ConfigurationEditorPanel.class, this);
+  //    
+  // if(parent != null) {
+  // parent.ensureXmlObject();
+  // }
   }
   
-  public void init(Class parentType, String elementName) {
-    m_helper.init(parentType, elementName);
-  }
-  
-  public void setup(XmlObject parent) {
+  public void init(XmlObject parent) {
     m_listening = false;
     m_helper.setup(parent);
     setText(stringValue());
-    if(isSet()) {
-      m_helper.validateXmlObject(this);
-    }
+//    if(isSet()) {
+//      m_helper.validateXmlObject(this);
+//    }
     m_listening = true;
   }
-  
+
   protected void fireActionPerformed() {
-    if(m_listening) {
-      set();
-    }
-    super.fireActionPerformed();
+    if (m_listening) set();
   }
-  
+
   public void tearDown() {
     m_helper.tearDown();
     m_listening = false;
     setText(null);
   }
-  
+
   public String stringValue() {
     return isSet() ? m_helper.getStringValue() : m_helper.defaultStringValue();
   }
@@ -85,29 +66,29 @@ public class XmlStringField extends XTextField
   public boolean isRequired() {
     return m_helper.isRequired();
   }
-  
+
   public boolean isSet() {
     return m_helper.isSet();
   }
 
   public void set() {
     String s = getText();
-    
+
     ensureXmlObject();
     m_helper.set(s);
     setText(s);
-    m_helper.validateXmlObject(this);
+    // m_helper.validateXmlObject(this);
   }
-  
+
   public void unset() {
-    if(!isRequired()) {
+    if (!isRequired()) {
       m_listening = false;
       m_helper.unset();
       setText(m_helper.defaultStringValue());
       m_listening = true;
     }
   }
-  
+
   public synchronized void addXmlObjectStructureListener(XmlObjectStructureListener listener) {
     m_helper.addXmlObjectStructureListener(listener);
   }
@@ -115,17 +96,4 @@ public class XmlStringField extends XTextField
   public synchronized void removeXmlObjectStructureListener(XmlObjectStructureListener listener) {
     m_helper.removeXmlObjectStructureListener(listener);
   }
-
-  class ResetAction extends XAbstractAction {
-    ResetAction() {
-      super("Reset");
-      setShortDescription("Reset to default value");
-      setAccelerator(RESET_STROKE);
-    }
-    
-    public void actionPerformed(ActionEvent ae) {
-      unset();
-    }
-  }
 }
-

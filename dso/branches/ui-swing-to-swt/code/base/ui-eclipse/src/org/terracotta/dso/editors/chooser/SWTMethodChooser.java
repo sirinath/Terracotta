@@ -26,6 +26,7 @@ import org.eclipse.swt.widgets.Text;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.EventMulticaster;
+import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
 public class SWTMethodChooser extends MessageDialog {
@@ -67,8 +68,8 @@ public class SWTMethodChooser extends MessageDialog {
       public void widgetSelected(SelectionEvent e) {
         SWTMethodNavigator dialog = new SWTMethodNavigator(getShell(), "Select Method", m_project);
         dialog.addValueListener(new UpdateEventListener() {
-          public void handleUpdate(Object arg) {
-            String[] values = (String[]) arg;
+          public void handleUpdate(UpdateEvent arg) {
+            String[] values = (String[]) arg.data;
             for (int i = 0; i < values.length; i++) {
               layout.m_list.add(values[i]);
               layout.m_list.forceFocus();
@@ -116,7 +117,7 @@ public class SWTMethodChooser extends MessageDialog {
 
   protected void buttonPressed(int buttonId) {
     if (buttonId == IDialogConstants.OK_ID) {
-      m_valueListener.fireUpdateEvent(m_layout.m_list.getItems());
+      m_valueListener.fireUpdateEvent(new UpdateEvent(m_layout.m_list.getItems()));
     }
     super.buttonPressed(buttonId);
   }
