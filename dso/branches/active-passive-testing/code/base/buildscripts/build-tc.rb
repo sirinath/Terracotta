@@ -578,6 +578,11 @@ END
     puts(find_jvms)
   end
 
+  def archive_build
+    depends :compile
+    archive_build_if_necessary
+  end
+
   protected
   # Overrides superclass method to provide for implicit targets.
   def target_missing(target)
@@ -643,6 +648,8 @@ END
       end
 
       @build_results.archive_to(ant, full_build_archive_path)
+    else
+      puts("Can't archive build: build-archive-dir not specified.")
     end
   end
 
@@ -662,7 +669,9 @@ END
 
   def mark_this_revision_as_good(revision)
     STDERR.puts("Revision #{revision} is good to go.")
-    File.open(File.join(build_archive_dir.to_s, "currently_good_rev.txt"), "w") do | f |
+    root = File.join(build_archive_dir.to_s, @build_environment.current_branch)
+    FileUtils.mkdir_p(root) unless File.exist?(root)
+    File.open(File.join(build_archive_dir.to_s, "general-monkey", @build_environment.current_branch, "good_rev.txt"), "w") do | f |
       f << revision.to_s + "\n"
     end
   end
@@ -683,7 +692,7 @@ END
 
   # The short path to the build archive -- i.e., everything that's produced by the archive tag.
   def short_build_archive_path
-    @archive_tag.to_path("build-archive", "jar")
+    @archive_tag.to_path("build-archive", "zip")
   end
 
   # A 'pattern' for the build archive. This is used only to put it into a monkey XML file, so that

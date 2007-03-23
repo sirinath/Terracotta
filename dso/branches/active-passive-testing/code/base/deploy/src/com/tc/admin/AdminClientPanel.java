@@ -14,7 +14,6 @@ import org.dijon.CheckBox;
 import org.dijon.Dialog;
 import org.dijon.DialogResource;
 import org.dijon.FrameResource;
-import org.dijon.HelpManager;
 import org.dijon.Label;
 import org.dijon.ScrollPane;
 import org.dijon.Separator;
@@ -41,6 +40,8 @@ import com.tc.admin.common.XTreeNode;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -62,7 +63,6 @@ import java.util.StringTokenizer;
 import java.util.prefs.Preferences;
 
 import javax.swing.Icon;
-import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -284,7 +284,7 @@ public class AdminClientPanel extends XContainer
     menuBar.add(menu);
 
     menu = new XMenu(getBundleString("help.menu.label"));
-    XMenuItem mitem = new XMenuItem("AdminClient Help",
+    XMenuItem mitem = new XMenuItem("AdminConsole Help",
                                     HelpHelper.getHelper().getHelpIcon());
     mitem.setAction(m_helpAction = new HelpAction());
     menu.add(mitem);
@@ -302,12 +302,12 @@ public class AdminClientPanel extends XContainer
 
   class HelpAction extends XAbstractAction {
     HelpAction() {
-      super("AdminClient Help");
+      super("AdminConsole Help");
     }
     
     public void actionPerformed(ActionEvent ae) {
       block();
-      HelpManager.getInstance().showHelp((JComponent)AdminClientPanel.this);
+      BrowserLauncher.openURL("http://www.terracotta.org/kit/reflector?kitID=2.3&pageID=ConsoleGuide");
       unblock();
     }
   }
@@ -624,11 +624,15 @@ public class AdminClientPanel extends XContainer
           updateCheckerPrefs.putLong("next-check-time", nextCheckTime());
           storePreferences();
         } else if(nextCheckTime < System.currentTimeMillis()) {
-          SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-              Timer t = new Timer(1, UpdateCheckerAction.this);
-              t.setRepeats(false);
-              t.start();
+          AdminClientPanel.this.addComponentListener(new ComponentAdapter() {
+            public void componentShown(ComponentEvent e) {
+              SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                  Timer t = new Timer(1, UpdateCheckerAction.this);
+                  t.setRepeats(false);
+                  t.start();
+                }
+              });
             }
           });
         }

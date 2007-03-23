@@ -56,7 +56,6 @@ import com.tc.object.bytecode.DuplicateMethodAdapter;
 import com.tc.object.bytecode.HashtableClassAdapter;
 import com.tc.object.bytecode.JavaLangReflectProxyClassAdapter;
 import com.tc.object.bytecode.JavaLangStringAdapter;
-import com.tc.object.bytecode.JavaLangThrowableAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierDebugClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapSegmentAdapter;
@@ -69,7 +68,6 @@ import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.Manager;
-import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.MergeTCToJavaClassAdapter;
 import com.tc.object.bytecode.NullManager;
@@ -100,6 +98,7 @@ import com.tc.object.field.TCField;
 import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.loaders.NamedLoaderAdapter;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.loaders.StandardClassLoaderAdapter;
 import com.tc.object.loaders.StandardClassProvider;
@@ -172,8 +171,7 @@ public class BootJarTool {
   private BootJarHandler              bootJarHandler;
   private boolean                     quiet;
 
-  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider,
-                     boolean quiet) {
+  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider, boolean quiet) {
     this.config = configuration;
     this.outputFile = outputFile;
     this.systemLoader = systemProvider;
@@ -181,7 +179,7 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.config);
-    ModulesLoader.initPlugins(this.config, true);
+    ModulesLoader.initModules(this.config, null, true);
   }
 
   public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider) {
@@ -1039,7 +1037,7 @@ public class BootJarTool {
     Map map = new HashMap();
 
     TransparencyClassSpec[] allSpecs = config.getAllSpecs();
-    for (int i=0; i<allSpecs.length; i++) {
+    for (int i = 0; i < allSpecs.length; i++) {
       TransparencyClassSpec spec = allSpecs[i];
 
       if (!spec.isPreInstrumented()) {
@@ -1118,7 +1116,6 @@ public class BootJarTool {
 
     return baos.toByteArray();
   }
-
 
   private RuntimeException exit(String msg, Throwable t) {
     if (!WRITE_OUT_TEMP_FILE) {
@@ -1315,16 +1312,9 @@ public class BootJarTool {
     spec.markPreInstrumented();
     spec.setHonorTransient(true);
 
-    ClassReader cr = new ClassReader(orig);
-    ClassWriter cw = new ClassWriter(true);
-    ManagerHelperFactory mgrFactory = new ManagerHelperFactory();
+    byte[] instrumented = doDSOTransform(className, orig);
 
-    ClassInfo classInfo = AsmClassInfo.getClassInfo(className, systemLoader);
-    ClassVisitor cv = new JavaLangThrowableAdapter(classInfo, spec, cw, mgrFactory.createHelper(), instrumentationLogger,
-                                                   getClass().getClassLoader(), portability);
-    cr.accept(cv, false);
-
-    bootJar.loadClassIntoJar(className, cw.toByteArray(), spec.isPreInstrumented());
+    bootJar.loadClassIntoJar(className, instrumented, spec.isPreInstrumented());
   }
 
   /**
@@ -1650,7 +1640,7 @@ public class BootJarTool {
     for (Iterator i = innerClasses.iterator(); i.hasNext();) {
       InnerClassNode innerClass = (InnerClassNode) i.next();
       if (innerClass.outerName.equals(tcClassNameDots.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
-                                                               ChangeClassNameHierarchyAdapter.SLASH_DELIMITER))) {
+                                                              ChangeClassNameHierarchyAdapter.SLASH_DELIMITER))) {
         changeClassNameAndGetBytes(innerClass.name, tcClassNameDots, jClassNameDots, instrumentedContext);
       }
     }
@@ -1682,8 +1672,8 @@ public class BootJarTool {
     bootJar.loadClassIntoJar(replacedClassName, cw.toByteArray(), true);
   }
 
-  private byte[] changeClassNameAndGetBytes(String fullClassNameDots, String classNameDotsToBeChanged, String classNameDotsReplaced,
-                               Map instrumentedContext) {
+  private byte[] changeClassNameAndGetBytes(String fullClassNameDots, String classNameDotsToBeChanged,
+                                            String classNameDotsReplaced, Map instrumentedContext) {
     ClassReader cr = new ClassReader(getSystemBytes(fullClassNameDots));
     ClassWriter cw = new ClassWriter(true);
     ClassVisitor cv = new ChangeClassNameRootAdapter(cw, fullClassNameDots, classNameDotsToBeChanged,
@@ -1758,7 +1748,14 @@ public class BootJarTool {
     ClassLoaderPreProcessorImpl adapter = new ClassLoaderPreProcessorImpl();
     byte[] patched = adapter.preProcess(getSystemBytes("java.lang.ClassLoader"));
 
-    bootJar.loadClassIntoJar("java.lang.ClassLoader", patched, false);
+    ClassReader reader = new ClassReader(patched);
+    ClassWriter writer = new ClassWriter(true);
+
+    ClassVisitor cv = new NamedLoaderAdapter().create(writer, null);
+
+    reader.accept(cv, false);
+
+    bootJar.loadClassIntoJar("java.lang.ClassLoader", writer.toByteArray(), false);
   }
 
   protected byte[] doDSOTransform(String name, byte[] data) {
@@ -1767,7 +1764,8 @@ public class BootJarTool {
     ClassWriter cw = new ClassWriter(true);
 
     ClassInfo classInfo = AsmClassInfo.getClassInfo(data, tcLoader);
-    ClassVisitor cv = config.createClassAdapterFor(cw, classInfo, instrumentationLogger, getClass().getClassLoader(), true);
+    ClassVisitor cv = config.createClassAdapterFor(cw, classInfo, instrumentationLogger, getClass().getClassLoader(),
+                                                   true);
     cr.accept(cv, false);
 
     return cw.toByteArray();

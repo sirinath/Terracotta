@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
@@ -8,6 +9,7 @@ import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.asm.commons.AdviceAdapter;
+import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.exception.TCInternalError;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
@@ -17,45 +19,31 @@ import com.tc.object.config.TransparencyCodeSpec;
  * @author steve
  */
 public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
-
   private final boolean              isAutolock;
   private final int                  autoLockType;
-  private final int                  modifiers;
-  private final String               methodName;
-  private final String               signature;
-  private final String               description;
-  private final String[]             exceptions;
   private final ManagerHelper        mgrHelper;
   private final InstrumentationSpec  spec;
-  private final Label                jsrLabel;
-  private final Label                labelZero;
-  private final Label                labelEnd;
   private final TransparencyCodeSpec codeSpec;
+  private final Label                labelZero = new Label();
 
-  private int                        localVariablesCount;
   private int[]                      localVariablesForMethodCall;
 
   private boolean                    visitInit = false;
+  private MemberInfo memberInfo;
 
-  public TransparencyCodeAdapter(InstrumentationSpec spec, boolean isAutolock, int autoLockType,
-                                 final MethodVisitor mv, final int modifiers, String originalMethodName,
-                                 String methodName, String methodDesc, String signature, final String[] exceptions) {
-    super(mv, modifiers, methodName, methodDesc);
+  public TransparencyCodeAdapter(InstrumentationSpec spec, boolean isAutolock, int autoLockType, MethodVisitor mv,
+                                 MemberInfo memberInfo) {
+    super(mv, memberInfo.getModifiers(), memberInfo.getName(), memberInfo.getSignature());
     this.spec = spec;
     this.isAutolock = isAutolock;
     this.autoLockType = autoLockType;
-    this.modifiers = modifiers;
-    this.methodName = methodName;
-    this.signature = signature;
-    this.description = methodDesc;
-    this.exceptions = exceptions;
-    this.jsrLabel = new Label();
-    this.labelEnd = new Label();
-    this.labelZero = new Label();
-    this.mgrHelper = spec.getManagerHelper();
-    this.codeSpec = spec.getTransparencyClassSpec().getCodeSpec(originalMethodName, description, isAutolock);
+    this.memberInfo = memberInfo;
 
-    if (!"<init>".equals(methodName)) {
+    this.mgrHelper = spec.getManagerHelper();
+    this.codeSpec = spec.getTransparencyClassSpec().getCodeSpec(memberInfo.getName(), memberInfo.getSignature(),
+                                                                isAutolock);
+
+    if (!"<init>".equals(memberInfo.getName())) {
       visitInit = true;
     }
   }
@@ -65,7 +53,6 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     localVariablesForMethodCall = new int[types.length];
     for (int i = 0; i < types.length; i++) {
       localVariablesForMethodCall[i] = newLocal(types[i].getSize());
-      localVariablesCount++;
     }
     for (int i = types.length - 1; i >= 0; i--) {
       super.visitVarInsn(types[i].getOpcode(ISTORE), localVariablesForMethodCall[i]);
@@ -94,7 +81,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     if (!spec.hasDelegatedToLogicalClass()) { return false; }
     String logicalExtendingClassName = spec.getSuperClassNameSlashes();
     if (INVOKESPECIAL == opcode && !spec.getClassNameSlashes().equals(classname) && !"<init>".equals(theMethodName)) {
-      spec.shouldProceedInstrumentation(modifiers, theMethodName, desc);
+      spec.shouldProceedInstrumentation(memberInfo.getModifiers(), theMethodName, desc);
       storeStackValuesToLocalVariables(desc);
       super.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(ClassAdapterBase
           .getDelegateFieldName(logicalExtendingClassName)), "()L" + logicalExtendingClassName + ";");
@@ -136,10 +123,11 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       super.visitInsn(DUP);
       super.visitInsn(DUP);
       super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/Util", "resolveAllReferencesBeforeClone",
-                         "(Ljava/lang/Object;)V");
+                            "(Ljava/lang/Object;)V");
       super.visitMethodInsn(opcode, classname, theMethodName, desc);
-      super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/Util", "fixTCObjectReferenceOfClonedObject",
-                         "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+      super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/Util",
+                            "fixTCObjectReferenceOfClonedObject",
+                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
       return true;
     }
     return false;
@@ -194,8 +182,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
 
   private void callTCBeginWithLocks(MethodVisitor c) {
     c.visitLabel(new Label());
-    LockDefinition[] defs = getTransparencyClassSpec().lockDefinitionsFor(modifiers, methodName, description,
-                                                                          exceptions);
+    LockDefinition[] defs = getTransparencyClassSpec().lockDefinitionsFor(memberInfo);
     for (int i = 0; i < defs.length; i++) {
       if (!defs[i].isAutolock()) {
         callTCBeginWithLock(defs[i], c);
@@ -210,8 +197,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   private void callTCCommit(MethodVisitor c) {
-    LockDefinition[] locks = getTransparencyClassSpec().lockDefinitionsFor(modifiers, methodName, description,
-                                                                           exceptions);
+    LockDefinition[] locks = getTransparencyClassSpec().lockDefinitionsFor(memberInfo);
     for (int i = 0; i < locks.length; i++) {
       if (!locks[i].isAutolock()) {
         c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(locks[i].getLockName()));
@@ -249,11 +235,27 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
         case AALOAD:
           Label end = new Label();
           Label notManaged = new Label();
+          Label noIndexException = new Label();
           super.visitInsn(DUP2);
           super.visitInsn(POP);
           callArrayManagerMethod("getObject", "(Ljava/lang/Object;)Lcom/tc/object/TCObject;");
           super.visitInsn(DUP);
           super.visitJumpInsn(IFNULL, notManaged);
+          super.visitInsn(DUP2);
+          super.visitInsn(SWAP);
+          super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "checkArrayIndex",
+                                "(I)Ljava/lang/ArrayIndexOutOfBoundsException;");
+          super.visitInsn(DUP);
+          super.visitJumpInsn(IFNULL, noIndexException);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(ATHROW);
+          super.visitLabel(noIndexException);
+          super.visitInsn(POP);
           super.visitInsn(DUP_X2);
           super.visitInsn(DUP);
           super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;");
@@ -391,7 +393,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     super.visitInsn(DUP);
     Label l1 = new Label();
     super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    mgrHelper.callManagerMethod("isPhysicallyInstrumented", mv);
+    mgrHelper.callManagerMethod("isPhysicallyInstrumented", this);
     super.visitJumpInsn(IFEQ, l1);
     swap(fieldType, reference);
     visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc);
@@ -438,7 +440,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     super.visitInsn(DUP);
     Label l1 = new Label();
     super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    mgrHelper.callManagerMethod("isPhysicallyInstrumented", mv);
+    mgrHelper.callManagerMethod("isPhysicallyInstrumented", this);
     super.visitJumpInsn(IFEQ, l1);
     visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc);
     Label l2 = new Label();
@@ -448,49 +450,48 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     super.visitLabel(l2);
   }
 
-  public void visitLocalVariable(String name, String desc, String fieldSignature, Label start, Label end, int index) {
-    super.visitLocalVariable(name, desc, fieldSignature, start, end, index);
-    localVariablesCount++;
-  }
-
-  private void addFinallyByteCode(MethodVisitor c) {
-
-    c.visitJumpInsn(GOTO, jsrLabel);
-    c.visitLabel(labelEnd);
-    c.visitVarInsn(ASTORE, localVariablesCount + 1);
-    callTCCommit(c);
-    c.visitVarInsn(ALOAD, localVariablesCount + 1);
-    c.visitInsn(ATHROW);
-    c.visitLabel(jsrLabel);
-    callTCCommit(c);
-  }
-
   private boolean isRoot(String classname, String fieldName) {
     return getTransparencyClassSpec().isRoot(classname.replace('/', '.'), fieldName);
   }
 
-  protected String getSignature() {
-    // This method added to silence warning about never reading "signature" field. If some code actually starts usiung
-    // that field, then you can kill this method
-    return this.signature;
-  }
-
   protected void onMethodEnter() {
-    if ("<init>".equals(methodName)) {
+    if ("<init>".equals(memberInfo.getName())) {
       visitInit = true;
-      if (getTransparencyClassSpec().isLockMethod(modifiers, methodName, description, exceptions)) {
-        mv.visitTryCatchBlock(labelZero, labelEnd, labelEnd, null);
-        callTCBeginWithLocks(mv);
-        mv.visitLabel(labelZero);
+      if (getTransparencyClassSpec().isLockMethod(memberInfo)) {
+        callTCBeginWithLocks(this);
+        super.visitLabel(labelZero);
       }
     }
   }
 
   protected void onMethodExit(int opcode) {
-    if ("<init>".equals(methodName)
-        && getTransparencyClassSpec().isLockMethod(modifiers, methodName, description, exceptions)) {
-      addFinallyByteCode(mv);
+    if ("<init>".equals(memberInfo.getName()) && getTransparencyClassSpec().isLockMethod(memberInfo)) {
+
+      if (opcode == RETURN) {
+        callTCCommit(this);
+      } else if (opcode == ATHROW) {
+        // nothing special to do here, exception handler for method will do the commit
+      } else {
+        // <init> should not be returning with any other opcodes
+        throw new AssertionError("unexpected exit instruction: " + opcode);
+      }
     }
+  }
+
+  public void visitEnd() {
+    if ("<init>".equals(memberInfo.getName()) && getTransparencyClassSpec().isLockMethod(memberInfo)) {
+
+      Label labelEnd = new Label();
+      super.visitLabel(labelEnd);
+      super.visitTryCatchBlock(labelZero, labelEnd, labelEnd, null);
+      int localVar = newLocal(1);
+      super.visitVarInsn(ASTORE, localVar);
+      callTCCommit(mv);
+      super.visitVarInsn(ALOAD, localVar);
+      mv.visitInsn(ATHROW);
+    }
+
+    super.visitEnd();
   }
 
 }

@@ -15,9 +15,6 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     
     ant.copy(:todir => ia_project_directory.to_s) do
       ant.fileset(:dir => "#{installer_directory.to_s}/#{internal_name.to_s}")
-    end
-
-    ant.copy(:todir => ia_project_directory.to_s) do
       ant.fileset(:dir => installer_directory.to_s, :includes => "common/**")
     end
 
@@ -32,13 +29,13 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     #
     # We also remove the JRE that we normally bundle with the kit, because IA script will handle the JRE
     # bundling for us.
-    srcfile = FilePath.new(destdir, "#{filename}.tar").to_s
     ant.delete(:includeemptydirs => true) do
       ant.fileset(:dir => srcdir.to_s, :includes => "**/jre/**")
     end
+    srcfile = FilePath.new(destdir, "#{filename}.tar").to_s
     ant.tar(:destfile => srcfile, :longfile => 'gnu') do
-      ant.tarfileset(:dir => srcdir.to_s, :prefix => install_name, :excludes => "**/*.sh **/*.bat **/*.exe **/bin/** **/libexec/**") 
-      ant.tarfileset(:dir => srcdir.to_s, :prefix => install_name, :includes => "**/*.sh **/*.bat **/*.exe **/bin/** **/libexec/**", :mode => 755) 
+      ant.tarfileset(:dir => srcdir.to_s, :prefix => "terracotta", :excludes => "**/*.sh **/*.bat **/*.exe **/bin/** **/libexec/**") 
+      ant.tarfileset(:dir => srcdir.to_s, :prefix => "terracotta", :includes => "**/*.sh **/*.bat **/*.exe **/bin/** **/libexec/**", :mode => 755) 
     end
     ant.untar(:src => srcfile, :dest => ia_contents_directory.to_s, :overwrite => true)
     ant.delete(:file => srcfile)

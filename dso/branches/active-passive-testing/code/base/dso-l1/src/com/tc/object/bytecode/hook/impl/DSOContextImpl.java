@@ -6,6 +6,7 @@ package com.tc.object.bytecode.hook.impl;
 
 import org.apache.commons.io.CopyUtils;
 
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
@@ -59,21 +60,21 @@ public class DSOContextImpl implements DSOContext {
   public static DSOContext createGlobalContext(ClassProvider globalProvider) throws ConfigurationSetupException {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
     Manager manager = new ManagerImpl(configHelper, globalProvider, preparedComponentsFromL2Connection);
-    return new DSOContextImpl(configHelper, manager);
+    return new DSOContextImpl(configHelper, globalProvider, manager);
   }
 
   /**
    * For tests
    */
-  public static DSOContext createContext(DSOClientConfigHelper configHelper, Manager manager) {
-    return new DSOContextImpl(configHelper, manager);
+  public static DSOContext createContext(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
+    return new DSOContextImpl(configHelper, classProvider, manager);
   }
 
   public static boolean isDSOSessions(String appName) throws ConfigurationSetupException {
     return getGlobalConfigHelper().isDSOSessions(appName);
   }
 
-  private DSOContextImpl(DSOClientConfigHelper configHelper, Manager manager) {
+  private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
     checkForProperlyInstrumentedBaseClasses();
     if (configHelper == null) { throw new NullPointerException(); }
 
@@ -82,7 +83,7 @@ public class DSOContextImpl implements DSOContext {
     weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
         .instrumentationLoggingOptions()));
 
-    ModulesLoader.initPlugins(configHelper, false);
+    ModulesLoader.initModules(configHelper, classProvider, false);
     validateBootJar();
   }
 
@@ -146,8 +147,8 @@ public class DSOContextImpl implements DSOContext {
   }
 
   // Needed by Spring
-  public void addInclude(String expression, boolean callConstructorOnLoad, String lockExpression) {
-    this.configHelper.addIncludeAndLockIfRequired(expression, true, callConstructorOnLoad, false, lockExpression);
+  public void addInclude(String expression, boolean callConstructorOnLoad, String lockExpression, ClassInfo classInfo) {
+    this.configHelper.addIncludeAndLockIfRequired(expression, true, callConstructorOnLoad, false, lockExpression, classInfo);
   }
 
   // Needed by Spring
