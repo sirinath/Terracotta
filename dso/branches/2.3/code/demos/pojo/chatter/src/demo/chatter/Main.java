@@ -34,7 +34,8 @@ import javax.swing.text.Document;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 
-public class Main extends JFrame implements ActionListener, ChatterDisplay, WindowListener {
+public class Main extends JFrame implements ActionListener, ChatterDisplay,
+		WindowListener {
 	private static final String CHATTER_SYSTEM = "SYSTEM";
 
 	private final ChatManager chatManager = new ChatManager();
@@ -45,7 +46,7 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 
 	private final DefaultListModel listModel = new DefaultListModel();
 
-	private final JList buddyList = new JList(listModel);
+	private final JList buddyList = new JList();
 
 	private boolean isServerDown = false;
 
@@ -88,6 +89,7 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 		buddyListPanel.setBackground(Color.WHITE);
 		buddyListPanel.add(buddyList);
 		buddyList.setFont(new Font("Andale Mono", Font.BOLD, 9));
+		buddyList.setMinimumSize(new Dimension(200, 400));
 
 		content.setLayout(new BorderLayout());
 		content.add(buddypanel, BorderLayout.NORTH);
@@ -103,10 +105,12 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 	}
 
 	private void populateCurrentUsers() {
-		final Object[] currentUsers = chatManager.getCurrentUsers();
-		for (int i = 0; i < currentUsers.length; i++) {
-			listModel
-					.addElement(new String(((User) currentUsers[i]).getName()));
+		synchronized (listModel) {
+			final Object[] currentUsers = chatManager.getCurrentUsers();
+			for (int i = 0; i < currentUsers.length; i++) {
+				listModel.addElement(new String(((User) currentUsers[i])
+						.getName()));
+			}
 		}
 	}
 
@@ -131,10 +135,10 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 		// to see the history of messages.
 		// ****************************************************
 		// --- CODE BEGINS HERE ---
-		//final Message[] messages = chatManager.getMessages();
-		//for (int i = 0; i < messages.length; i++) {
-		//	user.newMessage(messages[i]);
-		//}
+		// final Message[] messages = chatManager.getMessages();
+		// for (int i = 0; i < messages.length; i++) {
+		// user.newMessage(messages[i]);
+		// }
 		// --- CODE ENDS HERE ---
 		synchronized (chatManager) {
 			chatManager.registerUser(user);
@@ -163,19 +167,24 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 	}
 
 	public void handleDisconnectedUser(final String nodeId) {
-		final String username = chatManager.removeUser(nodeId);
-		listModel.removeElement(username);
+		synchronized (listModel) {
+			final String username = chatManager.removeUser(nodeId);
+			listModel.removeElement(username);
+		}
 	}
 
 	public void handleNewUser(final String username) {
-		listModel.addElement(username);
+		synchronized (listModel) {
+			listModel.addElement(username);
+		}
 	}
 
 	private void updateMessage(final String message) {
 		updateMessage(CHATTER_SYSTEM, message, true);
 	}
 
-	public void updateMessage(final String username, final String message, final boolean isOwnMessage) {
+	public void updateMessage(final String username, final String message,
+			final boolean isOwnMessage) {
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -211,17 +220,18 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 
 	/**
 	 * Registers this client for JMX notifications.
-	 *
+	 * 
 	 * @returns This clients Node ID
 	 */
 	private String registerForNotifications() throws Exception {
 		final java.util.List servers = MBeanServerFactory.findMBeanServer(null);
 		if (servers.size() == 0) {
-		   System.err.println("WARNING: No JMX servers found, unable to register for notifications.");
-		   return "0";
+			System.err
+					.println("WARNING: No JMX servers found, unable to register for notifications.");
+			return "0";
 		}
-		   
-		final MBeanServer server = (MBeanServer)servers.get(0);
+
+		final MBeanServer server = (MBeanServer) servers.get(0);
 		final ObjectName clusterBean = new ObjectName(
 				"org.terracotta:type=Terracotta Cluster,name=Terracotta Cluster Bean");
 		final ObjectName delegateName = ObjectName
@@ -324,6 +334,6 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay, Wind
 	}
 
 	public void windowOpened(WindowEvent e) {
-		// TODO Auto-generated method stub
+		buddyList.setModel(listModel);
 	}
 }

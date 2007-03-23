@@ -57,10 +57,6 @@ class ChatManager {
 		}
 	}
 
-	public DefaultListModel getListModel() {
-		return listModel;
-	}
-
 	public Object[] getCurrentUsers() {
 		return listModel.toArray();
 	}
