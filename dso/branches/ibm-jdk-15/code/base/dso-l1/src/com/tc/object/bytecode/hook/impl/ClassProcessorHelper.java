@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -394,7 +395,7 @@ public class ClassProcessorHelper {
    *
    * @see ClassLoaderPreProcessorImpl
    */
-  public static byte[] defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len, Object pd) {
+  public static byte[] defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len, ProtectionDomain pd) {
     if (inStaticInitializer()) { return b; }
     if (skipClass(caller)) { return b; }
 
@@ -414,7 +415,6 @@ public class ClassProcessorHelper {
 
     return preProcessor.preProcess(name, b, off, len, caller);
   }
-
 
   private static boolean skipClass(ClassLoader caller) {
     return (caller == tcLoader);

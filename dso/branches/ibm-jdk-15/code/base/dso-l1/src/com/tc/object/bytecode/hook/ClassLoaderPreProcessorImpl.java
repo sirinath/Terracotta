@@ -32,7 +32,7 @@ public class ClassLoaderPreProcessorImpl {
   private final static String DEFINECLASS1_METHOD_NAME = "defineClass1";
   private final static String DEFINECLASS2_METHOD_NAME = "defineClass2";
 
-  private static final String DESC_CORE                = "Ljava/lang/String;[BIILjava/lang/Object;";
+  private static final String DESC_CORE                = "Ljava/lang/String;[BIILjava/security/ProtectionDomain;";
   private static final String DESC_PREFIX              = "(" + DESC_CORE;
   private static final String DESC_HELPER              = "(Ljava/lang/ClassLoader;" + DESC_CORE + ")[B";
 
@@ -88,7 +88,8 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ILOAD, 4);
       mv.visitVarInsn(ALOAD, 5);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Pre",
-                         DESC_HELPER);
+                         "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/lang/Object;)[B");
+
       mv.visitVarInsn(ASTORE, 2);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
