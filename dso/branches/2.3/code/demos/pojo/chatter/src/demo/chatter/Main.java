@@ -89,7 +89,6 @@ public class Main extends JFrame implements ActionListener, ChatterDisplay,
 		buddyListPanel.setBackground(Color.WHITE);
 		buddyListPanel.add(buddyList);
 		buddyList.setFont(new Font("Andale Mono", Font.BOLD, 9));
-		buddyList.setMinimumSize(new Dimension(200, 400));
 
 		content.setLayout(new BorderLayout());
 		content.add(buddypanel, BorderLayout.NORTH);
