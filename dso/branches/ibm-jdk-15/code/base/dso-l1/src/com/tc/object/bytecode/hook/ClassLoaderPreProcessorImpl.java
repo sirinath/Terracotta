@@ -88,7 +88,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ILOAD, 4);
       mv.visitVarInsn(ALOAD, 5);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Pre",
-                         "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/lang/Object;)[B");
+                         "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/security/ProtectionDomain;)[B");
 
       mv.visitVarInsn(ASTORE, 2);
       mv.visitVarInsn(ALOAD, 0);
