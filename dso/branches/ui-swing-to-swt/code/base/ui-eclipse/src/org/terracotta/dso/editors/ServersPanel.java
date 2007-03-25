@@ -4,11 +4,11 @@
  */
 package org.terracotta.dso.editors;
 
+import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -23,36 +23,35 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.ui.util.SWTComponentModel;
+import org.terracotta.ui.util.SWTLayout;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
-import com.terracottatech.config.TcConfigDocument.TcConfig;
 
-public final class ServersPanel extends ConfigurationEditorPanel implements ConfigurationEditorRoot, SWTComponentModel {
+import java.util.HashMap;
+import java.util.Map;
 
-  private static final String DEFAULT_NAME     = "dev";
-  private static final String DEFAULT_HOST     = "localhost";
-  private static final int    DEFAULT_DSO_PORT = 9510;
-  private static final int    DEFAULT_JMX_PORT = 9520;
-  private static final int    NAME_INDEX       = 0;
-  private static final int    HOST_INDEX       = 1;
-  private static final int    DSO_PORT_INDEX   = 2;
-  private static final int    JMX_PORT_INDEX   = 3;
+public final class ServersPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-  private final Layout        m_layout;
-  private final Object        m_stateLock      = new Object();
-  private State               m_state;
-  private boolean             m_isActive;
-  private SelectionListener   m_addButtonListener;
-  private SelectionListener   m_removeButtonListener;
-  private SelectionListener   m_tableItemSelectListener;
+  private static final int NAME_INDEX     = 0;
+  private static final int HOST_INDEX     = 1;
+  private static final int DSO_PORT_INDEX = 2;
+  private static final int JMX_PORT_INDEX = 3;
+
+  private final Layout     m_layout;
+  private State            m_state;
+  private volatile boolean m_isActive;
 
   public ServersPanel(Composite parent, int style) {
     super(parent, style);
-    m_layout = new Layout(this);
+    this.m_layout = new Layout(this);
+    SWTUtil.setBackgroundRecursive(this.getDisplay().getSystemColor(SWT.COLOR_WHITE), this);
     createListeners();
   }
 
@@ -64,60 +63,108 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
   // not implemented
   }
 
-  private void createListeners() {
-    m_addButtonListener = new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        synchronized (m_stateLock) {
-          if (m_state.servers == null) {
-            m_state.servers = m_state.config.addNewServers();
-          }
-          Server server = m_state.servers.addNewServer();
-          server.setName(DEFAULT_NAME);
-          server.setHost(DEFAULT_HOST);
-          server.setDsoPort(DEFAULT_DSO_PORT);
-          server.setJmxPort(DEFAULT_JMX_PORT);
-          m_layout.m_serverTable.setSelection(createServerItem(server));
-          m_layout.m_removeServerButton.setEnabled(true);
-        }
-      }
-    };
-    m_tableItemSelectListener = new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
+  private void createContextListeners() {
+    createServersElementListener(XmlConfigEvent.SERVER_NAME, NAME_INDEX, m_layout.m_nameField);
+    createServersElementListener(XmlConfigEvent.SERVER_HOST, HOST_INDEX, m_layout.m_hostField);
+    createServersElementListener(XmlConfigEvent.SERVER_DSO_PORT, DSO_PORT_INDEX, m_layout.m_dsoPortField);
+    createServersElementListener(XmlConfigEvent.SERVER_JMX_PORT, JMX_PORT_INDEX, m_layout.m_jmxPortField);
+    
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        Server server = (Server) castEvent(e).element;
+        TableItem item = createServerItem(server);
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_NAME, null, server,
+            XmlConfigEvent.ELEM_NAME, XmlConfigEvent.SERVER_NAME));
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_HOST, null, server,
+            XmlConfigEvent.ELEM_HOST, XmlConfigEvent.SERVER_HOST));
+        m_layout.m_serverTable.setSelection(item);
+        updateServersElementListeners(server);
         m_layout.m_removeServerButton.setEnabled(true);
-        // TODO:
       }
-    };
-    m_removeButtonListener = new SelectionAdapter() {
+    }, XmlConfigEvent.NEW_SERVER, this);
+  }
+
+  private void createListeners() {
+    m_layout.m_addServerButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigEvent.CREATE_SERVER));
+      }
+    });
+
+    m_layout.m_serverTable.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        System.out.println("row selected event");// XXX
+        m_layout.m_removeServerButton.setEnabled(true);
+        TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
+        Server server = (Server) item.getData();
+        updateServersElementListeners(server);
+      }
+    });
+
+    // XXX: remember serverIndices - create REMOVE_X event
+    m_layout.m_removeServerButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
         int row = m_layout.m_serverTable.getSelectionIndex();
-        synchronized (m_stateLock) {
-          m_state.servers.getServerArray(row);
-          m_state.servers.removeServer(row);
-        }
+        // m_state.servers.getServerArray(row);
+        // m_state.servers.removeServer(row);
         m_layout.m_serverTable.remove(row);
         m_layout.m_serverTable.deselectAll();
         if (m_layout.m_serverTable.getItemCount() == 0) m_layout.m_removeServerButton.setEnabled(false);
       }
-    };
+    });
   }
 
-  private void initTableItems() {
-    m_layout.m_serverTable.removeAll();
-    synchronized (m_stateLock) {
-      Server[] servers = m_state.servers.getServerArray();
-      for (int i = 0; i < servers.length; i++) {
-        createServerItem(servers[i]);
+  private void createServersElementListener(int eventType, final int column, final Text field) {
+    UpdateEventListener listener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        int index = m_state.serverIndices.get(event.element).intValue();
+        TableItem item = m_layout.m_serverTable.getItem(index);
+        if (event.data == null) event.data = "";
+        item.setText(column, (String) event.data);
+        if (m_layout.m_serverTable.getSelectionIndex() == index) {
+          field.setText((String) event.data);
+        }
       }
-    }
+    };
+    m_state.xmlContext.addListener(listener, eventType, this);
   }
 
-  private TableItem createServerItem(Server server) {
+  private void updateServersElementListeners(Server server) {
+    updateListeners(XmlConfigEvent.SERVER_NAME, XmlConfigEvent.ELEM_NAME, server);
+    updateListeners(XmlConfigEvent.SERVER_HOST, XmlConfigEvent.ELEM_HOST, server);
+    updateListeners(XmlConfigEvent.SERVER_DSO_PORT, XmlConfigEvent.ELEM_DSO_PORT, server);
+    updateListeners(XmlConfigEvent.SERVER_JMX_PORT, XmlConfigEvent.ELEM_JMX_PORT, server);
+  }
+
+  private void updateListeners(int event, String elementName, XmlObject element) {
+    m_state.xmlContext.updateListeners(new XmlConfigEvent(element, elementName, event));
+  }
+
+  private XmlConfigEvent castEvent(UpdateEvent e) {
+    return (XmlConfigEvent) e;
+  }
+
+  private TableItem createServerItem(XmlObject server) {
     TableItem item = new TableItem(m_layout.m_serverTable, SWT.NONE);
-    item.setText(NAME_INDEX, (server.getName() == null) ? "" : server.getName());
-    item.setText(HOST_INDEX, (server.getHost() == null) ? "" : server.getHost());
-    item.setText(DSO_PORT_INDEX, "" + server.getDsoPort());
-    item.setText(JMX_PORT_INDEX, "" + server.getJmxPort());
+    item.setData(server);
+    m_state.serverIndices.put((Server) server, new Integer(m_layout.m_serverTable.getItemCount() - 1));
     return item;
+  }
+
+  private void initTableItems(Servers servers) {
+    m_layout.m_serverTable.setEnabled(false);
+    Server[] serverElements = servers.getServerArray();
+    for (int i = 0; i < serverElements.length; i++) {
+      createServerItem(serverElements[i]);
+      updateServersElementListeners(serverElements[i]);
+    }
+    m_layout.m_serverTable.setEnabled(true);
   }
 
   public synchronized boolean isActive() {
@@ -125,60 +172,43 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
   }
 
   public synchronized void init(Object data) {
-    synchronized (m_stateLock) {
-      if (isActive() && m_state.project == (IProject) data) return;
-      TcPlugin plugin = TcPlugin.getDefault();
-      disable();
-      m_state = new State();
-      m_state.project = (IProject) data;
-      m_state.config = plugin.getConfiguration(m_state.project);
-      m_state.servers = m_state.config != null ? m_state.config.getServers() : null;
-    }
-    initTableItems();
-    activate();
+    if (m_isActive && m_state.project == (IProject) data) return;
+    setActive(false);
+    m_state = new State((IProject) data);
+    createContextListeners();
+    Servers servers = TcPlugin.getDefault().getConfiguration(m_state.project).getServers();
+    setActive(true);
+    initTableItems(servers);
   }
 
-  public synchronized void disable() {
-    if (!isActive()) return;
-    m_layout.m_addServerButton.removeSelectionListener(m_addButtonListener);
-    m_layout.m_removeServerButton.removeSelectionListener(m_removeButtonListener);
-    m_layout.m_serverTable.removeSelectionListener(m_tableItemSelectListener);
-    m_layout.m_serverTable.deselectAll();
-    m_isActive = false;
-  }
-
-  public synchronized void activate() {
-    if (isActive()) return;
-    m_layout.m_addServerButton.addSelectionListener(m_addButtonListener);
-    m_layout.m_removeServerButton.addSelectionListener(m_removeButtonListener);
-    m_layout.m_serverTable.addSelectionListener(m_tableItemSelectListener);
-    m_isActive = true;
-  }
-
-  public IProject getProject() {
-    synchronized (m_stateLock) {
-      return m_state.project;
-    }
+  public synchronized void setActive(boolean active) {
+    m_isActive = active;
   }
 
   public synchronized void clearState() {
-    synchronized (m_stateLock) {
-      m_state = null;
-    }
-    disable();
+    setActive(false);
+    m_layout.reset();
+    m_state.xmlContext.detachComponentModel(this);
+    m_state = null;
   }
 
   // --------------------------------------------------------------------------------
 
   private class State {
-    private IProject project;
-    private TcConfig config;
-    private Servers  servers;
+    final IProject             project;
+    final XmlConfigContext     xmlContext;
+    final Map<Server, Integer> serverIndices;
+
+    private State(IProject project) {
+      this.project = project;
+      this.xmlContext = XmlConfigContext.getInstance(project);
+      this.serverIndices = new HashMap<Server, Integer>();
+    }
   }
 
   // --------------------------------------------------------------------------------
 
-  private static class Layout {
+  private static class Layout implements SWTLayout {
 
     private static final int    WIDTH_HINT         = 500;
     private static final int    HEIGHT_HINT        = 120;
@@ -201,6 +231,18 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
     private Table               m_serverTable;
     private Button              m_addServerButton;
     private Button              m_removeServerButton;
+    private Text                m_nameField;
+    private Text                m_hostField;
+    private Text                m_dsoPortField;
+    private Text                m_jmxPortField;
+
+    public void reset() {
+      m_serverTable.removeAll();
+      m_nameField.setText("");
+      m_hostField.setText("");
+      m_dsoPortField.setText("");
+      m_jmxPortField.setText("");
+    }
 
     private Layout(Composite parent) {
       Composite panel = new Composite(parent, SWT.NONE);
@@ -321,31 +363,31 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
 
       Label nameLabel = new Label(serverGroup, SWT.NONE);
       nameLabel.setText(NAME);
-      Text nameField = new Text(serverGroup, SWT.BORDER);
-      nameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+      m_nameField = new Text(serverGroup, SWT.BORDER);
+      m_nameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
       new Label(serverGroup, SWT.NONE); // space
 
       Label dsoPortLabel = new Label(serverGroup, SWT.NONE);
       dsoPortLabel.setText(DSO_PORT);
-      Text dsoPortField = new Text(serverGroup, SWT.BORDER);
+      m_dsoPortField = new Text(serverGroup, SWT.BORDER);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
-      gridData.widthHint = SWTUtil.textColumnsToPixels(dsoPortField, 6);
-      dsoPortField.setLayoutData(gridData);
+      gridData.widthHint = SWTUtil.textColumnsToPixels(m_dsoPortField, 6);
+      m_dsoPortField.setLayoutData(gridData);
 
       Label hostLabel = new Label(serverGroup, SWT.NONE);
       hostLabel.setText(HOST);
-      Text hostField = new Text(serverGroup, SWT.BORDER);
-      hostField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+      m_hostField = new Text(serverGroup, SWT.BORDER);
+      m_hostField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
       new Label(serverGroup, SWT.NONE); // space
 
       Label jmxPortLabel = new Label(serverGroup, SWT.NONE);
       jmxPortLabel.setText(JMX_PORT);
-      Text jmxPortField = new Text(serverGroup, SWT.BORDER);
+      m_jmxPortField = new Text(serverGroup, SWT.BORDER);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
-      gridData.widthHint = SWTUtil.textColumnsToPixels(jmxPortField, 6);
-      jmxPortField.setLayoutData(gridData);
+      gridData.widthHint = SWTUtil.textColumnsToPixels(m_jmxPortField, 6);
+      m_jmxPortField.setLayoutData(gridData);
 
       Label dataLabel = new Label(serverGroup, SWT.NONE);
       dataLabel.setText(DATA);
@@ -423,56 +465,3 @@ public final class ServersPanel extends ConfigurationEditorPanel implements Conf
     }
   }
 }
-
-// private static final String[] FIELDS = new String[] { "Name", "Host", "DsoPort", "JmxPort" };
-// private static final String[] HEADERS = new String[] { "Name", "Host", "DSO port", "JMX port" };
-//
-// class ServerTableModel extends XObjectTableModel {
-// public ServerTableModel() {
-// super(Server.class, FIELDS, HEADERS);
-// }
-//
-// public void setServers(Servers servers) {
-// ServerTableModel.this.clear();
-// set(servers.getServerArray());
-// }
-// }
-//
-// public void tableChanged(TableModelEvent e) {
-// if (m_serverTableModel.getRowCount() == 0) {
-// m_config.unsetServers();
-// m_servers = null;
-// m_serverPanel.setVisible(false);
-// } else {
-// m_serverPanel.setVisible(true);
-// }
-//
-// setDirty();
-// }
-//
-// public void valueChanged(ListSelectionEvent e) {
-// if (!e.getValueIsAdjusting()) {
-// int row = m_serverTable.getSelectedRow();
-// boolean haveSel = row != -1;
-//  
-// if (haveSel) {
-// m_serverPanel.tearDown();
-// m_serverPanel.setup((Server) m_serverTableModel.getObjectAt(row));
-// }
-// m_removeServerAction.setEnabled(haveSel);
-// }
-// }
-
-// private void addListeners() {
-// m_serverTableModel.addTableModelListener(this);
-// m_serverTable.getSelectionModel().addListSelectionListener(this);
-//
-// if (m_serverTableModel.getRowCount() > 0) {
-// m_serverTable.setRowSelectionInterval(0, 0);
-// }
-// }
-//
-// private void removeListeners() {
-// m_serverTableModel.removeTableModelListener(this);
-// m_serverTable.getSelectionModel().removeListSelectionListener(this);
-// }

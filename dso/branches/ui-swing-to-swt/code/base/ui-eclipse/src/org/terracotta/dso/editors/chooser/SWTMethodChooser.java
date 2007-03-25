@@ -29,6 +29,7 @@ import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
+
 public class SWTMethodChooser extends MessageDialog {
 
   private static final String    EXPLORE = "Explore...";

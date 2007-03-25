@@ -6,9 +6,7 @@ package org.terracotta.ui.util;
 
 import com.tc.util.event.UpdateEventListener;
 
-/**
- * NOTE: All Implementing Methods Must be Synchronized
- */
+
 public interface SWTComponentModel {
 
   /**
@@ -19,9 +17,14 @@ public interface SWTComponentModel {
 
   /**
    * Type arguments should be defined as <tt>public static final</tt> member fields of the implementing class
+   * <p>
+   * NOTE: needs synchronization
    */
   void addListener(UpdateEventListener listener, int type);
 
+  /**
+   * NOTE: needs synchronization
+   */
   void removeListener(UpdateEventListener listener, int type);
 
   /**
@@ -30,14 +33,9 @@ public interface SWTComponentModel {
   void clearState();
 
   /**
-   * This will unregister all action listeners. References to listener classes will be saved.
+   * Deactivates registered action listeners
    */
-  void disable();
-
-  /**
-   * Re-registers action listeners
-   */
-  void activate();
+  void setActive(boolean activate);
 
   boolean isActive();
 }

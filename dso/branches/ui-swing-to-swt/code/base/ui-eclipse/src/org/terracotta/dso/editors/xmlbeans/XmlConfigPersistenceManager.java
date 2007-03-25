@@ -23,8 +23,9 @@ final class XmlConfigPersistenceManager {
   private static final String   XGET             = "xget";
   private static final String   TYPE             = "type";
 
-  String readElement(XmlObject parent, Class parentType, String elementName) {
+  String readElement(XmlObject parent, String elementName) {
     try {
+      Class parentType = parent.schemaType().getJavaClass();
       XmlAnySimpleType element = ((XmlAnySimpleType) getXmlObject(parent, parentType, convertElementName(elementName)));
       if (element != null) return element.getStringValue();
       return getSchemaProperty(parentType, elementName).getDefaultText();
@@ -33,8 +34,9 @@ final class XmlConfigPersistenceManager {
     }
   }
 
-  void writeElement(XmlObject parent, Class parentType, String elementName, String value) {
+  void writeElement(XmlObject parent, String elementName, String value) {
     try {
+      Class parentType = parent.schemaType().getJavaClass();
       XmlObject xmlObject = ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName));
       Class[] params = new Class[] { String.class };
       Object[] args = new Object[] { value };

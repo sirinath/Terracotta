@@ -40,7 +40,7 @@ import java.util.List;
  *      public void handleUpdate(Object data) {
  *        System.out.println(data);       
  *      }
- *    });Object
+ *    });
  *  
  *  ...
  * </pre>
@@ -92,11 +92,10 @@ public final class EventMulticaster implements Serializable {
   public synchronized void addListener(UpdateEventListener listener) {
     if (eventListener == null) {
       eventListener = listener;
-    } else if (eventListener instanceof EventMulticaster.BroadcastListener) {
-      EventMulticaster.BroadcastListener broadcast = (EventMulticaster.BroadcastListener) eventListener;
-      broadcast.add(listener);
+    } else if (eventListener instanceof BroadcastListener) {
+      ((BroadcastListener) eventListener).add(listener);
     } else {
-      EventMulticaster.BroadcastListener broadcast = new BroadcastListener();
+      BroadcastListener broadcast = new BroadcastListener();
       broadcast.add(eventListener);
       broadcast.add(listener);
       eventListener = broadcast;
@@ -105,7 +104,7 @@ public final class EventMulticaster implements Serializable {
 
   public synchronized boolean removeListener(UpdateEventListener listener) {
     if (eventListener instanceof EventMulticaster.BroadcastListener) {
-      EventMulticaster.BroadcastListener broadcast = (EventMulticaster.BroadcastListener) eventListener;
+      BroadcastListener broadcast = (BroadcastListener) eventListener;
       if (!broadcast.remove(listener)) return false;
       if (broadcast.size() == 1) eventListener = broadcast.pop();
       return true;
@@ -125,7 +124,7 @@ public final class EventMulticaster implements Serializable {
     public void handleUpdate(UpdateEvent data) {
       for (Iterator iter = listeners.iterator(); iter.hasNext();) {
         UpdateEventListener listener = (UpdateEventListener) iter.next();
-        if (listener == data.source) return;
+        if (listener == data.source) continue;
         if (queue == null) listener.handleUpdate(data);
         else {
           QueueEvent event = new QueueEvent();

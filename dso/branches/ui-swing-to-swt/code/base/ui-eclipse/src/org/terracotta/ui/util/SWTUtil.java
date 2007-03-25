@@ -11,12 +11,14 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -29,6 +31,16 @@ public final class SWTUtil {
 
   private SWTUtil() {
   // cannot instantiate
+  }
+
+  public static void setBackgroundRecursive(Color color, Control control) {
+    control.setBackground(color);
+    if (control instanceof Composite) {
+      Control[] children = ((Composite) control).getChildren();
+      for (int i = 0; i < children.length; i++) {
+        setBackgroundRecursive(color, children[i]);
+      }
+    }
   }
 
   public static Composite getAncestorOfClass(Class clazz, Composite comp) {

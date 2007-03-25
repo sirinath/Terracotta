@@ -8,5 +8,5 @@ import java.util.EventListener;
 
 public interface UpdateEventListener extends EventListener {
 
-  void handleUpdate(UpdateEvent data);
+  void handleUpdate(UpdateEvent e);
 }
