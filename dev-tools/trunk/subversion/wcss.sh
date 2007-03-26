@@ -97,7 +97,7 @@ while getopts lsr:d: option; do
            snapshot_name="${OPTARG:?Snapshot name is required}";;
         d) delete="yes"
            snapshot_name="${OPTARG:?Snapshot name is required}";;
-        ?) usage
+        ?) wcss_usage
            exit 2;;
     esac
 done
