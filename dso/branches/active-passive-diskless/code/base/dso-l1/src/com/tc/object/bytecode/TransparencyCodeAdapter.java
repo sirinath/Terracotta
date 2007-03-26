@@ -9,6 +9,7 @@ import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.asm.commons.AdviceAdapter;
+import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.exception.TCInternalError;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
@@ -18,16 +19,13 @@ import com.tc.object.config.TransparencyCodeSpec;
  * @author steve
  */
 public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
-
   private final boolean              isAutolock;
   private final int                  autoLockType;
-  private final int                  modifiers;
-  private final String               methodName;
-  private final String               signature;
-  private final String               description;
-  private final String[]             exceptions;
   private final ManagerHelper        mgrHelper;
   private final InstrumentationSpec  spec;
+  private final MemberInfo           memberInfo;
+  private boolean                    isConstructor;
+
   private final TransparencyCodeSpec codeSpec;
   private final Label                labelZero = new Label();
 
@@ -35,22 +33,20 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
 
   private boolean                    visitInit = false;
 
-  public TransparencyCodeAdapter(InstrumentationSpec spec, boolean isAutolock, int autoLockType,
-                                 final MethodVisitor mv, final int modifiers, String originalMethodName,
-                                 String methodName, String methodDesc, String signature, final String[] exceptions) {
-    super(mv, modifiers, methodName, methodDesc);
+  public TransparencyCodeAdapter(InstrumentationSpec spec, boolean isAutolock, int autoLockType, MethodVisitor mv,
+                                 MemberInfo memberInfo, String originalName) {
+    super(mv, memberInfo.getModifiers(), originalName, memberInfo.getSignature());
     this.spec = spec;
     this.isAutolock = isAutolock;
     this.autoLockType = autoLockType;
-    this.modifiers = modifiers;
-    this.methodName = methodName;
-    this.signature = signature;
-    this.description = methodDesc;
-    this.exceptions = exceptions;
-    this.mgrHelper = spec.getManagerHelper();
-    this.codeSpec = spec.getTransparencyClassSpec().getCodeSpec(originalMethodName, description, isAutolock);
+    this.memberInfo = memberInfo;
 
-    if (!"<init>".equals(methodName)) {
+    this.mgrHelper = spec.getManagerHelper();
+    this.codeSpec = spec.getTransparencyClassSpec().getCodeSpec(memberInfo.getName(), //
+                                                                memberInfo.getSignature(), isAutolock);
+
+    isConstructor = "<init>".equals(originalName);
+    if (!isConstructor) {
       visitInit = true;
     }
   }
@@ -88,7 +84,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     if (!spec.hasDelegatedToLogicalClass()) { return false; }
     String logicalExtendingClassName = spec.getSuperClassNameSlashes();
     if (INVOKESPECIAL == opcode && !spec.getClassNameSlashes().equals(classname) && !"<init>".equals(theMethodName)) {
-      spec.shouldProceedInstrumentation(modifiers, theMethodName, desc);
+      spec.shouldProceedInstrumentation(memberInfo.getModifiers(), theMethodName, desc);
       storeStackValuesToLocalVariables(desc);
       super.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(ClassAdapterBase
           .getDelegateFieldName(logicalExtendingClassName)), "()L" + logicalExtendingClassName + ";");
@@ -122,7 +118,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
    * there is no implementation of clone() defined in that classes' hierarchy. If it does, it a bug in the compiler ;-)
    * This adaption is needed for both PORTABLE and ADAPTABLE classes as we can have instance where Logical subclass of
    * ADAPTABLE class calls clone() to make a copy of itself.
-   *
+   * 
    * @see AbstractMap and HashMap
    */
   private boolean handleJavaLangObjectCloneCall(int opcode, String classname, String theMethodName, String desc) {
@@ -189,8 +185,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
 
   private void callTCBeginWithLocks(MethodVisitor c) {
     c.visitLabel(new Label());
-    LockDefinition[] defs = getTransparencyClassSpec().lockDefinitionsFor(modifiers, methodName, description,
-                                                                          exceptions);
+    LockDefinition[] defs = getTransparencyClassSpec().lockDefinitionsFor(memberInfo);
     for (int i = 0; i < defs.length; i++) {
       if (!defs[i].isAutolock()) {
         callTCBeginWithLock(defs[i], c);
@@ -205,8 +200,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   private void callTCCommit(MethodVisitor c) {
-    LockDefinition[] locks = getTransparencyClassSpec().lockDefinitionsFor(modifiers, methodName, description,
-                                                                           exceptions);
+    LockDefinition[] locks = getTransparencyClassSpec().lockDefinitionsFor(memberInfo);
     for (int i = 0; i < locks.length; i++) {
       if (!locks[i].isAutolock()) {
         c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(locks[i].getLockName()));
@@ -244,11 +238,27 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
         case AALOAD:
           Label end = new Label();
           Label notManaged = new Label();
+          Label noIndexException = new Label();
           super.visitInsn(DUP2);
           super.visitInsn(POP);
           callArrayManagerMethod("getObject", "(Ljava/lang/Object;)Lcom/tc/object/TCObject;");
           super.visitInsn(DUP);
           super.visitJumpInsn(IFNULL, notManaged);
+          super.visitInsn(DUP2);
+          super.visitInsn(SWAP);
+          super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "checkArrayIndex",
+                                "(I)Ljava/lang/ArrayIndexOutOfBoundsException;");
+          super.visitInsn(DUP);
+          super.visitJumpInsn(IFNULL, noIndexException);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(SWAP);
+          super.visitInsn(POP);
+          super.visitInsn(ATHROW);
+          super.visitLabel(noIndexException);
+          super.visitInsn(POP);
           super.visitInsn(DUP_X2);
           super.visitInsn(DUP);
           super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;");
@@ -447,16 +457,10 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     return getTransparencyClassSpec().isRoot(classname.replace('/', '.'), fieldName);
   }
 
-  protected String getSignature() {
-    // This method added to silence warning about never reading "signature" field. If some code actually starts usiung
-    // that field, then you can kill this method
-    return this.signature;
-  }
-
   protected void onMethodEnter() {
-    if ("<init>".equals(methodName)) {
+    if (isConstructor) {
       visitInit = true;
-      if (getTransparencyClassSpec().isLockMethod(modifiers, methodName, description, exceptions)) {
+      if (getTransparencyClassSpec().isLockMethod(memberInfo)) {
         callTCBeginWithLocks(this);
         super.visitLabel(labelZero);
       }
@@ -464,8 +468,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   protected void onMethodExit(int opcode) {
-    if ("<init>".equals(methodName)
-        && getTransparencyClassSpec().isLockMethod(modifiers, methodName, description, exceptions)) {
+    if (isConstructor && getTransparencyClassSpec().isLockMethod(memberInfo)) {
 
       if (opcode == RETURN) {
         callTCCommit(this);
@@ -479,9 +482,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   public void visitEnd() {
-    if ("<init>".equals(methodName)
-        && getTransparencyClassSpec().isLockMethod(modifiers, methodName, description, exceptions)) {
-
+    if (isConstructor && getTransparencyClassSpec().isLockMethod(memberInfo)) {
       Label labelEnd = new Label();
       super.visitLabel(labelEnd);
       super.visitTryCatchBlock(labelZero, labelEnd, labelEnd, null);

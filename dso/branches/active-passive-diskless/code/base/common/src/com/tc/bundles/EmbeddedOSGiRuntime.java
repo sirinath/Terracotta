@@ -61,6 +61,7 @@ public interface EmbeddedOSGiRuntime {
       // root (which is not set when running tests)
       try {
         if (Directories.getInstallationRoot() != null) {
+          logger.debug("Prepending bundle repository: " + new File(Directories.getInstallationRoot(), "modules").toURL().toString());
           prependLocations.add(new File(Directories.getInstallationRoot(), "modules").toURL());
         }
       } catch (FileNotFoundException fnfe) {

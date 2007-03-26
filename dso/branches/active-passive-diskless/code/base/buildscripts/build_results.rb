@@ -101,6 +101,7 @@ class BuildResults
                           :excludes => "**/*.jar,**/app-server-install/**,**/*.war")
               ant.fileset(:dir => @build_dir.to_s,
                           :includes => "**/normal-boot-jars/*.jar,**/javaprocesses.txt")
+              ant.fileset(:dir => @build_dir.to_s, :includes => "modules/*")
           end
 
           puts "Done archiving build."

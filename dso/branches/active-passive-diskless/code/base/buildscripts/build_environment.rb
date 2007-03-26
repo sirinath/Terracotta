@@ -63,9 +63,9 @@ class BuildEnvironment < Environment
         if @branch.nil?
             case @svninfo["URL"]
                 when /trunk/: @branch="trunk"
-                when /branches\/private\/([^\/]+)\//: @branch = $1
-                when /branches\/([^\/]+)\//: @branch = $1
-                when /tags\/([^\/]+)\//: @branch = $1
+                when /branches\/private\/([^\/]+)/: @branch = $1
+                when /branches\/([^\/]+)/: @branch = $1
+                when /tags\/([^\/]+)/: @branch = $1
                 else @branch = "branch-unknown"
             end
         end
@@ -96,12 +96,6 @@ class BuildEnvironment < Environment
   # property is set in the configuration source supplied in the constructor.
   def specified_build_version
     @config_source['version'] || "[no-version]"
-  end
-
-  # What designation is assigned for this build? This returns '[none]' if no 'designation'
-  # property is set in the configuration source supplied in the constructor.
-  def specified_build_designation
-    @config_source['designation'] || "[no-designation]"
   end
 
   # When was this build started? This returns a timestamp (a Time object) that's created in
