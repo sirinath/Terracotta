@@ -166,7 +166,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
     this.mode = mode;
     if (mode == MODE_CENTRALIZED_CONFIG) {
-      this.l1ConfigurationCreator = new TestConfigurationCreator(this.l1_beanSet, true);
+      this.l1ConfigurationCreator = new TestConfigurationCreator(this.beanSet, true);
     } else if (mode == MODE_DISTRIBUTED_CONFIG) {
       this.l1ConfigurationCreator = new TestConfigurationCreator(this.l1_beanSet, false);
     } else {
@@ -360,25 +360,11 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
   }
 
   public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager() throws ConfigurationSetupException {
-    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator, null);
-  }
-
-  public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(int[] dsoPorts)
-      throws ConfigurationSetupException {
-    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator, dsoPorts);
+    return createL1TVSConfigurationSetupManager(this.l1ConfigurationCreator);
   }
 
   public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(TestConfigurationCreator configCreator)
       throws ConfigurationSetupException {
-    return createL1TVSConfigurationSetupManager(configCreator, null);
-  }
-
-  public L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager(TestConfigurationCreator configCreator,
-                                                                             int[] dsoPorts)
-      throws ConfigurationSetupException {
-    if (mode == MODE_CENTRALIZED_CONFIG && dsoPorts != null) { throw new AssertionError(
-        "DSO ports should not be passed in when creating a centralized config"); }
-
     if (mode == MODE_CENTRALIZED_CONFIG) {
       StringBuffer l2sSpec = new StringBuffer();
 
@@ -399,7 +385,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     }
 
     StandardL1TVSConfigurationSetupManager configSetupManager = new StandardL1TVSConfigurationSetupManager(
-        configCreator, this.defaultValueProvider, this.xmlObjectComparator, this.illegalChangeHandler, dsoPorts);
+        configCreator, this.defaultValueProvider, this.xmlObjectComparator, this.illegalChangeHandler);
 
     return configSetupManager;
   }
