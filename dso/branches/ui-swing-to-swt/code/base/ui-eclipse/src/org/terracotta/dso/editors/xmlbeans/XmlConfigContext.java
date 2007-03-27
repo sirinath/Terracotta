@@ -48,10 +48,12 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_serverVerboseListener;
   private final EventMulticaster                       m_serverGCIntervalObserver;
   private UpdateEventListener                          m_serverGCIntervalListener;
-  // context new element observers
+  // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
-  // context create listeners
+  private final EventMulticaster                       m_removeServerObserver;
+  // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
+  private UpdateEventListener                          m_deleteServerListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final XmlConfigPersistenceManager            m_persistenceManager;
@@ -75,8 +77,9 @@ public final class XmlConfigContext {
     this.m_serverGCObserver = new EventMulticaster();
     this.m_serverVerboseObserver = new EventMulticaster();
     this.m_serverGCIntervalObserver = new EventMulticaster();
-    // "new" element observers
+    // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
+    this.m_removeServerObserver = new EventMulticaster();
     init();
   }
 
@@ -88,7 +91,7 @@ public final class XmlConfigContext {
   // register context listeners - to persist state to xml beans
   private void init() {
     registerEventListeners();
-    registerCreationEventListeners();
+    registerContextEventListeners();
   }
 
   private void registerEventListeners() {
@@ -99,28 +102,44 @@ public final class XmlConfigContext {
       }
     }, XmlConfigEvent.XML_STRUCTURE_CHANGED);
 
-    addListener(m_serverNameListener = newWriter(XmlConfigEvent.ELEM_NAME), XmlConfigEvent.SERVER_NAME);
-    addListener(m_serverHostListener = newWriter(XmlConfigEvent.ELEM_HOST), XmlConfigEvent.SERVER_HOST);
-    addListener(m_serverDsoPortListener = newWriter(XmlConfigEvent.ELEM_DSO_PORT), XmlConfigEvent.SERVER_DSO_PORT);
-    addListener(m_serverJmxPortListener = newWriter(XmlConfigEvent.ELEM_JMX_PORT), XmlConfigEvent.SERVER_JMX_PORT);
-    addListener(m_serverDataListener = newWriter(XmlConfigEvent.ELEM_DATA), XmlConfigEvent.SERVER_DATA);
+    addListener(m_serverNameListener = newWriter(), XmlConfigEvent.SERVER_NAME);
+    addListener(m_serverHostListener = newWriter(), XmlConfigEvent.SERVER_HOST);
+    addListener(m_serverDsoPortListener = newWriter(), XmlConfigEvent.SERVER_DSO_PORT);
+    addListener(m_serverJmxPortListener = newWriter(), XmlConfigEvent.SERVER_JMX_PORT);
+    addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_DATA);
+    addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
   }
 
-  private UpdateEventListener newWriter(final String element) {
+  private UpdateEventListener newWriter() {
     return new UpdateEventListener() {
-      public void handleUpdate(UpdateEvent data) {
-        XmlObject server = ((XmlConfigEvent) data).element;
-        m_persistenceManager.writeElement(server, element, (String) data.data);
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.elementNames[event.type];
+        XmlObject server = event.element;
+        m_persistenceManager.writeElement(server, element, (String) event.data);
       }
     };
   }
 
-  private void registerCreationEventListeners() {
+  private void registerContextEventListeners() {
     m_createServerListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent data) {
         if (m_config.getServers() == null) m_config.addNewServers();
         Server server = m_config.getServers().addNewServer();
-        m_newServerObserver.fireUpdateEvent(new XmlConfigEvent(null, null, server, null, XmlConfigEvent.NEW_SERVER));
+        m_newServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.NEW_SERVER));
+      }
+    };
+    m_deleteServerListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent data) {
+        XmlObject server = ((XmlConfigEvent) data).element;
+        Server[] servers = m_config.getServers().getServerArray();
+        for (int i = 0; i < servers.length; i++) {
+          if (servers[i] == server) {
+            m_config.getServers().removeServer(i);
+            break;
+          }
+        }
+        m_removeServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.REMOVE_SERVER));
       }
     };
   }
@@ -160,9 +179,12 @@ public final class XmlConfigContext {
       case XmlConfigEvent.SERVER_GC_INTERVAL:
         action.exec(m_serverGCIntervalObserver, m_serverGCIntervalListener);
         break;
-      // NEW EVENTS - notified after corresponding creation
+      // NEW/REMOVE EVENTS - notified after corresponding creation/deletion
       case XmlConfigEvent.NEW_SERVER:
         action.exec(m_newServerObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_SERVER:
+        action.exec(m_removeServerObserver, null);
         break;
 
       default:
@@ -174,6 +196,9 @@ public final class XmlConfigContext {
     switch (event.type) {
       case XmlConfigEvent.CREATE_SERVER:
         m_createServerListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_SERVER:
+        m_deleteServerListener.handleUpdate(event);
         break;
 
       default:
@@ -188,7 +213,7 @@ public final class XmlConfigContext {
     if (event.type < 0) {
       creationEvent(event);
       return;
-    } else if (event.type > XmlConfigEvent.NEW_RANGE_CONSTANT) return;
+    } else if (event.type > XmlConfigEvent.ALT_RANGE_CONSTANT) return;
     notifyListeners(event, false);
   }
 
@@ -196,7 +221,7 @@ public final class XmlConfigContext {
    * Update listeners with current XmlContext state. This should be used to initialize object state.
    */
   public void updateListeners(XmlConfigEvent event) {
-    event.data = m_persistenceManager.readElement(event.element, event.elementName);
+    event.data = m_persistenceManager.readElement(event.element, XmlConfigEvent.elementNames[event.type]);
     notifyListeners(event, true);
   }
 

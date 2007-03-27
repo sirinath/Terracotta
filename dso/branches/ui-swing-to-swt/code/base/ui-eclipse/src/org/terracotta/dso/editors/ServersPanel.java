@@ -7,6 +7,10 @@ package org.terracotta.dso.editors;
 import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
@@ -25,6 +29,7 @@ import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
 import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTLayout;
 import org.terracotta.ui.util.SWTUtil;
@@ -34,8 +39,8 @@ import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 public final class ServersPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
@@ -52,8 +57,11 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     super(parent, style);
     this.m_layout = new Layout(this);
     SWTUtil.setBackgroundRecursive(this.getDisplay().getSystemColor(SWT.COLOR_WHITE), this);
-    createListeners();
   }
+
+  // ================================================================================
+  // INTERFACE
+  // ================================================================================
 
   public synchronized void addListener(UpdateEventListener listener, int type) {
   // not implemented
@@ -61,110 +69,6 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
 
   public synchronized void removeListener(UpdateEventListener listener, int type) {
   // not implemented
-  }
-
-  private void createContextListeners() {
-    createServersElementListener(XmlConfigEvent.SERVER_NAME, NAME_INDEX, m_layout.m_nameField);
-    createServersElementListener(XmlConfigEvent.SERVER_HOST, HOST_INDEX, m_layout.m_hostField);
-    createServersElementListener(XmlConfigEvent.SERVER_DSO_PORT, DSO_PORT_INDEX, m_layout.m_dsoPortField);
-    createServersElementListener(XmlConfigEvent.SERVER_JMX_PORT, JMX_PORT_INDEX, m_layout.m_jmxPortField);
-    
-    m_state.xmlContext.addListener(new UpdateEventListener() {
-      public void handleUpdate(UpdateEvent e) {
-        if (!m_isActive) return;
-        Server server = (Server) castEvent(e).element;
-        TableItem item = createServerItem(server);
-        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_NAME, null, server,
-            XmlConfigEvent.ELEM_NAME, XmlConfigEvent.SERVER_NAME));
-        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_HOST, null, server,
-            XmlConfigEvent.ELEM_HOST, XmlConfigEvent.SERVER_HOST));
-        m_layout.m_serverTable.setSelection(item);
-        updateServersElementListeners(server);
-        m_layout.m_removeServerButton.setEnabled(true);
-      }
-    }, XmlConfigEvent.NEW_SERVER, this);
-  }
-
-  private void createListeners() {
-    m_layout.m_addServerButton.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        if (!m_isActive) return;
-        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigEvent.CREATE_SERVER));
-      }
-    });
-
-    m_layout.m_serverTable.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        if (!m_isActive) return;
-        System.out.println("row selected event");// XXX
-        m_layout.m_removeServerButton.setEnabled(true);
-        TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
-        Server server = (Server) item.getData();
-        updateServersElementListeners(server);
-      }
-    });
-
-    // XXX: remember serverIndices - create REMOVE_X event
-    m_layout.m_removeServerButton.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        if (!m_isActive) return;
-        int row = m_layout.m_serverTable.getSelectionIndex();
-        // m_state.servers.getServerArray(row);
-        // m_state.servers.removeServer(row);
-        m_layout.m_serverTable.remove(row);
-        m_layout.m_serverTable.deselectAll();
-        if (m_layout.m_serverTable.getItemCount() == 0) m_layout.m_removeServerButton.setEnabled(false);
-      }
-    });
-  }
-
-  private void createServersElementListener(int eventType, final int column, final Text field) {
-    UpdateEventListener listener = new UpdateEventListener() {
-      public void handleUpdate(UpdateEvent e) {
-        if (!m_isActive) return;
-        XmlConfigEvent event = castEvent(e);
-        int index = m_state.serverIndices.get(event.element).intValue();
-        TableItem item = m_layout.m_serverTable.getItem(index);
-        if (event.data == null) event.data = "";
-        item.setText(column, (String) event.data);
-        if (m_layout.m_serverTable.getSelectionIndex() == index) {
-          field.setText((String) event.data);
-        }
-      }
-    };
-    m_state.xmlContext.addListener(listener, eventType, this);
-  }
-
-  private void updateServersElementListeners(Server server) {
-    updateListeners(XmlConfigEvent.SERVER_NAME, XmlConfigEvent.ELEM_NAME, server);
-    updateListeners(XmlConfigEvent.SERVER_HOST, XmlConfigEvent.ELEM_HOST, server);
-    updateListeners(XmlConfigEvent.SERVER_DSO_PORT, XmlConfigEvent.ELEM_DSO_PORT, server);
-    updateListeners(XmlConfigEvent.SERVER_JMX_PORT, XmlConfigEvent.ELEM_JMX_PORT, server);
-  }
-
-  private void updateListeners(int event, String elementName, XmlObject element) {
-    m_state.xmlContext.updateListeners(new XmlConfigEvent(element, elementName, event));
-  }
-
-  private XmlConfigEvent castEvent(UpdateEvent e) {
-    return (XmlConfigEvent) e;
-  }
-
-  private TableItem createServerItem(XmlObject server) {
-    TableItem item = new TableItem(m_layout.m_serverTable, SWT.NONE);
-    item.setData(server);
-    m_state.serverIndices.put((Server) server, new Integer(m_layout.m_serverTable.getItemCount() - 1));
-    return item;
-  }
-
-  private void initTableItems(Servers servers) {
-    m_layout.m_serverTable.setEnabled(false);
-    Server[] serverElements = servers.getServerArray();
-    for (int i = 0; i < serverElements.length; i++) {
-      createServerItem(serverElements[i]);
-      updateServersElementListeners(serverElements[i]);
-    }
-    m_layout.m_serverTable.setEnabled(true);
   }
 
   public synchronized boolean isActive() {
@@ -192,21 +96,191 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     m_state = null;
   }
 
-  // --------------------------------------------------------------------------------
+  // ================================================================================
+  // INIT LISTENERS
+  // ================================================================================
+
+  private void initTableItems(Servers servers) {
+    m_layout.m_serverTable.setEnabled(false);
+    Server[] serverElements = servers.getServerArray();
+    for (int i = 0; i < serverElements.length; i++) {
+      createServerItem(serverElements[i]);
+      updateServerListeners(serverElements[i]);
+    }
+    m_layout.m_serverTable.setEnabled(true);
+  }
+
+  private void createContextListeners() {
+    registerServersElementBehavior(XmlConfigEvent.SERVER_NAME, NAME_INDEX, m_layout.m_nameField);
+    registerServersElementBehavior(XmlConfigEvent.SERVER_HOST, HOST_INDEX, m_layout.m_hostField);
+    registerServersElementBehavior(XmlConfigEvent.SERVER_DSO_PORT, DSO_PORT_INDEX, m_layout.m_dsoPortField);
+    registerServersElementBehavior(XmlConfigEvent.SERVER_JMX_PORT, JMX_PORT_INDEX, m_layout.m_jmxPortField);
+    registerFieldBehavior(XmlConfigEvent.SERVER_DATA, m_layout.m_dataLocation);
+    registerFieldNotificationListener(XmlConfigEvent.SERVER_DATA, m_layout.m_dataLocation);
+    registerFieldBehavior(XmlConfigEvent.SERVER_LOGS, m_layout.m_logsLocation);
+    registerFieldNotificationListener(XmlConfigEvent.SERVER_LOGS, m_layout.m_logsLocation);
+    // - new server
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        Server server = (Server) castEvent(e).element;
+        TableItem item = createServerItem(server);
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_NAME, null, server,
+            XmlConfigEvent.SERVER_NAME));
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigContext.DEFAULT_HOST, null, server,
+            XmlConfigEvent.SERVER_HOST));
+        m_layout.m_serverTable.setSelection(item);
+        updateServerListeners(server);
+        m_layout.m_removeServerButton.setEnabled(true);
+      }
+    }, XmlConfigEvent.NEW_SERVER, this);
+    // - context create server
+    m_layout.m_addServerButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(XmlConfigEvent.CREATE_SERVER));
+      }
+    });
+    // - table selection
+    m_layout.m_serverTable.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_removeServerButton.setEnabled(true);
+        TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
+        Server server = (Server) item.getData();
+        updateServerListeners(server);
+      }
+    });
+    // - context delete server
+    m_layout.m_removeServerButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_removeServerButton.setEnabled(false);
+        int row = m_layout.m_serverTable.getSelectionIndex();
+        TableItem item = m_layout.m_serverTable.getItem(row);
+        Server server = (Server) item.getData();
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(server, XmlConfigEvent.DELETE_SERVER));
+      }
+    });
+    // - remove server
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        Server server = (Server) castEvent(e).element;
+        int row = m_state.serverIndices.indexOf(server);
+        m_state.serverIndices.remove(server);
+        m_layout.m_serverTable.remove(row);
+        m_layout.m_serverTable.deselectAll();
+        m_layout.resetServerFields();
+      }
+    }, XmlConfigEvent.REMOVE_SERVER, this);
+  }
+
+  private void registerFieldNotificationListener(final int type, final Text text) {
+    text.addFocusListener(new FocusAdapter() {
+      public void focusLost(FocusEvent e) {
+        TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
+        Server server = (Server) item.getData();
+        Text field = (Text) e.getSource();
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent(field.getText(), (UpdateEventListener) field.getData(),
+            server, type));
+      }
+    });
+    text.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.keyCode == SWT.Selection) {
+          TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
+          Server server = (Server) item.getData();
+          Text field = (Text) e.getSource();
+          m_state.xmlContext.notifyListeners(new XmlConfigEvent(field.getText(), (UpdateEventListener) field.getData(),
+              server, type));
+        }
+      }
+    });
+  }
+  
+  private void registerFieldBehavior(int eventType, final Text text) {
+    registerFieldNotificationListener(eventType, text);
+    UpdateEventListener textListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        int index = m_state.serverIndices.indexOf(event.element);
+        if (event.data == null) event.data = "";
+        if (m_layout.m_serverTable.getSelectionIndex() == index) {
+          text.setEnabled(true);
+          text.setText((String) event.data);
+        }
+      }
+    };
+    text.setData(textListener);
+    m_state.xmlContext.addListener(textListener, eventType, this);
+  }
+
+  private void registerServersElementBehavior(int eventType, final int column, final Text text) {
+    registerFieldBehavior(eventType, text);
+    UpdateEventListener itemListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        int index = m_state.serverIndices.indexOf(event.element);
+        TableItem item = m_layout.m_serverTable.getItem(index);
+        if (event.data == null) event.data = "";
+        item.setText(column, (String) event.data);
+      }
+    };
+    m_state.xmlContext.addListener(itemListener, eventType, this);
+  }
+
+  // ================================================================================
+  // HELPERS
+  // ================================================================================
+
+  private void updateServerListeners(Server server) {
+    updateListeners(XmlConfigEvent.SERVER_NAME, server);
+    updateListeners(XmlConfigEvent.SERVER_HOST, server);
+    updateListeners(XmlConfigEvent.SERVER_DSO_PORT, server);
+    updateListeners(XmlConfigEvent.SERVER_JMX_PORT, server);
+    updateListeners(XmlConfigEvent.SERVER_DATA, server);
+    updateListeners(XmlConfigEvent.SERVER_LOGS, server);
+  }
+
+  private void updateListeners(int event, XmlObject element) {
+    m_state.xmlContext.updateListeners(new XmlConfigEvent(element, event));
+  }
+
+  private XmlConfigEvent castEvent(UpdateEvent e) {
+    return (XmlConfigEvent) e;
+  }
+
+  private TableItem createServerItem(XmlObject server) {
+    TableItem item = new TableItem(m_layout.m_serverTable, SWT.NONE);
+    item.setData(server);
+    m_state.serverIndices.add((Server) server);
+    return item;
+  }
+
+  // ================================================================================
+  // STATE
+  // ================================================================================
 
   private class State {
     final IProject             project;
     final XmlConfigContext     xmlContext;
-    final Map<Server, Integer> serverIndices;
+    final XmlConfigUndoContext xmlUndoContext;
+    final List<Server> serverIndices;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
-      this.serverIndices = new HashMap<Server, Integer>();
+      this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
+      this.serverIndices = new LinkedList<Server>();
     }
   }
 
-  // --------------------------------------------------------------------------------
+  // ================================================================================
+  // LAYOUT
+  // ================================================================================
 
   private static class Layout implements SWTLayout {
 
@@ -235,13 +309,38 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     private Text                m_hostField;
     private Text                m_dsoPortField;
     private Text                m_jmxPortField;
+    private Text                m_dataLocation;
+    private Text                m_logsLocation;
+    private Combo               m_persistenceModeCombo;
+    private Button              m_gcCheck;
+    private Spinner             m_gcIntervalSpinner;
+    private Button              m_verboseCheck;
 
     public void reset() {
       m_serverTable.removeAll();
+    }
+
+    private void resetServerFields() {
       m_nameField.setText("");
+      m_nameField.setEnabled(false);
       m_hostField.setText("");
+      m_hostField.setEnabled(false);
       m_dsoPortField.setText("");
+      m_dsoPortField.setEnabled(false);
       m_jmxPortField.setText("");
+      m_jmxPortField.setEnabled(false);
+      m_dataLocation.setText("");
+      m_dataLocation.setEnabled(false);
+      m_logsLocation.setText("");
+      m_logsLocation.setEnabled(false);
+      m_persistenceModeCombo.select(0);
+      m_persistenceModeCombo.setEnabled(false);
+      m_gcCheck.setSelection(false);
+      m_gcCheck.setEnabled(false);
+      m_gcIntervalSpinner.setSelection(0);
+      m_gcIntervalSpinner.setEnabled(false);
+      m_verboseCheck.setSelection(false);
+      m_verboseCheck.setEnabled(false);
     }
 
     private Layout(Composite parent) {
@@ -364,6 +463,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       Label nameLabel = new Label(serverGroup, SWT.NONE);
       nameLabel.setText(NAME);
       m_nameField = new Text(serverGroup, SWT.BORDER);
+      m_nameField.setEnabled(false);
       m_nameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
       new Label(serverGroup, SWT.NONE); // space
@@ -371,6 +471,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       Label dsoPortLabel = new Label(serverGroup, SWT.NONE);
       dsoPortLabel.setText(DSO_PORT);
       m_dsoPortField = new Text(serverGroup, SWT.BORDER);
+      m_dsoPortField.setEnabled(false);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
       gridData.widthHint = SWTUtil.textColumnsToPixels(m_dsoPortField, 6);
       m_dsoPortField.setLayoutData(gridData);
@@ -378,6 +479,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       Label hostLabel = new Label(serverGroup, SWT.NONE);
       hostLabel.setText(HOST);
       m_hostField = new Text(serverGroup, SWT.BORDER);
+      m_hostField.setEnabled(false);
       m_hostField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
       new Label(serverGroup, SWT.NONE); // space
@@ -385,6 +487,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       Label jmxPortLabel = new Label(serverGroup, SWT.NONE);
       jmxPortLabel.setText(JMX_PORT);
       m_jmxPortField = new Text(serverGroup, SWT.BORDER);
+      m_jmxPortField.setEnabled(false);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
       gridData.widthHint = SWTUtil.textColumnsToPixels(m_jmxPortField, 6);
       m_jmxPortField.setLayoutData(gridData);
@@ -402,9 +505,10 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       gridData.horizontalSpan = 4;
       dataPanel.setLayoutData(gridData);
 
-      Text dataLocation = new Text(dataPanel, SWT.BORDER);
+      m_dataLocation = new Text(dataPanel, SWT.BORDER);
+      m_dataLocation.setEnabled(false);
       gridData = new GridData(GridData.FILL_HORIZONTAL);
-      dataLocation.setLayoutData(gridData);
+      m_dataLocation.setLayoutData(gridData);
 
       Button dataBrowse = new Button(dataPanel, SWT.PUSH);
       dataBrowse.setText(BROWSE);
@@ -423,9 +527,10 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       gridData.horizontalSpan = 4;
       logsPanel.setLayoutData(gridData);
 
-      Text logsLocation = new Text(logsPanel, SWT.BORDER);
+      m_logsLocation = new Text(logsPanel, SWT.BORDER);
+      m_logsLocation.setEnabled(false);
       gridData = new GridData(GridData.FILL_HORIZONTAL);
-      logsLocation.setLayoutData(gridData);
+      m_logsLocation.setLayoutData(gridData);
 
       Button logsBrowse = new Button(logsPanel, SWT.PUSH);
       logsBrowse.setText(BROWSE);
@@ -444,24 +549,28 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
       Label persistenceModeLabel = new Label(gcPanel, SWT.NONE);
       persistenceModeLabel.setText(PERSISTENCE_MODE);
 
-      Combo persistenceModeCombo = new Combo(gcPanel, SWT.BORDER);
+      m_persistenceModeCombo = new Combo(gcPanel, SWT.BORDER);
+      m_persistenceModeCombo.setEnabled(false);
       gridData = new GridData(GridData.FILL_VERTICAL | GridData.GRAB_HORIZONTAL);
       gridData.widthHint = 200;
-      persistenceModeCombo.setLayoutData(gridData);
+      m_persistenceModeCombo.setLayoutData(gridData);
 
-      Button gcCheck = new Button(gcPanel, SWT.CHECK);
-      gcCheck.setText(GARBAGE_COLLECTION);
+      m_gcCheck = new Button(gcPanel, SWT.CHECK);
+      m_gcCheck.setEnabled(false);
+      m_gcCheck.setText(GARBAGE_COLLECTION);
 
       Label gcIntervalLabel = new Label(gcPanel, SWT.NONE);
       gcIntervalLabel.setText(GC_INTERVAL);
 
-      Spinner gcIntervalSpinner = new Spinner(gcPanel, SWT.BORDER);
+      m_gcIntervalSpinner = new Spinner(gcPanel, SWT.BORDER);
+      m_gcIntervalSpinner.setEnabled(false);
       gridData = new GridData(GridData.FILL_VERTICAL | GridData.GRAB_HORIZONTAL);
       gridData.widthHint = 100;
-      gcIntervalSpinner.setLayoutData(gridData);
+      m_gcIntervalSpinner.setLayoutData(gridData);
 
-      Button verboseCheck = new Button(gcPanel, SWT.CHECK);
-      verboseCheck.setText(VERBOSE);
+      m_verboseCheck = new Button(gcPanel, SWT.CHECK);
+      m_verboseCheck.setEnabled(false);
+      m_verboseCheck.setText(VERBOSE);
     }
   }
 }

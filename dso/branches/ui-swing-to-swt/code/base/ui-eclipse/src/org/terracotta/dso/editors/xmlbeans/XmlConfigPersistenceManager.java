@@ -9,6 +9,8 @@ import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlAnySimpleType;
 import org.apache.xmlbeans.XmlObject;
 
+import com.terracottatech.config.Server;
+
 import java.lang.reflect.Method;
 import java.util.StringTokenizer;
 
@@ -30,7 +32,8 @@ final class XmlConfigPersistenceManager {
       if (element != null) return element.getStringValue();
       return getSchemaProperty(parentType, elementName).getDefaultText();
     } catch (Exception e) {
-      throw new RuntimeException(e); // XXX: this should display a dialog
+      e.printStackTrace();
+      return "";
     }
   }
 
@@ -45,7 +48,7 @@ final class XmlConfigPersistenceManager {
       Method method = objClass.getMethod(methodName, params);
       method.invoke(xmlObject, args);
     } catch (Exception e) {
-      throw new RuntimeException(e); // XXX: this should display a dialog
+      e.printStackTrace();
     }
   }
 
