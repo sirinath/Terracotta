@@ -779,7 +779,7 @@ public class AdminClientPanel extends XContainer
           try {
             StringBuffer sb = new StringBuffer();
             String version = getProductInfo().getVersion();
-            if(true || version.indexOf('.') != -1) {
+            if(version.indexOf('.') != -1) {
               URL url = constructCheckURL();
               HttpClient httpClient = new HttpClient();
               Properties props = getResponseBody(url, httpClient);
