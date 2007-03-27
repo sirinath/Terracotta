@@ -1,5 +1,4 @@
-
-Nightly Build from Trunk
+Release Notes for Terracotta 2.3
 
 
 Documentation: http://www.terracotta.org/confluence/display/docs1/Terracotta+Product+Documentation
@@ -7,6 +6,113 @@ Forums:        http://forums.terracotta.org/forums/forums/list.page
 Mailing Lists: http://lists.terracotta.org
 Support:       http://www.terracotta.org/confluence/display/orgsite/Support
 
+Improvements and New Features
+DMI Improvementes
+
+    * CDV-100 New and improved DMI with major performance improvements and the ability to fire only on nodes with receiver local
+
+Optimized Kit
+
+    * CDV-40 The Solaris and Linux kits have been combined and are now named generic
+    * CDV-41 Terracotta Sessions, Terracotta Spring, and Terracotta DSO are consolidated into one download
+    * CDV-42Kits contain all platform specific scripts
+
+Display Object Graph on Non-Portable Error
+
+    * CDV-43 Give user actionable items in the face of non-portable exceptions
+
+Update Checker
+
+    * CDV-45 Allows users to check for updated versions of Terracotta using the Eclipse Plugin and the Administrative Console
+
+Terracotta Administrator Console Pasword
+
+    * CDV-47 Provide first layer of security for access to Terracotta Administrator Console
+
+DSO Eclipse Plug-in Outline View
+
+    * CDV-48 Enhance the developer experience to show an application's clustering information in a single place
+
+Application Node to Terracotta Server Synchronized Replication
+
+    * CDV-50 support for L1 to L2 synchronized replication for additional coherence
+
+Additional java.util Classes Supported
+
+    * CDV-51
+          o java.util.AbstractList
+          o java.util.AbstractMap
+          o java.util.EnumMap
+          o java.util.EnumSet
+
+Cluster Events and Node Data
+
+    * CDV-54 Provides access to cluster events and node date to enable integrations to custom cluster aware features and various projects with multi-node support
+
+JMX Heartbeat Test
+
+    * CDV-129 Allows operators to verify health of Terracotta Server (L2) with a heartbeat accessed via JMX
+
+Integrations
+iBATIS
+
+    * CDV-44 Cluster iBATIS Generated POJOs from O/R mapping engine
+
+Lucene Search Index
+
+    * CDV-52 Cluster search index
+
+Bug Fixes
+
+    * CDV-113 Autogenerate bootjars
+    * CDV-171 ArrayList subclass picks up extra elements
+    * CDV-166 The requirement/option for the <server> attributes "name" and "host" respectively are reversed
+    * CDV-139 Misleading error message on TCNonPortableException
+    * CDV-116 Deadlock in AspectWerkz tickled by Geronimo
+    * CDV-98 Add ability to read snippets of tc-config.xml files in configuration plugins
+    * CDV-75 Incorrect behavior on non-portable exception
+    * CDV-192 bootjar validator does not exit
+    * CDV-176 reading outside the bounds of managed array fails to use the resolveLock monitor correctly
+      See Jira https://jira.terracotta.org/jira/secure/IssueNavigator.jspa?reset=true&pid=10172&status=5 for more 2.3 bug fixes
+
+Known Issues
+
+    * Terracotta Sessions Configurator creates a test environment that depends
+      on running two domains (instances) of a web container (AppServer) from a
+      single install source. IBM WebSphere CE does not support multiple
+      domains in a manner that is compatible with Configurator. However, you
+      can use Configurator to test a web application deployed on Apache
+      Tomcat. After you have configured your web application to run clustered
+      with Terracotta Sessions, use the generated tc-config.xml file to deploy
+      the web application on IBM WebSphere CE running with Terracotta
+      Sessions.
+
+    * OOME in Permspace
+
+      SEVERE: Error deploying web application directory search
+      org.apache.commons.logging.LogConfigurationException:
+      java.lang.OutOfMemoryError: PermGen space (Caused by java.lang.OutOfMemoryError: PermGen space) at
+      org.apache.commons.logging.impl.LogFactoryImpl.newInstance(LogFactoryImpl.java:538) at ...
+
+      Increase the permspace by passing the correct jvm arguments.
+
+    * Max server object count capped by int
+      There could be some unexpected behaviour if the database has more than max int/2 objects in it.
+
+    * Possible double notifies after server restart
+      It is possible to receive double notifies on server restart
+          o This is caused by
+                + Thread1 is selected to be the notified thread in the server and the
+                  notification succeeds
+                + The server crashes
+                + When the server comes back up and the outstanding transactions are re-sent, the server chooses a different thread to be the notified thread and THAT notify also succeeds.
+          o The solution is
+                + On the receiving client side, keep track of the server transaction id that caused the notify.
+                + On client reconnect, the client lock state should contain the notifier
+                  server transaction id
+                + The server lock manager can then decide whether or not to choose a notified
+                  thread for a given transaction based on whether that transaction's notified
+                  thread has already been applied
 
 
 Copyright (c) 2007, Terracotta, Inc.
