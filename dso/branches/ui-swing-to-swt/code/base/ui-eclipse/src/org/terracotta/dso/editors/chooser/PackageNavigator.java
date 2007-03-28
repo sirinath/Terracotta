@@ -5,19 +5,13 @@
 package org.terracotta.dso.editors.chooser;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jdt.core.IClassFile;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.core.JarPackageFragmentRoot;
 import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.ui.JavaWorkbenchAdapter;
-import org.eclipse.jdt.internal.ui.packageview.ClassPathContainer;
 import org.eclipse.jdt.internal.ui.packageview.PackageExplorerContentProvider;
 import org.eclipse.jdt.internal.ui.packageview.PackageExplorerLabelProvider;
 import org.eclipse.jdt.internal.ui.packageview.WorkingSetAwareJavaElementSorter;
@@ -27,11 +21,7 @@ import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -39,34 +29,31 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.model.IWorkbenchAdapter;
 import org.eclipse.ui.model.WorkbenchContentProvider;
-import org.terracotta.dso.PatternHelper;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
-
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-public class SWTMethodNavigator extends MessageDialog {
+public class PackageNavigator extends MessageDialog {
 
-  private final Shell            m_parentShell;
-  private final IProject         m_project;
-  private final EventMulticaster m_valueListener;
-  private final List             m_selectedValues;
-  private MethodChooserLayout    m_layout;
+  private final Shell             m_parentShell;
+  private final IProject          m_project;
+  private final EventMulticaster  m_valueListener;
+  private final NavigatorBehavior m_behavior;
+  private Layout                  m_layout;
 
-  public SWTMethodNavigator(Shell shell, String title, IProject project) {
+  public PackageNavigator(Shell shell, String title, IProject project, NavigatorBehavior behavior) {
     super(shell, title, null, null, MessageDialog.NONE, new String[] {
       IDialogConstants.OK_LABEL,
       IDialogConstants.CANCEL_LABEL }, 0);
     this.m_parentShell = shell;
     this.m_project = project;
     this.m_valueListener = new EventMulticaster();
-    this.m_selectedValues = new ArrayList();
+    this.m_behavior = behavior;
   }
 
   protected void configureShell(Shell shell) {
@@ -94,12 +81,21 @@ public class SWTMethodNavigator extends MessageDialog {
     return comp;
   }
 
+  void okButtonEnabled(boolean enable) {
+    getButton(getDefaultButtonIndex()).setEnabled(enable);
+  }
+
+  void enableSelection(boolean enable, ISelectionChangedListener listener) {
+    if (enable) m_layout.m_viewer.addSelectionChangedListener(listener);
+    else m_layout.m_viewer.removeSelectionChangedListener(listener);
+  }
+
   protected Control createCustomArea(Composite parent) {
-    initLayout(m_layout = new MethodChooserLayout(parent));
+    initLayout(m_layout = new Layout(parent, m_behavior.style()));
     return parent;
   }
 
-  private void initLayout(final MethodChooserLayout layout) {
+  private void initLayout(final Layout layout) {
     JavaHierarchyContentProvider contentProvider;
     layout.m_viewer.setContentProvider(contentProvider = new JavaHierarchyContentProvider());
     layout.m_viewer.setLabelProvider(new PackageExplorerLabelProvider(AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
@@ -109,44 +105,14 @@ public class SWTMethodNavigator extends MessageDialog {
     IJavaProject jproj = JavaCore.create(m_project);
     IJavaElement root = jproj.getJavaModel();
     layout.m_viewer.setInput(root);
-
-    layout.m_viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-      public void selectionChanged(SelectionChangedEvent event) {
-        m_selectedValues.removeAll(m_selectedValues);
-        StructuredSelection selection = (StructuredSelection) event.getSelection();
-        List selectedMethods = new ArrayList();
-        if (!selection.isEmpty()) {
-          for (Iterator i = selection.iterator(); i.hasNext();) {
-            Object element;
-            if ((element = i.next()) instanceof IMethod) {
-              IMethod method = (IMethod) element;
-              m_selectedValues.add(PatternHelper.getExecutionPattern(method));
-              selectedMethods.add(element);
-            }
-          }
-          layout.m_viewer.removeSelectionChangedListener(this);
-          event.getSelectionProvider().setSelection(new StructuredSelection(selectedMethods.toArray()));
-          layout.m_viewer.addSelectionChangedListener(this);
-        }
-        if (selectedMethods.size() > 0) getButton(getDefaultButtonIndex()).setEnabled(true);
-        else getButton(getDefaultButtonIndex()).setEnabled(false);
-      }
-    });
-
-    layout.m_viewer.addFilter(new ViewerFilter() {
-      public boolean select(Viewer viewer, Object parentElement, Object element) {
-        if (element instanceof ClassPathContainer || element instanceof IJavaProject
-            || element instanceof IPackageFragment || element instanceof ICompilationUnit || element instanceof IType
-            || element instanceof IPackageFragmentRoot || element instanceof IClassFile || element instanceof IMethod) { return true; }
-        return false;
-      }
-    });
+    layout.m_viewer.addSelectionChangedListener(m_behavior.getSelectionChangedListener(this));
+    layout.m_viewer.addFilter(m_behavior.getFilter());
   }
 
   protected void buttonPressed(int buttonId) {
     tearDown();
     if (buttonId == IDialogConstants.OK_ID) {
-      m_valueListener.fireUpdateEvent(new UpdateEvent(m_selectedValues.toArray(new String[0])));
+      m_valueListener.fireUpdateEvent(new UpdateEvent(m_behavior.getValues()));
     }
     super.buttonPressed(buttonId);
   }
@@ -154,7 +120,7 @@ public class SWTMethodNavigator extends MessageDialog {
   public void addValueListener(UpdateEventListener listener) {
     m_valueListener.addListener(listener);
   }
-  
+
   private void tearDown() {
     m_layout.m_viewer.getTree().setRedraw(false);
     m_layout.m_viewer.getTree().setEnabled(false);
@@ -210,13 +176,13 @@ public class SWTMethodNavigator extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
-  private static class MethodChooserLayout {
+  private static class Layout {
 
     final TreeViewer m_viewer;
     GridData         m_gridData;
 
-    private MethodChooserLayout(Composite parent) {
-      this.m_viewer = new TreeViewer(parent);
+    private Layout(Composite parent, int style) {
+      this.m_viewer = new TreeViewer(parent, style);
       m_viewer.getTree().setLayoutData(new GridData(GridData.FILL_BOTH));
     }
   }

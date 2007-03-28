@@ -12,6 +12,7 @@ import org.terracotta.ui.util.SWTComponentModel;
 import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.DsoServerData;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
@@ -56,12 +57,10 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteServerListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
-  private final XmlConfigPersistenceManager            m_persistenceManager;
   private final TcConfig                               m_config;
   private final Map<SWTComponentModel, List>           m_componentModels;
 
   private XmlConfigContext(IProject project) {
-    this.m_persistenceManager = new XmlConfigPersistenceManager();
     this.m_config = TcPlugin.getDefault().getConfiguration(project);
     this.m_componentModels = new HashMap<SWTComponentModel, List>();
     m_contexts.put(project, this);
@@ -88,6 +87,91 @@ public final class XmlConfigContext {
     return new XmlConfigContext(project);
   }
 
+  /**
+   * Update listeners with current XmlContext state. This should be used to initialize object state.
+   */
+  public void updateListeners(final XmlConfigEvent event) {
+    doAction(new XmlAction() {
+      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
+        event.data = XmlConfigPersistenceManager.readElement(event.element, XmlConfigEvent.m_elementNames[event.type]);
+        event.source = source;
+        multicaster.fireUpdateEvent(event);
+      }
+
+      public XmlConfigEvent getEvent() {
+        return event;
+      }
+    }, event.type);
+  }
+
+  /**
+   * Notify <tt>XmlContext</tt> that a change has occured
+   */
+  public void notifyListeners(final XmlConfigEvent event) {
+    if (event.type < 0) {
+      creationEvent(event);
+      return;
+    } else if (event.type > XmlConfigEvent.ALT_RANGE_CONSTANT) return;
+    doAction(new XmlAction() {
+      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
+        multicaster.fireUpdateEvent(event);
+      }
+
+      public XmlConfigEvent getEvent() {
+        return event;
+      }
+    }, event.type);
+  }
+
+  public void addListener(final UpdateEventListener listener, int type) {
+    addListener(listener, type, null);
+  }
+
+  public void addListener(final UpdateEventListener listener, int type, final SWTComponentModel model) {
+    doAction(new XmlAction() {
+      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
+        multicaster.addListener(listener);
+        MulticastListenerPair mLPair = new MulticastListenerPair();
+        mLPair.multicaster = multicaster;
+        mLPair.listener = listener;
+        if (!m_componentModels.containsKey(model)) {
+          List<MulticastListenerPair> list = new LinkedList<MulticastListenerPair>();
+          m_componentModels.put(model, list);
+          list.add(mLPair);
+        } else m_componentModels.get(model).add(mLPair);
+      }
+
+      public XmlConfigEvent getEvent() {
+        return null;
+      }
+    }, type);
+  }
+
+  public void detachComponentModel(SWTComponentModel model) {
+    List<MulticastListenerPair> pairs = m_componentModels.get(model);
+    for (Iterator<MulticastListenerPair> iter = pairs.iterator(); iter.hasNext();) {
+      MulticastListenerPair pair = iter.next();
+      pair.multicaster.removeListener(pair.listener);
+    }
+  }
+
+  public void removeListener(final UpdateEventListener listener, int type) {
+    doAction(new XmlAction() {
+      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
+        multicaster.removeListener(listener);
+      }
+
+      public XmlConfigEvent getEvent() {
+        return null;
+      }
+    }, type);
+  }
+
+  // HELPERS
+  public static String[] getListDefaults(Class parentType, int type) {
+    return XmlConfigPersistenceManager.getListDefaults(parentType, XmlConfigEvent.m_elementNames[type]);
+  }
+
   // register context listeners - to persist state to xml beans
   private void init() {
     registerEventListeners();
@@ -108,15 +192,38 @@ public final class XmlConfigContext {
     addListener(m_serverJmxPortListener = newWriter(), XmlConfigEvent.SERVER_JMX_PORT);
     addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_DATA);
     addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
+    addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
+    addListener(m_serverPersistListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlObject xml = ensureServerDsoPersistElement((XmlObject) event.variable);
+        XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+      }
+    }, XmlConfigEvent.SERVER_PERSIST);
+    addListener(m_serverGCIntervalListener = newGCWriter(), XmlConfigEvent.SERVER_GC_INTERVAL);
+    addListener(m_serverGCListener = newGCWriter(), XmlConfigEvent.SERVER_GC);
+    addListener(m_serverVerboseListener = newGCWriter(), XmlConfigEvent.SERVER_GC_VERBOSE);
+  }
+
+  private UpdateEventListener newGCWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlObject xml = ensureServerDsoGCElement((XmlObject) event.variable);
+        XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+      }
+    };
   }
 
   private UpdateEventListener newWriter() {
     return new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         XmlConfigEvent event = (XmlConfigEvent) e;
-        final String element = XmlConfigEvent.elementNames[event.type];
-        XmlObject server = event.element;
-        m_persistenceManager.writeElement(server, element, (String) event.data);
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlObject xml = event.element;
+        XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
       }
     };
   }
@@ -145,6 +252,7 @@ public final class XmlConfigContext {
   }
 
   private void doAction(XmlAction action, int type) {
+    XmlConfigEvent event = action.getEvent();
     switch (type) {
       case XmlConfigEvent.XML_STRUCTURE_CHANGED:
         action.exec(m_xmlStructureChangedObserver, m_xmlStructureChangedListener);
@@ -168,15 +276,31 @@ public final class XmlConfigContext {
         action.exec(m_serverLogsObserver, m_serverLogsListener);
         break;
       case XmlConfigEvent.SERVER_PERSIST:
+        if (event != null) {
+          event.variable = event.element; // <-- NOTE: Server element moved to variable field
+          event.element = ensureServerDsoPersistElement(event.element);
+        }
         action.exec(m_serverPersistObserver, m_serverPersistListener);
         break;
       case XmlConfigEvent.SERVER_GC:
+        if (event != null) {
+          event.variable = event.element; // <-- NOTE: Server element moved to variable field
+          event.element = ensureServerDsoGCElement(event.element);
+        }
         action.exec(m_serverGCObserver, m_serverGCListener);
         break;
-      case XmlConfigEvent.SERVER_VERBOSE:
+      case XmlConfigEvent.SERVER_GC_VERBOSE:
+        if (event != null) {
+          event.variable = event.element; // <-- NOTE: Server element moved to variable field
+          event.element = ensureServerDsoGCElement(event.element);
+        }
         action.exec(m_serverVerboseObserver, m_serverVerboseListener);
         break;
       case XmlConfigEvent.SERVER_GC_INTERVAL:
+        if (event != null) {
+          event.variable = event.element; // <-- NOTE: Server element moved to variable field
+          event.element = ensureServerDsoGCElement(event.element);
+        }
         action.exec(m_serverGCIntervalObserver, m_serverGCIntervalListener);
         break;
       // NEW/REMOVE EVENTS - notified after corresponding creation/deletion
@@ -206,82 +330,22 @@ public final class XmlConfigContext {
     }
   }
 
-  /**
-   * Notify <tt>XmlContext</tt> that a change has occured
-   */
-  public void notifyListeners(XmlConfigEvent event) {
-    if (event.type < 0) {
-      creationEvent(event);
-      return;
-    } else if (event.type > XmlConfigEvent.ALT_RANGE_CONSTANT) return;
-    notifyListeners(event, false);
+  private XmlObject ensureServerDsoElement(XmlObject server) {
+    String dsoElementName = XmlConfigEvent.PARENT_ELEM_DSO;
+    return XmlConfigPersistenceManager.ensureXml(server, Server.class, dsoElementName);
   }
 
-  /**
-   * Update listeners with current XmlContext state. This should be used to initialize object state.
-   */
-  public void updateListeners(XmlConfigEvent event) {
-    event.data = m_persistenceManager.readElement(event.element, XmlConfigEvent.elementNames[event.type]);
-    notifyListeners(event, true);
+  private XmlObject ensureServerDsoGCElement(XmlObject server) {
+    String gcElementName = XmlConfigEvent.PARENT_ELEM_GC;
+    XmlObject dso = ensureServerDsoElement(server);
+    return XmlConfigPersistenceManager.ensureXml(dso, DsoServerData.class, gcElementName);
   }
 
-  private void notifyListeners(final XmlConfigEvent event, final boolean ignoreContext) {
-    doAction(new XmlAction() {
-      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
-        if (ignoreContext) event.source = source;
-        multicaster.fireUpdateEvent(event);
-      }
-    }, event.type);
+  private XmlObject ensureServerDsoPersistElement(XmlObject server) {
+    String persistElementName = XmlConfigEvent.PARENT_ELEM_PERSIST;
+    XmlObject dso = ensureServerDsoElement(server);
+    return XmlConfigPersistenceManager.ensureXml(dso, DsoServerData.class, persistElementName);
   }
-
-  public void addListener(final UpdateEventListener listener, int type) {
-    addListener(listener, type, null);
-  }
-
-  public void addListener(final UpdateEventListener listener, int type, final SWTComponentModel model) {
-    doAction(new XmlAction() {
-      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
-        multicaster.addListener(listener);
-        MulticastListenerPair mLPair = new MulticastListenerPair();
-        mLPair.multicaster = multicaster;
-        mLPair.listener = listener;
-        if (!m_componentModels.containsKey(model)) {
-          List<MulticastListenerPair> list = new LinkedList<MulticastListenerPair>();
-          m_componentModels.put(model, list);
-          list.add(mLPair);
-        } else m_componentModels.get(model).add(mLPair);
-      }
-    }, type);
-  }
-
-  public void detachComponentModel(SWTComponentModel model) {
-    List<MulticastListenerPair> pairs = m_componentModels.get(model);
-    for (Iterator<MulticastListenerPair> iter = pairs.iterator(); iter.hasNext();) {
-      MulticastListenerPair pair = iter.next();
-      pair.multicaster.removeListener(pair.listener);
-    }
-  }
-
-  public void removeListener(final UpdateEventListener listener, int type) {
-    doAction(new XmlAction() {
-      public void exec(EventMulticaster multicaster, UpdateEventListener source) {
-        multicaster.removeListener(listener);
-      }
-    }, type);
-  }
-
-  // HELPERS
-  // public String[] getListDefaults() {
-  // return null;
-  // }
-  //
-  // public int[] getRangeDefaults() {
-  // return null;
-  // }
-  //
-  // public boolean isRequired() {
-  // return false;
-  // }
 
   // --------------------------------------------------------------------------------
 
@@ -294,5 +358,7 @@ public final class XmlConfigContext {
 
   private interface XmlAction {
     void exec(EventMulticaster multicaster, UpdateEventListener source);
+
+    XmlConfigEvent getEvent();
   }
 }

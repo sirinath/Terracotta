@@ -29,7 +29,6 @@ import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
-
 public class SWTMethodChooser extends MessageDialog {
 
   private static final String    EXPLORE = "Explore...";
@@ -67,7 +66,7 @@ public class SWTMethodChooser extends MessageDialog {
   private void initLayout(final MethodChooserLayout layout) {
     layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        SWTMethodNavigator dialog = new SWTMethodNavigator(getShell(), "Select Method", m_project);
+        PackageNavigator dialog = new PackageNavigator(getShell(), "Select Method", m_project, new MethodBehavior());
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent arg) {
             String[] values = (String[]) arg.data;
