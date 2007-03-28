@@ -32,6 +32,7 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.L2MBeanNames;
+import com.tc.management.beans.L2State;
 import com.tc.management.beans.TCServerInfo;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.transport.ConnectionPolicy;
@@ -174,7 +175,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     if (dsoServer != null) { return dsoServer.getListenPort(); }
     throw new IllegalStateException("DSO Server not running");
   }
-  
+
   public void dump() {
     if (dsoServer != null) {
       dsoServer.dump();
@@ -308,7 +309,7 @@ public class TCServerImpl extends SEDA implements TCServer {
 
   private void startDSOServer(Sink httpSink) throws Exception {
     dsoServer = new DistributedObjectServer(configurationSetupManager, getThreadGroup(), connectionPolicy, httpSink,
-                                            new TCServerInfo(this));
+                                            new TCServerInfo(this, new L2State()));
     dsoServer.start();
 
     registerDSOServer();

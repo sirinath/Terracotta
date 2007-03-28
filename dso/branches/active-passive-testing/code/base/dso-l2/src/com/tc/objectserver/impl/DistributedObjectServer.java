@@ -585,9 +585,9 @@ public class DistributedObjectServer extends SEDA {
       l2Coordinator = new L2HADisabledCooridinator();
     }
 
-    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectStore,
-                                                 lockManager, channelManager, clientStateManager, transactionManager,
-                                                 txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
+    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectStore, lockManager, channelManager,
+                                                 clientStateManager, transactionManager, txnObjectManager,
+                                                 clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader());
 
     stageManager.startAll(context);
@@ -602,7 +602,7 @@ public class DistributedObjectServer extends SEDA {
                                                     instanceMonitor, appEvents);
 
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
-    
+
     if (networkedHA) {
       l2Coordinator.start();
     } else {

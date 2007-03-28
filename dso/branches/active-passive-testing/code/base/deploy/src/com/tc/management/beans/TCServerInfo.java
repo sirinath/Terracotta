@@ -31,7 +31,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private final String                         buildID;
   private long                                 nextSequenceNumber;
 
-  public TCServerInfo(final TCServer server) throws NotCompliantMBeanException {
+  public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
     this.server = server;
     productInfo = ProductInfo.getThisProductInfo();
