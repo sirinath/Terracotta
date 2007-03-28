@@ -51,11 +51,6 @@ public class ActivePassiveServerConfigCreator {
   }
 
   private void checkPersistenceAndDiskLessMode() {
-    if (!serverPersistence.equals(L2ConfigBuilder.PERSISTENCE_MODE_PERMANENT_STORE)
-        && !serverPersistence.equals(L2ConfigBuilder.PERSISTENCE_MODE_TEMPORARY_SWAP_ONLY)) { throw new AssertionError(
-                                                                                                                       "Invalid persistence mode:  persistenceMode=["
-                                                                                                                           + serverPersistence
-                                                                                                                           + "]"); }
     if (!serverDiskless && serverPersistence.equals(L2ConfigBuilder.PERSISTENCE_MODE_TEMPORARY_SWAP_ONLY)) { throw new AssertionError(
                                                                                                                                       "The servers are not running in diskless mode so persistence mode should be set to permanent-store"); }
   }

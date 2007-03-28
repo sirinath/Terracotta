@@ -16,6 +16,7 @@ import com.tc.simulator.app.ErrorContext;
 import com.tc.test.TestConfigObject;
 import com.tc.test.activepassive.ActivePassiveServerConfigCreator;
 import com.tc.test.activepassive.ActivePassiveServerManager;
+import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.restart.RestartTestEnvironment;
 import com.tc.test.restart.RestartTestHelper;
 import com.tc.test.restart.ServerCrasher;
@@ -36,25 +37,25 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int                     DEFAULT_CLIENT_COUNT         = 2;
-  public static final int                     DEFAULT_INTENSITY            = 10;
-  public static final int                     DEFAULT_VALIDATOR_COUNT      = 0;
+  public static final int                         DEFAULT_CLIENT_COUNT    = 2;
+  public static final int                         DEFAULT_INTENSITY       = 10;
+  public static final int                         DEFAULT_VALIDATOR_COUNT = 0;
 
-  private TVSConfigurationSetupManagerFactory configFactory;
-  private DSOClientConfigHelper               configHelper;
-  protected DistributedTestRunner             runner;
-  private DistributedTestRunnerConfig         runnerConfig                 = new DistributedTestRunnerConfig();
-  private TransparentAppConfig                transparentAppConfig;
-  private ApplicationConfigBuilder            possibleApplicationConfigBuilder;
+  private TestTVSConfigurationSetupManagerFactory configFactory;
+  private DSOClientConfigHelper                   configHelper;
+  protected DistributedTestRunner                 runner;
+  private DistributedTestRunnerConfig             runnerConfig            = new DistributedTestRunnerConfig();
+  private TransparentAppConfig                    transparentAppConfig;
+  private ApplicationConfigBuilder                possibleApplicationConfigBuilder;
 
-  private String                              mode;
-  private ServerControl                       serverControl;
-  private boolean                             controlledCrashMode          = false;
-  private ServerCrasher                       crasher;
+  private String                                  mode;
+  private ServerControl                           serverControl;
+  private boolean                                 controlledCrashMode     = false;
+  private ServerCrasher                           crasher;
 
   // for active-passive tests
-  private ActivePassiveServerManager          serverManager;
-  private boolean                             crashActiveServerAfterMutate = false;
+  private ActivePassiveServerManager              apServerManager;
+  private ActivePassiveTestSetupManager           apSetupManager;
 
   protected void setUp() throws Exception {
     setUp(configFactory(), configHelper());
@@ -84,25 +85,29 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private final void setUpActivePassiveServers() throws Exception {
     controlledCrashMode = true;
-    serverManager = new ActivePassiveServerManager(mode()
+    apSetupManager = new ActivePassiveTestSetupManager();
+    setupActivePassiveTest(apSetupManager);
+    apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), new PortChooser(),
-                                                   ActivePassiveServerConfigCreator.DEV_MODE, TestConfigObject
-                                                       .getInstance(), runnerConfig.startTimeout());
-    crashActiveServerAfterMutate = serverManager.crashActiveServerAfterMutate();
-
-    if (!(configFactory instanceof TestTVSConfigurationSetupManagerFactory)) { throw new AssertionError(
-                                                                                                        "configFactory is not an instance of TestTVSConfigurationSetupManagerFactory as expected"); }
-    serverManager.addServersToConfig((TestTVSConfigurationSetupManagerFactory) configFactory);
+                                                     ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
+                                                     runnerConfig.startTimeout());
+    apServerManager.addServersToL1Config(configFactory);
   }
 
-  protected final void setUpControlledServer(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
-                                             int serverPort, int adminPort, String configFile) throws Exception {
+  protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+    throw new AssertionError("The sub-class (test) should override this method.");
+  }
+
+  protected final void setUpControlledServer(TestTVSConfigurationSetupManagerFactory factory,
+                                             DSOClientConfigHelper helper, int serverPort, int adminPort,
+                                             String configFile) throws Exception {
     controlledCrashMode = true;
     serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true);
     setUp(factory, helper);
   }
 
-  private final void setUp(TVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper) throws Exception {
+  private final void setUp(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)
+      throws Exception {
     super.setUp();
     this.configFactory = factory;
     this.configHelper = helper;
@@ -191,7 +196,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                                 .newApplicationConfig(), transparentAppConfig.getClientCount(),
                                             transparentAppConfig.getApplicationInstancePerClientCount(),
                                             getStartServer(), isMutateValidateTest, transparentAppConfig
-                                                .getValidatorCount(), isActivePassive(), serverManager);
+                                                .getValidatorCount(), isActivePassive(), apServerManager);
   }
 
   protected boolean canRun() {
@@ -222,7 +227,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       if (controlledCrashMode && !isActivePassive()) {
         serverControl.start(30 * 1000);
       } else if (controlledCrashMode) {
-        serverManager.startServers();
+        apServerManager.startServers();
       }
       this.runner.run();
 
@@ -243,6 +248,17 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       System.err.println("NOTE: " + getClass().getName() + " can't be run in mode '" + mode()
                          + "', and thus will be skipped.");
     }
+  }
+
+  protected void tearDown() throws Exception {
+    // TODO: remove this comment
+    System.err.println("TransparentTestBase tearDown() called");
+
+    if (controlledCrashMode && isActivePassive()) {
+      apServerManager.stopAllServers();
+      apServerManager = null;
+    }
+    super.tearDown();
   }
 
   protected void doDumpServerDetails() {

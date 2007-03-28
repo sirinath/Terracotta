@@ -6,7 +6,6 @@ package com.tctest;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
@@ -47,10 +46,6 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
       System.out.println("***** appId[" + appId + "]: mutate stage complete");
     }
 
-    System.out.println("***** appId[" + appId + "]:  before sleep [" + System.currentTimeMillis() + "]ms");
-    Thread.sleep(10000);
-    System.out.println("***** appId[" + appId + "]:  after sleep [" + System.currentTimeMillis() + "]ms");
-    
     notifyValidationStart();
     System.out.println("***** appId[" + appId + "]: notified mutate-listener... waiting for validat stage to start");
     waitForValidationStart();
@@ -76,13 +71,17 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
     listenerProvider.getMutationCompletionListener().waitForMutationCompleteTestWide();
   }
 
+  protected boolean isMutator() {
+    return isMutator;
+  }
+
   protected abstract void mutate() throws Throwable;
 
   protected abstract void validate() throws Throwable;
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = AbstractMutateValidateTransparentApp.class.getName();
-    TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    config.getOrCreateSpec(testClass);
     String methodExpression = "* " + testClass + "*.*(..)";
     config.addWriteAutolock(methodExpression);
   }

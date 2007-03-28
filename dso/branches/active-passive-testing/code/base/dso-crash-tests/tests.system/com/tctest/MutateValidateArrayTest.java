@@ -4,6 +4,7 @@
  */
 package com.tctest;
 
+import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.runner.TransparentAppConfig;
 
 public class MutateValidateArrayTest extends TransparentTestBase {
@@ -16,14 +17,22 @@ public class MutateValidateArrayTest extends TransparentTestBase {
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig tac = t.getTransparentAppConfig();
     tac.setClientCount(MUTATOR_NODE_COUNT).setIntensity(1).setValidatorCount(VALIDATOR_NODE_COUNT)
-        .setApplicationInstancePerClientCount(2);
+        .setApplicationInstancePerClientCount(APP_INSTANCE_PER_NODE);
     t.initializeTestRunner(IS_MUTATE_VALIDATE_TEST);
   }
-
+  
   protected Class getApplicationClass() {
     return MutateValidateArrayTestApp.class;
   }
 
+  public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+    setupManager.setServerCount(2);
+    setupManager.setServerCrashMode(ActivePassiveTestSetupManager.MUTATE_VALIDATE);
+    setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.PERMANENT_STORE);
+    setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.DISK);
+    setupManager.setServerCrashWaitInSec(30);
+  }
+  
   protected boolean canRunActivePassive() {
     return true;
   }

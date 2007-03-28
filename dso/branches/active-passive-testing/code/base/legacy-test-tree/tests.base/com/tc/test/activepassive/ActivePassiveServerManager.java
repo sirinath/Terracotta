@@ -7,30 +7,27 @@ package com.tc.test.activepassive;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
-import com.tc.test.TestConfigObject;
 import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
 public class ActivePassiveServerManager {
-  private static final String                    HOST                       = "localhost";
-  private static final String                    SERVER_NAME                = "testserver";
-  private static final String                    CONFIG_FILE_NAME           = "active-passive-server-config.xml";
-  private static final String                    MUTATE_VALIDATE_CRASH_MODE = "mutate-validate";
+  private static final String                    HOST             = "localhost";
+  private static final String                    SERVER_NAME      = "testserver";
+  private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
 
   private final File                             tempDir;
   private final PortChooser                      portChooser;
   private final String                           configModel;
-  private final TestConfigObject                 testConfig;
+  private final ActivePassiveTestSetupManager    setupManger;
   private final long                             startTimeout;
 
   private final int                              serverCount;
   private final String                           serverCrashMode;
-  private final String                           serverCrashType;
   private final int                              serverCrashWaitTime;
   private final String                           serverPersistence;
-  private final boolean                          serverDiskless;
+  private final boolean                          serverNetworkShare;
   private final ActivePassiveServerConfigCreator serverConfigCreator;
   private final String                           configFileLocation;
   private final File                             configFile;
@@ -40,16 +37,16 @@ public class ActivePassiveServerManager {
   private final int[]                            jmxPorts;
   private final String[]                         serverNames;
 
-  private int                                    activeIndex                = -1;
+  private int                                    activeIndex      = -1;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
-                                    String configModel, TestConfigObject testConfig, long startTimeout)
+                                    String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout)
       throws Exception {
     if (!isActivePassiveTest) { throw new AssertionError("A non-ActivePassiveTest is trying to use this class."); }
 
-    this.testConfig = testConfig;
+    this.setupManger = setupManger;
 
-    serverCount = this.testConfig.getActivePassiveServerCount();
+    serverCount = this.setupManger.getServerCount();
 
     if (serverCount < 2) { throw new AssertionError("Active-passive tests involve 2 or more DSO servers: serverCount=["
                                                     + serverCount + "]"); }
@@ -67,15 +64,10 @@ public class ActivePassiveServerManager {
     this.configModel = configModel;
     this.startTimeout = startTimeout;
 
-    // TODO: can be mutate-validate
-    serverCrashMode = this.testConfig.getActivePassiveServerCrashMode();
-
-    // TODO: implement time-based crash
-    serverCrashWaitTime = this.testConfig.getActivePassiveServerCrashWaitTime();
-    serverCrashType = this.testConfig.getActivePassiveServerCrashType();
-
-    serverPersistence = this.testConfig.getActivePassiveServerPersistence();
-    serverDiskless = this.testConfig.getActivePassiveServerDiskless();
+    serverCrashMode = this.setupManger.getServerCrashMode();
+    serverCrashWaitTime = this.setupManger.getWaitTimeInSec();
+    serverPersistence = this.setupManger.getServerPersistenceMode();
+    serverNetworkShare = this.setupManger.isNetworkShare();
 
     servers = new ServerInfo[this.serverCount];
     dsoPorts = new int[this.serverCount];
@@ -84,7 +76,7 @@ public class ActivePassiveServerManager {
     createServers();
 
     serverConfigCreator = new ActivePassiveServerConfigCreator(this.serverCount, dsoPorts, jmxPorts, serverNames,
-                                                               serverPersistence, serverDiskless, this.configModel,
+                                                               serverPersistence, serverNetworkShare, this.configModel,
                                                                configFile, this.tempDir);
     serverConfigCreator.writeL2Config();
   }
@@ -156,6 +148,15 @@ public class ActivePassiveServerManager {
     startPassives();
   }
 
+  public void stopAllServers() throws Exception {
+    for (int i = 0; i < serverCount; i++) {
+      ServerControl sc = servers[i].getServerControl();
+      if (sc.isRunning()) {
+        sc.shutdown();
+      }
+    }
+  }
+
   private void startActive() throws Exception {
     servers[activeIndex].getServerControl().start(startTimeout);
   }
@@ -195,11 +196,11 @@ public class ActivePassiveServerManager {
   }
 
   public boolean crashActiveServerAfterMutate() {
-    if (serverCrashMode.equals(MUTATE_VALIDATE_CRASH_MODE)) { return true; }
+    if (serverCrashMode.equals(ActivePassiveTestSetupManager.MUTATE_VALIDATE)) { return true; }
     return false;
   }
 
-  public void addServersToConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
+  public void addServersToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     for (int i = 0; i < serverCount; i++) {
       configFactory.addServerToL1Config(serverNames[i], dsoPorts[i], jmxPorts[i]);
     }

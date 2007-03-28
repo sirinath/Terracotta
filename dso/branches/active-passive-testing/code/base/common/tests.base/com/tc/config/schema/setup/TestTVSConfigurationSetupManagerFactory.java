@@ -298,11 +298,16 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
   public void addServerToL1Config(String name, int dsoPort, int jmxPort) {
     Server newL2 = this.l1_beanSet.serversBean().addNewServer();
 
-    newL2.setName(name);
+    if (name != null && !name.equals("")) {
+      newL2.setName(name);
+    }
     newL2.setHost("localhost");
 
     newL2.setDsoPort(dsoPort);
-    newL2.setJmxPort(jmxPort);
+
+    if (jmxPort >= 0) {
+      newL2.setJmxPort(jmxPort);
+    }
 
     newL2.setData(BOGUS_FILENAME);
     newL2.setLogs(BOGUS_FILENAME);

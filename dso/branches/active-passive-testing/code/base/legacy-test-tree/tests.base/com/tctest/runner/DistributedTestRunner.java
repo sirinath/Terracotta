@@ -6,10 +6,8 @@ package com.tctest.runner;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
-import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
-import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
@@ -44,39 +42,39 @@ import java.util.Map;
  */
 public class DistributedTestRunner implements ResultsListener {
 
-  private final boolean                             startServer;
+  private final boolean                                 startServer;
 
-  private final Class                               applicationClass;
-  private final ApplicationConfig                   applicationConfig;
-  private final ConfigVisitor                       configVisitor;
-  private final ContainerConfig                     containerConfig;
-  private final Control                             control;
-  private final ResultsListener[]                   resultsListeners;
-  private final DSOClientConfigHelper               configHelper;
-  private final ApplicationBuilder[]                applicationBuilders;
-  private final Container[]                         containers;
-  private final ContainerStateFactory               containerStateFactory;
-  private final TestGlobalIdGenerator               globalIdGenerator;
-  private final TCServerImpl                        server;
-  private final List                                errors  = new ArrayList();
-  private final List                                results = new ArrayList();
-  private final DistributedTestRunnerConfig         config;
-  private final TVSConfigurationSetupManagerFactory configFactory;
-  private boolean                                   startTimedOut;
-  private boolean                                   executionTimedOut;
-  private final int                                 clientCount;
-  private final int                                 applicationInstanceCount;
-  private final LinkedQueue                         statsOutputQueue;
-  private final QueuePrinter                        statsOutputPrinter;
+  private final Class                                   applicationClass;
+  private final ApplicationConfig                       applicationConfig;
+  private final ConfigVisitor                           configVisitor;
+  private final ContainerConfig                         containerConfig;
+  private final Control                                 control;
+  private final ResultsListener[]                       resultsListeners;
+  private final DSOClientConfigHelper                   configHelper;
+  private final ContainerStateFactory                   containerStateFactory;
+  private final TestGlobalIdGenerator                   globalIdGenerator;
+  private final TCServerImpl                            server;
+  private final List                                    errors  = new ArrayList();
+  private final List                                    results = new ArrayList();
+  private final DistributedTestRunnerConfig             config;
+  private final TestTVSConfigurationSetupManagerFactory configFactory;
+  private boolean                                       startTimedOut;
+  private boolean                                       executionTimedOut;
+  private final int                                     clientCount;
+  private final int                                     applicationInstanceCount;
+  private final LinkedQueue                             statsOutputQueue;
+  private final QueuePrinter                            statsOutputPrinter;
 
-  private final Map                                 optionalAttributes;
+  private final Map                                     optionalAttributes;
 
-  private final boolean                             isMutatorValidatorTest;
-  private final int                                 validatorCount;
-  private final boolean                             isActivePassiveTest;
-  private final ActivePassiveServerManager          serverManager;
+  private final boolean                                 isMutatorValidatorTest;
+  private final int                                     validatorCount;
+  private final boolean                                 isActivePassiveTest;
+  private final ActivePassiveServerManager              serverManager;
 
-  private Container[]                               validatorContainers;
+  private ApplicationBuilder[]                          applicationBuilders;
+  private Container[]                                   containers;
+  private Container[]                                   validatorContainers;
 
   /**
    * @param applicationClass Class of the application to be executed. It should implement the static method required by
@@ -86,7 +84,8 @@ public class DistributedTestRunner implements ResultsListener {
    * @param applicationsPerNode Number of application instances per classloader to execute. This counts as number of
    *        threads per classloader.
    */
-  public DistributedTestRunner(DistributedTestRunnerConfig config, TVSConfigurationSetupManagerFactory configFactory,
+  public DistributedTestRunner(DistributedTestRunnerConfig config,
+                               TestTVSConfigurationSetupManagerFactory configFactory,
                                DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
                                ApplicationConfig applicationConfig, int clientCount, int applicationInstanceCount,
                                boolean startServer, boolean isMutatorValidatorTest, int validatorCount,
@@ -113,21 +112,30 @@ public class DistributedTestRunner implements ResultsListener {
     this.control = newContainerControl();
 
     this.resultsListeners = newResultsListeners(this.clientCount + this.validatorCount);
-    this.applicationBuilders = newApplicationBuilders(this.clientCount + this.validatorCount);
 
-    this.containers = new Container[clientCount];
+    initializedClients();
 
+    L2TVSConfigurationSetupManager manager = configFactory.createL2TVSConfigurationSetupManager(null);
+
+    server = new TCServerImpl(manager, new TCThreadGroup(new ThrowableHandler(TCLogging
+        .getLogger(DistributedObjectServer.class))));
+  }
+
+  private void initializedClients() throws Exception {
+    applicationBuilders = newApplicationBuilders(this.clientCount + this.validatorCount);
+
+    createMutators();
+    createValidators();
+  }
+
+  private void createMutators() {
+    containers = new Container[clientCount];
     boolean mutator = true;
     for (int i = 0; i < containers.length; i++) {
       containers[i] = new Container(this.containerConfig, this.containerStateFactory, this.globalIdGenerator,
                                     this.control, this.resultsListeners[i], this.applicationBuilders[i],
                                     this.isMutatorValidatorTest, mutator);
     }
-    createValidators();
-    L2TVSConfigurationSetupManager manager = configFactory.createL2TVSConfigurationSetupManager(null);
-
-    this.server = new TCServerImpl(manager, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectServer.class))));
   }
 
   private void createValidators() {
@@ -154,11 +162,9 @@ public class DistributedTestRunner implements ResultsListener {
       if (this.startServer) {
         this.server.start();
 
-        if (this.configFactory instanceof TestTVSConfigurationSetupManagerFactory) {
-          TestTVSConfigurationSetupManagerFactory testFactory = (TestTVSConfigurationSetupManagerFactory) this.configFactory;
-          ((SettableConfigItem) testFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
-          testFactory.activateConfigurationChange();
-        }
+        // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
+        this.configFactory.addServerToL1Config(null, getServerPort(), -1);
+        this.configFactory.activateConfigurationChange();
       }
 
       for (int i = 0; i < containers.length; i++) {

@@ -174,7 +174,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     if (dsoServer != null) { return dsoServer.getListenPort(); }
     throw new IllegalStateException("DSO Server not running");
   }
-
+  
   public void dump() {
     if (dsoServer != null) {
       dsoServer.dump();
