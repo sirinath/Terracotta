@@ -62,13 +62,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     RestartTestHelper helper = null;
 
-    if (isCrashy()) {
+    if (isCrashy() && canRunCrash()) {
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
-      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+      configFactory().addServerToL1Config(null, helper.getServerPort(), -1);
+      configFactory().activateConfigurationChange();
+
       serverControl = helper.getServerControl();
-    } else if (isActivePassive()) {
+    } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers();
     } else {
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(0);
@@ -76,7 +79,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     this.doSetUp(this);
 
-    if (isCrashy()) {
+    if (isCrashy() && canRunCrash()) {
       crasher = new ServerCrasher(serverControl, helper.getServerCrasherConfig().getRestartInterval(), helper
           .getServerCrasherConfig().isCrashy());
       crasher.startAutocrash();
@@ -133,8 +136,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   private boolean isCrashy() {
-    return mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART)
-           || mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH);
+    return mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH);
   }
 
   private boolean isActivePassive() {
@@ -196,13 +198,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                                 .newApplicationConfig(), transparentAppConfig.getClientCount(),
                                             transparentAppConfig.getApplicationInstancePerClientCount(),
                                             getStartServer(), isMutateValidateTest, transparentAppConfig
-                                                .getValidatorCount(), isActivePassive(), apServerManager);
+                                                .getValidatorCount(), (isActivePassive() && canRunActivePassive()),
+                                            apServerManager);
   }
 
   protected boolean canRun() {
     return (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL) && canRunNormal())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH) && canRunCrash())
-           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_RESTART) && canRunRestart())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive());
   }
 
@@ -211,10 +213,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected boolean canRunCrash() {
-    return false;
-  }
-
-  protected boolean canRunRestart() {
     return false;
   }
 
@@ -254,7 +252,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // TODO: remove this comment
     System.err.println("TransparentTestBase tearDown() called");
 
-    if (controlledCrashMode && isActivePassive()) {
+    if (controlledCrashMode && isActivePassive() && canRunActivePassive()) {
       apServerManager.stopAllServers();
       apServerManager = null;
     }

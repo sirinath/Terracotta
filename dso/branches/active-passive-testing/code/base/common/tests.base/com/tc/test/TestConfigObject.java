@@ -411,12 +411,11 @@ public class TestConfigObject {
   }
 
   public static final String    TRANSPARENT_TESTS_MODE_NORMAL         = "normal";
-  public static final String    TRANSPARENT_TESTS_MODE_RESTART        = "restart";
   public static final String    TRANSPARENT_TESTS_MODE_CRASH          = "crash";
   public static final String    TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE = "active-passive";
 
   private static final String[] ALL_TRANSPARENT_TESTS_MODES           = { TRANSPARENT_TESTS_MODE_NORMAL,
-      TRANSPARENT_TESTS_MODE_RESTART, TRANSPARENT_TESTS_MODE_CRASH, TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE };
+      TRANSPARENT_TESTS_MODE_CRASH, TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE };
 
   public String transparentTestsMode() {
     String out = this.properties.getProperty(TRANSPARENT_TESTS_MODE);
