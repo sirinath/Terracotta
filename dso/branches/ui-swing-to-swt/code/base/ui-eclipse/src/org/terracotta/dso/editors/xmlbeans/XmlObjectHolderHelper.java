@@ -34,8 +34,8 @@ public final class XmlObjectHolderHelper {
   private SchemaType     m_propertySchemaType;
   private String         m_defaultStringValue;
   
-  private transient ArrayList                     m_listenerList; 
-  private transient XmlObjectStructureChangeEvent m_changeEvent;
+  private transient ArrayList<XmlObjectStructureListener> m_listenerList; 
+  private transient XmlObjectStructureChangeEvent         m_changeEvent;
   
   private static Icon m_problemIcon;
   
@@ -366,7 +366,7 @@ public final class XmlObjectHolderHelper {
   public synchronized void addXmlObjectStructureListener(XmlObjectStructureListener listener) {
     if(listener != null) {
       if(m_listenerList == null) {
-        m_listenerList = new ArrayList();
+        m_listenerList = new ArrayList<XmlObjectStructureListener>();
       }
       m_listenerList.add(listener);
     }
@@ -392,14 +392,13 @@ public final class XmlObjectHolderHelper {
   }
   
   private XmlObjectStructureListener[] getListenerArray() {
-    return (XmlObjectStructureListener[])
-      m_listenerList.toArray(new XmlObjectStructureListener[0]);
+    return m_listenerList.toArray(new XmlObjectStructureListener[0]);
   }
   
   protected void fireXmlObjectStructureChanged() {
     if(m_listenerList != null) {
-      XmlObjectStructureListener[] listeners = getListenerArray();
-      XmlObjectStructureChangeEvent event    = getChangeEvent();
+      XmlObjectStructureListener[]  listeners = getListenerArray();
+      XmlObjectStructureChangeEvent event     = getChangeEvent();
       
       for(int i = 0; i < listeners.length; i++) {
         listeners[i].structureChanged(event);

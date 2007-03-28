@@ -1,5 +1,4 @@
-<html>
-<!--
+/***
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
@@ -27,22 +26,67 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
--->
-<body>
-Provides an implementation for optional class, field and method attributes.
+ */
+package com.tc.asm.tree.analysis;
 
-<p>
+import java.util.Set;
 
-By default ASM strips optional attributes, in order to keep them in
-the bytecode that is being readed you should pass an array of required attribute
-instances to {@link org.objectweb.asm.ClassReader#accept(org.objectweb.asm.ClassVisitor, org.objectweb.asm.Attribute[], boolean) ClassReader.accept()} method.
-In order to add custom attributes to the manually constructed bytecode concrete
-subclasses of the {@link org.objectweb.asm.Attribute Attribute} can be passed to 
-the visitAttribute methods of the 
-{@link org.objectweb.asm.ClassVisitor ClassVisitor}, 
-{@link org.objectweb.asm.FieldVisitor FieldVisitor} and
-{@link org.objectweb.asm.MethodVisitor MethodVisitor} interfaces.
+import com.tc.asm.tree.AbstractInsnNode;
 
-@since ASM 1.4.1
-</body>
-</html>
+/**
+ * A {@link Value} that is represented by its type in a two types type system.
+ * This type system distinguishes the ONEWORD and TWOWORDS types.
+ * 
+ * @author Eric Bruneton
+ */
+public class SourceValue implements Value {
+
+    /**
+     * The size of this value.
+     */
+    public final int size;
+
+    /**
+     * The instructions that can produce this value. For example, for the Java
+     * code below, the instructions that can produce the value of <tt>i</tt>
+     * at line 5 are the txo ISTORE instructions at line 1 and 3:
+     * 
+     * <pre>
+     * 1: i = 0;
+     * 2: if (...) {
+     * 3:   i = 1;
+     * 4: }
+     * 5: return i;
+     * </pre>
+     * 
+     * This field is a set of {@link AbstractInsnNode} objects.
+     */
+    public final Set insns;
+
+    public SourceValue(final int size) {
+        this(size, SmallSet.EMPTY_SET);
+    }
+
+    public SourceValue(final int size, final AbstractInsnNode insn) {
+        this.size = size;
+        this.insns = new SmallSet(insn, null);
+    }
+
+    public SourceValue(final int size, final Set insns) {
+        this.size = size;
+        this.insns = insns;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public boolean equals(final Object value) {
+        SourceValue v = (SourceValue) value;
+        return size == v.size && insns.equals(v.insns);
+    }
+
+    public int hashCode() {
+        return insns.hashCode();
+    }
+}

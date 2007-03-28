@@ -1,4 +1,4 @@
-/***
+/**
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
@@ -27,66 +27,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.tc.asm.tree.analysis;
+package com.tc.asm.util;
 
-import java.util.Set;
-
-import com.tc.asm.tree.AbstractInsnNode;
+import java.util.Map;
 
 /**
- * A {@link Value} that is represented by its type in a two types type system.
- * This type system distinguishes the ONEWORD and TWOWORDS types.
+ * An attribute that can print the ASM code to create an equivalent attribute.
  * 
- * @author Eric Bruneton
+ * Implementation should print the ASM code that generates attribute data
+ * structures for current attribute state.
+ * 
+ * @author Eugene Kuleshov
  */
-public class DataflowValue implements Value {
+public interface ASMifiable {
 
     /**
-     * The size of this value.
-     */
-    public final int size;
-
-    /**
-     * The instructions that can produce this value. For example, for the Java
-     * code below, the instructions that can produce the value of <tt>i</tt>
-     * at line 5 are the txo ISTORE instructions at line 1 and 3:
+     * Prints the ASM code to create an attribute equal to this attribute.
      * 
-     * <pre>
-     * 1: i = 0;
-     * 2: if (...) {
-     * 3:   i = 1;
-     * 4: }
-     * 5: return i;
-     * </pre>
-     * 
-     * This field is a set of {@link AbstractInsnNode} objects.
+     * @param buf A buffer used for printing Java code.
+     * @param varName name of the variable in a printed code used to store
+     *        attribute instance.
+     * @param labelNames map of label instances to their names.
      */
-    public final Set insns;
-
-    public DataflowValue(final int size) {
-        this(size, SmallSet.EMPTY_SET);
-    }
-
-    public DataflowValue(final int size, final AbstractInsnNode insn) {
-        this.size = size;
-        this.insns = new SmallSet(insn, null);
-    }
-
-    public DataflowValue(final int size, final Set insns) {
-        this.size = size;
-        this.insns = insns;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public boolean equals(final Object value) {
-        DataflowValue v = (DataflowValue) value;
-        return size == v.size && insns.equals(v.insns);
-    }
-
-    public int hashCode() {
-        return insns.hashCode();
-    }
+    void asmify(StringBuffer buf, String varName, Map labelNames);
 }

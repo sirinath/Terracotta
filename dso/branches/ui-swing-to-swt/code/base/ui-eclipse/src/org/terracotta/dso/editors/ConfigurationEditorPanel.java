@@ -17,8 +17,9 @@ import org.terracotta.ui.util.SWTUtil;
 import java.util.ArrayList;
 
 public class ConfigurationEditorPanel extends Composite {
-  private transient ArrayList                     m_listenerList;
-  private transient XmlObjectStructureChangeEvent m_changeEvent;
+
+  private transient ArrayList<XmlObjectStructureListener> m_listenerList;
+  private transient XmlObjectStructureChangeEvent         m_changeEvent;
 
   public ConfigurationEditorPanel(Composite parent, int style) {
     super(parent, style);
@@ -71,9 +72,9 @@ public class ConfigurationEditorPanel extends Composite {
   }
 
   public synchronized void addXmlObjectStructureListener(XmlObjectStructureListener listener) {
-    if (listener != null) {
-      if (m_listenerList == null) {
-        m_listenerList = new ArrayList();
+    if(listener != null) {
+      if(m_listenerList == null) {
+        m_listenerList = new ArrayList<XmlObjectStructureListener>();
       }
       m_listenerList.add(listener);
     }
@@ -98,7 +99,7 @@ public class ConfigurationEditorPanel extends Composite {
   }
 
   private XmlObjectStructureListener[] getListenerArray() {
-    return (XmlObjectStructureListener[]) m_listenerList.toArray(new XmlObjectStructureListener[0]);
+    return m_listenerList.toArray(new XmlObjectStructureListener[0]);
   }
 
   protected void fireXmlObjectStructureChanged(XmlObjectStructureChangeEvent e) {
