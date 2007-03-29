@@ -77,6 +77,14 @@ Bug Fixes
 
 Known Issues
 
+    *  This release supports the use of the THashMap and THashSet classes from the trove library 
+       (http://trove4j.sourceforge.net/, only version 1.1b5 is officially supported in this release). THashMap and THashSet 
+       support the use of user customized hashing strategies through via the 
+       TObjectHashingStrategy interface. When distributing THashMap/THashSet instances, only the 
+       default hashing strategy is supported. Any custom hash strategy will not be honored across 
+       the cluster.
+
+
     * Terracotta Sessions Configurator creates a test environment that depends
       on running two domains (instances) of a web container (AppServer) from a
       single install source. IBM WebSphere CE does not support multiple
