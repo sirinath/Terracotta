@@ -38,6 +38,7 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.concurrent.SetOnceFlag;
+import com.tc.util.runtime.Vm;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -146,7 +147,9 @@ public class ManagerImpl implements Manager {
     lookupExistingOrNull(o);
     monitorEnter(o, LOCK_TYPE_WRITE);
     monitorExit(o);
-    logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
+    if (!Vm.isIBM()) {
+      logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
+    }
   }
 
   private void startClient() {
