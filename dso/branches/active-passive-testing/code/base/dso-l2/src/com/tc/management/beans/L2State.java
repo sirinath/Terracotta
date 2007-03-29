@@ -31,4 +31,24 @@ public class L2State implements StateChangeListener {
     setState(sce.getCurrentState());
   }
 
+  public boolean isActiveCoordinator() {
+    if (getState().equals(StateManager.ACTIVE_COORDINATOR)) { return true; }
+    return false;
+  }
+
+  public boolean isPassiveUninitialized() {
+    if (getState().equals(StateManager.PASSIVE_UNINTIALIZED)) { return true; }
+    return false;
+  }
+
+  public boolean isPassiveStandby() {
+    if (getState().equals(StateManager.PASSIVE_STANDBY)) { return true; }
+    return false;
+  }
+
+  public boolean isStartState() {
+    if (getState().equals(StateManager.START_STATE)) { return true; }
+    return false;
+  }
+
 }

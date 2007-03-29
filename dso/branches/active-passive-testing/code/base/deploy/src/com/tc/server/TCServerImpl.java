@@ -308,8 +308,9 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   private void startDSOServer(Sink httpSink) throws Exception {
+    L2State l2State = new L2State();
     dsoServer = new DistributedObjectServer(configurationSetupManager, getThreadGroup(), connectionPolicy, httpSink,
-                                            new TCServerInfo(this, new L2State()));
+                                            new TCServerInfo(this, l2State), l2State);
     dsoServer.start();
 
     registerDSOServer();

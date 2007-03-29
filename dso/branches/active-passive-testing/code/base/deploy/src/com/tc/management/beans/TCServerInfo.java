@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.management.beans;
 
@@ -29,27 +30,37 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private final TCServer                       server;
   private final ProductInfo                    productInfo;
   private final String                         buildID;
+  private final L2State                        l2State;
   private long                                 nextSequenceNumber;
 
   public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
     this.server = server;
+    this.l2State = l2State;
     productInfo = ProductInfo.getThisProductInfo();
     buildID = makeBuildID(productInfo);
     nextSequenceNumber = 1;
     server.setActivationListener(this);
   }
-  
+
   public void reset() {
     // nothing to reset
   }
 
   public boolean isStarted() {
-    return server.isStarted();
+    return l2State.isStartState();
   }
 
   public boolean isActive() {
-    return server.isActive();
+    return l2State.isActiveCoordinator();
+  }
+
+  public boolean isPassiveUninitialized() {
+    return l2State.isPassiveUninitialized();
+  }
+
+  public boolean isPassiveStandby() {
+    return l2State.isPassiveStandby();
   }
 
   public long getStartTime() {
@@ -117,7 +128,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public String getDescriptionOfCapabilities() {
     return server.getDescriptionOfCapabilities();
   }
-  
+
   public L2Info[] getL2Info() {
     return server.infoForAllL2s();
   }

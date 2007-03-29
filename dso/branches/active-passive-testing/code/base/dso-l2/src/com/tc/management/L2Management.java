@@ -9,6 +9,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.L2MBeanNames;
+import com.tc.management.beans.L2State;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.management.beans.object.ObjectManagementMonitorMBean;
@@ -43,8 +44,9 @@ public class L2Management extends TerracottaManagement {
   private final TCServerInfoMBean              tcServerInfo;
   private final ObjectManagementMonitor        objectManagementBean;
 
-  public L2Management(TCServerInfoMBean tcServerInfo, L2TVSConfigurationSetupManager configurationSetupManager)
-      throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
+  public L2Management(TCServerInfoMBean tcServerInfo, L2TVSConfigurationSetupManager configurationSetupManager,
+                      L2State l2State) throws MBeanRegistrationException, NotCompliantMBeanException,
+      InstanceAlreadyExistsException {
     this.tcServerInfo = tcServerInfo;
     this.configurationSetupManager = configurationSetupManager;
 

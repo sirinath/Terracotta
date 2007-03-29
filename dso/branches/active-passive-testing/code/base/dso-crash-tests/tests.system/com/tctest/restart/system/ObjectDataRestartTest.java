@@ -25,7 +25,7 @@ public class ObjectDataRestartTest extends TransparentTestBase implements TestCo
     return true;
   }
 
-  protected boolean canRunRestart() {
+  protected boolean canRunActivePassive() {
     return true;
   }
 
