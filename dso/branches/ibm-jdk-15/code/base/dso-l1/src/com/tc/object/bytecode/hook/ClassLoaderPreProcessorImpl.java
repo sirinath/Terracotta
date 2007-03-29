@@ -90,7 +90,23 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Pre",
                          "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/security/ProtectionDomain;)[B");
 
-      mv.visitVarInsn(ASTORE, 2);
+      mv.visitVarInsn(ASTORE, 6); // byte[] b = CPH.defineClass0Pre(..);
+      // If instrumented use the new array, otherwise pass straight through
+      Label notInstrumented = new Label();
+      mv.visitVarInsn(ALOAD, 2); // if (b != original) {
+      mv.visitVarInsn(ALOAD, 6);
+      mv.visitJumpInsn(IF_ACMPEQ, notInstrumented);
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitVarInsn(ALOAD, 1);
+      mv.visitVarInsn(ALOAD, 6);
+      mv.visitInsn(ICONST_0);
+      mv.visitVarInsn(ALOAD, 6); // b.length
+      mv.visitInsn(ARRAYLENGTH);
+      mv.visitVarInsn(ALOAD, 5);
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassLoader", "defineClassImpl",
+                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;");
+      mv.visitInsn(ARETURN);
+      mv.visitLabel(notInstrumented); // } else {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 2);
@@ -99,6 +115,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, 5);
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassLoader", "defineClassImpl",
                          "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;");
+      
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
