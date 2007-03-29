@@ -30,6 +30,7 @@ import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.plugins.ModulesLoader;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.runtime.Vm;
 import com.terracottatech.config.ConfigurationModel;
 
 import java.io.ByteArrayOutputStream;
@@ -75,7 +76,9 @@ public class DSOContextImpl implements DSOContext {
   }
 
   private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
-    checkForProperlyInstrumentedBaseClasses();
+    if (!Vm.isIBM()) {
+      checkForProperlyInstrumentedBaseClasses();
+    }
     if (configHelper == null) { throw new NullPointerException(); }
 
     this.configHelper = configHelper;
