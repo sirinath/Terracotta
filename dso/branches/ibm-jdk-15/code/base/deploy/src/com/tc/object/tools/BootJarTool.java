@@ -186,17 +186,8 @@ public class BootJarTool {
     this(configuration, outputFile, systemProvider, false);
   }
 
-  private boolean isAtLeastJDK15() {
-    try {
-      getBytesForClass("java.lang.StringBuilder", systemLoader);
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
-  }
-
   private void addJdk15SpecificPreInstrumentedClasses() {
-    if (isAtLeastJDK15()) {
+    if (Vm.isJDK15Compliant()) {
       TransparencyClassSpec spec = config.getOrCreateSpec("java.math.MathContext");
       spec.markPreInstrumented();
 
@@ -224,11 +215,12 @@ public class BootJarTool {
 
       bootJar = bootJarHandler.getBootJar();
 
-      addInstrumentedHashMap();
-      addInstrumentedHashtable();
-      addInstrumentedJavaUtilCollection();
-
-      addJdk15SpecificPreInstrumentedClasses();
+      if (!Vm.isIBM()) {
+        addInstrumentedHashMap();
+        addInstrumentedHashtable();
+        addInstrumentedJavaUtilCollection();
+        addJdk15SpecificPreInstrumentedClasses();
+      }
 
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(SessionSupport.class.getName());
@@ -300,25 +292,32 @@ public class BootJarTool {
       // the boot jar.
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
-      loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
+      if (!Vm.isIBM()) {
+        loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
+        loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
+        loadTerracottaClass(JavaLangArrayHelpers.class.getName());
+        loadTerracottaClass(ProxyInstance.class.getName());
+      }
 
-      loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
-
-      loadTerracottaClass(JavaLangArrayHelpers.class.getName());
-
-      loadTerracottaClass(ProxyInstance.class.getName());
-
+      loadTerracottaClass(Vm.class.getName());
+      loadTerracottaClass(Vm.class.getName() + "$Version");
       addManagementClasses();
 
-      addSpringClasses();
+      if (!Vm.isIBM()) {
+        addSpringClasses();
+      }
 
       addSunStandardLoaders();
-      addInstrumentedJavaLangThrowable();
-      addInstrumentedJavaLangStringBuffer();
+      if (!Vm.isIBM()) {
+        addInstrumentedJavaLangThrowable();
+        addInstrumentedJavaLangStringBuffer();
+      }
       addInstrumentedClassLoader();
-      addInstrumentedJavaLangString();
-      addInstrumentedProxy();
-      addTreeMap();
+      if (!Vm.isIBM()) {
+        addInstrumentedJavaLangString();
+        addInstrumentedProxy();
+        addTreeMap();
+      }
 
       Map internalSpecs = getTCSpecs();
       loadBootJarClasses(removeAlreadyLoaded(massageSpecs(internalSpecs, true)));
@@ -329,10 +328,12 @@ public class BootJarTool {
       // user defined specs should ALWAYS be after internal specs
       loadBootJarClasses(removeAlreadyLoaded(userSpecs));
 
-      adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
-      adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
+      if (!Vm.isIBM()) {
+        adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
+        adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
+      }
 
-    } catch (Exception e) {
+   } catch (Exception e) {
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }
 
@@ -1165,7 +1166,7 @@ public class BootJarTool {
   }
 
   private void addPortableStringBuffer() {
-    boolean isJDK15 = isAtLeastJDK15();
+    boolean isJDK15 = Vm.isJDK15Compliant();
     if (isJDK15) {
       addAbstractStringBuilder();
     }
@@ -1213,7 +1214,7 @@ public class BootJarTool {
     // even if we aren't making StringBu[ild|ff]er portable, we still need to make
     // sure it calls the fast getChars() methods on String
 
-    boolean isJDK15 = isAtLeastJDK15();
+    boolean isJDK15 = Vm.isJDK15Compliant();
 
     String className = isJDK15 ? "java.lang.AbstractStringBuilder" : "java.lang.StringBuffer";
     TransparencyClassSpec spec = config.getOrCreateSpec(className);
@@ -1321,7 +1322,7 @@ public class BootJarTool {
    * This instrumentation is temporary to add debug statements to the CyclicBarrier class.
    */
   private void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
-    if (!isAtLeastJDK15()) { return; }
+    if (!Vm.isJDK15Compliant()) { return; }
 
     byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
 
@@ -1339,7 +1340,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentHashMap() {
-    if (!isAtLeastJDK15()) { return; }
+    if (!Vm.isJDK15Compliant()) { return; }
 
     loadTerracottaClass("com.tcclient.util.ConcurrentHashMapEntrySetWrapper");
     loadTerracottaClass("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$IteratorWrapper");
@@ -1407,7 +1408,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentLinkedBlockingQueue() {
-    if (!isAtLeastJDK15()) { return; }
+    if (!Vm.isJDK15Compliant()) { return; }
 
     // Instrumentation for Itr inner class
     byte[] bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue$Itr");
@@ -1466,7 +1467,7 @@ public class BootJarTool {
 
   private void addInstrumentedJavaUtilConcurrentFutureTask() {
 
-    if (!isAtLeastJDK15()) { return; }
+    if (!Vm.isJDK15Compliant()) { return; }
     Map instrumentedContext = new HashMap();
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.FutureTask");
@@ -1703,7 +1704,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentLocksReentrantLock() {
-    if (!isAtLeastJDK15()) { return; }
+    if (!Vm.isJDK15Compliant()) { return; }
 
     byte[] bytes = getSystemBytes("com.tc.util.concurrent.locks.ReentrantLock");
     TransparencyClassSpec spec = config.getOrCreateSpec("com.tc.util.concurrent.locks.ReentrantLock");
