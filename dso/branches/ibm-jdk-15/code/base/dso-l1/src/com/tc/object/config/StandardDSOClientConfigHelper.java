@@ -34,6 +34,7 @@ import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
 import com.tc.object.bytecode.AbstractListMethodCreator;
 import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DSOUnsafeAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
@@ -112,7 +113,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private Lock[]                                 locks                              = new Lock[0];
   private final Map                              roots                              = new ConcurrentHashMap();
-  private final Map                              types                              = new HashMap();
 
   private final Set                              applicationNames                   = Collections
                                                                                         .synchronizedSet(new HashSet());
@@ -242,7 +242,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     logger.debug("web-applications: " + this.applicationNames);
     logger.debug("synchronous-write web-applications: " + this.synchronousWriteApplications);
     logger.debug("roots: " + this.roots);
-    logger.debug("transients: " + this.types);
     logger.debug("locks: " + this.locks);
     logger.debug("distributed-methods: " + this.distributedMethods);
 
@@ -1206,7 +1205,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     ClassInfo classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
 
     String patterns = "get(Ljava/lang/Object;)Ljava/lang/Object;|" + //
-                      "hashCode()I|" + // 
+                      "hashCode()I|" + //
                       "contains(Ljava/lang/Object;)Z|" + //
                       "containsKey(Ljava/lang/Object;)Z|" + //
                       "elements()Ljava/util/Enumeration;|" + //
@@ -1374,10 +1373,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   public boolean isTransient(int modifiers, ClassInfo classInfo, String field) {
     if (ByteCodeUtil.isParent(field)) return true;
+    if (ClassAdapterBase.isDelegateFieldName(field)) { return false; }
+
     String className = classInfo.getName();
     if (Modifier.isTransient(modifiers) && isHonorJavaTransient(classInfo)) return true;
-    Type type = (Type) types.get(className);
-    if (type != null) { return (type.containsTransient(field)); }
+
+    TransparencyClassSpec spec = getSpec(className);
+    if (spec != null) { return spec.getTransients().contains(field); }
     return false;
   }
 
@@ -1679,16 +1681,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   public void addTransient(String className, String fieldName) {
     TransparencyClassSpec spec = this.getOrCreateSpec(className);
     spec.addTransient(fieldName);
-  }
-
-  public void addTransientType(String className, String fieldName) {
-    Type type = (Type) this.types.get(className);
-    if (type == null) {
-      type = new Type();
-      type.setName(className);
-      this.types.put(className, type);
-    }
-    type.addTransient(fieldName);
   }
 
   public String toString() {
