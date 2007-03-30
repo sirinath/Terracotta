@@ -16,7 +16,7 @@ import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.HashMap;
@@ -42,6 +42,7 @@ public class L2Management extends TerracottaManagement {
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final TCServerInfoMBean              tcServerInfo;
   private final ObjectManagementMonitor        objectManagementBean;
+  private static final Map                     rmiRegistryMap = new HashMap();
 
   public L2Management(TCServerInfoMBean tcServerInfo, L2TVSConfigurationSetupManager configurationSetupManager)
       throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
@@ -69,44 +70,49 @@ public class L2Management extends TerracottaManagement {
     registerMBeans();
   }
 
+  /**
+   * Keep track of RMI Registries by jmxPort. In 1.5 and forward you can create multiple RMI
+   * Registries in a single VM.
+   */
+  private static Registry getRMIRegistry(int jmxPort) throws RemoteException {
+    Integer key = new Integer(jmxPort);
+    Registry registry = (Registry) rmiRegistryMap.get(key);
+    if (registry == null) {
+      rmiRegistryMap.put(key, registry = LocateRegistry.createRegistry(jmxPort));
+    }
+    return registry;
+  }
+  
   public synchronized void start() throws Exception {
     int jmxPort = configurationSetupManager.commonl2Config().jmxPort().getInt();
     if (jmxPort == 0) {
       jmxPort = new PortChooser().chooseRandomPort();
     }
-    try {
-      JMXServiceURL url;
-      Map env = new HashMap();
-      String authMsg = "Authentication OFF";
-      String credentialsMsg = "";
-      if (configurationSetupManager.commonl2Config().authentication()) {
-        String pwd = configurationSetupManager.commonl2Config().authenticationPasswordFile();
-        String access = configurationSetupManager.commonl2Config().authenticationAccessFile();
-        if (!new File(pwd).exists()) CustomerLogging.getConsoleLogger().error("Password file does not exist: " + pwd);
-        if (!new File(access).exists()) CustomerLogging.getConsoleLogger().error(
-                                                                                 "Access file does not exist: "
-                                                                                     + access);
-        env.put("jmx.remote.x.password.file", pwd);
-        env.put("jmx.remote.x.access.file", access);
-        authMsg = "Authentication ON";
-        credentialsMsg = "Credentials: " + configurationSetupManager.commonl2Config().authenticationPasswordFile()
-                         + " " + configurationSetupManager.commonl2Config().authenticationAccessFile();
-      }
-      Registry registry = LocateRegistry.createRegistry(jmxPort);
-      url = new JMXServiceURL("service:jmx:rmi://");
-      RMIJRMPServerImpl server = new RMIJRMPServerImpl(jmxPort, null, null, env);
-      jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
-      jmxConnectorServer.start();
-      registry.bind("jmxrmi", server);
-      CustomerLogging.getConsoleLogger().info(
-                                              "JMX Server started. " + authMsg + " - Available at URL["
-                                                  + "service:jmx:rmi:///jndi/rmi://localhost:" + jmxPort + "/jmxrmi"
-                                                  + "]");
-      if (!credentialsMsg.equals("")) CustomerLogging.getConsoleLogger().info(credentialsMsg);
-    } catch (BindException be) {
-      throw new Exception("Unable to bind JMX server on port " + jmxPort
-                          + "; perhaps this port is already in use, or you don't have sufficient privileges?", be);
+    JMXServiceURL url;
+    Map env = new HashMap();
+    String authMsg = "Authentication OFF";
+    String credentialsMsg = "";
+    if (configurationSetupManager.commonl2Config().authentication()) {
+      String pwd = configurationSetupManager.commonl2Config().authenticationPasswordFile();
+      String access = configurationSetupManager.commonl2Config().authenticationAccessFile();
+      if (!new File(pwd).exists()) CustomerLogging.getConsoleLogger().error("Password file does not exist: " + pwd);
+      if (!new File(access).exists()) CustomerLogging.getConsoleLogger().error("Access file does not exist: " + access);
+      env.put("jmx.remote.x.password.file", pwd);
+      env.put("jmx.remote.x.access.file", access);
+      authMsg = "Authentication ON";
+      credentialsMsg = "Credentials: " + configurationSetupManager.commonl2Config().authenticationPasswordFile() + " "
+                       + configurationSetupManager.commonl2Config().authenticationAccessFile();
     }
+    url = new JMXServiceURL("service:jmx:rmi://");
+    RMIJRMPServerImpl server = new RMIJRMPServerImpl(jmxPort, null, null, env);
+    jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
+    jmxConnectorServer.start();
+    getRMIRegistry(jmxPort).bind("jmxrmi", server);
+    CustomerLogging.getConsoleLogger().info(
+                                            "JMX Server started. " + authMsg + " - Available at URL["
+                                                + "service:jmx:rmi:///jndi/rmi://localhost:" + jmxPort + "/jmxrmi"
+                                                + "]");
+    if (!credentialsMsg.equals("")) CustomerLogging.getConsoleLogger().info(credentialsMsg);
   }
 
   public synchronized void stop() throws IOException, InstanceNotFoundException, MBeanRegistrationException {
