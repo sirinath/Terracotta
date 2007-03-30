@@ -5,10 +5,12 @@
 package com.tc.management.beans;
 
 import com.tc.config.schema.L2Info;
+import com.tc.l2.context.StateChangedEvent;
+import com.tc.l2.state.StateChangeListener;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.server.TCServer;
-import com.tc.server.TCServerActivationListener;
 import com.tc.util.ProductInfo;
+import com.tc.util.State;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,7 +19,7 @@ import javax.management.AttributeChangeNotification;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 
-public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean, TCServerActivationListener {
+public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean, StateChangeListener {
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
   static {
@@ -31,16 +33,18 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private final ProductInfo                    productInfo;
   private final String                         buildID;
   private final L2State                        l2State;
+  private final StateChangeNotificationInfo    stateChangeNotificationInfo;
   private long                                 nextSequenceNumber;
 
   public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
     this.server = server;
     this.l2State = l2State;
+    this.l2State.registerStateChangeListener(this);
     productInfo = ProductInfo.getThisProductInfo();
     buildID = makeBuildID(productInfo);
     nextSequenceNumber = 1;
-    server.setActivationListener(this);
+    stateChangeNotificationInfo = new StateChangeNotificationInfo();
   }
 
   public void reset() {
@@ -90,17 +94,8 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     timer.schedule(task, 1000);
   }
 
-  public void serverActivated(TCServer theServer) {
-    _sendNotification("TCServer active", "Active", "jmx.terracotta.L2.active", Boolean.FALSE, Boolean.TRUE);
-  }
-
   public MBeanNotificationInfo[] getNotificationInfo() {
     return NOTIFICATION_INFO;
-  }
-
-  private synchronized void _sendNotification(String msg, String attr, String type, Object oldVal, Object newVal) {
-    sendNotification(new AttributeChangeNotification(this, nextSequenceNumber++, System.currentTimeMillis(), msg, attr,
-                                                     type, oldVal, newVal));
   }
 
   public String toString() {
@@ -150,4 +145,20 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return "OK";
   }
 
+  public void l2StateChanged(StateChangedEvent sce) {
+    State state = sce.getCurrentState();
+
+    // TODO: remove
+    System.err.println("*****  msg=[" + stateChangeNotificationInfo.getMsg(state) + "] attrName=["
+                       + stateChangeNotificationInfo.getAttributeName(state) + "] attrType=["
+                       + stateChangeNotificationInfo.getAttributeType(state) + "] stateName=[" + state.getName() + "]");
+
+    _sendNotification(stateChangeNotificationInfo.getMsg(state), stateChangeNotificationInfo.getAttributeName(state),
+                      stateChangeNotificationInfo.getAttributeType(state), Boolean.FALSE, Boolean.TRUE);
+  }
+
+  private synchronized void _sendNotification(String msg, String attr, String type, Object oldVal, Object newVal) {
+    sendNotification(new AttributeChangeNotification(this, nextSequenceNumber++, System.currentTimeMillis(), msg, attr,
+                                                     type, oldVal, newVal));
+  }
 }

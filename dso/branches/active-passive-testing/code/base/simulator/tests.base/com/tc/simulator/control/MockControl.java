@@ -35,7 +35,7 @@ public class MockControl implements Control {
     throw new AssertionError("This method should be implemented");
   }
 
-  public boolean waitForMutationComplete(long timeout) throws InterruptedException {
+  public boolean waitForMutationComplete(long timeout) {
     throw new AssertionError("This method should be implemented");
   }
 
@@ -43,7 +43,7 @@ public class MockControl implements Control {
     throw new AssertionError("This method should be implemented");
   }
 
-  public boolean waitForValidationStart(long timeout) throws InterruptedException {
+  public boolean waitForValidationStart(long timeout) {
     throw new AssertionError("This method should be implemented");
   }
 

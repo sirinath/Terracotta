@@ -4,6 +4,7 @@
  */
 package com.tctest.restart.system;
 
+import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.TestConfigurator;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
@@ -29,4 +30,11 @@ public class ObjectDataRestartTest extends TransparentTestBase implements TestCo
     return true;
   }
 
+  public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+    setupManager.setServerCount(2);
+    setupManager.setServerCrashMode(ActivePassiveTestSetupManager.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashWaitInSec(15);
+    setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.DISK);
+    setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.PERMANENT_STORE);
+  }
 }

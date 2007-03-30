@@ -19,7 +19,7 @@ public class ActivePassiveTestSetupManager {
   private String             serverCrashMode;
   private String             serverShareMode;
   private String             persistenceMode;
-  private int                waitTimeInSec;
+  private long               waitTimeInSec;
 
   public void setServerCount(int count) {
     if (count < 2) { throw new AssertionError("Server count must be 2 or more:  count=[" + count + "]"); }
@@ -40,6 +40,10 @@ public class ActivePassiveTestSetupManager {
 
   public String getServerCrashMode() {
     if (serverCrashMode == null) { throw new AssertionError("Server crash mode was not set."); }
+
+    // TODO: remove
+    System.err.println("****  setup manager: serverCrashMode=[" + serverCrashMode + "]");
+
     return serverCrashMode;
   }
 
@@ -66,12 +70,12 @@ public class ActivePassiveTestSetupManager {
     return persistenceMode;
   }
 
-  public void setServerCrashWaitInSec(int time) {
+  public void setServerCrashWaitInSec(long time) {
     if (time < 0) { throw new AssertionError("Wait time should not be a negative number."); }
     waitTimeInSec = time;
   }
 
-  public int getWaitTimeInSec() {
+  public long getWaitTimeInSec() {
     return waitTimeInSec;
   }
 }

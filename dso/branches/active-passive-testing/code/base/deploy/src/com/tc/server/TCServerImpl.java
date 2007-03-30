@@ -298,7 +298,7 @@ public class TCServerImpl extends SEDA implements TCServer {
       activateTime = System.currentTimeMillis();
 
       if (activationListener != null) {
-        activationListener.serverActivated(TCServerImpl.this);
+        activationListener.serverActivated();
       }
     }
   }
@@ -312,7 +312,6 @@ public class TCServerImpl extends SEDA implements TCServer {
     dsoServer = new DistributedObjectServer(configurationSetupManager, getThreadGroup(), connectionPolicy, httpSink,
                                             new TCServerInfo(this, l2State), l2State);
     dsoServer.start();
-
     registerDSOServer();
   }
 
@@ -357,6 +356,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     mBeanServer.registerMBean(mgmtContext.getDSOAppEventsMBean(), L2MBeanNames.DSO_APP_EVENTS);
   }
 
+  // TODO: check that this is not needed then remove
   private TCServerActivationListener activationListener;
 
   public void setActivationListener(TCServerActivationListener listener) {

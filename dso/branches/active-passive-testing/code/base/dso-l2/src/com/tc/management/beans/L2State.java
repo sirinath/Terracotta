@@ -10,11 +10,18 @@ import com.tc.l2.state.StateManager;
 import com.tc.util.State;
 
 public class L2State implements StateChangeListener {
-
-  private State serverState = StateManager.PASSIVE_STANDBY;
+  private State               serverState = StateManager.START_STATE;
+  private StateChangeListener changeListener;
 
   public synchronized void setState(State state) {
     if (!validateState(state)) { throw new AssertionError("Unrecognized server state: [" + state.getName() + "]"); }
+    if (serverState.equals(state)) { throw new AssertionError("Re-setting L2 state to the same state."); }
+
+    // TODO: remove
+    System.err.println("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()
+                       + "] newState=[" + state.getName() + "]");
+
+    changeListener.l2StateChanged(new StateChangedEvent(serverState, state));
     serverState = state;
   }
 
@@ -23,8 +30,10 @@ public class L2State implements StateChangeListener {
   }
 
   private boolean validateState(State state) {
-    return (state.equals(StateManager.START_STATE) || state.equals(StateManager.PASSIVE_UNINTIALIZED)
-            || state.equals(StateManager.PASSIVE_STANDBY) || state.equals(StateManager.ACTIVE_COORDINATOR));
+    for (int i = 0; i < StateManager.validStates.length; i++) {
+      if (StateManager.validStates[i].equals(state)) { return true; }
+    }
+    return false;
   }
 
   public void l2StateChanged(StateChangedEvent sce) {
@@ -49,6 +58,11 @@ public class L2State implements StateChangeListener {
   public boolean isStartState() {
     if (getState().equals(StateManager.START_STATE)) { return true; }
     return false;
+  }
+
+  public void registerStateChangeListener(StateChangeListener listener) {
+    if (changeListener != null) { throw new AssertionError("State change listerer is already set."); }
+    changeListener = listener;
   }
 
 }

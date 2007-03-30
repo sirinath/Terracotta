@@ -183,13 +183,17 @@ public class DistributedTestRunner implements ResultsListener {
           notifyExecutionTimeout();
         }
 
+        if (isActivePassiveTest) {
+          checkForErrors();
+        }
+
         for (int i = 0; i < validatorContainers.length; i++) {
           new Thread(validatorContainers[i]).start();
         }
 
         if (isActivePassiveTest && serverManager.crashActiveServerAfterMutate()) {
           // TODO: remove this debugginh message
-          Thread.sleep(3000);
+          Thread.sleep(5000);
           System.err.println("***** DTR: Crashing active server");
           serverManager.crashActive();
           System.err.println("***** DTR: Notifying the test-wide control");
@@ -197,15 +201,34 @@ public class DistributedTestRunner implements ResultsListener {
         }
       }
 
+      if (isActivePassiveTest) {
+        checkForErrors();
+      }
+
       final boolean complete = this.control.waitForAllComplete(this.config.executionTimeout());
 
       if (!complete) {
         notifyExecutionTimeout();
       }
+
+      if (isActivePassiveTest) {
+        checkForErrors();
+      }
     } catch (Throwable t) {
       notifyError(new ErrorContext(t));
     } finally {
       if (false && this.startServer) this.server.stop();
+    }
+  }
+
+  private void checkForErrors() throws Exception {
+    List l = serverManager.getErrors();
+    if (l.size() > 0) {
+      for (Iterator iter = l.iterator(); iter.hasNext();) {
+        Exception e = (Exception) iter.next();
+        e.printStackTrace();
+      }
+      throw (Exception) l.get(l.size() - 1);
     }
   }
 

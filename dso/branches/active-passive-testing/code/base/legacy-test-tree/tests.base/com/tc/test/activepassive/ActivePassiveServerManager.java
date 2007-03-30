@@ -5,12 +5,23 @@
 package com.tc.test.activepassive;
 
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
+import com.tc.management.beans.L2MBeanNames;
+import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 
 public class ActivePassiveServerManager {
   private static final String                    HOST             = "localhost";
@@ -25,7 +36,7 @@ public class ActivePassiveServerManager {
 
   private final int                              serverCount;
   private final String                           serverCrashMode;
-  private final int                              serverCrashWaitTime;
+  private final long                             serverCrashWaitTimeInSec;
   private final String                           serverPersistence;
   private final boolean                          serverNetworkShare;
   private final ActivePassiveServerConfigCreator serverConfigCreator;
@@ -37,7 +48,11 @@ public class ActivePassiveServerManager {
   private final int[]                            jmxPorts;
   private final String[]                         serverNames;
 
+  private final List                             errors;
+
   private int                                    activeIndex      = -1;
+  private int                                    lastCrashedIndex = -1;
+  private ActivePassiveServerCrasher             serverCrasher;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout)
@@ -65,7 +80,7 @@ public class ActivePassiveServerManager {
     this.startTimeout = startTimeout;
 
     serverCrashMode = this.setupManger.getServerCrashMode();
-    serverCrashWaitTime = this.setupManger.getWaitTimeInSec();
+    serverCrashWaitTimeInSec = this.setupManger.getWaitTimeInSec();
     serverPersistence = this.setupManger.getServerPersistenceMode();
     serverNetworkShare = this.setupManger.isNetworkShare();
 
@@ -79,6 +94,8 @@ public class ActivePassiveServerManager {
                                                                serverPersistence, serverNetworkShare, this.configModel,
                                                                configFile, this.tempDir);
     serverConfigCreator.writeL2Config();
+
+    errors = new ArrayList();
   }
 
   private void createServers() throws FileNotFoundException {
@@ -144,11 +161,79 @@ public class ActivePassiveServerManager {
       activeIndex = 0;
     }
     startActive();
-    Thread.sleep(500);
     startPassives();
+
+    if (serverCrashMode.equals(ActivePassiveTestSetupManager.CONTINUOUS_ACTIVE_CRASH)) {
+      startContinuousCrash();
+    }
+  }
+
+  private void startContinuousCrash() {
+    serverCrasher = new ActivePassiveServerCrasher(this, serverCrashWaitTimeInSec);
+    new Thread(serverCrasher).start();
+  }
+
+  public void storeErrors(Exception e) {
+    if (e != null) {
+      synchronized (errors) {
+        errors.add(e);
+      }
+    }
+  }
+
+  public List getErrors() {
+    synchronized (errors) {
+      List l = new ArrayList();
+      l.addAll(errors);
+      return l;
+    }
+  }
+
+  private int getActiveIndex() throws Exception {
+    // look at each server and make sure there's only one active and return the active's index
+    int index = -1;
+
+    long duration = jmxPorts.length * 5000;
+    long startTime = System.currentTimeMillis();
+
+    while (duration > 0 && index < 0) {
+      for (int i = 0; i < jmxPorts.length; i++) {
+        if (i != lastCrashedIndex) {
+          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
+          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+          TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
+              .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+          if (mbean.isActive()) {
+            if (index < 0) {
+              index = i;
+            } else {
+              throw new Exception("More than one active server found.");
+            }
+          }
+        }
+      }
+
+      duration -= (System.currentTimeMillis() - startTime);
+    }
+
+    if (index < 0) { throw new Exception("No active server found."); }
+
+    return index;
+  }
+
+  private JMXConnector getJMXConnector(int jmxPort) throws IOException {
+    String url = "service:jmx:rmi:///jndi/rmi://" + HOST + ":" + jmxPort + "/jmxrmi";
+    JMXServiceURL jmxServerUrl = new JMXServiceURL(url);
+    JMXConnector jmxConnector = JMXConnectorFactory.newJMXConnector(jmxServerUrl, null);
+    jmxConnector.connect();
+    return jmxConnector;
   }
 
   public void stopAllServers() throws Exception {
+    if (serverCrasher != null) {
+      serverCrasher.stop();
+    }
+
     for (int i = 0; i < serverCount; i++) {
       ServerControl sc = servers[i].getServerControl();
       if (sc.isRunning()) {
@@ -159,6 +244,7 @@ public class ActivePassiveServerManager {
 
   private void startActive() throws Exception {
     servers[activeIndex].getServerControl().start(startTimeout);
+    Thread.sleep(500);
   }
 
   private void startPassives() throws Exception {
@@ -167,20 +253,34 @@ public class ActivePassiveServerManager {
         servers[i].getServerControl().start(startTimeout);
       }
     }
+    Thread.sleep(500 * (servers.length - 1));
   }
 
   // TODO: remove the debuggin comments in this method
   public void crashActive() throws Exception {
     System.err.println("***** Crashing active server ");
 
-    servers[activeIndex].getServerControl().crash();
-    // TODO: figure out which is next active and then set activeIndex accordingly
-    // for now assume that there are only 2 servers, 1 active and 1 passive
-    activeIndex = 1;
+    if (activeIndex < 0) { throw new AssertionError("Active index was not set."); }
 
+    servers[activeIndex].getServerControl().crash();
     System.err.println("***** Sleeping after crashing active server ");
-    Thread.sleep(2000);
+    Thread.sleep(5000);
     System.err.println("***** Done sleeping after crashing active server ");
+
+    lastCrashedIndex = activeIndex;
+    activeIndex = getActiveIndex();
+  }
+
+  public void restartLastCrashedServer() throws Exception {
+    // TODO: remove
+    System.err.println("*****  restarting crashed server");
+
+    if (lastCrashedIndex >= 0) {
+      servers[lastCrashedIndex].getServerControl().start(startTimeout);
+      lastCrashedIndex = -1;
+    } else {
+      throw new AssertionError("No crashed servers to restart.");
+    }
   }
 
   public int getServerCount() {
@@ -202,6 +302,11 @@ public class ActivePassiveServerManager {
 
   public void addServersToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     for (int i = 0; i < serverCount; i++) {
+
+      // TODO: remove
+      System.err.println("******* adding to L1 config: serverName=[" + serverNames[i] + "] dsoPort=[" + dsoPorts[i]
+                         + "] jmxPort=[" + jmxPorts[i] + "]");
+
       configFactory.addServerToL1Config(serverNames[i], dsoPorts[i], jmxPorts[i]);
     }
   }

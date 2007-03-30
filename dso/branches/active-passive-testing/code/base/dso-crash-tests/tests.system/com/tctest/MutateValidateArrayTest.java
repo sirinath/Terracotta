@@ -20,7 +20,7 @@ public class MutateValidateArrayTest extends TransparentTestBase {
         .setApplicationInstancePerClientCount(APP_INSTANCE_PER_NODE);
     t.initializeTestRunner(IS_MUTATE_VALIDATE_TEST);
   }
-  
+
   protected Class getApplicationClass() {
     return MutateValidateArrayTestApp.class;
   }
@@ -30,9 +30,8 @@ public class MutateValidateArrayTest extends TransparentTestBase {
     setupManager.setServerCrashMode(ActivePassiveTestSetupManager.MUTATE_VALIDATE);
     setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.PERMANENT_STORE);
     setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.DISK);
-    setupManager.setServerCrashWaitInSec(30);
   }
-  
+
   protected boolean canRunActivePassive() {
     return true;
   }

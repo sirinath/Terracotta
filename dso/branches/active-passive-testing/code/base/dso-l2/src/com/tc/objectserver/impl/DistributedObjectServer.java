@@ -220,7 +220,8 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
-                                 ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean, L2State l2State) {
+                                 ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean,
+                                 L2State l2State) {
     super(threadGroup);
 
     // This assertion is here because we want to assume that all threads spawned by the server (including any created in
@@ -278,6 +279,7 @@ public class DistributedObjectServer extends SEDA {
     TCFile location = new TCFileImpl(this.configSetupManager.commonl2Config().dataPath().getFile());
     startupLock = new StartupLock(location);
 
+    l2State.setState(StateManager.PASSIVE_STANDBY);
     if (!startupLock.canProceed(new TCRandomFileAccessImpl(), persistent)) {
       consoleLogger.error("Another L2 process is using the directory " + location + " as data directory.");
       if (!persistent) {
@@ -759,7 +761,7 @@ public class DistributedObjectServer extends SEDA {
     if (System.getProperty("com.sun.management.jmxremote.authenticate") == null) {
       System.setProperty("com.sun.management.jmxremote.authenticate", "false");
     }
-    l2Management = new L2Management(tcServerInfoMBean, configSetupManager, l2State);
+    l2Management = new L2Management(tcServerInfoMBean, configSetupManager);
     l2Management.start();
   }
 

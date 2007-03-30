@@ -17,20 +17,40 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
 
   private String[]     myArrayTestRoot;
   private List         validationArray;
-  private int          iterationCount;
+  private int          iterationCount1;
+  private int          iterationCount2;
+  private int          iterationCount3;
   private final String appId;
 
   public MutateValidateArrayTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     this.appId = appId;
     myArrayTestRoot = new String[] { "hee", "hoo", "haa" };
-    iterationCount = 300;
+    iterationCount1 = 300;
+    iterationCount2 = 300;
+    iterationCount3 = 300;
     validationArray = new ArrayList();
   }
 
   protected void mutate() throws Throwable {
     synchronized (validationArray) {
-      for (int i = 0; i < iterationCount; i++) {
+      for (int i = 0; i < iterationCount1; i++) {
+        int index = (i + 1) % myArrayTestRoot.length;
+        String val = myArrayTestRoot[index];
+        validationArray.add(val);
+        System.out.println("****** appId[" + appId + "]:   val added=[" + val + "] index=[" + index + "]");
+      }
+    }
+    synchronized (validationArray) {
+      for (int i = 0; i < iterationCount2; i++) {
+        int index = (i + 1) % myArrayTestRoot.length;
+        String val = myArrayTestRoot[index];
+        validationArray.add(val);
+        System.out.println("****** appId[" + appId + "]:   val added=[" + val + "] index=[" + index + "]");
+      }
+    }
+    synchronized (validationArray) {
+      for (int i = 0; i < iterationCount3; i++) {
         int index = (i + 1) % myArrayTestRoot.length;
         String val = myArrayTestRoot[index];
         validationArray.add(val);
@@ -41,7 +61,7 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
 
   protected void validate() throws Throwable {
     synchronized (validationArray) {
-      for (int i = 0; i < iterationCount * getParticipantCount(); i++) {
+      for (int i = 0; i < (iterationCount1 + iterationCount2 + iterationCount3) * getParticipantCount(); i++) {
         System.out.println("****** appId[" + appId + "]:   index=[" + i + "]");
         System.out.println("***** " + validationArray.get(i));
 
