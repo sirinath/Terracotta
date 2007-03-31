@@ -34,7 +34,7 @@ public class ObjectDataRestartTest extends TransparentTestBase implements TestCo
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(ActivePassiveTestSetupManager.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitInSec(15);
-    setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.DISK);
-    setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.PERMANENT_STORE);
+    setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.NETWORK);
+    setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.TEMPORARY_SWAP_ONLY);
   }
 }

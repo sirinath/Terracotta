@@ -40,10 +40,10 @@ public class ExtraProcessServerControl extends ServerControlBase {
     this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, mergeOutput);
   }
 
-  public ExtraProcessServerControl(String host, String serverName, int dsoPort, int adminPort, String configFileLoc,
-                                   boolean mergeOutput) throws FileNotFoundException {
+  public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
+                                   String servername, List additionalJvmArgs) throws FileNotFoundException {
     this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(),
-         mergeOutput, serverName);
+         mergeOutput, servername, additionalJvmArgs);
   }
 
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
@@ -52,15 +52,20 @@ public class ExtraProcessServerControl extends ServerControlBase {
     // Tests don't run in an environment where such a thing even exists. If the server needs an
     // "installation directory", the tests should be creating one themselves.
     this(debugParams, host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(), mergeOutput,
-         null);
+         null, new ArrayList());
   }
 
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, File runningDirectory, File installationRoot,
-                                   boolean mergeOutput, String serverName) {
+                                   boolean mergeOutput, String serverName, List additionalJvmArgs) {
     super(host, dsoPort, adminPort);
     this.serverName = serverName;
-    this.jvmArgs = new ArrayList();
+    jvmArgs = new ArrayList();
+
+    if (additionalJvmArgs != null && additionalJvmArgs.size() > 0) {
+      jvmArgs.addAll(additionalJvmArgs);
+    }
+
     this.configFileLoc = configFileLoc;
     this.mergeOutput = mergeOutput;
     this.name = "DSO process @ " + getHost() + ":" + getDsoPort();

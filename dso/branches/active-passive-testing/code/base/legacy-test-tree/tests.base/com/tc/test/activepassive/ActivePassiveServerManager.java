@@ -9,6 +9,7 @@ import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.PortChooser;
 
 import java.io.File;
@@ -66,11 +67,6 @@ public class ActivePassiveServerManager {
     if (serverCount < 2) { throw new AssertionError("Active-passive tests involve 2 or more DSO servers: serverCount=["
                                                     + serverCount + "]"); }
 
-    // TODO: remove this once JMX client code is implemented
-    if (serverCount > 2) { throw new AssertionError(
-                                                    "Active-passive tests for now involves 2 DSO servers: serverCount=["
-                                                        + serverCount + "]"); }
-
     this.tempDir = tempDir;
     configFileLocation = this.tempDir + File.separator + CONFIG_FILE_NAME;
     configFile = new File(configFileLocation);
@@ -112,8 +108,16 @@ public class ActivePassiveServerManager {
     servers[1] = new ServerInfo(HOST, serverNames[1], dsoPorts[1], jmxPorts[1], getServerControl(dsoPorts[1],
                                                                                                  jmxPorts[1],
                                                                                                  serverNames[1]));
+    if (dsoPorts.length > 2) {
+      dsoPorts[2] = 7510;
+      jmxPorts[2] = 7520;
+      serverNames[2] = SERVER_NAME + 2;
+      servers[2] = new ServerInfo(HOST, serverNames[2], dsoPorts[2], jmxPorts[2], getServerControl(dsoPorts[2],
+                                                                                                   jmxPorts[2],
+                                                                                                   serverNames[2]));
+    }
 
-    for (int i = 2; i < dsoPorts.length; i++) {
+    for (int i = 3; i < dsoPorts.length; i++) {
       dsoPorts[i] = getUnusedPort("dso");
       jmxPorts[i] = getUnusedPort("jmx");
       serverNames[i] = SERVER_NAME + i;
@@ -153,7 +157,11 @@ public class ActivePassiveServerManager {
   }
 
   private ServerControl getServerControl(int dsoPort, int jmxPort, String serverName) throws FileNotFoundException {
-    return new ExtraProcessServerControl(HOST, serverName, dsoPort, jmxPort, configFileLocation, true);
+    List jvmArgs = new ArrayList();
+    if (serverNetworkShare) {
+      jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ".l2.ha.network.enabled=true");
+    }
+    return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, jvmArgs);
   }
 
   public void startServers() throws Exception {
@@ -162,6 +170,10 @@ public class ActivePassiveServerManager {
     }
     startActive();
     startPassives();
+
+    if (serverNetworkShare) {
+      activeIndex = getActiveIndex();
+    }
 
     if (serverCrashMode.equals(ActivePassiveTestSetupManager.CONTINUOUS_ACTIVE_CRASH)) {
       startContinuousCrash();
@@ -190,19 +202,22 @@ public class ActivePassiveServerManager {
   }
 
   private int getActiveIndex() throws Exception {
-    // look at each server and make sure there's only one active and return the active's index
     int index = -1;
 
     long duration = jmxPorts.length * 5000;
     long startTime = System.currentTimeMillis();
 
-    while (duration > 0 && index < 0) {
+    while (duration > (System.currentTimeMillis() - startTime)) {
       for (int i = 0; i < jmxPorts.length; i++) {
         if (i != lastCrashedIndex) {
           JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
           MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
           TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
               .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+
+          // TODO: remove
+          System.err.println("********  index=[" + index + "]  i=[" + i + "] active=[" + mbean.isActive() + "]");
+
           if (mbean.isActive()) {
             if (index < 0) {
               index = i;
@@ -212,13 +227,32 @@ public class ActivePassiveServerManager {
           }
         }
       }
-
-      duration -= (System.currentTimeMillis() - startTime);
+      if (index >= 0) {
+        break;
+      }
     }
 
     if (index < 0) { throw new Exception("No active server found."); }
 
     return index;
+  }
+
+  private void waitForPassiveStandby() throws Exception {
+    long duration = jmxPorts.length * 5000;
+    long startTime = System.currentTimeMillis();
+
+    while (duration > (System.currentTimeMillis() - startTime)) {
+      for (int i = 0; i < jmxPorts.length; i++) {
+        if (i != activeIndex) {
+          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
+          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+          TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
+              .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+          if (mbean.isPassiveStandby()) { return; }
+        }
+      }
+    }
+    throw new Exception("No passive-standby servers found.");
   }
 
   private JMXConnector getJMXConnector(int jmxPort) throws IOException {
@@ -262,13 +296,33 @@ public class ActivePassiveServerManager {
 
     if (activeIndex < 0) { throw new AssertionError("Active index was not set."); }
 
-    servers[activeIndex].getServerControl().crash();
+    System.err.println("***** wait to find a passive-standby server.");
+    waitForPassiveStandby();
+    System.err.println("***** finish  wait to find a passive-standby server.");
+
+    ServerControl server = servers[activeIndex].getServerControl();
+    server.crash();
     System.err.println("***** Sleeping after crashing active server ");
-    Thread.sleep(5000);
+    waitForServerCrash(server);
     System.err.println("***** Done sleeping after crashing active server ");
 
     lastCrashedIndex = activeIndex;
+    System.err.println("***** lastCrashedIndex[" + lastCrashedIndex + "] ");
+
     activeIndex = getActiveIndex();
+  }
+
+  private void waitForServerCrash(ServerControl server) throws Exception {
+    long duration = 5000;
+    long startTime = System.currentTimeMillis();
+    while (duration > (System.currentTimeMillis() - startTime)) {
+      if (server.isRunning()) {
+        Thread.sleep(1000);
+      } else {
+        return;
+      }
+    }
+    throw new Exception("Server crash did not complete.");
   }
 
   public void restartLastCrashedServer() throws Exception {
