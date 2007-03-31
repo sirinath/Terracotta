@@ -17,9 +17,11 @@ import org.eclipse.swt.widgets.Text;
 
 public class AddModuleDialog extends MessageDialog {
 
-  private Text          m_moduleName;
-  private Text          m_moduleVersion;
-  private ValueListener m_valueListener;
+  private static final String NAME    = "Name";
+  private static final String VERSION = "Version";
+  private Text                m_moduleName;
+  private Text                m_moduleVersion;
+  private ValueListener       m_valueListener;
 
   public AddModuleDialog(Shell parentShell, String title, String message) {
     super(parentShell, title, null, message, MessageDialog.NONE, new String[] {
@@ -34,21 +36,19 @@ public class AddModuleDialog extends MessageDialog {
     comp.setLayout(gridLayout);
     comp.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-    GridData gridData = new GridData();
-    gridData.verticalAlignment = GridData.VERTICAL_ALIGN_CENTER;
     Label nameLabel = new Label(comp, SWT.RIGHT);
-    nameLabel.setText("Name");
-    nameLabel.setLayoutData(gridData);
+    nameLabel.setText(NAME);
+    nameLabel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_CENTER));
 
     m_moduleName = new Text(comp, SWT.SINGLE | SWT.BORDER);
-    m_moduleName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+    m_moduleName.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.VERTICAL_ALIGN_CENTER));
 
     Label versionLabel = new Label(comp, SWT.RIGHT);
-    versionLabel.setText("Version");
-    versionLabel.setLayoutData(gridData);
+    versionLabel.setText(VERSION);
+    versionLabel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_CENTER));
 
     m_moduleVersion = new Text(comp, SWT.SINGLE | SWT.BORDER);
-    m_moduleVersion.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+    m_moduleVersion.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.VERTICAL_ALIGN_CENTER));
 
     return comp;
   }

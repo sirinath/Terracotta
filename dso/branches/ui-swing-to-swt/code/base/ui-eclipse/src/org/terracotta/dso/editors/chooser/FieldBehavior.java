@@ -15,7 +15,8 @@ import org.eclipse.swt.SWT;
 
 public final class FieldBehavior implements NavigatorBehavior {
 
-  private String m_selectedValue;
+  public static final String SELECT_FOLDER = "Select Folder";
+  private String             m_selectedValue;
 
   public int style() {
     return SWT.SINGLE;

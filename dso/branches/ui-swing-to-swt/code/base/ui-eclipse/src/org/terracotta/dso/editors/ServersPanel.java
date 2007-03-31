@@ -49,15 +49,14 @@ import java.util.List;
 
 public final class ServersPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-  private static final int    NAME_INDEX     = 0;
-  private static final int    HOST_INDEX     = 1;
-  private static final int    DSO_PORT_INDEX = 2;
-  private static final int    JMX_PORT_INDEX = 3;
-  private static final String SELECT_FOLDER  = "Select Folder";
+  private static final int NAME_INDEX     = 0;
+  private static final int HOST_INDEX     = 1;
+  private static final int DSO_PORT_INDEX = 2;
+  private static final int JMX_PORT_INDEX = 3;
 
-  private final Layout        m_layout;
-  private State               m_state;
-  private volatile boolean    m_isActive;
+  private final Layout     m_layout;
+  private State            m_state;
+  private volatile boolean m_isActive;
 
   public ServersPanel(Composite parent, int style) {
     super(parent, style);
@@ -192,7 +191,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     m_layout.m_dataBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        PackageNavigator dialog = new PackageNavigator(getShell(), SELECT_FOLDER, m_state.project, new FieldBehavior());
+        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
+            new FieldBehavior());
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
             m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, getSelectedServer(),
@@ -206,7 +206,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     m_layout.m_logsBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        PackageNavigator dialog = new PackageNavigator(getShell(), SELECT_FOLDER, m_state.project, new FieldBehavior());
+        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
+            new FieldBehavior());
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
             m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, getSelectedServer(),
@@ -244,7 +245,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     spinner.addKeyListener(new KeyAdapter() {
       public void keyPressed(KeyEvent e) {
         if (e.keyCode == SWT.Selection) {
-          handleSpinnerEvent(spinner, type);
+          spinner.getParent().forceFocus();
+          spinner.forceFocus();
         }
       }
     });
@@ -258,7 +260,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
         if (!m_isActive) return;
         XmlConfigEvent event = castEvent(e);
         int index = m_state.serverIndices.indexOf(event.variable);
-        if (event.data == null) event.data = "";
+        if (event.data == null) event.data = "0";
         if (m_layout.m_serverTable.getSelectionIndex() == index) {
           spinner.setEnabled(true);
           spinner.setCapture(true);

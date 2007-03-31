@@ -48,6 +48,7 @@ final class XmlConfigPersistenceManager {
       Class objClass = xmlObject.getClass();
       Method method = objClass.getMethod(methodName, params);
       method.invoke(xmlObject, args);
+      System.out.println(value);// XXX
     } catch (Exception e) {
       e.printStackTrace(); // XXX
     }
@@ -86,7 +87,11 @@ final class XmlConfigPersistenceManager {
     try {
       method = parentType.getMethod(XSET + fieldName, params);
     } catch (NoSuchMethodException e) {
-      method = parentType.getMethod(SET + fieldName, params);
+      try {
+        method = parentType.getMethod(SET + fieldName, params);
+      } catch (NoSuchMethodException ee) {
+        method = parentType.getMethod(XSET + fieldName + "1", params);
+      }
     }
     method.invoke(parent, args);
     return getXmlObject(parent, parentType, fieldName);
@@ -114,7 +119,11 @@ final class XmlConfigPersistenceManager {
     try {
       method = parentType.getMethod(prefix + fieldName, NO_PARAMS);
     } catch (NoSuchMethodException e) {
-      method = parentType.getMethod(GET + fieldName, NO_PARAMS);
+      try {
+        method = parentType.getMethod(GET + fieldName, NO_PARAMS);
+      } catch (NoSuchMethodException ee) {
+        method = parentType.getMethod(prefix + fieldName + "1", NO_PARAMS);
+      }
     }
     return (method != null) ? method.invoke(parent, NO_ARGS) : null;
   }

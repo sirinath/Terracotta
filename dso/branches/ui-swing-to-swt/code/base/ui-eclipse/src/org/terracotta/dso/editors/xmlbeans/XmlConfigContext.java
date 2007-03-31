@@ -4,6 +4,7 @@
  */
 package org.terracotta.dso.editors.xmlbeans;
 
+import org.apache.xmlbeans.XmlAnyURI;
 import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.terracotta.dso.TcPlugin;
@@ -16,6 +17,7 @@ import com.terracottatech.config.Client;
 import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.DsoClientDebugging;
 import com.terracottatech.config.DsoServerData;
+import com.terracottatech.config.Module;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
@@ -52,11 +54,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_serverVerboseListener;
   private final EventMulticaster                       m_serverGCIntervalObserver;
   private UpdateEventListener                          m_serverGCIntervalListener;
-
   private final EventMulticaster                       m_clientLogsObserver;
   private UpdateEventListener                          m_clientLogsListener;
-  private final EventMulticaster                       m_clientDSOReflectionEnabledObserver;
-  private UpdateEventListener                          m_clientDSOReflectionEnabledListener;
   private final EventMulticaster                       m_clientClassObserver;
   private UpdateEventListener                          m_clientClassListener;
   private final EventMulticaster                       m_clientHierarchyObserver;
@@ -75,10 +74,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_clientDistributedMethodDebugListener;
   private final EventMulticaster                       m_clientFieldChangeDebugObserver;
   private UpdateEventListener                          m_clientFieldChangeDebugListener;
-  private final EventMulticaster                       m_clientNonPortableWarningObserver;
-  private UpdateEventListener                          m_clientNonPortableWarningListener;
-  private final EventMulticaster                       m_clientPartialInstrumentationObserver;
-  private UpdateEventListener                          m_clientPartialInstrumentationListener;
+  private final EventMulticaster                       m_clientNonPortableDumpObserver;
+  private UpdateEventListener                          m_clientNonPortableDumpListener;
   private final EventMulticaster                       m_clientWaitNotifyDebugObserver;
   private UpdateEventListener                          m_clientWaitNofifyDebugListener;
   private final EventMulticaster                       m_clientNewObjectDebugObserver;
@@ -89,17 +86,22 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_clientCallerListener;
   private final EventMulticaster                       m_clientFullStackObserver;
   private UpdateEventListener                          m_clientFullStackListener;
-  private final EventMulticaster                       m_clientFindNeededIncludesObserver;
-  private UpdateEventListener                          m_clientFindNeededIncludesListener;
   private final EventMulticaster                       m_clientFaultCountObserver;
   private UpdateEventListener                          m_clientFaultCountListener;
-
   // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
   private final EventMulticaster                       m_removeServerObserver;
+  private final EventMulticaster                       m_newClientModuleRepoObserver;
+  private final EventMulticaster                       m_removeClientModuleRepoObserver;
+  private final EventMulticaster                       m_newClientModuleObserver;
+  private final EventMulticaster                       m_removeClientModuleObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
+  private UpdateEventListener                          m_createClientModuleRepoListener;
+  private UpdateEventListener                          m_deleteClientModuleRepoListener;
+  private UpdateEventListener                          m_createClientModuleListener;
+  private UpdateEventListener                          m_deleteClientModuleListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final TcConfig                               m_config;
@@ -122,7 +124,6 @@ public final class XmlConfigContext {
     this.m_serverVerboseObserver = new EventMulticaster();
     this.m_serverGCIntervalObserver = new EventMulticaster();
     this.m_clientLogsObserver = new EventMulticaster();
-    this.m_clientDSOReflectionEnabledObserver = new EventMulticaster();
     this.m_clientClassObserver = new EventMulticaster();
     this.m_clientHierarchyObserver = new EventMulticaster();
     this.m_clientLocksObserver = new EventMulticaster();
@@ -132,18 +133,20 @@ public final class XmlConfigContext {
     this.m_clientLockDebugObserver = new EventMulticaster();
     this.m_clientDistributedMethodDebugObserver = new EventMulticaster();
     this.m_clientFieldChangeDebugObserver = new EventMulticaster();
-    this.m_clientNonPortableWarningObserver = new EventMulticaster();
-    this.m_clientPartialInstrumentationObserver = new EventMulticaster();
+    this.m_clientNonPortableDumpObserver = new EventMulticaster();
     this.m_clientWaitNotifyDebugObserver = new EventMulticaster();
     this.m_clientNewObjectDebugObserver = new EventMulticaster();
     this.m_clientAutolockDetailsObserver = new EventMulticaster();
     this.m_clientCallerObserver = new EventMulticaster();
     this.m_clientFullStackObserver = new EventMulticaster();
-    this.m_clientFindNeededIncludesObserver = new EventMulticaster();
     this.m_clientFaultCountObserver = new EventMulticaster();
     // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
     this.m_removeServerObserver = new EventMulticaster();
+    this.m_newClientModuleRepoObserver = new EventMulticaster();
+    this.m_removeClientModuleRepoObserver = new EventMulticaster();
+    this.m_newClientModuleObserver = new EventMulticaster();
+    this.m_removeClientModuleObserver = new EventMulticaster();
     init();
   }
 
@@ -242,7 +245,7 @@ public final class XmlConfigContext {
     registerEventListeners();
     registerContextEventListeners();
   }
-  
+
   private void registerEventListeners() {
     addListener(m_xmlStructureChangedListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent data) {
@@ -272,7 +275,6 @@ public final class XmlConfigContext {
     addListener(m_serverVerboseListener = newGCWriter(), XmlConfigEvent.SERVER_GC_VERBOSE);
     // client
     addListener(m_clientLogsListener = newWriter(), XmlConfigEvent.CLIENT_LOGS);
-    addListener(m_clientDSOReflectionEnabledListener = newWriter(), XmlConfigEvent.CLIENT_DSO_REFLECTION_ENABLED);
     // client instrumentation logging
     addListener(m_clientClassListener = newInstLoggingWriter(), XmlConfigEvent.CLIENT_CLASS);
     addListener(m_clientHierarchyListener = newInstLoggingWriter(), XmlConfigEvent.CLIENT_HIERARCHY);
@@ -285,18 +287,13 @@ public final class XmlConfigContext {
     addListener(m_clientDistributedMethodDebugListener = newRuntimeLoggingWriter(),
         XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG);
     addListener(m_clientFieldChangeDebugListener = newRuntimeLoggingWriter(), XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG);
-    addListener(m_clientNonPortableWarningListener = newRuntimeLoggingWriter(),
-        XmlConfigEvent.CLIENT_NON_PORTABLE_WARNING);
-    addListener(m_clientPartialInstrumentationListener = newRuntimeLoggingWriter(),
-        XmlConfigEvent.CLIENT_PARTIAL_INSTRUMENTATION);
+    addListener(m_clientNonPortableDumpListener = newRuntimeLoggingWriter(), XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP);
     addListener(m_clientWaitNofifyDebugListener = newRuntimeLoggingWriter(), XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG);
     addListener(m_clientNewObjectDebugListener = newRuntimeLoggingWriter(), XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG);
     // client runtime output
     addListener(m_clientAutolockDetialsListener = newRuntimeOutputWriter(), XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS);
     addListener(m_clientCallerListener = newRuntimeOutputWriter(), XmlConfigEvent.CLIENT_CALLER);
     addListener(m_clientFullStackListener = newRuntimeOutputWriter(), XmlConfigEvent.CLIENT_FULL_STACK);
-    addListener(m_clientFindNeededIncludesListener = newRuntimeOutputWriter(),
-        XmlConfigEvent.CLIENT_FIND_NEEDED_INCLUDES);
     addListener(m_clientFaultCountListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         XmlConfigEvent event = (XmlConfigEvent) e;
@@ -383,6 +380,42 @@ public final class XmlConfigContext {
         m_removeServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.REMOVE_SERVER));
       }
     };
+    m_createClientModuleListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        String[] values = (String[]) e.data;
+        Module module = m_config.getClients().getModules().addNewModule();
+        module.setName(values[0]);
+        module.setVersion(values[1]);
+        XmlConfigEvent event = new XmlConfigEvent(values, null, module, XmlConfigEvent.NEW_CLIENT_MODULE);
+        m_newClientModuleObserver.fireUpdateEvent(event);
+      }
+    };
+    m_deleteClientModuleListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getClients().getModules().removeModule(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE);
+        event.index = index;
+        m_removeClientModuleObserver.fireUpdateEvent(event);
+      }
+    };
+    m_createClientModuleRepoListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlAnyURI repo = m_config.getClients().getModules().addNewRepository();
+        repo.setStringValue((String) e.data);
+        XmlConfigEvent event = new XmlConfigEvent(e.data, null, repo, XmlConfigEvent.NEW_CLIENT_MODULE_REPO);
+        m_newClientModuleRepoObserver.fireUpdateEvent(event);
+      }
+    };
+    m_deleteClientModuleRepoListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getClients().getModules().removeRepository(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO);
+        event.index = index;
+        m_removeClientModuleRepoObserver.fireUpdateEvent(event);
+      }
+    };
   }
 
   private void doAction(XmlAction action, int type) {
@@ -428,9 +461,6 @@ public final class XmlConfigContext {
       case XmlConfigEvent.CLIENT_LOGS:
         action.exec(m_clientLogsObserver, m_clientLogsListener);
         break;
-      case XmlConfigEvent.CLIENT_DSO_REFLECTION_ENABLED:
-        action.exec(m_clientDSOReflectionEnabledObserver, m_clientDSOReflectionEnabledListener);
-        break;
       case XmlConfigEvent.CLIENT_CLASS:
         swapClientInstLoggingEvent(event);
         action.exec(m_clientClassObserver, m_clientClassListener);
@@ -467,13 +497,9 @@ public final class XmlConfigContext {
         swapClientRuntimeLoggingEvent(event);
         action.exec(m_clientFieldChangeDebugObserver, m_clientFieldChangeDebugListener);
         break;
-      case XmlConfigEvent.CLIENT_NON_PORTABLE_WARNING:
+      case XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP:
         swapClientRuntimeLoggingEvent(event);
-        action.exec(m_clientNonPortableWarningObserver, m_clientNonPortableWarningListener);
-        break;
-      case XmlConfigEvent.CLIENT_PARTIAL_INSTRUMENTATION:
-        swapClientRuntimeLoggingEvent(event);
-        action.exec(m_clientPartialInstrumentationObserver, m_clientPartialInstrumentationListener);
+        action.exec(m_clientNonPortableDumpObserver, m_clientNonPortableDumpListener);
         break;
       case XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG:
         swapClientRuntimeLoggingEvent(event);
@@ -495,10 +521,6 @@ public final class XmlConfigContext {
         swapClientRuntimeOutputEvent(event);
         action.exec(m_clientFullStackObserver, m_clientFullStackListener);
         break;
-      case XmlConfigEvent.CLIENT_FIND_NEEDED_INCLUDES:
-        swapClientRuntimeOutputEvent(event);
-        action.exec(m_clientFindNeededIncludesObserver, m_clientFindNeededIncludesListener);
-        break;
       case XmlConfigEvent.CLIENT_FAULT_COUNT:
         swapClientDsoEvent(event);
         action.exec(m_clientFaultCountObserver, m_clientFaultCountListener);
@@ -509,6 +531,20 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.REMOVE_SERVER:
         action.exec(m_removeServerObserver, null);
+        break;
+      case XmlConfigEvent.NEW_CLIENT_MODULE:
+        action.exec(m_newClientModuleObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_CLIENT_MODULE:
+        action.exec(m_removeClientModuleObserver, null);
+        break;
+      case XmlConfigEvent.NEW_CLIENT_MODULE_REPO:
+        swapClientDsoEvent(event);
+        action.exec(m_newClientModuleRepoObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO:
+        swapClientDsoEvent(event);
+        action.exec(m_removeClientModuleRepoObserver, null);
         break;
 
       default:
@@ -565,6 +601,18 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.DELETE_SERVER:
         m_deleteServerListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_CLIENT_MODULE:
+        m_createClientModuleListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_CLIENT_MODULE:
+        m_deleteClientModuleListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_CLIENT_MODULE_REPO:
+        m_createClientModuleRepoListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_CLIENT_MODULE_REPO:
+        m_deleteClientModuleRepoListener.handleUpdate(event);
         break;
 
       default:

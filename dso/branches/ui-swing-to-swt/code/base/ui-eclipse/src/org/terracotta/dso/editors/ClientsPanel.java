@@ -7,6 +7,14 @@ package org.terracotta.dso.editors;
 import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -17,8 +25,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.chooser.FieldBehavior;
+import org.terracotta.dso.editors.chooser.PackageNavigator;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
@@ -28,12 +39,16 @@ import org.terracotta.ui.util.SWTUtil;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Client;
+import com.terracottatech.config.Module;
 
 public class ClientsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-  private final Layout     m_layout;
-  private State            m_state;
-  private volatile boolean m_isActive;
+  private static final String MODULE_DECLARATION   = "Module Declaration";
+  private static final String MODULE_REPO_LOCATION = "Repository Location (URL)";
+  private static final String REPO_DECLARATION     = "Repository Declaration";
+  private final Layout        m_layout;
+  private State               m_state;
+  private volatile boolean    m_isActive;
 
   public ClientsPanel(Composite parent, int style) {
     super(parent, style);
@@ -65,11 +80,10 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     setActive(false);
     m_state = new State((IProject) data);
     createContextListeners();
-    Client client = TcPlugin.getDefault().getConfiguration(m_state.project).getClients();
     setActive(true);
-    updateClientListeners(client);
-    // initModuleRepositories(client);
-    // initModules(client);
+    updateClientListeners();
+    initModuleRepositories();
+    initModules();
   }
 
   public synchronized boolean isActive() {
@@ -86,11 +100,142 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
   private void createContextListeners() {
     registerFieldBehavior(XmlConfigEvent.CLIENT_LOGS, m_layout.m_logsLocation);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_CLASS, m_layout.m_classCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_HIERARCHY, m_layout.m_hierarchyCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_LOCKS, m_layout.m_locksCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_TRANSIENT_ROOT, m_layout.m_transientRootCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS, m_layout.m_distributedMethodsCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_ROOTS, m_layout.m_rootsCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_LOCK_DEBUG, m_layout.m_lockDebugCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG, m_layout.m_distributedMethodDebugCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG, m_layout.m_fieldChangeDebugCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP, m_layout.m_nonPortableDumpCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG, m_layout.m_waitNotifyDebugCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG, m_layout.m_newObjectDebugCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS, m_layout.m_autoLockDetailsCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_CALLER, m_layout.m_callerCheck);
+    registerCheckBehavior(XmlConfigEvent.CLIENT_FULL_STACK, m_layout.m_fullStackCheck);
+    registerFaultCountBehavior(XmlConfigEvent.CLIENT_FAULT_COUNT, m_layout.m_faultCountSpinner);
+    m_layout.m_logsBrowse.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
+            new FieldBehavior());
+        dialog.addValueListener(new UpdateEventListener() {
+          public void handleUpdate(UpdateEvent event) {
+            m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, m_state.client,
+                XmlConfigEvent.CLIENT_LOGS));
+          }
+        });
+        dialog.open();
+      }
+    });
+    // - modules behavior
+    m_layout.m_addModule.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        AddModuleDialog dialog = new AddModuleDialog(getShell(), MODULE_DECLARATION, MODULE_DECLARATION);
+        dialog.addValueListener(new AddModuleDialog.ValueListener() {
+          public void setValues(String name, String version) {
+            if (!name.trim().equals("") || !version.trim().equals("")) {
+              String[] values = new String[] { name, version };
+              m_state.xmlContext.notifyListeners(new XmlConfigEvent(values, null, m_state.client,
+                  XmlConfigEvent.CREATE_CLIENT_MODULE));
+            }
+          }
+        });
+        dialog.open();
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        TableItem item = new TableItem(m_layout.m_moduleTable, SWT.NONE, 0);
+        item.setText((String[]) e.data);
+        m_layout.m_moduleTable.setSelection(item);
+      }
+    }, XmlConfigEvent.NEW_CLIENT_MODULE, this);
+    m_layout.m_removeModule.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        int selected = m_layout.m_moduleTable.getSelectionIndex();
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.DELETE_CLIENT_MODULE);
+        event.index = selected;
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_moduleTable.remove(((XmlConfigEvent) e).index);
+      }
+    }, XmlConfigEvent.REMOVE_CLIENT_MODULE, this);
+    // - modules repo behavior
+    m_layout.m_addModuleRepo.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        RepoLocationDialog dialog = new RepoLocationDialog(getShell(), REPO_DECLARATION, MODULE_REPO_LOCATION);
+        dialog.addValueListener(new RepoLocationDialog.ValueListener() {
+          public void setValues(String repoLocation) {
+            if (repoLocation != null && !(repoLocation = repoLocation.trim()).equals("")) {
+              m_state.xmlContext.notifyListeners(new XmlConfigEvent(repoLocation, null, m_state.client,
+                  XmlConfigEvent.CREATE_CLIENT_MODULE_REPO));
+            }
+          }
+        });
+        dialog.open();
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        TableItem item = new TableItem(m_layout.m_moduleRepoTable, SWT.NONE, 0);
+        item.setText((String) e.data);
+        m_layout.m_moduleRepoTable.setSelection(item);
+      }
+    }, XmlConfigEvent.NEW_CLIENT_MODULE_REPO, this);
+    m_layout.m_removeModuleRepo.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        int selected = m_layout.m_moduleRepoTable.getSelectionIndex();
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.DELETE_CLIENT_MODULE_REPO);
+        event.index = selected;
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_moduleRepoTable.remove(((XmlConfigEvent) e).index);
+      }
+    }, XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO, this);
+  }
+
+  // - check box listeners
+  private void registerCheckBehavior(final int type, final Button check) {
+    check.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + check.getSelection(), (UpdateEventListener) check
+            .getData(), m_state.client, type));
+      }
+    });
+    UpdateEventListener checkListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        boolean select = Boolean.parseBoolean((String) event.data);
+        check.setEnabled(true);
+        check.setSelection(select);
+      }
+    };
+    check.setData(checkListener);
+    m_state.xmlContext.addListener(checkListener, type, this);
   }
 
   // - field listeners
   private void registerFieldBehavior(int type, final Text text) {
-    // registerFieldNotificationListener(type, text);
+    registerFieldNotificationListener(type, text);
     UpdateEventListener textListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
@@ -105,46 +250,97 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
   }
 
   // - handle field notifications
-  // private void registerFieldNotificationListener(final int type, final Text text) {
-  // text.addFocusListener(new FocusAdapter() {
-  // public void focusLost(FocusEvent e) {
-  // handleFieldEvent(text, type);
-  // }
-  // });
-  // text.addKeyListener(new KeyAdapter() {
-  // public void keyPressed(KeyEvent e) {
-  // if (e.keyCode == SWT.Selection) {
-  // handleFieldEvent(text, type);
-  // }
-  // }
-  // });
-  // }
+  private void registerFieldNotificationListener(final int type, final Text text) {
+    text.addFocusListener(new FocusAdapter() {
+      public void focusLost(FocusEvent e) {
+        handleFieldEvent(text, type);
+      }
+    });
+    text.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.keyCode == SWT.Selection) {
+          handleFieldEvent(text, type);
+        }
+      }
+    });
+  }
+
+  // - spinner behavior
+  private void registerFaultCountBehavior(final int type, final Spinner spinner) {
+    spinner.addFocusListener(new FocusAdapter() {
+      public void focusLost(FocusEvent e) {
+        handleSpinnerEvent(spinner, type);
+      }
+    });
+    spinner.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.keyCode == SWT.Selection) {
+          spinner.getParent().forceFocus();
+          spinner.forceFocus();
+        }
+      }
+    });
+    spinner.addMouseListener(new MouseAdapter() {
+      public void mouseUp(MouseEvent mouseevent) {
+        handleSpinnerEvent(spinner, type);
+      }
+    });
+    UpdateEventListener spinnerListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        if (event.data == null) event.data = "0";
+        spinner.setEnabled(true);
+        spinner.setCapture(true);
+        spinner.setIncrement(50);
+        spinner.setMaximum(1000000);
+        spinner.setSelection(Integer.parseInt((String) event.data));
+      }
+    };
+    spinner.setData(spinnerListener);
+    m_state.xmlContext.addListener(spinnerListener, type, this);
+  }
 
   // ================================================================================
   // HELPERS
   // ================================================================================
 
-  private void updateClientListeners(Client client) {
-    updateListeners(XmlConfigEvent.CLIENT_LOGS, client);
-    updateListeners(XmlConfigEvent.CLIENT_DSO_REFLECTION_ENABLED, client);
-    updateListeners(XmlConfigEvent.CLIENT_CLASS, client);
-    updateListeners(XmlConfigEvent.CLIENT_HIERARCHY, client);
-    updateListeners(XmlConfigEvent.CLIENT_LOCKS, client);
-    updateListeners(XmlConfigEvent.CLIENT_TRANSIENT_ROOT, client);
-    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS, client);
-    updateListeners(XmlConfigEvent.CLIENT_ROOTS, client);
-    updateListeners(XmlConfigEvent.CLIENT_LOCK_DEBUG, client);
-    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG, client);
-    updateListeners(XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG, client);
-    updateListeners(XmlConfigEvent.CLIENT_NON_PORTABLE_WARNING, client);
-    updateListeners(XmlConfigEvent.CLIENT_PARTIAL_INSTRUMENTATION, client);
-    updateListeners(XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG, client);
-    updateListeners(XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG, client);
-    updateListeners(XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS, client);
-    updateListeners(XmlConfigEvent.CLIENT_CALLER, client);
-    updateListeners(XmlConfigEvent.CLIENT_FULL_STACK, client);
-    updateListeners(XmlConfigEvent.CLIENT_FIND_NEEDED_INCLUDES, client);
-    updateListeners(XmlConfigEvent.CLIENT_FAULT_COUNT, client);
+  private void updateClientListeners() {
+    updateListeners(XmlConfigEvent.CLIENT_LOGS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_CLASS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_HIERARCHY, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_LOCKS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_TRANSIENT_ROOT, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_ROOTS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_LOCK_DEBUG, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_CALLER, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_FULL_STACK, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_FAULT_COUNT, m_state.client);
+  }
+
+  private void initModuleRepositories() {
+    TableItem item;
+    String[] repos = m_state.client.getModules().getRepositoryArray();
+    for (int i = 0; i < repos.length; i++) {
+      item = new TableItem(m_layout.m_moduleRepoTable, SWT.NONE);
+      item.setText(repos[i]);
+    }
+  }
+
+  private void initModules() {
+    TableItem item;
+    Module[] modules = m_state.client.getModules().getModuleArray();
+    for (int i = 0; i < modules.length; i++) {
+      item = new TableItem(m_layout.m_moduleTable, SWT.NONE);
+      item.setText(new String[] { modules[i].getName(), modules[i].getVersion() });
+    }
   }
 
   private void updateListeners(int event, XmlObject element) {
@@ -155,6 +351,18 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     return (XmlConfigEvent) e;
   }
 
+  private void handleFieldEvent(Text text, int type) {
+    if (!m_isActive) return;
+    m_state.xmlContext.notifyListeners(new XmlConfigEvent(text.getText(), (UpdateEventListener) text.getData(),
+        m_state.client, type));
+  }
+
+  private void handleSpinnerEvent(Spinner spinner, int type) {
+    if (!m_isActive) return;
+    m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + spinner.getSelection(), (UpdateEventListener) spinner
+        .getData(), m_state.client, type));
+  }
+
   // ================================================================================
   // STATE
   // ================================================================================
@@ -163,11 +371,13 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
+    final Client               client;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
+      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
     }
   }
 
@@ -179,7 +389,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
     private static final int    WIDTH_HINT               = 500;
     private static final int    HEIGHT_HINT              = 600;
-    private static final String DSO_REFLECTION_ENABLED   = "DSO Reflection Enabled";
     private static final String LOGS_LOCATION            = "Logs Location";
     private static final String BROWSE                   = "Browse...";
     private static final String DSO_CLIENT_DATA          = "Dso Client Data";
@@ -195,14 +404,12 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     private static final String LOCK_DEBUG               = "Lock Debug";
     private static final String DISTRIBUTED_METHOD_DEBUG = "Distributed Method Debug";
     private static final String FIELD_CHANGE_DEBUG       = "Field Change Debug";
-    private static final String NON_PORTABLE_WARNING     = "Non-portable Warning";
-    private static final String PARTIAL_INSTRUMENTATION  = "Partial Instrumentation";
+    private static final String NON_PORTABLE_DUMP        = "Non-portable Dump";
     private static final String WAIT_NOTIFY_DEBUG        = "Wait Notify Debug";
     private static final String NEW_OBJECT_DEBUG         = "New Object Debug";
     private static final String AUTOLOCK_DETAILS         = "Autolock Details";
     private static final String CALLER                   = "Caller";
     private static final String FULL_STACK               = "Full Stack";
-    private static final String FIND_NEEDED_INCLUDES     = "Find Needed Includes";
     private static final String MODULE_REPOSITORIES      = "Module Repositories";
     private static final String MODULES                  = "Modules";
     private static final String LOCATION                 = "Location";
@@ -212,7 +419,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     private static final String REMOVE                   = "Remove";
     private static final String FAULT_COUNT              = "Fault Count";
 
-    private Button              m_dsoReflectionEnabledCheck;
     private Button              m_logsBrowse;
     private Text                m_logsLocation;
     private Button              m_classCheck;
@@ -224,14 +430,12 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     private Button              m_lockDebugCheck;
     private Button              m_distributedMethodDebugCheck;
     private Button              m_fieldChangeDebugCheck;
-    private Button              m_nonPortableWarningCheck;
-    private Button              m_partialInstrumentationCheck;
+    private Button              m_nonPortableDumpCheck;
     private Button              m_waitNotifyDebugCheck;
     private Button              m_newObjectDebugCheck;
     private Button              m_autoLockDetailsCheck;
     private Button              m_callerCheck;
     private Button              m_fullStackCheck;
-    private Button              m_findNeededIncludesCheck;
     private Spinner             m_faultCountSpinner;
     private Table               m_moduleRepoTable;
     private Button              m_addModuleRepo;
@@ -241,8 +445,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     private Button              m_removeModule;
 
     public void reset() {
-      m_dsoReflectionEnabledCheck.setSelection(false);
-      m_dsoReflectionEnabledCheck.setEnabled(false);
       m_logsBrowse.setEnabled(false);
       m_logsLocation.setText("");
       m_logsLocation.setEnabled(false);
@@ -264,10 +466,8 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       m_distributedMethodDebugCheck.setEnabled(false);
       m_fieldChangeDebugCheck.setSelection(false);
       m_fieldChangeDebugCheck.setEnabled(false);
-      m_nonPortableWarningCheck.setSelection(false);
-      m_nonPortableWarningCheck.setEnabled(false);
-      m_partialInstrumentationCheck.setSelection(false);
-      m_partialInstrumentationCheck.setEnabled(false);
+      m_nonPortableDumpCheck.setSelection(false);
+      m_nonPortableDumpCheck.setEnabled(false);
       m_waitNotifyDebugCheck.setSelection(false);
       m_waitNotifyDebugCheck.setEnabled(false);
       m_newObjectDebugCheck.setSelection(false);
@@ -278,8 +478,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       m_callerCheck.setEnabled(false);
       m_fullStackCheck.setSelection(false);
       m_fullStackCheck.setEnabled(false);
-      m_findNeededIncludesCheck.setSelection(false);
-      m_findNeededIncludesCheck.setEnabled(false);
       m_moduleRepoTable.removeAll();
       m_addModuleRepo.setEnabled(false);
       m_removeModuleRepo.setEnabled(false);
@@ -298,7 +496,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
       Composite comp = new Composite(panel, SWT.NONE);
       gridLayout = new GridLayout();
-      gridLayout.numColumns = 4;
+      gridLayout.numColumns = 3;
       gridLayout.marginWidth = 0;
       gridLayout.marginHeight = 0;
 
@@ -322,9 +520,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       m_logsBrowse.setText(BROWSE);
       SWTUtil.applyDefaultButtonSize(m_logsBrowse);
 
-      m_dsoReflectionEnabledCheck = new Button(comp, SWT.CHECK);
-      m_dsoReflectionEnabledCheck.setText(DSO_REFLECTION_ENABLED);
-
       Group dsoClientDataGroup = new Group(comp, SWT.BORDER);
       dsoClientDataGroup.setText(DSO_CLIENT_DATA);
       gridLayout = new GridLayout();
@@ -333,7 +528,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       gridLayout.marginHeight = 10;
       dsoClientDataGroup.setLayout(gridLayout);
       gridData = new GridData(GridData.FILL_BOTH);
-      gridData.horizontalSpan = 4;
+      gridData.horizontalSpan = 3;
       dsoClientDataGroup.setLayoutData(gridData);
 
       createInstrumentationLoggingGroup(dsoClientDataGroup);
@@ -388,10 +583,8 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       m_distributedMethodDebugCheck.setText(DISTRIBUTED_METHOD_DEBUG);
       m_fieldChangeDebugCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
       m_fieldChangeDebugCheck.setText(FIELD_CHANGE_DEBUG);
-      m_nonPortableWarningCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
-      m_nonPortableWarningCheck.setText(NON_PORTABLE_WARNING);
-      m_partialInstrumentationCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
-      m_partialInstrumentationCheck.setText(PARTIAL_INSTRUMENTATION);
+      m_nonPortableDumpCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
+      m_nonPortableDumpCheck.setText(NON_PORTABLE_DUMP);
       m_waitNotifyDebugCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
       m_waitNotifyDebugCheck.setText(WAIT_NOTIFY_DEBUG);
       m_newObjectDebugCheck = new Button(runtimeLoggingGroup, SWT.CHECK);
@@ -415,8 +608,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       m_callerCheck.setText(CALLER);
       m_fullStackCheck = new Button(runtimeOutputOptionsGroup, SWT.CHECK);
       m_fullStackCheck.setText(FULL_STACK);
-      m_findNeededIncludesCheck = new Button(runtimeOutputOptionsGroup, SWT.CHECK);
-      m_findNeededIncludesCheck.setText(FIND_NEEDED_INCLUDES);
     }
 
     private void createFaultCountPane(Composite parent) {
@@ -461,7 +652,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       Composite tablePanel = new Composite(sidePanel, SWT.BORDER);
       tablePanel.setLayout(new FillLayout());
       tablePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
-      m_moduleRepoTable = new Table(tablePanel, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL);
+      m_moduleRepoTable = new Table(tablePanel, SWT.SINGLE | SWT.FULL_SELECTION | SWT.V_SCROLL);
       m_moduleRepoTable.setHeaderVisible(true);
       m_moduleRepoTable.setLinesVisible(true);
       SWTUtil.makeTableColumnsResizeEqualWidth(tablePanel, m_moduleRepoTable);
@@ -519,7 +710,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       Composite tablePanel = new Composite(sidePanel, SWT.BORDER);
       tablePanel.setLayout(new FillLayout());
       tablePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
-      m_moduleTable = new Table(tablePanel, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL);
+      m_moduleTable = new Table(tablePanel, SWT.SINGLE | SWT.FULL_SELECTION | SWT.V_SCROLL);
       m_moduleTable.setHeaderVisible(true);
       m_moduleTable.setLinesVisible(true);
       SWTUtil.makeTableColumnsResizeEqualWidth(tablePanel, m_moduleTable);

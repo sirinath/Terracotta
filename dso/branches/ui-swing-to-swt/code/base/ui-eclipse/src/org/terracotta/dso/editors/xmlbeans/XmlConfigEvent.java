@@ -34,28 +34,31 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      CLIENT_LOCK_DEBUG                   = 95;
   public static final int      CLIENT_DISTRIBUTED_METHOD_DEBUG     = 100;
   public static final int      CLIENT_FIELD_CHANGE_DEBUG           = 105;
-  public static final int      CLIENT_NON_PORTABLE_WARNING         = 110;
-  public static final int      CLIENT_PARTIAL_INSTRUMENTATION      = 115;
-  public static final int      CLIENT_WAIT_NOTIFY_DEBUG            = 120;
-  public static final int      CLIENT_NEW_OBJECT_DEBUG             = 125;
-  public static final int      CLIENT_AUTOLOCK_DETAILS             = 130;
-  public static final int      CLIENT_CALLER                       = 135;
-  public static final int      CLIENT_FULL_STACK                   = 140;
-  public static final int      CLIENT_FIND_NEEDED_INCLUDES         = 145;
-  public static final int      CLIENT_MODULE_LOCATION              = 150;
-  public static final int      CLIENT_NAME                         = 155;
-  public static final int      CLIENT_VERSION                      = 160;
-  public static final int      CLIENT_DSO_REFLECTION_ENABLED       = 165;
-  public static final int      CLIENT_FAULT_COUNT                  = 170;
-  // public static final int CLIENT_ =
-
+  public static final int      CLIENT_NON_PORTABLE_DUMP            = 110;
+  public static final int      CLIENT_WAIT_NOTIFY_DEBUG            = 115;
+  public static final int      CLIENT_NEW_OBJECT_DEBUG             = 120;
+  public static final int      CLIENT_AUTOLOCK_DETAILS             = 125;
+  public static final int      CLIENT_CALLER                       = 130;
+  public static final int      CLIENT_FULL_STACK                   = 135;
+  public static final int      CLIENT_MODULE_LOCATION              = 140;
+  public static final int      CLIENT_NAME                         = 145;
+  public static final int      CLIENT_VERSION                      = 150;
+  public static final int      CLIENT_FAULT_COUNT                  = 155;
   // only this context may listen to "create" and "delete" events - corresponding "new" and "remove" events are
   // broadcast
   public static final int      CREATE_SERVER                       = -5;
   public static final int      DELETE_SERVER                       = -10;
+  public static final int      CREATE_CLIENT_MODULE_REPO           = -15;
+  public static final int      CREATE_CLIENT_MODULE                = -20;
+  public static final int      DELETE_CLIENT_MODULE_REPO           = -25;
+  public static final int      DELETE_CLIENT_MODULE                = -30;
   // only this context may notify "new" and "remove" events after receiving a corresponding "create" or "delete" event
   public static final int      NEW_SERVER                          = ALT_RANGE_CONSTANT + 5;
   public static final int      REMOVE_SERVER                       = ALT_RANGE_CONSTANT + 10;
+  public static final int      NEW_CLIENT_MODULE_REPO              = ALT_RANGE_CONSTANT + 15;
+  public static final int      NEW_CLIENT_MODULE                   = ALT_RANGE_CONSTANT + 20;
+  public static final int      REMOVE_CLIENT_MODULE_REPO           = ALT_RANGE_CONSTANT + 25;
+  public static final int      REMOVE_CLIENT_MODULE                = ALT_RANGE_CONSTANT + 30;
   // container elements with no associated events
   public static final String   PARENT_ELEM_DSO                     = "dso";
   public static final String   PARENT_ELEM_PERSIST                 = "persistence";
@@ -64,7 +67,7 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final String   PARENT_ELEM_INSTRUMENTATION_LOGGING = "instrumentation-logging";
   public static final String   PARENT_ELEM_RUNTIME_OUTPUT_OPTIONS  = "runtime-output-options";
   public static final String   PARENT_ELEM_RUNTIME_LOGGING         = "runtime-logging";
-
+  // element names
   private static final String  ELEM_NAME                           = "name";
   private static final String  ELEM_HOST                           = "host";
   private static final String  ELEM_DSO_PORT                       = "dso-port";
@@ -84,18 +87,15 @@ public class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_LOCK_DEBUG                     = "lock-debug";
   private static final String  ELEM_DISTRIBUTED_METHOD_DEBUG       = "distributed-method-debug";
   private static final String  ELEM_FIELD_CHANGE_DEBUG             = "field-change-debug";
-  private static final String  ELEM_NON_PORTABLE_WARNING           = "non-portable-warning";
-  private static final String  ELEM_PARTIAL_INSTRUMENTATION        = "partial-instrumentation";
+  private static final String  ELEM_NON_PORTABLE_DUMP              = "non-portable-dump";
   private static final String  ELEM_WAIT_NOTIFY_DEBUG              = "wait-notify-debug";
   private static final String  ELEM_NEW_OBJECT_DEBUG               = "new-object-debug";
   private static final String  ELEM_AUTOLOCK_DETAILS               = "auto-lock-details";
   private static final String  ELEM_CALLER                         = "caller";
   private static final String  ELEM_FULL_STACK                     = "full-stack";
-  private static final String  ELEM_FIND_NEEDED_INCLUDES           = "find-needed-includes";
-  private static final String  ELEM_DSO_REFLECTION_ENABLED         = "dso-reflection-enabled";
   private static final String  ELEM_FAULT_COUNT                    = "fault-count";
 
-  public static final String[] m_elementNames                      = new String[170 + 1];
+  public static final String[] m_elementNames                      = new String[155 + 1];
   static {
     m_elementNames[SERVER_NAME] = ELEM_NAME;
     m_elementNames[SERVER_HOST] = ELEM_HOST;
@@ -117,25 +117,19 @@ public class XmlConfigEvent extends UpdateEvent {
     m_elementNames[CLIENT_LOCK_DEBUG] = ELEM_LOCK_DEBUG;
     m_elementNames[CLIENT_DISTRIBUTED_METHOD_DEBUG] = ELEM_DISTRIBUTED_METHOD_DEBUG;
     m_elementNames[CLIENT_FIELD_CHANGE_DEBUG] = ELEM_FIELD_CHANGE_DEBUG;
-    m_elementNames[CLIENT_NON_PORTABLE_WARNING] = ELEM_NON_PORTABLE_WARNING;
-    m_elementNames[CLIENT_PARTIAL_INSTRUMENTATION] = ELEM_PARTIAL_INSTRUMENTATION;
+    m_elementNames[CLIENT_NON_PORTABLE_DUMP] = ELEM_NON_PORTABLE_DUMP;
     m_elementNames[CLIENT_WAIT_NOTIFY_DEBUG] = ELEM_WAIT_NOTIFY_DEBUG;
     m_elementNames[CLIENT_NEW_OBJECT_DEBUG] = ELEM_NEW_OBJECT_DEBUG;
     m_elementNames[CLIENT_AUTOLOCK_DETAILS] = ELEM_AUTOLOCK_DETAILS;
     m_elementNames[CLIENT_CALLER] = ELEM_CALLER;
     m_elementNames[CLIENT_FULL_STACK] = ELEM_FULL_STACK;
-    m_elementNames[CLIENT_FIND_NEEDED_INCLUDES] = ELEM_FIND_NEEDED_INCLUDES;
-    m_elementNames[CLIENT_DSO_REFLECTION_ENABLED] = ELEM_DSO_REFLECTION_ENABLED;
     m_elementNames[CLIENT_FAULT_COUNT] = ELEM_FAULT_COUNT;
   }
 
   public final int             type;
   public XmlObject             element;
-  public Object                variable;                                                        // extra field may
-
-  // contain
-
-  // anything
+  public Object                variable;
+  public int                   index;
 
   public XmlConfigEvent(int type) {
     this(null, null, null, type);
@@ -157,7 +151,7 @@ public class XmlConfigEvent extends UpdateEvent {
     sb.append("data=" + data + "\n");
     sb.append("source=" + source + "\n");
     sb.append("type=" + type + "\n");
-    sb.append("element=" + element + "\n");
+    sb.append("element=" + element.getClass().getName() + "\n");
     sb.append("variable=" + variable + "\n");
     return sb.toString();
   }
