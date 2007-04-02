@@ -37,11 +37,10 @@ import com.terracottatech.config.Roots;
 
 public final class RootsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-  private static final int    FIELD_COLUMN = 0;
-  private static final int    NAME_COLUMN  = 1;
-  private static final String ADD_MSG      = "Enter Fully Qualified Field Name";
-  private final Layout        m_layout;
-  private State               m_state;
+  private static final int FIELD_COLUMN = 0;
+  private static final int NAME_COLUMN  = 1;
+  private final Layout     m_layout;
+  private State            m_state;
 
   public RootsPanel(Composite parent, int style) {
     super(parent, style);
@@ -117,8 +116,8 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
         setActive(false);
         m_layout.m_table.forceFocus();
         NavigatorBehavior behavior = new FieldBehavior();
-        ExpressionChooser chooser = new ExpressionChooser(getShell(), behavior.getTitle(), ADD_MSG, m_state.project,
-            behavior);
+        ExpressionChooser chooser = new ExpressionChooser(getShell(), behavior.getTitle(), FieldBehavior.ADD_MSG,
+            m_state.project, behavior);
         chooser.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent updateEvent) {
             String[] items = (String[]) updateEvent.data;
@@ -242,7 +241,7 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
       m_table = new Table(tablePanel, SWT.SINGLE | SWT.FULL_SELECTION | SWT.V_SCROLL);
       m_table.setHeaderVisible(true);
       m_table.setLinesVisible(true);
-      SWTUtil.makeTableColumnsResizeEqualWidth(tablePanel, m_table);
+      SWTUtil.makeTableColumnsResizeWeightedWidth(tablePanel, m_table, new int[] { 2, 1 });
       SWTUtil.makeTableColumnsEditable(m_table, new int[] { 0, 1 });
 
       TableColumn fieldCol = new TableColumn(m_table, SWT.NONE);

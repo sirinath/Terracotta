@@ -26,7 +26,8 @@ import java.util.List;
 
 public final class FieldBehavior implements NavigatorBehavior {
 
-  private static final String SELECT_METHOD = "Select Method";
+  public static final String  ADD_MSG      = "Enter Fully Qualified Field Name";
+  private static final String SELECT_FIELD = "Select Member Field";
   private final List          m_selectedValues;
 
   public FieldBehavior() {
@@ -38,7 +39,7 @@ public final class FieldBehavior implements NavigatorBehavior {
   }
 
   public String getTitle() {
-    return SELECT_METHOD;
+    return SELECT_FIELD;
   }
 
   public ViewerFilter getFilter() {
@@ -90,7 +91,7 @@ public final class FieldBehavior implements NavigatorBehavior {
     }
     String[] parts = (String[]) list.toArray(new String[0]);
     StringBuffer name = new StringBuffer();
-    for (int i = parts.length -1; i >= 1; i--) {
+    for (int i = parts.length - 1; i >= 1; i--) {
       name.append(parts[i] + ".");
     }
     name.append(parts[0]);

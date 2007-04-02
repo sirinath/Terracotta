@@ -21,6 +21,7 @@ import com.terracottatech.config.Module;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 import com.terracottatech.config.Server;
+import com.terracottatech.config.TransientFields;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.util.HashMap;
@@ -94,6 +95,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_rootsFieldListener;
   private final EventMulticaster                       m_rootsNameObserver;
   private UpdateEventListener                          m_rootsNameListener;
+  private final EventMulticaster                       m_transientFieldsObserver;
+  private UpdateEventListener                          m_transientFieldsListener;
   // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
   private final EventMulticaster                       m_removeServerObserver;
@@ -103,6 +106,8 @@ public final class XmlConfigContext {
   private final EventMulticaster                       m_removeClientModuleObserver;
   private final EventMulticaster                       m_newRootObserver;
   private final EventMulticaster                       m_removeRootObserver;
+  private final EventMulticaster                       m_newTransientFieldObserver;
+  private final EventMulticaster                       m_removeTransientFieldObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
@@ -112,6 +117,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteClientModuleListener;
   private UpdateEventListener                          m_createRootListener;
   private UpdateEventListener                          m_deleteRootListener;
+  private UpdateEventListener                          m_createTransientFieldListener;
+  private UpdateEventListener                          m_deleteTransientFieldListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final TcConfig                               m_config;
@@ -152,6 +159,7 @@ public final class XmlConfigContext {
     this.m_clientFaultCountObserver = new EventMulticaster();
     this.m_rootsFieldObserver = new EventMulticaster();
     this.m_rootsNameObserver = new EventMulticaster();
+    this.m_transientFieldsObserver = new EventMulticaster();
     // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
     this.m_removeServerObserver = new EventMulticaster();
@@ -161,6 +169,8 @@ public final class XmlConfigContext {
     this.m_removeClientModuleObserver = new EventMulticaster();
     this.m_newRootObserver = new EventMulticaster();
     this.m_removeRootObserver = new EventMulticaster();
+    this.m_newTransientFieldObserver = new EventMulticaster();
+    this.m_removeTransientFieldObserver = new EventMulticaster();
     init();
   }
 
@@ -318,6 +328,18 @@ public final class XmlConfigContext {
     }, XmlConfigEvent.CLIENT_FAULT_COUNT);
     addListener(m_rootsFieldListener = newWriter(), XmlConfigEvent.ROOTS_FIELD);
     addListener(m_rootsNameListener = newWriter(), XmlConfigEvent.ROOTS_NAME);
+    addListener(m_transientFieldsListener = newSingleValueWriter(), XmlConfigEvent.TRANSIENT_FIELD);
+  }
+
+  private UpdateEventListener newSingleValueWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        TransientFields fields = (TransientFields) event.element;
+        fields.setFieldNameArray(event.index, (String) event.data);
+        System.out.println(fields.getFieldNameArray(event.index));// XXX
+      }
+    };
   }
 
   private UpdateEventListener newInstLoggingWriter() {
@@ -450,6 +472,24 @@ public final class XmlConfigContext {
         m_removeRootObserver.fireUpdateEvent(event);
       }
     };
+    m_createTransientFieldListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        m_config.getApplication().getDso().getTransientFields().addFieldName((String) e.data);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.NEW_TRANSIENT_FIELD);
+        event.data = e.data;
+        m_newTransientFieldObserver.fireUpdateEvent(event);
+      }
+    };
+    m_deleteTransientFieldListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        TransientFields fields = m_config.getApplication().getDso().getTransientFields();
+        fields.removeFieldName(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_TRANSIENT_FIELD);
+        event.index = index;
+        m_removeTransientFieldObserver.fireUpdateEvent(event);
+      }
+    };
   }
 
   private void doAction(XmlAction action, int type) {
@@ -565,6 +605,9 @@ public final class XmlConfigContext {
       case XmlConfigEvent.ROOTS_NAME:
         action.exec(m_rootsNameObserver, m_rootsNameListener);
         break;
+      case XmlConfigEvent.TRANSIENT_FIELD:
+        action.exec(m_transientFieldsObserver, m_transientFieldsListener);
+        break;
       // NEW and REMOVE EVENTS - Notified after corresponding creation or deletion
       case XmlConfigEvent.NEW_SERVER:
         action.exec(m_newServerObserver, null);
@@ -591,6 +634,12 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.REMOVE_ROOT:
         action.exec(m_removeRootObserver, null);
+        break;
+      case XmlConfigEvent.NEW_TRANSIENT_FIELD:
+        action.exec(m_newTransientFieldObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_TRANSIENT_FIELD:
+        action.exec(m_removeTransientFieldObserver, null);
         break;
 
       default:
@@ -665,6 +714,12 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.DELETE_ROOT:
         m_deleteRootListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_TRANSIENT_FIELD:
+        m_createTransientFieldListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_TRANSIENT_FIELD:
+        m_deleteTransientFieldListener.handleUpdate(event);
         break;
 
       default:
