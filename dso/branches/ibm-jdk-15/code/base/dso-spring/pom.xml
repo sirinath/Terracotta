@@ -11,10 +11,6 @@
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>common</artifactId>
       <version>${tcVersion}</version>
       <type>test-jar</type>
       <scope>test</scope>
@@ -42,18 +38,6 @@
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>dso-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>thirdparty</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>linked-child-process</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
       <artifactId>dso-l1</artifactId>
     </dependency>
     <dependency>
@@ -65,28 +49,20 @@
       <artifactId>ehcache</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>aspectwerkz</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>dso-l2</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring</artifactId>      
+      <artifactId>spring</artifactId>
     </dependency>
     <dependency>
       <groupId>jmock</groupId>
-      <artifactId>jmock-cglib</artifactId>     
+      <artifactId>jmock-cglib</artifactId>
     </dependency>
     <dependency>
       <groupId>ognl</groupId>
-      <artifactId>ognl</artifactId>     
+      <artifactId>ognl</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -94,11 +70,11 @@
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-webflow</artifactId>      
+      <artifactId>spring-webflow</artifactId>
     </dependency>
     <dependency>
       <groupId>cglib</groupId>
-      <artifactId>cglib-nodep</artifactId>      
+      <artifactId>cglib-nodep</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-pool</groupId>
@@ -106,11 +82,15 @@
     </dependency>
     <dependency>
       <groupId>commons-dbcp</groupId>
-      <artifactId>commons-dbcp</artifactId>      
+      <artifactId>commons-dbcp</artifactId>
     </dependency>
     <dependency>
       <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>      
+      <artifactId>jmock</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
     </dependency>
   </dependencies>
 </project>
