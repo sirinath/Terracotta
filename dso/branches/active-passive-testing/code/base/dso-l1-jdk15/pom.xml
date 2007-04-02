@@ -9,7 +9,7 @@
     <version>2.3-SNAPSHOT</version>
   </parent>
   <artifactId>dso-l1-jdk15</artifactId>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -25,10 +25,6 @@
   <dependencies>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>dso-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
       <artifactId>dso-common-jdk15</artifactId>
     </dependency>
     <dependency>
@@ -42,13 +38,9 @@
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>common</artifactId>
       <version>${tcVersion}</version>
       <type>test-jar</type>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
   </dependencies>
 </project>
