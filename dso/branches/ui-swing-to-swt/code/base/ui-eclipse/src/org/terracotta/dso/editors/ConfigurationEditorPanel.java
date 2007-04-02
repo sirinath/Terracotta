@@ -10,13 +10,17 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.PlatformUI;
 import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
+import org.terracotta.ui.util.AbstractSWTPanel;
 import org.terracotta.ui.util.SWTUtil;
+
+import com.tc.util.event.UpdateEvent;
 
 import java.util.ArrayList;
 
-public class ConfigurationEditorPanel extends Composite {
+public abstract class ConfigurationEditorPanel extends AbstractSWTPanel {
 
   private transient ArrayList<XmlObjectStructureListener> m_listenerList;
   private transient XmlObjectStructureChangeEvent         m_changeEvent;
@@ -25,7 +29,12 @@ public class ConfigurationEditorPanel extends Composite {
     super(parent, style);
     setLayout(new FillLayout());
   }
-
+  
+  protected final XmlConfigEvent castEvent(UpdateEvent e) {
+    return (XmlConfigEvent) e;
+  }
+  
+  // TODO: REMOVE ALL OF THIS
   public static void ensureXmlObject(Composite comp) {
     ConfigurationEditorPanel parent = (ConfigurationEditorPanel) SWTUtil.getAncestorOfClass(
         ConfigurationEditorPanel.class, comp);

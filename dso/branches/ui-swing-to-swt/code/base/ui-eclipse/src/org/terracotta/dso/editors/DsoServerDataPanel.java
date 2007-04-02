@@ -108,4 +108,12 @@ public class DsoServerDataPanel extends ConfigurationEditorPanel
 //    
 //    setEnabled(false);
 //  }
+
+  public void clearState() {
+    
+  }
+
+  public void init(Object data) {
+    
+  }
 }

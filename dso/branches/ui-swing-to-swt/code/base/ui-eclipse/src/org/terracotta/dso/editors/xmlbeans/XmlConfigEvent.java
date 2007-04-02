@@ -44,6 +44,8 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      CLIENT_NAME                         = 145;
   public static final int      CLIENT_VERSION                      = 150;
   public static final int      CLIENT_FAULT_COUNT                  = 155;
+  public static final int      ROOTS_FIELD                         = 160;
+  public static final int      ROOTS_NAME                          = 165;
   // only this context may listen to "create" and "delete" events - corresponding "new" and "remove" events are
   // broadcast
   public static final int      CREATE_SERVER                       = -5;
@@ -52,6 +54,8 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      CREATE_CLIENT_MODULE                = -20;
   public static final int      DELETE_CLIENT_MODULE_REPO           = -25;
   public static final int      DELETE_CLIENT_MODULE                = -30;
+  public static final int      CREATE_ROOT                         = -35;
+  public static final int      DELETE_ROOT                         = -40;
   // only this context may notify "new" and "remove" events after receiving a corresponding "create" or "delete" event
   public static final int      NEW_SERVER                          = ALT_RANGE_CONSTANT + 5;
   public static final int      REMOVE_SERVER                       = ALT_RANGE_CONSTANT + 10;
@@ -59,6 +63,8 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      NEW_CLIENT_MODULE                   = ALT_RANGE_CONSTANT + 20;
   public static final int      REMOVE_CLIENT_MODULE_REPO           = ALT_RANGE_CONSTANT + 25;
   public static final int      REMOVE_CLIENT_MODULE                = ALT_RANGE_CONSTANT + 30;
+  public static final int      NEW_ROOT                            = ALT_RANGE_CONSTANT + 35;
+  public static final int      REMOVE_ROOT                         = ALT_RANGE_CONSTANT + 40;
   // container elements with no associated events
   public static final String   PARENT_ELEM_DSO                     = "dso";
   public static final String   PARENT_ELEM_PERSIST                 = "persistence";
@@ -94,8 +100,10 @@ public class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_CALLER                         = "caller";
   private static final String  ELEM_FULL_STACK                     = "full-stack";
   private static final String  ELEM_FAULT_COUNT                    = "fault-count";
+  private static final String  ELEM_FIELD_NAME                     = "field-name";
+  private static final String  ELEM_ROOT_NAME                      = "root-name";
 
-  public static final String[] m_elementNames                      = new String[155 + 1];
+  public static final String[] m_elementNames                      = new String[165 + 1];
   static {
     m_elementNames[SERVER_NAME] = ELEM_NAME;
     m_elementNames[SERVER_HOST] = ELEM_HOST;
@@ -124,6 +132,8 @@ public class XmlConfigEvent extends UpdateEvent {
     m_elementNames[CLIENT_CALLER] = ELEM_CALLER;
     m_elementNames[CLIENT_FULL_STACK] = ELEM_FULL_STACK;
     m_elementNames[CLIENT_FAULT_COUNT] = ELEM_FAULT_COUNT;
+    m_elementNames[ROOTS_FIELD] = ELEM_FIELD_NAME;
+    m_elementNames[ROOTS_NAME] = ELEM_ROOT_NAME;
   }
 
   public final int             type;

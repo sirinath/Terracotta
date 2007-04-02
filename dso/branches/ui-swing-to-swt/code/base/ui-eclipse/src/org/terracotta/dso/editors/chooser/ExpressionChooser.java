@@ -29,7 +29,7 @@ import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
-public class SWTMethodChooser extends MessageDialog {
+public class ExpressionChooser extends MessageDialog {
 
   private static final String    EXPLORE = "Explore...";
   private static final String    ADD     = "Add";
@@ -41,14 +41,16 @@ public class SWTMethodChooser extends MessageDialog {
   private SelectionListener      m_exploreListener;
   private SelectionListener      m_addListener;
   private MethodChooserLayout    m_layout;
+  private NavigatorBehavior      m_behavior;
 
-  public SWTMethodChooser(Shell shell, String title, String message, IProject project) {
+  public ExpressionChooser(Shell shell, String title, String message, IProject project, NavigatorBehavior behavior) {
     super(shell, title, null, message, MessageDialog.NONE, new String[] {
       IDialogConstants.OK_LABEL,
       IDialogConstants.CANCEL_LABEL }, 0);
-    m_parentShell = shell;
-    m_project = project;
-    m_valueListener = new EventMulticaster();
+    this.m_parentShell = shell;
+    this.m_project = project;
+    this.m_valueListener = new EventMulticaster();
+    this.m_behavior = behavior;
   }
 
   protected void configureShell(Shell shell) {
@@ -66,7 +68,7 @@ public class SWTMethodChooser extends MessageDialog {
   private void initLayout(final MethodChooserLayout layout) {
     layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        PackageNavigator dialog = new PackageNavigator(getShell(), "Select Method", m_project, new MethodBehavior());
+        PackageNavigator dialog = new PackageNavigator(getShell(), m_behavior.getTitle(), m_project, m_behavior);
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent arg) {
             String[] values = (String[]) arg.data;

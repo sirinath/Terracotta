@@ -29,7 +29,8 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
-import org.terracotta.dso.editors.chooser.FieldBehavior;
+import org.terracotta.dso.editors.chooser.FolderBehavior;
+import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.chooser.PackageNavigator;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
@@ -56,7 +57,6 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
 
   private final Layout     m_layout;
   private State            m_state;
-  private volatile boolean m_isActive;
 
   public ServersPanel(Composite parent, int style) {
     super(parent, style);
@@ -69,18 +69,6 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
   // INTERFACE
   // ================================================================================
 
-  public synchronized void addListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
-
-  public synchronized void removeListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
-
-  public synchronized boolean isActive() {
-    return m_isActive;
-  }
-
   public synchronized void init(Object data) {
     if (m_isActive && m_state.project == (IProject) data) return;
     setActive(false);
@@ -89,10 +77,6 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     Servers servers = TcPlugin.getDefault().getConfiguration(m_state.project).getServers();
     setActive(true);
     initTableItems(servers);
-  }
-
-  public synchronized void setActive(boolean active) {
-    m_isActive = active;
   }
 
   public synchronized void clearState() {
@@ -191,8 +175,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     m_layout.m_dataBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
-            new FieldBehavior());
+        NavigatorBehavior behavior = new FolderBehavior();
+        PackageNavigator dialog = new PackageNavigator(getShell(), behavior.getTitle(), m_state.project, behavior);
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
             m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, getSelectedServer(),
@@ -206,8 +190,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     m_layout.m_logsBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
-            new FieldBehavior());
+        NavigatorBehavior behavior = new FolderBehavior();
+        PackageNavigator dialog = new PackageNavigator(getShell(), behavior.getTitle(), m_state.project, behavior);
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
             m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, getSelectedServer(),
@@ -382,10 +366,6 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
 
   private void updateListeners(int event, XmlObject element) {
     m_state.xmlContext.updateListeners(new XmlConfigEvent(element, event));
-  }
-
-  private XmlConfigEvent castEvent(UpdateEvent e) {
-    return (XmlConfigEvent) e;
   }
 
   private Server getSelectedServer() {

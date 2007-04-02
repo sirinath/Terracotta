@@ -1,267 +1,156 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.dso.editors;
 
-import org.dijon.Button;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
+import org.terracotta.ui.util.SWTComponentModel;
+import org.terracotta.ui.util.SWTUtil;
 
-import com.tc.admin.common.XTable;
-import com.terracottatech.config.AdditionalBootJarClasses;
-import com.terracottatech.config.DsoApplication;
+import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.Client;
 
-import java.awt.event.ActionListener;
+public class BootClassesPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-import javax.swing.event.ListSelectionListener;
+  private final Layout        m_layout;
+  private State               m_state;
+  private volatile boolean    m_isActive;
 
-public class BootClassesPanel extends ConfigurationEditorPanel
-//  implements TableModelListener
-{
-  
   public BootClassesPanel(Composite parent, int style) {
     super(parent, style);
+    this.m_layout = new Layout(this);
+  }
+
+  // ================================================================================
+  // INTERFACE
+  // ================================================================================
+
+  public synchronized void addListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void removeListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void clearState() {
+    setActive(false);
+    m_layout.reset();
+    m_state.xmlContext.detachComponentModel(this);
+    m_state = null;
+  }
+
+  public synchronized void init(Object data) {
+    if (m_isActive && m_state.project == (IProject) data) return;
+    setActive(false);
+    m_state = new State((IProject) data);
+    setActive(true);
+  }
+
+  public synchronized boolean isActive() {
+    return m_isActive;
+  }
+
+  public synchronized void setActive(boolean activate) {
+    m_isActive = activate;
   }
   
-  private IProject                 m_project;
-  private DsoApplication           m_dsoApp;
-  private AdditionalBootJarClasses m_bootClasses;
-  private XTable                   m_bootClassesTable;
-//  private BootClassTableModel      m_bootClassesTableModel;
-  private Button                   m_addButton;
-  private ActionListener           m_addListener;
-  private Button                   m_removeButton;
-  private ActionListener           m_removeListener;
-  private ListSelectionListener    m_bootClassesListener;
-//  
-//  public BootClassesPanel() {
-//    super();
-//  }
-//  
-//  public void load(ContainerResource containerRes) {
-//    super.init(containerRes);
-//
-//    m_bootClassesTable = (XTable)findComponent("BootClassesTable");
-//    m_bootClassesTable.setModel(m_bootClassesTableModel = new BootClassTableModel());
-//    m_bootClassesListener = new ListSelectionListener() {
-//      public void valueChanged(ListSelectionEvent lse) {
-//        if(!lse.getValueIsAdjusting()) {
-//          int[] sel = m_bootClassesTable.getSelectedRows();
-//          m_removeButton.setEnabled(sel != null && sel.length > 0);
-//        }
-//      }
-//    };        
-//    
-//    m_addButton = (Button)findComponent("AddBootClassButton");
-//    m_addListener = new ActionListener() {
-//      public void actionPerformed(ActionEvent ae) {
-//        Display.getDefault().asyncExec(new Runnable() {
-//          public void run() {
-//            IJavaProject     javaProject = JavaCore.create(m_project);
-//            int              filter      = IJavaSearchScope.SYSTEM_LIBRARIES;
-//            IJavaElement[]   elements    = new IJavaElement[]{javaProject};
-//            IJavaSearchScope scope       = SearchEngine.createJavaSearchScope(elements, filter);
-//            int              style       = IJavaElementSearchConstants.CONSIDER_ALL_TYPES;
-//            SelectionDialog  dialog;
-//            
-//            try {
-//              dialog = JavaUI.createTypeDialog(null, null, scope, style, true);
-//            } catch(JavaModelException jme) {
-//              jme.printStackTrace();
-//              return;
-//            }
-//              
-//            dialog.setTitle("DSO Application Configuration");
-//            dialog.setMessage("Select system classes to add to DSO Boot Jar");
-//            dialog.open();
-//            
-//            final Object[] result = dialog.getResult();
-//            
-//            SwingUtilities.invokeLater(new Runnable() {
-//              public void run() {
-//                IType type;
-//            
-//                if(result != null) {
-//                  for(int i = 0; i < result.length; i++) {
-//                    type = (IType)result[i];
-//                    internalAddBootClass(type.getFullyQualifiedName());
-//                  }
-//                }
-//              }
-//            });
-//          }
-//        });
-//      }
-//    };
-//
-//    m_removeButton = (Button)findComponent("RemoveBootClassButton");
-//    m_removeListener = new ActionListener() {
-//      public void actionPerformed(ActionEvent ae) {
-//        int[] selection  = m_bootClassesTable.getSelectedRows();
-//        
-//        for(int i = selection.length-1; i >= 0; i--) {
-//          ensureAdditionalBootClasses().removeInclude(selection[i]);
-//          m_bootClassesTableModel.removeRow(selection[i]);
-//        }
-//      }
-//    };
-//  }
-//
-//  public boolean hasAnySet() {
-//    return m_bootClasses != null &&
-//           m_bootClasses.sizeOfIncludeArray() > 0;
-//  }
-//  
-//  private AdditionalBootJarClasses ensureAdditionalBootClasses() {
-//    if(m_bootClasses == null) {
-//      ensureXmlObject();
-//    }
-//    return m_bootClasses;
-//  }
-//  
-//  public void ensureXmlObject() {
-//    super.ensureXmlObject();
-//
-//    if(m_bootClasses == null) {
-//      removeListeners();
-//      m_bootClasses = m_dsoApp.addNewAdditionalBootJarClasses();
-//      updateChildren();
-//      addListeners();
-//    }
-//  }
-//  
-//  private void syncModel() {
-//    if(!hasAnySet() && m_dsoApp.getAdditionalBootJarClasses() != null) {
-//      m_dsoApp.unsetAdditionalBootJarClasses();
-//      m_bootClasses = null;
-//      fireXmlObjectStructureChanged(m_dsoApp);
-//    }
-//
-//    setDirty();
-//  }
-//  
-//  private void addListeners() {
-//    m_bootClassesTableModel.addTableModelListener(this);
-//    m_bootClassesTable.getSelectionModel().addListSelectionListener(m_bootClassesListener);
-//    m_addButton.addActionListener(m_addListener);
-//    m_removeButton.addActionListener(m_removeListener);
-//  }
-//  
-//  private void removeListeners() {
-//    m_bootClassesTableModel.removeTableModelListener(this);
-//    m_bootClassesTable.getSelectionModel().removeListSelectionListener(m_bootClassesListener);
-//    m_addButton.removeActionListener(m_addListener);
-//    m_removeButton.removeActionListener(m_removeListener);
-//  }
-//  
-//  public void updateChildren() {
-//    m_bootClassesTableModel.clear();
-//
-//    if(m_bootClasses != null) {
-//      String[] bootClasses = m_bootClasses.getIncludeArray();
-//  
-//      for(int i = 0; i < bootClasses.length; i++) {
-//        m_bootClassesTableModel.addBootClass(bootClasses[i]);
-//      }
-//    }
-//  }
-//
-//  public void updateModel() {
-//    removeListeners();
-//    updateChildren();
-//    addListeners();
-//  }
-//  
-//  public void setup(IProject project, DsoApplication dsoApp) {
-//    setEnabled(true);
-//    removeListeners();
-//
-//    m_project     = project;
-//    m_dsoApp      = dsoApp;
-//    m_bootClasses = m_dsoApp != null ?
-//                    m_dsoApp.getAdditionalBootJarClasses() : null;
-//
-//    updateChildren();
-//    addListeners();
-//  }
-//  
-//  public void tearDown() {
-//    removeListeners();
-//    
-//    m_dsoApp      = null;
-//    m_bootClasses = null;
-//
-//    m_bootClassesTableModel.clear();
-//    
-//    setEnabled(false);    
-//  }
-//  
-//  class BootClassTableModel extends DefaultTableModel {
-//    BootClassTableModel() {
-//      super();
-//      setColumnIdentifiers(new String[]{"Boot Classes"});
-//    }
-//    
-//    void clear() {
-//      setRowCount(0);
-//    }
-//    
-//    void setBootClasses(AdditionalBootJarClasses bootClasses) {
-//      clear();
-//      
-//      if(bootClasses != null) {
-//        int count = bootClasses.sizeOfIncludeArray();
-//        
-//        for(int i = 0; i < count; i++) {
-//          addBootClass(bootClasses.getIncludeArray(i));
-//        }
-//      }
-//    }
-//      
-//    void addBootClass(String typeName) {
-//      addRow(new Object[] {typeName});
-//    }
-//    
-//    int indexOf(String typeName) {
-//      int count = getRowCount();
-//      
-//      for(int i = 0; i < count; i++) {
-//        if(((String)getValueAt(i, 0)).equals(typeName)) {
-//          return i;
-//        }
-//      }
-//      
-//      return -1;
-//    }
-//    
-//    public void setValueAt(Object value, int row, int col) {
-//      m_bootClasses.setIncludeArray(row, (String)value);
-//      super.setValueAt(value, row, col);
-//    }
-//  }
-//  
-//  public void tableChanged(TableModelEvent tme) {
-//    syncModel();
-//  }
-//  
-//  private void internalAddBootClass(String typeName) {
-//    ensureAdditionalBootClasses().addInclude(typeName);
-//    m_bootClassesTableModel.addBootClass(typeName);
-//    
-//    int row = m_bootClassesTableModel.getRowCount()-1;
-//    m_bootClassesTable.setRowSelectionInterval(row, row);
-//  }
-//
-//  public boolean isBootClass(String typeName) {
-//    AdditionalBootJarClasses bootClasses = ensureAdditionalBootClasses();
-//    int                      count       = bootClasses.sizeOfIncludeArray();
-//    
-//    for(int i = 0; i < count; i++) {
-//      if(typeName.equals(bootClasses.getIncludeArray(i))) {
-//        return true;
-//      }
-//    }
-//    
-//    return false;
-//  }
+//================================================================================
+  // STATE
+  // ================================================================================
+
+  private class State {
+    final IProject             project;
+    final XmlConfigContext     xmlContext;
+    final XmlConfigUndoContext xmlUndoContext;
+    final Client               client;
+
+    private State(IProject project) {
+      this.project = project;
+      this.xmlContext = XmlConfigContext.getInstance(project);
+      this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
+      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
+    }
+  }
+
+  // ================================================================================
+  // LAYOUT
+  // ================================================================================
+
+  private static class Layout {
+
+    private static final String BOOT_CLASSES = "Boot Classes";
+    private static final String ADD          = "Add...";
+    private static final String REMOVE       = "Remove";
+    
+    public void reset() {
+      
+    }
+
+    private Layout(Composite parent) {
+      Composite comp = new Composite(parent, SWT.NONE);
+      GridLayout gridLayout = new GridLayout();
+      gridLayout.numColumns = 2;
+      gridLayout.marginWidth = 10;
+      gridLayout.marginHeight = 10;
+      gridLayout.makeColumnsEqualWidth = false;
+      comp.setLayout(gridLayout);
+      
+      Composite sidePanel = new Composite(comp, SWT.NONE);
+      gridLayout = new GridLayout();
+      gridLayout.numColumns = 1;
+      gridLayout.marginWidth = 0;
+      gridLayout.marginHeight = 0;
+      sidePanel.setLayout(gridLayout);
+      sidePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
+      
+      Label label = new Label(sidePanel, SWT.NONE);
+      label.setText(BOOT_CLASSES);
+      label.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+
+      Composite tablePanel = new Composite(sidePanel, SWT.BORDER);
+      tablePanel.setLayout(new FillLayout());
+      tablePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
+      Table table = new Table(tablePanel, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL);
+      table.setHeaderVisible(false);
+      table.setLinesVisible(true);
+
+      TableColumn column = new TableColumn(table, SWT.NONE);
+      column.setText(BOOT_CLASSES);
+      column.pack();
+
+      Composite buttonPanel = new Composite(comp, SWT.NONE);
+      gridLayout = new GridLayout();
+      gridLayout.numColumns = 1;
+      gridLayout.marginWidth = 0;
+      gridLayout.marginHeight = 0;
+      buttonPanel.setLayout(gridLayout);
+      buttonPanel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+
+      new Label(buttonPanel, SWT.NONE); // filler
+      
+      Button addButton = new Button(buttonPanel, SWT.PUSH);
+      addButton.setText(ADD);
+      addButton.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_END));
+      SWTUtil.applyDefaultButtonSize(addButton);
+
+      Button removeButton = new Button(buttonPanel, SWT.PUSH);
+      removeButton.setText(REMOVE);
+      removeButton.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+      SWTUtil.applyDefaultButtonSize(removeButton);
+    }
+  }
 }

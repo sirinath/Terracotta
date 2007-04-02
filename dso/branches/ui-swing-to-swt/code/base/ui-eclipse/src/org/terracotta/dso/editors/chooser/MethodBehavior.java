@@ -26,6 +26,7 @@ import java.util.List;
 
 public final class MethodBehavior implements NavigatorBehavior {
 
+  private static final String SELECT_METHOD = "Select Method";
   private final List m_selectedValues;
 
   public MethodBehavior() {
@@ -33,7 +34,11 @@ public final class MethodBehavior implements NavigatorBehavior {
   }
   
   public int style() {
-    return SWT.NONE;
+    return SWT.MULTI;
+  }
+  
+  public String getTitle() {
+    return SELECT_METHOD;
   }
 
   public ViewerFilter getFilter() {

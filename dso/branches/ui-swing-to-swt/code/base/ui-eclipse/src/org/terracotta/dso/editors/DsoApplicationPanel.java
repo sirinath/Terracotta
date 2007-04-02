@@ -5,148 +5,155 @@
 package org.terracotta.dso.editors;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
-import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
-import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
+import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
+import org.terracotta.ui.util.SWTComponentModel;
 
-import com.terracottatech.config.Application;
-import com.terracottatech.config.DsoApplication;
-import com.terracottatech.config.TcConfigDocument.TcConfig;
+import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.Client;
 
-public class DsoApplicationPanel extends ConfigurationEditorPanel implements ConfigurationEditorRoot,
-    XmlObjectStructureListener {
-  private IProject                 m_project;
-  private TcConfig                 m_config;
-  private Application              m_application;
-  private DsoApplication           m_dsoApp;
-  private InstrumentedClassesPanel m_instrumentedClassesPanel;
-  private TransientFieldsPanel     m_transientFieldsPanel;
-  private LocksPanel               m_locksPanel;
-  private RootsPanel               m_rootsPanel;
-  private DistributedMethodsPanel  m_distributedMethodsPanel;
-  private BootClassesPanel         m_bootClassesPanel;
+public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+
+  private final Layout     m_layout;
+  private State            m_state;
+  private volatile boolean m_isActive;
 
   public DsoApplicationPanel(Composite parent, int style) {
     super(parent, style);
-//    load();
-  }
-//
-//  public void load() { // XXX add tabs here
-//    m_instrumentedClassesPanel = new InstrumentedClassesPanel();
-//    m_transientFieldsPanel = new TransientFieldsPanel();
-//    m_locksPanel = new LocksPanel();
-//    m_rootsPanel = new RootsPanel();
-//    m_distributedMethodsPanel = new DistributedMethodsPanel();
-//    m_bootClassesPanel = new BootClassesPanel();
-//  }
-//
-//  public void structureChanged(XmlObjectStructureChangeEvent e) {/**/}
-//
-//  private void addListeners() {
-//    m_instrumentedClassesPanel.addXmlObjectStructureListener(this);
-//    m_transientFieldsPanel.addXmlObjectStructureListener(this);
-//    m_locksPanel.addXmlObjectStructureListener(this);
-//    m_rootsPanel.addXmlObjectStructureListener(this);
-//    m_distributedMethodsPanel.addXmlObjectStructureListener(this);
-//    m_bootClassesPanel.addXmlObjectStructureListener(this);
-//  }
-//
-//  private void removeListeners() {
-//    m_instrumentedClassesPanel.removeXmlObjectStructureListener(this);
-//    m_transientFieldsPanel.removeXmlObjectStructureListener(this);
-//    m_locksPanel.removeXmlObjectStructureListener(this);
-//    m_rootsPanel.removeXmlObjectStructureListener(this);
-//    m_distributedMethodsPanel.removeXmlObjectStructureListener(this);
-//    m_bootClassesPanel.removeXmlObjectStructureListener(this);
-//  }
-//
-//  public void ensureXmlObject() {
-//    if (m_dsoApp == null) {
-//      removeListeners();
-//      if (m_application == null) {
-//        m_application = m_config.addNewApplication();
-//      }
-//      m_dsoApp = m_application.addNewDso();
-//      initPanels();
-//      addListeners();
-//    }
-//  }
-//
-//  public void setupInternal() {
-//    TcPlugin plugin = TcPlugin.getDefault();
-//
-//    m_config = plugin.getConfiguration(m_project);
-//    m_application = m_config != null ? m_config.getApplication() : null;
-//    m_dsoApp = m_application != null ? m_application.getDso() : null;
-//
-//    initPanels();
-//  }
-//
-//  private void initPanels() {
-//    m_instrumentedClassesPanel.setup(m_project, m_dsoApp);
-//    m_transientFieldsPanel.setup(m_project, m_dsoApp);
-//    m_locksPanel.setup(m_project, m_dsoApp);
-//    m_rootsPanel.setup(m_project, m_dsoApp);
-//    m_distributedMethodsPanel.setup(m_project, m_dsoApp);
-//    m_bootClassesPanel.setup(m_project, m_dsoApp);
-//  }
-//
-//  public void updateInstrumentedClassesPanel() {
-//    m_instrumentedClassesPanel.updateModel();
-//  }
-//
-//  public void updateTransientsPanel() {
-//    m_transientFieldsPanel.updateModel();
-//  }
-//
-//  public void updateLocksPanel() {
-//    m_locksPanel.updateModel();
-//  }
-//
-//  public void updateRootsPanel() {
-//    m_rootsPanel.updateModel();
-//  }
-//
-//  public void updateDistributedMethodsPanel() {
-//    m_distributedMethodsPanel.updateModel();
-//  }
-//
-//  public void updateBootClassesPanel() {
-//    m_bootClassesPanel.updateModel();
-//  }
-//
-//  public void setup(IProject project) {
-//    m_project = project;
-//
-//    setEnabled(true);
-//    removeListeners();
-//    setupInternal();
-//    addListeners();
-//  }
-//
-//  public IProject getProject() {
-//    return m_project;
-//  }
-//
-//  public void tearDown() {
-//    removeListeners();
-//
-//    m_instrumentedClassesPanel.tearDown();
-//    m_transientFieldsPanel.tearDown();
-//    m_locksPanel.tearDown();
-//    m_rootsPanel.tearDown();
-//    m_distributedMethodsPanel.tearDown();
-//    m_bootClassesPanel.tearDown();
-//
-//    setEnabled(false);
-//  }
-
-  // TODO: remove these
-  public IProject getProject() {
-    return null;
+    this.m_layout = new Layout(this);
   }
 
-  public void structureChanged(XmlObjectStructureChangeEvent e) {
-    
+  // ================================================================================
+  // INTERFACE
+  // ================================================================================
+
+  public synchronized void addListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void removeListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void clearState() {
+    setActive(false);
+    m_state.xmlContext.detachComponentModel(this);
+    m_state = null;
+  }
+
+  public synchronized void init(Object data) {
+    if (m_isActive && m_state.project == (IProject) data) return;
+    setActive(false);
+    IProject project = (IProject) data;
+    m_state = new State(project);
+    m_layout.m_bootClasses.init(project);
+    m_layout.m_distributedMethods.init(project);
+    m_layout.m_instrumentedClasses.init(project);
+    m_layout.m_locks.init(project);
+    m_layout.m_roots.init(project);
+    m_layout.m_transientFields.init(project);
+    setActive(true);
+  }
+
+  public synchronized boolean isActive() {
+    return m_isActive;
+  }
+
+  public synchronized void setActive(boolean activate) {
+    m_isActive = activate;
+  }
+
+  // ================================================================================
+  // STATE
+  // ================================================================================
+
+  private class State {
+    final IProject             project;
+    final XmlConfigContext     xmlContext;
+    final XmlConfigUndoContext xmlUndoContext;
+    final Client               client;
+
+    private State(IProject project) {
+      this.project = project;
+      this.xmlContext = XmlConfigContext.getInstance(project);
+      this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
+      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
+    }
+  }
+
+  // ================================================================================
+  // LAYOUT
+  // ================================================================================
+
+  private static class Layout {
+
+    private static final String      ROOTS_ICON                = "/com/tc/admin/icons/hierarchicalLayout.gif";
+    private static final String      LOCKS_ICON                = "/com/tc/admin/icons/deadlock_view.gif";
+    private static final String      TRANSIENT_FIELDS_ICON     = "/com/tc/admin/icons/transient.gif";
+    private static final String      INSTRUMENTED_CLASSES_ICON = "/com/tc/admin/icons/class_obj.gif";
+    private static final String      DISTRIBUTED_METHODS_ICON  = "/com/tc/admin/icons/jmeth_obj.gif";
+    private static final String      BOOT_CLASSES_ICON         = "/com/tc/admin/icons/jar_obj.gif";
+    private static final String      ROOTS                     = "Roots";
+    private static final String      LOCKS                     = "Locks";
+    private static final String      TRANSIENT_FIELDS          = "Transient Fields";
+    private static final String      INSTRUMENTED_CLASSES      = "Instrumented Classes";
+    private static final String      DISTRIBUTED_METHODS       = "Distributed Methods";
+    private static final String      BOOT_CLASSES              = "Boot Classes";
+    private RootsPanel               m_roots;
+    private LocksPanel               m_locks;
+    private TransientFieldsPanel     m_transientFields;
+    private InstrumentedClassesPanel m_instrumentedClasses;
+    private DistributedMethodsPanel  m_distributedMethods;
+    private BootClassesPanel         m_bootClasses;
+
+    public void reset() {
+      // not implemented
+    }
+
+    private Layout(Composite parent) {
+      final TabFolder tabFolder = new TabFolder(parent, SWT.BORDER);
+
+      TabItem rootsTab = new TabItem(tabFolder, SWT.NONE);
+      rootsTab.setText(ROOTS);
+      rootsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(ROOTS_ICON)));
+      rootsTab.setControl(m_roots = new RootsPanel(tabFolder, SWT.NONE));
+
+      TabItem locksTab = new TabItem(tabFolder, SWT.NONE);
+      locksTab.setText(LOCKS);
+      locksTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(LOCKS_ICON)));
+      locksTab.setControl(m_locks = new LocksPanel(tabFolder, SWT.NONE));
+
+      TabItem transientFieldsTab = new TabItem(tabFolder, SWT.NONE);
+      transientFieldsTab.setText(TRANSIENT_FIELDS);
+      transientFieldsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
+          TRANSIENT_FIELDS_ICON)));
+      transientFieldsTab.setControl(m_transientFields = new TransientFieldsPanel(tabFolder, SWT.NONE));
+
+      TabItem instrumentedClassesTab = new TabItem(tabFolder, SWT.NONE);
+      instrumentedClassesTab.setText(INSTRUMENTED_CLASSES);
+      instrumentedClassesTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
+          INSTRUMENTED_CLASSES_ICON)));
+      instrumentedClassesTab.setControl(m_instrumentedClasses = new InstrumentedClassesPanel(tabFolder, SWT.NONE));
+
+      TabItem distributedMethodsTab = new TabItem(tabFolder, SWT.NONE);
+      distributedMethodsTab.setText(DISTRIBUTED_METHODS);
+      distributedMethodsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
+          DISTRIBUTED_METHODS_ICON)));
+      distributedMethodsTab.setControl(m_distributedMethods = new DistributedMethodsPanel(tabFolder, SWT.NONE));
+
+      TabItem bootClassesTab = new TabItem(tabFolder, SWT.NONE);
+      bootClassesTab.setText(BOOT_CLASSES);
+      bootClassesTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(BOOT_CLASSES_ICON)));
+      bootClassesTab.setControl(m_bootClasses = new BootClassesPanel(tabFolder, SWT.NONE));
+
+      tabFolder.pack();
+      tabFolder.setSelection(rootsTab);
+    }
   }
 }

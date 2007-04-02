@@ -16,4 +16,6 @@ public interface NavigatorBehavior {
   Object getValues();
   
   int style();
+  
+  String getTitle();
 }

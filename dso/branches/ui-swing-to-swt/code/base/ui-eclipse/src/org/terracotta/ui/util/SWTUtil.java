@@ -155,15 +155,22 @@ public final class SWTUtil {
               final Text text = new Text(table, SWT.NONE);
               Listener textListener = new Listener() {
                 public void handleEvent(final Event e) {
+                  Event updateEvent = new Event();
                   switch (e.type) {
                     case SWT.FocusOut:
                       item.setText(column, text.getText());
+                      updateEvent.item = item;
+                      updateEvent.index = column;
+                      table.notifyListeners(SWT.SetData, updateEvent);
                       text.dispose();
                       break;
                     case SWT.Traverse:
                       switch (e.detail) {
                         case SWT.TRAVERSE_RETURN:
                           item.setText(column, text.getText());
+                          updateEvent.item = item;
+                          updateEvent.index = column;
+                          table.notifyListeners(SWT.SetData, updateEvent);
                           // FALL THROUGH
                         case SWT.TRAVERSE_ESCAPE:
                           text.dispose();

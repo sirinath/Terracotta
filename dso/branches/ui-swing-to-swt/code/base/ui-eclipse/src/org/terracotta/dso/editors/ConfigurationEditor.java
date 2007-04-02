@@ -113,8 +113,9 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 //  }
 
   void createDsoApplicationPage(int pageIndex) {
-    addPage(pageIndex, new DsoApplicationPanel(getContainer(), SWT.NONE));
+    addPage(pageIndex, m_dsoAppPanel = new DsoApplicationPanel(getContainer(), SWT.NONE));
     setPageText(pageIndex, "DSO config");
+    m_dsoAppPanel.init(m_project);
   }
 
   public DsoApplicationPanel getDsoApplicationPanel() {

@@ -18,6 +18,8 @@ import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.DsoClientDebugging;
 import com.terracottatech.config.DsoServerData;
 import com.terracottatech.config.Module;
+import com.terracottatech.config.Root;
+import com.terracottatech.config.Roots;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
@@ -88,6 +90,10 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_clientFullStackListener;
   private final EventMulticaster                       m_clientFaultCountObserver;
   private UpdateEventListener                          m_clientFaultCountListener;
+  private final EventMulticaster                       m_rootsFieldObserver;
+  private UpdateEventListener                          m_rootsFieldListener;
+  private final EventMulticaster                       m_rootsNameObserver;
+  private UpdateEventListener                          m_rootsNameListener;
   // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
   private final EventMulticaster                       m_removeServerObserver;
@@ -95,6 +101,8 @@ public final class XmlConfigContext {
   private final EventMulticaster                       m_removeClientModuleRepoObserver;
   private final EventMulticaster                       m_newClientModuleObserver;
   private final EventMulticaster                       m_removeClientModuleObserver;
+  private final EventMulticaster                       m_newRootObserver;
+  private final EventMulticaster                       m_removeRootObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
@@ -102,6 +110,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteClientModuleRepoListener;
   private UpdateEventListener                          m_createClientModuleListener;
   private UpdateEventListener                          m_deleteClientModuleListener;
+  private UpdateEventListener                          m_createRootListener;
+  private UpdateEventListener                          m_deleteRootListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final TcConfig                               m_config;
@@ -140,6 +150,8 @@ public final class XmlConfigContext {
     this.m_clientCallerObserver = new EventMulticaster();
     this.m_clientFullStackObserver = new EventMulticaster();
     this.m_clientFaultCountObserver = new EventMulticaster();
+    this.m_rootsFieldObserver = new EventMulticaster();
+    this.m_rootsNameObserver = new EventMulticaster();
     // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
     this.m_removeServerObserver = new EventMulticaster();
@@ -147,6 +159,8 @@ public final class XmlConfigContext {
     this.m_removeClientModuleRepoObserver = new EventMulticaster();
     this.m_newClientModuleObserver = new EventMulticaster();
     this.m_removeClientModuleObserver = new EventMulticaster();
+    this.m_newRootObserver = new EventMulticaster();
+    this.m_removeRootObserver = new EventMulticaster();
     init();
   }
 
@@ -302,6 +316,8 @@ public final class XmlConfigContext {
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
       }
     }, XmlConfigEvent.CLIENT_FAULT_COUNT);
+    addListener(m_rootsFieldListener = newWriter(), XmlConfigEvent.ROOTS_FIELD);
+    addListener(m_rootsNameListener = newWriter(), XmlConfigEvent.ROOTS_NAME);
   }
 
   private UpdateEventListener newInstLoggingWriter() {
@@ -416,6 +432,24 @@ public final class XmlConfigContext {
         m_removeClientModuleRepoObserver.fireUpdateEvent(event);
       }
     };
+    m_createRootListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        Root root = m_config.getApplication().getDso().getRoots().addNewRoot();
+        root.setFieldName(((String[]) e.data)[0]);
+        root.setRootName(((String[]) e.data)[1]);
+        m_newRootObserver.fireUpdateEvent(new XmlConfigEvent(root, XmlConfigEvent.NEW_ROOT));
+      }
+    };
+    m_deleteRootListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        Roots roots = m_config.getApplication().getDso().getRoots();
+        roots.removeRoot(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_ROOT);
+        event.index = index;
+        m_removeRootObserver.fireUpdateEvent(event);
+      }
+    };
   }
 
   private void doAction(XmlAction action, int type) {
@@ -525,6 +559,12 @@ public final class XmlConfigContext {
         swapClientDsoEvent(event);
         action.exec(m_clientFaultCountObserver, m_clientFaultCountListener);
         break;
+      case XmlConfigEvent.ROOTS_FIELD:
+        action.exec(m_rootsFieldObserver, m_rootsFieldListener);
+        break;
+      case XmlConfigEvent.ROOTS_NAME:
+        action.exec(m_rootsNameObserver, m_rootsNameListener);
+        break;
       // NEW and REMOVE EVENTS - Notified after corresponding creation or deletion
       case XmlConfigEvent.NEW_SERVER:
         action.exec(m_newServerObserver, null);
@@ -545,6 +585,12 @@ public final class XmlConfigContext {
       case XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO:
         swapClientDsoEvent(event);
         action.exec(m_removeClientModuleRepoObserver, null);
+        break;
+      case XmlConfigEvent.NEW_ROOT:
+        action.exec(m_newRootObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_ROOT:
+        action.exec(m_removeRootObserver, null);
         break;
 
       default:
@@ -613,6 +659,12 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.DELETE_CLIENT_MODULE_REPO:
         m_deleteClientModuleRepoListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_ROOT:
+        m_createRootListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_ROOT:
+        m_deleteRootListener.handleUpdate(event);
         break;
 
       default:

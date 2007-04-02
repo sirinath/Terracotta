@@ -170,4 +170,14 @@ public class InstrumentationLoggingPanel extends ConfigurationEditorPanel
 //  private void setup(XmlBooleanToggle toggle) {
 //    toggle.setup(m_instrumentationLogging);
 //  }
+
+  public void clearState() {
+    
+    
+  }
+
+  public void init(Object data) {
+    
+    
+  }
 }

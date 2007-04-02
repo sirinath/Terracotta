@@ -152,4 +152,14 @@ public class RuntimeLoggingPanel extends ConfigurationEditorPanel
 //  private void setup(XmlBooleanToggle toggle) {
 //    toggle.setup(m_runtimeLogging);
 //  }
+
+  public void clearState() {
+    
+    
+  }
+
+  public void init(Object data) {
+    
+    
+  }
 }

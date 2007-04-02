@@ -13,13 +13,17 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
 
-public final class FieldBehavior implements NavigatorBehavior {
+public final class FolderBehavior implements NavigatorBehavior {
 
-  public static final String SELECT_FOLDER = "Select Folder";
-  private String             m_selectedValue;
+  private static final String SELECT_FOLDER = "Select Folder";
+  private String              m_selectedValue;
 
   public int style() {
     return SWT.SINGLE;
+  }
+
+  public String getTitle() {
+    return SELECT_FOLDER;
   }
 
   public ViewerFilter getFilter() {
@@ -49,7 +53,6 @@ public final class FieldBehavior implements NavigatorBehavior {
               m_selectedValue = folder.getProjectRelativePath().toString();
               nav.okButtonEnabled(true);
             }
-
           }
         }
       }

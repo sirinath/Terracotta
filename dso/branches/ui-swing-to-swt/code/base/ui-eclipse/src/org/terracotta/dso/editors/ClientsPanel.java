@@ -28,7 +28,8 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
-import org.terracotta.dso.editors.chooser.FieldBehavior;
+import org.terracotta.dso.editors.chooser.FolderBehavior;
+import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.chooser.PackageNavigator;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
@@ -41,14 +42,13 @@ import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.Module;
 
-public class ClientsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public final class ClientsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
   private static final String MODULE_DECLARATION   = "Module Declaration";
   private static final String MODULE_REPO_LOCATION = "Repository Location (URL)";
   private static final String REPO_DECLARATION     = "Repository Declaration";
   private final Layout        m_layout;
   private State               m_state;
-  private volatile boolean    m_isActive;
 
   public ClientsPanel(Composite parent, int style) {
     super(parent, style);
@@ -59,14 +59,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
   // ================================================================================
   // INTERFACE
   // ================================================================================
-
-  public synchronized void addListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
-
-  public synchronized void removeListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
 
   public synchronized void clearState() {
     setActive(false);
@@ -84,14 +76,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     updateClientListeners();
     initModuleRepositories();
     initModules();
-  }
-
-  public synchronized boolean isActive() {
-    return m_isActive;
-  }
-
-  public synchronized void setActive(boolean activate) {
-    m_isActive = activate;
   }
 
   // ================================================================================
@@ -119,8 +103,8 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
     m_layout.m_logsBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        PackageNavigator dialog = new PackageNavigator(getShell(), FieldBehavior.SELECT_FOLDER, m_state.project,
-            new FieldBehavior());
+        NavigatorBehavior behavior = new FolderBehavior();
+        PackageNavigator dialog = new PackageNavigator(getShell(), behavior.getTitle(), m_state.project, behavior);
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
             m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, m_state.client,
@@ -153,6 +137,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
         TableItem item = new TableItem(m_layout.m_moduleTable, SWT.NONE, 0);
         item.setText((String[]) e.data);
         m_layout.m_moduleTable.setSelection(item);
+        m_layout.m_removeModule.setEnabled(true);
       }
     }, XmlConfigEvent.NEW_CLIENT_MODULE, this);
     m_layout.m_removeModule.addSelectionListener(new SelectionAdapter() {
@@ -168,8 +153,15 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         m_layout.m_moduleTable.remove(((XmlConfigEvent) e).index);
+        m_layout.m_removeModule.setEnabled(false);
       }
     }, XmlConfigEvent.REMOVE_CLIENT_MODULE, this);
+    m_layout.m_moduleTable.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_removeModule.setEnabled(true);
+      }
+    });
     // - modules repo behavior
     m_layout.m_addModuleRepo.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
@@ -192,6 +184,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
         TableItem item = new TableItem(m_layout.m_moduleRepoTable, SWT.NONE, 0);
         item.setText((String) e.data);
         m_layout.m_moduleRepoTable.setSelection(item);
+        m_layout.m_removeModuleRepo.setEnabled(true);
       }
     }, XmlConfigEvent.NEW_CLIENT_MODULE_REPO, this);
     m_layout.m_removeModuleRepo.addSelectionListener(new SelectionAdapter() {
@@ -207,8 +200,15 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         m_layout.m_moduleRepoTable.remove(((XmlConfigEvent) e).index);
+        m_layout.m_removeModuleRepo.setEnabled(false);
       }
     }, XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO, this);
+    m_layout.m_moduleRepoTable.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_removeModuleRepo.setEnabled(true);
+      }
+    });
   }
 
   // - check box listeners
@@ -345,10 +345,6 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
   private void updateListeners(int event, XmlObject element) {
     m_state.xmlContext.updateListeners(new XmlConfigEvent(element, event));
-  }
-
-  private XmlConfigEvent castEvent(UpdateEvent e) {
-    return (XmlConfigEvent) e;
   }
 
   private void handleFieldEvent(Text text, int type) {
@@ -679,6 +675,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
       m_removeModuleRepo = new Button(buttonPanel, SWT.PUSH);
       m_removeModuleRepo.setText(REMOVE);
+      m_removeModuleRepo.setEnabled(false);
       m_removeModuleRepo.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
       SWTUtil.applyDefaultButtonSize(m_removeModuleRepo);
     }
@@ -742,6 +739,7 @@ public class ClientsPanel extends ConfigurationEditorPanel implements SWTCompone
 
       m_removeModule = new Button(buttonPanel, SWT.PUSH);
       m_removeModule.setText(REMOVE);
+      m_removeModule.setEnabled(false);
       m_removeModule.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
       SWTUtil.applyDefaultButtonSize(m_removeModule);
     }

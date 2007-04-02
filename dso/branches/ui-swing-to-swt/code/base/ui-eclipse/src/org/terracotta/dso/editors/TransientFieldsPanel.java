@@ -1,253 +1,156 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.dso.editors;
 
-import org.dijon.Button;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.terracotta.dso.editors.chooser.FieldChooser;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
+import org.terracotta.ui.util.SWTComponentModel;
+import org.terracotta.ui.util.SWTUtil;
 
-import com.tc.admin.common.XTable;
-import com.terracottatech.config.DsoApplication;
-import com.terracottatech.config.TransientFields;
+import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.Client;
 
-import java.awt.event.ActionListener;
+public class TransientFieldsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-import javax.swing.event.ListSelectionListener;
+  private final Layout        m_layout;
+  private State               m_state;
+  private volatile boolean    m_isActive;
 
-public class TransientFieldsPanel extends ConfigurationEditorPanel
-//  implements TableModelListener
-{
-  private IProject              m_project;
-  private DsoApplication        m_dsoApp;
-  private TransientFields       m_transientFields;
-  private XTable                m_transientTable;
-//  private TransientTableModel   m_transientTableModel;
-  private Button                m_addButton;
-  private ActionListener        m_addListener;
-  private Button                m_removeButton;
-  private ActionListener        m_removeListener;
-  private ListSelectionListener m_transientsListener;
-  private FieldChooser          m_fieldChooser;
-  
   public TransientFieldsPanel(Composite parent, int style) {
     super(parent, style);
+    this.m_layout = new Layout(this);
+  }
+
+  // ================================================================================
+  // INTERFACE
+  // ================================================================================
+
+  public synchronized void addListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void removeListener(UpdateEventListener listener, int type) {
+  // not implemented
+  }
+
+  public synchronized void clearState() {
+    setActive(false);
+    m_layout.reset();
+    m_state.xmlContext.detachComponentModel(this);
+    m_state = null;
+  }
+
+  public synchronized void init(Object data) {
+    if (m_isActive && m_state.project == (IProject) data) return;
+    setActive(false);
+    m_state = new State((IProject) data);
+    setActive(true);
+  }
+
+  public synchronized boolean isActive() {
+    return m_isActive;
+  }
+
+  public synchronized void setActive(boolean activate) {
+    m_isActive = activate;
   }
   
-//  public void load(ContainerResource containerRes) {
-//    super.init(containerRes);
-//
-//    m_transientTable = (XTable)findComponent("TransientFieldTable");
-//    m_transientTable.setModel(m_transientTableModel = new TransientTableModel());
-//    m_transientsListener = new ListSelectionListener() {
-//      public void valueChanged(ListSelectionEvent lse) {
-//        if(!lse.getValueIsAdjusting()) {
-//          int[] sel = m_transientTable.getSelectedRows();
-//          m_removeButton.setEnabled(sel != null && sel.length > 0);
-//        }
-//      }
-//    };        
-//    
-//    m_addButton = (Button)findComponent("AddTransientButton");
-//    m_addListener = new ActionListener() {
-//      public void actionPerformed(ActionEvent ae) {
-//        FieldChooser chsr = getFieldChooser();
-//        
-//        chsr.setup(m_project);
-//        chsr.center(TransientFieldsPanel.this.getAncestorOfClass(java.awt.Frame.class));
-//        chsr.setVisible(true);
-//      }
-//    };
-//
-//    m_removeButton = (Button)findComponent("RemoveTransientButton");
-//    m_removeListener = new ActionListener() {
-//      public void actionPerformed(ActionEvent ae) {
-//        int[] selection  = m_transientTable.getSelectedRows();
-//        
-//        for(int i = selection.length-1; i >= 0; i--) {
-//          ensureTransientFields().removeFieldName(selection[i]);
-//          m_transientTableModel.removeRow(selection[i]);
-//        }
-//      }
-//    };
-//  }
-//
-//  private FieldChooser getFieldChooser() {
-//    if(m_fieldChooser == null) {
-//      m_fieldChooser = new FieldChooser((Frame)getAncestorOfClass(Frame.class));
-//      m_fieldChooser.setListener(new FieldChooserListener());
-//    }
-//    
-//    return m_fieldChooser;
-//  }
-//
-//  class FieldChooserListener implements ActionListener {
-//    public void actionPerformed(ActionEvent ae) {
-//      String[] fields = m_fieldChooser.getFieldNames();
-//      String   field;
-//      
-//      for(int i = 0; i < fields.length; i++) {
-//        field = fields[i];
-//        
-//        if(field != null &&
-//           (field = field.trim()) != null &&
-//            field.length() > 0 &&
-//           !isTransient(fields[i]))
-//        {
-//          internalAddTransient(fields[i]);
-//        }
-//      }
-//    }
-//  }
-//  
-//  public boolean hasAnySet() {
-//    return m_transientFields != null &&
-//           m_transientFields.sizeOfFieldNameArray() > 0;
-//  }
-//  
-//  private TransientFields ensureTransientFields() {
-//    if(m_transientFields == null) {
-//      ensureXmlObject();
-//    }
-//    return m_transientFields;
-//  }
-//  
-//  public void ensureXmlObject() {
-//    super.ensureXmlObject();
-//
-//    if(m_transientFields == null) {
-//      removeListeners();
-//      m_transientFields = m_dsoApp.addNewTransientFields();
-//      updateChildren();
-//      addListeners();
-//    }
-//  }
-//  
-//  private void syncModel() {
-//    if(!hasAnySet() && m_dsoApp.getTransientFields() != null){
-//      m_dsoApp.unsetTransientFields();
-//      m_transientFields = null;
-//      fireXmlObjectStructureChanged(m_dsoApp);
-//    }
-//
-//    setDirty();
-//  }
-//  
-//  private void addListeners() {
-//    m_transientTableModel.addTableModelListener(this);
-//    m_transientTable.getSelectionModel().addListSelectionListener(m_transientsListener);
-//    m_addButton.addActionListener(m_addListener);
-//    m_removeButton.addActionListener(m_removeListener);
-//  }
-//  
-//  private void removeListeners() {
-//    m_transientTableModel.removeTableModelListener(this);
-//    m_transientTable.getSelectionModel().removeListSelectionListener(m_transientsListener);
-//    m_addButton.removeActionListener(m_addListener);
-//    m_removeButton.removeActionListener(m_removeListener);
-//  }
-//  
-//  public void updateChildren() {
-//    m_transientTableModel.clear();
-//
-//    if(m_transientFields != null) {
-//      String[] transients = m_transientFields.getFieldNameArray();
-//  
-//      for(int i = 0; i < transients.length; i++) {
-//        m_transientTableModel.addField(transients[i]);
-//      }
-//    }
-//  }
-//
-//  public void updateModel() {
-//    removeListeners();
-//    updateChildren();
-//    addListeners();
-//  }
-//  
-//  public void setup(IProject project, DsoApplication dsoApp) {
-//    setEnabled(true);
-//    removeListeners();
-//
-//    m_project         = project;
-//    m_dsoApp          = dsoApp;
-//    m_transientFields = m_dsoApp != null ?
-//                        m_dsoApp.getTransientFields() :
-//                        null;
-//
-//    updateChildren();
-//    addListeners();
-//  }
-//  
-//  public void tearDown() {
-//    removeListeners();
-//    
-//    m_dsoApp          = null;
-//    m_transientFields = null;
-//
-//    m_transientTableModel.clear();
-//    
-//    setEnabled(false);    
-//  }
-//  
-//  class TransientTableModel extends DefaultTableModel {
-//    TransientTableModel() {
-//      super();
-//      setColumnIdentifiers(new String[]{"Transient fields"});
-//    }
-//    
-//    void clear() {
-//      setRowCount(0);
-//    }
-//    
-//    void setTransientFields(TransientFields fields) {
-//      clear();
-//      
-//      if(fields != null) {
-//        int count = fields.sizeOfFieldNameArray();
-//        
-//        for(int i = 0; i < count; i++) {
-//          addField(fields.getFieldNameArray(i));
-//        }
-//      }
-//    }
-//      
-//    void addField(String fieldName) {
-//      addRow(new Object[] {fieldName});
-//    }
-//    
-//    int indexOf(String fieldName) {
-//      int count = getRowCount();
-//      
-//      for(int i = 0; i < count; i++) {
-//        if(((String)getValueAt(i, 0)).equals(fieldName)) {
-//          return i;
-//        }
-//      }
-//      
-//      return -1;
-//    }
-//    
-//    public void setValueAt(Object value, int row, int col) {
-//      m_transientFields.setFieldNameArray(row, (String)value);
-//      super.setValueAt(value, row, col);
-//    }
-//  }
-//  
-//  public void tableChanged(TableModelEvent tme) {
-//    syncModel();
-//  }
-//  
-//  private void internalAddTransient(String fieldName) {
-//    ensureTransientFields().addFieldName(fieldName);
-//    m_transientTableModel.addField(fieldName);
-//    
-//    int row = m_transientTableModel.getRowCount()-1;
-//    m_transientTable.setRowSelectionInterval(row, row);
-//  }
-//
-//  public boolean isTransient(String fieldName) {
-//    return TcPlugin.getDefault().getConfigurationHelper(m_project).isTransient(fieldName);
-//  }
+//================================================================================
+  // STATE
+  // ================================================================================
+
+  private class State {
+    final IProject             project;
+    final XmlConfigContext     xmlContext;
+    final XmlConfigUndoContext xmlUndoContext;
+    final Client               client;
+
+    private State(IProject project) {
+      this.project = project;
+      this.xmlContext = XmlConfigContext.getInstance(project);
+      this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
+      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
+    }
+  }
+
+  // ================================================================================
+  // LAYOUT
+  // ================================================================================
+
+  private static class Layout {
+
+    private static final String TRANSIENT_FIELDS = "Transient Fields";
+    private static final String ADD              = "Add...";
+    private static final String REMOVE           = "Remove";
+    
+    public void reset() {
+      
+    }
+
+    private Layout(Composite parent) {
+      Composite comp = new Composite(parent, SWT.NONE);
+      GridLayout gridLayout = new GridLayout();
+      gridLayout.numColumns = 2;
+      gridLayout.marginWidth = 10;
+      gridLayout.marginHeight = 10;
+      gridLayout.makeColumnsEqualWidth = false;
+      comp.setLayout(gridLayout);
+
+      Composite sidePanel = new Composite(comp, SWT.NONE);
+      gridLayout = new GridLayout();
+      gridLayout.numColumns = 1;
+      gridLayout.marginWidth = 0;
+      gridLayout.marginHeight = 0;
+      sidePanel.setLayout(gridLayout);
+      sidePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+      Label label = new Label(sidePanel, SWT.NONE);
+      label.setText(TRANSIENT_FIELDS);
+      label.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+
+      Composite tablePanel = new Composite(sidePanel, SWT.BORDER);
+      tablePanel.setLayout(new FillLayout());
+      tablePanel.setLayoutData(new GridData(GridData.FILL_BOTH));
+      Table table = new Table(tablePanel, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL);
+      table.setHeaderVisible(false);
+      table.setLinesVisible(true);
+
+      TableColumn column = new TableColumn(table, SWT.NONE);
+      column.setText(TRANSIENT_FIELDS);
+      column.pack();
+
+      Composite buttonPanel = new Composite(comp, SWT.NONE);
+      gridLayout = new GridLayout();
+      gridLayout.numColumns = 1;
+      gridLayout.marginWidth = 0;
+      gridLayout.marginHeight = 0;
+      buttonPanel.setLayout(gridLayout);
+      buttonPanel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+
+      new Label(buttonPanel, SWT.NONE); // filler
+
+      Button addButton = new Button(buttonPanel, SWT.PUSH);
+      addButton.setText(ADD);
+      addButton.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_END));
+      SWTUtil.applyDefaultButtonSize(addButton);
+
+      Button removeButton = new Button(buttonPanel, SWT.PUSH);
+      removeButton.setText(REMOVE);
+      removeButton.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+      SWTUtil.applyDefaultButtonSize(removeButton);
+    }
+  }
 }

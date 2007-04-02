@@ -23,6 +23,14 @@ public class PersistencePanel extends ConfigurationEditorPanel
   public PersistencePanel(Composite parent, int style) {
     super(parent, style);
   }
+
+  public void clearState() {
+    
+  }
+
+  public void init(Object data) {
+    
+  }
   
 //  public void load(ContainerResource containerRes) {
 //    super.init(containerRes);

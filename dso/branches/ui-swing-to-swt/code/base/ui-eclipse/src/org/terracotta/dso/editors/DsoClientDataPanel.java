@@ -20,6 +20,16 @@ public class DsoClientDataPanel extends ConfigurationEditorPanel
     super(parent, style);
   }
 
+  public void clearState() {
+    
+    
+  }
+
+  public void init(Object data) {
+    
+    
+  }
+
 //  public void load(ContainerResource containerRes) {
 //    super.init(containerRes);
 //

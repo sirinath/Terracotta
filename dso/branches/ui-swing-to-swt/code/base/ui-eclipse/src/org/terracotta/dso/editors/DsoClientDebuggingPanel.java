@@ -108,4 +108,14 @@ public class DsoClientDebuggingPanel extends ConfigurationEditorPanel
 //
 //    setEnabled(false);
 //  }
+
+  public void clearState() {
+    
+    
+  }
+
+  public void init(Object data) {
+    
+    
+  }
 }
