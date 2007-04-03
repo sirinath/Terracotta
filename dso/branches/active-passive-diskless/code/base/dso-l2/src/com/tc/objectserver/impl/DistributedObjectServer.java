@@ -253,10 +253,11 @@ public class DistributedObjectServer extends SEDA {
 
     try {
       startJMXServer();
-    } catch (Throwable t) {
+    } catch (Exception e) {
       String msg = "Unable to start the JMX server";
       consoleLogger.error(msg);
-      logger.error(msg, t);
+      logger.error(msg, e);
+      throw new RuntimeException(msg, e);
     }
 
     NIOWorkarounds.solaris10Workaround();
@@ -748,12 +749,16 @@ public class DistributedObjectServer extends SEDA {
   }
 
   private void startJMXServer() throws Exception {
-    // Make sure we don't require authentication for JMX, unless someone's overridden it
-    if (System.getProperty("com.sun.management.jmxremote.authenticate") == null) {
-      System.setProperty("com.sun.management.jmxremote.authenticate", "false");
-    }
     l2Management = new L2Management(tcServerInfoMBean, configSetupManager);
-    l2Management.start();
+    
+    /*
+     * Some tests use this if they run with jdk1.4 and start multiple in-process
+     * DistributedObjectServers. When we no longer support 1.4, this can be
+     * removed. See com.tctest.LockManagerSystemTest.
+     */
+    if(!Boolean.getBoolean("org.terracotta.server.disableJmxConnector")) {
+      l2Management.start();
+    }
   }
 
   private void stopJMXServer() throws Exception {
