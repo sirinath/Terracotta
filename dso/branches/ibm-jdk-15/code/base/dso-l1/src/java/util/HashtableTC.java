@@ -17,7 +17,7 @@ import java.util.Map.Entry;
 /*
  * This class will be merged with java.lang.Hashtable in the bootjar. This hashtable can store ObjectIDs instead of
  * Objects to save memory and transparently fault Objects as needed. It can also clear references. For General rules
- *
+ * 
  * @see HashMapTC class
  */
 public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearable {
@@ -254,12 +254,11 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     return $__tc_MANAGED != null;
   }
 
-  protected Map.Entry getEntry(Object key) {
-    // This method is imstrumented during bootjar creation into the vanila (which gets tainted) java.util.Hashtable.
-    // This is needed
-    // so that we can easily get access to the Original Key on put without a traversal or proxy Keys.
-    throw new RuntimeException("This should never execute ! Check BootJarTool");
-  }
+  // protected Map.Entry getEntry(Object key) {
+  // This method is imstrumented during bootjar creation into the vanila (which gets tainted) java.util.Hashtable.
+  // This is needed so that we can easily get access to the Original Key on put without a traversal or proxy Keys.
+  // throw new RuntimeException("This should never execute ! Check BootJarTool");
+  // }
 
   private static class ValuesWrapper {
 
