@@ -73,7 +73,7 @@ public class ActivePassiveServerManager {
 
     this.portChooser = portChooser;
     this.configModel = configModel;
-    this.startTimeout = startTimeout;
+    this.startTimeout = startTimeout * 2;
 
     serverCrashMode = this.setupManger.getServerCrashMode();
     serverCrashWaitTimeInSec = this.setupManger.getWaitTimeInSec();
