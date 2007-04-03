@@ -44,7 +44,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
   private final Map<String, GroupMessageListener>         messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
   private final Map<MessageID, GroupResponse>             pendingRequests  = new Hashtable<MessageID, GroupResponse>();
 
-  private boolean                                         debug            = false;
+  private boolean                                         debug            = true;
 
   public TribesGroupManager() {
     group = new GroupChannel();

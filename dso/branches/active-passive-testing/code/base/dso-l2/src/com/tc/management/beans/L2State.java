@@ -15,7 +15,8 @@ public class L2State implements StateChangeListener {
 
   public synchronized void setState(State state) {
     if (!validateState(state)) { throw new AssertionError("Unrecognized server state: [" + state.getName() + "]"); }
-    if (serverState.equals(state)) { throw new AssertionError("Re-setting L2 state to the same state: existing=["+serverState.getName()+"] passedIn=["+state.getName()+"]"); }
+    // if (serverState.equals(state)) { throw new AssertionError("Re-setting L2 state to the same state:
+    // existing=["+serverState.getName()+"] passedIn=["+state.getName()+"]"); }
 
     // TODO: remove
     System.err.println("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()

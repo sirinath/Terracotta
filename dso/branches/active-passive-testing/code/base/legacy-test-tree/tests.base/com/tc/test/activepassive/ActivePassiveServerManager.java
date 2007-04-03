@@ -222,9 +222,12 @@ public class ActivePassiveServerManager {
             if (index < 0) {
               index = i;
             } else {
+              jmxConnector.close();
               throw new Exception("More than one active server found.");
             }
           }
+
+          jmxConnector.close();
         }
       }
       if (index >= 0) {
