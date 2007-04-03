@@ -17,6 +17,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -184,13 +185,90 @@ public final class SWTUtil {
               text.addListener(SWT.Traverse, textListener);
               editor.setEditor(text, item, indices[i]);
               text.setText(item.getText(indices[i]));
-              text.selectAll();
               text.setFocus();
               return;
             }
             if (!visible && rect.intersects(clientArea)) {
               visible = true;
             }
+          }
+          if (!visible) return;
+          index++;
+        }
+      }
+    });
+  }
+
+  public static void makeTableComboItem(final Table table, final int column, final String[] values) {
+    final TableEditor editor = new TableEditor(table);
+    editor.horizontalAlignment = SWT.LEFT;
+    editor.grabHorizontal = true;
+    table.addListener(SWT.MouseDown, new Listener() {
+      public void handleEvent(Event event) {
+        Rectangle clientArea = table.getClientArea();
+        Point pt = new Point(event.x, event.y);
+        int index = table.getTopIndex();
+        while (index < table.getItemCount()) {
+          boolean visible = false;
+          final TableItem item = table.getItem(index);
+          final Rectangle rect = item.getBounds(column);
+          if (rect.contains(pt)) {
+            final Combo combo = new Combo(table, SWT.READ_ONLY);
+            for (int i = 0; i < values.length; i++) {
+              combo.add(values[i]);
+            }
+            final boolean[] isMouseOverCombo = new boolean[] { false };
+            Listener comboListener = new Listener() {
+              public void handleEvent(final Event e) {
+                Event updateEvent = new Event();
+                switch (e.type) {
+                  case SWT.FocusOut:
+                    if (isMouseOverCombo[0]) return;
+                    if (combo.getSelectionIndex() != -1) {
+                      item.setText(column, combo.getText());
+                      updateEvent.item = item;
+                      updateEvent.index = column;
+                      table.notifyListeners(SWT.SetData, updateEvent);
+                    }
+                    combo.dispose();
+                    break;
+                  case SWT.Traverse:
+                    switch (e.detail) {
+                      case SWT.TRAVERSE_RETURN:
+                        if (combo.getSelectionIndex() != -1) {
+                          item.setText(column, combo.getText());
+                          updateEvent.item = item;
+                          updateEvent.index = column;
+                          table.notifyListeners(SWT.SetData, updateEvent);
+                        }
+                        // FALL THROUGH
+                      case SWT.TRAVERSE_ESCAPE:
+                        combo.dispose();
+                        e.doit = false;
+                    }
+                    break;
+                }
+              }
+            };
+            combo.addListener(SWT.FocusOut, comboListener);
+            combo.addListener(SWT.Traverse, comboListener);
+            combo.addListener(SWT.MouseEnter, new Listener() {
+              public void handleEvent(Event e) {
+                isMouseOverCombo[0] = true;
+              }
+            });
+            combo.addListener(SWT.MouseExit, new Listener() {
+              public void handleEvent(Event e) {
+                isMouseOverCombo[0] = false;
+              }
+            });
+            editor.setEditor(combo, item, column);
+            combo.select(combo.indexOf(item.getText(column)));
+            combo.setFocus();
+            return;
+          }
+          if (!visible && rect.intersects(clientArea)) {
+            visible = true;
           }
           if (!visible) return;
           index++;

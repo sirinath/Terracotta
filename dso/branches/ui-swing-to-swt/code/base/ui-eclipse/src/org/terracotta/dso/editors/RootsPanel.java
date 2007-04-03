@@ -32,6 +32,8 @@ import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.Application;
+import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 
@@ -140,6 +142,8 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
       }
     }, XmlConfigEvent.NEW_ROOT, this);
   }
+  
+  // --------------------------------------------------------------------------------
 
   private class TableListener implements UpdateEventListener {
     public void handleUpdate(UpdateEvent e) {
@@ -188,7 +192,13 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      this.roots = TcPlugin.getDefault().getConfiguration(project).getApplication().getDso().getRoots();
+      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
+      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
+      DsoApplication dso = app.getDso();
+      if (dso == null) dso = app.addNewDso();
+      Roots rt = dso.getRoots();
+      if (rt == null) rt = dso.addNewRoots();
+      this.roots = rt;
     }
   }
 

@@ -26,17 +26,18 @@ import java.util.List;
 
 public final class MethodBehavior implements NavigatorBehavior {
 
+  public static final String  ADD_MSG       = "Enter Fully Qualified Field Name";
   private static final String SELECT_METHOD = "Select Method";
-  private final List m_selectedValues;
+  private final List          m_selectedValues;
 
   public MethodBehavior() {
     this.m_selectedValues = new ArrayList();
   }
-  
+
   public int style() {
     return SWT.MULTI;
   }
-  
+
   public String getTitle() {
     return SELECT_METHOD;
   }

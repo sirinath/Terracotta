@@ -31,6 +31,8 @@ import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.Application;
+import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.TransientFields;
 
 public class TransientFieldsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
@@ -179,7 +181,13 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      this.fields = TcPlugin.getDefault().getConfiguration(project).getApplication().getDso().getTransientFields();
+      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
+      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
+      DsoApplication dso = app.getDso();
+      if (dso == null) dso = app.addNewDso();
+      TransientFields fi = dso.getTransientFields();
+      if (fi == null) fi = dso.addNewTransientFields();
+      this.fields = fi;
     }
   }
 

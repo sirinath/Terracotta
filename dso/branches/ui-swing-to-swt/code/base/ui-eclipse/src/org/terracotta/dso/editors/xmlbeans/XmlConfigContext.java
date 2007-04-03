@@ -13,11 +13,16 @@ import org.terracotta.ui.util.SWTComponentModel;
 import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
+import com.terracottatech.config.AdditionalBootJarClasses;
+import com.terracottatech.config.Autolock;
 import com.terracottatech.config.Client;
+import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.DsoClientDebugging;
 import com.terracottatech.config.DsoServerData;
+import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
+import com.terracottatech.config.NamedLock;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 import com.terracottatech.config.Server;
@@ -97,6 +102,20 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_rootsNameListener;
   private final EventMulticaster                       m_transientFieldsObserver;
   private UpdateEventListener                          m_transientFieldsListener;
+  private final EventMulticaster                       m_distributedMethodsObserver;
+  private UpdateEventListener                          m_distributedMethodsListener;
+  private final EventMulticaster                       m_bootClassesObserver;
+  private UpdateEventListener                          m_bootClassesListener;
+  private final EventMulticaster                       m_locksAutoMethodObserver;
+  private UpdateEventListener                          m_locksAutoMethodListener;
+  private final EventMulticaster                       m_locksAutoLevelObserver;
+  private UpdateEventListener                          m_locksAutoLevelListener;
+  private final EventMulticaster                       m_locksNamedNameObserver;
+  private UpdateEventListener                          m_locksNamedNameListener;
+  private final EventMulticaster                       m_locksNamedMethodObserver;
+  private UpdateEventListener                          m_locksNamedMethodListener;
+  private final EventMulticaster                       m_locksNamedLevelObserver;
+  private UpdateEventListener                          m_locksNamedLevelListener;
   // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
   private final EventMulticaster                       m_removeServerObserver;
@@ -108,6 +127,14 @@ public final class XmlConfigContext {
   private final EventMulticaster                       m_removeRootObserver;
   private final EventMulticaster                       m_newTransientFieldObserver;
   private final EventMulticaster                       m_removeTransientFieldObserver;
+  private final EventMulticaster                       m_newDistributedMethodObserver;
+  private final EventMulticaster                       m_removeDistributedMethodObserver;
+  private final EventMulticaster                       m_newBootClassObserver;
+  private final EventMulticaster                       m_removeBootClassObserver;
+  private final EventMulticaster                       m_newLockAutoObserver;
+  private final EventMulticaster                       m_removeLockAutoObserver;
+  private final EventMulticaster                       m_newLockNamedObserver;
+  private final EventMulticaster                       m_removeLockNamedObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
@@ -119,6 +146,14 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteRootListener;
   private UpdateEventListener                          m_createTransientFieldListener;
   private UpdateEventListener                          m_deleteTransientFieldListener;
+  private UpdateEventListener                          m_createDistributedMethodListener;
+  private UpdateEventListener                          m_deleteDistributedMethodListener;
+  private UpdateEventListener                          m_createBootClassListener;
+  private UpdateEventListener                          m_deleteBootClassListener;
+  private UpdateEventListener                          m_createLockAutoListener;
+  private UpdateEventListener                          m_deleteLockAutoListener;
+  private UpdateEventListener                          m_createLockNamedListener;
+  private UpdateEventListener                          m_deleteLockNamedListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final TcConfig                               m_config;
@@ -160,6 +195,13 @@ public final class XmlConfigContext {
     this.m_rootsFieldObserver = new EventMulticaster();
     this.m_rootsNameObserver = new EventMulticaster();
     this.m_transientFieldsObserver = new EventMulticaster();
+    this.m_distributedMethodsObserver = new EventMulticaster();
+    this.m_bootClassesObserver = new EventMulticaster();
+    this.m_locksAutoMethodObserver = new EventMulticaster();
+    this.m_locksAutoLevelObserver = new EventMulticaster();
+    this.m_locksNamedNameObserver = new EventMulticaster();
+    this.m_locksNamedMethodObserver = new EventMulticaster();
+    this.m_locksNamedLevelObserver = new EventMulticaster();
     // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
     this.m_removeServerObserver = new EventMulticaster();
@@ -171,6 +213,14 @@ public final class XmlConfigContext {
     this.m_removeRootObserver = new EventMulticaster();
     this.m_newTransientFieldObserver = new EventMulticaster();
     this.m_removeTransientFieldObserver = new EventMulticaster();
+    this.m_newDistributedMethodObserver = new EventMulticaster();
+    this.m_removeDistributedMethodObserver = new EventMulticaster();
+    this.m_newBootClassObserver = new EventMulticaster();
+    this.m_removeBootClassObserver = new EventMulticaster();
+    this.m_newLockAutoObserver = new EventMulticaster();
+    this.m_removeLockAutoObserver = new EventMulticaster();
+    this.m_newLockNamedObserver = new EventMulticaster();
+    this.m_removeLockNamedObserver = new EventMulticaster();
     init();
   }
 
@@ -326,18 +376,65 @@ public final class XmlConfigContext {
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
       }
     }, XmlConfigEvent.CLIENT_FAULT_COUNT);
+    // dso applications
     addListener(m_rootsFieldListener = newWriter(), XmlConfigEvent.ROOTS_FIELD);
     addListener(m_rootsNameListener = newWriter(), XmlConfigEvent.ROOTS_NAME);
-    addListener(m_transientFieldsListener = newSingleValueWriter(), XmlConfigEvent.TRANSIENT_FIELD);
+    addListener(m_transientFieldsListener = newTransientFieldsWriter(), XmlConfigEvent.TRANSIENT_FIELD);
+    addListener(m_distributedMethodsListener = newDistributedMethodsWriter(), XmlConfigEvent.DISTRIBUTED_METHOD);
+    addListener(m_bootClassesListener = newBootClassesWriter(), XmlConfigEvent.BOOT_CLASS);
+    addListener(m_locksAutoMethodListener = newLocksAutoWriter(), XmlConfigEvent.LOCKS_AUTO_METHOD);
+    addListener(m_locksAutoLevelListener = newLocksAutoWriter(), XmlConfigEvent.LOCKS_AUTO_LEVEL);
+    addListener(m_locksNamedNameListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_NAME);
+    addListener(m_locksNamedMethodListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_METHOD);
+    addListener(m_locksNamedLevelListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_LEVEL);
   }
 
-  private UpdateEventListener newSingleValueWriter() {
+  private UpdateEventListener newLocksAutoWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlConfigPersistenceManager.writeElement(event.element, element, (String) event.data);
+      }
+    };
+  }
+
+  private UpdateEventListener newLocksNamedWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlConfigPersistenceManager.writeElement(event.element, element, (String) event.data);
+      }
+    };
+  }
+
+  private UpdateEventListener newBootClassesWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        AdditionalBootJarClasses classes = (AdditionalBootJarClasses) event.element;
+        classes.setIncludeArray(event.index, (String) event.data);
+      }
+    };
+  }
+
+  private UpdateEventListener newDistributedMethodsWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        DistributedMethods.MethodExpression method = (DistributedMethods.MethodExpression) event.element;
+        method.setStringValue((String) event.data);
+      }
+    };
+  }
+
+  private UpdateEventListener newTransientFieldsWriter() {
     return new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         XmlConfigEvent event = (XmlConfigEvent) e;
         TransientFields fields = (TransientFields) event.element;
         fields.setFieldNameArray(event.index, (String) event.data);
-        System.out.println(fields.getFieldNameArray(event.index));// XXX
       }
     };
   }
@@ -490,6 +587,77 @@ public final class XmlConfigContext {
         m_removeTransientFieldObserver.fireUpdateEvent(event);
       }
     };
+    m_createDistributedMethodListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        DistributedMethods.MethodExpression expr = m_config.getApplication().getDso().getDistributedMethods()
+            .addNewMethodExpression();
+        expr.setStringValue((String) e.data);
+        m_newDistributedMethodObserver.fireUpdateEvent(new XmlConfigEvent(expr, XmlConfigEvent.NEW_DISTRIBUTED_METHOD));
+      }
+    };
+    m_deleteDistributedMethodListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getApplication().getDso().getDistributedMethods().removeMethodExpression(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_DISTRIBUTED_METHOD);
+        event.index = index;
+        m_removeDistributedMethodObserver.fireUpdateEvent(event);
+      }
+    };
+    m_createBootClassListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        m_config.getApplication().getDso().getAdditionalBootJarClasses().addInclude((String) e.data);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.NEW_BOOT_CLASS);
+        event.data = e.data;
+        m_newBootClassObserver.fireUpdateEvent(event);
+      }
+    };
+    m_deleteBootClassListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getApplication().getDso().getAdditionalBootJarClasses().removeInclude(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_BOOT_CLASS);
+        event.index = index;
+        m_removeBootClassObserver.fireUpdateEvent(event);
+      }
+    };
+    m_createLockAutoListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        String[] values = (String[]) e.data;
+        Autolock lock = m_config.getApplication().getDso().getLocks().addNewAutolock();
+        lock.setMethodExpression(values[0]);
+        lock.setLockLevel(LockLevel.Enum.forString(values[1]));
+        m_newLockAutoObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_AUTO));
+      }
+    };
+    m_deleteLockAutoListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getApplication().getDso().getLocks().removeAutolock(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_AUTO);
+        event.index = index;
+        m_removeLockAutoObserver.fireUpdateEvent(event);
+      }
+    };
+    m_createLockNamedListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        String[] values = (String[]) e.data;
+        NamedLock lock = m_config.getApplication().getDso().getLocks().addNewNamedLock();
+        lock.setLockName(values[0]);
+        lock.setMethodExpression(values[1]);
+        lock.setLockLevel(LockLevel.Enum.forString(values[2]));
+        m_newLockNamedObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_NAMED));
+      }
+    };
+    m_deleteLockNamedListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        int index = ((XmlConfigEvent) e).index;
+        m_config.getApplication().getDso().getLocks().removeNamedLock(index);
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_NAMED);
+        event.index = index;
+        m_removeLockNamedObserver.fireUpdateEvent(event);
+      }
+    };
   }
 
   private void doAction(XmlAction action, int type) {
@@ -608,6 +776,27 @@ public final class XmlConfigContext {
       case XmlConfigEvent.TRANSIENT_FIELD:
         action.exec(m_transientFieldsObserver, m_transientFieldsListener);
         break;
+      case XmlConfigEvent.DISTRIBUTED_METHOD:
+        action.exec(m_distributedMethodsObserver, m_distributedMethodsListener);
+        break;
+      case XmlConfigEvent.BOOT_CLASS:
+        action.exec(m_bootClassesObserver, m_bootClassesListener);
+        break;
+      case XmlConfigEvent.LOCKS_AUTO_METHOD:
+        action.exec(m_locksAutoMethodObserver, m_locksAutoMethodListener);
+        break;
+      case XmlConfigEvent.LOCKS_AUTO_LEVEL:
+        action.exec(m_locksAutoLevelObserver, m_locksAutoLevelListener);
+        break;
+      case XmlConfigEvent.LOCKS_NAMED_NAME:
+        action.exec(m_locksNamedNameObserver, m_locksNamedNameListener);
+        break;
+      case XmlConfigEvent.LOCKS_NAMED_METHOD:
+        action.exec(m_locksNamedMethodObserver, m_locksNamedMethodListener);
+        break;
+      case XmlConfigEvent.LOCKS_NAMED_LEVEL:
+        action.exec(m_locksNamedLevelObserver, m_locksNamedLevelListener);
+        break;
       // NEW and REMOVE EVENTS - Notified after corresponding creation or deletion
       case XmlConfigEvent.NEW_SERVER:
         action.exec(m_newServerObserver, null);
@@ -640,6 +829,30 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.REMOVE_TRANSIENT_FIELD:
         action.exec(m_removeTransientFieldObserver, null);
+        break;
+      case XmlConfigEvent.NEW_DISTRIBUTED_METHOD:
+        action.exec(m_newDistributedMethodObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_DISTRIBUTED_METHOD:
+        action.exec(m_removeDistributedMethodObserver, null);
+        break;
+      case XmlConfigEvent.NEW_BOOT_CLASS:
+        action.exec(m_newBootClassObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_BOOT_CLASS:
+        action.exec(m_removeBootClassObserver, null);
+        break;
+      case XmlConfigEvent.NEW_LOCK_AUTO:
+        action.exec(m_newLockAutoObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_LOCK_AUTO:
+        action.exec(m_removeLockAutoObserver, null);
+        break;
+      case XmlConfigEvent.NEW_LOCK_NAMED:
+        action.exec(m_newLockNamedObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_LOCK_NAMED:
+        action.exec(m_removeLockNamedObserver, null);
         break;
 
       default:
@@ -720,6 +933,30 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.DELETE_TRANSIENT_FIELD:
         m_deleteTransientFieldListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_DISTRIBUTED_METHOD:
+        m_createDistributedMethodListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_DISTRIBUTED_METHOD:
+        m_deleteDistributedMethodListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_BOOT_CLASS:
+        m_createBootClassListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_BOOT_CLASS:
+        m_deleteBootClassListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_LOCK_AUTO:
+        m_createLockAutoListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_LOCK_AUTO:
+        m_deleteLockAutoListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_LOCK_NAMED:
+        m_createLockNamedListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_LOCK_NAMED:
+        m_deleteLockNamedListener.handleUpdate(event);
         break;
 
       default:

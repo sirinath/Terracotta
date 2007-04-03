@@ -373,7 +373,9 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
+      Client cl = TcPlugin.getDefault().getConfiguration(project).getClients();
+      if (cl == null) cl = TcPlugin.getDefault().getConfiguration(project).addNewClients();
+      this.client = cl;
     }
   }
 

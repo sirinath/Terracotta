@@ -13,7 +13,7 @@ public class XmlConfigEvent extends UpdateEvent {
 
   public static final int      ALT_RANGE_CONSTANT                  = 999999;
   // if the config xml structure changes rename (producing errors) the effected event type to locate it's listeners
-  public static final int      XML_STRUCTURE_CHANGED               = 0;
+  public static final int      XML_STRUCTURE_CHANGED               = 5;
   public static final int      SERVER_NAME                         = 10;
   public static final int      SERVER_HOST                         = 15;
   public static final int      SERVER_DSO_PORT                     = 20;
@@ -47,8 +47,16 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      ROOTS_FIELD                         = 160;
   public static final int      ROOTS_NAME                          = 165;
   public static final int      TRANSIENT_FIELD                     = 170;
+  public static final int      DISTRIBUTED_METHOD                  = 175;
+  public static final int      BOOT_CLASS                          = 180;
+  public static final int      LOCKS_AUTO_METHOD                   = 185;
+  public static final int      LOCKS_AUTO_LEVEL                    = 190;
+  public static final int      LOCKS_NAMED_NAME                    = 195;
+  public static final int      LOCKS_NAMED_METHOD                  = 200;
+  public static final int      LOCKS_NAMED_LEVEL                   = 205;
   // only this context may listen to "create" and "delete" events - corresponding "new" and "remove" events are
   // broadcast
+  public static final int      NULL                                = -1;
   public static final int      CREATE_SERVER                       = -5;
   public static final int      DELETE_SERVER                       = -10;
   public static final int      CREATE_CLIENT_MODULE_REPO           = -15;
@@ -59,6 +67,14 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      DELETE_ROOT                         = -40;
   public static final int      CREATE_TRANSIENT_FIELD              = -45;
   public static final int      DELETE_TRANSIENT_FIELD              = -50;
+  public static final int      CREATE_DISTRIBUTED_METHOD           = -55;
+  public static final int      DELETE_DISTRIBUTED_METHOD           = -60;
+  public static final int      CREATE_BOOT_CLASS                   = -65;
+  public static final int      DELETE_BOOT_CLASS                   = -70;
+  public static final int      CREATE_LOCK_AUTO                    = -75;
+  public static final int      DELETE_LOCK_AUTO                    = -80;
+  public static final int      CREATE_LOCK_NAMED                   = -85;
+  public static final int      DELETE_LOCK_NAMED                   = -90;
   // only this context may notify "new" and "remove" events after receiving a corresponding "create" or "delete" event
   public static final int      NEW_SERVER                          = ALT_RANGE_CONSTANT + 5;
   public static final int      REMOVE_SERVER                       = ALT_RANGE_CONSTANT + 10;
@@ -70,6 +86,14 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final int      REMOVE_ROOT                         = ALT_RANGE_CONSTANT + 40;
   public static final int      NEW_TRANSIENT_FIELD                 = ALT_RANGE_CONSTANT + 45;
   public static final int      REMOVE_TRANSIENT_FIELD              = ALT_RANGE_CONSTANT + 50;
+  public static final int      NEW_DISTRIBUTED_METHOD              = ALT_RANGE_CONSTANT + 55;
+  public static final int      REMOVE_DISTRIBUTED_METHOD           = ALT_RANGE_CONSTANT + 60;
+  public static final int      NEW_BOOT_CLASS                      = ALT_RANGE_CONSTANT + 65;
+  public static final int      REMOVE_BOOT_CLASS                   = ALT_RANGE_CONSTANT + 70;
+  public static final int      NEW_LOCK_AUTO                       = ALT_RANGE_CONSTANT + 75;
+  public static final int      REMOVE_LOCK_AUTO                    = ALT_RANGE_CONSTANT + 80;
+  public static final int      NEW_LOCK_NAMED                      = ALT_RANGE_CONSTANT + 85;
+  public static final int      REMOVE_LOCK_NAMED                   = ALT_RANGE_CONSTANT + 90;
   // container elements with no associated events
   public static final String   PARENT_ELEM_DSO                     = "dso";
   public static final String   PARENT_ELEM_PERSIST                 = "persistence";
@@ -78,6 +102,8 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final String   PARENT_ELEM_INSTRUMENTATION_LOGGING = "instrumentation-logging";
   public static final String   PARENT_ELEM_RUNTIME_OUTPUT_OPTIONS  = "runtime-output-options";
   public static final String   PARENT_ELEM_RUNTIME_LOGGING         = "runtime-logging";
+  public static final String   PARENT_ELEM_AUTOLOCK                = "autolock";
+  public static final String   PARENT_ELEM_NAMED_LOCK              = "named-lock";
   // element names
   private static final String  ELEM_NAME                           = "name";
   private static final String  ELEM_HOST                           = "host";
@@ -107,8 +133,11 @@ public class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_FAULT_COUNT                    = "fault-count";
   private static final String  ELEM_FIELD_NAME                     = "field-name";
   private static final String  ELEM_ROOT_NAME                      = "root-name";
+  private static final String  ELEM_LOCK_LEVEL                     = "lock-level";
+  private static final String  ELEM_METHOD_EXPRESSION              = "method-expression";
+  private static final String  ELEM_LOCK_NAME                      = "lock-name";
 
-  public static final String[] m_elementNames                      = new String[170 + 1];
+  public static final String[] m_elementNames                      = new String[205 + 1];
   static {
     m_elementNames[SERVER_NAME] = ELEM_NAME;
     m_elementNames[SERVER_HOST] = ELEM_HOST;
@@ -139,6 +168,11 @@ public class XmlConfigEvent extends UpdateEvent {
     m_elementNames[CLIENT_FAULT_COUNT] = ELEM_FAULT_COUNT;
     m_elementNames[ROOTS_FIELD] = ELEM_FIELD_NAME;
     m_elementNames[ROOTS_NAME] = ELEM_ROOT_NAME;
+    m_elementNames[LOCKS_AUTO_LEVEL] = ELEM_LOCK_LEVEL;
+    m_elementNames[LOCKS_AUTO_METHOD] = ELEM_METHOD_EXPRESSION;
+    m_elementNames[LOCKS_NAMED_LEVEL] = ELEM_LOCK_LEVEL;
+    m_elementNames[LOCKS_NAMED_METHOD] = ELEM_METHOD_EXPRESSION;
+    m_elementNames[LOCKS_NAMED_NAME] = ELEM_LOCK_NAME;
   }
 
   public final int             type;
