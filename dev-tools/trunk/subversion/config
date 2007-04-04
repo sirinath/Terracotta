@@ -162,7 +162,7 @@ LICENSE = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:
 *.el = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 *.y = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 *.l = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.sh = svn:eol-style=native;svn:executable;svn:keywords=Date Revision Author HeadURL Id
+*.sh = svn:eol-style=LF;svn:executable;svn:keywords=Date Revision Author HeadURL Id
 *.bat = svn:eol-style=CRLF;svn:executable;svn:keywords=Date Revision Author HeadURL Id
 *.txt = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/plain
 
