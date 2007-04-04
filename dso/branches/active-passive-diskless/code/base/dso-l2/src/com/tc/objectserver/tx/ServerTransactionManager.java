@@ -4,7 +4,6 @@
 package com.tc.objectserver.tx;
 
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.managedobject.BackReferences;
@@ -56,9 +55,8 @@ public interface ServerTransactionManager {
    * Apply the changes in the given transaction to the given set of checked out objects.
    * @param instanceMonitor 
    * 
-   * @return The results of the transaction apply
    */
-  public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
+  public void apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
                     ObjectInstanceMonitor instanceMonitor);
   
   /**

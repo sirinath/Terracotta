@@ -581,7 +581,7 @@ public class DistributedObjectServer extends SEDA {
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager);
+                                          objectManager, transactionManager, gtxm);
     } else {
       l2Coordinator = new L2HADisabledCooridinator();
     }
@@ -589,7 +589,7 @@ public class DistributedObjectServer extends SEDA {
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectStore, lockManager, channelManager,
                                                  clientStateManager, transactionManager, txnObjectManager,
                                                  clientHandshakeManager, channelStats, l2Coordinator,
-                                                 new CommitTransactionMessageToTransactionBatchReader());
+                                                 new CommitTransactionMessageToTransactionBatchReader(gtxm));
 
     stageManager.startAll(context);
 

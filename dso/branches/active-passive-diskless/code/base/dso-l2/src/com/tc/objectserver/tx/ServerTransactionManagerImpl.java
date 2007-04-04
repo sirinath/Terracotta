@@ -130,7 +130,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public GlobalTransactionID apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
+  public void apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
                                    ObjectInstanceMonitor instanceMonitor) {
 
     final ServerTransactionID stxnID = txn.getServerTransactionID();
@@ -138,12 +138,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     final TransactionID txnID = txn.getTransactionID();
     final List changes = txn.getChanges();
 
-    // TODO:: Fix for passive
-    GlobalTransactionID gtxID = gtxm.createGlobalTransactionID(stxnID);
+    GlobalTransactionID gtxID = txn.getGlobalTransactionID();
 
     TransactionAccount ci;
     if (txn.isPassive()) {
       ci = getOrCreateNullTransactionAccount(channelID);
+      gtxm.createGlobalTransactionDesc(stxnID, txn.getGlobalTransactionID());
     } else {
       // There could potentically be a small leak if the clients crash and then shutdownClient() called before
       // apply() is called. Will create a TransactionAccount which will never get removed.
@@ -176,11 +176,11 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
         objectManager.createRoot(rootName, newID);
       }
     }
+    gtxm.applyComplete(stxnID);
     transactionRateCounter.increment();
     if (!channelID.isNull()) channelStats.notifyTransaction(channelID);
 
     fireTransactionAppliedEvent(stxnID);
-    return gtxID;
   }
 
   public void skipApplyAndCommit(ServerTransaction txn) {

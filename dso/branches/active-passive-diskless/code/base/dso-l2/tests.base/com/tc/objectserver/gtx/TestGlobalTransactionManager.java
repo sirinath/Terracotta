@@ -57,7 +57,7 @@ public final class TestGlobalTransactionManager implements ServerGlobalTransacti
     }
   }
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
+  public GlobalTransactionID getOrCreateGlobalTransactionID(ServerTransactionID serverTransactionID) {
     return new GlobalTransactionID(idSequence++);
   }
 }

@@ -6,6 +6,7 @@ package com.tc.objectserver.persistence.api;
 import com.tc.objectserver.gtx.GlobalTransactionDescriptor;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface TransactionPersistor {
   
@@ -14,4 +15,6 @@ public interface TransactionPersistor {
   public void saveGlobalTransactionDescriptor(PersistenceTransaction tx, GlobalTransactionDescriptor gtx);
 
   public void deleteAllByServerTransactionID(PersistenceTransaction tx, Collection toDelete);
+
+  public void deleteAllByServerTransactionID(List toDelete);
 }

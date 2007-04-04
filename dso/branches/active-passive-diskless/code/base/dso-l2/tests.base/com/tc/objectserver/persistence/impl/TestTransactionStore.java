@@ -45,7 +45,7 @@ public class TestTransactionStore implements TransactionStore {
     }
   }
 
-  public GlobalTransactionDescriptor createTransactionDescriptor(ServerTransactionID stxid) {
+  public GlobalTransactionDescriptor getOrCreateTransactionDescriptor(ServerTransactionID stxid) {
     nextTransactionIDContextQueue.put(stxid);
     GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxid, new GlobalTransactionID(idSequence++));
     basicPut(volatileMap, rv);

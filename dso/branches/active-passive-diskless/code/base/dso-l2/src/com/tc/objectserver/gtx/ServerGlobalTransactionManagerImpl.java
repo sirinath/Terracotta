@@ -39,7 +39,8 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
 
   public boolean needsApply(ServerTransactionID stxID) {
     GlobalTransactionDescriptor gtx = this.transactionStore.getTransactionDescriptor(stxID);
-    return (gtx == null);
+    // XXX:: In passive this mapping is not yet created
+    return gtx == null || !gtx.isApplied();
   }
 
   public void completeTransactions(PersistenceTransaction tx, Collection collection) {
@@ -63,14 +64,27 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
   public GlobalTransactionID getLowGlobalTransactionIDWatermark() {
     return transactionStore.getLeastGlobalTransactionID();
   }
+  
+  public void setLowWatermark(GlobalTransactionID lowWatermark) {
+    transactionStore.removeAllByServerTransactionIDsLessThan(lowWatermark);
+  }
 
   public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
     return transactionStore.getGlobalTransactionID(stxnID);
   }
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
-    GlobalTransactionDescriptor gdesc = transactionStore.createTransactionDescriptor(serverTransactionID);
+  public GlobalTransactionID getOrCreateGlobalTransactionID(ServerTransactionID serverTransactionID) {
+    GlobalTransactionDescriptor gdesc = transactionStore.getOrCreateTransactionDescriptor(serverTransactionID);
     return gdesc.getGlobalTransactionID();
+  }
+
+  public void applyComplete(ServerTransactionID stxnID) {
+    GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxnID);
+    desc.applyComplete();
+  }
+
+  public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID) {
+    transactionStore.createGlobalTransactionDesc(stxnID, globalTransactionID);
   }
 
 }

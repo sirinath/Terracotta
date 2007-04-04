@@ -12,22 +12,26 @@ import com.tc.objectserver.gtx.TransactionCommittedError;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.api.TransactionStore;
+import com.tc.util.Assert;
 import com.tc.util.sequence.Sequence;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.Map.Entry;
 
 public class TransactionStoreImpl implements TransactionStore {
 
   private final Map                  serverTransactionIDMap = Collections.synchronizedMap(new HashMap());
-  private final SortedSet            ids                    = Collections
-                                                                .synchronizedSortedSet(new TreeSet(
+  private final SortedMap            ids                    = Collections
+                                                                .synchronizedSortedMap(new TreeMap(
                                                                                                    GlobalTransactionID.COMPARATOR));
   private final TransactionPersistor persistor;
   private final Sequence             globalIDSequence;
@@ -49,14 +53,20 @@ public class TransactionStoreImpl implements TransactionStore {
     gtx.commitComplete();
   }
 
+  // TODO:: This method maynot be needed anymore
   public GlobalTransactionDescriptor getTransactionDescriptor(ServerTransactionID serverTransactionID) {
     return (GlobalTransactionDescriptor) this.serverTransactionIDMap.get(serverTransactionID);
   }
 
-  public GlobalTransactionDescriptor createTransactionDescriptor(ServerTransactionID serverTransactionID) {
-    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(serverTransactionID, getNextGlobalTransactionID());
-    basicAdd(rv);
-    return rv;
+  public GlobalTransactionDescriptor getOrCreateTransactionDescriptor(ServerTransactionID serverTransactionID) {
+    synchronized (serverTransactionIDMap) {
+      GlobalTransactionDescriptor rv = (GlobalTransactionDescriptor) serverTransactionIDMap.get(serverTransactionID);
+      if (rv == null) {
+        rv = new GlobalTransactionDescriptor(serverTransactionID, getNextGlobalTransactionID());
+        basicAdd(rv);
+      }
+      return rv;
+    }
   }
 
   private GlobalTransactionID getNextGlobalTransactionID() {
@@ -67,14 +77,14 @@ public class TransactionStoreImpl implements TransactionStore {
     ServerTransactionID sid = gtx.getServerTransactionID();
     GlobalTransactionID gid = gtx.getGlobalTransactionID();
     Object prevDesc = this.serverTransactionIDMap.put(sid, gtx);
-    ids.add(gid);
+    ids.put(gid, gtx);
     if (prevDesc != null) { throw new AssertionError("Adding new mapping for old txn IDs : " + gtx + " Prev desc = "
                                                      + prevDesc); }
   }
 
   public GlobalTransactionID getLeastGlobalTransactionID() {
     synchronized (ids) {
-      return (GlobalTransactionID) ((ids.isEmpty()) ? GlobalTransactionID.NULL_ID : ids.first());
+      return (GlobalTransactionID) ((ids.isEmpty()) ? GlobalTransactionID.NULL_ID : ids.firstKey());
     }
   }
 
@@ -113,5 +123,30 @@ public class TransactionStoreImpl implements TransactionStore {
       }
     }
     removeAllByServerTransactionID(tx, stxIDs);
+  }
+
+  public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID) {
+    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxnID, globalTransactionID);
+    basicAdd(rv);
+  }
+
+  // TODO:: Optimize to not hit disk all the time. remember though the delete should happen immediately
+  public void removeAllByServerTransactionIDsLessThan(GlobalTransactionID lowWatermark) {
+    List toDeleteSids;
+    synchronized (ids) {
+      if (ids.isEmpty()) { return; }
+      Map toDelete = ids.headMap(lowWatermark);
+      toDeleteSids = new ArrayList(toDelete.size());
+      for (Iterator i = toDelete.entrySet().iterator(); i.hasNext();) {
+        Entry e = (Entry) i.next();
+        GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) e.getValue();
+        i.remove();
+        ServerTransactionID sid = desc.getServerTransactionID();
+        Object d1 = serverTransactionIDMap.remove(sid);
+        Assert.assertTrue(d1 == desc);
+        toDeleteSids.add(sid);
+      }
+    }
+    persistor.deleteAllByServerTransactionID(toDeleteSids);
   }
 }
