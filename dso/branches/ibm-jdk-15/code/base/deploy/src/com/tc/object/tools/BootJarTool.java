@@ -310,8 +310,8 @@ public class BootJarTool {
       addSunStandardLoaders();
       if (!Vm.isIBM()) {
         addInstrumentedJavaLangThrowable();
-        addInstrumentedJavaLangStringBuffer();
       }
+      addInstrumentedJavaLangStringBuffer();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
       if (!Vm.isIBM()) {
@@ -1217,7 +1217,18 @@ public class BootJarTool {
 
     boolean isJDK15 = Vm.isJDK15Compliant();
 
-    String className = isJDK15 ? "java.lang.AbstractStringBuilder" : "java.lang.StringBuffer";
+    if (isJDK15) {
+      if (Vm.isIBM()) {
+        addNonPortableStringBuffer("java.lang.StringBuilder");
+      } else {
+        addNonPortableStringBuffer("java.lang.AbstractStringBuilder");
+      }
+    }
+    
+    addNonPortableStringBuffer("java.lang.StringBuffer");
+  }
+
+  private void addNonPortableStringBuffer(String className) {
     TransparencyClassSpec spec = config.getOrCreateSpec(className);
     spec.markPreInstrumented();
 
