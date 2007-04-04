@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  All content copyright (c) 2003-2007 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved.
+
+-->
 <tc:tc-config xmlns:tc="http://www.terracotta.org/config">
   <servers>
     <server host="%i" name="sample"/>
@@ -10,7 +17,16 @@
     <dso>
       <instrumented-classes>
         <include>
-          <class-expression>*..*</class-expression>
+          <class-expression>com.uwyn.rife.*..*</class-expression>
+        </include>
+        <include>
+          <class-expression>Order</class-expression>
+        </include>
+        <include>
+          <class-expression>OrderData</class-expression>
+        </include>
+        <include>
+          <class-expression>OrderDataMetaData</class-expression>
         </include>
       </instrumented-classes>
       <roots>
@@ -25,32 +41,28 @@
       </roots>
       <locks>
         <autolock>
-          <method-expression>* *..*.*(..)</method-expression>
+          <method-expression>* com.uwyn.rife.*..*.*(..)</method-expression>
           <lock-level>write</lock-level>
         </autolock>
-        <named-lock>
-          <lock-name>lockOne</lock-name>
-          <method-expression>* org.apache.catalina.core.ApplicationFilterConfig.release(..)</method-expression>
-          <lock-level>write</lock-level>
-        </named-lock>
       </locks>
       <transient-fields>
-        <field-name>com.uwyn.rife.engine.Gate.mInitException</field-name>
-        <field-name>com.uwyn.rife.engine.RequestState.mResponse</field-name>
-        <field-name>com.uwyn.rife.engine.ElementContext.mResponse</field-name>
         <field-name>com.uwyn.rife.engine.ContinuationManager.mRandom</field-name>
+        <field-name>com.uwyn.rife.engine.ElementContext.mResponse</field-name>
+        <field-name>com.uwyn.rife.engine.Gate.mInitException</field-name>
+        <field-name>com.uwyn.rife.engine.InitConfigFilter.mConfig</field-name>
+        <field-name>com.uwyn.rife.engine.RequestState.mResponse</field-name>
         <field-name>com.uwyn.rife.engine.Site$SiteData.mResourceModificationTimes</field-name>
         <field-name>com.uwyn.rife.engine.Site$SiteData.mUrls</field-name>
-        <field-name>com.uwyn.rife.servlet.RifeFilter.mClassloader</field-name>
-        <field-name>com.uwyn.rife.servlet.HttpResponse.mResponse</field-name>
         <field-name>com.uwyn.rife.servlet.HttpRequest.mHttpServletRequest</field-name>
-        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_US_ASCII</field-name>
+        <field-name>com.uwyn.rife.servlet.HttpResponse.mResponse</field-name>
+        <field-name>com.uwyn.rife.servlet.RifeFilter.mClassloader</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_ISO_8859_1</field-name>
-        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_8</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_US_ASCII</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16BE</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16LE</field-name>
-        <field-name>org.apache.catalina.core.ApplicationFilterConfig.context</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16LE</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_8</field-name>
       </transient-fields>
     </dso>
   </application>
