@@ -292,12 +292,12 @@ public class BootJarTool {
       // the boot jar.
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
+      loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
       if (!Vm.isIBM()) {
-        loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
         loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
-        loadTerracottaClass(JavaLangArrayHelpers.class.getName());
         loadTerracottaClass(ProxyInstance.class.getName());
       }
+      loadTerracottaClass(JavaLangArrayHelpers.class.getName());
 
       loadTerracottaClass(Vm.class.getName());
       loadTerracottaClass(Vm.class.getName() + "$Version");
@@ -313,8 +313,8 @@ public class BootJarTool {
         addInstrumentedJavaLangStringBuffer();
       }
       addInstrumentedClassLoader();
+      addInstrumentedJavaLangString();
       if (!Vm.isIBM()) {
-        addInstrumentedJavaLangString();
         addInstrumentedProxy();
         addTreeMap();
       }
