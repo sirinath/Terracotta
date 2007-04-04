@@ -4,21 +4,23 @@
  */
 package com.tc.test.activepassive;
 
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
+
 public class ActivePassiveServerCrasher implements Runnable {
 
   private final ActivePassiveServerManager serverManger;
   private final long                       serverCrashWaitTimeInSec;
 
-  private boolean                          testIsRunning;
+  private SynchronizedBoolean              testIsRunning;
 
   public ActivePassiveServerCrasher(ActivePassiveServerManager serverManager, long serverCrashWaitTimeInSec) {
     this.serverManger = serverManager;
     this.serverCrashWaitTimeInSec = serverCrashWaitTimeInSec;
-    testIsRunning = true;
+    testIsRunning = new SynchronizedBoolean(true);
   }
 
   public void run() {
-    while (testIsRunning) {
+    while (testIsRunning.get()) {
       try {
         Thread.sleep(serverCrashWaitTimeInSec * 1000);
         serverManger.crashActive();
@@ -30,6 +32,6 @@ public class ActivePassiveServerCrasher implements Runnable {
   }
 
   public void stop() {
-    testIsRunning = false;
+    testIsRunning.set(false);
   }
 }

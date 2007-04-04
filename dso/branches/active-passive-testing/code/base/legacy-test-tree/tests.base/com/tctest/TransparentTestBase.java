@@ -66,9 +66,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
-      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+//      configFactory().activateConfigurationChange();
       configFactory().addServerToL1Config(null, helper.getServerPort(), -1);
-      configFactory().activateConfigurationChange();
+      configFactory().addServerToL2Config(null, helper.getServerPort(), helper.getAdminPort());
 
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
@@ -249,9 +250,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void tearDown() throws Exception {
-    if (controlledCrashMode && isActivePassive() && canRunActivePassive()) {
-      apServerManager.stopAllServers();
-      apServerManager = null;
+    if (controlledCrashMode) {
+      if (isActivePassive() && canRunActivePassive()) {
+        apServerManager.stopAllServers();
+        apServerManager = null;
+      } else if (isCrashy() && canRunCrash()) {
+        crasher.stop();
+      }
     }
     super.tearDown();
   }

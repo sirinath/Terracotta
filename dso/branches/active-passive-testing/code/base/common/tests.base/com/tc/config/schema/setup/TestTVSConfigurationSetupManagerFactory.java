@@ -23,6 +23,7 @@ import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.util.Assert;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.Server;
+import com.terracottatech.config.Servers;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -295,13 +296,29 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     return (NewL1DSOConfig) proxify(NewL1DSOConfig.class, this.beanSet.clientBean(), this.sampleL1DSO, "dso");
   }
 
+  private void cleanBeanSetServersIfNeeded(TestConfigBeanSet beanSetArg) {
+    if (beanSetArg == null) { throw new AssertionError("beanSetArg is null"); }
+
+    Servers l2s = beanSetArg.serversBean();
+    if (l2s.sizeOfServerArray() == 1) {
+      Server l2 = l2s.getServerArray(0);
+      if (l2.getName().equals(TestConfigBeanSet.DEFAULT_SERVER_NAME)
+          && l2.getHost().equals(TestConfigBeanSet.DEFAULT_HOST)) {
+        l2s.removeServer(0);
+        if (l2s.sizeOfServerArray() != 0) { throw new AssertionError("Default server has not been cleared"); }
+      }
+    }
+  }
+
   public void addServerToL1Config(String name, int dsoPort, int jmxPort) {
-    Server newL2 = this.l1_beanSet.serversBean().addNewServer();
+    cleanBeanSetServersIfNeeded(l1_beanSet);
+
+    Server newL2 = l1_beanSet.serversBean().addNewServer();
 
     if (name != null && !name.equals("")) {
       newL2.setName(name);
     }
-    newL2.setHost("localhost");
+    newL2.setHost(TestConfigBeanSet.DEFAULT_HOST);
 
     newL2.setDsoPort(dsoPort);
 
@@ -311,6 +328,23 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
     newL2.setData(BOGUS_FILENAME);
     newL2.setLogs(BOGUS_FILENAME);
+  }
+
+  public void addServerToL2Config(String name, int dsoPort, int jmxPort) {
+    cleanBeanSetServersIfNeeded(beanSet);
+
+    Server newL2 = this.beanSet.serversBean().addNewServer();
+
+    if (name != null && !name.equals("")) {
+      newL2.setName(name);
+    }
+
+    newL2.setHost(TestConfigBeanSet.DEFAULT_HOST);
+    newL2.setDsoPort(dsoPort);
+    newL2.setJmxPort(jmxPort);
+
+//    newL2.setData(BOGUS_FILENAME);
+//    newL2.setLogs(BOGUS_FILENAME);
   }
 
   private Server findL2Bean(String name) {
