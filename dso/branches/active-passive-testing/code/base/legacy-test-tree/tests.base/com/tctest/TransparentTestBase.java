@@ -249,9 +249,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void tearDown() throws Exception {
-    // TODO: remove this comment
-    System.err.println("TransparentTestBase tearDown() called");
-
     if (controlledCrashMode && isActivePassive() && canRunActivePassive()) {
       apServerManager.stopAllServers();
       apServerManager = null;

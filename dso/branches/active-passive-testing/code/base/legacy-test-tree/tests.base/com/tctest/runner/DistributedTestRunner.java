@@ -41,6 +41,7 @@ import java.util.Map;
  * Takes an application configuration and some parameters and runs a single-vm, multi-node (multi-classloader) test.
  */
 public class DistributedTestRunner implements ResultsListener {
+  private static final boolean                          DEBUG   = false;
 
   private final boolean                                 startServer;
 
@@ -152,11 +153,16 @@ public class DistributedTestRunner implements ResultsListener {
     }
   }
 
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
+  }
+
   public void run() {
     try {
 
-      // TODO: remove this
-      System.err.println("***** control=[" + control.toString() + "]");
+      debugPrintln("***** control=[" + control.toString() + "]");
 
       Thread statsOutputPrinterThread = new Thread(this.statsOutputPrinter);
       statsOutputPrinterThread.setDaemon(true);
@@ -192,11 +198,10 @@ public class DistributedTestRunner implements ResultsListener {
         }
 
         if (isActivePassiveTest && serverManager.crashActiveServerAfterMutate()) {
-          // TODO: remove this debugginh message
           Thread.sleep(5000);
-          System.err.println("***** DTR: Crashing active server");
+          debugPrintln("***** DTR: Crashing active server");
           serverManager.crashActive();
-          System.err.println("***** DTR: Notifying the test-wide control");
+          debugPrintln("***** DTR: Notifying the test-wide control");
           control.notifyValidationStart();
         }
       }

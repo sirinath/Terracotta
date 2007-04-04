@@ -6,8 +6,6 @@ package com.tc.simulator.container;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.simulator.app.Application;
 import com.tc.simulator.app.ApplicationBuilder;
 import com.tc.simulator.app.ApplicationInstantiationException;
@@ -29,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class Container implements Runnable {
+  private static final boolean             DEBUG = false;
 
   private final ContainerConfig            config;
   private final ContainerState             containerState;
@@ -73,20 +72,17 @@ public final class Container implements Runnable {
    * Make applications go.
    */
   public synchronized void run() {
-    // TODO: fix this message
-    logger.info("*******  isMutateValidateTest=[" + isMutateValidateTest + "]");
+    debugPrintln("isMutateValidateTest=[" + isMutateValidateTest + "]");
 
     Thread.currentThread().setContextClassLoader(applicationBuilder.getContextClassLoader());
 
     SynchronizedBoolean isRunning = new SynchronizedBoolean(true);
     try {
       if (!validateConfig()) return;
-      // TODO: remove
-      logger.info("***** config is alright");
+      debugPrintln("***** config is alright");
 
       if (isMutator) {
-        // TODO: remove
-        logger.info("******* isMutator=[" + isMutator + "]");
+        debugPrintln("******* isMutator=[" + isMutator + "]");
         if (!waitForStart()) return;
       } else {
         if (!waitForMutationCompleteTestWide()) return;
@@ -120,6 +116,12 @@ public final class Container implements Runnable {
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
+    }
+  }
+
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
     }
   }
 
@@ -175,9 +177,6 @@ public final class Container implements Runnable {
    * Private stuff
    */
 
-  // TODO: remove... for debugging
-  TCLogger logger = TCLogging.getLogger(Container.class);
-
   private ApplicationExecutionInstance newExecutionInstance(ContainerExecutionInstance containerExecution)
       throws ApplicationInstantiationException {
     String appId = this.idGenerator.nextId() + "";
@@ -192,8 +191,8 @@ public final class Container implements Runnable {
                                                                                this.containerState);
 
     if (isMutateValidateTest) {
-      logger.info("****** Container:  appId=[" + appId + "] isMutator=[" + isMutator + "] isMutateValidateTest=["
-                  + isMutateValidateTest + "]");
+      debugPrintln("****** Container:  appId=[" + appId + "] isMutator=[" + isMutator + "] isMutateValidateTest=["
+                   + isMutateValidateTest + "]");
       applicationBuilder.setAppConfigAttribute(appId, "" + isMutator);
     }
 

@@ -28,6 +28,7 @@ public class ActivePassiveServerManager {
   private static final String                    HOST             = "localhost";
   private static final String                    SERVER_NAME      = "testserver";
   private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
+  private static final boolean                   DEBUG            = false;
 
   private final File                             tempDir;
   private final PortChooser                      portChooser;
@@ -95,29 +96,34 @@ public class ActivePassiveServerManager {
   }
 
   private void createServers() throws FileNotFoundException {
-    // TODO: get rid of this after L1 config has been worked out
-    dsoPorts[0] = 9510;
-    jmxPorts[0] = 9520;
-    serverNames[0] = SERVER_NAME + 0;
-    servers[0] = new ServerInfo(HOST, serverNames[0], dsoPorts[0], jmxPorts[0], getServerControl(dsoPorts[0],
-                                                                                                 jmxPorts[0],
-                                                                                                 serverNames[0]));
-    dsoPorts[1] = 8510;
-    jmxPorts[1] = 8520;
-    serverNames[1] = SERVER_NAME + 1;
-    servers[1] = new ServerInfo(HOST, serverNames[1], dsoPorts[1], jmxPorts[1], getServerControl(dsoPorts[1],
-                                                                                                 jmxPorts[1],
-                                                                                                 serverNames[1]));
-    if (dsoPorts.length > 2) {
-      dsoPorts[2] = 7510;
-      jmxPorts[2] = 7520;
-      serverNames[2] = SERVER_NAME + 2;
-      servers[2] = new ServerInfo(HOST, serverNames[2], dsoPorts[2], jmxPorts[2], getServerControl(dsoPorts[2],
-                                                                                                   jmxPorts[2],
-                                                                                                   serverNames[2]));
+    int startIndex = 0;
+
+    if (DEBUG) {
+      dsoPorts[0] = 9510;
+      jmxPorts[0] = 9520;
+      serverNames[0] = SERVER_NAME + 0;
+      servers[0] = new ServerInfo(HOST, serverNames[0], dsoPorts[0], jmxPorts[0], getServerControl(dsoPorts[0],
+                                                                                                   jmxPorts[0],
+                                                                                                   serverNames[0]));
+      dsoPorts[1] = 8510;
+      jmxPorts[1] = 8520;
+      serverNames[1] = SERVER_NAME + 1;
+      servers[1] = new ServerInfo(HOST, serverNames[1], dsoPorts[1], jmxPorts[1], getServerControl(dsoPorts[1],
+                                                                                                   jmxPorts[1],
+                                                                                                   serverNames[1]));
+      if (dsoPorts.length > 2) {
+        dsoPorts[2] = 7510;
+        jmxPorts[2] = 7520;
+        serverNames[2] = SERVER_NAME + 2;
+        servers[2] = new ServerInfo(HOST, serverNames[2], dsoPorts[2], jmxPorts[2], getServerControl(dsoPorts[2],
+                                                                                                     jmxPorts[2],
+                                                                                                     serverNames[2]));
+      }
+
+      startIndex = 3;
     }
 
-    for (int i = 3; i < dsoPorts.length; i++) {
+    for (int i = startIndex; i < dsoPorts.length; i++) {
       dsoPorts[i] = getUnusedPort("dso");
       jmxPorts[i] = getUnusedPort("jmx");
       serverNames[i] = SERVER_NAME + i;
@@ -215,8 +221,7 @@ public class ActivePassiveServerManager {
           TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
               .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
 
-          // TODO: remove
-          System.err.println("********  index=[" + index + "]  i=[" + i + "] active=[" + mbean.isActive() + "]");
+          debugPrintln("********  index=[" + index + "]  i=[" + i + "] active=[" + mbean.isActive() + "]");
 
           if (mbean.isActive()) {
             if (index < 0) {
@@ -240,6 +245,12 @@ public class ActivePassiveServerManager {
     return index;
   }
 
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
+  }
+
   private void waitForPassiveStandby() throws Exception {
     long duration = jmxPorts.length * 5000;
     long startTime = System.currentTimeMillis();
@@ -247,11 +258,20 @@ public class ActivePassiveServerManager {
     while (duration > (System.currentTimeMillis() - startTime)) {
       for (int i = 0; i < jmxPorts.length; i++) {
         if (i != activeIndex) {
-          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
-          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
-          TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
-              .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
-          if (mbean.isPassiveStandby()) { return; }
+          JMXConnector jmxConnector = null;
+          try {
+            jmxConnector = getJMXConnector(jmxPorts[i]);
+            MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+            TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
+                .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+            if (mbean.isPassiveStandby()) { return; }
+          } catch (Exception e) {
+            throw e;
+          } finally {
+            if (jmxConnector != null) {
+              jmxConnector.close();
+            }
+          }
         }
       }
     }
@@ -293,24 +313,24 @@ public class ActivePassiveServerManager {
     Thread.sleep(500 * (servers.length - 1));
   }
 
-  // TODO: remove the debuggin comments in this method
   public void crashActive() throws Exception {
-    System.err.println("***** Crashing active server ");
+
+    debugPrintln("***** Crashing active server ");
 
     if (activeIndex < 0) { throw new AssertionError("Active index was not set."); }
 
-    System.err.println("***** wait to find a passive-standby server.");
+    debugPrintln("***** wait to find a passive-standby server.");
     waitForPassiveStandby();
-    System.err.println("***** finish  wait to find a passive-standby server.");
+    debugPrintln("***** finish  wait to find a passive-standby server.");
 
     ServerControl server = servers[activeIndex].getServerControl();
     server.crash();
-    System.err.println("***** Sleeping after crashing active server ");
+    debugPrintln("***** Sleeping after crashing active server ");
     waitForServerCrash(server);
-    System.err.println("***** Done sleeping after crashing active server ");
+    debugPrintln("***** Done sleeping after crashing active server ");
 
     lastCrashedIndex = activeIndex;
-    System.err.println("***** lastCrashedIndex[" + lastCrashedIndex + "] ");
+    debugPrintln("***** lastCrashedIndex[" + lastCrashedIndex + "] ");
 
     activeIndex = getActiveIndex();
   }
@@ -329,8 +349,7 @@ public class ActivePassiveServerManager {
   }
 
   public void restartLastCrashedServer() throws Exception {
-    // TODO: remove
-    System.err.println("*****  restarting crashed server");
+    debugPrintln("*****  restarting crashed server");
 
     if (lastCrashedIndex >= 0) {
       servers[lastCrashedIndex].getServerControl().start(startTimeout);
@@ -360,9 +379,8 @@ public class ActivePassiveServerManager {
   public void addServersToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     for (int i = 0; i < serverCount; i++) {
 
-      // TODO: remove
-      System.err.println("******* adding to L1 config: serverName=[" + serverNames[i] + "] dsoPort=[" + dsoPorts[i]
-                         + "] jmxPort=[" + jmxPorts[i] + "]");
+      debugPrintln("******* adding to L1 config: serverName=[" + serverNames[i] + "] dsoPort=[" + dsoPorts[i]
+                   + "] jmxPort=[" + jmxPorts[i] + "]");
 
       configFactory.addServerToL1Config(serverNames[i], dsoPorts[i], jmxPorts[i]);
     }

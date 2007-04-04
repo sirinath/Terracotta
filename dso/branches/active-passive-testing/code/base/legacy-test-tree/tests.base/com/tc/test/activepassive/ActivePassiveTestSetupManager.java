@@ -40,10 +40,6 @@ public class ActivePassiveTestSetupManager {
 
   public String getServerCrashMode() {
     if (serverCrashMode == null) { throw new AssertionError("Server crash mode was not set."); }
-
-    // TODO: remove
-    System.err.println("****  setup manager: serverCrashMode=[" + serverCrashMode + "]");
-
     return serverCrashMode;
   }
 

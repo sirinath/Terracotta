@@ -19,17 +19,19 @@ import com.tc.simulator.listener.MutationCompletionListener;
 import com.tc.util.TCTimeoutException;
 
 public class ControlImpl implements Control, MutationCompletionListener {
-  private final int           mutatorCount;
-  private final int           completeParties;
-  private final CyclicBarrier startBarrier;
-  private final CountDown     validationStartCount;
-  private final CountDown     countdown;
-  private final int           validatorCount;
-  private final Control       testWideControl;
-  private final boolean       crashActiveServerAfterMutate;
+  private static final boolean DEBUG = false;
 
-  private CountDown           mutationCompleteCount;
-  private long                executionTimeout;
+  private final int            mutatorCount;
+  private final int            completeParties;
+  private final CyclicBarrier  startBarrier;
+  private final CountDown      validationStartCount;
+  private final CountDown      countdown;
+  private final int            validatorCount;
+  private final Control        testWideControl;
+  private final boolean        crashActiveServerAfterMutate;
+
+  private CountDown            mutationCompleteCount;
+  private long                 executionTimeout;
 
   public ControlImpl(int mutatorCount) {
     this(mutatorCount, 0, false);
@@ -57,8 +59,8 @@ public class ControlImpl implements Control, MutationCompletionListener {
     this.mutatorCount = mutatorCount;
     this.validatorCount = validatorCount;
     completeParties = mutatorCount + validatorCount;
-    // TODO: remove
-    System.err.println("####### completeParties=[" + completeParties + "]");
+
+    debugPrintln("####### completeParties=[" + completeParties + "]");
 
     startBarrier = new CyclicBarrier(this.mutatorCount);
     mutationCompleteCount = new CountDown(this.mutatorCount);
@@ -123,11 +125,10 @@ public class ControlImpl implements Control, MutationCompletionListener {
   }
 
   public void notifyValidationStart() {
-    // TODO: remove this debugging comments
-    System.err.println("********  validation.release() called:  init=[" + validationStartCount.initialCount()
-                       + "] before=[" + validationStartCount.currentCount() + "]");
+    debugPrintln("********  validation.release() called:  init=[" + validationStartCount.initialCount() + "] before=["
+                 + validationStartCount.currentCount() + "]");
     validationStartCount.release();
-    System.err.println("******* validation.release() called:  after=[" + validationStartCount.currentCount() + "]");
+    debugPrintln("******* validation.release() called:  after=[" + validationStartCount.currentCount() + "]");
   }
 
   /*
@@ -150,9 +151,7 @@ public class ControlImpl implements Control, MutationCompletionListener {
   }
 
   public boolean waitForValidationStart(long timeout) throws InterruptedException {
-    // TODO: remove debugging comments
-    System.err.println("*******  waitForValidationStart:  validationStartCount=[" + validationStartCount.currentCount()
-                       + "]");
+    debugPrintln("*******  waitForValidationStart:  validationStartCount=[" + validationStartCount.currentCount() + "]");
     if (timeout < 0) {
       while (true) {
         synchronized (this) {
@@ -198,8 +197,7 @@ public class ControlImpl implements Control, MutationCompletionListener {
   }
 
   public void notifyComplete() {
-    // TODO: remove debug statement
-    System.err.println("*******  countdown called:  control=[" + toString() + "]");
+    debugPrintln("*******  countdown called:  control=[" + toString() + "]");
     this.countdown.release();
   }
 
@@ -229,4 +227,9 @@ public class ControlImpl implements Control, MutationCompletionListener {
                                                 + timeout + "]"); }
   }
 
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
+  }
 }

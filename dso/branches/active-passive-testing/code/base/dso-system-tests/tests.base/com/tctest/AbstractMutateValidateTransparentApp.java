@@ -13,6 +13,7 @@ import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 public abstract class AbstractMutateValidateTransparentApp extends AbstractErrorCatchingTransparentApp {
   public static final String     VALIDATOR_COUNT = "validator-count";
   public static final String     MUTATOR_COUNT   = "mutator-count";
+  private static final boolean   DEBUG           = true;
 
   protected final int            validatorCount;
   protected final int            mutatorCount;
@@ -29,32 +30,37 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
     mutatorCount = cfg.getGlobalParticipantCount();
     isMutator = Boolean.valueOf(cfg.getAttribute(appId)).booleanValue();
 
-    // TODO: remove
-    System.out.println("***** appId=[" + appId + "]:  isMutator=[" + isMutator + "]");
+    debugPrintln("***** appId=[" + appId + "]:  isMutator=[" + isMutator + "]");
+  }
+
+  protected void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
   }
 
   // mutator: mutate, wait until all mutation is done, then validate
   // validator: wait until all mutation is done, then validate
   public void runTest() throws Throwable {
     if (isMutator) {
-      System.out.println("***** appId[" + appId + "]: starting mutate");
+      debugPrintln("***** appId[" + appId + "]: starting mutate");
       mutate();
-      System.out.println("***** appId[" + appId + "]: finished mutate");
+      debugPrintln("***** appId[" + appId + "]: finished mutate");
       notifyMutationComplete();
-      System.out.println("***** appId[" + appId + "]: notified mutate-listener... waiting for mutate stage to finish");
+      debugPrintln("***** appId[" + appId + "]: notified mutate-listener... waiting for mutate stage to finish");
       waitForMutationComplete();
-      System.out.println("***** appId[" + appId + "]: mutate stage complete");
+      debugPrintln("***** appId[" + appId + "]: mutate stage complete");
     }
 
     Thread.sleep(5000);
 
     notifyValidationStart();
-    System.out.println("***** appId[" + appId + "]: notified mutate-listener... waiting for validat stage to start");
+    debugPrintln("***** appId[" + appId + "]: notified mutate-listener... waiting for validat stage to start");
     waitForValidationStart();
 
-    System.out.println("***** appId[" + appId + "]: starting validate");
+    debugPrintln("***** appId[" + appId + "]: starting validate");
     validate();
-    System.out.println("***** appId[" + appId + "]: finished validate");
+    debugPrintln("***** appId[" + appId + "]: finished validate");
   }
 
   private final void waitForValidationStart() throws Exception {
