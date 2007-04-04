@@ -10,20 +10,28 @@ import com.tc.l2.state.StateManager;
 import com.tc.util.State;
 
 public class L2State implements StateChangeListener {
-  private State               serverState = StateManager.START_STATE;
-  private StateChangeListener changeListener;
+  private static final boolean DEBUG       = false;
+  private State                serverState = StateManager.START_STATE;
+  private StateChangeListener  changeListener;
 
   public synchronized void setState(State state) {
     if (!validateState(state)) { throw new AssertionError("Unrecognized server state: [" + state.getName() + "]"); }
+
+    // TODO: need to deal with checking for state validity at some point
     // if (serverState.equals(state)) { throw new AssertionError("Re-setting L2 state to the same state:
     // existing=["+serverState.getName()+"] passedIn=["+state.getName()+"]"); }
 
-    // TODO: remove
-    System.err.println("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()
-                       + "] newState=[" + state.getName() + "]");
+    debugPrintln("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()
+                 + "] newState=[" + state.getName() + "]");
 
     changeListener.l2StateChanged(new StateChangedEvent(serverState, state));
     serverState = state;
+  }
+
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
   }
 
   public synchronized State getState() {

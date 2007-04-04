@@ -20,6 +20,7 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 
 public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean, StateChangeListener {
+  private static final boolean                 DEBUG = false;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
   static {
@@ -148,10 +149,9 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public void l2StateChanged(StateChangedEvent sce) {
     State state = sce.getCurrentState();
 
-    // TODO: remove
-    System.err.println("*****  msg=[" + stateChangeNotificationInfo.getMsg(state) + "] attrName=["
-                       + stateChangeNotificationInfo.getAttributeName(state) + "] attrType=["
-                       + stateChangeNotificationInfo.getAttributeType(state) + "] stateName=[" + state.getName() + "]");
+    debugPrintln("*****  msg=[" + stateChangeNotificationInfo.getMsg(state) + "] attrName=["
+                 + stateChangeNotificationInfo.getAttributeName(state) + "] attrType=["
+                 + stateChangeNotificationInfo.getAttributeType(state) + "] stateName=[" + state.getName() + "]");
 
     _sendNotification(stateChangeNotificationInfo.getMsg(state), stateChangeNotificationInfo.getAttributeName(state),
                       stateChangeNotificationInfo.getAttributeType(state), Boolean.FALSE, Boolean.TRUE);
@@ -160,5 +160,11 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private synchronized void _sendNotification(String msg, String attr, String type, Object oldVal, Object newVal) {
     sendNotification(new AttributeChangeNotification(this, nextSequenceNumber++, System.currentTimeMillis(), msg, attr,
                                                      type, oldVal, newVal));
+  }
+
+  private void debugPrintln(String s) {
+    if (DEBUG) {
+      System.err.println(s);
+    }
   }
 }
