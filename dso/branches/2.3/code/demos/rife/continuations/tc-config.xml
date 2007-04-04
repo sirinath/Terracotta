@@ -31,7 +31,7 @@
       </instrumented-classes>
       <roots>
         <root>
-          <field-name>com.uwyn.rife.engine.ContinuationManager.mContexts</field-name>
+          <field-name>com.uwyn.rife.continuations.ContinuationManager.mContexts</field-name>
           <root-name>mContexts</root-name>
         </root>
         <root>
@@ -46,7 +46,8 @@
         </autolock>
       </locks>
       <transient-fields>
-        <field-name>com.uwyn.rife.engine.ContinuationManager.mRandom</field-name>
+  			<field-name>com.uwyn.rife.continuations.ContinuationManager.mRandom</field-name>
+  			<field-name>com.uwyn.rife.engine.RequestState.mInitConfig</field-name>
         <field-name>com.uwyn.rife.engine.ElementContext.mResponse</field-name>
         <field-name>com.uwyn.rife.engine.Gate.mInitException</field-name>
         <field-name>com.uwyn.rife.engine.InitConfigFilter.mConfig</field-name>
@@ -60,7 +61,6 @@
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_US_ASCII</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16BE</field-name>
-        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16LE</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16LE</field-name>
         <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_8</field-name>
       </transient-fields>
