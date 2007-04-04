@@ -28,6 +28,11 @@
           <method-expression>* *..*.*(..)</method-expression>
           <lock-level>write</lock-level>
         </autolock>
+        <named-lock>
+          <lock-name>lockOne</lock-name>
+          <method-expression>* org.apache.catalina.core.ApplicationFilterConfig.release(..)</method-expression>
+          <lock-level>write</lock-level>
+        </named-lock>
       </locks>
       <transient-fields>
         <field-name>com.uwyn.rife.engine.Gate.mInitException</field-name>
