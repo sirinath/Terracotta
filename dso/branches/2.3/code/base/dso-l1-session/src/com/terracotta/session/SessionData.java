@@ -79,8 +79,6 @@ public class SessionData implements Session, SessionSupport {
   public synchronized void invalidate() {
     if (invalidated) { throw new IllegalStateException("session already invalidated"); }
 
-    Log.log("session.invalidate() invoked for " + getId());
-
     try {
       eventMgr.fireSessionDestroyedEvent(this);
 
@@ -276,8 +274,4 @@ public class SessionData implements Session, SessionSupport {
     return timestamp;
   }
 
-  public String toString() {
-    return "Session(" + sessionId.getExternalId() + ",lastAccess=" + lastAccessedTime + ",start=" + requestStartMillis
-           + ",maxIdleMillis=" + maxIdleMillis + ",createTime=" + createTime + ",invalidated=" + invalidated + ")";
-  }
 }

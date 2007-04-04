@@ -255,7 +255,6 @@ public class TerracottaSessionManager {
   }
 
   private void expire(SessionId id, SessionData sd) {
-    Log.log("mgr.expire() for " + sd);
     try {
       sd.invalidate();
     } catch (Throwable t) {
@@ -270,16 +269,9 @@ public class TerracottaSessionManager {
     Assert.pre(req != null);
     Assert.pre(res != null);
 
-    if (requestedSessionId == null) {
-      Log.log("creating new session since requested id is null");
-      return createNewSession(req, res);
-    }
+    if (requestedSessionId == null) { return createNewSession(req, res); }
     final SessionData sd = store.find(requestedSessionId);
-    if (sd == null) {
-      Log.log("creating new session since store.find() returned null for requested id "
-              + requestedSessionId.getRequestedId());
-      return createNewSession(req, res);
-    }
+    if (sd == null) { return createNewSession(req, res); }
     Assert.inv(sd.isValid());
     if (requestedSessionId.isServerHop()) cookieWriter.writeCookie(req, res, requestedSessionId);
 
@@ -350,7 +342,6 @@ public class TerracottaSessionManager {
       int errors = 0;
 
       if (invalidatorLogEnabled) {
-        Log.log("invalidator run started");
         logger.info("SESSION INVALIDATOR: started");
       }
 
@@ -382,14 +373,10 @@ public class TerracottaSessionManager {
 
     private boolean evaluateSession(final Timestamp dtm, final SessionId id) {
       Assert.pre(id != null);
-      Log.log("invalidator eval'ing " + id);
 
       boolean rv = false;
       id.tryWriteLock();
-      if (!id.getLock().isLocked()) {
-        Log.log("invalidator could not get lock for " + id);
-        return rv;
-      }
+      if (!id.getLock().isLocked()) { return rv; }
 
       try {
         final SessionData sd = store.findSessionDataUnlocked(id);
