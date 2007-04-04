@@ -84,8 +84,10 @@ public class SessionDataStore {
       if (rv != null) {
         rv.associate(sessId, lifecycleEventMgr, ctxMgr);
         rv.startRequest();
-        if (!rv.isValid()) rv = null;
-        else {
+        if (!rv.isValid()) {
+          Log.log("existing session is invalid for requested " + sessId.getKey() + ", session: " + rv);
+          rv = null;
+        } else {
           updateTimestampIfNeeded(rv);
         }
       }
@@ -101,12 +103,17 @@ public class SessionDataStore {
     final Timestamp t = sd.getTimestamp();
     final long diff = t.getMillis() - now;
     if (diff < (sd.getMaxInactiveMillis() / 2) || diff > (sd.getMaxInactiveMillis())) {
-      t.setMillis(now + sd.getMaxInactiveMillis());
+      long newTime = now + sd.getMaxInactiveMillis();
+      Log.log("updating timestamp to " + newTime + " on " + sd);
+      t.setMillis(newTime);
     }
   }
 
   public void remove(final SessionId id) {
     Assert.pre(id != null);
+
+    Log.log("store.remove() for " + id);
+
     id.getWriteLock();
     try {
       store.remove(id.getKey());
