@@ -8,11 +8,15 @@ import org.apache.commons.httpclient.HttpClient;
 
 import com.tc.test.server.appserver.unit.AbstractAppServerTestCase;
 import com.tc.test.server.util.HttpUtil;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -35,12 +39,14 @@ public class SynchWriteMultiThreadsTest extends AbstractAppServerTestCase {
     private HttpClient                 client;
     private int                        port0, port1;
     private SynchWriteMultiThreadsTest parent;
+    private List                       errors;
 
-    public Driver(SynchWriteMultiThreadsTest parent, int port0, int port1) {
+    public Driver(SynchWriteMultiThreadsTest parent, int port0, int port1, List errors) {
       client = HttpUtil.createHttpClient();
       this.parent = parent;
       this.port0 = port0;
       this.port1 = port1;
+      this.errors = errors;
     }
 
     public void run() {
@@ -50,7 +56,8 @@ public class SynchWriteMultiThreadsTest extends AbstractAppServerTestCase {
         URL url1 = parent.createUrl(port1, "server=1&command=ping");
         assertEquals("Receive pong", "OK", HttpUtil.getResponseBody(url1, client));
         generateTransactionRequests();
-      } catch (Exception e) {
+      } catch (Throwable e) {
+        errors.add(e);
         throw new RuntimeException(e);
       }
     }
@@ -82,10 +89,11 @@ public class SynchWriteMultiThreadsTest extends AbstractAppServerTestCase {
     int port0 = startAppServer(true).serverPort();
     int port1 = startAppServer(true).serverPort();
 
+    List errors = Collections.synchronizedList(new ArrayList());
     // start all drivers
     Driver[] drivers = new Driver[NUM_OF_DRIVERS];
     for (int i = 0; i < NUM_OF_DRIVERS; i++) {
-      drivers[i] = new Driver(this, port0, port1);
+      drivers[i] = new Driver(this, port0, port1, errors);
       drivers[i].start();
     }
 
@@ -94,12 +102,18 @@ public class SynchWriteMultiThreadsTest extends AbstractAppServerTestCase {
       drivers[i].join();
     }
 
-    // send kill signal to server0
-    killServer0(port0);
+    
+    // proceed only if there are no errors inside any threads    
+    if (errors.size() == 0) {
+      // send kill signal to server0
+      killServer0(port0);
 
-    // validate data on server1
-    for (int i = 0; i < NUM_OF_DRIVERS; i++) {
-      drivers[i].validate();
+      // validate data on server1
+      for (int i = 0; i < NUM_OF_DRIVERS; i++) {
+        drivers[i].validate();
+      }
+    } else {      
+      Assert.failure("Exception found in driver thread. ", (Throwable)errors.get(0));
     }
   }
 
@@ -123,9 +137,9 @@ public class SynchWriteMultiThreadsTest extends AbstractAppServerTestCase {
       String command = request.getParameter("command");
       String data = request.getParameter("data");
 
-      String log = "##sessionId = " + session.getId() + "##command = " + command + "##data = " + data;
-      //System.err.println(log);
-      //System.err.flush();
+      // String log = "##sessionId = " + session.getId() + "##command = " + command + "##data = " + data;
+      // System.err.println(log);
+      // System.err.flush();
 
       switch (Integer.parseInt(server)) {
         case 0:
