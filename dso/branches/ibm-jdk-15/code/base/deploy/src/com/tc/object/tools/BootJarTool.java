@@ -215,8 +215,8 @@ public class BootJarTool {
 
       bootJar = bootJarHandler.getBootJar();
 
+      addInstrumentedHashMap();
       if (!Vm.isIBM()) {
-        addInstrumentedHashMap();
         addInstrumentedHashtable();
         addInstrumentedJavaUtilCollection();
         addJdk15SpecificPreInstrumentedClasses();
@@ -308,9 +308,7 @@ public class BootJarTool {
       }
 
       addSunStandardLoaders();
-      if (!Vm.isIBM()) {
-        addInstrumentedJavaLangThrowable();
-      }
+      addInstrumentedJavaLangThrowable();
       addInstrumentedJavaLangStringBuffer();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
@@ -1625,13 +1623,15 @@ public class BootJarTool {
     byte[] jData = getSystemBytes(jClassNameDots);
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
+    ClassNode jCN = new ClassNode();
+    jCR.accept(jCN, ClassReader.SKIP_DEBUG);    
 
     ClassInfo jClassInfo = AsmClassInfo.getClassInfo(jClassNameDots, systemLoader);
 
     TransparencyClassAdapter dsoAdapter = config.createDsoClassAdapterFor(cw, jClassInfo, instrumentationLogger,
                                                                           getClass().getClassLoader(), true);
 
-    ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
+    ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots, jCN,
                                                                               tcClassNameDots, tcCN,
                                                                               instrumentedContext));
     jCR.accept(cv, 0);
