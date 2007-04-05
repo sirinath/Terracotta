@@ -40,7 +40,6 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DSOUnsafeAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
-import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.THashMapAdapter;
@@ -681,8 +680,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
-    spec = getOrCreateSpec("java.util.WeakHashMap");
-    addCustomAdapter("java.util.WeakHashMap", new JavaUtilWeakHashMapAdapter());
+    addPermanentExcludePattern("java.util.WeakHashMap");
+    addPermanentExcludePattern("java.lang.ref.*");
 
     spec = getOrCreateSpec("java.lang.reflect.AccessibleObject");
     spec.addTransient("securityCheckCache");

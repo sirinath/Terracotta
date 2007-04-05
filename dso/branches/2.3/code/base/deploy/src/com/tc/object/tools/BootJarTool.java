@@ -64,6 +64,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
+import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
 import com.tc.object.bytecode.Manageable;
@@ -229,6 +230,8 @@ public class BootJarTool {
       addInstrumentedJavaUtilCollection();
 
       addJdk15SpecificPreInstrumentedClasses();
+
+      addInstrumentedWeakHashMap();
 
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(SessionSupport.class.getName());
@@ -989,8 +992,10 @@ public class BootJarTool {
           }
 
           if (!specs.containsKey(clazz.getName()) && !bootJar.classLoaded(clazz.getName())) {
-            if (tcSpecs) { throw new AssertionError("Missing super class " + clazz.getName() + " for type "
-                                                    + spec.getClassName()); }
+            if (tcSpecs) {
+              //
+              throw new AssertionError("Missing super class " + clazz.getName() + " for type " + spec.getClassName());
+            }
             supers.add(clazz.getName());
           }
 
@@ -1741,6 +1746,17 @@ public class BootJarTool {
 
     config.removeSpec("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition");
 
+  }
+
+  private void addInstrumentedWeakHashMap() {
+    ClassReader reader = new ClassReader(getSystemBytes("java.util.WeakHashMap"));
+    ClassWriter writer = new ClassWriter(true);
+
+    ClassVisitor cv = new JavaUtilWeakHashMapAdapter().create(writer, null);
+
+    reader.accept(cv, false);
+
+    bootJar.loadClassIntoJar("java.util.WeakHashMap", writer.toByteArray(), false);
   }
 
   private void addInstrumentedClassLoader() {
