@@ -24,11 +24,6 @@
          See the Terracotta Configuration Guide and Reference for additional
          information.-->
     <logs>logs/client-logs/%(webserver.log.name)</logs>
-    
-    <!-- Tell DSO to load the Rife 1.6.0 module. -->
-    <modules>
-      <module name="clustered-rife-1.6.0" version="1.0.0"/>
-    </modules>
   </clients>
   
   <application>
@@ -44,21 +39,69 @@
       <instrumented-classes>
         <!-- Here, we're essentially saying, treat the all of the classes found in the: 'demo.continuations', 
             package as shareable; For a "live" application, it would be a good idea to investigate 
-            and declar only the classes that absolutely must be available in the cluster. -->
+            and declare only the classes that absolutely must be available in the cluster. -->
         <include>
           <class-expression>demo.continuations.*..*</class-expression>
         </include>
+        
+        <!-- Here we add instrumentation for the entire Rife framework -->
+        <include>
+          <class-expression>com.uwyn.rife.*..*</class-expression>
+        </include>
       </instrumented-classes>
+
+      <!-- We declare the following fields from the Rife framework a root, making it 
+           available for all instances of our app that runs via DSO -->
+      <roots>
+        <root>
+          <field-name>com.uwyn.rife.continuations.ContinuationManager.mContexts</field-name>
+          <root-name>mContexts</root-name>
+        </root>
+        <root>
+          <field-name>com.uwyn.rife.template.TemplateClassLoader.mBytecodeRepository</field-name>
+          <root-name>mBytecodeRepository</root-name>
+        </root>
+      </roots>
+      
       <!-- These methods (originating from local objects) operates on objects declared as shared. This
            section tells DSO to assume a lock on those objects for the duration of the call; essentially this
            section declares that all methods found for all classes found for all packages should assume the
            behavior described -->
       <locks>
+        <!-- Here we say, assume write-locks for all of the web application's class methods. -->
         <autolock>
           <method-expression>* demo.continuations.*..*.*(..)</method-expression>
           <lock-level>write</lock-level>
         </autolock>
+
+        <!-- Here we say, assume write-locks for all of the Rife framework's class methods. -->
+        <autolock>
+          <method-expression>* com.uwyn.rife.*..*.*(..)</method-expression>
+          <lock-level>write</lock-level>
+        </autolock>
       </locks>
+      
+      <!-- These fields belong to the Rife framework, we make them transient because we want the values that 
+           they hold to only be available locally -->
+      <transient-fields>
+  			<field-name>com.uwyn.rife.continuations.ContinuationManager.mRandom</field-name>
+  			<field-name>com.uwyn.rife.engine.RequestState.mInitConfig</field-name>
+        <field-name>com.uwyn.rife.engine.ElementContext.mResponse</field-name>
+        <field-name>com.uwyn.rife.engine.Gate.mInitException</field-name>
+        <field-name>com.uwyn.rife.engine.InitConfigFilter.mConfig</field-name>
+        <field-name>com.uwyn.rife.engine.RequestState.mResponse</field-name>
+        <field-name>com.uwyn.rife.engine.Site$SiteData.mResourceModificationTimes</field-name>
+        <field-name>com.uwyn.rife.engine.Site$SiteData.mUrls</field-name>
+        <field-name>com.uwyn.rife.servlet.HttpRequest.mHttpServletRequest</field-name>
+        <field-name>com.uwyn.rife.servlet.HttpResponse.mResponse</field-name>
+        <field-name>com.uwyn.rife.servlet.RifeFilter.mClassloader</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_ISO_8859_1</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_US_ASCII</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16BE</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_16LE</field-name>
+        <field-name>com.uwyn.rife.template.InternalString.mBytesValue_UTF_8</field-name>
+      </transient-fields>
     </dso>
   </application>
 </tc:tc-config>
