@@ -520,13 +520,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
       spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
 
-      spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
-
-      spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
-      spec.setUseNonDefaultConstructor(true);
-
       spec = getOrCreateSpec("java.util.Hashtable", "com.tc.object.applicator.PartialHashMapApplicator");
     }
+
+    spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
+
+    spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
+    spec.setUseNonDefaultConstructor(true);
     /*
      * spec.addSupportMethodCreator(new HashtableMethodCreator());
      * spec.addHashtablePutLogSpec(SerializationUtil.PUT_SIGNATURE);
