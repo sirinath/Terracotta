@@ -8,6 +8,7 @@ import org.apache.xmlbeans.XmlAnyURI;
 import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.terracotta.dso.TcPlugin;
+import org.terracotta.dso.editors.ConfigurationEditor;
 import org.terracotta.ui.util.SWTComponentModel;
 
 import com.tc.util.event.EventMulticaster;
@@ -23,6 +24,8 @@ import com.terracottatech.config.DsoServerData;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.NamedLock;
+import com.terracottatech.config.QualifiedClassName;
+import com.terracottatech.config.QualifiedFieldName;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 import com.terracottatech.config.Server;
@@ -158,10 +161,12 @@ public final class XmlConfigContext {
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final TcConfig                               m_config;
   private final Map<SWTComponentModel, List>           m_componentModels;
+  private final IProject                               m_project;
 
   private XmlConfigContext(IProject project) {
     this.m_config = TcPlugin.getDefault().getConfiguration(project);
     this.m_componentModels = new HashMap<SWTComponentModel, List>();
+    this.m_project = project;
     m_contexts.put(project, this);
     // standard observers
     this.m_xmlStructureChangedObserver = new EventMulticaster();
@@ -571,10 +576,9 @@ public final class XmlConfigContext {
     };
     m_createTransientFieldListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
-        m_config.getApplication().getDso().getTransientFields().addFieldName((String) e.data);
-        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.NEW_TRANSIENT_FIELD);
-        event.data = e.data;
-        m_newTransientFieldObserver.fireUpdateEvent(event);
+        QualifiedFieldName field = m_config.getApplication().getDso().getTransientFields().addNewFieldName();
+        field.setStringValue((String) e.data);
+        m_newTransientFieldObserver.fireUpdateEvent(new XmlConfigEvent(field, XmlConfigEvent.NEW_BOOT_CLASS));
       }
     };
     m_deleteTransientFieldListener = new UpdateEventListener() {
@@ -606,10 +610,9 @@ public final class XmlConfigContext {
     };
     m_createBootClassListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
-        m_config.getApplication().getDso().getAdditionalBootJarClasses().addInclude((String) e.data);
-        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.NEW_BOOT_CLASS);
-        event.data = e.data;
-        m_newBootClassObserver.fireUpdateEvent(event);
+        QualifiedClassName include = m_config.getApplication().getDso().getAdditionalBootJarClasses().addNewInclude();
+        include.setStringValue((String) e.data);
+        m_newBootClassObserver.fireUpdateEvent(new XmlConfigEvent(include, XmlConfigEvent.NEW_BOOT_CLASS));
       }
     };
     m_deleteBootClassListener = new UpdateEventListener() {
@@ -1003,6 +1006,14 @@ public final class XmlConfigContext {
     XmlObject debugging = ensureClientDsoDebuggingElement(client);
     return XmlConfigPersistenceManager.ensureXml(debugging, DsoClientDebugging.class,
         XmlConfigEvent.PARENT_ELEM_RUNTIME_LOGGING);
+  }
+
+  // --------------------------------------------------------------------------------
+
+  // adapter method for compatibility with legacy code
+  private void setDirty() {
+    ConfigurationEditor editor = TcPlugin.getDefault().getConfigurationEditor(m_project);
+    editor._setDirty();
   }
 
   // --------------------------------------------------------------------------------

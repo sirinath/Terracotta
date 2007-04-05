@@ -4,6 +4,7 @@
  */
 package org.terracotta.dso.editors;
 
+import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -41,6 +42,7 @@ import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.QualifiedClassName;
 
 public class BootClassesPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
@@ -161,7 +163,8 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
     m_state.xmlContext.addListener(new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
-        createTableItem((String) e.data);
+        QualifiedClassName include = (QualifiedClassName) castEvent(e).element;
+        createTableItem(include);
       }
     }, XmlConfigEvent.NEW_BOOT_CLASS, this);
   }
@@ -171,15 +174,16 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
   // ================================================================================
 
   private void initTableItems() {
-    String[] includes = m_state.bootClasses.getIncludeArray();
+    XmlObject[] includes = m_state.bootClasses.selectPath("*");
     for (int i = 0; i < includes.length; i++) {
-      createTableItem(includes[i]);
+      createTableItem((QualifiedClassName) includes[i]);
     }
   }
 
-  private void createTableItem(String element) {
+  private void createTableItem(QualifiedClassName element) {
     TableItem item = new TableItem(m_layout.m_table, SWT.NONE);
-    item.setText(element);
+    item.setText(element.getStringValue());
+    item.setData(element);
   }
 
   // ================================================================================

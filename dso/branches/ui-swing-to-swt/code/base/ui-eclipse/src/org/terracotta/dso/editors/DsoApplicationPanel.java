@@ -6,6 +6,7 @@ package org.terracotta.dso.editors;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
@@ -15,14 +16,12 @@ import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
 import org.terracotta.ui.util.SWTComponentModel;
 
-import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Client;
 
 public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWTComponentModel {
 
-  private final Layout     m_layout;
-  private State            m_state;
-  private volatile boolean m_isActive;
+  private final Layout m_layout;
+  private State        m_state;
 
   public DsoApplicationPanel(Composite parent, int style) {
     super(parent, style);
@@ -32,14 +31,6 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWT
   // ================================================================================
   // INTERFACE
   // ================================================================================
-
-  public synchronized void addListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
-
-  public synchronized void removeListener(UpdateEventListener listener, int type) {
-  // not implemented
-  }
 
   public synchronized void clearState() {
     setActive(false);
@@ -59,14 +50,6 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWT
     m_layout.m_roots.init(project);
     m_layout.m_transientFields.init(project);
     setActive(true);
-  }
-
-  public synchronized boolean isActive() {
-    return m_isActive;
-  }
-
-  public synchronized void setActive(boolean activate) {
-    m_isActive = activate;
   }
 
   // ================================================================================
@@ -93,6 +76,7 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWT
 
   private static class Layout {
 
+    private static final int         MIN_HEIGHT                = 400;
     private static final String      ROOTS_ICON                = "/com/tc/admin/icons/hierarchicalLayout.gif";
     private static final String      LOCKS_ICON                = "/com/tc/admin/icons/deadlock_view.gif";
     private static final String      TRANSIENT_FIELDS_ICON     = "/com/tc/admin/icons/transient.gif";
@@ -111,49 +95,55 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWT
     private InstrumentedClassesPanel m_instrumentedClasses;
     private DistributedMethodsPanel  m_distributedMethods;
     private BootClassesPanel         m_bootClasses;
+    private final TabFolder          m_tabFolder;
 
     public void reset() {
-      // not implemented
+    // not implemented
     }
 
     private Layout(Composite parent) {
-      final TabFolder tabFolder = new TabFolder(parent, SWT.BORDER);
+      ScrolledComposite scroll = new ScrolledComposite(parent, SWT.V_SCROLL);
+      m_tabFolder = new TabFolder(scroll, SWT.BORDER);
+      scroll.setContent(m_tabFolder);
+      scroll.setExpandHorizontal(true);
+      scroll.setExpandVertical(true);
+      scroll.setMinHeight(MIN_HEIGHT);
 
-      TabItem rootsTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem rootsTab = new TabItem(m_tabFolder, SWT.NONE);
       rootsTab.setText(ROOTS);
       rootsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(ROOTS_ICON)));
-      rootsTab.setControl(m_roots = new RootsPanel(tabFolder, SWT.NONE));
+      rootsTab.setControl(m_roots = new RootsPanel(m_tabFolder, SWT.NONE));
 
-      TabItem locksTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem locksTab = new TabItem(m_tabFolder, SWT.NONE);
       locksTab.setText(LOCKS);
       locksTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(LOCKS_ICON)));
-      locksTab.setControl(m_locks = new LocksPanel(tabFolder, SWT.NONE));
+      locksTab.setControl(m_locks = new LocksPanel(m_tabFolder, SWT.NONE));
 
-      TabItem transientFieldsTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem transientFieldsTab = new TabItem(m_tabFolder, SWT.NONE);
       transientFieldsTab.setText(TRANSIENT_FIELDS);
       transientFieldsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
           TRANSIENT_FIELDS_ICON)));
-      transientFieldsTab.setControl(m_transientFields = new TransientFieldsPanel(tabFolder, SWT.NONE));
+      transientFieldsTab.setControl(m_transientFields = new TransientFieldsPanel(m_tabFolder, SWT.NONE));
 
-      TabItem instrumentedClassesTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem instrumentedClassesTab = new TabItem(m_tabFolder, SWT.NONE);
       instrumentedClassesTab.setText(INSTRUMENTED_CLASSES);
       instrumentedClassesTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
           INSTRUMENTED_CLASSES_ICON)));
-      instrumentedClassesTab.setControl(m_instrumentedClasses = new InstrumentedClassesPanel(tabFolder, SWT.NONE));
+      instrumentedClassesTab.setControl(m_instrumentedClasses = new InstrumentedClassesPanel(m_tabFolder, SWT.NONE));
 
-      TabItem distributedMethodsTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem distributedMethodsTab = new TabItem(m_tabFolder, SWT.NONE);
       distributedMethodsTab.setText(DISTRIBUTED_METHODS);
       distributedMethodsTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(
           DISTRIBUTED_METHODS_ICON)));
-      distributedMethodsTab.setControl(m_distributedMethods = new DistributedMethodsPanel(tabFolder, SWT.NONE));
+      distributedMethodsTab.setControl(m_distributedMethods = new DistributedMethodsPanel(m_tabFolder, SWT.NONE));
 
-      TabItem bootClassesTab = new TabItem(tabFolder, SWT.NONE);
+      TabItem bootClassesTab = new TabItem(m_tabFolder, SWT.NONE);
       bootClassesTab.setText(BOOT_CLASSES);
       bootClassesTab.setImage(new Image(parent.getDisplay(), this.getClass().getResourceAsStream(BOOT_CLASSES_ICON)));
-      bootClassesTab.setControl(m_bootClasses = new BootClassesPanel(tabFolder, SWT.NONE));
+      bootClassesTab.setControl(m_bootClasses = new BootClassesPanel(m_tabFolder, SWT.NONE));
 
-      tabFolder.pack();
-      tabFolder.setSelection(rootsTab);
+      m_tabFolder.pack();
+      m_tabFolder.setSelection(rootsTab);
     }
   }
 }

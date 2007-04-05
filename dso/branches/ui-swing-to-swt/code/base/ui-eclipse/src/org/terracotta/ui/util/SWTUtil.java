@@ -78,6 +78,14 @@ public final class SWTUtil {
     return text.computeSize(width, height).x;
   }
 
+  public static int textRowsToPixels(Text text, int rows) {
+    GC gc = new GC(text);
+    FontMetrics fm = gc.getFontMetrics();
+    int height = rows * fm.getHeight();
+    gc.dispose();
+    return text.computeSize(0, height).y;
+  }
+
   public static void applyDefaultButtonSize(Button button) {
     Point preferredSize = button.computeSize(SWT.DEFAULT, SWT.DEFAULT, false);
     Point hint = Geometry.max(LayoutConstants.getMinButtonSize(), preferredSize);
@@ -92,7 +100,7 @@ public final class SWTUtil {
     locationY = (parentSize.height - mySize.height) / 2 + parentSize.y;
     shell.setLocation(new Point(locationX, locationY));
   }
-
+  
   public static void makeTableColumnsResizeEqualWidth(final Composite tablePanel, final Table table) {
     tablePanel.addControlListener(new ControlAdapter() {
       public void controlResized(ControlEvent e) {
@@ -101,7 +109,7 @@ public final class SWTUtil {
         int width = area.width - 2 * table.getBorderWidth();
         if (preferredSize.y > area.height + table.getHeaderHeight()) {
           Point vBarSize = table.getVerticalBar().getSize();
-          width -= vBarSize.x;
+          width -= vBarSize.x + 1; // don't know why +1 is needed, but it is
         }
         TableColumn[] columns = table.getColumns();
         int colWidth = width / columns.length;
@@ -126,7 +134,7 @@ public final class SWTUtil {
         int width = area.width - 2 * table.getBorderWidth();
         if (preferredSize.y > area.height + table.getHeaderHeight()) {
           Point vBarSize = table.getVerticalBar().getSize();
-          width -= vBarSize.x;
+          width -= vBarSize.x + 1; // don't know why +1 is needed, but it is
         }
         TableColumn[] columns = table.getColumns();
         int widthUnit = width / totalWeight;

@@ -4,6 +4,7 @@
  */
 package org.terracotta.dso.editors;
 
+import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -33,6 +34,7 @@ import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.QualifiedFieldName;
 import com.terracottatech.config.TransientFields;
 
 public class TransientFieldsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
@@ -146,7 +148,8 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
     m_state.xmlContext.addListener(new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
-        createTableItem((String) e.data);
+        QualifiedFieldName field = (QualifiedFieldName) castEvent(e).element;
+        createTableItem(field);
       }
     }, XmlConfigEvent.NEW_TRANSIENT_FIELD, this);
   }
@@ -156,15 +159,16 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
   // ================================================================================
 
   private void initTableItems() {
-    String[] fields = m_state.fields.getFieldNameArray();
+    XmlObject[] fields = m_state.fields.selectPath("*");
     for (int i = 0; i < fields.length; i++) {
-      createTableItem(fields[i]);
+      createTableItem((QualifiedFieldName) fields[i]);
     }
   }
 
-  private void createTableItem(String element) {
+  private void createTableItem(QualifiedFieldName element) {
     TableItem item = new TableItem(m_layout.m_table, SWT.NONE);
-    item.setText(element);
+    item.setText(element.getStringValue());
+    item.setData(element);
   }
 
   // ================================================================================
