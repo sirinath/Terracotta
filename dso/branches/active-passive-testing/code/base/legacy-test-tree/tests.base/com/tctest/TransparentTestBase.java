@@ -66,8 +66,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
-//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
-//      configFactory().activateConfigurationChange();
+      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
+      // configFactory().activateConfigurationChange();
       configFactory().addServerToL1Config(null, helper.getServerPort(), -1);
       configFactory().addServerToL2Config(null, helper.getServerPort(), helper.getAdminPort());
 
@@ -184,7 +184,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return System.getProperty("test.base.server.port");
   }
 
-  protected boolean getStartServer() {
+  private boolean getStartServer() {
     return getServerPortProp() == null && mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL)
            && !controlledCrashMode;
   }
