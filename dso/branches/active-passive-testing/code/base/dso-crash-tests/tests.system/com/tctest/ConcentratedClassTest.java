@@ -32,9 +32,9 @@ public class ConcentratedClassTest extends TransparentTestBase {
     return ConcentratedClassTestApp.class;
   }
 
-  protected boolean getStartServer() {
-    return true;
-  }
+//  protected boolean getStartServer() {
+//    return true;
+//  }
   
   protected boolean canRunCrash() {
     return true;
