@@ -12,20 +12,16 @@ import com.tc.objectserver.gtx.TransactionCommittedError;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.api.TransactionStore;
-import com.tc.util.Assert;
 import com.tc.util.sequence.Sequence;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 public class TransactionStoreImpl implements TransactionStore {
 
@@ -100,7 +96,9 @@ public class TransactionStoreImpl implements TransactionStore {
         }
       }
     }
-    persistor.deleteAllByServerTransactionID(tx, toDelete);
+    if (!toDelete.isEmpty()) {
+      persistor.deleteAllByServerTransactionID(tx, toDelete);
+    }
   }
 
   public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
@@ -130,23 +128,4 @@ public class TransactionStoreImpl implements TransactionStore {
     basicAdd(rv);
   }
 
-  // TODO:: Optimize to not hit disk all the time. remember though the delete should happen immediately
-  public void removeAllByServerTransactionIDsLessThan(GlobalTransactionID lowWatermark) {
-    List toDeleteSids;
-    synchronized (ids) {
-      if (ids.isEmpty()) { return; }
-      Map toDelete = ids.headMap(lowWatermark);
-      toDeleteSids = new ArrayList(toDelete.size());
-      for (Iterator i = toDelete.entrySet().iterator(); i.hasNext();) {
-        Entry e = (Entry) i.next();
-        GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) e.getValue();
-        i.remove();
-        ServerTransactionID sid = desc.getServerTransactionID();
-        Object d1 = serverTransactionIDMap.remove(sid);
-        Assert.assertTrue(d1 == desc);
-        toDeleteSids.add(sid);
-      }
-    }
-    persistor.deleteAllByServerTransactionID(toDeleteSids);
-  }
 }

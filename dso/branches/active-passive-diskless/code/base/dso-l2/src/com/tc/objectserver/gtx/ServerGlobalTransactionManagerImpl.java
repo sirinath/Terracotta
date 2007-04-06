@@ -49,9 +49,11 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
   }
 
   public void commit(PersistenceTransaction persistenceTransaction, ServerTransactionID stxID) {
-    GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
-    Assert.assertNotNull(desc);
-    transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);
+    if (!stxID.isServerGeneratedTransacation()) {
+      GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
+      Assert.assertNotNull(desc);
+      transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);
+    }
   }
 
   public void commitAll(PersistenceTransaction persistenceTransaction, Collection stxIDs) {
@@ -63,10 +65,6 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
 
   public GlobalTransactionID getLowGlobalTransactionIDWatermark() {
     return transactionStore.getLeastGlobalTransactionID();
-  }
-  
-  public void setLowWatermark(GlobalTransactionID lowWatermark) {
-    transactionStore.removeAllByServerTransactionIDsLessThan(lowWatermark);
   }
 
   public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {

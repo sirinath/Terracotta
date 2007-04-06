@@ -25,8 +25,10 @@ import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
 import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
+import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.stats.counter.Counter;
+import com.tc.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -130,8 +132,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void apply(ServerTransaction txn, Map objects, BackReferences includeIDs,
-                                   ObjectInstanceMonitor instanceMonitor) {
+  public void apply(ServerTransaction txn, Map objects, BackReferences includeIDs, ObjectInstanceMonitor instanceMonitor) {
 
     final ServerTransactionID stxnID = txn.getServerTransactionID();
     final ChannelID channelID = txn.getChannelID();
@@ -143,7 +144,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     TransactionAccount ci;
     if (txn.isPassive()) {
       ci = getOrCreateNullTransactionAccount(channelID);
-      gtxm.createGlobalTransactionDesc(stxnID, txn.getGlobalTransactionID());
+      if (!stxnID.isServerGeneratedTransacation()) gtxm.createGlobalTransactionDesc(stxnID, gtxID);
     } else {
       // There could potentically be a small leak if the clients crash and then shutdownClient() called before
       // apply() is called. Will create a TransactionAccount which will never get removed.
@@ -155,6 +156,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       DNA orgDNA = (DNA) i.next();
       long version = orgDNA.getVersion();
       if (version == DNA.NULL_VERSION) {
+        Assert.assertFalse(gtxID.isNull());
         version = gtxID.toLong();
       }
       DNA change = new VersionizedDNAWrapper(orgDNA, version, true);
@@ -176,9 +178,11 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
         objectManager.createRoot(rootName, newID);
       }
     }
-    gtxm.applyComplete(stxnID);
+    if (!stxnID.isServerGeneratedTransacation()) {
+      gtxm.applyComplete(stxnID);
+      channelStats.notifyTransaction(channelID);
+    }
     transactionRateCounter.increment();
-    if (!channelID.isNull()) channelStats.notifyTransaction(channelID);
 
     fireTransactionAppliedEvent(stxnID);
   }
@@ -193,7 +197,17 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     fireTransactionAppliedEvent(txn.getServerTransactionID());
   }
 
-  public void release(PersistenceTransaction ptx, Collection objects, Map newRoots) {
+  public void commit(PersistenceTransactionProvider ptxp, Collection objects, Map newRoots,
+                     Collection appliedServerTransactionIDs, Set completedTransactionIDs) {
+    PersistenceTransaction ptx = ptxp.newTransaction();
+    release(ptx, objects, newRoots);
+    gtxm.commitAll(ptx, appliedServerTransactionIDs);
+    gtxm.completeTransactions(ptx, completedTransactionIDs);
+    ptx.commit();
+    committed(appliedServerTransactionIDs);
+  }
+
+  private void release(PersistenceTransaction ptx, Collection objects, Map newRoots) {
     // change done so now we can release the objects
     objectManager.releaseAll(ptx, objects);
 
@@ -232,7 +246,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void committed(Collection txnsIds) {
+  private void committed(Collection txnsIds) {
     for (Iterator i = txnsIds.iterator(); i.hasNext();) {
       final ServerTransactionID txnId = (ServerTransactionID) i.next();
       final ChannelID waiter = txnId.getChannelID();
@@ -242,7 +256,6 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       if (ci != null && ci.applyCommitted(txnID)) {
         acknowledge(waiter, txnID);
       }
-
     }
   }
 

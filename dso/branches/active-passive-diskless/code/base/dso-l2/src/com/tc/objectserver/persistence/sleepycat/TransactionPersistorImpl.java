@@ -25,7 +25,6 @@ import com.tc.util.Conversion;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 
 class TransactionPersistorImpl extends SleepycatPersistorBase implements TransactionPersistor {
 
@@ -105,11 +104,4 @@ class TransactionPersistorImpl extends SleepycatPersistorBase implements Transac
       }
     }
   }
-
-  public void deleteAllByServerTransactionID(List toDelete) {
-    PersistenceTransaction ptxn = ptp.newTransaction();
-    deleteAllByServerTransactionID(ptxn, toDelete);
-    ptxn.commit();
-  }
-
 }

@@ -70,7 +70,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     this.channelID = channelID;
     this.passive = passive;
     this.serverTxID = new ServerTransactionID(channelID, txID);
-    // NOTE::XXX:: GlobalTransactionID id assigned in the process transaction stage. The transaction could be
+    // NOTE::XXX:: GlobalTransactionID is assigned in the process transaction stage. The transaction could be
     // re-ordered before apply. This is not a problem because for an transaction to be re-ordered, it should not
     // have any common objects between them. hence if g1 is the first txn and g2 is the second txn, g2 will be applied
     // before g1, only when g2 has not common objects with g1. If this is not true then we cant assign gid here.

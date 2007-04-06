@@ -31,6 +31,4 @@ public interface TransactionStore {
 
   public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID);
 
-  public void removeAllByServerTransactionIDsLessThan(GlobalTransactionID lowWatermark);
-
 }

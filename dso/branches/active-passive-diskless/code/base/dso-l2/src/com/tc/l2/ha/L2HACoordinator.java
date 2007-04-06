@@ -32,7 +32,6 @@ import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.groups.NodeID;
-import com.tc.object.gtx.GlobalTransactionManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
@@ -58,16 +57,16 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
                          PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                         ServerTransactionManager transactionManager, GlobalTransactionManager gtxm) {
+                         ServerTransactionManager transactionManager) {
     this.consoleLogger = consoleLogger;
     this.server = server;
-    init(stageManager, clusterStateStore, objectManager, transactionManager, gtxm);
+    init(stageManager, clusterStateStore, objectManager, transactionManager);
   }
 
   private void init(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                    ServerTransactionManager transactionManager, GlobalTransactionManager gtxm) {
+                    ServerTransactionManager transactionManager) {
     try {
-      basicInit(stageManager, clusterStateStore, objectManager, transactionManager, gtxm);
+      basicInit(stageManager, clusterStateStore, objectManager, transactionManager);
     } catch (GroupException e) {
       logger.error(e);
       throw new AssertionError(e);
@@ -75,11 +74,10 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   }
 
   private void basicInit(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                         ServerTransactionManager transactionManager, GlobalTransactionManager gtxm)
-      throws GroupException {
+                         ServerTransactionManager transactionManager) throws GroupException {
 
     this.clusterState = new ClusterState(clusterStateStore, server.getManagedObjectStore(), server
-        .getConnectionIdFactory());
+        .getConnectionIdFactory(), server.getPersistor().getGlobalTransactionIDSequence());
 
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
@@ -97,7 +95,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE,
                              new L2ObjectSyncSendHandler(this.l2ObjectStateManager), 1, Integer.MAX_VALUE);
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE,
-                             new TransactionRelayHandler(this.l2ObjectStateManager, gtxm), 1, Integer.MAX_VALUE);
+                             new TransactionRelayHandler(this.l2ObjectStateManager), 1, Integer.MAX_VALUE);
     final Sink ackProcessingStage = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();

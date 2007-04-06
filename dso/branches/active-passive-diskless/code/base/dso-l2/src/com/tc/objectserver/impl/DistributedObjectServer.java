@@ -464,7 +464,7 @@ public class DistributedObjectServer extends SEDA {
     int commitThreads = (persistent ? 4 : 1);
     stageManager
         .createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                     new CommitTransactionChangeHandler(gtxm, transactionStorePTP), commitThreads, maxStageSize);
+                     new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
 
     TransactionalStageCoordinator txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
@@ -581,7 +581,7 @@ public class DistributedObjectServer extends SEDA {
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, gtxm);
+                                          objectManager, transactionManager);
     } else {
       l2Coordinator = new L2HADisabledCooridinator();
     }
@@ -735,6 +735,10 @@ public class DistributedObjectServer extends SEDA {
   public ManagedObjectStore getManagedObjectStore() {
     return objectStore;
   }
+  
+  public Persistor getPersistor() {
+    return persistor;
+  }
 
   public ServerConfigurationContext getContext() {
     return context;
@@ -750,13 +754,12 @@ public class DistributedObjectServer extends SEDA {
 
   private void startJMXServer() throws Exception {
     l2Management = new L2Management(tcServerInfoMBean, configSetupManager);
-    
+
     /*
-     * Some tests use this if they run with jdk1.4 and start multiple in-process
-     * DistributedObjectServers. When we no longer support 1.4, this can be
-     * removed. See com.tctest.LockManagerSystemTest.
+     * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
+     * longer support 1.4, this can be removed. See com.tctest.LockManagerSystemTest.
      */
-    if(!Boolean.getBoolean("org.terracotta.server.disableJmxConnector")) {
+    if (!Boolean.getBoolean("org.terracotta.server.disableJmxConnector")) {
       l2Management.start();
     }
   }

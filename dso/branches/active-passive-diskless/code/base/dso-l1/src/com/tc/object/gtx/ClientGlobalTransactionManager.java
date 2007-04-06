@@ -11,6 +11,8 @@ import com.tc.object.tx.TransactionID;
 import java.util.Collection;
 
 public interface ClientGlobalTransactionManager extends GlobalTransactionManager {
+  public void setLowWatermark(GlobalTransactionID lowWatermark);
+
   public void flush(LockID lockID);
 
   public void unpause();

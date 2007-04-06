@@ -49,7 +49,6 @@ public class TestTransactionStore implements TransactionStore {
     nextTransactionIDContextQueue.put(stxid);
     GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxid, new GlobalTransactionID(idSequence++));
     basicPut(volatileMap, rv);
-
     return rv;
   }
 
@@ -59,7 +58,7 @@ public class TestTransactionStore implements TransactionStore {
 
   public void commitTransactionDescriptor(PersistenceTransaction persistenceTransaction,
                                           GlobalTransactionDescriptor txID) {
-    if(txID.isCommitted()) { throw new TransactionCommittedError("Already committed : " + txID); }
+    if (txID.isCommitted()) { throw new TransactionCommittedError("Already committed : " + txID); }
     try {
       commitContextQueue.put(new Object[] { persistenceTransaction, txID });
       if (!volatileMap.containsValue(txID)) throw new AssertionError();
@@ -107,5 +106,10 @@ public class TestTransactionStore implements TransactionStore {
 
   public void shutdownClient(PersistenceTransaction transaction, ChannelID client) {
     throw new ImplementMe();
+  }
+
+  public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID) {
+    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxnID, globalTransactionID);
+    basicPut(volatileMap, rv);
   }
 }

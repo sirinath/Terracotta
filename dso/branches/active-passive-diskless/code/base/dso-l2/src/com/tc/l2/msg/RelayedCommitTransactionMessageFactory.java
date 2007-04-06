@@ -4,7 +4,6 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.objectserver.tx.ServerTransaction;
 
@@ -17,10 +16,9 @@ public class RelayedCommitTransactionMessageFactory {
 
   public static RelayedCommitTransactionMessage createRelayedCommitTransactionMessage(
                                                                                       CommitTransactionMessage commitMsg,
-                                                                                      List txns,
-                                                                                      GlobalTransactionID lowWaterMark) {
+                                                                                      List txns) {
     RelayedCommitTransactionMessage msg = new RelayedCommitTransactionMessage(commitMsg.getChannelID(), commitMsg
-        .getBatchData(), commitMsg.getSerializer(), getGlobalTransactionIDMapping(txns), lowWaterMark);
+        .getBatchData(), commitMsg.getSerializer(), getGlobalTransactionIDMapping(txns), commitMsg.getAcknowledgedTransactionIDs());
     return msg;
   }
 

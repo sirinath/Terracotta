@@ -19,7 +19,6 @@ import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.object.gtx.GlobalTransactionManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -31,15 +30,13 @@ public class TransactionRelayHandler extends AbstractEventHandler {
   private static final TCLogger          logger = TCLogging.getLogger(TransactionRelayHandler.class);
 
   private final L2ObjectStateManager     l2ObjectStateMgr;
-  private final GlobalTransactionManager gtxm;
 
   private GroupManager                   groupManager;
 
   private ServerTransactionManager       transactionManager;
 
-  public TransactionRelayHandler(L2ObjectStateManager objectStateManager, GlobalTransactionManager gtxm) {
+  public TransactionRelayHandler(L2ObjectStateManager objectStateManager) {
     this.l2ObjectStateMgr = objectStateManager;
-    this.gtxm = gtxm;
   }
 
   public void handleEvent(EventContext context) {
@@ -63,8 +60,7 @@ public class TransactionRelayHandler extends AbstractEventHandler {
   private void sendCommitTransactionMessage(NodeID nodeID, IncomingTransactionContext ict) {
     addWaitForNotification(nodeID, ict);
     RelayedCommitTransactionMessage msg = RelayedCommitTransactionMessageFactory
-        .createRelayedCommitTransactionMessage(ict.getCommitTransactionMessage(), ict.getTxns(), gtxm
-            .getLowGlobalTransactionIDWatermark());
+        .createRelayedCommitTransactionMessage(ict.getCommitTransactionMessage(), ict.getTxns());
     try {
       this.groupManager.sendTo(nodeID, msg);
     } catch (GroupException e) {

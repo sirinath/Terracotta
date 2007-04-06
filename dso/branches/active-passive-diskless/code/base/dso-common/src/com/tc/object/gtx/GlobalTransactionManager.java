@@ -5,8 +5,6 @@ package com.tc.object.gtx;
 
 public interface GlobalTransactionManager {
 
-  public void setLowWatermark(GlobalTransactionID lowWatermark);
-
   /**
    * Returns the least GlobalTransactionID that is still active.
    */

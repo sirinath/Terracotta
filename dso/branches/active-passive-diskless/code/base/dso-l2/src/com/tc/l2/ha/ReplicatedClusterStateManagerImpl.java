@@ -82,9 +82,15 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   }
 
   // TODO:: Sync only once a while to the passives
-  public synchronized void publishNextAvailableObjectID(long maxID) {
-    state.setNextAvailableObjectID(maxID);
+  public synchronized void publishNextAvailableObjectID(long minID) {
+    state.setNextAvailableObjectID(minID);
     publishToAll(ClusterStateMessageFactory.createNextAvailableObjectIDMessage(state));
+  }
+
+  // TODO:: Sync only once a while to the passives
+  public void publishNextAvailableGlobalTransactionID(long minID) {
+    state.setNextAvailableGlobalTransactionID(minID);
+    publishToAll(ClusterStateMessageFactory.createNextAvailableGlobalTransactionIDMessage(state));
   }
 
   public synchronized void connectionIDCreated(ConnectionID connectionID) {
@@ -139,5 +145,4 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
       logger.error("Error handling message : " + msg, e);
     }
   }
-
 }

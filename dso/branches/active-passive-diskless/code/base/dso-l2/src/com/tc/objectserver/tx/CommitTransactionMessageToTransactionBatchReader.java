@@ -9,8 +9,6 @@ import com.tc.object.gtx.GlobalTransactionIDGenerator;
 import com.tc.object.msg.CommitTransactionMessage;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
 
 public final class CommitTransactionMessageToTransactionBatchReader implements TransactionBatchReaderFactory {
 
@@ -23,12 +21,12 @@ public final class CommitTransactionMessageToTransactionBatchReader implements T
   // Used by active server
   public TransactionBatchReader newTransactionBatchReader(CommitTransactionMessage ctm) throws IOException {
     return new TransactionBatchReaderImpl(gtxm, ctm.getBatchData(), ctm.getChannelID(), ctm
-        .addAcknowledgedTransactionIDsTo(new HashSet()), ctm.getSerializer(), false);
+        .getAcknowledgedTransactionIDs(), ctm.getSerializer(), false);
   }
 
   // Used by passive server
   public TransactionBatchReader newTransactionBatchReader(RelayedCommitTransactionMessage ctm) throws IOException {
-    return new TransactionBatchReaderImpl(ctm, ctm.getBatchData(), ctm.getChannelID(), Collections.EMPTY_LIST, ctm
+    return new TransactionBatchReaderImpl(ctm, ctm.getBatchData(), ctm.getChannelID(), ctm.getAcknowledgedTransactionIDs(), ctm
         .getSerializer(), true);
   }
 
