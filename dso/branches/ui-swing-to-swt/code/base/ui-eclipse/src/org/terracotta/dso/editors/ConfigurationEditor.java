@@ -108,10 +108,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     m_parseTimer.setRepeats(false);
   }
 
-//  private Composite createComposite() {
-//    return new Composite(getContainer(), SWT.EMBEDDED);
-//  }
-
   void createDsoApplicationPage(int pageIndex) {
     addPage(pageIndex, m_dsoAppPanel = new DsoApplicationPanel(getContainer(), SWT.NONE));
     setPageText(pageIndex, "DSO config");
@@ -441,24 +437,17 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public void initPanels() {
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
+
     if (m_project != null && m_project.isOpen()) {
       enablePanels();
       ensureRequiredConfigElements();
 
       // m_dsoAppPanel.setup(m_project);
-      m_serversPanel.init(m_project);
-      m_clientsPanel.init(m_project);
+      // m_serversPanel.init(m_project);
+      // m_clientsPanel.init(m_project);
     } else {
       disablePanels();
     }
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
   }
 
   public void updateInstrumentedClassesPanel() {
@@ -601,7 +590,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 
     if (config != null) {
       TcConfigDocument configDoc = TcConfigDocument.Factory.newInstance();
-
+      java.lang.System.out.println(config.toString());// XXX
       configDoc.setTcConfig(config);
       doc.removeDocumentListener(m_docListener);
       doc.set(configDoc.xmlText(opts));
@@ -638,8 +627,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     JavaSetupParticipant.inspectAll();
     TcPlugin.getDefault().updateDecorators();
     TcPlugin.getDefault().fireConfigurationChange(m_project);
-
-    // TcPlugin.getDefault().saveConfigurationQuietly(m_project);
+    TcPlugin.getDefault().saveConfigurationQuietly(m_project);
   }
 
   private void clearDirty() {

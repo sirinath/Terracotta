@@ -30,21 +30,17 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.dialogs.SelectionDialog;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.AdditionalBootJarClasses;
-import com.terracottatech.config.Application;
-import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.QualifiedClassName;
 
-public class BootClassesPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class BootClassesPanel extends ConfigurationEditorPanel {
 
   private static final String CLASS_SELECT_TITLE   = "DSO Application Configuration";
   private static final String CLASS_SELECT_MESSAGE = "Select system classes to add to DSO Boot Jar";
@@ -91,8 +87,7 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
       public void handleEvent(Event e) {
         if (!m_isActive) return;
         TableItem item = (TableItem) e.item;
-        XmlConfigEvent event = new XmlConfigEvent(item.getText(e.index), null, m_state.bootClasses,
-            XmlConfigEvent.BOOT_CLASS);
+        XmlConfigEvent event = new XmlConfigEvent(item.getText(e.index), null, null, XmlConfigEvent.BOOT_CLASS);
         event.index = m_layout.m_table.getSelectionIndex();
         m_state.xmlContext.notifyListeners(event);
       }
@@ -155,7 +150,7 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
         Object[] items = dialog.getResult();
         for (int i = 0; i < items.length; i++) {
           XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.CREATE_BOOT_CLASS);
-          event.data = ((IType)items[i]).getFullyQualifiedName();
+          event.data = ((IType) items[i]).getFullyQualifiedName();
           m_state.xmlContext.notifyListeners(event);
         }
       }
@@ -174,7 +169,9 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
   // ================================================================================
 
   private void initTableItems() {
-    XmlObject[] includes = m_state.bootClasses.selectPath("*");
+    AdditionalBootJarClasses bootClasses = m_state.xmlContext.getParentElementProvider().hasAdditionalBootJarClasses();
+    if (bootClasses == null) return;
+    XmlObject[] includes = bootClasses.selectPath("*");
     for (int i = 0; i < includes.length; i++) {
       createTableItem((QualifiedClassName) includes[i]);
     }
@@ -191,22 +188,14 @@ public class BootClassesPanel extends ConfigurationEditorPanel implements SWTCom
   // ================================================================================
 
   private class State {
-    final IProject                 project;
-    final XmlConfigContext         xmlContext;
-    final XmlConfigUndoContext     xmlUndoContext;
-    final AdditionalBootJarClasses bootClasses;
+    final IProject             project;
+    final XmlConfigContext     xmlContext;
+    final XmlConfigUndoContext xmlUndoContext;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      AdditionalBootJarClasses bc = dso.getAdditionalBootJarClasses();
-      if (bc == null) bc = dso.addNewAdditionalBootJarClasses();
-      this.bootClasses = bc;
     }
   }
 

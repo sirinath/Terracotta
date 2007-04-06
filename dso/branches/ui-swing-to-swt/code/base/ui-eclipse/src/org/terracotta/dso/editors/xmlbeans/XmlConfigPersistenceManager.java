@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 
 import javax.xml.namespace.QName;
 
+// TODO: Perhaps an error dialog should be displayed instead of failing silently
 final class XmlConfigPersistenceManager {
 
   private static final Class[]  NO_PARAMS        = new Class[0];
@@ -25,6 +26,7 @@ final class XmlConfigPersistenceManager {
   private static final String   XGET             = "xget";
   private static final String   GET              = "get";
   private static final String   TYPE             = "type";
+  private static final String   ADD_NEW          = "addNew";
 
   static String readElement(XmlObject parent, String elementName) {
     try {
@@ -39,19 +41,50 @@ final class XmlConfigPersistenceManager {
   }
 
   static void writeElement(XmlObject parent, String elementName, String value) {
+    Class parentType = parent.schemaType().getJavaClass();
+    Class[] params = new Class[] { String.class };
+    Object[] args = new Object[] { value };
+    Method method = null;
     try {
-      Class parentType = parent.schemaType().getJavaClass();
-      XmlObject xmlObject = ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName));
-      Class[] params = new Class[] { String.class };
-      Object[] args = new Object[] { value };
-      String methodName = SET_STRING_VALUE;
-      Class objClass = xmlObject.getClass();
-      Method method = objClass.getMethod(methodName, params);
-      method.invoke(xmlObject, args);
-      System.out.println(value);// XXX
-    } catch (Exception e) {
-      e.printStackTrace(); // XXX
+      method = parentType.getMethod(SET + convertElementName(elementName), params);
+      method.invoke(parent, args);
+    } catch (Exception e) { /* skip */
     }
+    if (method == null) {
+      try {
+        params[0] = Boolean.TYPE;
+        method = parentType.getMethod(SET + convertElementName(elementName), params);
+        args[0] = Boolean.parseBoolean(value);
+        method.invoke(parent, args);
+      } catch (Exception e) { /* skip */
+      }
+    }
+    if (method == null) {
+      try {
+        params[0] = Integer.TYPE;
+        method = parentType.getMethod(SET + convertElementName(elementName), params);
+        args[0] = Integer.parseInt(value);
+        method.invoke(parent, args);
+      } catch (Exception e) { /* skip */
+      }
+    }
+    if (method == null) {
+      try {
+        XmlObject xmlObject = ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName),
+            false);
+        String methodName = SET_STRING_VALUE;
+        Class objClass = xmlObject.getClass();
+        method = objClass.getMethod(methodName, params);
+        args[0] = value;
+        method.invoke(xmlObject, args);
+      } catch (Exception e) { /* skip */
+      }
+    }
+    if (method == null) {
+      System.out.println("Unable to save XML value for: " + parent + " " + elementName + " " + value);// XXX
+    }
+
+    if (method != null) System.out.println(value);// XXX
   }
 
   static String[] getListDefaults(Class parentType, String elementName) {
@@ -70,22 +103,30 @@ final class XmlConfigPersistenceManager {
 
   static XmlObject ensureXml(XmlObject parent, Class parentType, String elementName) {
     try {
-      return ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName));
+      return ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName), true);
     } catch (Exception e) {
       e.printStackTrace();
       return null;
     }
   }
 
-  static private XmlObject ensureElementHierarchy(XmlObject parent, Class parentType, String elementName,
-                                                  String fieldName) throws Exception {
+  private static XmlObject ensureElementHierarchy(XmlObject parent, Class parentType, String elementName,
+                                                  String fieldName, boolean addNew) throws Exception {
     XmlObject xmlObject = getXmlObject(parent, parentType, fieldName);
     if (xmlObject != null) return xmlObject;
     Class[] params = new Class[] { getPropertySchemaType(parentType, elementName).getJavaClass() };
     Object[] args = new Object[] { getSchemaProperty(parentType, elementName).getDefaultValue() };
     Method method = null;
+
+    // TODO: move try catch for add new
+    // TODO: handle [] additions correctly
     try {
-      method = parentType.getMethod(XSET + fieldName, params);
+      if (addNew && args.length == 1 && args[0] == null) {
+        method = parentType.getMethod(ADD_NEW + fieldName, new Class[0]);
+        args = new Object[0];
+      } else {
+        method = parentType.getMethod(XSET + fieldName, params);
+      }
     } catch (NoSuchMethodException e) {
       try {
         method = parentType.getMethod(SET + fieldName, params);
@@ -97,7 +138,7 @@ final class XmlConfigPersistenceManager {
     return getXmlObject(parent, parentType, fieldName);
   }
 
-  static private String convertElementName(String s) {
+  private static String convertElementName(String s) {
     StringBuffer sb = new StringBuffer();
     StringTokenizer st = new StringTokenizer(s, "-");
     String tok;
@@ -109,11 +150,11 @@ final class XmlConfigPersistenceManager {
     return sb.toString();
   }
 
-  static private XmlObject getXmlObject(XmlObject parent, Class parentType, String fieldName) throws Exception {
+  private static XmlObject getXmlObject(XmlObject parent, Class parentType, String fieldName) throws Exception {
     return (XmlObject) invokePrefixedParentNoParams(XGET, parent, parentType, fieldName);
   }
 
-  static private Object invokePrefixedParentNoParams(String prefix, XmlObject parent, Class parentType, String fieldName)
+  private static Object invokePrefixedParentNoParams(String prefix, XmlObject parent, Class parentType, String fieldName)
       throws Exception {
     Method method = null;
     try {
@@ -128,11 +169,11 @@ final class XmlConfigPersistenceManager {
     return (method != null) ? method.invoke(parent, NO_ARGS) : null;
   }
 
-  static private SchemaType getParentSchemaType(Class parentType) throws Exception {
+  private static SchemaType getParentSchemaType(Class parentType) throws Exception {
     return (SchemaType) parentType.getField(TYPE).get(null);
   }
 
-  static private SchemaProperty getSchemaProperty(Class parentType, String elementName) throws Exception {
+  private static SchemaProperty getSchemaProperty(Class parentType, String elementName) throws Exception {
     QName qname = QName.valueOf(elementName);
     SchemaType type = getParentSchemaType(parentType);
     SchemaProperty property = type.getElementProperty(qname);
@@ -140,7 +181,7 @@ final class XmlConfigPersistenceManager {
     return property;
   }
 
-  static private SchemaType getPropertySchemaType(Class parentType, String elementName) throws Exception {
+  private static SchemaType getPropertySchemaType(Class parentType, String elementName) throws Exception {
     return getSchemaProperty(parentType, elementName).getType();
   }
 }

@@ -28,14 +28,12 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.FolderBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.chooser.PackageNavigator;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTLayout;
 import org.terracotta.ui.util.SWTUtil;
 
@@ -48,7 +46,7 @@ import com.terracottatech.config.Servers;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class ServersPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public final class ServersPanel extends ConfigurationEditorPanel {
 
   private static final int NAME_INDEX     = 0;
   private static final int HOST_INDEX     = 1;
@@ -74,9 +72,8 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
     setActive(false);
     m_state = new State((IProject) data);
     createContextListeners();
-    Servers servers = TcPlugin.getDefault().getConfiguration(m_state.project).getServers();
     setActive(true);
-    initTableItems(servers);
+    initTableItems(m_state.xmlContext.getParentElementProvider().hasServers());
   }
 
   public synchronized void clearState() {
@@ -91,6 +88,7 @@ public final class ServersPanel extends ConfigurationEditorPanel implements SWTC
   // ================================================================================
 
   private void initTableItems(Servers servers) {
+    if (servers == null) return;
     m_layout.m_serverTable.setEnabled(false);
     Server[] serverElements = servers.getServerArray();
     for (int i = 0; i < serverElements.length; i++) {

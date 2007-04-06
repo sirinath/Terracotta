@@ -20,24 +20,20 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.ExpressionChooser;
 import org.terracotta.dso.editors.chooser.FieldBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
-import com.terracottatech.config.Application;
-import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.QualifiedFieldName;
 import com.terracottatech.config.TransientFields;
 
-public class TransientFieldsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class TransientFieldsPanel extends ConfigurationEditorPanel {
 
   private final Layout m_layout;
   private State        m_state;
@@ -83,8 +79,7 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
       public void handleEvent(Event e) {
         if (!m_isActive) return;
         TableItem item = (TableItem) e.item;
-        XmlConfigEvent event = new XmlConfigEvent(item.getText(e.index), null, m_state.fields,
-            XmlConfigEvent.TRANSIENT_FIELD);
+        XmlConfigEvent event = new XmlConfigEvent(item.getText(e.index), null, null, XmlConfigEvent.TRANSIENT_FIELD);
         event.index = m_layout.m_table.getSelectionIndex();
         m_state.xmlContext.notifyListeners(event);
       }
@@ -159,7 +154,9 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
   // ================================================================================
 
   private void initTableItems() {
-    XmlObject[] fields = m_state.fields.selectPath("*");
+    TransientFields fieldsElement = m_state.xmlContext.getParentElementProvider().hasTransientFields();
+    if (fieldsElement == null) return;
+    XmlObject[] fields = fieldsElement.selectPath("*");
     for (int i = 0; i < fields.length; i++) {
       createTableItem((QualifiedFieldName) fields[i]);
     }
@@ -179,19 +176,11 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel implements SW
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final TransientFields      fields;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      TransientFields fi = dso.getTransientFields();
-      if (fi == null) fi = dso.addNewTransientFields();
-      this.fields = fi;
     }
   }
 

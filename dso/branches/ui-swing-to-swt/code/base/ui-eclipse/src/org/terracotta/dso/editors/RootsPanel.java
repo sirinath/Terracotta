@@ -20,24 +20,20 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.ExpressionChooser;
 import org.terracotta.dso.editors.chooser.FieldBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
-import com.terracottatech.config.Application;
-import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 
-public final class RootsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public final class RootsPanel extends ConfigurationEditorPanel {
 
   private static final int FIELD_COLUMN = 0;
   private static final int NAME_COLUMN  = 1;
@@ -142,7 +138,7 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
       }
     }, XmlConfigEvent.NEW_ROOT, this);
   }
-  
+
   // --------------------------------------------------------------------------------
 
   private class TableListener implements UpdateEventListener {
@@ -166,7 +162,9 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
   // ================================================================================
 
   private void initTableItems() {
-    Root[] roots = m_state.roots.getRootArray();
+    Roots rootsElement = m_state.xmlContext.getParentElementProvider().hasRoots();
+    if (rootsElement == null) return;
+    Root[] roots = rootsElement.getRootArray();
     for (int i = 0; i < roots.length; i++) {
       createTableItem(roots[i], new String[] { roots[i].getFieldName(), roots[i].getRootName() });
     }
@@ -186,19 +184,11 @@ public final class RootsPanel extends ConfigurationEditorPanel implements SWTCom
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final Roots                roots;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      Roots rt = dso.getRoots();
-      if (rt == null) rt = dso.addNewRoots();
-      this.roots = rt;
     }
   }
 

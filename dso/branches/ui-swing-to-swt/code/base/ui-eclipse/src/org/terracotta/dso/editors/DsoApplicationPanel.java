@@ -11,14 +11,10 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 
-import com.terracottatech.config.Client;
-
-public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class DsoApplicationPanel extends ConfigurationEditorPanel {
 
   private final Layout m_layout;
   private State        m_state;
@@ -60,13 +56,11 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel implements SWT
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final Client               client;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      this.client = TcPlugin.getDefault().getConfiguration(project).getClients();
     }
   }
 

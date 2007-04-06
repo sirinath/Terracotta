@@ -20,26 +20,22 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.ExpressionChooser;
 import org.terracotta.dso.editors.chooser.MethodBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
-import com.terracottatech.config.Application;
 import com.terracottatech.config.Autolock;
-import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Locks;
 import com.terracottatech.config.NamedLock;
 
-public class LocksPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class LocksPanel extends ConfigurationEditorPanel {
 
   private final Layout m_layout;
   private State        m_state;
@@ -303,9 +299,11 @@ public class LocksPanel extends ConfigurationEditorPanel implements SWTComponent
   // ================================================================================
 
   private void initTableItems() {
+    Locks locks = m_state.xmlContext.getParentElementProvider().hasLocks();
+    if (locks == null) return;
     String[] autolockLevels = XmlConfigContext.getListDefaults(Autolock.class, XmlConfigEvent.LOCKS_AUTO_LEVEL);
     SWTUtil.makeTableComboItem(m_layout.m_autoLocksTable, Layout.AUTO_LOCK_COLUMN, autolockLevels);
-    Autolock[] autolocks = m_state.locks.getAutolockArray();
+    Autolock[] autolocks = locks.getAutolockArray();
     for (int i = 0; i < autolocks.length; i++) {
       createAutolockTableItem(autolocks[i], new String[] {
         autolocks[i].getMethodExpression(),
@@ -313,7 +311,7 @@ public class LocksPanel extends ConfigurationEditorPanel implements SWTComponent
     }
     String[] namedLockLevels = XmlConfigContext.getListDefaults(NamedLock.class, XmlConfigEvent.LOCKS_NAMED_LEVEL);
     SWTUtil.makeTableComboItem(m_layout.m_namedLocksTable, Layout.NAMED_LOCK_COLUMN, namedLockLevels);
-    NamedLock[] namedLocks = m_state.locks.getNamedLockArray();
+    NamedLock[] namedLocks = locks.getNamedLockArray();
     for (int i = 0; i < namedLocks.length; i++) {
       createNamedLockTableItem(namedLocks[i], new String[] {
         namedLocks[i].getLockName(),
@@ -345,19 +343,11 @@ public class LocksPanel extends ConfigurationEditorPanel implements SWTComponent
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final Locks                locks;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      Locks lk = dso.getLocks();
-      if (lk == null) lk = dso.addNewLocks();
-      this.locks = lk;
     }
   }
 

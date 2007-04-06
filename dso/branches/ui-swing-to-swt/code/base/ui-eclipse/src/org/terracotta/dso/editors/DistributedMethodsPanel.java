@@ -20,23 +20,19 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.ExpressionChooser;
 import org.terracotta.dso.editors.chooser.MethodBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
-import com.terracottatech.config.Application;
 import com.terracottatech.config.DistributedMethods;
-import com.terracottatech.config.DsoApplication;
 
-public class DistributedMethodsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class DistributedMethodsPanel extends ConfigurationEditorPanel {
 
   private final Layout m_layout;
   private State        m_state;
@@ -159,7 +155,9 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel implements
   // ================================================================================
 
   private void initTableItems() {
-    DistributedMethods.MethodExpression[] methods = m_state.methods.getMethodExpressionArray();
+    DistributedMethods distributedMethods = m_state.xmlContext.getParentElementProvider().hasDistributedMethods();
+    if (distributedMethods == null) return;
+    DistributedMethods.MethodExpression[] methods = distributedMethods.getMethodExpressionArray();
     for (int i = 0; i < methods.length; i++) {
       createTableItem(methods[i], methods[i].getStringValue());
     }
@@ -179,19 +177,11 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel implements
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final DistributedMethods   methods;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      DistributedMethods dm = dso.getDistributedMethods();
-      if (dm == null) dm = dso.addNewDistributedMethods();
-      this.methods = dm;
     }
   }
 

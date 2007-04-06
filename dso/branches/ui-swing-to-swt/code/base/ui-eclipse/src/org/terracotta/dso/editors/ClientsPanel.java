@@ -4,7 +4,6 @@
  */
 package org.terracotta.dso.editors;
 
-import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -27,22 +26,20 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.chooser.FolderBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.chooser.PackageNavigator;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
-import com.terracottatech.config.Client;
 import com.terracottatech.config.Module;
+import com.terracottatech.config.Modules;
 
-public final class ClientsPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public final class ClientsPanel extends ConfigurationEditorPanel {
 
   private static final String MODULE_DECLARATION   = "Module Declaration";
   private static final String MODULE_REPO_LOCATION = "Repository Location (URL)";
@@ -74,8 +71,9 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
     createContextListeners();
     setActive(true);
     updateClientListeners();
-    initModuleRepositories();
-    initModules();
+    Modules modules = m_state.xmlContext.getParentElementProvider().hasModules();
+    initModuleRepositories(modules);
+    initModules(modules);
   }
 
   // ================================================================================
@@ -107,8 +105,7 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
         PackageNavigator dialog = new PackageNavigator(getShell(), behavior.getTitle(), m_state.project, behavior);
         dialog.addValueListener(new UpdateEventListener() {
           public void handleUpdate(UpdateEvent event) {
-            m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, m_state.client,
-                XmlConfigEvent.CLIENT_LOGS));
+            m_state.xmlContext.notifyListeners(new XmlConfigEvent(event.data, null, null, XmlConfigEvent.CLIENT_LOGS));
           }
         });
         dialog.open();
@@ -123,7 +120,7 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
           public void setValues(String name, String version) {
             if (!name.trim().equals("") || !version.trim().equals("")) {
               String[] values = new String[] { name, version };
-              m_state.xmlContext.notifyListeners(new XmlConfigEvent(values, null, m_state.client,
+              m_state.xmlContext.notifyListeners(new XmlConfigEvent(values, null, null,
                   XmlConfigEvent.CREATE_CLIENT_MODULE));
             }
           }
@@ -170,7 +167,7 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
         dialog.addValueListener(new RepoLocationDialog.ValueListener() {
           public void setValues(String repoLocation) {
             if (repoLocation != null && !(repoLocation = repoLocation.trim()).equals("")) {
-              m_state.xmlContext.notifyListeners(new XmlConfigEvent(repoLocation, null, m_state.client,
+              m_state.xmlContext.notifyListeners(new XmlConfigEvent(repoLocation, null, null,
                   XmlConfigEvent.CREATE_CLIENT_MODULE_REPO));
             }
           }
@@ -217,7 +214,7 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
         m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + check.getSelection(), (UpdateEventListener) check
-            .getData(), m_state.client, type));
+            .getData(), null, type));
       }
     });
     UpdateEventListener checkListener = new UpdateEventListener() {
@@ -306,57 +303,59 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
   // ================================================================================
 
   private void updateClientListeners() {
-    updateListeners(XmlConfigEvent.CLIENT_LOGS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_CLASS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_HIERARCHY, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_LOCKS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_TRANSIENT_ROOT, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_ROOTS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_LOCK_DEBUG, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_CALLER, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_FULL_STACK, m_state.client);
-    updateListeners(XmlConfigEvent.CLIENT_FAULT_COUNT, m_state.client);
+    updateListeners(XmlConfigEvent.CLIENT_LOGS);
+    updateListeners(XmlConfigEvent.CLIENT_CLASS);
+    updateListeners(XmlConfigEvent.CLIENT_HIERARCHY);
+    updateListeners(XmlConfigEvent.CLIENT_LOCKS);
+    updateListeners(XmlConfigEvent.CLIENT_TRANSIENT_ROOT);
+    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS);
+    updateListeners(XmlConfigEvent.CLIENT_ROOTS);
+    updateListeners(XmlConfigEvent.CLIENT_LOCK_DEBUG);
+    updateListeners(XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG);
+    updateListeners(XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG);
+    updateListeners(XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP);
+    updateListeners(XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG);
+    updateListeners(XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG);
+    updateListeners(XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS);
+    updateListeners(XmlConfigEvent.CLIENT_CALLER);
+    updateListeners(XmlConfigEvent.CLIENT_FULL_STACK);
+    updateListeners(XmlConfigEvent.CLIENT_FAULT_COUNT);
   }
 
-  private void initModuleRepositories() {
+  private void initModuleRepositories(Modules modules) {
+    if (modules == null) return;
     TableItem item;
-    String[] repos = m_state.client.getModules().getRepositoryArray();
+    String[] repos = modules.getRepositoryArray();
     for (int i = 0; i < repos.length; i++) {
       item = new TableItem(m_layout.m_moduleRepoTable, SWT.NONE);
       item.setText(repos[i]);
     }
   }
 
-  private void initModules() {
+  private void initModules(Modules modulesElement) {
+    if (modulesElement == null) return;
     TableItem item;
-    Module[] modules = m_state.client.getModules().getModuleArray();
+    Module[] modules = modulesElement.getModuleArray();
     for (int i = 0; i < modules.length; i++) {
       item = new TableItem(m_layout.m_moduleTable, SWT.NONE);
       item.setText(new String[] { modules[i].getName(), modules[i].getVersion() });
     }
   }
 
-  private void updateListeners(int event, XmlObject element) {
-    m_state.xmlContext.updateListeners(new XmlConfigEvent(element, event));
+  private void updateListeners(int event) {
+    m_state.xmlContext.updateListeners(new XmlConfigEvent(event));
   }
 
   private void handleFieldEvent(Text text, int type) {
     if (!m_isActive) return;
-    m_state.xmlContext.notifyListeners(new XmlConfigEvent(text.getText(), (UpdateEventListener) text.getData(),
-        m_state.client, type));
+    m_state.xmlContext.notifyListeners(new XmlConfigEvent(text.getText(), (UpdateEventListener) text.getData(), null,
+        type));
   }
 
   private void handleSpinnerEvent(Spinner spinner, int type) {
     if (!m_isActive) return;
     m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + spinner.getSelection(), (UpdateEventListener) spinner
-        .getData(), m_state.client, type));
+        .getData(), null, type));
   }
 
   // ================================================================================
@@ -367,15 +366,11 @@ public final class ClientsPanel extends ConfigurationEditorPanel implements SWTC
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final Client               client;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Client cl = TcPlugin.getDefault().getConfiguration(project).getClients();
-      if (cl == null) cl = TcPlugin.getDefault().getConfiguration(project).addNewClients();
-      this.client = cl;
     }
   }
 

@@ -21,19 +21,15 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
-import org.terracotta.ui.util.SWTComponentModel;
 import org.terracotta.ui.util.SWTUtil;
 
-import com.terracottatech.config.Application;
 import com.terracottatech.config.ClassExpression;
-import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.InstrumentedClasses;
 
-public class InstrumentedClassesPanel extends ConfigurationEditorPanel implements SWTComponentModel {
+public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
 
   private static final String INCLUDE = "include";
   private static final String EXCLUDE = "exclude";
@@ -97,8 +93,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel implement
   // ================================================================================
 
   private void initTableItems() {
+    InstrumentedClasses classesElement = m_state.xmlContext.getParentElementProvider().hasInstrumentedClasses();
+    if (classesElement == null) return;
     SWTUtil.makeTableComboItem(m_layout.m_table, 0, new String[] { INCLUDE, EXCLUDE });
-    XmlObject[] classes = m_state.classes.selectPath("*");
+    XmlObject[] classes = classesElement.selectPath("*");
     for (int i = 0; i < classes.length; i++) {
       if (classes[i] instanceof Include) {
         createIncludeTableItem((Include) classes[i]);
@@ -130,19 +128,11 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel implement
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
-    final InstrumentedClasses  classes;
 
     private State(IProject project) {
       this.project = project;
       this.xmlContext = XmlConfigContext.getInstance(project);
       this.xmlUndoContext = XmlConfigUndoContext.getInstance(project);
-      Application app = TcPlugin.getDefault().getConfiguration(project).getApplication();
-      if (app == null) app = TcPlugin.getDefault().getConfiguration(project).addNewApplication();
-      DsoApplication dso = app.getDso();
-      if (dso == null) dso = app.addNewDso();
-      InstrumentedClasses cl = dso.getInstrumentedClasses();
-      if (cl == null) cl = dso.addNewInstrumentedClasses();
-      this.classes = cl;
     }
   }
 

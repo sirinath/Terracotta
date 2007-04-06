@@ -4,7 +4,6 @@
  */
 package org.terracotta.ui.util;
 
-import com.tc.util.event.UpdateEventListener;
 
 
 public interface SWTComponentModel {
@@ -14,18 +13,6 @@ public interface SWTComponentModel {
    * accessor methods).
    */
   void init(Object data);
-
-  /**
-   * Type arguments should be defined as <tt>public static final</tt> member fields of the implementing class
-   * <p>
-   * NOTE: needs synchronization
-   */
-  void addListener(UpdateEventListener listener, int type);
-
-  /**
-   * NOTE: needs synchronization
-   */
-  void removeListener(UpdateEventListener listener, int type);
 
   /**
    * Clears state information. This will set both <tt>isInit()</tt> and <tt>isActive()</tt> to <tt>false</tt>

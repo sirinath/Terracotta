@@ -9,7 +9,7 @@ import org.apache.xmlbeans.XmlObject;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 
-public class XmlConfigEvent extends UpdateEvent {
+public final class XmlConfigEvent extends UpdateEvent {
 
   public static final int      ALT_RANGE_CONSTANT                  = 999999;
   // if the config xml structure changes rename (producing errors) the effected event type to locate it's listeners
@@ -104,6 +104,7 @@ public class XmlConfigEvent extends UpdateEvent {
   public static final String   PARENT_ELEM_RUNTIME_LOGGING         = "runtime-logging";
   public static final String   PARENT_ELEM_AUTOLOCK                = "autolock";
   public static final String   PARENT_ELEM_NAMED_LOCK              = "named-lock";
+  public static final String   PARENT_ELEM_MODULES                 = "modules";
   // element names
   private static final String  ELEM_NAME                           = "name";
   private static final String  ELEM_HOST                           = "host";
