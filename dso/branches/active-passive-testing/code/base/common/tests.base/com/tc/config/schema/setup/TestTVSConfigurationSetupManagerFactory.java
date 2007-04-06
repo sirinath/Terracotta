@@ -178,7 +178,12 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
       Assert.assertNotBlank(l2Identifier);
       this.defaultL2Identifier = l2Identifier;
     } else {
-      this.defaultL2Identifier = this.beanSet.serversBean().getServerArray()[0].getName();
+      String defaultName = this.beanSet.serversBean().getServerArray()[0].getName();
+      if(!TestConfigBeanSet.DEFAULT_SERVER_NAME.equals(defaultName)) {
+        this.defaultL2Identifier = this.beanSet.serversBean().getServerArray()[0].getName();
+      } else {
+        this.defaultL2Identifier = TestConfigBeanSet.DEFAULT_HOST;
+      }
     }
 
     Assert.assertNotNull(this.defaultL2Identifier);
@@ -302,7 +307,7 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     Servers l2s = beanSetArg.serversBean();
     if (l2s.sizeOfServerArray() == 1) {
       Server l2 = l2s.getServerArray(0);
-      if (l2.getName().equals(TestConfigBeanSet.DEFAULT_SERVER_NAME)
+      if (l2.getName() != null && l2.getName().equals(TestConfigBeanSet.DEFAULT_SERVER_NAME)
           && l2.getHost().equals(TestConfigBeanSet.DEFAULT_HOST)) {
         l2s.removeServer(0);
         if (l2s.sizeOfServerArray() != 0) { throw new AssertionError("Default server has not been cleared"); }
