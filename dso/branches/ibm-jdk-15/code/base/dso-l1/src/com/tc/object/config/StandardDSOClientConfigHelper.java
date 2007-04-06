@@ -507,27 +507,28 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       spec.addDistributedMethodCall("fireContentsChanged", "(Ljava/lang/Object;II)V", false);
       spec.addDistributedMethodCall("fireIntervalAdded", "(Ljava/lang/Object;II)V", false);
       spec.addDistributedMethodCall("fireIntervalRemoved", "(Ljava/lang/Object;II)V", false);
-
-      spec = getOrCreateSpec("java.util.Arrays");
-      spec.addDoNotInstrument("copyOfRange");
-      spec.addDoNotInstrument("copyOf");
-
-      spec = getOrCreateSpec("java.util.Arrays$ArrayList");
-
-      spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
-      spec.setUseNonDefaultConstructor(true);
-      spec.addMethodAdapter(SerializationUtil.PUT_SIGNATURE, new TreeMapAdapter.PutAdapter());
-      spec.addMethodAdapter("deleteEntry(Ljava/util/TreeMap$Entry;)V", new TreeMapAdapter.DeleteEntryAdapter());
-      spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-      spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
-
-      spec = getOrCreateSpec("java.util.Hashtable", "com.tc.object.applicator.PartialHashMapApplicator");
     }
+
+    spec = getOrCreateSpec("java.util.Arrays");
+    spec.addDoNotInstrument("copyOfRange");
+    spec.addDoNotInstrument("copyOf");
+
+    spec = getOrCreateSpec("java.util.Arrays$ArrayList");
+
+    spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
+    spec.setUseNonDefaultConstructor(true);
+    spec.addMethodAdapter(SerializationUtil.PUT_SIGNATURE, new TreeMapAdapter.PutAdapter());
+    spec.addMethodAdapter("deleteEntry(Ljava/util/TreeMap$Entry;)V", new TreeMapAdapter.DeleteEntryAdapter());
+    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
+    spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
 
     spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
 
     spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
     spec.setUseNonDefaultConstructor(true);
+
+    spec = getOrCreateSpec("java.util.Hashtable", "com.tc.object.applicator.PartialHashMapApplicator");
+
     /*
      * spec.addSupportMethodCreator(new HashtableMethodCreator());
      * spec.addHashtablePutLogSpec(SerializationUtil.PUT_SIGNATURE);
@@ -543,156 +544,156 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
     // "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized * java.util.Hashtable.keys(..)",
     // "synchronized * java.util.Hashtable.size(..)", "synchronized * java.util.Hashtable.toString(..)" });
-    if (!Vm.isIBM()) {
-      spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
-      addWriteAutolock("synchronized * java.util.Properties.*(..)");
 
-      spec = getOrCreateSpec("com.tcclient.util.MapEntrySetWrapper$EntryWrapper");
+    spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
+    addWriteAutolock("synchronized * java.util.Properties.*(..)");
 
-      spec = getOrCreateSpec("java.util.IdentityHashMap", "com.tc.object.applicator.HashMapApplicator");
-      spec.addAlwaysLogSpec(SerializationUtil.PUT_SIGNATURE);
-      spec.addAlwaysLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
-      spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
+    spec = getOrCreateSpec("com.tcclient.util.MapEntrySetWrapper$EntryWrapper");
 
-      spec = getOrCreateSpec("java.util.BitSet");
+    spec = getOrCreateSpec("java.util.IdentityHashMap", "com.tc.object.applicator.HashMapApplicator");
+    spec.addAlwaysLogSpec(SerializationUtil.PUT_SIGNATURE);
+    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
+    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
+
+    spec = getOrCreateSpec("java.util.BitSet");
+    spec.setHonorTransient(false);
+
+    if (Vm.isJDK15Compliant()) {
+      spec = getOrCreateSpec("java.util.EnumMap");
       spec.setHonorTransient(false);
-
-      if (Vm.isJDK15Compliant()) {
-        spec = getOrCreateSpec("java.util.EnumMap");
-        spec.setHonorTransient(false);
-        spec = getOrCreateSpec("java.util.EnumSet");
-        spec = getOrCreateSpec("java.util.RegularEnumSet");
-        spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
-      }
-
-      spec = getOrCreateSpec("java.util.Collections");
-      spec = getOrCreateSpec("java.util.Collections$EmptyList", "com.tc.object.applicator.ListApplicator");
-      spec = getOrCreateSpec("java.util.Collections$EmptyMap", "com.tc.object.applicator.HashMapApplicator");
-      spec = getOrCreateSpec("java.util.Collections$EmptySet", "com.tc.object.applicator.HashSetApplicator");
-
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$1");
-      spec.setHonorJDKSubVersionSpecific(true);
-      spec = getOrCreateSpec("java.util.Collections$2");
-      spec.setHonorJDKSubVersionSpecific(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableList$1");
-      spec.setHonorJDKSubVersionSpecific(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableList");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableRandomAccessList");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableSet");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedMap");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedSet");
-      spec.setHonorTransient(true);
-
-      spec = getOrCreateSpec("java.util.Collections$SingletonSet");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SingletonList");
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SingletonMap");
-      spec.setHonorTransient(true);
-
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedSet");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedCollection");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedList");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedMap");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedSet");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedMap");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.Collections$SynchronizedRandomAccessList");
-      // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-      spec.setHonorTransient(true);
-
-      addJavaUtilCollectionPreInstrumentedSpec();
-
-      spec = getOrCreateSpec("com.tcclient.util.SortedViewSetWrapper");
-      spec.setHonorTransient(true);
-
-      // These classes are not PORTABLE by themselves, but logical classes subclasses them.
-      // We dont want them to get tc fields, TransparentAccess interfaces etc. but we do want them
-      // to be instrumented for Array manipulations, clone(), wait(), notify() calls etc.
-      spec = getOrCreateSpec("java.util.AbstractCollection");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
-      spec = getOrCreateSpec("java.util.AbstractList");
-      spec.setHonorTransient(true);
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec.addSupportMethodCreator(new AbstractListMethodCreator());
-      spec = getOrCreateSpec("java.util.AbstractSet");
-      spec = getOrCreateSpec("java.util.AbstractSequentialList");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec = getOrCreateSpec("java.util.Dictionary");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+      spec = getOrCreateSpec("java.util.EnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet");
+      spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
     }
+
+    spec = getOrCreateSpec("java.util.Collections");
+    spec = getOrCreateSpec("java.util.Collections$EmptyList", "com.tc.object.applicator.ListApplicator");
+    spec = getOrCreateSpec("java.util.Collections$EmptyMap", "com.tc.object.applicator.HashMapApplicator");
+    spec = getOrCreateSpec("java.util.Collections$EmptySet", "com.tc.object.applicator.HashSetApplicator");
+
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$1");
+    spec.setHonorJDKSubVersionSpecific(true);
+    spec = getOrCreateSpec("java.util.Collections$2");
+    spec.setHonorJDKSubVersionSpecific(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableList$1");
+    spec.setHonorJDKSubVersionSpecific(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableList");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableRandomAccessList");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSet");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedMap");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedSet");
+    spec.setHonorTransient(true);
+
+    spec = getOrCreateSpec("java.util.Collections$SingletonSet");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SingletonList");
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SingletonMap");
+    spec.setHonorTransient(true);
+
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedSet");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedCollection");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedList");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedMap");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedSet");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedMap");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$SynchronizedRandomAccessList");
+    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
+    spec.setHonorTransient(true);
+
+    addJavaUtilCollectionPreInstrumentedSpec();
+
+    spec = getOrCreateSpec("com.tcclient.util.SortedViewSetWrapper");
+    spec.setHonorTransient(true);
+
+    // These classes are not PORTABLE by themselves, but logical classes subclasses them.
+    // We dont want them to get tc fields, TransparentAccess interfaces etc. but we do want them
+    // to be instrumented for Array manipulations, clone(), wait(), notify() calls etc.
+    spec = getOrCreateSpec("java.util.AbstractCollection");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
+    spec = getOrCreateSpec("java.util.AbstractList");
+    spec.setHonorTransient(true);
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.addSupportMethodCreator(new AbstractListMethodCreator());
+    spec = getOrCreateSpec("java.util.AbstractSet");
+    spec = getOrCreateSpec("java.util.AbstractSequentialList");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec = getOrCreateSpec("java.util.Dictionary");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+
     // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
     spec = getOrCreateSpec("java.util.AbstractMap");
     spec.setHonorTransient(true);
 
-    if (!Vm.isIBM()) {
-      // spec = getOrCreateSpec("java.lang.Number");
-      // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
-      // JVM crashes.
-      // spec.generateNonStaticTCFields(false);
+    // spec = getOrCreateSpec("java.lang.Number");
+    // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
+    // JVM crashes.
+    // spec.generateNonStaticTCFields(false);
 
-      spec = getOrCreateSpec("java.lang.Exception");
-      spec = getOrCreateSpec("java.lang.RuntimeException");
-      spec = getOrCreateSpec("java.lang.InterruptedException");
-      spec = getOrCreateSpec("java.awt.AWTException");
-      spec = getOrCreateSpec("java.io.IOException");
-      spec = getOrCreateSpec("java.io.FileNotFoundException");
-      spec = getOrCreateSpec("java.lang.Error");
-      spec = getOrCreateSpec("java.util.ConcurrentModificationException");
-      spec = getOrCreateSpec("java.util.NoSuchElementException");
+    spec = getOrCreateSpec("java.lang.Exception");
+    spec = getOrCreateSpec("java.lang.RuntimeException");
+    spec = getOrCreateSpec("java.lang.InterruptedException");
+    spec = getOrCreateSpec("java.awt.AWTException");
+    spec = getOrCreateSpec("java.io.IOException");
+    spec = getOrCreateSpec("java.io.FileNotFoundException");
+    spec = getOrCreateSpec("java.lang.Error");
+    spec = getOrCreateSpec("java.util.ConcurrentModificationException");
+    spec = getOrCreateSpec("java.util.NoSuchElementException");
 
-      spec = getOrCreateSpec("java.util.EventObject");
-      // spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.EventObject");
+    // spec.setHonorTransient(true);
 
-      spec = getOrCreateSpec("com.tcclient.object.Client");
-      spec = getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
+    spec = getOrCreateSpec("com.tcclient.object.Client");
+    spec = getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
 
-      spec = getOrCreateSpec("java.io.File");
+    spec = getOrCreateSpec("java.io.File");
 
-      spec = getOrCreateSpec("java.util.Date", "com.tc.object.applicator.DateApplicator");
-      spec.addAlwaysLogSpec(SerializationUtil.SET_TIME_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_YEAR_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_MONTH_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_DATE_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_HOURS_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_MINUTES_SIGNATURE);
-      spec.addDateMethodLogSpec(SerializationUtil.SET_SECONDS_SIGNATURE);
+    spec = getOrCreateSpec("java.util.Date", "com.tc.object.applicator.DateApplicator");
+    spec.addAlwaysLogSpec(SerializationUtil.SET_TIME_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_YEAR_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_MONTH_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_DATE_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_HOURS_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_MINUTES_SIGNATURE);
+    spec.addDateMethodLogSpec(SerializationUtil.SET_SECONDS_SIGNATURE);
 
-      spec = getOrCreateSpec("java.sql.Date", "com.tc.object.applicator.DateApplicator");
-      spec = getOrCreateSpec("java.sql.Time", "com.tc.object.applicator.DateApplicator");
-      spec = getOrCreateSpec("java.sql.Timestamp", "com.tc.object.applicator.DateApplicator");
-      spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
-      spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
-    }
+    spec = getOrCreateSpec("java.sql.Date", "com.tc.object.applicator.DateApplicator");
+    spec = getOrCreateSpec("java.sql.Time", "com.tc.object.applicator.DateApplicator");
+    spec = getOrCreateSpec("java.sql.Timestamp", "com.tc.object.applicator.DateApplicator");
+    spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
+    spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
+
     addPermanentExcludePattern("java.util.WeakHashMap");
     addPermanentExcludePattern("java.lang.ref.*");
     if (!Vm.isIBM()) {
+      // this exclusion of the IBM JDK seems necessary, otherwhise the VM crashes
       spec = getOrCreateSpec("java.lang.reflect.AccessibleObject");
       spec.addTransient("securityCheckCache");
-
-      addReflectionPreInstrumentedSpec();
-      addJDK15PreInstrumentedSpec();
     }
+    addReflectionPreInstrumentedSpec();
+
+    addJDK15PreInstrumentedSpec();
 
     /* ******* ALL ABOVE SPECS ARE PRE-INSTRUMENTED ******* */
     markAllSpecsPreInstrumented();

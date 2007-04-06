@@ -217,11 +217,9 @@ public class BootJarTool {
       bootJar = bootJarHandler.getBootJar();
 
       addInstrumentedHashMap();
-      if (!Vm.isIBM()) {
-        addInstrumentedHashtable();
-        addInstrumentedJavaUtilCollection();
-        addJdk15SpecificPreInstrumentedClasses();
-      }
+      addInstrumentedHashtable();
+      addInstrumentedJavaUtilCollection();
+      addJdk15SpecificPreInstrumentedClasses();
 
       addInstrumentedWeakHashMap();
 
@@ -296,10 +294,8 @@ public class BootJarTool {
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
-      if (!Vm.isIBM()) {
-        loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
-        loadTerracottaClass(ProxyInstance.class.getName());
-      }
+      loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
+      loadTerracottaClass(ProxyInstance.class.getName());
       loadTerracottaClass(JavaLangArrayHelpers.class.getName());
 
       loadTerracottaClass(Vm.class.getName());
@@ -315,10 +311,8 @@ public class BootJarTool {
       addInstrumentedJavaLangStringBuffer();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
-      if (!Vm.isIBM()) {
-        addInstrumentedProxy();
-        addTreeMap();
-      }
+      addInstrumentedProxy();
+      addTreeMap();
 
       Map internalSpecs = getTCSpecs();
       loadBootJarClasses(removeAlreadyLoaded(massageSpecs(internalSpecs, true)));
@@ -329,11 +323,8 @@ public class BootJarTool {
       // user defined specs should ALWAYS be after internal specs
       loadBootJarClasses(removeAlreadyLoaded(userSpecs));
 
-      if (!Vm.isIBM()) {
-        adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
-        adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
-      }
-
+      adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
+      adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
    } catch (Exception e) {
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }

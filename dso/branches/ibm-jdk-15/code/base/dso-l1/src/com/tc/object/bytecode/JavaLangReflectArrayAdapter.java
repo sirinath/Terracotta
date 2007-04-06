@@ -9,6 +9,7 @@ import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.exception.TCRuntimeException;
+import com.tc.util.runtime.Vm;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,10 @@ public class JavaLangReflectArrayAdapter extends ClassAdapter implements Opcodes
   static {
     nonNativeMethods.add("newInstance");
     nonNativeMethods.add("<init>");
+    // the IBM JDK just delegates to their own setImpl native version
+    if (Vm.isIBM()) {
+      nonNativeMethods.add("set");
+    }
 
     excludeMethods.add("getLength");
     excludeMethods.add("getByte");

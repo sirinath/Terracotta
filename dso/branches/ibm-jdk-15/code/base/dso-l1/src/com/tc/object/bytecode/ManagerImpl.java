@@ -147,9 +147,7 @@ public class ManagerImpl implements Manager {
     lookupExistingOrNull(o);
     monitorEnter(o, LOCK_TYPE_WRITE);
     monitorExit(o);
-    if (!Vm.isIBM()) {
-      logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
-    }
+    logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
   }
 
   private void startClient() {
