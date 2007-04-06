@@ -38,7 +38,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.concurrent.SetOnceFlag;
-import com.tc.util.runtime.Vm;
 
 import java.util.Collection;
 import java.util.HashMap;
