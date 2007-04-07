@@ -92,6 +92,7 @@ import com.tc.objectserver.handler.BroadcastChangeHandler;
 import com.tc.objectserver.handler.ChannelLifeCycleHandler;
 import com.tc.objectserver.handler.ClientHandshakeHandler;
 import com.tc.objectserver.handler.CommitTransactionChangeHandler;
+import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
 import com.tc.objectserver.handler.ManagedObjectFaultHandler;
 import com.tc.objectserver.handler.ManagedObjectFlushHandler;
@@ -122,9 +123,9 @@ import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.objectserver.persistence.impl.InMemoryPersistor;
+import com.tc.objectserver.persistence.impl.InMemorySequenceProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullTransactionPersistor;
-import com.tc.objectserver.persistence.impl.PersistentBatchSequenceProvider;
 import com.tc.objectserver.persistence.impl.TransactionStoreImpl;
 import com.tc.objectserver.persistence.sleepycat.ConnectionIDFactoryImpl;
 import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFactory;
@@ -156,8 +157,8 @@ import com.tc.util.TCTimeoutException;
 import com.tc.util.TCTimerImpl;
 import com.tc.util.io.FileUtils;
 import com.tc.util.sequence.BatchSequence;
+import com.tc.util.sequence.MutableSequence;
 import com.tc.util.sequence.Sequence;
-import com.tc.util.sequence.SimpleSequence;
 import com.tc.util.startuplock.FileNotCreatedException;
 import com.tc.util.startuplock.LocationNotCreatedException;
 
@@ -332,27 +333,27 @@ public class DistributedObjectServer extends SEDA {
     }
 
     persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
-    PersistenceTransactionProvider nullPersistenceTransactionProvider = new NullPersistenceTransactionProvider();
     PersistenceTransactionProvider transactionStorePTP;
+    MutableSequence gidSequence;
     if (persistent) {
-      // XXX: This construction/initialization order is pretty lame. Perhaps
-      // making the sequence provider its own
-      // handler isn't the right thing to do.
-      PersistentBatchSequenceProvider sequenceProvider = new PersistentBatchSequenceProvider(persistor
-          .getGlobalTransactionIDSequence());
-      Stage requestBatchStage = stageManager
-          .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE, sequenceProvider,
-                       1, maxStageSize);
-      sequenceProvider.setRequestBatchSink(requestBatchStage.getSink());
-      globalTransactionIDSequence = new BatchSequence(sequenceProvider, 1000);
+      gidSequence = persistor.getGlobalTransactionIDSequence();
 
       transactionPersistor = persistor.getTransactionPersistor();
       transactionStorePTP = persistenceTransactionProvider;
     } else {
+      gidSequence = new InMemorySequenceProvider();
+
       transactionPersistor = new NullTransactionPersistor();
-      transactionStorePTP = nullPersistenceTransactionProvider;
-      globalTransactionIDSequence = new SimpleSequence();
+      transactionStorePTP = new NullPersistenceTransactionProvider();
     }
+
+    GlobalTransactionIDBatchRequestHandler gidSequenceProvider = new GlobalTransactionIDBatchRequestHandler(
+                                                                                                             gidSequence);
+    Stage requestBatchStage = stageManager
+        .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE, gidSequenceProvider,
+                     1, maxStageSize);
+    gidSequenceProvider.setRequestBatchSink(requestBatchStage.getSink());
+    globalTransactionIDSequence = new BatchSequence(gidSequenceProvider, 10000);
 
     clientStateStore = persistor.getClientStatePersistor();
 
@@ -462,9 +463,8 @@ public class DistributedObjectServer extends SEDA {
     stageManager.createStage(ServerConfigurationContext.RECALL_OBJECTS_STAGE, new RecallObjectsHandler(), 1, -1);
 
     int commitThreads = (persistent ? 4 : 1);
-    stageManager
-        .createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                     new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
+    stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
+                             new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
 
     TransactionalStageCoordinator txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
@@ -581,7 +581,7 @@ public class DistributedObjectServer extends SEDA {
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager);
+                                          objectManager, transactionManager, gidSequenceProvider);
     } else {
       l2Coordinator = new L2HADisabledCooridinator();
     }
@@ -734,10 +734,6 @@ public class DistributedObjectServer extends SEDA {
 
   public ManagedObjectStore getManagedObjectStore() {
     return objectStore;
-  }
-  
-  public Persistor getPersistor() {
-    return persistor;
   }
 
   public ServerConfigurationContext getContext() {

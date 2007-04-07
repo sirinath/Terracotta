@@ -8,8 +8,8 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.objectserver.gtx.GlobalTransactionIDSequenceProvider;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
-import com.tc.objectserver.persistence.api.PersistentSequence;
 import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.sequence.ObjectIDSequence;
@@ -19,30 +19,30 @@ import java.util.Set;
 
 public class ClusterState {
 
-  private static final TCLogger     logger               = TCLogging.getLogger(ClusterState.class);
+  private static final TCLogger                          logger               = TCLogging.getLogger(ClusterState.class);
 
-  private static final String       L2_STATE_KEY         = "CLUSTER_STATE::L2_STATE_KEY";
-  private static final String       CLUSTER_ID_KEY       = "CLUSTER_STATE::CLUSTER_ID_KEY";
+  private static final String                            L2_STATE_KEY         = "CLUSTER_STATE::L2_STATE_KEY";
+  private static final String                            CLUSTER_ID_KEY       = "CLUSTER_STATE::CLUSTER_ID_KEY";
 
-  private final PersistentMapStore  clusterStateStore;
-  private final ObjectIDSequence    oidSequence;
-  private final ConnectionIDFactory connectionIdFactory;
-  private final PersistentSequence globalTxnIDSequence;
+  private final PersistentMapStore                       clusterStateStore;
+  private final ObjectIDSequence                         oidSequence;
+  private final ConnectionIDFactory                      connectionIdFactory;
+  private final GlobalTransactionIDSequenceProvider gidSequenceProvider;
 
-  private final Set                 connections          = new HashSet();
-  private long                      nextAvailObjectID    = -1;
-  private long                      nextAvailChannelID   = -1;
-  private long                      nextAvailGlobalTxnID = -1;
-  private State                     currentState;
-  private String                    clusterID;
-  
+  private final Set                                      connections          = new HashSet();
+  private long                                           nextAvailObjectID    = -1;
+  private long                                           nextAvailChannelID   = -1;
+  private long                                           nextAvailGlobalTxnID = -1;
+  private State                                          currentState;
+  private String                                         clusterID;
 
   public ClusterState(PersistentMapStore clusterStateStore, ObjectIDSequence oidSequence,
-                      ConnectionIDFactory connectionIdFactory, PersistentSequence globalTxnIDSequence) {
+                      ConnectionIDFactory connectionIdFactory,
+                      GlobalTransactionIDSequenceProvider gidSequenceProvider) {
     this.clusterStateStore = clusterStateStore;
     this.oidSequence = oidSequence;
     this.connectionIdFactory = connectionIdFactory;
-    this.globalTxnIDSequence = globalTxnIDSequence;
+    this.gidSequenceProvider = gidSequenceProvider;
     this.clusterID = clusterStateStore.get(CLUSTER_ID_KEY);
   }
 
@@ -63,7 +63,7 @@ public class ClusterState {
   public long getNextAvailableChannelID() {
     return nextAvailChannelID;
   }
-  
+
   public long getNextAvailableGlobalTxnID() {
     return nextAvailGlobalTxnID;
   }
@@ -128,7 +128,7 @@ public class ClusterState {
     long nextGID = getNextAvailableGlobalTxnID();
     if (nextGID != -1) {
       logger.info("Setting the Next Available Global Transaction ID to " + nextGID);
-      this.globalTxnIDSequence.setNext(nextGID);
+      this.gidSequenceProvider.setNextAvailableGID(nextGID);
     }
   }
 

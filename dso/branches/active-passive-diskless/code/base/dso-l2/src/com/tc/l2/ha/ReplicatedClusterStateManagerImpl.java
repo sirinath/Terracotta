@@ -4,6 +4,7 @@
  */
 package com.tc.l2.ha;
 
+import com.tc.async.api.Sink;
 import com.tc.l2.api.ReplicatedClusterStateManager;
 import com.tc.l2.msg.ClusterStateMessage;
 import com.tc.l2.msg.ClusterStateMessageFactory;
@@ -16,9 +17,11 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
+import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
+import com.tc.objectserver.context.ChannelStateEventContext;
 import com.tc.util.Assert;
 import com.tc.util.UUID;
 
@@ -31,14 +34,16 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
 
   private final GroupManager    groupManager;
   private final ClusterState    state;
-
   private final StateManager    stateManager;
+  private final Sink            channelLifeCycleSink;
 
   public ReplicatedClusterStateManagerImpl(GroupManager groupManager, StateManager stateManager,
-                                           ClusterState clusterState, ConnectionIDFactory factory) {
+                                           ClusterState clusterState, ConnectionIDFactory factory,
+                                           Sink channelLifeCycleSink) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     state = clusterState;
+    this.channelLifeCycleSink = channelLifeCycleSink;
     groupManager.registerForMessages(ClusterStateMessage.class, this);
     factory.registerForConnectionIDEvents(this);
   }
@@ -135,7 +140,20 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
       return;
     }
     msg.initState(state);
+    sendChannelLifeCycleEventsIfNecessary(msg);
     sendOKResponse(fromNode, msg);
+  }
+
+  private void sendChannelLifeCycleEventsIfNecessary(ClusterStateMessage msg) {
+    if (msg.getType() == ClusterStateMessage.NEW_CONNECTION_CREATED) {
+      // Not really needed, but just in case
+      channelLifeCycleSink.add(new ChannelStateEventContext(ChannelStateEventContext.CREATE, new ChannelID(msg
+          .getConnectionID().getChannelID())));
+    } else if (msg.getType() == ClusterStateMessage.CONNECTION_DESTROYED) {
+      // this is needed to clean up some data structures internally
+      channelLifeCycleSink.add(new ChannelStateEventContext(ChannelStateEventContext.REMOVE, new ChannelID(msg
+          .getConnectionID().getChannelID())));
+    }
   }
 
   private void sendOKResponse(NodeID fromNode, ClusterStateMessage msg) {

@@ -34,6 +34,7 @@ import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.gtx.GlobalTransactionIDSequenceProvider;
 import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -57,16 +58,17 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
                          PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                         ServerTransactionManager transactionManager) {
+                         ServerTransactionManager transactionManager,
+                         GlobalTransactionIDSequenceProvider gidSequenceProvider) {
     this.consoleLogger = consoleLogger;
     this.server = server;
-    init(stageManager, clusterStateStore, objectManager, transactionManager);
+    init(stageManager, clusterStateStore, objectManager, transactionManager, gidSequenceProvider);
   }
 
   private void init(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                    ServerTransactionManager transactionManager) {
+                    ServerTransactionManager transactionManager, GlobalTransactionIDSequenceProvider gidSequenceProvider) {
     try {
-      basicInit(stageManager, clusterStateStore, objectManager, transactionManager);
+      basicInit(stageManager, clusterStateStore, objectManager, transactionManager, gidSequenceProvider);
     } catch (GroupException e) {
       logger.error(e);
       throw new AssertionError(e);
@@ -74,10 +76,11 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
   }
 
   private void basicInit(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
-                         ServerTransactionManager transactionManager) throws GroupException {
+                         ServerTransactionManager transactionManager,
+                         GlobalTransactionIDSequenceProvider gidSequenceProvider) throws GroupException {
 
     this.clusterState = new ClusterState(clusterStateStore, server.getManagedObjectStore(), server
-        .getConnectionIdFactory(), server.getPersistor().getGlobalTransactionIDSequence());
+        .getConnectionIdFactory(), gidSequenceProvider);
 
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
@@ -103,7 +106,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
                                                           objectManager, objectsSyncSink);
 
     this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState, server
-        .getConnectionIdFactory());
+        .getConnectionIdFactory(), stageManager.getStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE).getSink());
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, objectsSyncSink);
     this.groupManager.routeMessages(RelayedCommitTransactionMessage.class, objectsSyncSink);

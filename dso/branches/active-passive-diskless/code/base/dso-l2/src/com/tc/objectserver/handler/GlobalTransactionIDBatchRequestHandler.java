@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.persistence.impl;
+package com.tc.objectserver.handler;
 
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
@@ -10,17 +10,17 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.l2.api.ReplicatedClusterStateManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.persistence.api.PersistentSequence;
-import com.tc.util.sequence.BatchSequenceProvider;
+import com.tc.objectserver.gtx.GlobalTransactionIDSequenceProvider;
 import com.tc.util.sequence.BatchSequenceReceiver;
+import com.tc.util.sequence.MutableSequence;
 
-public class PersistentBatchSequenceProvider extends AbstractEventHandler implements BatchSequenceProvider {
+public class GlobalTransactionIDBatchRequestHandler extends AbstractEventHandler implements GlobalTransactionIDSequenceProvider {
 
   private Sink                          requestBatchSink;
-  private final PersistentSequence      sequence;
+  private final MutableSequence         sequence;
   private ReplicatedClusterStateManager clusterStateMgr;
 
-  public PersistentBatchSequenceProvider(PersistentSequence sequence) {
+  public GlobalTransactionIDBatchRequestHandler(MutableSequence sequence) {
     this.sequence = sequence;
   }
 
@@ -47,6 +47,10 @@ public class PersistentBatchSequenceProvider extends AbstractEventHandler implem
   // BatchSequenceProvider interface
   public void requestBatch(BatchSequenceReceiver receiver, int size) {
     this.requestBatchSink.add(new GlobalTransactionIDBatchRequestContext(receiver, size));
+  }
+
+  public void setNextAvailableGID(long nextGID) {
+    sequence.setNext(nextGID);
   }
 
   public static final class GlobalTransactionIDBatchRequestContext implements EventContext {
