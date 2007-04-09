@@ -1530,7 +1530,12 @@ public class BootJarTool {
     spec.addAlwaysLogSpec(SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_AT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
+    // the Vector.addAll(Collection) implementation in the IBM JDK simply delegates
+    // to Vector.addAllAt(int, Collection), if addAll is instrumented as well, the
+    // vector elements are added twice to the collection
+    if (!Vm.isIBM()) {
+      spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
+    }
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ELEMENT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ALL_ELEMENTS_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ELEMENT_AT_SIGNATURE);
