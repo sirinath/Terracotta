@@ -24,7 +24,6 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.LinkedList;
 
 public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
-  private static final int        NUM_OF_PUT = 1000;
 
   private final DataKey[]         keyRoots   = new DataKey[] { new DataKey(1), new DataKey(2), new DataKey(3),
       new DataKey(4)                        };
@@ -33,7 +32,6 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
 
   private final CyclicBarrier     barrier;
   private final ConcurrentHashMap mapRoot    = new ConcurrentHashMap();
-  private final SharedObject      sharedRoot = new SharedObject();
   
   private final HashKey myKey = new HashKey(101);
   private final LinkedList<Integer> sharedList = new LinkedList<Integer>();
@@ -298,48 +296,7 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
     }
   }
 
-  private static class HashValue {
-    private int i;
 
-    public HashValue(int i) {
-      super();
-      this.i = i;
-    }
-
-    public int getInt() {
-      return this.i;
-    }
-
-    public int hashCode() {
-      return i;
-    }
-
-    public boolean equals(Object obj) {
-      if (obj == null) return false;
-      if (!(obj instanceof HashValue)) return false;
-      return ((HashValue) obj).i == i;
-    }
-
-    public String toString() {
-      return super.toString() + ", i: " + i;
-    }
-  }
-
-  private static class SharedObject {
-    private ConcurrentHashMap map;
-
-    public SharedObject() {
-      super();
-    }
-
-    public ConcurrentHashMap getMap() {
-      return map;
-    }
-
-    public void setMap(ConcurrentHashMap map) {
-      this.map = map;
-    }
-
-  }
+  
 
 }
