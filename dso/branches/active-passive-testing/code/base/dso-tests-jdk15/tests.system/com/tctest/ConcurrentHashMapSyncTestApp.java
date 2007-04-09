@@ -154,7 +154,7 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
     // verify
     if (index == 0) {
       for (int i = 0; i < upbound; ++i) {
-        System.out.println("*** Verify["+i+"] value="+sharedList.get(i));
+        // System.out.println("*** Verify["+i+"] value="+sharedList.get(i));
         Assert.assertTrue(i == sharedList.get(i));
       }
     }
