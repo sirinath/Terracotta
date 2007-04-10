@@ -108,6 +108,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     controlledCrashMode = true;
     serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true);
     setUp(factory, helper);
+    
+    configFactory().addServerToL1Config(null, serverPort, adminPort);
+    configFactory().addServerToL2Config(null, serverPort, adminPort);
   }
 
   private final void setUp(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)

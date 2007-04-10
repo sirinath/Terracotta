@@ -43,6 +43,7 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
                                                                                                   new FatalIllegalConfigurationChangeHandler());
 
     factory.addServerToL1Config(null, port, adminPort);
+    factory.addServerToL2Config(null, port, adminPort);
     L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
     setUpControlledServer(factory, new StandardDSOClientConfigHelper(manager), port, adminPort, configFile
         .getAbsolutePath());

@@ -86,6 +86,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
   public void setUp() throws Exception {
     TestTVSConfigurationSetupManagerFactory factory = createDistributedConfigFactory();
+    factory.addServerToL2Config(null, server.getListenPort(), -1);
 
     ManagedObjectStateFactory.disableSingleton(true);
     L2TVSConfigurationSetupManager l2Manager = factory.createL2TVSConfigurationSetupManager(null);

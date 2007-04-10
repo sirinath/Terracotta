@@ -10,7 +10,7 @@ import com.tc.l2.state.StateManager;
 import com.tc.util.State;
 
 public class L2State implements StateChangeListener {
-  private static final boolean DEBUG       = false;
+  private static final boolean DEBUG       = true;
   private State                serverState = StateManager.START_STATE;
   private StateChangeListener  changeListener;
 
@@ -21,10 +21,12 @@ public class L2State implements StateChangeListener {
     // if (serverState.equals(state)) { throw new AssertionError("Re-setting L2 state to the same state:
     // existing=["+serverState.getName()+"] passedIn=["+state.getName()+"]"); }
 
-    debugPrintln("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()
-                 + "] newState=[" + state.getName() + "]");
+    if (changeListener != null) {
+      debugPrintln("*******  L2State is notifying listener of state change:  oldState=[" + serverState.getName()
+                   + "] newState=[" + state.getName() + "]");
+      changeListener.l2StateChanged(new StateChangedEvent(serverState, state));
+    }
 
-    changeListener.l2StateChanged(new StateChangedEvent(serverState, state));
     serverState = state;
   }
 
