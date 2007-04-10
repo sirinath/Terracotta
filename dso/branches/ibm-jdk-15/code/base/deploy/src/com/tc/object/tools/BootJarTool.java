@@ -302,10 +302,8 @@ public class BootJarTool {
       loadTerracottaClass(Vm.class.getName() + "$Version");
       addManagementClasses();
 
-      if (!Vm.isIBM()) {
-        addSpringClasses();
-      }
-
+      addSpringClasses();
+ 
       addSunStandardLoaders();
       addInstrumentedJavaLangThrowable();
       addInstrumentedJavaLangStringBuffer();

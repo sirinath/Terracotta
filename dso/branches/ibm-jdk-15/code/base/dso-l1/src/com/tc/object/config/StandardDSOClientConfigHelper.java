@@ -389,125 +389,124 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private void doAutoconfig(boolean interrogateBootJar) {
     TransparencyClassSpec spec = null;
     LockDefinition ld = null;
-    if (!Vm.isIBM()) {
-      // Table model stuff
-      addIncludePattern("javax.swing.event.TableModelEvent", true);
-      spec = getOrCreateSpec("javax.swing.event.TableModelEvent");
+    
+    // Table model stuff
+    addIncludePattern("javax.swing.event.TableModelEvent", true);
+    spec = getOrCreateSpec("javax.swing.event.TableModelEvent");
 
-      addIncludePattern("javax.swing.table.AbstractTableModel", true);
-      spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
-      spec.addDistributedMethodCall("fireTableChanged", "(Ljavax/swing/event/TableModelEvent;)V", false);
-      spec.addTransient("listenerList");
+    addIncludePattern("javax.swing.table.AbstractTableModel", true);
+    spec = getOrCreateSpec("javax.swing.table.AbstractTableModel");
+    spec.addDistributedMethodCall("fireTableChanged", "(Ljavax/swing/event/TableModelEvent;)V", false);
+    spec.addTransient("listenerList");
 
-      spec = getOrCreateSpec("javax.swing.table.DefaultTableModel");
-      spec.setCallConstructorOnLoad(true);
-      ld = new LockDefinition("tcdefaultTableLock", ConfigLockLevel.WRITE);
-      ld.commit();
-      addLock("* javax.swing.table.DefaultTableModel.set*(..)", ld);
-      addLock("* javax.swing.table.DefaultTableModel.insert*(..)", ld);
-      addLock("* javax.swing.table.DefaultTableModel.move*(..)", ld);
-      addLock("* javax.swing.table.DefaultTableModel.remove*(..)", ld);
+    spec = getOrCreateSpec("javax.swing.table.DefaultTableModel");
+    spec.setCallConstructorOnLoad(true);
+    ld = new LockDefinition("tcdefaultTableLock", ConfigLockLevel.WRITE);
+    ld.commit();
+    addLock("* javax.swing.table.DefaultTableModel.set*(..)", ld);
+    addLock("* javax.swing.table.DefaultTableModel.insert*(..)", ld);
+    addLock("* javax.swing.table.DefaultTableModel.move*(..)", ld);
+    addLock("* javax.swing.table.DefaultTableModel.remove*(..)", ld);
 
-      ld = new LockDefinition("tcdefaultTableLock", ConfigLockLevel.READ);
-      ld.commit();
-      addLock("* javax.swing.table.DefaultTableModel.get*(..)", ld);
+    ld = new LockDefinition("tcdefaultTableLock", ConfigLockLevel.READ);
+    ld.commit();
+    addLock("* javax.swing.table.DefaultTableModel.get*(..)", ld);
 
-      spec = getOrCreateSpec("javax.swing.DefaultListModel");
-      spec.setCallConstructorOnLoad(true);
+    spec = getOrCreateSpec("javax.swing.DefaultListModel");
+    spec.setCallConstructorOnLoad(true);
 
-      ld = new LockDefinition("tcdefaultListLock", ConfigLockLevel.WRITE);
-      ld.commit();
-      addLock("* javax.swing.DefaultListModel.*(..)", ld);
+    ld = new LockDefinition("tcdefaultListLock", ConfigLockLevel.WRITE);
+    ld.commit();
+    addLock("* javax.swing.DefaultListModel.*(..)", ld);
 
-      addIncludePattern("java.awt.Color", true);
-      spec = getOrCreateSpec("java.awt.Color");
-      spec.addTransient("cs");
+    addIncludePattern("java.awt.Color", true);
+    spec = getOrCreateSpec("java.awt.Color");
+    spec.addTransient("cs");
 
-      spec = getOrCreateSpec("java.awt.event.MouseMotionAdapter");
-      spec = getOrCreateSpec("java.awt.event.MouseAdapter");
+    spec = getOrCreateSpec("java.awt.event.MouseMotionAdapter");
+    spec = getOrCreateSpec("java.awt.event.MouseAdapter");
 
-      // java.awt.point
-      spec = getOrCreateSpec("java.awt.Point");
-      spec = getOrCreateSpec("java.awt.geom.Point2D");
-      spec = getOrCreateSpec("java.awt.geom.Point2D$Double");
-      spec = getOrCreateSpec("java.awt.geom.Point2D$Float");
-      // end java.awt.Point
+    // java.awt.point
+    spec = getOrCreateSpec("java.awt.Point");
+    spec = getOrCreateSpec("java.awt.geom.Point2D");
+    spec = getOrCreateSpec("java.awt.geom.Point2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Point2D$Float");
+    // end java.awt.Point
 
-      // java.awt.geom.Line
-      spec = getOrCreateSpec("java.awt.geom.Line2D");
-      spec = getOrCreateSpec("java.awt.geom.Line2D$Double");
-      spec = getOrCreateSpec("java.awt.geom.Line2D$Float");
-      // end java.awt.geom.Line
+    // java.awt.geom.Line
+    spec = getOrCreateSpec("java.awt.geom.Line2D");
+    spec = getOrCreateSpec("java.awt.geom.Line2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Line2D$Float");
+    // end java.awt.geom.Line
 
-      // java.awt.Rectangle
-      spec = getOrCreateSpec("java.awt.Rectangle");
-      spec = getOrCreateSpec("java.awt.geom.Rectangle2D");
-      spec = getOrCreateSpec("java.awt.geom.RectangularShape");
-      spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Double");
-      spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Float");
-      spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D");
-      spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Double");
-      spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Float");
-      // end java.awt.Rectangle
+    // java.awt.Rectangle
+    spec = getOrCreateSpec("java.awt.Rectangle");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D");
+    spec = getOrCreateSpec("java.awt.geom.RectangularShape");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Rectangle2D$Float");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.RoundRectangle2D$Float");
+    // end java.awt.Rectangle
 
-      // java.awt.geom.Ellipse2D
-      spec = getOrCreateSpec("java.awt.geom.Ellipse2D");
-      spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Double");
-      spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Float");
-      // end java.awt.geom.Ellipse2D
+    // java.awt.geom.Ellipse2D
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D");
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Double");
+    spec = getOrCreateSpec("java.awt.geom.Ellipse2D$Float");
+    // end java.awt.geom.Ellipse2D
 
-      // java.awt.geom.Path2D
-      if (Vm.isJDK16()) {
-        spec = getOrCreateSpec("java.awt.geom.Path2D");
-        spec = getOrCreateSpec("java.awt.geom.Path2D$Double");
-        spec = getOrCreateSpec("java.awt.geom.Path2D$Float");
-      }
-      // end java.awt.geom.Path2D
-
-      // java.awt.geom.GeneralPath
-      spec = getOrCreateSpec("java.awt.geom.GeneralPath");
-      // end java.awt.geom.GeneralPath
-
-      // java.awt.BasicStroke
-      spec = getOrCreateSpec("java.awt.BasicStroke");
-      // end java.awt.BasicStroke
-
-      // java.awt.Dimension
-      spec = getOrCreateSpec("java.awt.Dimension");
-      spec = getOrCreateSpec("java.awt.geom.Dimension2D");
-      // end java.awt.Dimension
-
-      addIncludePattern("javax.swing.tree.TreePath", false);
-      spec = getOrCreateSpec("javax.swing.tree.TreePath");
-
-      addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
-      spec = getOrCreateSpec("javax.swing.tree.DefaultMutableTreeNode");
-
-      spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
-      ld = new LockDefinition("tctreeLock", ConfigLockLevel.WRITE);
-      ld.commit();
-      addLock("* javax.swing.tree.DefaultTreeModel.get*(..)", ld);
-      addLock("* javax.swing.tree.DefaultTreeModel.set*(..)", ld);
-      addLock("* javax.swing.tree.DefaultTreeModel.insert*(..)", ld);
-
-      spec.addTransient("listenerList");
-      spec.addDistributedMethodCall("fireTreeNodesChanged",
-                                    "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
-      spec.addDistributedMethodCall("fireTreeNodesInserted",
-                                    "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
-      spec.addDistributedMethodCall("fireTreeNodesRemoved",
-                                    "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
-      spec.addDistributedMethodCall("fireTreeStructureChanged",
-                                    "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
-      spec.addDistributedMethodCall("fireTreeStructureChanged", "(Ljava/lang/Object;Ljavax/swing/tree/TreePath;)V",
-                                    false);
-
-      spec = getOrCreateSpec("javax.swing.AbstractListModel");
-      spec.addTransient("listenerList");
-      spec.addDistributedMethodCall("fireContentsChanged", "(Ljava/lang/Object;II)V", false);
-      spec.addDistributedMethodCall("fireIntervalAdded", "(Ljava/lang/Object;II)V", false);
-      spec.addDistributedMethodCall("fireIntervalRemoved", "(Ljava/lang/Object;II)V", false);
+    // java.awt.geom.Path2D
+    if (Vm.isJDK16()) {
+      spec = getOrCreateSpec("java.awt.geom.Path2D");
+      spec = getOrCreateSpec("java.awt.geom.Path2D$Double");
+      spec = getOrCreateSpec("java.awt.geom.Path2D$Float");
     }
+    // end java.awt.geom.Path2D
+
+    // java.awt.geom.GeneralPath
+    spec = getOrCreateSpec("java.awt.geom.GeneralPath");
+    // end java.awt.geom.GeneralPath
+
+    // java.awt.BasicStroke
+    spec = getOrCreateSpec("java.awt.BasicStroke");
+    // end java.awt.BasicStroke
+
+    // java.awt.Dimension
+    spec = getOrCreateSpec("java.awt.Dimension");
+    spec = getOrCreateSpec("java.awt.geom.Dimension2D");
+    // end java.awt.Dimension
+
+    addIncludePattern("javax.swing.tree.TreePath", false);
+    spec = getOrCreateSpec("javax.swing.tree.TreePath");
+
+    addIncludePattern("javax.swing.tree.DefaultMutableTreeNode", false);
+    spec = getOrCreateSpec("javax.swing.tree.DefaultMutableTreeNode");
+
+    spec = getOrCreateSpec("javax.swing.tree.DefaultTreeModel");
+    ld = new LockDefinition("tctreeLock", ConfigLockLevel.WRITE);
+    ld.commit();
+    addLock("* javax.swing.tree.DefaultTreeModel.get*(..)", ld);
+    addLock("* javax.swing.tree.DefaultTreeModel.set*(..)", ld);
+    addLock("* javax.swing.tree.DefaultTreeModel.insert*(..)", ld);
+
+    spec.addTransient("listenerList");
+    spec.addDistributedMethodCall("fireTreeNodesChanged",
+                                  "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
+    spec.addDistributedMethodCall("fireTreeNodesInserted",
+                                  "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
+    spec.addDistributedMethodCall("fireTreeNodesRemoved",
+                                  "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
+    spec.addDistributedMethodCall("fireTreeStructureChanged",
+                                  "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
+    spec.addDistributedMethodCall("fireTreeStructureChanged", "(Ljava/lang/Object;Ljavax/swing/tree/TreePath;)V",
+                                  false);
+
+    spec = getOrCreateSpec("javax.swing.AbstractListModel");
+    spec.addTransient("listenerList");
+    spec.addDistributedMethodCall("fireContentsChanged", "(Ljava/lang/Object;II)V", false);
+    spec.addDistributedMethodCall("fireIntervalAdded", "(Ljava/lang/Object;II)V", false);
+    spec.addDistributedMethodCall("fireIntervalRemoved", "(Ljava/lang/Object;II)V", false);
 
     spec = getOrCreateSpec("java.util.Arrays");
     spec.addDoNotInstrument("copyOfRange");
