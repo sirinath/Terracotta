@@ -16,7 +16,6 @@ import com.tc.util.runtime.Os;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 
@@ -30,7 +29,7 @@ import javax.servlet.http.HttpSession;
  */
 public class AppServerShutdownTest extends AbstractAppServerTestCase {
 
-  private static final int TIME_WAIT_FOR_SHUTDOWN = 60 * 1000;
+  private static final int TIME_WAIT_FOR_SHUTDOWN = 3 * 60 * 1000;
 
   public AppServerShutdownTest() {
     // this.disableAllUntil("2007-04-08");
@@ -65,10 +64,8 @@ public class AppServerShutdownTest extends AbstractAppServerTestCase {
     // JVM to exit before checking for clean shutdown.
     checkAvalability(port1, client);
     checkAvalability(port2, client);
+    checkAlive();
 
-    System.out.println("Polling heartbeat threads...");
-    assertFalse("Linked child processes are still alive", LinkedJavaProcessPollingAgent.isAnyAppServerAlive());
-    
     // There could be 2 kinds of failures:
     // 1. Cargo didn't shutdown the appserver normally
     // 2. DSO didn't allow the appserver to shutdown -- We want to catch this
@@ -85,32 +82,43 @@ public class AppServerShutdownTest extends AbstractAppServerTestCase {
       assertFalse("App server didn't shutdown", processes_after.indexOf("CargoLinkedChildProcess") > 0);
     }
 
-  }
+    System.out.println("Polling heartbeat threads...");
+    assertFalse("Linked child processes are still alive", LinkedJavaProcessPollingAgent.isAnyAppServerAlive());
 
+  }
+  
+  /**
+   * check app server status by ping servlet URL
+   */
   private void checkAvalability(int port, HttpClient client) throws Exception {
     long start = System.currentTimeMillis();
     do {
-      System.out.println("checkAvailability....");
+      System.out.println("ping servlet url....");
       try {
+        Thread.sleep(1000);
         URL url = createUrl(port, ShutdownNormallyServlet.class);
         HttpUtil.getResponseBody(url, client);
-        // app server is still up
-        // continue to hit it
-        Thread.sleep(1000);
+        System.out.println("  -- servlet still available");
       } catch (HttpException e) {
-        System.out.println("app server still avalable..." + e.getMessage());
-        Thread.sleep(1000);
-      } catch (MalformedURLException e) {
-        throw e;
+        System.out.println("  -- app server still available..." + e.getMessage());
       } catch (IOException e) {
         // expected
         return;
       }
     } while (System.currentTimeMillis() - start < TIME_WAIT_FOR_SHUTDOWN);
-
-    // timeout
-    System.err.println("Current java processes found: \n" + ProcessInfo.ps_grep_java());
-    throw new Exception("Appserver didn't shutdown after: " + TIME_WAIT_FOR_SHUTDOWN + " ms");
+  }
+  
+  /**
+   * check server status by pinging its linked-child-process
+   */
+  private void checkAlive() throws Exception {
+    long start = System.currentTimeMillis();
+    boolean foundAlive = false;
+    do {
+      Thread.sleep(1000);
+      System.out.println("ping linked-child-process....");
+      foundAlive = LinkedJavaProcessPollingAgent.isAnyAppServerAlive();
+    } while (foundAlive && System.currentTimeMillis() - start < TIME_WAIT_FOR_SHUTDOWN);
   }
 
   public static final class ShutdownNormallyServlet extends HttpServlet {
