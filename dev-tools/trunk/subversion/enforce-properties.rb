@@ -20,7 +20,7 @@ module Config
   # 'native'
   EOL_NATIVE_EXTENSIONS = %w(
     c c\\+\\+ cxx cpp h hxx hpp java jsp properties tld rb rbx rbw rhtml rxml rjs py
-    html css js cgi fcgi xml dtd sql txt yaml yml y l sh)
+    html css js cgi fcgi xml dtd sql txt yaml yml y l xsd xsdconfig)
 
   # Other file names that should  have the svn:eol-style property set to 'native'
   OTHER_EOL_NATIVE = %w(.project .classpath makefile rakefile readme)
@@ -30,6 +30,16 @@ module Config
   EOL_NATIVE_PATTERNS =
       EOL_NATIVE_EXTENSIONS.map { |ext| /\.#{ext}$/ } +
       OTHER_EOL_NATIVE.map { |filename| /^#{filename}$/ }
+
+  # A mapping of file name patterns to the required value of svn:eol-style that
+  # files matching the pattern must have.
+  EOL_STYLE_MAP = {
+    /\.sh$/ => 'LF',
+    /\.bat$/ => 'CRLF'
+  }
+  EOL_NATIVE_PATTERNS.each do |pattern|
+    EOL_STYLE_MAP[pattern] = 'native'
+  end
 
   # A mapping of file name patterns to the required value of svn:mime-type that
   # files matching the pattern must have.
@@ -122,9 +132,11 @@ $svnlook = SVNLook.new(Config::SVNLOOK, REPO, $config)
 $errors = Array.new
 
 def enforce_eol_native(filename)
-  if Config::EOL_NATIVE_PATTERNS.any? { |pattern| pattern.match(filename) }
-    unless $svnlook.props_for_path(filename)['svn:eol-style'] == 'native'
-      $errors << "#{filename} must have svn:eol-style property set to 'native'"
+  Config::EOL_STYLE_MAP.each do |pattern, eol_style|
+    if pattern.match(filename)
+      unless $svnlook.props_for_path(filename)['svn:eol-style'] == eol_style
+        $errors << "#{filename} must have svn:eol-style property set to '#{eol_style}'"
+      end
     end
   end
 end
@@ -151,3 +163,4 @@ unless $errors.empty?
   STDERR.puts(Config::ERROR_MESSAGE)
   exit 1
 end
+
