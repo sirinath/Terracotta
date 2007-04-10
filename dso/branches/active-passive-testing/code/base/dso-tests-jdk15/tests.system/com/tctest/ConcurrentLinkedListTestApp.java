@@ -47,7 +47,7 @@ public class ConcurrentLinkedListTestApp extends AbstractTransparentApp {
     // thread 0 as a produce
     if(index == 0) {
       int val = 0;
-      synchronized(resultList) {
+      synchronized(sharedList) {
         resultList.clear();
         sharedList.clear();
       }
@@ -87,7 +87,8 @@ public class ConcurrentLinkedListTestApp extends AbstractTransparentApp {
     
     // verify
     for(int i = 0; i < upbound; ++i) {
-      synchronized(resultList) {
+      // it is right to use the same lock
+      synchronized(sharedList) {
         // System.out.println("*** Verify["+i+"] value="+resultList.get(i));
         Assert.assertTrue(i == resultList.get(i));
       }
