@@ -13,7 +13,7 @@ public class ConcurrentLinkedListTest extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return ConcurrentHashMapSyncTestApp.class;
+    return ConcurrentLinkedListTestApp.class;
   }
 
 }
