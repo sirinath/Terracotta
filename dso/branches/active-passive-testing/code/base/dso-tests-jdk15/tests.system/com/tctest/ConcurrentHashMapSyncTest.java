@@ -3,6 +3,8 @@
  */
 package com.tctest;
 
+import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+
 public class ConcurrentHashMapSyncTest extends TransparentTestBase {
 
   // need to be at least 4
@@ -16,5 +18,20 @@ public class ConcurrentHashMapSyncTest extends TransparentTestBase {
   protected Class getApplicationClass() {
     return ConcurrentHashMapSyncTestApp.class;
   }
+  
+
+  protected boolean canRunActivePassive() {
+    return true;
+  }
+
+  public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+    setupManager.setServerCount(2);
+    setupManager.setServerCrashMode(ActivePassiveTestSetupManager.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashWaitInSec(15);
+    setupManager.setServerShareDataMode(ActivePassiveTestSetupManager.DISK);
+    setupManager.setServerPersistenceMode(ActivePassiveTestSetupManager.PERMANENT_STORE);
+  }
+
+
 
 }
