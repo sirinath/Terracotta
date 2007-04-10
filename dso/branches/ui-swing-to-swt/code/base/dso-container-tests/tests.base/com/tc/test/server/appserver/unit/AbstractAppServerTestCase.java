@@ -32,7 +32,6 @@ import com.tc.test.server.tcconfig.StandardTerracottaAppServerConfig;
 import com.tc.test.server.tcconfig.TerracottaServerConfigGenerator;
 import com.tc.test.server.util.HttpUtil;
 import com.tc.test.server.util.VmStat;
-import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
@@ -43,7 +42,9 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -190,11 +191,18 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     config = TestConfigObject.getInstance();
     tempDir = getTempDirectory();
     serverInstallDir = makeDir(config.appserverServerInstallDir());
-    File workDir = new File(config.appserverWorkingDir());
-    if (workDir.exists() && workDir.isDirectory()) {
-      FileUtils.cleanDirectory(workDir);
+    File workDir;
+    
+    try {
+      workDir = new File(config.appserverWorkingDir());
+      if (workDir.exists() && workDir.isDirectory()) {
+        FileUtils.cleanDirectory(workDir);
+      }
+    } catch (IOException e) {
+      workDir = new File(config.appserverWorkingDir()+"-"+new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()));
     }
-    workingDir = makeDir(config.appserverWorkingDir());
+    
+    workingDir = makeDir(workDir.getAbsolutePath());
     bootJar = new File(config.normalBootJar());
     appServerFactory = NewAppServerFactory.createFactoryFromProperties(config);
 
@@ -418,24 +426,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       VmStat.stop();
       synchronized (workingDirLock) {
         File dest = new File(tempDir, getName());
-        if (dest.exists()) {
-          String destName = dest.getName();
-          String[] runs = dest.getParentFile().list();
-          int max = 0;
-          for (int i = 0; i < runs.length; i++) {
-            if (destName.equals(runs[i])) continue;
-            int current = Integer.parseInt(runs[i].substring(destName.length(), runs[i].length()));
-            if (current > max) max = current;
-          }
-          max++;
-          Banner.warnBanner("Moving files from previous run to: " + dest + max);
-          dest.renameTo(new File(dest + "" + max));
-        }
-        boolean renamed = workingDir.renameTo(dest);
-        if (!renamed) {
-          Banner.errorBanner("Could not rename " + workingDir + " to " + dest);
-          archiveSandboxLogs();
-        }
+        com.tc.util.io.FileUtils.copyFile(workingDir, dest);
       }
     }
   }
