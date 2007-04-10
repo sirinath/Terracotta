@@ -31,6 +31,7 @@ import com.tc.net.groups.GroupEventsListener;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupManagerFactory;
+import com.tc.net.groups.Node;
 import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -115,10 +116,10 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     this.groupManager.registerForGroupEvents(this);
   }
 
-  public void start() {
+  public void start(final Node thisNode, final Node[] allNodes) {
     NodeID myNodeId;
     try {
-      myNodeId = groupManager.join();
+      myNodeId = groupManager.join(thisNode, allNodes);
     } catch (GroupException e) {
       logger.error("Caught Exception :", e);
       throw new AssertionError(e);

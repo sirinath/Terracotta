@@ -13,6 +13,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.NullSink;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.exception.TCRuntimeException;
 import com.tc.io.TCFile;
@@ -33,6 +34,7 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.groups.Node;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
@@ -255,10 +257,10 @@ public class DistributedObjectServer extends SEDA {
     try {
       startJMXServer();
     } catch (Exception e) {
-      String msg = "Unable to start the JMX server";
+      String msg = "Unable to start the JMX server. Do you have another Terracotta Server running?";
       consoleLogger.error(msg);
       logger.error(msg, e);
-      throw new RuntimeException(msg, e);
+      System.exit(-1);
     }
 
     NIOWorkarounds.solaris10Workaround();
@@ -347,11 +349,10 @@ public class DistributedObjectServer extends SEDA {
       transactionStorePTP = new NullPersistenceTransactionProvider();
     }
 
-    GlobalTransactionIDBatchRequestHandler gidSequenceProvider = new GlobalTransactionIDBatchRequestHandler(
-                                                                                                             gidSequence);
+    GlobalTransactionIDBatchRequestHandler gidSequenceProvider = new GlobalTransactionIDBatchRequestHandler(gidSequence);
     Stage requestBatchStage = stageManager
-        .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE, gidSequenceProvider,
-                     1, maxStageSize);
+        .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE,
+                     gidSequenceProvider, 1, maxStageSize);
     gidSequenceProvider.setRequestBatchSink(requestBatchStage.getSink());
     globalTransactionIDSequence = new BatchSequence(gidSequenceProvider, 10000);
 
@@ -605,11 +606,39 @@ public class DistributedObjectServer extends SEDA {
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
 
     if (networkedHA) {
-      l2Coordinator.start();
+      final Node thisNode = makeThisNode();
+      final Node[] allNodes = makeAllNodes();
+      l2Coordinator.start(thisNode, allNodes);
     } else {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
+  }
+
+  private Node[] makeAllNodes() {
+    String[] l2s = configSetupManager.allCurrentlyKnownServers();
+    Node[] rv = new Node[l2s.length];
+    for (int i = 0; i < l2s.length; i++) {
+      NewL2DSOConfig l2;
+      try {
+        l2 = configSetupManager.dsoL2ConfigFor(l2s[i]);
+      } catch (ConfigurationSetupException e) {
+        throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
+      }
+      rv[i] = makeNode(l2);
+    }
+    return rv;
+  }
+
+  private static Node makeNode(NewL2DSOConfig l2) {
+    // NOTE: until we resolve Tribes stepping on TCComm's port
+    // we'll use TCComm.port + 1 in Tribes
+    return new Node(l2.host().getString(), l2.listenPort().getInt() + 1);
+  }
+
+  private Node makeThisNode() {
+    NewL2DSOConfig l2 = configSetupManager.dsoL2Config();
+    return makeNode(l2);
   }
 
   public boolean startActiveMode() throws IOException {

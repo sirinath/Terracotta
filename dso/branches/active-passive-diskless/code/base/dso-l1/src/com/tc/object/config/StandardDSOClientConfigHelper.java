@@ -39,7 +39,6 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DSOUnsafeAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
-import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.THashMapAdapter;
@@ -113,6 +112,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private Lock[]                                 locks                              = new Lock[0];
   private final Map                              roots                              = new ConcurrentHashMap();
+  private final Set                              transients                         = Collections
+                                                                                        .synchronizedSet(new HashSet());
 
   private final Set                              applicationNames                   = Collections
                                                                                         .synchronizedSet(new HashSet());
@@ -245,7 +246,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     logger.debug("locks: " + this.locks);
     logger.debug("distributed-methods: " + this.distributedMethods);
 
-    rewriteHashtableAutLockSpecIfNecessary();
+    rewriteHashtableAutoLockSpecIfNecessary();
+    removeTomcatAdapters();
   }
 
   public void allowCGLIBInstrumentation() {
@@ -676,8 +678,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
-    spec = getOrCreateSpec("java.util.WeakHashMap");
-    addCustomAdapter("java.util.WeakHashMap", new JavaUtilWeakHashMapAdapter());
+    addPermanentExcludePattern("java.util.WeakHashMap");
+    addPermanentExcludePattern("java.lang.ref.*");
 
     spec = getOrCreateSpec("java.lang.reflect.AccessibleObject");
     spec.addTransient("securityCheckCache");
@@ -1019,8 +1021,15 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addCustomAdapter("org.apache.jasper.runtime.JspWriterImpl", new JspWriterImplAdapter());
     addCustomAdapter("org.apache.catalina.loader.WebappLoader", new WebAppLoaderAdapter());
     addCustomAdapter("org.apache.catalina.startup.Catalina", new CatalinaAdapter());
-    addCustomAdapter("org.apache.catalina.core.ContainerBase", new ContainerBaseAdapter());
     addCustomAdapter("org.apache.catalina.startup.Bootstrap", new BootstrapAdapter());
+    addCustomAdapter("org.apache.catalina.core.ContainerBase", new ContainerBaseAdapter());
+  }
+
+  private void removeTomcatAdapters() {
+    // XXX: hack for starting Glassfish w/o session support
+    if (applicationNames.isEmpty()) {
+      removeCustomAdapter("org.apache.catalina.core.ContainerBase");
+    }
   }
 
   private void addWeblogicCustomAdapters() {
@@ -1033,13 +1042,19 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                      new TerracottaServletResponseImplAdapter());
   }
 
-  public void addCustomAdapter(String name, ClassAdapterFactory factory) {
-    try {
-      // Constructor cstr = adapter.getConstructor(ADAPTER_CSTR_SIGNATURE);
+  public boolean removeCustomAdapter(String name) {
+    synchronized (customAdapters) {
+      Object prev = this.customAdapters.remove(name);
+      return prev != null;
+    }
+  }
+
+  public boolean addCustomAdapter(String name, ClassAdapterFactory factory) {
+    synchronized (customAdapters) {
+      if (customAdapters.containsKey(name)) { return false; }
       Object prev = this.customAdapters.put(name, factory);
       Assert.assertNull(prev);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      return true;
     }
   }
 
@@ -1188,7 +1203,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return roots.containsKey(className);
   }
 
-  private void rewriteHashtableAutLockSpecIfNecessary() {
+  private void rewriteHashtableAutoLockSpecIfNecessary() {
     // addReadAutolock(new String[] { "synchronized * java.util.Hashtable.get(..)",
     // "synchronized * java.util.Hashtable.hashCode(..)", "synchronized * java.util.Hashtable.contains*(..)",
     // "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
@@ -1328,7 +1343,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // If a root is defined then we automagically instrument
     if (classContainsAnyRoots(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // custom adapters trump config.
-    if (hasCustomAdapter(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
+    if (customAdapters.containsKey(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // existing class specs trump config
     if (hasSpec(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
 
@@ -1356,10 +1371,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return DEAFULT_INSTRUMENTATION_DESCRIPTOR;
   }
 
-  public boolean hasCustomAdapter(String fullName) {
-    return customAdapters.containsKey(fullName);
-  }
-
   private String outerClassnameWithoutInner(String fullName) {
     int indexOfInner = fullName.indexOf('$');
     return indexOfInner < 0 ? fullName : fullName.substring(0, indexOfInner);
@@ -1372,9 +1383,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     String className = classInfo.getName();
     if (Modifier.isTransient(modifiers) && isHonorJavaTransient(classInfo)) return true;
 
-    TransparencyClassSpec spec = getSpec(className);
-    if (spec != null) { return spec.getTransients().contains(field); }
-    return false;
+    return transients.contains(className + "." + field);
   }
 
   public boolean isVolatile(int modifiers, ClassInfo classInfo, String field) {
@@ -1673,8 +1682,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   public void addTransient(String className, String fieldName) {
-    TransparencyClassSpec spec = this.getOrCreateSpec(className);
-    spec.addTransient(fieldName);
+    if ((className == null) || (fieldName == null)) {
+      //
+      throw new IllegalArgumentException("class " + className + ", field = " + fieldName);
+    }
+    transients.add(className + "." + fieldName);
   }
 
   public String toString() {

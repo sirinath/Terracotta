@@ -44,10 +44,8 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServlet;
@@ -92,7 +90,7 @@ import javax.servlet.http.HttpSessionListener;
  * the appserver)
  * </ul>
  * <p>
- *
+ * 
  * <pre>
  *                            outer class:
  *                            ...
@@ -109,7 +107,7 @@ import javax.servlet.http.HttpSessionListener;
  *                            out.println(&quot;false&quot;);
  *                            ...
  * </pre>
- *
+ * 
  * <p>
  * <h3>Debugging Information:</h3>
  * There are a number of locations and files to consider when debugging appserver unit tests. Below is a list followed
@@ -144,17 +142,17 @@ import javax.servlet.http.HttpSessionListener;
  * <p>
  * As a final note: the <tt>UttpUtil</tt> class should be used (and added to as needed) to page servlets and validate
  * assertions.
- *
+ * 
  * @author eellis
  */
 public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   private static final SynchronizedInt    nodeCounter      = new SynchronizedInt(-1);
   private static final String             NODE             = "node-";
-  private static final String             DOMAIN           = "127.0.0.1";
+  private static final String             DOMAIN           = "localhost";
 
   private final Object                    workingDirLock   = new Object();
-  private final List                      appservers       = new ArrayList();
+  protected final List                    appservers       = new ArrayList();
   private final List                      dsoServerJvmArgs = new ArrayList();
   private final List                      roots            = new ArrayList();
   private final List                      locks            = new ArrayList();
@@ -185,6 +183,9 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   }
 
   protected void setUp() throws Exception {
+    
+    LinkedJavaProcessPollingAgent.startHeartBeatServer();
+    
     isSynchronousWrite = false;
     config = TestConfigObject.getInstance();
     tempDir = getTempDirectory();
@@ -308,7 +309,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   *
+   * 
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -397,19 +398,22 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   *
+   * 
    * @throws Exception
    */
   protected void tearDown() throws Exception {
     try {
+      System.out.println("in tearDown...");
       for (Iterator iter = appservers.iterator(); iter.hasNext();) {
         Server server = (Server) iter.next();
         server.stop();
       }
-      Thread.sleep(5000);
-      LinkedJavaProcessPollingAgent.destroy();
-      Thread.sleep(5000);
+      
+      System.out.println("Shutdown heartbeat server and its children...");
+      LinkedJavaProcessPollingAgent.shutdown();
+      
       if (dsoServer != null && dsoServer.isRunning()) dsoServer.stop();
+      
     } finally {
       VmStat.stop();
       synchronized (workingDirLock) {
@@ -507,8 +511,6 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     StandardTerracottaAppServerConfig configBuilder = appServerFactory.createTcConfig(installation.getDataDirectory());
 
     if (isSynchronousWrite) {
-      Map attributes = new HashMap();
-      attributes.put("synchronous-write", "true");
       configBuilder.addWebApplication(testName(), isSynchronousWrite);
     } else {
       configBuilder.addWebApplication(testName());

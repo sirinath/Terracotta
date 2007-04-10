@@ -33,6 +33,7 @@ import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.geronimo.GeronimoLoaderNaming;
 import com.tc.jboss.JBossLoaderNaming;
+import com.tc.jetty.JettyLoaderNaming;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
@@ -64,6 +65,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
+import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
 import com.tc.object.bytecode.Manageable;
@@ -230,6 +232,8 @@ public class BootJarTool {
 
       addJdk15SpecificPreInstrumentedClasses();
 
+      addInstrumentedWeakHashMap();
+
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(SessionSupport.class.getName());
       loadTerracottaClass(TCMap.class.getName());
@@ -269,6 +273,7 @@ public class BootJarTool {
       loadTerracottaClass(SessionsHelper.class.getName());
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
+      loadTerracottaClass(JettyLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
@@ -990,8 +995,10 @@ public class BootJarTool {
           }
 
           if (!specs.containsKey(clazz.getName()) && !bootJar.classLoaded(clazz.getName())) {
-            if (tcSpecs) { throw new AssertionError("Missing super class " + clazz.getName() + " for type "
-                                                    + spec.getClassName()); }
+            if (tcSpecs) {
+              //
+              throw new AssertionError("Missing super class " + clazz.getName() + " for type " + spec.getClassName());
+            }
             supers.add(clazz.getName());
           }
 
@@ -1567,7 +1574,7 @@ public class BootJarTool {
     ClassVisitor cv = new LogicalClassSerializationAdapter.LogicalClassSerializationClassAdapter(cw, spec
         .getClassName());
     cr.accept(cv, 0);
-    
+
     bytes = cw.toByteArray();
     bootJar.loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
@@ -1732,6 +1739,17 @@ public class BootJarTool {
 
     config.removeSpec("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition");
 
+  }
+
+  private void addInstrumentedWeakHashMap() {
+    ClassReader reader = new ClassReader(getSystemBytes("java.util.WeakHashMap"));
+    ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+
+    ClassVisitor cv = new JavaUtilWeakHashMapAdapter().create(writer, null);
+
+    reader.accept(cv, 0);
+
+    bootJar.loadClassIntoJar("java.util.WeakHashMap", writer.toByteArray(), false);
   }
 
   private void addInstrumentedClassLoader() {
