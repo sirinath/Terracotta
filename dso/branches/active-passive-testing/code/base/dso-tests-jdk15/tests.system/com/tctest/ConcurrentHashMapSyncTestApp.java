@@ -47,7 +47,6 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
 
       testConcurrentSync(index);
       testConcurrentPingpong(index);
-      testProducerConsumer(index);
       
     } catch (Throwable t) {
       notifyError(t);
@@ -109,9 +108,7 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
             if ((d = ((DataValue)mapRoot.get(myKey)).getInt()) < upbound) {
               if((d % 2) != 0) {
                 mapRoot.put(myKey, new DataValue(++d));
-                synchronized(mapRoot){
-                  sharedList.add(d);
-                }
+                sharedList.add(d);
                 // System.out.println("*** Thread["+index+"] value="+d);
                 mapRoot.notifyAll();
               } 
@@ -132,9 +129,7 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
           if ((d = ((DataValue)mapRoot.get(myKey)).getInt()) < upbound) {
             if((d % 2) == 0) {
               mapRoot.put(myKey, new DataValue(++d));
-              synchronized(mapRoot){
-                sharedList.add(d);
-              }
+              sharedList.add(d);
               // System.out.println("*** Thread["+index+"] value="+d);
               mapRoot.notifyAll();
             } 
@@ -160,46 +155,6 @@ public class ConcurrentHashMapSyncTestApp extends AbstractTransparentApp {
     barrier.await();
   }
   
-  /**
-   * Test producer consumer on a shared list
-   */
-  private void testProducerConsumer(int index) throws Exception {
-    int upbound = 1000;
-    
-    // thread 0 as a produce
-    if(index == 0) {
-      int val = 0;
-      while(val < upbound){
-        synchronized(sharedList) {
-          sharedList.clear();
-          sharedList.add(++val);
-          // System.out.println("*** Produces item " + val);
-          sharedList.notifyAll();
-        }
-        Thread.sleep(2);
-      }
-    }
-    
-    if(index != 0) {
-      int val = 0;
-      while(val < upbound){
-        synchronized(sharedList) {
-          while(sharedList.isEmpty()) {
-            sharedList.wait();
-          }
-          val = sharedList.removeFirst();
-          // System.out.println("*** Thread " + index + " consumes item " + val);
-          // put the last item back as a end indicator
-          if(val == upbound) sharedList.add(val);
-        }
-        Thread.sleep(10);
-      }
-    }
-    
-    barrier.await();
-  }
-  
-
  
   void assertMappingsEqual(Map expect, Map actual) {
     Assert.assertEquals(expect.size(), actual.size());
