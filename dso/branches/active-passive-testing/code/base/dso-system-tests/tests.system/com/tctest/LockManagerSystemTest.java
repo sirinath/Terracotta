@@ -42,6 +42,7 @@ import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.server.NullTCServerInfo;
+import com.tc.util.PortChooser;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -85,8 +86,13 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   }
 
   public void setUp() throws Exception {
+    PortChooser portChooser = new PortChooser();
+    int dsoPort = portChooser.chooseRandomPort();
+    int jmxPort = portChooser.chooseRandomPort();
+
     TestTVSConfigurationSetupManagerFactory factory = createDistributedConfigFactory();
-    factory.addServerToL2Config(null, server.getListenPort(), -1);
+    factory.addServerToL2Config(null, dsoPort, jmxPort);
+    // factory.addServerToL1Config(null, dsoPort, jmxPort);
 
     ManagedObjectStateFactory.disableSingleton(true);
     L2TVSConfigurationSetupManager l2Manager = factory.createL2TVSConfigurationSetupManager(null);
