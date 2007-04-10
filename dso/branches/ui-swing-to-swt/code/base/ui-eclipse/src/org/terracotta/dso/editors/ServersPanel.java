@@ -94,6 +94,8 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     for (int i = 0; i < serverElements.length; i++) {
       createServerItem(serverElements[i]);
       updateServerListeners(serverElements[i]);
+      m_layout.m_dataBrowse.setEnabled(true);
+      m_layout.m_logsBrowse.setEnabled(true);
     }
     m_layout.m_serverTable.setEnabled(true);
   }
@@ -142,8 +144,6 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         Server server = getSelectedServer();
         updateServerListeners(server);
         updateServerSubGroupListeners(server);
-        m_layout.m_dataBrowse.setEnabled(true);
-        m_layout.m_logsBrowse.setEnabled(true);
       }
     });
     // - context delete server
@@ -458,6 +458,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     private Button              m_verboseCheck;
     private Button              m_logsBrowse;
     private Button              m_dataBrowse;
+    private Group               m_serverGroup;
 
     public void reset() {
       m_serverTable.removeAll();
@@ -595,54 +596,54 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     }
 
     private void createServerGroup(Composite parent) {
-      Group serverGroup = new Group(parent, SWT.BORDER);
-      serverGroup.setText(SERVER);
+      m_serverGroup = new Group(parent, SWT.BORDER);
+      m_serverGroup.setText(SERVER);
       GridLayout gridLayout = new GridLayout();
       gridLayout.numColumns = 5;
       gridLayout.marginWidth = 10;
       gridLayout.marginHeight = 10;
-      serverGroup.setLayout(gridLayout);
+      m_serverGroup.setLayout(gridLayout);
       GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
-      serverGroup.setLayoutData(gridData);
+      m_serverGroup.setLayoutData(gridData);
 
-      Label nameLabel = new Label(serverGroup, SWT.NONE);
+      Label nameLabel = new Label(m_serverGroup, SWT.NONE);
       nameLabel.setText(NAME);
-      m_nameField = new Text(serverGroup, SWT.BORDER);
+      m_nameField = new Text(m_serverGroup, SWT.BORDER);
       m_nameField.setEnabled(false);
       m_nameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-      new Label(serverGroup, SWT.NONE); // space
+      new Label(m_serverGroup, SWT.NONE); // space
 
-      Label dsoPortLabel = new Label(serverGroup, SWT.NONE);
+      Label dsoPortLabel = new Label(m_serverGroup, SWT.NONE);
       dsoPortLabel.setText(DSO_PORT);
-      m_dsoPortField = new Text(serverGroup, SWT.BORDER);
+      m_dsoPortField = new Text(m_serverGroup, SWT.BORDER);
       SWTUtil.makeIntField(m_dsoPortField);
       m_dsoPortField.setEnabled(false);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
       gridData.widthHint = SWTUtil.textColumnsToPixels(m_dsoPortField, 6);
       m_dsoPortField.setLayoutData(gridData);
 
-      Label hostLabel = new Label(serverGroup, SWT.NONE);
+      Label hostLabel = new Label(m_serverGroup, SWT.NONE);
       hostLabel.setText(HOST);
-      m_hostField = new Text(serverGroup, SWT.BORDER);
+      m_hostField = new Text(m_serverGroup, SWT.BORDER);
       m_hostField.setEnabled(false);
       m_hostField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-      new Label(serverGroup, SWT.NONE); // space
+      new Label(m_serverGroup, SWT.NONE); // space
 
-      Label jmxPortLabel = new Label(serverGroup, SWT.NONE);
+      Label jmxPortLabel = new Label(m_serverGroup, SWT.NONE);
       jmxPortLabel.setText(JMX_PORT);
-      m_jmxPortField = new Text(serverGroup, SWT.BORDER);
+      m_jmxPortField = new Text(m_serverGroup, SWT.BORDER);
       SWTUtil.makeIntField(m_jmxPortField);
       m_jmxPortField.setEnabled(false);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
       gridData.widthHint = SWTUtil.textColumnsToPixels(m_jmxPortField, 6);
       m_jmxPortField.setLayoutData(gridData);
 
-      Label dataLabel = new Label(serverGroup, SWT.NONE);
+      Label dataLabel = new Label(m_serverGroup, SWT.NONE);
       dataLabel.setText(DATA);
 
-      Composite dataPanel = new Composite(serverGroup, SWT.NONE);
+      Composite dataPanel = new Composite(m_serverGroup, SWT.NONE);
       gridLayout = new GridLayout();
       gridLayout.numColumns = 2;
       gridLayout.marginWidth = 0;
@@ -659,12 +660,13 @@ public final class ServersPanel extends ConfigurationEditorPanel {
 
       m_dataBrowse = new Button(dataPanel, SWT.PUSH);
       m_dataBrowse.setText(BROWSE);
+      m_dataBrowse.setEnabled(false);
       SWTUtil.applyDefaultButtonSize(m_dataBrowse);
 
-      Label logsLabel = new Label(serverGroup, SWT.NONE);
+      Label logsLabel = new Label(m_serverGroup, SWT.NONE);
       logsLabel.setText(LOGS);
 
-      Composite logsPanel = new Composite(serverGroup, SWT.NONE);
+      Composite logsPanel = new Composite(m_serverGroup, SWT.NONE);
       gridLayout = new GridLayout();
       gridLayout.numColumns = 2;
       gridLayout.marginWidth = 0;
@@ -681,9 +683,10 @@ public final class ServersPanel extends ConfigurationEditorPanel {
 
       m_logsBrowse = new Button(logsPanel, SWT.PUSH);
       m_logsBrowse.setText(BROWSE);
+      m_logsBrowse.setEnabled(false);
       SWTUtil.applyDefaultButtonSize(m_logsBrowse);
 
-      Composite gcPanel = new Composite(serverGroup, SWT.NONE);
+      Composite gcPanel = new Composite(m_serverGroup, SWT.NONE);
       gridLayout = new GridLayout();
       gridLayout.numColumns = 3;
       gridLayout.marginWidth = 0;

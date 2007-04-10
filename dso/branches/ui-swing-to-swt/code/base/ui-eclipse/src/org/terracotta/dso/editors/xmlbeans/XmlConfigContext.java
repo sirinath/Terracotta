@@ -255,7 +255,6 @@ public final class XmlConfigContext {
         return event;
       }
     }, event.type);
-    setDirty(); // XXX
   }
 
   /**
@@ -264,7 +263,6 @@ public final class XmlConfigContext {
   public void notifyListeners(final XmlConfigEvent event) {
     if (event.type < 0) {
       creationEvent(event);
-      setDirty(); // XXX
       return;
     } else if (event.type > XmlConfigEvent.ALT_RANGE_CONSTANT) return;
     doAction(new XmlAction() {
@@ -276,8 +274,6 @@ public final class XmlConfigContext {
         return event;
       }
     }, event.type);
-    System.out.println("SET DIRTY");// XXX
-    setDirty(); // XXX
   }
 
   public void addListener(final UpdateEventListener listener, int type) {
@@ -339,6 +335,7 @@ public final class XmlConfigContext {
     addListener(m_xmlStructureChangedListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent data) {
         // GENERAL EVENT TO PROVOKE ALL EVENT LISTENERS TO UPDATE THEIR VALUES
+        // NOT IMPLEMENTED
         System.out.println(data.data);// XXX
       }
     }, XmlConfigEvent.XML_STRUCTURE_CHANGED);
@@ -356,6 +353,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureServerDsoPersistElement((Server) event.variable);
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     }, XmlConfigEvent.SERVER_PERSIST);
     // server gc
@@ -389,6 +387,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureClientDsoElement();
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     }, XmlConfigEvent.CLIENT_FAULT_COUNT);
     // dso applications
@@ -410,6 +409,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = (XmlConfigEvent) e;
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlConfigPersistenceManager.writeElement(event.element, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -420,6 +420,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = (XmlConfigEvent) e;
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlConfigPersistenceManager.writeElement(event.element, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -430,6 +431,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = (XmlConfigEvent) e;
         AdditionalBootJarClasses classes = (AdditionalBootJarClasses) event.element;
         classes.setIncludeArray(event.index, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -440,6 +442,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = (XmlConfigEvent) e;
         DistributedMethods.MethodExpression method = (DistributedMethods.MethodExpression) event.element;
         method.setStringValue((String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -450,6 +453,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = (XmlConfigEvent) e;
         TransientFields fields = (TransientFields) event.element;
         fields.setFieldNameArray(event.index, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -461,6 +465,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureClientInstrumentationLoggingElement();
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -472,6 +477,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureClientRuntimeOutputOptionsElement();
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -483,6 +489,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureClientRuntimeLoggingElement();
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -494,6 +501,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = ensureServerDsoGCElement((Server) event.variable);
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -505,6 +513,7 @@ public final class XmlConfigContext {
         final String element = XmlConfigEvent.m_elementNames[event.type];
         XmlObject xml = event.element;
         XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
       }
     };
   }
@@ -515,6 +524,7 @@ public final class XmlConfigContext {
         if (m_config.getServers() == null) m_config.addNewServers();
         Server server = m_config.getServers().addNewServer();
         m_newServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.NEW_SERVER));
+        setDirty(); // XXX
       }
     };
     m_deleteServerListener = new UpdateEventListener() {
@@ -528,6 +538,7 @@ public final class XmlConfigContext {
           }
         }
         m_removeServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.REMOVE_SERVER));
+        setDirty(); // XXX
       }
     };
     m_createClientModuleListener = new UpdateEventListener() {
@@ -538,6 +549,7 @@ public final class XmlConfigContext {
         module.setVersion(values[1]);
         XmlConfigEvent event = new XmlConfigEvent(values, null, module, XmlConfigEvent.NEW_CLIENT_MODULE);
         m_newClientModuleObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_deleteClientModuleListener = new UpdateEventListener() {
@@ -547,6 +559,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE);
         event.index = index;
         m_removeClientModuleObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createClientModuleRepoListener = new UpdateEventListener() {
@@ -555,6 +568,7 @@ public final class XmlConfigContext {
         repo.setStringValue((String) e.data);
         XmlConfigEvent event = new XmlConfigEvent(e.data, null, repo, XmlConfigEvent.NEW_CLIENT_MODULE_REPO);
         m_newClientModuleRepoObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_deleteClientModuleRepoListener = new UpdateEventListener() {
@@ -564,6 +578,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO);
         event.index = index;
         m_removeClientModuleRepoObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createRootListener = new UpdateEventListener() {
@@ -572,6 +587,7 @@ public final class XmlConfigContext {
         root.setFieldName(((String[]) e.data)[0]);
         root.setRootName(((String[]) e.data)[1]);
         m_newRootObserver.fireUpdateEvent(new XmlConfigEvent(root, XmlConfigEvent.NEW_ROOT));
+        setDirty(); // XXX
       }
     };
     m_deleteRootListener = new UpdateEventListener() {
@@ -582,6 +598,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_ROOT);
         event.index = index;
         m_removeRootObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createTransientFieldListener = new UpdateEventListener() {
@@ -589,6 +606,7 @@ public final class XmlConfigContext {
         QualifiedFieldName field = m_config.getApplication().getDso().getTransientFields().addNewFieldName();
         field.setStringValue((String) e.data);
         m_newTransientFieldObserver.fireUpdateEvent(new XmlConfigEvent(field, XmlConfigEvent.NEW_BOOT_CLASS));
+        setDirty(); // XXX
       }
     };
     m_deleteTransientFieldListener = new UpdateEventListener() {
@@ -599,6 +617,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_TRANSIENT_FIELD);
         event.index = index;
         m_removeTransientFieldObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createDistributedMethodListener = new UpdateEventListener() {
@@ -607,6 +626,7 @@ public final class XmlConfigContext {
             .addNewMethodExpression();
         expr.setStringValue((String) e.data);
         m_newDistributedMethodObserver.fireUpdateEvent(new XmlConfigEvent(expr, XmlConfigEvent.NEW_DISTRIBUTED_METHOD));
+        setDirty(); // XXX
       }
     };
     m_deleteDistributedMethodListener = new UpdateEventListener() {
@@ -616,6 +636,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_DISTRIBUTED_METHOD);
         event.index = index;
         m_removeDistributedMethodObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createBootClassListener = new UpdateEventListener() {
@@ -623,6 +644,7 @@ public final class XmlConfigContext {
         QualifiedClassName include = m_config.getApplication().getDso().getAdditionalBootJarClasses().addNewInclude();
         include.setStringValue((String) e.data);
         m_newBootClassObserver.fireUpdateEvent(new XmlConfigEvent(include, XmlConfigEvent.NEW_BOOT_CLASS));
+        setDirty(); // XXX
       }
     };
     m_deleteBootClassListener = new UpdateEventListener() {
@@ -632,6 +654,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_BOOT_CLASS);
         event.index = index;
         m_removeBootClassObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createLockAutoListener = new UpdateEventListener() {
@@ -641,6 +664,7 @@ public final class XmlConfigContext {
         lock.setMethodExpression(values[0]);
         lock.setLockLevel(LockLevel.Enum.forString(values[1]));
         m_newLockAutoObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_AUTO));
+        setDirty(); // XXX
       }
     };
     m_deleteLockAutoListener = new UpdateEventListener() {
@@ -650,6 +674,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_AUTO);
         event.index = index;
         m_removeLockAutoObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
     m_createLockNamedListener = new UpdateEventListener() {
@@ -660,6 +685,7 @@ public final class XmlConfigContext {
         lock.setMethodExpression(values[1]);
         lock.setLockLevel(LockLevel.Enum.forString(values[2]));
         m_newLockNamedObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_NAMED));
+        setDirty(); // XXX
       }
     };
     m_deleteLockNamedListener = new UpdateEventListener() {
@@ -669,6 +695,7 @@ public final class XmlConfigContext {
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_NAMED);
         event.index = index;
         m_removeLockNamedObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
       }
     };
   }
@@ -699,86 +726,141 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.SERVER_PERSIST:
         swapServerPersistEvent(event);
+        setDirty(); // XXX
         action.exec(m_serverPersistObserver, m_serverPersistListener);
         break;
       case XmlConfigEvent.SERVER_GC:
         swapServerGCEvent(event);
+        setDirty(); // XXX
         action.exec(m_serverGCObserver, m_serverGCListener);
         break;
       case XmlConfigEvent.SERVER_GC_VERBOSE:
         swapServerGCEvent(event);
+        setDirty(); // XXX
         action.exec(m_serverVerboseObserver, m_serverVerboseListener);
         break;
       case XmlConfigEvent.SERVER_GC_INTERVAL:
         swapServerGCEvent(event);
+        setDirty(); // XXX
         action.exec(m_serverGCIntervalObserver, m_serverGCIntervalListener);
         break;
       case XmlConfigEvent.CLIENT_LOGS:
-        if (event != null) event.element = m_provider.ensureClient();
+        if (event != null) {
+          event.element = m_provider.ensureClient();
+          setDirty(); // XXX
+        }
         action.exec(m_clientLogsObserver, m_clientLogsListener);
         break;
       case XmlConfigEvent.CLIENT_CLASS:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientClassObserver, m_clientClassListener);
         break;
       case XmlConfigEvent.CLIENT_HIERARCHY:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientHierarchyObserver, m_clientHierarchyListener);
         break;
       case XmlConfigEvent.CLIENT_LOCKS:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientLocksObserver, m_clientLocksListener);
         break;
       case XmlConfigEvent.CLIENT_TRANSIENT_ROOT:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientTransientRootObserver, m_clientTransientRootListener);
         break;
       case XmlConfigEvent.CLIENT_DISTRIBUTED_METHODS:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientDistributedMethodsObserver, m_clientDistributedMethodsListener);
         break;
       case XmlConfigEvent.CLIENT_ROOTS:
-        if (event != null) event.element = ensureClientInstrumentationLoggingElement();
+        if (event != null) {
+          event.element = ensureClientInstrumentationLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientRootsObserver, m_clientRootsListener);
         break;
       case XmlConfigEvent.CLIENT_LOCK_DEBUG:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientLockDebugObserver, m_clientLockDebugListener);
         break;
       case XmlConfigEvent.CLIENT_DISTRIBUTED_METHOD_DEBUG:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientDistributedMethodDebugObserver, m_clientDistributedMethodDebugListener);
         break;
       case XmlConfigEvent.CLIENT_FIELD_CHANGE_DEBUG:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientFieldChangeDebugObserver, m_clientFieldChangeDebugListener);
         break;
       case XmlConfigEvent.CLIENT_NON_PORTABLE_DUMP:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientNonPortableDumpObserver, m_clientNonPortableDumpListener);
         break;
       case XmlConfigEvent.CLIENT_WAIT_NOTIFY_DEBUG:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientWaitNotifyDebugObserver, m_clientWaitNofifyDebugListener);
         break;
       case XmlConfigEvent.CLIENT_NEW_OBJECT_DEBUG:
-        if (event != null) event.element = ensureClientRuntimeLoggingElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeLoggingElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientNewObjectDebugObserver, m_clientNewObjectDebugListener);
         break;
       case XmlConfigEvent.CLIENT_AUTOLOCK_DETAILS:
-        if (event != null) event.element = ensureClientRuntimeOutputOptionsElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeOutputOptionsElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientAutolockDetailsObserver, m_clientAutolockDetialsListener);
         break;
       case XmlConfigEvent.CLIENT_CALLER:
-        if (event != null) event.element = ensureClientRuntimeOutputOptionsElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeOutputOptionsElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientCallerObserver, m_clientCallerListener);
         break;
       case XmlConfigEvent.CLIENT_FULL_STACK:
-        if (event != null) event.element = ensureClientRuntimeOutputOptionsElement();
+        if (event != null) {
+          event.element = ensureClientRuntimeOutputOptionsElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientFullStackObserver, m_clientFullStackListener);
         break;
       case XmlConfigEvent.CLIENT_FAULT_COUNT:
-        if (event != null) event.element = ensureClientDsoElement();
+        if (event != null) {
+          event.element = ensureClientDsoElement();
+          setDirty(); // XXX
+        }
         action.exec(m_clientFaultCountObserver, m_clientFaultCountListener);
         break;
       case XmlConfigEvent.ROOTS_FIELD:
@@ -788,14 +870,20 @@ public final class XmlConfigContext {
         action.exec(m_rootsNameObserver, m_rootsNameListener);
         break;
       case XmlConfigEvent.TRANSIENT_FIELD:
-        if (event != null) event.element = m_provider.ensureTransientFields();
+        if (event != null) {
+          event.element = m_provider.ensureTransientFields();
+          setDirty(); // XXX
+        }
         action.exec(m_transientFieldsObserver, m_transientFieldsListener);
         break;
       case XmlConfigEvent.DISTRIBUTED_METHOD:
         action.exec(m_distributedMethodsObserver, m_distributedMethodsListener);
         break;
       case XmlConfigEvent.BOOT_CLASS:
-        if (event != null) event.element = m_provider.ensureAdditionalBootJarClasses();
+        if (event != null) {
+          event.element = m_provider.ensureAdditionalBootJarClasses();
+          setDirty(); // XXX
+        }
         action.exec(m_bootClassesObserver, m_bootClassesListener);
         break;
       case XmlConfigEvent.LOCKS_AUTO_METHOD:
@@ -821,19 +909,31 @@ public final class XmlConfigContext {
         action.exec(m_removeServerObserver, null);
         break;
       case XmlConfigEvent.NEW_CLIENT_MODULE:
-        if (event != null) event.element = m_provider.ensureClient();
+        if (event != null) {
+          event.element = m_provider.ensureClient();
+          setDirty(); // XXX
+        }
         action.exec(m_newClientModuleObserver, null);
         break;
       case XmlConfigEvent.REMOVE_CLIENT_MODULE:
-        if (event != null) event.element = m_provider.ensureClient();
+        if (event != null) {
+          event.element = m_provider.ensureClient();
+          setDirty(); // XXX
+        }
         action.exec(m_removeClientModuleObserver, null);
         break;
       case XmlConfigEvent.NEW_CLIENT_MODULE_REPO:
-        if (event != null) event.element = ensureClientDsoElement();
+        if (event != null) {
+          event.element = ensureClientDsoElement();
+          setDirty(); // XXX
+        }
         action.exec(m_newClientModuleRepoObserver, null);
         break;
       case XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO:
-        if (event != null) event.element = ensureClientDsoElement();
+        if (event != null) {
+          event.element = ensureClientDsoElement();
+          setDirty(); // XXX
+        }
         action.exec(m_removeClientModuleRepoObserver, null);
         break;
       case XmlConfigEvent.NEW_ROOT:
@@ -902,6 +1002,7 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.CREATE_CLIENT_MODULE:
         ensureClientModulesElement();
+        setDirty(); // XXX
         m_createClientModuleListener.handleUpdate(event);
         break;
       case XmlConfigEvent.DELETE_CLIENT_MODULE:
@@ -909,6 +1010,7 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.CREATE_CLIENT_MODULE_REPO:
         ensureClientModulesElement();
+        setDirty(); // XXX
         m_createClientModuleRepoListener.handleUpdate(event);
         break;
       case XmlConfigEvent.DELETE_CLIENT_MODULE_REPO:
@@ -1005,15 +1107,6 @@ public final class XmlConfigContext {
 
   // --------------------------------------------------------------------------------
 
-  // XXX
-  // adapter method for compatibility with legacy code
-  private void setDirty() {
-    ConfigurationEditor editor = TcPlugin.getDefault().getConfigurationEditor(m_project);
-    if (editor != null) editor._setDirty();
-  }
-
-  // --------------------------------------------------------------------------------
-
   private class MulticastListenerPair {
     EventMulticaster    multicaster;
     UpdateEventListener listener;
@@ -1025,5 +1118,11 @@ public final class XmlConfigContext {
     void exec(EventMulticaster multicaster, UpdateEventListener source);
 
     XmlConfigEvent getEvent();
+  }
+
+  // XXX: this should not be necessary
+  private void setDirty() {
+    ConfigurationEditor editor = TcPlugin.getDefault().getConfigurationEditor(m_project);
+    if (editor != null) editor._setDirty();
   }
 }

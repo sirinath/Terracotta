@@ -100,7 +100,7 @@ public final class SWTUtil {
     locationY = (parentSize.height - mySize.height) / 2 + parentSize.y;
     shell.setLocation(new Point(locationX, locationY));
   }
-  
+
   public static void makeTableColumnsResizeEqualWidth(final Composite tablePanel, final Table table) {
     tablePanel.addControlListener(new ControlAdapter() {
       public void controlResized(ControlEvent e) {

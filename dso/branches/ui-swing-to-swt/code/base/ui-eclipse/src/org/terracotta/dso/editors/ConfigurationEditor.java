@@ -111,7 +111,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   void createDsoApplicationPage(int pageIndex) {
     addPage(pageIndex, m_dsoAppPanel = new DsoApplicationPanel(getContainer(), SWT.NONE));
     setPageText(pageIndex, "DSO config");
-    m_dsoAppPanel.init(m_project);
   }
 
   public DsoApplicationPanel getDsoApplicationPanel() {
@@ -130,7 +129,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     scroll.setMinHeight(370);
     addPage(pageIndex, scroll);
     setPageText(pageIndex, "Servers config");
-    m_serversPanel.init(m_project); // XXX
   }
 
   void createClientPage(int pageIndex) {
@@ -141,7 +139,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     scroll.setMinHeight(460);
     addPage(pageIndex, scroll);
     setPageText(pageIndex, "Clients config");
-    m_clientsPanel.init(m_project); // XXX
   }
 
   void createXMLEditorPage(int pageIndex) {
@@ -182,6 +179,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 
       ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
     }
+    initPanels();
   }
 
   public void dispose() {
@@ -437,14 +435,12 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public void initPanels() {
-
     if (m_project != null && m_project.isOpen()) {
-      enablePanels();
       ensureRequiredConfigElements();
-
-      // m_dsoAppPanel.setup(m_project);
-      // m_serversPanel.init(m_project);
-      // m_clientsPanel.init(m_project);
+      m_dsoAppPanel.init(m_project);
+      m_serversPanel.init(m_project);
+      m_clientsPanel.init(m_project);
+      enablePanels();
     } else {
       disablePanels();
     }
@@ -538,13 +534,13 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   private void disablePanels() {
-    m_dsoAppPanel.setEnabled(false);
+    m_dsoAppPanel.setActive(false);
     m_serversPanel.setActive(false);
     m_clientsPanel.setActive(false);
   }
 
   private void enablePanels() {
-    m_dsoAppPanel.setEnabled(true);
+    m_dsoAppPanel.setActive(true);
     m_serversPanel.setActive(true);
     m_clientsPanel.setActive(true);
   }
@@ -585,12 +581,9 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     TcPlugin plugin = TcPlugin.getDefault();
     IDocument doc = m_xmlEditor.getDocument();
     XmlOptions opts = plugin.getXmlOptions();
-
     TcConfig config = plugin.getConfiguration(m_project);
-
     if (config != null) {
       TcConfigDocument configDoc = TcConfigDocument.Factory.newInstance();
-      java.lang.System.out.println(config.toString());// XXX
       configDoc.setTcConfig(config);
       doc.removeDocumentListener(m_docListener);
       doc.set(configDoc.xmlText(opts));
@@ -621,9 +614,11 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public synchronized void _setDirty() {
+    // XXX: this should be removed. The doc should only be saved when the user saves and the XML text editor should
+    // only be refreshed when it comes into view. On top of that there is no reason why a GUI would need a setDirty()
+    // method in the first place.
     syncXmlDocument();
-    internalSetDirty(Boolean.TRUE);
-
+//    internalSetDirty(Boolean.TRUE);
     JavaSetupParticipant.inspectAll();
     TcPlugin.getDefault().updateDecorators();
     TcPlugin.getDefault().fireConfigurationChange(m_project);
