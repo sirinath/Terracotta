@@ -20,14 +20,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class TransactionStoreImpl implements TransactionStore {
 
   private final Map                  serverTransactionIDMap = Collections.synchronizedMap(new HashMap());
-  private final SortedSet            ids                    = Collections
-                                                                .synchronizedSortedSet(new TreeSet(
+  private final SortedMap            ids                    = Collections
+                                                                .synchronizedSortedMap(new TreeMap(
                                                                                                    GlobalTransactionID.COMPARATOR));
   private final TransactionPersistor persistor;
   private final Sequence             globalIDSequence;
@@ -53,10 +53,15 @@ public class TransactionStoreImpl implements TransactionStore {
     return (GlobalTransactionDescriptor) this.serverTransactionIDMap.get(serverTransactionID);
   }
 
-  public GlobalTransactionDescriptor createTransactionDescriptor(ServerTransactionID serverTransactionID) {
-    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(serverTransactionID, getNextGlobalTransactionID());
-    basicAdd(rv);
-    return rv;
+  public GlobalTransactionDescriptor getOrCreateTransactionDescriptor(ServerTransactionID serverTransactionID) {
+    synchronized (serverTransactionIDMap) {
+      GlobalTransactionDescriptor rv = (GlobalTransactionDescriptor) serverTransactionIDMap.get(serverTransactionID);
+      if (rv == null) {
+        rv = new GlobalTransactionDescriptor(serverTransactionID, getNextGlobalTransactionID());
+        basicAdd(rv);
+      }
+      return rv;
+    }
   }
 
   private GlobalTransactionID getNextGlobalTransactionID() {
@@ -67,30 +72,30 @@ public class TransactionStoreImpl implements TransactionStore {
     ServerTransactionID sid = gtx.getServerTransactionID();
     GlobalTransactionID gid = gtx.getGlobalTransactionID();
     Object prevDesc = this.serverTransactionIDMap.put(sid, gtx);
-    ids.add(gid);
+    ids.put(gid, gtx);
     if (prevDesc != null) { throw new AssertionError("Adding new mapping for old txn IDs : " + gtx + " Prev desc = "
                                                      + prevDesc); }
   }
 
   public GlobalTransactionID getLeastGlobalTransactionID() {
     synchronized (ids) {
-      return (GlobalTransactionID) ((ids.isEmpty()) ? GlobalTransactionID.NULL_ID : ids.first());
+      return (GlobalTransactionID) ((ids.isEmpty()) ? GlobalTransactionID.NULL_ID : ids.firstKey());
     }
   }
 
   public void removeAllByServerTransactionID(PersistenceTransaction tx, Collection stxIDs) {
     Collection toDelete = new HashSet();
-    synchronized (ids) {
-      for (Iterator i = stxIDs.iterator(); i.hasNext();) {
-        ServerTransactionID stxID = (ServerTransactionID) i.next();
-        GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) this.serverTransactionIDMap.remove(stxID);
-        if (desc != null) {
-          ids.remove(desc.getGlobalTransactionID());
-          toDelete.add(stxID);
-        }
+    for (Iterator i = stxIDs.iterator(); i.hasNext();) {
+      ServerTransactionID stxID = (ServerTransactionID) i.next();
+      GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) this.serverTransactionIDMap.remove(stxID);
+      if (desc != null) {
+        ids.remove(desc.getGlobalTransactionID());
+        toDelete.add(stxID);
       }
     }
-    persistor.deleteAllByServerTransactionID(tx, toDelete);
+    if (!toDelete.isEmpty()) {
+      persistor.deleteAllByServerTransactionID(tx, toDelete);
+    }
   }
 
   public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
@@ -114,4 +119,10 @@ public class TransactionStoreImpl implements TransactionStore {
     }
     removeAllByServerTransactionID(tx, stxIDs);
   }
+
+  public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID) {
+    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxnID, globalTransactionID);
+    basicAdd(rv);
+  }
+
 }

@@ -39,7 +39,6 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DSOUnsafeAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
-import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.THashMapAdapter;
@@ -113,6 +112,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private Lock[]                                 locks                              = new Lock[0];
   private final Map                              roots                              = new ConcurrentHashMap();
+  private final Set                              transients                         = Collections
+                                                                                        .synchronizedSet(new HashSet());
 
   private final Set                              applicationNames                   = Collections
                                                                                         .synchronizedSet(new HashSet());
@@ -677,8 +678,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
-    spec = getOrCreateSpec("java.util.WeakHashMap");
-    addCustomAdapter("java.util.WeakHashMap", new JavaUtilWeakHashMapAdapter());
+    addPermanentExcludePattern("java.util.WeakHashMap");
+    addPermanentExcludePattern("java.lang.ref.*");
 
     spec = getOrCreateSpec("java.lang.reflect.AccessibleObject");
     spec.addTransient("securityCheckCache");
@@ -1382,9 +1383,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     String className = classInfo.getName();
     if (Modifier.isTransient(modifiers) && isHonorJavaTransient(classInfo)) return true;
 
-    TransparencyClassSpec spec = getSpec(className);
-    if (spec != null) { return spec.getTransients().contains(field); }
-    return false;
+    return transients.contains(className + "." + field);
   }
 
   public boolean isVolatile(int modifiers, ClassInfo classInfo, String field) {
@@ -1637,13 +1636,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         if (classSpec.isPreInstrumented()) {
           message = "* " + classSpec.getClassName() + "... ";
           preInstrumentedCount++;
-          if (bjClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific()) {
-            message += "ok";
-          } else {
+          if (!(bjClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific())) {
             message += "missing";
             missingCount++;
+            logger.info(message);
           }
-          logger.info(message);
         }
       }
     } catch (BootJarException bjex) {
@@ -1655,11 +1652,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                            "IOException occurred while attempting to verify the contents of the boot jar.",
                                            ioex);
     }
-    logger.info("Number of classes in the DSO boot jar:" + bootJarPopulation);
-    logger.info("Number of classes expected to be in the DSO boot jar:" + preInstrumentedCount);
-    logger.info("Number of classes found missing from the DSO boot jar:" + missingCount);
-    if (missingCount > 0) { throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount
-                                                                 + " pre-instrumented class(es) found missing."); }
+
+    if (missingCount > 0) {
+      logger.info("Number of classes in the DSO boot jar:" + bootJarPopulation);
+      logger.info("Number of classes expected to be in the DSO boot jar:" + preInstrumentedCount);
+      logger.info("Number of classes found missing from the DSO boot jar:" + missingCount);
+      throw new IncompleteBootJarException("Incomplete DSO boot jar; " + missingCount
+                                           + " pre-instrumented class(es) found missing.");
+    }
   }
 
   public synchronized TransparencyClassSpec[] getAllSpecs() {
@@ -1683,8 +1683,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   }
 
   public void addTransient(String className, String fieldName) {
-    TransparencyClassSpec spec = this.getOrCreateSpec(className);
-    spec.addTransient(fieldName);
+    if ((className == null) || (fieldName == null)) {
+      //
+      throw new IllegalArgumentException("class " + className + ", field = " + fieldName);
+    }
+    transients.add(className + "." + fieldName);
   }
 
   public String toString() {
