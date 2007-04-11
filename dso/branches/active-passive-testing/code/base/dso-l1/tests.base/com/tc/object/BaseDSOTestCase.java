@@ -115,6 +115,7 @@ public class BaseDSOTestCase extends TCTestCase {
     return new StandardDSOClientConfigHelper(true, createL1ConfigManager());
   }
 
+  // TODO: fix this
   protected final void makeClientUsePort(int whichPort) throws ConfigurationSetupException {
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(whichPort);
   }

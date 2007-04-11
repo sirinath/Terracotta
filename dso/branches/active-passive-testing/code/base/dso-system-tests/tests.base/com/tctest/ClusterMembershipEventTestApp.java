@@ -9,6 +9,8 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
 import com.tc.cluster.ClusterEventListener;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.config.ConfigVisitor;
+import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 
@@ -16,8 +18,14 @@ import java.util.HashSet;
 
 public class ClusterMembershipEventTestApp extends ServerCrashingAppBase implements ClusterEventListener {
 
+  //TODO: remove
+  private String appId;
+
   public ClusterMembershipEventTestApp(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
     super(appId, config, listenerProvider);
+    
+    //TODO: remove
+    this.appId = appId;
   }
 
   private final int             initialNodeCount = getParticipantCount();
@@ -32,15 +40,37 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
   private String                thisNode;
 
   public void runTest() throws Throwable {
+    //TODO:  remove
+    System.err.println("*******  appId=["+appId+"]");
+    
     ManagerUtil.addClusterEventListener(this);
+    
+//  TODO:  remove
+    System.err.println("*******  appId=["+appId+"]  finished with adding as a cluster-event-listener");
+    
     check(1, thisNodeConCnt.get(), "thisNodeConnected");
+    
+//  TODO:  remove
+    System.err.println("*******  appId=["+appId+"]  finished with 1st check");
+    
     waitForNodes(initialNodeCount);
+    
+//  TODO:  remove
+    System.err.println("*******  appId=["+appId+"]  finished with waitForNodes");
 
     System.err.println("### stage 1 [all nodes connected]: thisNode=" + thisNode + ", threadId="
                        + Thread.currentThread().getName());
 
     clearCounters();
+    
+//  TODO:  remove
+    System.err.println("*******  appId=["+appId+"]  finished with clearCounters");
+    
     final boolean isMasterNode = barrier.barrier() == 0;
+    
+//  TODO:  remove
+    System.err.println("*******  appId=["+appId+"]  isMasterNode=["+isMasterNode+"]");
+    
     if (isMasterNode) {
       System.err.println("### masterNode=" + thisNode + " -> crashing server...");
       getConfig().getServerControl().crash();
@@ -155,10 +185,19 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
     }
   }
 
+  public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
+    config.addIncludePattern(ClusterMembershipEventTestApp.class.getName());
+    config.addRoot("barrier", ClusterMembershipEventTestApp.class.getName() + ".barrier");
+    config.addWriteAutolock("* " + ClusterMembershipEventTestApp.class.getName() + ".*(..)");
+
+    config.addIncludePattern(CyclicBarrier.class.getName());
+    config.addWriteAutolock("* " + CyclicBarrier.class.getName() + ".*(..)");
+  }
+  
   public static class L1Client {
     public static void main(String args[]) {
       // nothing to do
     }
   }
-
+  
 }

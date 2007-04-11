@@ -20,7 +20,7 @@ public abstract class ServerCrashingAppBase extends AbstractErrorCatchingTranspa
   public static final String HOST_NAME   = "host-name";
 
   private ApplicationConfig  config;
-
+  
   public ServerCrashingAppBase(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
     super(appId, config, listenerProvider);
     this.config = config;
