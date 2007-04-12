@@ -44,7 +44,7 @@
       <arg value="src/tribes" />
     </exec>
     <tstamp/>
-    <jar destfile="dist/tc-tribes-${DSTAMP}.jar" basedir="build" />
+    <jar destfile="dist/catalina-tribes-snapshot-${DSTAMP}.jar" basedir="build" />
   </target>
 
 </project>
