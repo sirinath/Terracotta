@@ -18,14 +18,8 @@ import java.util.HashSet;
 
 public class ClusterMembershipEventTestApp extends ServerCrashingAppBase implements ClusterEventListener {
 
-  //TODO: remove
-  private String appId;
-
   public ClusterMembershipEventTestApp(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
     super(appId, config, listenerProvider);
-    
-    //TODO: remove
-    this.appId = appId;
   }
 
   private final int             initialNodeCount = getParticipantCount();
@@ -40,37 +34,19 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
   private String                thisNode;
 
   public void runTest() throws Throwable {
-    //TODO:  remove
-    System.err.println("*******  appId=["+appId+"]");
-    
     ManagerUtil.addClusterEventListener(this);
-    
-//  TODO:  remove
-    System.err.println("*******  appId=["+appId+"]  finished with adding as a cluster-event-listener");
-    
+
     check(1, thisNodeConCnt.get(), "thisNodeConnected");
-    
-//  TODO:  remove
-    System.err.println("*******  appId=["+appId+"]  finished with 1st check");
-    
+
     waitForNodes(initialNodeCount);
-    
-//  TODO:  remove
-    System.err.println("*******  appId=["+appId+"]  finished with waitForNodes");
 
     System.err.println("### stage 1 [all nodes connected]: thisNode=" + thisNode + ", threadId="
                        + Thread.currentThread().getName());
 
     clearCounters();
-    
-//  TODO:  remove
-    System.err.println("*******  appId=["+appId+"]  finished with clearCounters");
-    
+
     final boolean isMasterNode = barrier.barrier() == 0;
-    
-//  TODO:  remove
-    System.err.println("*******  appId=["+appId+"]  isMasterNode=["+isMasterNode+"]");
-    
+
     if (isMasterNode) {
       System.err.println("### masterNode=" + thisNode + " -> crashing server...");
       getConfig().getServerControl().crash();
@@ -134,7 +110,7 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
     // NOTE: on some systems (Solaris, Win) we get multiple disconnect/connect events
     // per one logical disconnect/connect occurance.
     if (expectedMin < actual) notifyError(msg + " expectedMin=" + expectedMin + ", actual=" + actual + ", thisNodeId="
-                                        + thisNode);
+                                          + thisNode);
   }
 
   public void nodeConnected(String nodeId) {
@@ -193,11 +169,11 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
     config.addIncludePattern(CyclicBarrier.class.getName());
     config.addWriteAutolock("* " + CyclicBarrier.class.getName() + ".*(..)");
   }
-  
+
   public static class L1Client {
     public static void main(String args[]) {
       // nothing to do
     }
   }
-  
+
 }

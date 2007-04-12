@@ -117,10 +117,6 @@ public class RestartTestEnvironment {
     }
     builder.getSystem().setConfigurationModel(configurationModel);
 
-    // TODO: remove this
-    System.err.println("******  RestartTestEnvironment:  adminPort=[" + this.adminPort + "] serverPort=["
-                       + this.serverPort + "] ");
-
     if (this.adminPort > 0) builder.getServers().getL2s()[0].setJMXPort(this.adminPort);
     if (this.serverPort > 0) builder.getServers().getL2s()[0].setDSOPort(this.serverPort);
 
