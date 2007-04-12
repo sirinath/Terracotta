@@ -159,10 +159,10 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteLockNamedListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
-  private final TcConfig                               m_config;
   private final Map<SWTComponentModel, List>           m_componentModels;
   private final IProject                               m_project;
-  private final XmlConfigParentElementProvider         m_provider;
+  private XmlConfigParentElementProvider               m_provider;
+  private TcConfig                                     m_config;
 
   private XmlConfigContext(IProject project) {
     this.m_config = TcPlugin.getDefault().getConfiguration(project);
@@ -236,14 +236,19 @@ public final class XmlConfigContext {
     return new XmlConfigContext(project);
   }
 
-  public XmlConfigParentElementProvider getParentElementProvider() {
+  public synchronized void refreshXmlConfig() {
+    m_config = TcPlugin.getDefault().getConfiguration(m_project);
+    m_provider = new XmlConfigParentElementProvider(m_project);
+  }
+
+  public synchronized XmlConfigParentElementProvider getParentElementProvider() {
     return m_provider;
   }
 
   /**
    * Update listeners with current XmlContext state. This should be used to initialize object state.
    */
-  public void updateListeners(final XmlConfigEvent event) {
+  public synchronized void updateListeners(final XmlConfigEvent event) {
     doAction(new XmlAction() {
       public void exec(EventMulticaster multicaster, UpdateEventListener source) {
         event.data = XmlConfigPersistenceManager.readElement(event.element, XmlConfigEvent.m_elementNames[event.type]);
@@ -260,7 +265,7 @@ public final class XmlConfigContext {
   /**
    * Notify <tt>XmlContext</tt> that a change has occured
    */
-  public void notifyListeners(final XmlConfigEvent event) {
+  public synchronized void notifyListeners(final XmlConfigEvent event) {
     if (event.type < 0) {
       creationEvent(event);
       return;
@@ -280,7 +285,7 @@ public final class XmlConfigContext {
     addListener(listener, type, null);
   }
 
-  public void addListener(final UpdateEventListener listener, int type, final SWTComponentModel model) {
+  public synchronized void addListener(final UpdateEventListener listener, int type, final SWTComponentModel model) {
     doAction(new XmlAction() {
       public void exec(EventMulticaster multicaster, UpdateEventListener source) {
         multicaster.addListener(listener);
@@ -300,7 +305,7 @@ public final class XmlConfigContext {
     }, type);
   }
 
-  public void detachComponentModel(SWTComponentModel model) {
+  public synchronized void detachComponentModel(SWTComponentModel model) {
     List<MulticastListenerPair> pairs = m_componentModels.get(model);
     for (Iterator<MulticastListenerPair> iter = pairs.iterator(); iter.hasNext();) {
       MulticastListenerPair pair = iter.next();
@@ -308,7 +313,7 @@ public final class XmlConfigContext {
     }
   }
 
-  public void removeListener(final UpdateEventListener listener, int type) {
+  public synchronized void removeListener(final UpdateEventListener listener, int type) {
     doAction(new XmlAction() {
       public void exec(EventMulticaster multicaster, UpdateEventListener source) {
         multicaster.removeListener(listener);
@@ -345,8 +350,7 @@ public final class XmlConfigContext {
     addListener(m_serverDsoPortListener = newWriter(), XmlConfigEvent.SERVER_DSO_PORT);
     addListener(m_serverJmxPortListener = newWriter(), XmlConfigEvent.SERVER_JMX_PORT);
     addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_DATA);
-    addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
-    addListener(m_serverDataListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
+    addListener(m_serverLogsListener = newWriter(), XmlConfigEvent.SERVER_LOGS);
     addListener(m_serverPersistListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         XmlConfigEvent event = (XmlConfigEvent) e;
@@ -531,10 +535,14 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent data) {
         XmlObject server = ((XmlConfigEvent) data).element;
         Server[] servers = m_config.getServers().getServerArray();
-        for (int i = 0; i < servers.length; i++) {
-          if (servers[i] == server) {
-            m_config.getServers().removeServer(i);
-            break;
+        if (servers.length == 1) {
+          m_config.unsetServers();
+        } else {
+          for (int i = 0; i < servers.length; i++) {
+            if (servers[i] == server) {
+              m_config.getServers().removeServer(i);
+              break;
+            }
           }
         }
         m_removeServerObserver.fireUpdateEvent(new XmlConfigEvent(server, XmlConfigEvent.REMOVE_SERVER));

@@ -75,6 +75,14 @@ public final class ClientsPanel extends ConfigurationEditorPanel {
     initModuleRepositories(modules);
     initModules(modules);
   }
+  
+  public synchronized void refreshContent() {
+    m_layout.reset();
+    updateClientListeners();
+    Modules modules = m_state.xmlContext.getParentElementProvider().hasModules();
+    initModuleRepositories(modules);
+    initModules(modules);
+  }
 
   // ================================================================================
   // INIT LISTENERS

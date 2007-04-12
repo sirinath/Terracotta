@@ -7,6 +7,7 @@ package org.terracotta.dso.editors.xmlbeans;
 import org.apache.xmlbeans.SchemaProperty;
 import org.apache.xmlbeans.SchemaStringEnumEntry;
 import org.apache.xmlbeans.SchemaType;
+import org.apache.xmlbeans.StringEnumAbstractBase;
 import org.apache.xmlbeans.XmlAnySimpleType;
 import org.apache.xmlbeans.XmlObject;
 
@@ -18,15 +19,16 @@ import javax.xml.namespace.QName;
 // TODO: Perhaps an error dialog should be displayed instead of failing silently
 final class XmlConfigPersistenceManager {
 
-  private static final Class[]  NO_PARAMS        = new Class[0];
-  private static final Object[] NO_ARGS          = new Object[0];
-  private static final String   SET_STRING_VALUE = "setStringValue";
-  private static final String   XSET             = "xset";
-  private static final String   SET              = "set";
-  private static final String   XGET             = "xget";
-  private static final String   GET              = "get";
-  private static final String   TYPE             = "type";
-  private static final String   ADD_NEW          = "addNew";
+  private static final Class[]  NO_PARAMS  = new Class[0];
+  private static final Object[] NO_ARGS    = new Object[0];
+  private static final String   XSET       = "xset";
+  private static final String   SET        = "set";
+  private static final String   XGET       = "xget";
+  private static final String   GET        = "get";
+  private static final String   TYPE       = "type";
+  private static final String   ADD_NEW    = "addNew";
+  private static final String   FOR_STRING = "forString";
+  private static final String   ENUM_VALUE = "enumValue";
 
   static String readElement(XmlObject parent, String elementName) {
     try {
@@ -70,18 +72,21 @@ final class XmlConfigPersistenceManager {
     }
     if (method == null) {
       try {
+        params[0] = String.class;
+        args[0] = value;
         XmlObject xmlObject = ensureElementHierarchy(parent, parentType, elementName, convertElementName(elementName),
             false);
-        String methodName = SET_STRING_VALUE;
-        Class objClass = xmlObject.getClass();
-        method = objClass.getMethod(methodName, params);
-        args[0] = value;
-        method.invoke(xmlObject, args);
+        StringEnumAbstractBase enumValue = (StringEnumAbstractBase) xmlObject.getClass().getMethod(ENUM_VALUE,
+            new Class[0]).invoke(xmlObject, new Object[0]);
+        method = enumValue.getClass().getMethod(FOR_STRING, params);
+        Object enumElement = method.invoke(enumValue, args);
+        xmlObject.getClass().getMethod("set", new Class[] { StringEnumAbstractBase.class }).invoke(xmlObject,
+            new Object[] { enumElement });
       } catch (Exception e) { /* skip */
       }
     }
     if (method == null) {
-      System.out.println("Unable to save XML value for: " + parent + " " + elementName + " " + value);// XXX
+      System.err.println("Unable to save XML value for: " + parent + " " + elementName + " " + value);// XXX
     }
 
     if (method != null) System.out.println(value);// XXX

@@ -31,6 +31,12 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel {
   public synchronized void clearState() {
     setActive(false);
     m_state.xmlContext.detachComponentModel(this);
+    m_layout.m_bootClasses.clearState();
+    m_layout.m_distributedMethods.clearState();
+    m_layout.m_instrumentedClasses.clearState();
+    m_layout.m_locks.clearState();
+    m_layout.m_roots.clearState();
+    m_layout.m_transientFields.clearState();
     m_state = null;
   }
 

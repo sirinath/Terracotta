@@ -158,7 +158,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
   private DecoratorUpdateAction     m_decoratorUpdateAction;
   private ArrayList<IProjectAction> m_projectActionList;
   private BootClassHelper           m_bootClassHelper;
-  private TcConfig                  m_config;
 
   public static final String        PLUGIN_ID               = "org.terracotta.dso";
   private static final String       RESOURCE_FILE           = "Resources.xml";
@@ -883,13 +882,11 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
 
   public synchronized TcConfig getConfiguration(IProject project) {
     TcConfig config = (TcConfig) getSessionProperty(project, CONFIGURATION);
-    if (m_config != null && config == null) return m_config; // fix for null config state
 
     if (config == null) {
       try {
         loadConfiguration(project);
         config = (TcConfig) getSessionProperty(project, CONFIGURATION);
-        m_config = config;
       } catch (XmlException e) {
         LineLengths lineLengths = getConfigurationLineLengths(project);
         handleXmlException(getConfigurationFile(project), lineLengths, e);
@@ -904,7 +901,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
         setSessionProperty(project, CONFIGURATION, config);
       }
     }
-
+    
     return config;
   }
 

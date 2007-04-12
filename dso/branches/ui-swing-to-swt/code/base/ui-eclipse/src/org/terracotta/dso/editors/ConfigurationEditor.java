@@ -60,6 +60,7 @@ import org.terracotta.dso.decorator.NameLockedDecorator;
 import org.terracotta.dso.decorator.RootDecorator;
 import org.terracotta.dso.decorator.TransientDecorator;
 import org.terracotta.dso.editors.xml.XMLEditor;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
 
 import com.terracottatech.config.Application;
 import com.terracottatech.config.ConfigurationModel;
@@ -75,6 +76,12 @@ import java.text.MessageFormat;
 import javax.swing.Timer;
 
 public class ConfigurationEditor extends MultiPageEditorPart implements IResourceChangeListener, IGotoMarker {
+
+  private static final int     XML_EDITOR_PAGE_INDEX      = 0;
+  private static final int     DSO_APPLICATION_PAGE_INDEX = 1;
+  private static final int     SERVERS_PAGE_INDEX         = 2;
+  private static final int     CLIENT_PAGE_INDEX          = 3;
+
   private IProject             m_project;
   private Application          m_application;
   private DsoApplicationPanel  m_dsoAppPanel;
@@ -170,12 +177,12 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   protected void createPages() {
-    createXMLEditorPage(0);
+    createXMLEditorPage(XML_EDITOR_PAGE_INDEX);
 
     if (haveActiveConfig()) {
-      createDsoApplicationPage(1);
-      createServersPage(2);
-      createClientPage(3);
+      createDsoApplicationPage(DSO_APPLICATION_PAGE_INDEX);
+      createServersPage(SERVERS_PAGE_INDEX);
+      createClientPage(CLIENT_PAGE_INDEX);
 
       ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
     }
@@ -364,9 +371,32 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   public boolean isSaveAsAllowed() {
     return true;
   }
+  
+  private int m_currentPage;
 
   protected void pageChange(int newPageIndex) {
     super.pageChange(newPageIndex);
+    if (m_currentPage == XML_EDITOR_PAGE_INDEX) {
+      internalSetDirty(Boolean.FALSE);
+      syncXmlModel();
+      XmlConfigContext.getInstance(m_project).refreshXmlConfig();
+      switch (newPageIndex) {
+        case DSO_APPLICATION_PAGE_INDEX:
+//          m_dsoAppPanel.clearState();
+//          m_dsoAppPanel.init(m_project);
+          break;
+        case SERVERS_PAGE_INDEX:
+          m_serversPanel.refreshContent();
+          break;
+        case CLIENT_PAGE_INDEX:
+          m_clientsPanel.refreshContent();
+          break;
+
+        default:
+          break;
+      }
+    }
+    m_currentPage = newPageIndex;
   }
 
   private ResourceDeltaVisitor getResourceDeltaVisitor() {
@@ -393,8 +423,8 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
             IFile configFile = plugin.getConfigurationFile(project);
 
             if (configFile != null && configFile.equals(res)) {
-              plugin.reloadConfiguration(m_project);
-              initPanels();
+//              plugin.reloadConfiguration(m_project);
+//              initPanels();
               clearDirty();
 
               return false;
@@ -599,7 +629,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 
     try {
       plugin.setConfigurationFromString(m_project, xmlText);
-      initPanels();
     } catch (IOException ioe) {
       disablePanels();
     }
@@ -618,7 +647,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     // only be refreshed when it comes into view. On top of that there is no reason why a GUI would need a setDirty()
     // method in the first place.
     syncXmlDocument();
-//    internalSetDirty(Boolean.TRUE);
+    internalSetDirty(Boolean.TRUE);
     JavaSetupParticipant.inspectAll();
     TcPlugin.getDefault().updateDecorators();
     TcPlugin.getDefault().fireConfigurationChange(m_project);

@@ -83,6 +83,15 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     m_state = null;
   }
 
+  public synchronized void refreshContent() {
+    m_layout.reset();
+    initTableItems(m_state.xmlContext.getParentElementProvider().hasServers());
+    if (m_state.selectionIndex < m_layout.m_serverTable.getItemCount()) {
+      m_layout.m_serverTable.setSelection(m_state.selectionIndex);
+      handleTableSelection();
+    }
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -90,6 +99,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
   private void initTableItems(Servers servers) {
     if (servers == null) return;
     m_layout.m_serverTable.setEnabled(false);
+    m_state.serverIndices.clear();
     Server[] serverElements = servers.getServerArray();
     for (int i = 0; i < serverElements.length; i++) {
       createServerItem(serverElements[i]);
@@ -127,6 +137,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         updateServerSubGroupListeners(server);
         m_layout.m_dataBrowse.setEnabled(true);
         m_layout.m_logsBrowse.setEnabled(true);
+        m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
       }
     }, XmlConfigEvent.NEW_SERVER, this);
     // - context create server
@@ -140,10 +151,8 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     m_layout.m_serverTable.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        m_layout.m_removeServerButton.setEnabled(true);
-        Server server = getSelectedServer();
-        updateServerListeners(server);
-        updateServerSubGroupListeners(server);
+        handleTableSelection();
+        m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
       }
     });
     // - context delete server
@@ -167,6 +176,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         m_layout.m_serverTable.remove(row);
         m_layout.m_serverTable.deselectAll();
         m_layout.resetServerFields();
+        m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
       }
     }, XmlConfigEvent.REMOVE_SERVER, this);
     // - browse data button
@@ -400,6 +410,13 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + spinner.getSelection(), (UpdateEventListener) spinner
         .getData(), server, type));
   }
+  
+  private void handleTableSelection() {
+    m_layout.m_removeServerButton.setEnabled(true);
+    Server server = getSelectedServer();
+    updateServerListeners(server);
+    updateServerSubGroupListeners(server);
+  }
 
   // ================================================================================
   // STATE
@@ -410,6 +427,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
     final List<Server>         serverIndices;
+    int                        selectionIndex;
 
     private State(IProject project) {
       this.project = project;
@@ -462,6 +480,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
 
     public void reset() {
       m_serverTable.removeAll();
+      resetServerFields();
     }
 
     private void resetServerFields() {
