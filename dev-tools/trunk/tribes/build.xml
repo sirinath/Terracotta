@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="dist" name="tc-tribes">
+
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.5"/>
+    <property name="source" value="1.5"/>
+    <path id="tc-tribes.classpath">
+        <pathelement location="build"/>
+        <pathelement location="lib/tomcat-juli-6.0.9.jar"/>
+    </path>
+
+    <target name="clean">
+        <delete dir="build"/>
+        <delete dir="dist"/>
+    </target>
+
+    <target name="build">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <mkdir dir="build"/>
+        <javac debug="true" 
+               debuglevel="${debuglevel}" 
+               destdir="build" 
+               source="${source}" 
+               target="${target}">
+            <src path="src"/>
+            <classpath refid="tc-tribes.classpath"/>
+        </javac>
+    </target>
+
+  <target name="get-source">
+    <mkdir dir="src"/>
+    <exec executable="svn">
+      <arg value="co"/>
+      <arg value="http://svn.apache.org/repos/asf/tomcat/tc6.0.x/trunk/java/org/apache/catalina/tribes"/>
+      <arg value="src/tribes"/>
+    </exec>
+  </target>
+
+  <target name="dist" depends="get-source,build">
+    <mkdir dir="dist"/>
+    <mkdir dir="build/META-INF"/>
+    <exec executable="svn" output="build/META-INF/svn.info">
+      <arg value="info" />
+      <arg value="src/tribes" />
+    </exec>
+    <tstamp/>
+    <jar destfile="dist/tc-tribes-${DSTAMP}.jar" basedir="build" />
+  </target>
+
+</project>
