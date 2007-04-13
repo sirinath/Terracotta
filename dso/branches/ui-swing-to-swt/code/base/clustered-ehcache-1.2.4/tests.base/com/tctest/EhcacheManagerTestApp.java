@@ -5,7 +5,6 @@ import java.util.concurrent.CyclicBarrier;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
 
 import com.tc.object.config.ConfigLockLevel;
@@ -38,13 +37,13 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 	}
 
 	/**
-	 * Inject Ehcache 1.2.0 configuration, and instrument this test class
+	 * Inject Ehcache 1.2.4 configuration, and instrument this test class
 	 * @param visitor
 	 * @param config
 	 */
 	public static void visitL1DSOConfig(final ConfigVisitor visitor,
 			final DSOClientConfigHelper config) {
-	    config.addNewModule("clustered-ehcache-1.2.0", "1.0.0");
+	    config.addNewModule("clustered-ehcache-1.2.4", "1.0.0");
 		config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
 
 	    final String testClass = EhcacheManagerTestApp.class.getName();
@@ -59,19 +58,21 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 	 */
 	protected void runTest() throws Throwable {
 		if (barrier.await() == 0) {
-			addCache("CACHE1");
+			addCache("CACHE1", true);
+			addCache("CACHE2", false);
 			letOtherNodeProceed();
-
 			waitForPermissionToProceed();
-			verifyCache("CACHE2");
+			verifyCache("CACHE3");
+			verifyCache("CACHE4");
 			shutdownCacheManager();
 			letOtherNodeProceed();
 		} else {
 			waitForPermissionToProceed();
 			verifyCache("CACHE1");
-			addCache("CACHE2");
+			verifyCache("CACHE2");
+			addCache("CACHE3", true);
+			addCache("CACHE4", false);
 			letOtherNodeProceed();
-			
 			waitForPermissionToProceed();
 			verifyCacheManagerShutdown();
 		}
@@ -81,14 +82,20 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 	/**
 	 * Add a cache into the CacheManager.
 	 * @param name The name of the cache to add
+	 * @param mustDelegate create Manually create the cache or let the manager handle the details 
 	 * @throws Throwable
 	 */
-	private void addCache(final String name) throws Throwable {
+	private void addCache(final String name, boolean mustDelegate) throws Throwable {
 		synchronized(clusteredCacheManager) {
-	        Cache cache = new Cache(name, 2, false, true, 0, 2);
-			clusteredCacheManager.addCache(cache);
-	        cache.put(new Element(name + "key1", "value1"));
-	        cache.put(new Element(name + "key2", "value1"));
+			if (mustDelegate) {
+				clusteredCacheManager.addCache(name);
+			} else {
+		        Cache cache = new Cache(name, 2, false, true, 0, 2);
+				clusteredCacheManager.addCache(cache);
+			}
+			//Cache cache = clusteredCacheManager.getCache(name); 
+	        //cache.put(new Element(name + "key1", "value1"));
+	        //cache.put(new Element(name + "key2", "value1"));
 		}
 	}
 
@@ -104,16 +111,10 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 			Assert.assertNotNull(cache);
 			Assert.assertEquals(name, cache.getName());
 			Assert.assertEquals(Status.STATUS_ALIVE, cache.getStatus());
-			
 	        //int sizeFromGetSize = cache.getSize();
 	        //int sizeFromKeys = cache.getKeys().size();
 	        //Assert.assertEquals(sizeFromGetSize, sizeFromKeys);
 	        //Assert.assertEquals(2, cache.getSize());
-	        
-	        //Element key1 = cache.get(name + "key1");
-	        //Element key2 = cache.get(name + "key2");
-	        //Assert.assertNotNull(key1);
-	        //Assert.assertNotNull(key2);
 		}
 	}
 
