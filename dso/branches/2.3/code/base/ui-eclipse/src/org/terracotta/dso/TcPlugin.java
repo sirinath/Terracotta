@@ -951,8 +951,6 @@ public class TcPlugin extends AbstractUIPlugin
     return helper;
   }
 
-  public static final TcConfig BAD_CONFIG = TcConfig.Factory.newInstance();
-  
   public synchronized TcConfig getConfiguration(IProject project) {
     TcConfig config = (TcConfig)getSessionProperty(project, CONFIGURATION);
     
@@ -970,7 +968,7 @@ public class TcPlugin extends AbstractUIPlugin
       }
 
       if(config == null) {
-        config = BAD_CONFIG;
+        config = TcConfig.Factory.newInstance();
         setSessionProperty(project, CONFIGURATION, config);
       }
     }
