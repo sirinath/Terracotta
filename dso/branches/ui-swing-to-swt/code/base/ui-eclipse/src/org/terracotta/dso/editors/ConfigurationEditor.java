@@ -77,24 +77,24 @@ import javax.swing.Timer;
 
 public class ConfigurationEditor extends MultiPageEditorPart implements IResourceChangeListener, IGotoMarker {
 
-  private static final int     XML_EDITOR_PAGE_INDEX      = 0;
-  private static final int     DSO_APPLICATION_PAGE_INDEX = 1;
-  private static final int     SERVERS_PAGE_INDEX         = 2;
-  private static final int     CLIENT_PAGE_INDEX          = 3;
+  private static final int         XML_EDITOR_PAGE_INDEX      = 0;
+  private static final int         DSO_APPLICATION_PAGE_INDEX = 1;
+  private static final int         SERVERS_PAGE_INDEX         = 2;
+  private static final int         CLIENT_PAGE_INDEX          = 3;
 
-  private IProject             m_project;
-  private Application          m_application;
-  private DsoApplicationPanel  m_dsoAppPanel;
-  private ServersPanel         m_serversPanel;
-  private ClientsPanel         m_clientsPanel;
-  private XMLEditor            m_xmlEditor;
-  private int                  m_xmlEditorPageIndex;
-  private ResourceDeltaVisitor m_resourceDeltaVisitor;
-  private boolean              m_haveActiveConfig;
-  private DocumentListener     m_docListener;
-  private ElementStateListener m_elementStateListener;
-  private TextInputListener    m_textInputListener;
-  private Timer                m_parseTimer;
+  private IProject                 m_project;
+  private Application              m_application;
+  private ConfigurationEditorPanel m_dsoAppPanel;
+  private ConfigurationEditorPanel m_serversPanel;
+  private ConfigurationEditorPanel m_clientsPanel;
+  private XMLEditor                m_xmlEditor;
+  private int                      m_xmlEditorPageIndex;
+  private ResourceDeltaVisitor     m_resourceDeltaVisitor;
+  private boolean                  m_haveActiveConfig;
+  private DocumentListener         m_docListener;
+  private ElementStateListener     m_elementStateListener;
+  private TextInputListener        m_textInputListener;
+  private Timer                    m_parseTimer;
 
   static {
     try {
@@ -121,7 +121,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public DsoApplicationPanel getDsoApplicationPanel() {
-    return m_dsoAppPanel;
+    return (DsoApplicationPanel) m_dsoAppPanel;
   }
 
   public void showDsoApplicationPanel() {
@@ -371,7 +371,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   public boolean isSaveAsAllowed() {
     return true;
   }
-  
+
   private int m_currentPage;
 
   protected void pageChange(int newPageIndex) {
@@ -382,8 +382,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
       XmlConfigContext.getInstance(m_project).refreshXmlConfig();
       switch (newPageIndex) {
         case DSO_APPLICATION_PAGE_INDEX:
-//          m_dsoAppPanel.clearState();
-//          m_dsoAppPanel.init(m_project);
+          m_dsoAppPanel.refreshContent();
           break;
         case SERVERS_PAGE_INDEX:
           m_serversPanel.refreshContent();
@@ -423,8 +422,8 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
             IFile configFile = plugin.getConfigurationFile(project);
 
             if (configFile != null && configFile.equals(res)) {
-//              plugin.reloadConfiguration(m_project);
-//              initPanels();
+              // plugin.reloadConfiguration(m_project);
+              // initPanels();
               clearDirty();
 
               return false;
@@ -626,7 +625,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     TcPlugin plugin = TcPlugin.getDefault();
     IDocument doc = m_xmlEditor.getDocument();
     String xmlText = doc.get();
-
     try {
       plugin.setConfigurationFromString(m_project, xmlText);
     } catch (IOException ioe) {
@@ -643,15 +641,16 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public synchronized void _setDirty() {
-    // XXX: this should be removed. The doc should only be saved when the user saves and the XML text editor should
-    // only be refreshed when it comes into view. On top of that there is no reason why a GUI would need a setDirty()
-    // method in the first place.
+    // XXX: This really needs to be removed. The doc should only be saved when the user explicitly saves and the XML
+    // text editor should only be refreshed when it comes into view. On top of that there is no reason why a GUI would
+    // need a setDirty() method in the first place. The entire config is written to disk, then reloaded from disk in
+    // it's entirety after every xml element update...
     syncXmlDocument();
-    internalSetDirty(Boolean.TRUE);
     JavaSetupParticipant.inspectAll();
-    TcPlugin.getDefault().updateDecorators();
-    TcPlugin.getDefault().fireConfigurationChange(m_project);
-    TcPlugin.getDefault().saveConfigurationQuietly(m_project);
+    TcPlugin plugin = TcPlugin.getDefault();
+    plugin.updateDecorators();
+    plugin.fireConfigurationChange(m_project);
+    plugin.saveConfigurationQuietly(m_project);
   }
 
   private void clearDirty() {

@@ -47,11 +47,13 @@ final class XmlConfigPersistenceManager {
     Class[] params = new Class[] { String.class };
     Object[] args = new Object[] { value };
     Method method = null;
+    // STRING
     try {
       method = parentType.getMethod(SET + convertElementName(elementName), params);
       method.invoke(parent, args);
     } catch (Exception e) { /* skip */
     }
+    // BOOLEAN
     if (method == null) {
       try {
         params[0] = Boolean.TYPE;
@@ -61,6 +63,7 @@ final class XmlConfigPersistenceManager {
       } catch (Exception e) { /* skip */
       }
     }
+    // INTEGER
     if (method == null) {
       try {
         params[0] = Integer.TYPE;
@@ -70,6 +73,7 @@ final class XmlConfigPersistenceManager {
       } catch (Exception e) { /* skip */
       }
     }
+    // ENUM
     if (method == null) {
       try {
         params[0] = String.class;
@@ -152,6 +156,7 @@ final class XmlConfigPersistenceManager {
       sb.append(Character.toUpperCase(tok.charAt(0)));
       sb.append(tok.substring(1));
     }
+    if (sb.toString().equals("Class")) return sb.toString() + "1";
     return sb.toString();
   }
 

@@ -446,7 +446,6 @@ public final class ClientsPanel extends ConfigurationEditorPanel {
     private Button              m_removeModule;
 
     public void reset() {
-      m_logsBrowse.setEnabled(false);
       m_logsLocation.setText("");
       m_logsLocation.setEnabled(false);
       m_classCheck.setSelection(false);
@@ -480,10 +479,8 @@ public final class ClientsPanel extends ConfigurationEditorPanel {
       m_fullStackCheck.setSelection(false);
       m_fullStackCheck.setEnabled(false);
       m_moduleRepoTable.removeAll();
-      m_addModuleRepo.setEnabled(false);
       m_removeModuleRepo.setEnabled(false);
       m_moduleTable.removeAll();
-      m_addModule.setEnabled(false);
       m_removeModule.setEnabled(false);
     }
 

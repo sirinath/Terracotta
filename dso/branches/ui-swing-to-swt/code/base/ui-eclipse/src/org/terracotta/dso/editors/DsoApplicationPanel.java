@@ -54,6 +54,15 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+    m_layout.m_bootClasses.refreshContent();
+    m_layout.m_distributedMethods.refreshContent();
+    m_layout.m_instrumentedClasses.refreshContent();
+    m_layout.m_locks.refreshContent();
+    m_layout.m_roots.refreshContent();
+    m_layout.m_transientFields.refreshContent();
+  }
+
   // ================================================================================
   // STATE
   // ================================================================================

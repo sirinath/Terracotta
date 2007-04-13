@@ -63,6 +63,10 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================

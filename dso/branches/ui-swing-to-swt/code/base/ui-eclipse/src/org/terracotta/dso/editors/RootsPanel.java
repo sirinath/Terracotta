@@ -65,6 +65,11 @@ public final class RootsPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+    m_layout.reset();
+    initTableItems();
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -209,7 +214,6 @@ public final class RootsPanel extends ConfigurationEditorPanel {
     private Button              m_removeButton;
 
     public void reset() {
-      m_addButton.setEnabled(false);
       m_removeButton.setEnabled(false);
       m_table.removeAll();
     }

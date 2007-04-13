@@ -62,6 +62,10 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================

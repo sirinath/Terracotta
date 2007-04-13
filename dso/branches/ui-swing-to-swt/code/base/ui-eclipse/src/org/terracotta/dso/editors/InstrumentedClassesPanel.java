@@ -61,6 +61,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -77,7 +81,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         } else if (index == 0) {
           m_layout.m_moveUpButton.setEnabled(false);
           m_layout.m_moveDownButton.setEnabled(true);
-        } else if (index == m_layout.m_table.getItemCount() -1) {
+        } else if (index == m_layout.m_table.getItemCount() - 1) {
           m_layout.m_moveUpButton.setEnabled(true);
           m_layout.m_moveDownButton.setEnabled(false);
         } else {

@@ -15,6 +15,7 @@ import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
 import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.AdditionalBootJarClasses;
+import com.terracottatech.config.Application;
 import com.terracottatech.config.Autolock;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.DistributedMethods;
@@ -27,7 +28,6 @@ import com.terracottatech.config.NamedLock;
 import com.terracottatech.config.QualifiedClassName;
 import com.terracottatech.config.QualifiedFieldName;
 import com.terracottatech.config.Root;
-import com.terracottatech.config.Roots;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.TransientFields;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
@@ -396,7 +396,7 @@ public final class XmlConfigContext {
     }, XmlConfigEvent.CLIENT_FAULT_COUNT);
     // dso applications
     addListener(m_rootsFieldListener = newWriter(), XmlConfigEvent.ROOTS_FIELD);
-    addListener(m_rootsNameListener = newWriter(), XmlConfigEvent.ROOTS_NAME);
+    addListener(m_rootsNameListener = newRootsNameWriter(), XmlConfigEvent.ROOTS_NAME);
     addListener(m_transientFieldsListener = newTransientFieldsWriter(), XmlConfigEvent.TRANSIENT_FIELD);
     addListener(m_distributedMethodsListener = newDistributedMethodsWriter(), XmlConfigEvent.DISTRIBUTED_METHOD);
     addListener(m_bootClassesListener = newBootClassesWriter(), XmlConfigEvent.BOOT_CLASS);
@@ -405,6 +405,22 @@ public final class XmlConfigContext {
     addListener(m_locksNamedNameListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_NAME);
     addListener(m_locksNamedMethodListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_METHOD);
     addListener(m_locksNamedLevelListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_LEVEL);
+  }
+
+  private UpdateEventListener newRootsNameWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlObject xml = event.element;
+        if (((String) event.data).trim().equals("") && ((Root) xml).isSetRootName()) {
+          ((Root) xml).unsetRootName();
+        } else {
+          XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        }
+        setDirty(); // XXX
+      }
+    };
   }
 
   private UpdateEventListener newLocksAutoWriter() {
@@ -564,6 +580,9 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getClients().getModules().removeModule(index);
+        if (m_config.getClients().getModules().sizeOfModuleArray() == 0) {
+          removeModulesElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE);
         event.index = index;
         m_removeClientModuleObserver.fireUpdateEvent(event);
@@ -583,6 +602,9 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getClients().getModules().removeRepository(index);
+        if (m_config.getClients().getModules().sizeOfRepositoryArray() == 0) {
+          removeModulesElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_CLIENT_MODULE_REPO);
         event.index = index;
         m_removeClientModuleRepoObserver.fireUpdateEvent(event);
@@ -591,9 +613,13 @@ public final class XmlConfigContext {
     };
     m_createRootListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
+        ensureDsoElement();
+        if (!m_config.getApplication().getDso().isSetRoots()) {
+          m_config.getApplication().getDso().addNewRoots();
+        }
         Root root = m_config.getApplication().getDso().getRoots().addNewRoot();
         root.setFieldName(((String[]) e.data)[0]);
-        root.setRootName(((String[]) e.data)[1]);
+        if (!((String[]) e.data)[1].trim().equals("")) root.setRootName(((String[]) e.data)[1]);
         m_newRootObserver.fireUpdateEvent(new XmlConfigEvent(root, XmlConfigEvent.NEW_ROOT));
         setDirty(); // XXX
       }
@@ -601,8 +627,11 @@ public final class XmlConfigContext {
     m_deleteRootListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
-        Roots roots = m_config.getApplication().getDso().getRoots();
-        roots.removeRoot(index);
+        m_config.getApplication().getDso().getRoots().removeRoot(index);
+        if (m_config.getApplication().getDso().getRoots().sizeOfRootArray() == 0) {
+          m_config.getApplication().getDso().unsetRoots();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_ROOT);
         event.index = index;
         m_removeRootObserver.fireUpdateEvent(event);
@@ -649,6 +678,9 @@ public final class XmlConfigContext {
     };
     m_createBootClassListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
+        if (!m_config.getApplication().getDso().isSetAdditionalBootJarClasses()) {
+          m_config.getApplication().getDso().addNewAdditionalBootJarClasses();
+        }
         QualifiedClassName include = m_config.getApplication().getDso().getAdditionalBootJarClasses().addNewInclude();
         include.setStringValue((String) e.data);
         m_newBootClassObserver.fireUpdateEvent(new XmlConfigEvent(include, XmlConfigEvent.NEW_BOOT_CLASS));
@@ -659,6 +691,10 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getApplication().getDso().getAdditionalBootJarClasses().removeInclude(index);
+        if (m_config.getApplication().getDso().getAdditionalBootJarClasses().sizeOfIncludeArray() == 0) {
+          m_config.getApplication().getDso().unsetAdditionalBootJarClasses();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_BOOT_CLASS);
         event.index = index;
         m_removeBootClassObserver.fireUpdateEvent(event);
@@ -706,6 +742,24 @@ public final class XmlConfigContext {
         setDirty(); // XXX
       }
     };
+  }
+
+  private void removeModulesElementIfEmpty() {
+    if (m_config.getClients().getModules().sizeOfModuleArray() == 0
+        && m_config.getClients().getModules().sizeOfRepositoryArray() == 0) {
+      m_config.getClients().unsetModules();
+    }
+  }
+
+  private void removeDsoElementIfEmpty() {
+    if (!m_config.getApplication().getDso().isSetAdditionalBootJarClasses()
+        && !m_config.getApplication().getDso().isSetDistributedMethods()
+        && !m_config.getApplication().getDso().isSetDsoReflectionEnabled()
+        && !m_config.getApplication().getDso().isSetLocks() && !m_config.getApplication().getDso().isSetRoots()
+        && !m_config.getApplication().getDso().isSetTransientFields()
+        && !m_config.getApplication().getDso().isSetWebApplications()) {
+      m_config.getApplication().unsetDso();
+    }
   }
 
   private void doAction(XmlAction action, int type) {
@@ -1064,6 +1118,15 @@ public final class XmlConfigContext {
       default:
         break;
     }
+  }
+
+  private XmlObject ensureApplicationElement() {
+    return XmlConfigPersistenceManager.ensureXml(m_config, TcConfig.class, XmlConfigEvent.PARENT_ELEM_APPLICATION);
+  }
+
+  private XmlObject ensureDsoElement() {
+    XmlObject app = ensureApplicationElement();
+    return XmlConfigPersistenceManager.ensureXml(app, Application.class, XmlConfigEvent.PARENT_ELEM_DSO);
   }
 
   private XmlObject ensureServerDsoElement(XmlObject server) {

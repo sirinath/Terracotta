@@ -72,6 +72,11 @@ public class BootClassesPanel extends ConfigurationEditorPanel {
     setActive(true);
   }
 
+  public synchronized void refreshContent() {
+    m_layout.reset();
+    initTableItems();
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -214,7 +219,6 @@ public class BootClassesPanel extends ConfigurationEditorPanel {
     private Table               m_table;
 
     public void reset() {
-      m_addButton.setEnabled(false);
       m_removeButton.setEnabled(false);
       m_table.removeAll();
     }

@@ -95,6 +95,7 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      NEW_LOCK_NAMED                      = ALT_RANGE_CONSTANT + 85;
   public static final int      REMOVE_LOCK_NAMED                   = ALT_RANGE_CONSTANT + 90;
   // container elements with no associated events
+  public static final String   PARENT_ELEM_APPLICATION             = "application";
   public static final String   PARENT_ELEM_DSO                     = "dso";
   public static final String   PARENT_ELEM_PERSIST                 = "persistence";
   public static final String   PARENT_ELEM_GC                      = "garbage-collection";
