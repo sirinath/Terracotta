@@ -18,6 +18,7 @@ import com.tc.test.TCTestCase;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.sequence.Sequence;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +40,7 @@ public class TransactionStoreTest extends TCTestCase {
     List gtxs = new LinkedList();
     for (int i = 0; i < 100; i++) {
       ServerTransactionID sid1 = new ServerTransactionID(new ChannelID(i), new TransactionID(i));
-      GlobalTransactionDescriptor desc = store.createTransactionDescriptor(sid1);
+      GlobalTransactionDescriptor desc = store.getOrCreateTransactionDescriptor(sid1);
       store.commitTransactionDescriptor(null, desc);
       assertNotNull(store.getTransactionDescriptor(new ServerTransactionID(desc.getChannelID(), desc
           .getClientTransactionID())));
@@ -85,7 +86,7 @@ public class TransactionStoreTest extends TCTestCase {
 
     ServerTransactionID stx1 = new ServerTransactionID(new ChannelID(1), new TransactionID(1));
 
-    GlobalTransactionDescriptor gtx1 = store.createTransactionDescriptor(stx1);
+    GlobalTransactionDescriptor gtx1 = store.getOrCreateTransactionDescriptor(stx1);
     assertNotEquals(GlobalTransactionID.NULL_ID, store.getLeastGlobalTransactionID());
     assertEquals(getGlobalTransactionID(gtx1), store.getLeastGlobalTransactionID());
 
@@ -96,7 +97,7 @@ public class TransactionStoreTest extends TCTestCase {
     int max = 200;
     for (int i = min; i < max; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i), new TransactionID(i));
-      GlobalTransactionDescriptor gtxi = store.createTransactionDescriptor(stxid);
+      GlobalTransactionDescriptor gtxi = store.getOrCreateTransactionDescriptor(stxid);
       store.commitTransactionDescriptor(null, gtxi);
     }
 
@@ -181,7 +182,7 @@ public class TransactionStoreTest extends TCTestCase {
     for (int i = initialMax; i < laterMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
       store.getGlobalTransactionID(stxid);
-      store.commitTransactionDescriptor(null, store.createTransactionDescriptor(stxid));
+      store.commitTransactionDescriptor(null, store.getOrCreateTransactionDescriptor(stxid));
     }
     GlobalTransactionID lowmk2 = store.getLeastGlobalTransactionID();
 
@@ -228,13 +229,13 @@ public class TransactionStoreTest extends TCTestCase {
 
     assertNull(store.getTransactionDescriptor(stxid1));
     assertEquals(GlobalTransactionID.NULL_ID, store.getGlobalTransactionID(stxid1));
-    GlobalTransactionDescriptor gtx1 = store.createTransactionDescriptor(stxid1);
+    GlobalTransactionDescriptor gtx1 = store.getOrCreateTransactionDescriptor(stxid1);
     assertEquals(gtx1, store.getTransactionDescriptor(stxid1));
 
     assertSame(gtx1, store.getTransactionDescriptor(stxid1));
 
     assertNull(store.getTransactionDescriptor(stxid2));
-    GlobalTransactionDescriptor gtx2 = store.createTransactionDescriptor(stxid2);
+    GlobalTransactionDescriptor gtx2 = store.getOrCreateTransactionDescriptor(stxid2);
     store.getGlobalTransactionID(stxid2);
     assertEquals(gtx2, store.getTransactionDescriptor(stxid2));
 
@@ -261,7 +262,7 @@ public class TransactionStoreTest extends TCTestCase {
     Map sid2Gid = new HashMap();
     for (int i = initialMin; i < initialMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
-      GlobalTransactionDescriptor desc = store.createTransactionDescriptor(stxid);
+      GlobalTransactionDescriptor desc = store.getOrCreateTransactionDescriptor(stxid);
       store.commitTransactionDescriptor(null, desc);
       assertEquals(stxid, desc.getServerTransactionID());
       sid2Gid.put(stxid, desc);
@@ -286,7 +287,7 @@ public class TransactionStoreTest extends TCTestCase {
     for (int i = initialMax; i < laterMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
       GlobalTransactionDescriptor desc;
-      store.commitTransactionDescriptor(null, desc = store.createTransactionDescriptor(stxid));
+      store.commitTransactionDescriptor(null, desc = store.getOrCreateTransactionDescriptor(stxid));
       assertTrue(maxID.toLong() < desc.getGlobalTransactionID().toLong());
     }
   }
@@ -300,7 +301,16 @@ public class TransactionStoreTest extends TCTestCase {
     public long                         sequence    = 0;
 
     public Collection loadAllGlobalTransactionDescriptors() {
-      return persisted.values();
+      return getNewGlobalTransactionDescs(persisted.values());
+    }
+
+    private Collection getNewGlobalTransactionDescs(Collection c) {
+      Collection newList = new ArrayList(c.size());
+      for (Iterator i = c.iterator(); i.hasNext();) {
+        GlobalTransactionDescriptor oldGD = (GlobalTransactionDescriptor) i.next();
+        newList.add(new GlobalTransactionDescriptor(oldGD.getServerTransactionID(), oldGD.getGlobalTransactionID()));
+      }
+      return newList;
     }
 
     public void saveGlobalTransactionDescriptor(PersistenceTransaction tx, GlobalTransactionDescriptor gtx) {

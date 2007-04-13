@@ -61,12 +61,14 @@ public abstract class CargoAppServer extends AbstractAppServer {
     setProperties(params, port, instance);
 
     ConfigurationFactory factory = new DefaultConfigurationFactory();
-    LocalConfiguration config = (LocalConfiguration)factory
-        .createConfiguration(cargoServerKey(), ContainerType.INSTALLED, ConfigurationType.STANDALONE, instance.getAbsolutePath());
+    LocalConfiguration config = (LocalConfiguration) factory.createConfiguration(cargoServerKey(),
+                                                                                 ContainerType.INSTALLED,
+                                                                                 ConfigurationType.STANDALONE, instance
+                                                                                     .getAbsolutePath());
     setConfigProperties(config);
     config.setProperty(ServletPropertySet.PORT, Integer.toString(port));
     config.setProperty(GeneralPropertySet.JVMARGS, params.jvmArgs());
-    config.setProperty(GeneralPropertySet.LOGGING, "high");
+    config.setProperty(GeneralPropertySet.LOGGING, "low");
     addWars(config, params.wars(), params.instanceName());
 
     container = container(config);
@@ -77,26 +79,27 @@ public abstract class CargoAppServer extends AbstractAppServer {
 
     linkJavaProcess(instance);
 
-    // System.err.println("Starting " + ClassUtils.getShortClassName(getClass()) + " on port " + port + "...");
-
     container.start();
 
     return new AppServerResult(port, this);
   }
 
-  public final void stop() throws Exception {
+  public final void stop() {
     if (container != null) {
       if (container.getState().equals(State.STARTED) || container.getState().equals(State.STARTING)
           || container.getState().equals(State.UNKNOWN)) {
-        // System.err.println("Stopping " + ClassUtils.getShortClassName(getClass()) + " on port " + port + "...");
         try {
-          container.stop(); // NOTE: stop is not guaranteed to work
-          if (!container.getState().equals(State.STOPPED)) {
-            System.err.println("App server didn't shut down properly. Current state: " + container.getState());
+          // XXX: clear out the jvmargs so that the VMs spawned for stop() don't try to use DSO
+          // XXX: If you know a better way to do this, go for it
+          String jvmArgs = container.getConfiguration().getPropertyValue(GeneralPropertySet.JVMARGS);
+          try {
+            container.getConfiguration().setProperty(GeneralPropertySet.JVMARGS, null);
+            container.stop(); // NOTE: stop is not guaranteed to work
+          } finally {
+            container.getConfiguration().setProperty(GeneralPropertySet.JVMARGS, jvmArgs);
           }
         } catch (ContainerException e) {
-          System.err.println(e.getMessage());
-          System.err.println("LinkedJavaProcess.destroy() will kill this process");
+          throw new RuntimeException(e);
         }
       }
     }
@@ -117,7 +120,7 @@ public abstract class CargoAppServer extends AbstractAppServer {
 
   /**
    * Create a linked java process {@link LinkedJavaProcessPollingAgent}
-   * 
+   *
    * @throws InterruptedException
    */
   private void linkJavaProcess(File instance) throws InterruptedException {
