@@ -46,6 +46,7 @@ import com.tc.object.SerializationUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
+import com.tc.object.bytecode.AccessibleObjectAdapter;
 import com.tc.object.bytecode.BufferedWriterAdapter;
 import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
@@ -136,6 +137,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.AccessibleObject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -305,6 +307,7 @@ public class BootJarTool {
       addSpringClasses();
  
       addSunStandardLoaders();
+      addInstrumentedAccessibleObject();
       addInstrumentedJavaLangThrowable();
       addInstrumentedJavaLangStringBuffer();
       addInstrumentedClassLoader();
@@ -1156,6 +1159,24 @@ public class BootJarTool {
     } else {
       addNonPortableStringBuffer();
     }
+  }
+  
+  private void addInstrumentedAccessibleObject() {
+    String classname = AccessibleObject.class.getName();
+    byte[] bytes = getSystemBytes(classname);
+
+    // instrument the state changing methods in AccessibleObject
+    ClassReader cr = new ClassReader(bytes);
+    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+    ClassVisitor cv = new AccessibleObjectAdapter(cw);
+    cr.accept(cv, 0);
+    bytes = cw.toByteArray();
+
+    // regular DSO instrumentation
+    TransparencyClassSpec spec = config.getOrCreateSpec(classname);
+    spec.markPreInstrumented();
+    
+    bootJar.loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
   private void addPortableStringBuffer() {

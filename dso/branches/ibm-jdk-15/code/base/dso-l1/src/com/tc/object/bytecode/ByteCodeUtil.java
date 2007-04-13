@@ -378,4 +378,9 @@ public class ByteCodeUtil implements Opcodes {
     return TC_METHOD_PREFIX + "set" + fieldName;
   }
 
+  public static void systemOutPrintln(MethodVisitor mv, String msg) {
+    mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+    mv.visitLdcInsn(msg);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+  }
 }

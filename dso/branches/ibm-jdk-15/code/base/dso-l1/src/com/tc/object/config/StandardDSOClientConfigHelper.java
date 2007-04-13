@@ -685,11 +685,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     addPermanentExcludePattern("java.util.WeakHashMap");
     addPermanentExcludePattern("java.lang.ref.*");
-    if (!Vm.isIBM()) {
-      // this exclusion of the IBM JDK seems necessary, otherwhise the VM crashes
-      spec = getOrCreateSpec("java.lang.reflect.AccessibleObject");
-      spec.addTransient("securityCheckCache");
-    }
     addReflectionPreInstrumentedSpec();
 
     addJDK15PreInstrumentedSpec();
