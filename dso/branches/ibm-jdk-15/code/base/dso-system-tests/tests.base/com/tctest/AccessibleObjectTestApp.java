@@ -8,11 +8,13 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 
 public class AccessibleObjectTestApp extends AbstractTransparentApp {
@@ -40,6 +42,8 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
     subclassSetMethodTest2(index);
     subclassSetMethodTest3(index);
     subclassSetMethodTest4(index);
+    subclassSetMethodTestStaticArray(index);
+    subclassSetMethodTestUnlocked(index);
     basicGetMethodTest(index);
     subclassGetMethodTest1(index);
     subclassGetMethodTest2(index);
@@ -47,16 +51,89 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
     subclassGetMethodTest4(index);
   }
   
-  private void subclassSetMethodTest4(int index) throws Exception {
+  private void subclassSetMethodTestStaticArray(int index) throws Exception {
     if (index == 0) {
-      Method m = Superclass.class.getDeclaredMethod("setSuperString", new Class[]{String.class});
-      root.setM(m);
+      Method m1 = Superclass.class.getDeclaredMethod("setSuperString", new Class[]{String.class});
+      root.setM1(m1);
+      Method m2 = Superclass.class.getDeclaredMethod("setL", new Class[]{Long.TYPE});
+      root.setM2(m2);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m1 = root.getM1();
+      Assert.assertFalse(m1.isAccessible());
+      Method m2 = root.getM2();
+      Assert.assertFalse(m2.isAccessible());
+    }
+    
+    barrier.barrier();
+    
+    if (index == 0) {
+      synchronized(root) {
+        Method m1 = root.getM1();
+        Method m2 = root.getM2();
+        AccessibleObject.setAccessible(new AccessibleObject[]{m1, m2}, true);
+      }
+    }
+    
+    barrier.barrier();
+    
+    if (index == 1) {
+      Method m1 = root.getM1();
+      Assert.assertTrue(m1.isAccessible());
+      Method m2 = root.getM2();
+      Assert.assertTrue(m2.isAccessible());
+      
+      Subclass sub = new Subclass();
+      m1.invoke(sub, new Object[]{"sample super string"});
+      m2.invoke(sub, new Object[]{Long.valueOf(773648L)});
+      Assert.assertEquals("sample super string", sub.getSuperString());
+      Assert.assertEquals(773648L, sub.getL());
+    }
+    
+    barrier.barrier();
+  }
+  
+  private void subclassSetMethodTestUnlocked(int index) throws Exception {
+    if (index == 0) {
+      Method m = Superclass.class.getDeclaredMethod("setSuperString", new Class[]{String.class});
+      root.setM1(m);
+    }
+    
+    barrier.barrier();
+    
+    if (index == 1) {
+      Method m = root.getM1();
+      Assert.assertFalse(m.isAccessible());
+    }
+    
+    barrier.barrier();
+    
+    if (index == 0) {
+      Method m = root.getM1();
+      try {
+        m.setAccessible(true);
+        Assert.fail();
+      } catch (UnlockedSharedObjectException e) {
+        Assert.assertFalse(m.isAccessible());
+      }
+    }
+    
+    barrier.barrier();
+  }
+ 
+  private void subclassSetMethodTest4(int index) throws Exception {
+    if (index == 0) {
+      Method m = Superclass.class.getDeclaredMethod("setSuperString", new Class[]{String.class});
+      root.setM1(m);
+    }
+    
+    barrier.barrier();
+    
+    if (index == 1) {
+      Method m = root.getM1();
       Assert.assertFalse(m.isAccessible());
     }
     
@@ -64,7 +141,7 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
     
     if (index == 0) {
       synchronized(root) {
-        Method m = root.getM();
+        Method m = root.getM1();
         m.setAccessible(true);
       }
     }
@@ -72,7 +149,7 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Assert.assertTrue(m.isAccessible());
       Subclass sub = new Subclass();
       m.invoke(sub, new Object[]{"sample super string"});
@@ -85,13 +162,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassSetMethodTest3(int index) throws Exception {
     if (index == 0) {
       Method m = Subclass.class.getMethod("setS", new Class[]{String.class});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       m.invoke(sub, new Object[]{"sample string"});
       Assert.assertEquals("sample string", sub.getS());
@@ -103,13 +180,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassSetMethodTest2(int index) throws Exception {
     if (index == 0) {
       Method m = Subclass.class.getMethod("setI", new Class[]{Integer.TYPE});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       m.invoke(sub, new Object[]{new Integer(10)});
       Assert.assertEquals(10, sub.getI());
@@ -121,13 +198,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassSetMethodTest1(int index) throws Exception {
     if (index == 0) {
       Method m = Superclass.class.getDeclaredMethod("setI", new Class[]{Integer.TYPE});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       m.invoke(sub, new Object[]{new Integer(10)});
       Assert.assertEquals(10, sub.getI());
@@ -139,13 +216,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassGetMethodTest4(int index) throws Exception {
     if (index == 0) {
       Method m = Superclass.class.getDeclaredMethod("getSuperString", new Class[]{});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       synchronized(root) {
         m.setAccessible(true);
       }
@@ -161,13 +238,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassGetMethodTest3(int index) throws Exception {
     if (index == 0) {
       Method m = Subclass.class.getMethod("getS", new Class[]{});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       sub.setS("sample string");
       String value = (String)m.invoke(sub, new Object[]{});
@@ -180,13 +257,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassGetMethodTest2(int index) throws Exception {
     if (index == 0) {
       Method m = Subclass.class.getMethod("getI", new Class[]{});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       sub.setI(20);
       Integer value = (Integer)m.invoke(sub, new Object[]{});
@@ -199,13 +276,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void subclassGetMethodTest1(int index) throws Exception {
     if (index == 0) {
       Method m = Superclass.class.getDeclaredMethod("getI", new Class[]{});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Subclass sub = new Subclass();
       sub.setI(20);
       Integer value = (Integer)m.invoke(sub, new Object[]{});
@@ -218,13 +295,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void basicGetMethodTest(int index) throws Exception {
     if (index == 0) {
       Method m = Superclass.class.getDeclaredMethod("getI", new Class[]{});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Superclass sc = new Superclass();
       sc.setI(20);
       Integer value = (Integer)m.invoke(sc, new Object[]{});
@@ -238,13 +315,13 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   private void basicSetMethodTest(int index) throws Exception {
     if (index == 0) {
       Method m = Superclass.class.getDeclaredMethod("setI", new Class[]{Integer.TYPE});
-      root.setM(m);
+      root.setM1(m);
     }
     
     barrier.barrier();
     
     if (index == 1) {
-      Method m = root.getM();
+      Method m = root.getM1();
       Superclass sc = new Superclass();
       m.invoke(sc, new Object[]{new Integer(10)});
       Assert.assertEquals(10, sc.getI());
@@ -265,6 +342,7 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   
   private static class Superclass {
     private int i;
+    private long l;
     private String superString;
 
     public int getI() {
@@ -282,6 +360,14 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
     protected void setSuperString(String superString) {
       this.superString = superString;
     }
+
+    protected long getL() {
+      return l;
+    }
+
+    protected void setL(long l) {
+      this.l = l;
+    }
   }
   
   private static class Subclass extends Superclass {
@@ -297,15 +383,24 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
   }
   
   private static class DataRoot {
-    private Method m;
+    private Method m1;
+    private Method m2;
     private Superclass sharedObject;
 
-    public synchronized Method getM() {
-      return m;
+    public synchronized Method getM1() {
+      return m1;
     }
 
-    public synchronized void setM(Method m) {
-      this.m = m;
+    public synchronized void setM1(Method m) {
+      this.m1 = m;
+    }
+
+    public synchronized Method getM2() {
+      return m2;
+    }
+
+    public synchronized void setM2(Method m) {
+      this.m2 = m;
     }
 
     public Superclass getSharedObject() {
