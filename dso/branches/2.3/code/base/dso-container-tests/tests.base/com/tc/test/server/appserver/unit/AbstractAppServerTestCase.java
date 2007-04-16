@@ -32,7 +32,6 @@ import com.tc.test.server.tcconfig.StandardTerracottaAppServerConfig;
 import com.tc.test.server.tcconfig.TerracottaServerConfigGenerator;
 import com.tc.test.server.util.HttpUtil;
 import com.tc.test.server.util.VmStat;
-import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
@@ -43,7 +42,9 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -92,7 +93,7 @@ import javax.servlet.http.HttpSessionListener;
  * the appserver)
  * </ul>
  * <p>
- *
+ * 
  * <pre>
  *                            outer class:
  *                            ...
@@ -109,7 +110,7 @@ import javax.servlet.http.HttpSessionListener;
  *                            out.println(&quot;false&quot;);
  *                            ...
  * </pre>
- *
+ * 
  * <p>
  * <h3>Debugging Information:</h3>
  * There are a number of locations and files to consider when debugging appserver unit tests. Below is a list followed
@@ -144,7 +145,7 @@ import javax.servlet.http.HttpSessionListener;
  * <p>
  * As a final note: the <tt>UttpUtil</tt> class should be used (and added to as needed) to page servlets and validate
  * assertions.
- *
+ * 
  * @author eellis
  */
 public abstract class AbstractAppServerTestCase extends TCTestCase {
@@ -189,11 +190,18 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     config = TestConfigObject.getInstance();
     tempDir = getTempDirectory();
     serverInstallDir = makeDir(config.appserverServerInstallDir());
-    File workDir = new File(config.appserverWorkingDir());
-    if (workDir.exists() && workDir.isDirectory()) {
-      FileUtils.cleanDirectory(workDir);
+    File workDir;
+    try {
+      workDir = new File(config.appserverWorkingDir());
+      if (workDir.exists() && workDir.isDirectory()) {
+        FileUtils.cleanDirectory(workDir);
+      }
+    } catch (Throwable e) {
+      workDir = new File(config.appserverWorkingDir() + "-"
+                         + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()));
     }
-    workingDir = makeDir(config.appserverWorkingDir());
+
+    workingDir = makeDir(workDir.getAbsolutePath());
     bootJar = new File(config.normalBootJar());
     appServerFactory = NewAppServerFactory.createFactoryFromProperties(config);
 
@@ -308,7 +316,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   *
+   * 
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -397,7 +405,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   *
+   * 
    * @throws Exception
    */
   protected void tearDown() throws Exception {
@@ -413,24 +421,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     } finally {
       VmStat.stop();
       synchronized (workingDirLock) {
-        File dest = new File(tempDir, getName());
-        if (dest.exists()) {
-          String destName = dest.getName();
-          String[] runs = dest.getParentFile().list();
-          int max = 0;
-          for (int i = 0; i < runs.length; i++) {
-            if (destName.equals(runs[i])) continue;
-            int current = Integer.parseInt(runs[i].substring(destName.length(), runs[i].length()));
-            if (current > max) max = current;
-          }
-          max++;
-          Banner.warnBanner("Moving files from previous run to: " + dest + max);
-          dest.renameTo(new File(dest + "" + max));
-        }
-        boolean renamed = workingDir.renameTo(dest);
-        if (!renamed) {
-          Banner.errorBanner("Could not rename " + workingDir + " to " + dest);
-          archiveSandboxLogs();
+        try {
+          File dest = new File(tempDir, getName());
+          workingDir.renameTo(dest);
+        } catch (Throwable e) {
+          System.err.println("Error while moving log files. " + e.getMessage());
         }
       }
     }
