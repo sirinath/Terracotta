@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="lib" path="lib/catalina-tribes-6.0.9.jar" sourcepath="/home/ssubbiah/java/tomcat/apache-tomcat-6.0.9-src/java"/>
-	<classpathentry kind="lib" path="lib/tomcat-juli-6.0.9.jar" sourcepath="/home/ssubbiah/java/tomcat/tribes"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

@@ -714,25 +714,27 @@ public class TcPlugin extends AbstractUIPlugin
     IFile configFile = getConfigurationFile(project);
 
     if(configFile != null) {
-      IPath path   = configFile.getLocation();
-      File  file   = path.toFile();
-      List  errors = new ArrayList();
-      
-      if(m_configLoader.testIsOld(file)) {
-        m_configLoader.updateToCurrent(file);
-      }
+      IPath   path      = configFile.getLocation();
+      File    file      = path.toFile();
+      List    errors    = new ArrayList();
+      boolean refreshed = false;
       
       if(!configFile.isSynchronized(IResource.DEPTH_ZERO)) {
         configFile.refreshLocal(IResource.DEPTH_ZERO, null);
-      }
-  
-      if(testLoadSerializedConfigFile(project)) {
-        return;
+        refreshed = true;
       }
       
       LineLengths lineLengths = new LineLengths(configFile);
       setSessionProperty(project, CONFIGURATION_LINE_LENGTHS, lineLengths);
-  
+    
+      if(m_configLoader.testIsOld(file)) {
+        m_configLoader.updateToCurrent(file);
+      }
+      
+      if(!refreshed && testLoadSerializedConfigFile(project)) {
+        return;
+      }
+      
       clearSAXMarkers(configFile);
       
       // The following line may throw XmlException if the doc is not well-formed.
@@ -949,6 +951,8 @@ public class TcPlugin extends AbstractUIPlugin
     return helper;
   }
 
+  public static final TcConfig BAD_CONFIG = TcConfig.Factory.newInstance();
+  
   public synchronized TcConfig getConfiguration(IProject project) {
     TcConfig config = (TcConfig)getSessionProperty(project, CONFIGURATION);
     
@@ -966,7 +970,7 @@ public class TcPlugin extends AbstractUIPlugin
       }
 
       if(config == null) {
-        config = TcConfig.Factory.newInstance();
+        config = BAD_CONFIG;
         setSessionProperty(project, CONFIGURATION, config);
       }
     }
@@ -1075,7 +1079,7 @@ public class TcPlugin extends AbstractUIPlugin
   {
     IFile file = getConfigurationFile(project);
     if(file != null && file.exists()) {
-      setPersistentProperty(file, ACTIVE_CONFIGURATION_FILE, null);
+      setSessionProperty(file, ACTIVE_CONFIGURATION_FILE, null);
     }
     
     setSessionProperty(project, CONFIGURATION_LINE_LENGTHS, null);
@@ -1178,13 +1182,13 @@ public class TcPlugin extends AbstractUIPlugin
   }
 
   public void setSessionProperty(
-    IProject      project,
+    IResource     res,
     QualifiedName name,
     Object        value)
   {
-    if(project != null && project.exists() && project.isOpen()) {
+    if(res != null && res.exists()) {
       try {
-        project.setSessionProperty(name, value);
+        res.setSessionProperty(name, value);
       } catch(CoreException ce) {
         ce.printStackTrace();
       }
@@ -1192,12 +1196,12 @@ public class TcPlugin extends AbstractUIPlugin
   }
 
   public Object getSessionProperty(
-    IProject      project,
+    IResource     res,
     QualifiedName name)
   {
-    if(project != null && project.exists() && project.isOpen()) {
+    if(res != null && res.exists()) {
       try {
-        return project.getSessionProperty(name);
+        return res.getSessionProperty(name);
       } catch(CoreException ce) {
         ce.printStackTrace();
       }
@@ -1270,14 +1274,14 @@ public class TcPlugin extends AbstractUIPlugin
     IFile file = oldPath != null ? project.getFile(oldPath) : null;
     if(file != null && file.exists()) {
       clearSAXMarkers(file);
-      setPersistentProperty(file, ACTIVE_CONFIGURATION_FILE, null);
+      setSessionProperty(file, ACTIVE_CONFIGURATION_FILE, null);
     }
     
     setPersistentProperty(project, CONFIGURATION_FILE_PATH, path);
 
     file = project.getFile(new Path(path));
     setSessionProperty(project, CONFIGURATION_FILE, file);  
-    setPersistentProperty(file, ACTIVE_CONFIGURATION_FILE, "true");
+    setSessionProperty(file, ACTIVE_CONFIGURATION_FILE, "true");
     
     ConfigurationEditor configEditor = getConfigurationEditor(project);
     if(false && configEditor != null) {
@@ -1298,7 +1302,7 @@ public class TcPlugin extends AbstractUIPlugin
       if(path != null) {
         file = project.getFile(new Path(path));
         setSessionProperty(project, CONFIGURATION_FILE, file);
-        setPersistentProperty(file, ACTIVE_CONFIGURATION_FILE, "true");
+        setSessionProperty(file, ACTIVE_CONFIGURATION_FILE, "true");
       }
     }
     

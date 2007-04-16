@@ -4,7 +4,6 @@
 package com.tc.process;
 
 import com.tc.test.TCTestCase;
-import com.tc.util.runtime.Os;
 
 import java.io.File;
 
@@ -106,16 +105,8 @@ public class LinkedJavaProcessTest extends TCTestCase {
 
     assertEquals("", ignoreStandardWarnings(err).trim());
 
-    String[] lines = output.split("[\\r\\n]+");
-    assertEquals(strip(lines[0]), "ljpt.foo=myprop");
-
-    if (Os.isWindows()) {
-      // sometimes the case of the drive letter (ie. "C:\.." vs "c:\..") will be different here
-      lines[1] = strip(lines[1]);
-      lines[1] = lines[1].substring(0, 1).toLowerCase() + lines[1].substring(1);
-      pwd = pwd.substring(0, 1).toLowerCase() + pwd.substring(1);
-    }
-    assertEquals(pwd, strip(lines[1]));
+    assertContains("ljpt.foo=myprop", output);
+    assertContains(pwd.toLowerCase(), output.toLowerCase());
   }
 
   private String strip(String s) {
