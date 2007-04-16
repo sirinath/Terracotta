@@ -95,6 +95,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   private ElementStateListener     m_elementStateListener;
   private TextInputListener        m_textInputListener;
   private Timer                    m_parseTimer;
+  private boolean                  m_isXmlEditorVisible       = true;
 
   static {
     try {
@@ -377,6 +378,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   protected void pageChange(int newPageIndex) {
     super.pageChange(newPageIndex);
     if (m_currentPage == XML_EDITOR_PAGE_INDEX) {
+      m_isXmlEditorVisible = false;
       internalSetDirty(Boolean.FALSE);
       syncXmlModel();
       XmlConfigContext.getInstance(m_project).refreshXmlConfig();
@@ -394,6 +396,8 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
         default:
           break;
       }
+    } else {
+      m_isXmlEditorVisible = true;
     }
     m_currentPage = newPageIndex;
   }
@@ -722,7 +726,11 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     public void actionPerformed(ActionEvent ae) {
       asyncExec(new Runnable() {
         public void run() {
-          syncXmlModel();
+          // Fix for problem occurring when xml is edited, then before 2 seconds have elapsed, the page is changed to
+          // the graphical editor. After modifying the element, switching back to the xml editor looses the change. This
+          // was happening because the TcConfig was being reset after the UI was displayed leaving it in an inconsistent
+          // state. An update event would be more appropriate and amenable to this type of situation.
+          if (m_isXmlEditorVisible) syncXmlModel();
         }
       });
     }

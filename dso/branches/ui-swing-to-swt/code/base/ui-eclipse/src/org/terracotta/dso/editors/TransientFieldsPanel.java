@@ -64,7 +64,8 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel {
   }
 
   public synchronized void refreshContent() {
-
+    m_layout.reset();
+    initTableItems();
   }
 
   // ================================================================================
@@ -203,7 +204,6 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel {
     private final Table         m_table;
 
     public void reset() {
-      m_addButton.setEnabled(false);
       m_removeButton.setEnabled(false);
       m_table.removeAll();
     }

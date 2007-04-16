@@ -23,7 +23,7 @@ import com.terracottatech.config.TcConfigDocument.TcConfig;
 // NOTE: Elements referenced by hasX() should be treated as READ ONLY!
 public final class XmlConfigParentElementProvider {
 
-  private static final String      CLIENT               = "client";
+  private static final String      CLIENTS               = "clients";
   private static final String      MODULES              = "modules";
   private static final String      SERVERS              = "servers";
   private static final String      ROOTS                = "roots";
@@ -54,7 +54,7 @@ public final class XmlConfigParentElementProvider {
 
   Client ensureClient() {
     if (hasClient() != null) return m_client;
-    return (Client) XmlConfigPersistenceManager.ensureXml(m_config, TcConfig.class, CLIENT);
+    return (Client) XmlConfigPersistenceManager.ensureXml(m_config, TcConfig.class, CLIENTS);
   }
 
   public Client hasClient() {

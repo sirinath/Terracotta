@@ -63,7 +63,8 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel {
   }
 
   public synchronized void refreshContent() {
-
+    m_layout.reset();
+    initTableItems();
   }
 
   // ================================================================================
@@ -204,7 +205,6 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel {
     private Table               m_table;
 
     public void reset() {
-      m_addButton.setEnabled(false);
       m_removeButton.setEnabled(false);
       m_table.removeAll();
     }

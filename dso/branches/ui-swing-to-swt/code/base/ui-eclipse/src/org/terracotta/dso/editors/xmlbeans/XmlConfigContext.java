@@ -640,6 +640,10 @@ public final class XmlConfigContext {
     };
     m_createTransientFieldListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
+        ensureDsoElement();
+        if (!m_config.getApplication().getDso().isSetTransientFields()) {
+          m_config.getApplication().getDso().addNewTransientFields();
+        }
         QualifiedFieldName field = m_config.getApplication().getDso().getTransientFields().addNewFieldName();
         field.setStringValue((String) e.data);
         m_newTransientFieldObserver.fireUpdateEvent(new XmlConfigEvent(field, XmlConfigEvent.NEW_BOOT_CLASS));
@@ -649,8 +653,11 @@ public final class XmlConfigContext {
     m_deleteTransientFieldListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
-        TransientFields fields = m_config.getApplication().getDso().getTransientFields();
-        fields.removeFieldName(index);
+        m_config.getApplication().getDso().getTransientFields().removeFieldName(index);
+        if (m_config.getApplication().getDso().getTransientFields().sizeOfFieldNameArray() == 0) {
+          m_config.getApplication().getDso().unsetTransientFields();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_TRANSIENT_FIELD);
         event.index = index;
         m_removeTransientFieldObserver.fireUpdateEvent(event);
@@ -659,6 +666,10 @@ public final class XmlConfigContext {
     };
     m_createDistributedMethodListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
+        ensureDsoElement();
+        if (!m_config.getApplication().getDso().isSetDistributedMethods()) {
+          m_config.getApplication().getDso().addNewDistributedMethods();
+        }
         DistributedMethods.MethodExpression expr = m_config.getApplication().getDso().getDistributedMethods()
             .addNewMethodExpression();
         expr.setStringValue((String) e.data);
@@ -670,6 +681,10 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getApplication().getDso().getDistributedMethods().removeMethodExpression(index);
+        if (m_config.getApplication().getDso().getDistributedMethods().sizeOfMethodExpressionArray() == 0) {
+          m_config.getApplication().getDso().unsetDistributedMethods();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_DISTRIBUTED_METHOD);
         event.index = index;
         m_removeDistributedMethodObserver.fireUpdateEvent(event);
@@ -704,9 +719,13 @@ public final class XmlConfigContext {
     m_createLockAutoListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         String[] values = (String[]) e.data;
+        ensureDsoElement();
+        if (!m_config.getApplication().getDso().isSetLocks()) {
+          m_config.getApplication().getDso().addNewLocks();
+        }
         Autolock lock = m_config.getApplication().getDso().getLocks().addNewAutolock();
         lock.setMethodExpression(values[0]);
-        lock.setLockLevel(LockLevel.Enum.forString(values[1]));
+        lock.setLockLevel(LockLevel.Enum.forInt(1)); // no default defined in schema so index 1 is used - "write"
         m_newLockAutoObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_AUTO));
         setDirty(); // XXX
       }
@@ -715,6 +734,11 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getApplication().getDso().getLocks().removeAutolock(index);
+        if (m_config.getApplication().getDso().getLocks().sizeOfAutolockArray() == 0
+            && m_config.getApplication().getDso().getLocks().sizeOfNamedLockArray() == 0) {
+          m_config.getApplication().getDso().unsetLocks();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_AUTO);
         event.index = index;
         m_removeLockAutoObserver.fireUpdateEvent(event);
@@ -724,10 +748,14 @@ public final class XmlConfigContext {
     m_createLockNamedListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         String[] values = (String[]) e.data;
+        ensureDsoElement();
+        if (!m_config.getApplication().getDso().isSetLocks()) {
+          m_config.getApplication().getDso().addNewLocks();
+        }
         NamedLock lock = m_config.getApplication().getDso().getLocks().addNewNamedLock();
-        lock.setLockName(values[0]);
+        lock.setLockName("default"); // no default defined in schema so "default" is used
         lock.setMethodExpression(values[1]);
-        lock.setLockLevel(LockLevel.Enum.forString(values[2]));
+        lock.setLockLevel(LockLevel.Enum.forInt(1)); // no default defined in schema so index 1 is used - "write"
         m_newLockNamedObserver.fireUpdateEvent(new XmlConfigEvent(lock, XmlConfigEvent.NEW_LOCK_NAMED));
         setDirty(); // XXX
       }

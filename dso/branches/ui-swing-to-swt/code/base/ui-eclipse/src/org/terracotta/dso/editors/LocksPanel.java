@@ -66,7 +66,8 @@ public class LocksPanel extends ConfigurationEditorPanel {
   }
 
   public synchronized void refreshContent() {
-
+    m_layout.reset();
+    initTableItems();
   }
 
   // ================================================================================
@@ -311,7 +312,7 @@ public class LocksPanel extends ConfigurationEditorPanel {
     for (int i = 0; i < autolocks.length; i++) {
       createAutolockTableItem(autolocks[i], new String[] {
         autolocks[i].getMethodExpression(),
-        autolocks[i].getLockLevel().toString() });
+        (autolocks[i].isSetLockLevel()) ? autolocks[i].getLockLevel().toString() : "" });
     }
     String[] namedLockLevels = XmlConfigContext.getListDefaults(NamedLock.class, XmlConfigEvent.LOCKS_NAMED_LEVEL);
     SWTUtil.makeTableComboItem(m_layout.m_namedLocksTable, Layout.NAMED_LOCK_COLUMN, namedLockLevels);
@@ -320,7 +321,7 @@ public class LocksPanel extends ConfigurationEditorPanel {
       createNamedLockTableItem(namedLocks[i], new String[] {
         namedLocks[i].getLockName(),
         namedLocks[i].getMethodExpression(),
-        namedLocks[i].getLockLevel().toString() });
+        (namedLocks[i].isSetLockLevel()) ? namedLocks[i].getLockLevel().toString() : "" });
     }
   }
 
@@ -383,10 +384,8 @@ public class LocksPanel extends ConfigurationEditorPanel {
     private Button              m_removeNamedLockButton;
 
     public void reset() {
-      m_addAutoLockButton.setEnabled(false);
       m_removeAutoLockButton.setEnabled(false);
       m_autoLocksTable.removeAll();
-      m_addNamedLockButton.setEnabled(false);
       m_removeNamedLockButton.setEnabled(false);
       m_namedLocksTable.removeAll();
     }
