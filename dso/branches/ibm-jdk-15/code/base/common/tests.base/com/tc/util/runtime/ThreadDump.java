@@ -1,5 +1,6 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util.runtime;
 
@@ -8,6 +9,8 @@ import com.tc.test.TestConfigObject;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class ThreadDump {
 
@@ -30,10 +33,23 @@ public class ThreadDump {
 
   public static void dumpThreadsMany(int iterations, long delay) {
     for (int i = 0; i < iterations; i++) {
-      if (Os.isWindows()) {
-        doWindowsDump();
-      } else {
-        doUnixDump();
+      boolean doStandardDump = !Vm.isIBM();
+      if (Vm.isIBM()) {
+        try {
+          doIbmDump();
+        } catch (Exception ignore) {
+          System.err.println("Got an exception while trying to use the native IBM thread"
+              + " dump facility, using 'standard' method. Error is: " + ignore.getMessage());
+          System.err.flush();
+          doStandardDump = true;
+        }
+      }
+      if (doStandardDump) {
+        if (Os.isWindows()) {
+          doWindowsDump();
+        } else {
+          doUnixDump();
+        }
       }
       ThreadUtil.reallySleep(delay);
     }
@@ -50,7 +66,7 @@ public class ThreadDump {
       pid = GetPid.getPID();
     } catch (Throwable t) {
       System.err.println("Got Exception trying to get the process ID. Sending Kill signal to entire process group. "
-                         + t.getMessage());
+          + t.getMessage());
       System.err.flush();
       pid = 0;
     }
@@ -60,6 +76,13 @@ public class ThreadDump {
 
   private static void doWindowsDump() {
     doSignal(new String[] {}, GetPid.getPID());
+  }
+
+  private static void doIbmDump() throws ClassNotFoundException, SecurityException, NoSuchMethodException,
+      IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+    final Class ibmDumpClass = Class.forName("com.ibm.jvm.Dump");
+    final Method ibmDumpMethod = ibmDumpClass.getDeclaredMethod("JavaDump", new Class[] {});
+    ibmDumpMethod.invoke(null, new Object[] {});
   }
 
   private static void doSignal(String[] args, int pid) {
