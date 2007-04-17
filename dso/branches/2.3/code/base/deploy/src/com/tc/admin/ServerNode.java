@@ -24,12 +24,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
-import java.util.Map;
 import java.util.prefs.Preferences;
 
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXServiceURL;
 import javax.naming.CommunicationException;
 import javax.naming.ServiceUnavailableException;
 import javax.swing.Icon;
@@ -70,25 +68,23 @@ public class ServerNode extends ComponentNode implements ConnectionListener {
   private static final String     PORT                           = ServersHelper.PORT;
   private static final String     AUTO_CONNECT                   = ServersHelper.AUTO_CONNECT;
 
-  private static final long       DEFAULT_CONNECT_TIMEOUT_MILLIS = 8000;
-
-  private static final long       CONNECT_TIMEOUT_MILLIS         = Long
-                                                                     .getLong(
-                                                                              "com.tc.admin.ServerNode.connect-timeout",
-                                                                              DEFAULT_CONNECT_TIMEOUT_MILLIS)
-                                                                     .longValue();
-
   ServerNode() {
     this(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT, ConnectionContext.DEFAULT_AUTO_CONNECT);
   }
 
-  ServerNode(final String host, final int port, final boolean autoConnect) {
+  ServerNode(final String host, final int jmxPort, final boolean autoConnect) {
     super();
 
     m_acc = AdminClient.getContext();
     setRenderer(new ServerNodeTreeCellRenderer());
     AutoConnectionListener acl = new AutoConnectionListener();
-    m_connectManager = new ServerConnectionManager(host, port, autoConnect, acl);
+    m_connectManager = new ServerConnectionManager(host, jmxPort, autoConnect, acl);
+    if(autoConnect) {
+      String[] creds = ServerConnectionManager.getCachedCredentials(host);
+      if(creds != null) {
+        m_connectManager.setCredentials(creds[0], creds[1]);
+      }
+    }
     initMenu(autoConnect);
     setComponent(m_serverPanel = new ServerPanel(this));
   }
@@ -157,6 +153,10 @@ public class ServerNode extends ComponentNode implements ConnectionListener {
     }
   }
 
+  ServerConnectionManager getServerConnectionManager() {
+    return m_connectManager;
+  }
+  
   ConnectionContext getConnectionContext() {
     return m_connectManager.getConnectionContext();
   }
@@ -269,14 +269,12 @@ public class ServerNode extends ComponentNode implements ConnectionListener {
     return m_connectException != null;
   }
 
-  private ConnectDialog getConnectDialog(JMXServiceURL url, Map env, long timeout, ConnectionListener listener) {
+  ConnectDialog getConnectDialog(ConnectionListener listener) {
     if (m_connectDialog == null) {
-      m_connectDialog = new ConnectDialog((Frame) m_serverPanel.getAncestorOfClass(java.awt.Frame.class), url, env,
-                                          timeout, listener);
+      Frame frame = (Frame) m_serverPanel.getAncestorOfClass(java.awt.Frame.class);
+      m_connectDialog = new ConnectDialog(frame, m_connectManager, listener);
     } else {
-      m_connectDialog.setServiceURL(url);
-      m_connectDialog.setEnvironment(env);
-      m_connectDialog.setTimeout(timeout);
+      m_connectDialog.setServerConnectionManager(m_connectManager);
       m_connectDialog.setConnectionListener(listener);
     }
 
@@ -299,14 +297,15 @@ public class ServerNode extends ComponentNode implements ConnectionListener {
 
     m_connectException = null;
 
-    JMXServiceURL url = m_connectManager.getJMXServiceURL();
-    Map env = m_connectManager.getConnectionEnvironment();
-    ConnectDialog cd = getConnectDialog(url, env, CONNECT_TIMEOUT_MILLIS, this);
+    ConnectDialog cd = getConnectDialog(this);
+    Frame frame = (Frame) m_serverPanel.getAncestorOfClass(java.awt.Frame.class);
 
-    AdminClientPanel topPanel = (AdminClientPanel) SwingUtilities.getAncestorOfClass(AdminClientPanel.class,
-                                                                                     m_serverPanel);
+    String[] creds = ServerConnectionManager.getCachedCredentials(getHost());
+    if(creds != null) {
+      m_connectManager.setCredentials(creds[0], creds[1]);
+    }
 
-    cd.center(topPanel);
+    cd.center(frame);
     cd.setVisible(true);
   }
 
@@ -522,6 +521,13 @@ public class ServerNode extends ComponentNode implements ConnectionListener {
       JCheckBoxMenuItem menuitem = (JCheckBoxMenuItem) ae.getSource();
       boolean autoConnect = menuitem.isSelected();
 
+      if(autoConnect) {
+        String[] creds = ServerConnectionManager.getCachedCredentials(getHost());
+        if(creds != null) {
+          m_connectManager.setCredentials(creds[0], creds[1]);
+        }
+      }
+      
       m_connectManager.setAutoConnect(autoConnect);
       m_serverPanel.setupConnectButton();
       m_acc.controller.updateServerPrefs();

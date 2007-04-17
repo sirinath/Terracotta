@@ -14,17 +14,21 @@ import com.tc.admin.common.XObjectTable;
 import com.tc.config.schema.L2Info;
 
 import java.awt.Color;
+import java.awt.Frame;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 
+import javax.management.remote.JMXConnector;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumnModel;
 
 public class ServerPanel extends XContainer {
@@ -41,7 +45,6 @@ public class ServerPanel extends XContainer {
   private ProductInfoPanel        m_altProductInfoPanel;    // Displayed if the RuntimeInfoPanel is not.
   private XObjectTable            m_clusterMemberTable;
   private ClusterMemberTableModel m_clusterMemberTableModel;
-  private ClusterMemberListener   m_clusterMemberListener;
 
   static {
     m_connectIcon = new ImageIcon(ServerPanel.class.getResource("/com/tc/admin/icons/disconnect_co.gif"));
@@ -64,7 +67,6 @@ public class ServerPanel extends XContainer {
     m_productInfoPanel = (ProductInfoPanel) findComponent("ProductInfoPanel");
     m_clusterMemberTable = (XObjectTable) findComponent("ClusterMembersTable");
     m_clusterMemberTableModel = new ClusterMemberTableModel();
-    m_clusterMemberListener = new ClusterMemberListener();
     m_clusterMemberTable.setModel(m_clusterMemberTableModel);
     TableColumnModel colModel = m_clusterMemberTable.getColumnModel();
     colModel.getColumn(0).setCellRenderer(new ClusterMemberStatusRenderer());
@@ -283,31 +285,97 @@ public class ServerPanel extends XContainer {
   }
 
   private class ClusterMemberListener implements ConnectionListener {
+    ServerConnectionManager m_scm;
+    ConnectDialog m_cd;
+    
+    void setServerConnectionManager(ServerConnectionManager scm) {
+      m_scm = scm;
+    }
+    
     public void handleConnection() {
-      if (m_clusterMemberTableModel != null) {
-        int count = m_clusterMemberTableModel.getRowCount();
-        m_clusterMemberTableModel.fireTableRowsUpdated(0, count - 1);
-      }
+      m_scm.setAutoConnect(false);
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          if (m_clusterMemberTableModel != null) {
+            int count = m_clusterMemberTableModel.getRowCount();
+            m_clusterMemberTableModel.fireTableRowsUpdated(0, count - 1);
+          }
+        }
+      });
     }
 
-    public void handleException() {
-      if (m_clusterMemberTableModel != null) {
-        m_clusterMemberTableModel.fireTableDataChanged();
+    class ConnectDialogListener implements ConnectionListener {
+      public void handleConnection() {
+        JMXConnector jmxc;
+        if ((jmxc = m_cd.getConnector()) != null) {
+          try {
+            m_scm.setJMXConnector(jmxc);
+          } catch (IOException ioe) {
+            ioe.printStackTrace();
+          }
+        }
       }
+      
+      public void handleException() {/**/}
+    }
+  
+    void connect() {
+      AdminClientPanel topPanel = (AdminClientPanel) ServerPanel.this.getAncestorOfClass(AdminClientPanel.class);
+      Frame frame = (Frame) topPanel.getAncestorOfClass(java.awt.Frame.class);
+
+      m_cd = m_serverNode.getConnectDialog(new ConnectDialogListener());
+      m_cd.setServerConnectionManager(m_scm);
+      m_cd.center(frame);
+      m_cd.setVisible(true);
+    }
+    
+    public void handleException() {
+      if(m_cd != null && m_cd.isVisible()) return;
+      
+      m_scm.setAutoConnect(false);
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          Exception e = m_scm.getConnectionException();
+          if(e instanceof SecurityException) {
+            connect();
+          }
+
+          if (m_clusterMemberTableModel != null) {
+            m_clusterMemberTableModel.fireTableDataChanged();
+          }
+        }
+      });
     }
   }
 
   void addClusterMember(L2Info clusterMember) {
-    String host = clusterMember.host();
-
-    if (host.equals("localhost") || host.equals(L2Info.IMPLICIT_L2_NAME)) {
-      clusterMember = new L2Info(clusterMember.name(), m_serverNode.getHost(), clusterMember.jmxPort());
+    ClusterMemberListener cml = new ClusterMemberListener();
+    ServerConnectionManager scm = new ServerConnectionManager(clusterMember, false, cml);
+    String[] creds = ServerConnectionManager.getCachedCredentials(clusterMember.host());
+    
+    if(creds == null) {
+      creds = m_serverNode.getServerConnectionManager().getCredentials();
     }
-
-    ServerConnectionManager scm = new ServerConnectionManager(clusterMember, true, m_clusterMemberListener);
+    if(creds != null) {
+      scm.setCredentials(creds[0], creds[1]);
+    }
+    cml.setServerConnectionManager(scm);
+    scm.setAutoConnect(true);
+    
     m_clusterMemberTableModel.addClusterMember(scm);
   }
 
+  ServerConnectionManager[] getClusterMembers() {
+    int count = m_clusterMemberTableModel.getRowCount();
+    ServerConnectionManager[] result = new ServerConnectionManager[count];
+    
+    for(int i = 0; i < count; i++) {
+      result[i] = m_clusterMemberTableModel.getClusterMemberAt(i);
+    }
+    
+    return result;
+  }
+  
   public void tearDown() {
     super.tearDown();
 
@@ -325,6 +393,5 @@ public class ServerPanel extends XContainer {
     m_productInfoPanel = null;
     m_clusterMemberTable = null;
     m_clusterMemberTableModel = null;
-    m_clusterMemberListener = null;
   }
 }

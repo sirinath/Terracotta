@@ -41,6 +41,8 @@ public class ServerConnectionManager implements NotificationListener {
   private Timer                   m_connectMonitorTimer;
   private AutoConnectListener     m_autoConnectListener;
 
+  private static final Map        m_credentialsMap = new HashMap();
+  
   private static final int        CONNECT_MONITOR_PERIOD = 1000;
 
   static {
@@ -59,7 +61,11 @@ public class ServerConnectionManager implements NotificationListener {
     setL2Info(l2Info);
   }
 
-  private void setL2Info(L2Info l2Info) {
+  public L2Info getL2Info() {
+    return m_l2Info;
+  }
+  
+  public void setL2Info(L2Info l2Info) {
     cancelActiveServices();
 
     m_l2Info = l2Info;
@@ -82,6 +88,20 @@ public class ServerConnectionManager implements NotificationListener {
     setL2Info(new L2Info(m_l2Info.name(), m_l2Info.host(), port));
   }
 
+  public void setCredentials(String username, String password) {
+    Map connEnv = getConnectionEnvironment();
+    connEnv.put("jmx.remote.credentials", new String[] { username, password });
+  }
+  
+  public String[] getCredentials() {
+    Map connEnv = getConnectionEnvironment();
+    return (String[])connEnv.get("jmx.remote.credentials");
+  }
+
+  public static String[] getCachedCredentials(String host) {
+    return (String[])m_credentialsMap.get(host);
+  }
+  
   public void setAutoConnect(boolean autoConnect) {
     if ((m_autoConnect = autoConnect) == true) {
       if (!m_connected) {
@@ -105,6 +125,7 @@ public class ServerConnectionManager implements NotificationListener {
   }
 
   public void setJMXConnector(JMXConnector jmxc) throws IOException {
+    m_connectException = null;
     m_connectCntx.jmxc = jmxc;
     m_connectCntx.mbsc = jmxc.getMBeanServerConnection();
     setConnected(true);
@@ -120,6 +141,7 @@ public class ServerConnectionManager implements NotificationListener {
           startConnect();
         }
       } else { // connected
+        m_credentialsMap.put(m_l2Info.host(), getCredentials());
         m_started = true;
         if ((m_active = internalIsActive()) == false) {
           addActivationListener();
@@ -363,6 +385,10 @@ public class ServerConnectionManager implements NotificationListener {
     return getHostname() + ":" + getJMXPortNumber();
   }
 
+  public void dump(String prefix) {
+    System.out.println(prefix+this+",connected="+m_connected+",autoConnect="+m_autoConnect+",started="+m_started+",exception="+m_connectException);
+  }
+  
   void cancelActiveServices() {
     cancelConnectThread();
     cancelConnectionMonitor();
