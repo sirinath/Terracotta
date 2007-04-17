@@ -91,7 +91,7 @@ import javax.servlet.http.HttpSessionListener;
  * the appserver)
  * </ul>
  * <p>
- * 
+ *
  * <pre>
  *                            outer class:
  *                            ...
@@ -108,7 +108,7 @@ import javax.servlet.http.HttpSessionListener;
  *                            out.println(&quot;false&quot;);
  *                            ...
  * </pre>
- * 
+ *
  * <p>
  * <h3>Debugging Information:</h3>
  * There are a number of locations and files to consider when debugging appserver unit tests. Below is a list followed
@@ -143,7 +143,7 @@ import javax.servlet.http.HttpSessionListener;
  * <p>
  * As a final note: the <tt>UttpUtil</tt> class should be used (and added to as needed) to page servlets and validate
  * assertions.
- * 
+ *
  * @author eellis
  */
 public abstract class AbstractAppServerTestCase extends TCTestCase {
@@ -184,24 +184,25 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   }
 
   protected void setUp() throws Exception {
-    
+
     LinkedJavaProcessPollingAgent.startHeartBeatServer();
-    
+
     isSynchronousWrite = false;
     config = TestConfigObject.getInstance();
     tempDir = getTempDirectory();
     serverInstallDir = makeDir(config.appserverServerInstallDir());
     File workDir;
-    
+
     try {
       workDir = new File(config.appserverWorkingDir());
       if (workDir.exists() && workDir.isDirectory()) {
         FileUtils.cleanDirectory(workDir);
       }
     } catch (IOException e) {
-      workDir = new File(config.appserverWorkingDir()+"-"+new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()));
+      workDir = new File(config.appserverWorkingDir() + "-"
+                         + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()));
     }
-    
+
     workingDir = makeDir(workDir.getAbsolutePath());
     bootJar = new File(config.normalBootJar());
     appServerFactory = NewAppServerFactory.createFactoryFromProperties(config);
@@ -239,7 +240,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private void archiveSandboxLogs() {
     synchronized (workingDirLock) {
       if (installation != null) {
-        String src = installation.getSandboxDirectory().getParentFile().getAbsolutePath();
+        String src = installation.sandboxDirectory().getParentFile().getAbsolutePath();
         String dest = new File(tempDir, "archive-logs-" + System.currentTimeMillis() + ".zip").getAbsolutePath();
 
         String msg = "\n";
@@ -272,7 +273,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
     TerracottaServerConfigGenerator generator = configGen();
 
-    File dsoWorkingDir = installation.getDataDirectory();
+    File dsoWorkingDir = installation.dataDirectory();
     File outputFile = new File(dsoWorkingDir, "dso-server.log");
 
     StandardDsoServerParameters params = new StandardDsoServerParameters(generator, dsoWorkingDir, outputFile,
@@ -317,7 +318,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   * 
+   *
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -354,6 +355,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
           params.appendJvmArgs(jvmargs[i]);
         }
       }
+
+      params.appendJvmArgs("-DNODE=" + NODE + nodeNumber);
 
       // params.appendJvmArgs("-Dtc.classloader.writeToDisk=true");
 
@@ -406,7 +409,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   * 
+   *
    * @throws Exception
    */
   protected void tearDown() throws Exception {
@@ -416,18 +419,20 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         Server server = (Server) iter.next();
         server.stop();
       }
-      
+
       System.out.println("Shutdown heartbeat server and its children...");
       LinkedJavaProcessPollingAgent.shutdown();
-      
+
       if (dsoServer != null && dsoServer.isRunning()) dsoServer.stop();
-      
+
     } finally {
       VmStat.stop();
       synchronized (workingDirLock) {
         File dest = new File(tempDir, getName());
         try {
           workingDir.renameTo(dest);
+          // XXX: check return value?!!?
+
         } catch (Throwable e) {
           throw new RuntimeException("Error moving logs files. There might be zombie processes.", e);
         }
@@ -443,7 +448,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     if (warFile != null) return warFile;
     War war = appServerFactory.createWar(testName());
     addServletsWebAppClasses(war);
-    File resourceDir = installation.getDataDirectory();
+    File resourceDir = installation.dataDirectory();
     warFile = new File(resourceDir + File.separator + war.writeWarFileToDirectory(resourceDir));
     return warFile;
   }
@@ -503,12 +508,14 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   private synchronized TerracottaServerConfigGenerator configGen() throws Exception {
     if (configGen != null) { return configGen; }
-    StandardTerracottaAppServerConfig configBuilder = appServerFactory.createTcConfig(installation.getDataDirectory());
+    StandardTerracottaAppServerConfig configBuilder = appServerFactory.createTcConfig(installation.dataDirectory());
 
-    if (isSynchronousWrite) {
-      configBuilder.addWebApplication(testName(), isSynchronousWrite);
-    } else {
-      configBuilder.addWebApplication(testName());
+    if (isSessionTest()) {
+      if (isSynchronousWrite) {
+        configBuilder.addWebApplication(testName(), isSynchronousWrite);
+      } else {
+        configBuilder.addWebApplication(testName());
+      }
     }
 
     configBuilder.addInclude("com.tctest..*");
@@ -532,6 +539,10 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       configBuilder.addLock(lock.isAutoLock(), lock.methodExpression(), lock.lockLevel().toString(), lockName);
     }
 
-    return configGen = new TerracottaServerConfigGenerator(installation.getDataDirectory(), configBuilder);
+    return configGen = new TerracottaServerConfigGenerator(installation.dataDirectory(), configBuilder);
+  }
+
+  protected boolean isSessionTest() {
+    return true;
   }
 }
