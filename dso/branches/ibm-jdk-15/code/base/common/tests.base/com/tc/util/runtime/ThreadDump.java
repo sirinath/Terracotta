@@ -7,6 +7,7 @@ package com.tc.util.runtime;
 import com.tc.process.StreamCollector;
 import com.tc.test.TestConfigObject;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.exception.ExceptionUtil;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -37,9 +38,10 @@ public class ThreadDump {
       if (Vm.isIBM()) {
         try {
           doIbmDump();
-        } catch (Exception ignore) {
+        } catch (Exception e) {
           System.err.println("Got an exception while trying to use the native IBM thread"
-              + " dump facility, using 'standard' method. Error is: " + ignore.getMessage());
+              + " dump facility, using 'standard' method.  Stacktrace is below:");
+          ExceptionUtil.dumpFullStackTrace(e, System.err);
           System.err.flush();
           doStandardDump = true;
         }
