@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.process;
 
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 public class LinkedJavaProcess {
 
+  private File           javaHome;
   private final String   mainClassName;
   private String[]       javaArguments;
   private final String[] arguments;
@@ -60,6 +62,14 @@ public class LinkedJavaProcess {
     this.javaExecutable = null;
     this.process = null;
     this.running = false;
+  }
+
+  public File getJavaHome() {
+    return javaHome;
+  }
+
+  public void setJavaHome(File javaHome) {
+    this.javaHome = javaHome;
   }
 
   public LinkedJavaProcess(String mainClassName) {
@@ -96,7 +106,9 @@ public class LinkedJavaProcess {
 
   private synchronized void setJavaExecutableIfNecessary() throws IOException {
     if (this.javaExecutable == null) {
-      File javaHome = new File(System.getProperty("java.home"));
+      if (javaHome == null) {
+        javaHome = new File(System.getProperty("java.home"));
+      }
       File javaBin = new File(javaHome, "bin");
       File javaPlain = new File(javaBin, "java");
       File javaExe = new File(javaBin, "java.exe");
@@ -112,13 +124,15 @@ public class LinkedJavaProcess {
       if (this.javaExecutable == null) {
         // formatting
         throw new IOException("Can't find the Java binary; perhaps you need to set it yourself? Tried "
-                              + javaPlain.getAbsolutePath() + " and " + javaExe.getAbsolutePath());
+            + javaPlain.getAbsolutePath() + " and " + javaExe.getAbsolutePath());
       }
     }
   }
 
   public synchronized void start() throws IOException {
     if (this.running) throw new IllegalStateException("This LinkedJavaProcess is already running.");
+
+    LinkedJavaProcessPollingAgent.startHeartBeatServer();
 
     List fullCommandList = new LinkedList();
     List allJavaArguments = new ArrayList();

@@ -17,7 +17,6 @@
           id="org.terracotta.dso.newProjectWizard" 
           name="Terracotta DSO Project" 
           category="org.eclipse.jdt.ui.java/org.terracotta.dso.ui.project"
-          finalPerspective="org.terracotta.dso.terracottaPerspective"
           project="true"
           icon="images/eclipse/logo16.gif" 
           class="org.terracotta.dso.wizards.NewProjectWizard"
@@ -93,7 +92,6 @@
       <shortcut
             label="Terracotta DSO Application"
             icon="images/eclipse/logo16.gif"	
-            helpContextId="org.terracotta.dso.debug.ui.shortcut_dso_application"
             modes="run,debug"
             class="org.terracotta.dso.launch.LaunchShortcut"
             id="org.terracotta.dso.debug.ui.dsoApplicationShortcut">
@@ -116,7 +114,6 @@
       <shortcut
             label="Terracotta DSO JUnit Test"
             icon="images/eclipse/logo16.gif"	
-            helpContextId="org.terracotta.dso.debug.ui.shortcut_dso_junit_test"
             modes="run,debug"
             class="org.terracotta.dso.launch.DSOJUnitLaunchShortcut"
             id="org.terracotta.dso.debug.ui.dsoJUnitTestLaunchShortcut">
@@ -204,7 +201,7 @@
          category="org.terracotta.dso.views"
          class="org.terracotta.dso.views.ConfigViewPart" 
          icon="images/eclipse/logo16.gif"/>
-   </extension> 
+   </extension>
 
    <extension point="org.eclipse.core.resources.natures"
             id="ProjectNature"
@@ -233,7 +230,6 @@
                class="org.terracotta.dso.actions.WorkbenchNatureAction"
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group3"
                enablesFor="1"
-               helpContextId="add_nature_context"
                id="workbenchNatureAction">
          </action>
          <action
@@ -244,7 +240,6 @@
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group1"
                toolbarPath="Terracotta"
                enablesFor="1"
-               helpContextId="start_server_context"
                id="workbenchServerAction">
          </action>
          <action
@@ -252,7 +247,6 @@
                label="Show Config Editor"
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group2"
                tooltip="Show the DSO configuration editor"
-               helpContextId="show.config.editor.action.context"
                class="org.terracotta.dso.actions.ShowConfigEditorAction"
                enablesFor="*">
                <enablement>
@@ -264,7 +258,6 @@
                label="Show AdminConsole..."
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group2"
                tooltip="Show the Terracotta AdminConsole"
-               helpContextId="show.adminconsole.action.context"
                icon="images/eclipse/monitor_obj.gif"
                class="org.terracotta.dso.actions.ShowAdminConsoleAction"
                enablesFor="*">
@@ -277,7 +270,6 @@
                label="Build BootJar..."
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group2"
                tooltip="Build the BootJar from you current DSO configuration"
-               helpContextId="build.bootjar.action.context"
                icon="images/eclipse/jar_obj.gif"
                class="org.terracotta.dso.actions.BuildBootJarAction"
                enablesFor="*">
@@ -291,7 +283,6 @@
                class="org.terracotta.dso.actions.HelpHandler"
                menubarPath="org.terracotta.dso.workbenchActionSetMenu/group5"
                enablesFor="*"
-               helpContextId="help_handler_context"
                id="workbenchHelperHandlerAction">
          </action>
          <action
@@ -321,7 +312,7 @@
               <and>
                 <objectState name="projectNature" value="org.terracotta.dso.ProjectNature"/>
                 <not>
-                  <objectState name="persistentProperty" value="org.terracotta.dso.ActiveDomainConfigFile"/>
+                  <objectState name="sessionProperty" value="org.terracotta.dso.ActiveDomainConfigFile"/>
                 </not>
               </and>
             </visibility>
@@ -336,7 +327,6 @@
            label="Make Current Config File"
            menubarPath="filePopupMenu/group1"
            tooltip="Make this file the current config file"
-           helpContextId="make.config.file.action.context"
            class="org.terracotta.dso.actions.MakeConfigFileAction"
            enablesFor="1">
          </action>
@@ -368,7 +358,6 @@
                class="org.terracotta.dso.actions.AddTerracottaNatureAction"
                menubarPath="projectPopupMenu/group3"
                enablesFor="1"
-               helpContextId="add_nature_context"
                id="addTerracottaNatureAction">
          </action>
       </objectContribution>
@@ -384,7 +373,6 @@
                class="org.terracotta.dso.actions.RemoveTerracottaNatureAction"
                menubarPath="projectPopupMenu/group3"
                enablesFor="1"
-               helpContextId="remove_nature_context"
                id="removeTerracottaNatureAction">
          </action>
       </objectContribution>
@@ -399,7 +387,6 @@
                class="org.terracotta.dso.actions.ManageServerHandler"
                menubarPath="projectPopupMenu/group2"
                enablesFor="1"
-               helpContextId="stop_server_context"
                id="stopTerracottaServerAction">
          </action>
       </objectContribution>
@@ -415,7 +402,6 @@
          label="Show Config Editor"
          menubarPath="projectPopupMenu/group1"
          tooltip="Show the DSO configuration editor"
-         helpContextId="show.config.editor.action.context"
          class="org.terracotta.dso.actions.ShowConfigEditorAction"
          enablesFor="1">
        </action>
@@ -432,7 +418,6 @@
          label="Show AdminConsole..."
          menubarPath="projectPopupMenu/group1"
          tooltip="Show the Terracotta AdminConsole"
-         helpContextId="show.adminconsole.action.context"
          icon="images/eclipse/monitor_obj.gif"
          class="org.terracotta.dso.actions.ShowAdminConsoleAction"
          enablesFor="1">
@@ -450,7 +435,6 @@
          label="Build BootJar..."
          menubarPath="projectPopupMenu/group1"
          tooltip="Build the BootJar from you current DSO configuration"
-         helpContextId="build.bootjar.action.context"
          icon="images/eclipse/jar_obj.gif"
          class="org.terracotta.dso.actions.BuildBootJarAction"
          enablesFor="1">

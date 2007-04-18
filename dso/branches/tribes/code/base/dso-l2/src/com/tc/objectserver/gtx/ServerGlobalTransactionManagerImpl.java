@@ -15,6 +15,7 @@ import com.tc.util.SequenceValidator;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransactionManager {
 
@@ -24,7 +25,6 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
 
   public ServerGlobalTransactionManagerImpl(SequenceValidator sequenceValidator, TransactionStore transactionStore,
                                             PersistenceTransactionProvider ptxp) {
-    super();
     this.sequenceValidator = sequenceValidator;
     this.transactionStore = transactionStore;
     this.persistenceTransactionProvider = ptxp;
@@ -37,9 +37,16 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     tx.commit();
   }
 
+  public void shutdownAllClientsExcept(Set cids) {
+    PersistenceTransaction tx = this.persistenceTransactionProvider.newTransaction();
+    transactionStore.shutdownAllClientsExcept(tx, cids);
+    tx.commit();
+  }
+
   public boolean needsApply(ServerTransactionID stxID) {
     GlobalTransactionDescriptor gtx = this.transactionStore.getTransactionDescriptor(stxID);
-    return (gtx == null);
+    // XXX:: In passive this mapping is not yet created
+    return gtx == null || !gtx.isApplied();
   }
 
   public void completeTransactions(PersistenceTransaction tx, Collection collection) {
@@ -48,9 +55,11 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
   }
 
   public void commit(PersistenceTransaction persistenceTransaction, ServerTransactionID stxID) {
-    GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
-    Assert.assertNotNull(desc);
-    transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);
+    if (!stxID.isServerGeneratedTransacation()) {
+      GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
+      Assert.assertNotNull(desc);
+      transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);
+    }
   }
 
   public void commitAll(PersistenceTransaction persistenceTransaction, Collection stxIDs) {
@@ -68,9 +77,18 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     return transactionStore.getGlobalTransactionID(stxnID);
   }
 
-  public GlobalTransactionID createGlobalTransactionID(ServerTransactionID serverTransactionID) {
-    GlobalTransactionDescriptor gdesc = transactionStore.createTransactionDescriptor(serverTransactionID);
+  public GlobalTransactionID getOrCreateGlobalTransactionID(ServerTransactionID serverTransactionID) {
+    GlobalTransactionDescriptor gdesc = transactionStore.getOrCreateTransactionDescriptor(serverTransactionID);
     return gdesc.getGlobalTransactionID();
+  }
+
+  public void applyComplete(ServerTransactionID stxnID) {
+    GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxnID);
+    desc.applyComplete();
+  }
+
+  public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID) {
+    transactionStore.createGlobalTransactionDesc(stxnID, globalTransactionID);
   }
 
 }

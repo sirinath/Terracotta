@@ -5,7 +5,8 @@
 package com.tc.test.server.appserver;
 
 import org.apache.commons.io.FileUtils;
-import org.codehaus.cargo.util.log.Logger;
+import org.codehaus.cargo.util.internal.log.AbstractLogger;
+import org.codehaus.cargo.util.log.LogLevel;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,12 +29,12 @@ public abstract class AbstractAppServer implements AppServer {
   }
 
   protected final synchronized File createInstance(AppServerParameters params) throws Exception {
-    instance = new File(installation.getSandboxDirectory() + File.separator + params.instanceName());
+    instance = new File(installation.sandboxDirectory() + File.separator + params.instanceName());
     if (instance.exists()) {
       FileUtils.deleteDirectory(instance);
     }
     instance.mkdir();
-    initiateStartupAppender(installation.getSandboxDirectory());
+    initiateStartupAppender(installation.sandboxDirectory());
     return instance;
   }
 
@@ -62,6 +63,14 @@ public abstract class AbstractAppServer implements AppServer {
 
   protected final String minorVersion() {
     return installation.minorVersion();
+  }
+
+  protected final File serverBaseDirectory() {
+    return installation.serverBaseDir();
+  }
+
+  protected final File sandboxDirectory() {
+    return installation.sandboxDirectory();
   }
 
   /**
@@ -103,35 +112,19 @@ public abstract class AbstractAppServer implements AppServer {
     }
   }
 
-  public final static class ConsoleLogger implements Logger {
+  public final static class ConsoleLogger extends AbstractLogger {
 
     private static final DateFormat FORMAT = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss.SSS");
 
     private final String            instance;
-    private final boolean           debugEnabled;
 
-    public ConsoleLogger(String instance, boolean debugEnabled) {
+    public ConsoleLogger(String instance) {
       this.instance = instance;
-      this.debugEnabled = debugEnabled;
     }
 
-    public void info(String message, String category) {
-      log("info", message, category);
-    }
-
-    public void debug(String message, String category) {
-      if (debugEnabled) {
-        log("debug", message, category);
-      }
-    }
-
-    public void warn(String message, String category) {
-      log("warn", message, category);
-    }
-
-    private void log(String severity, String message, String category) {
-      System.out.println(FORMAT.format(new Date()) + " [" + severity + "][" + category + "][" + instance + "] "
-                         + message);
+    protected void doLog(LogLevel level, String message, String category) {
+      String msg = "[" + FORMAT.format(new Date()) + "]" + "[" + level.getLevel() + "][" + instance + "] " + message;
+      System.out.println(msg);
     }
   }
 }

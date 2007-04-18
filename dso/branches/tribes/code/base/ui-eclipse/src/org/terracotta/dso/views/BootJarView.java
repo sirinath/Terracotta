@@ -11,7 +11,6 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -33,6 +32,8 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IPartListener;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
@@ -41,6 +42,7 @@ import org.terracotta.dso.JdtUtils;
 import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.actions.ActionUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,12 +53,16 @@ import java.util.zip.ZipFile;
 public class BootJarView extends ViewPart
   implements IResourceChangeListener,
              IResourceDeltaVisitor,
-             ISelectionChangedListener
+             ISelectionChangedListener,
+             IPartListener
 {
   public static final String ID_BOOTJAR_VIEW_PART = "org.terracotta.dso.ui.views.bootJarView";
 
   private TableViewer viewer;
   private IFile bootJarFile;
+  private IJavaProject lastJavaProject;
+  private static final String EMPTY_CONTENT_ELEM = "No boot JAR found.";
+  private static final Object[] EMPTY_CONTENT = {EMPTY_CONTENT_ELEM};
   
   public BootJarView() {
     super();
@@ -69,6 +75,7 @@ public class BootJarView extends ViewPart
     viewer.setLabelProvider(new ViewLabelProvider());
     viewer.setInput(getViewSite());
     viewer.addSelectionChangedListener(this);
+    getSite().getPage().addPartListener(this);
     ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
   }
 
@@ -86,16 +93,33 @@ public class BootJarView extends ViewPart
         } catch(CoreException ce) {/**/}
       }
       
+      String fileName = null;
+      String tip = "";
+      String desc = "";
+      
       if(bootJarFile == null ||
          !bootJarFile.exists() ||
+         !bootJarFile.getProject().isOpen() ||
          !TcPlugin.getDefault().hasTerracottaNature(bootJarFile.getProject()))
       {
-        return new Object[0];
+        fileName = getDefaultBootJarPath();
+        tip = fileName;
+        desc = "System bootjar: " + new File(fileName).getName();
+      } else {
+        fileName = bootJarFile.getLocation().toOSString();
+        tip = desc = bootJarFile.getProject().getName() + IPath.SEPARATOR + bootJarFile.getName();
       }
 
+      File file = new File(fileName);
+      setTitleToolTip(tip);
+      setContentDescription(desc);
+
+      if(fileName == null || !file.exists()) {
+        return EMPTY_CONTENT;
+      }
+      
       ZipFile zipFile = null;
       try {
-        String fileName = bootJarFile.getLocation().toOSString();
         zipFile = new ZipFile(fileName);
         Enumeration entries = zipFile.entries();
         while(entries.hasMoreElements()) {
@@ -134,7 +158,8 @@ public class BootJarView extends ViewPart
     }
 
     public Image getImage(Object obj) {
-      return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_CLASS);
+      String imgName = (obj != EMPTY_CONTENT_ELEM) ? JavaPluginImages.IMG_OBJS_CLASS : JavaPluginImages.IMG_OBJS_REFACTORING_ERROR;
+      return JavaPluginImages.get(imgName);
     }
   }
 
@@ -142,8 +167,8 @@ public class BootJarView extends ViewPart
     viewer.getControl().setFocus();
   }
   
-  public static IFile getBootJarFile() {
-    IWorkbenchWindow window      = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+  public IFile getBootJarFile() {
+    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
     
     if(window != null) {
       ISelection selection = window.getSelectionService().getSelection();
@@ -156,20 +181,29 @@ public class BootJarView extends ViewPart
           IFile    localBootJar = project.getFile(safeGetInstallBootJarName(javaProject));
 
           if(localBootJar != null) {
+            lastJavaProject = javaProject;
             return localBootJar;
           }
         }
       }
     }
     
-    String     bootJarName = safeGetInstallBootJarName();
-    IPath      bootJarPath = BootJarHelper.getHelper().getBootJarPath(bootJarName);
-    IWorkspace workspace   = ResourcesPlugin.getWorkspace(); 
-    
-    return workspace.getRoot().getFileForLocation(bootJarPath);
+    return null;
   }
 
+  private static String getDefaultBootJarPath() {
+    String bootJarName = safeGetInstallBootJarName();
+    
+    if(bootJarName != null) {
+      IPath path = BootJarHelper.getHelper().getBootJarPath(bootJarName);
+      if(path != null) {
+        return path.toOSString();
+      }
+    }
 
+    return null;
+  }
+  
   private static String safeGetInstallBootJarName(IJavaProject javaProject) {
     try {
       String portablePath = null;
@@ -200,10 +234,21 @@ public class BootJarView extends ViewPart
       return false;
     }
     
-    if((delta.getFlags() & IResourceDelta.DESCRIPTION) != 0 || isAffected(delta)) {
-      bootJarFile = getBootJarFile();
-      viewer.setContentProvider(new ViewContentProvider());
-      viewer.setInput(getViewSite());
+    IResource res = delta.getResource();
+    if(res instanceof IProject) {
+      IProject project = (IProject)res;
+
+      if((delta.getKind() == IResourceDelta.ADDED &&
+         TcPlugin.getDefault().hasTerracottaNature(project)) ||
+         (delta.getFlags() & IResourceDelta.DESCRIPTION) != 0)
+      {
+        reset();
+        return false;
+      }
+    }
+  
+    if(isAffected(delta)) {
+      reset();
       return false;
     }
     
@@ -217,12 +262,12 @@ public class BootJarView extends ViewPart
       if(res.equals(bootJarFile)) {
         return true;
       }
-
-      IResourceDelta[] children = delta.getAffectedChildren();
-      for(int i = 0; i < children.length; i++) {
-        if(isAffected(children[i])) {
-          return true;
-        }
+    }
+    
+    IResourceDelta[] children = delta.getAffectedChildren();
+    for(int i = 0; i < children.length; i++) {
+      if(isAffected(children[i])) {
+        return true;
       }
     }
 
@@ -230,10 +275,21 @@ public class BootJarView extends ViewPart
   }
   
   public void resourceChanged(final IResourceChangeEvent event){
-    if(event.getType() == IResourceChangeEvent.POST_CHANGE) {
+    int type = event.getType();
+
+    if(type == IResourceChangeEvent.PRE_DELETE ||
+       type == IResourceChangeEvent.PRE_CLOSE)
+    {
+      getSite().getShell().getDisplay().asyncExec(new Runnable() {
+        public void run(){
+          clear();
+        }
+      });
+    } else if(type == IResourceChangeEvent.POST_CHANGE) {
       getSite().getShell().getDisplay().asyncExec(new Runnable() {
         public void run(){
           try {
+            bootJarFile = getBootJarFile();
             event.getDelta().accept(BootJarView.this);
           } catch(CoreException ce) {
             ce.printStackTrace();
@@ -246,7 +302,7 @@ public class BootJarView extends ViewPart
   public void selectionChanged(SelectionChangedEvent event) {
     ISelection sel = event.getSelection();
     
-    if(!sel.isEmpty()) {
+    if(!sel.isEmpty() && bootJarFile != null) {
       if(sel instanceof StructuredSelection) {
         StructuredSelection ss = (StructuredSelection)sel;
         
@@ -261,10 +317,54 @@ public class BootJarView extends ViewPart
               if(type != null) {
                 ConfigUI.jumpToMember(type);
               }
-            } catch(JavaModelException jme) {/**/}
+            } catch(JavaModelException jme) {
+              jme.printStackTrace();
+            }
           }
         }
       }
     }
+  }
+
+  public void partActivated(IWorkbenchPart part) {
+    if(part != this) {
+      IWorkbenchWindow window = part.getSite().getWorkbenchWindow();
+      
+      if(window != null) {
+        ISelection selection = window.getSelectionService().getSelection();
+        
+        if(selection != null) {
+          IJavaProject javaProject = ActionUtil.locateSelectedJavaProject(selection);
+          
+          if(!javaProject.equals(lastJavaProject)) {
+            bootJarFile = getBootJarFile();
+            reset();
+          }
+        }
+      }
+    }
+  }
+
+  public void partBroughtToTop(IWorkbenchPart part) {/**/}
+  public void partClosed(IWorkbenchPart part) {/**/}
+  public void partDeactivated(IWorkbenchPart part) {/**/}
+  public void partOpened(IWorkbenchPart part) {/**/}
+
+  void reset() {
+    viewer.setContentProvider(new ViewContentProvider());
+    viewer.setInput(getViewSite());
+  }
+
+  void clear() {
+    bootJarFile = null;
+    reset();
+  }
+  
+  public void dispose() {
+    viewer.removeSelectionChangedListener(this);
+    getSite().getPage().removePartListener(this);
+    ResourcesPlugin.getWorkspace().removeResourceChangeListener(this);
+    
+    super.dispose();
   }
 }

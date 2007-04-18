@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -13,6 +14,9 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AtomicIntegerTestApp extends AbstractTransparentApp {
@@ -20,6 +24,7 @@ public class AtomicIntegerTestApp extends AbstractTransparentApp {
   private final CyclicBarrier barrier;
 
   private final DataRoot      root = new DataRoot();
+  private final AtomicInteger sum  = new AtomicInteger(0);
 
   public AtomicIntegerTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -35,6 +40,7 @@ public class AtomicIntegerTestApp extends AbstractTransparentApp {
   }
 
   private void atomicIntegerTesting() throws Exception {
+    loadTest();
     basicSetTesting();
     basicGetTesting();
     addAndGetTesting();
@@ -66,6 +72,28 @@ public class AtomicIntegerTestApp extends AbstractTransparentApp {
 
     barrier.barrier();
 
+  }
+
+  private void loadTest() throws Exception {
+    List errors = Collections.synchronizedList(new ArrayList());
+
+    Loader[] loaders = new Loader[3];
+
+    for (int i = 0; i < loaders.length; i++) {
+      loaders[i] = new Loader(sum, errors);
+      loaders[i].start();
+    }
+
+    for (int i = 0; i < loaders.length; i++) {
+      loaders[i].join();
+    }
+    if (errors.size() == 0) {
+      if (barrier.barrier() == 0) {
+        Assert.assertEquals(100 * getParticipantCount() * loaders.length, sum.intValue());
+      }
+    } else {
+      throw new Exception((Throwable) errors.get(0));
+    }
   }
 
   private void basicSetTesting() throws Exception {
@@ -258,6 +286,7 @@ public class AtomicIntegerTestApp extends AbstractTransparentApp {
 
     spec.addRoot("barrier", "barrier");
     spec.addRoot("root", "root");
+    spec.addRoot("sum", "sum");
   }
 
   private static class DataRoot {
@@ -279,4 +308,25 @@ public class AtomicIntegerTestApp extends AbstractTransparentApp {
       intValue.set(0);
     }
   }
+
+  private static class Loader extends Thread {
+    private AtomicInteger sum;
+    private List          errors;
+
+    public Loader(AtomicInteger sum, List errors) {
+      this.sum = sum;
+      this.errors = errors;
+    }
+
+    public void run() {
+      try {
+        for (int i = 0; i < 100; i++) {
+          sum.addAndGet(1);
+        }
+      } catch (Throwable t) {
+        errors.add(t);
+      }
+    }
+  }
+
 }

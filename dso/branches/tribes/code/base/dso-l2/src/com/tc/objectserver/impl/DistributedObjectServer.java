@@ -22,11 +22,13 @@ import com.tc.io.TCRandomFileAccessImpl;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
+import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2Management;
+import com.tc.management.beans.L2State;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.remote.connect.ClientConnectEventHandler;
 import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
@@ -80,6 +82,7 @@ import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.DSOApplicationEvents;
 import com.tc.objectserver.api.ObjectManagerMBean;
+import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -94,6 +97,7 @@ import com.tc.objectserver.handler.BroadcastChangeHandler;
 import com.tc.objectserver.handler.ChannelLifeCycleHandler;
 import com.tc.objectserver.handler.ClientHandshakeHandler;
 import com.tc.objectserver.handler.CommitTransactionChangeHandler;
+import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
 import com.tc.objectserver.handler.ManagedObjectFaultHandler;
 import com.tc.objectserver.handler.ManagedObjectFlushHandler;
@@ -124,9 +128,9 @@ import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.objectserver.persistence.impl.InMemoryPersistor;
+import com.tc.objectserver.persistence.impl.InMemorySequenceProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullTransactionPersistor;
-import com.tc.objectserver.persistence.impl.PersistentBatchSequenceProvider;
 import com.tc.objectserver.persistence.impl.TransactionStoreImpl;
 import com.tc.objectserver.persistence.sleepycat.ConnectionIDFactoryImpl;
 import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFactory;
@@ -158,8 +162,8 @@ import com.tc.util.TCTimeoutException;
 import com.tc.util.TCTimerImpl;
 import com.tc.util.io.FileUtils;
 import com.tc.util.sequence.BatchSequence;
+import com.tc.util.sequence.MutableSequence;
 import com.tc.util.sequence.Sequence;
-import com.tc.util.sequence.SimpleSequence;
 import com.tc.util.startuplock.FileNotCreatedException;
 import com.tc.util.startuplock.LocationNotCreatedException;
 
@@ -205,6 +209,7 @@ public class DistributedObjectServer extends SEDA {
   private CacheManager                         cacheManager;
 
   private final TCServerInfoMBean              tcServerInfoMBean;
+  private final L2State                        l2State;
   private L2Management                         l2Management;
   private L2Coordinator                        l2Coordinator;
 
@@ -212,13 +217,15 @@ public class DistributedObjectServer extends SEDA {
 
   private ConnectionIDFactoryImpl              connectionIdFactory;
 
+  // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
-    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean);
+    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State());
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
-                                 ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean) {
+                                 ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean,
+                                 L2State l2State) {
     super(threadGroup);
 
     // This assertion is here because we want to assume that all threads spawned by the server (including any created in
@@ -230,6 +237,7 @@ public class DistributedObjectServer extends SEDA {
     this.connectionPolicy = connectionPolicy;
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
+    this.l2State = l2State;
   }
 
   public void dump() {
@@ -334,27 +342,26 @@ public class DistributedObjectServer extends SEDA {
     }
 
     persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
-    PersistenceTransactionProvider nullPersistenceTransactionProvider = new NullPersistenceTransactionProvider();
     PersistenceTransactionProvider transactionStorePTP;
+    MutableSequence gidSequence;
     if (persistent) {
-      // XXX: This construction/initialization order is pretty lame. Perhaps
-      // making the sequence provider its own
-      // handler isn't the right thing to do.
-      PersistentBatchSequenceProvider sequenceProvider = new PersistentBatchSequenceProvider(persistor
-          .getGlobalTransactionIDSequence());
-      Stage requestBatchStage = stageManager
-          .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE, sequenceProvider,
-                       1, maxStageSize);
-      sequenceProvider.setRequestBatchSink(requestBatchStage.getSink());
-      globalTransactionIDSequence = new BatchSequence(sequenceProvider, 1000);
+      gidSequence = persistor.getGlobalTransactionIDSequence();
 
       transactionPersistor = persistor.getTransactionPersistor();
       transactionStorePTP = persistenceTransactionProvider;
     } else {
+      gidSequence = new InMemorySequenceProvider();
+
       transactionPersistor = new NullTransactionPersistor();
-      transactionStorePTP = nullPersistenceTransactionProvider;
-      globalTransactionIDSequence = new SimpleSequence();
+      transactionStorePTP = new NullPersistenceTransactionProvider();
     }
+
+    GlobalTransactionIDBatchRequestHandler gidSequenceProvider = new GlobalTransactionIDBatchRequestHandler(gidSequence);
+    Stage requestBatchStage = stageManager
+        .createStage(ServerConfigurationContext.REQUEST_BATCH_GLOBAL_TRANSACTION_ID_SEQUENCE_STAGE,
+                     gidSequenceProvider, 1, maxStageSize);
+    gidSequenceProvider.setRequestBatchSink(requestBatchStage.getSink());
+    globalTransactionIDSequence = new BatchSequence(gidSequenceProvider, 10000);
 
     clientStateStore = persistor.getClientStatePersistor();
 
@@ -449,6 +456,7 @@ public class DistributedObjectServer extends SEDA {
     transactionManager = new ServerTransactionManagerImpl(gtxm, transactionStore, lockManager, clientStateManager,
                                                           objectManager, taa, globalTxnCounter, channelStats);
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
+    ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
 
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
                              maxStageSize);
@@ -464,9 +472,8 @@ public class DistributedObjectServer extends SEDA {
     stageManager.createStage(ServerConfigurationContext.RECALL_OBJECTS_STAGE, new RecallObjectsHandler(), 1, -1);
 
     int commitThreads = (persistent ? 4 : 1);
-    stageManager
-        .createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                     new CommitTransactionChangeHandler(gtxm, transactionStorePTP), commitThreads, maxStageSize);
+    stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
+                             new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
 
     TransactionalStageCoordinator txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
@@ -498,7 +505,8 @@ public class DistributedObjectServer extends SEDA {
                                                                                                            true, 0L));
     Stage objectRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE,
                                                    new ManagedObjectRequestHandler(globalObjectFaultCounter,
-                                                                                   globalObjectFlushCounter), 1,
+                                                                                   globalObjectFlushCounter,
+                                                                                   objectRequestManager), 1,
                                                    maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
                              new RespondToObjectRequestHandler(), 4, maxStageSize);
@@ -565,7 +573,8 @@ public class DistributedObjectServer extends SEDA {
                                                                                            TCLogging
                                                                                                .getLogger(ServerClientHandshakeManager.class),
                                                                                            channelManager,
-                                                                                           objectManager,
+                                                                                           objectRequestManager,
+                                                                                           transactionManager,
                                                                                            sequenceValidator,
                                                                                            clientStateManager,
                                                                                            lockManager,
@@ -583,15 +592,17 @@ public class DistributedObjectServer extends SEDA {
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager);
+                                          objectManager, transactionManager, gidSequenceProvider);
+      l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
+      l2State.setState(StateManager.ACTIVE_COORDINATOR);
       l2Coordinator = new L2HADisabledCooridinator();
     }
 
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectStore, lockManager, channelManager,
                                                  clientStateManager, transactionManager, txnObjectManager,
                                                  clientHandshakeManager, channelStats, l2Coordinator,
-                                                 new CommitTransactionMessageToTransactionBatchReader());
+                                                 new CommitTransactionMessageToTransactionBatchReader(gtxm));
 
     stageManager.startAll(context);
 
@@ -626,15 +637,20 @@ public class DistributedObjectServer extends SEDA {
       } catch (ConfigurationSetupException e) {
         throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
       }
-      rv[i] = new Node(l2.host().getString(), l2.listenPort().getInt());
+      rv[i] = makeNode(l2);
     }
     return rv;
   }
 
+  private static Node makeNode(NewL2DSOConfig l2) {
+    // NOTE: until we resolve Tribes stepping on TCComm's port
+    // we'll use TCComm.port + 1 in Tribes
+    return new Node(l2.host().getString(), l2.listenPort().getInt() + 1);
+  }
+
   private Node makeThisNode() {
     NewL2DSOConfig l2 = configSetupManager.dsoL2Config();
-    final Node rv = new Node(l2.host().getString(), l2.listenPort().getInt());
-    return rv;
+    return makeNode(l2);
   }
 
   public boolean startActiveMode() throws IOException {

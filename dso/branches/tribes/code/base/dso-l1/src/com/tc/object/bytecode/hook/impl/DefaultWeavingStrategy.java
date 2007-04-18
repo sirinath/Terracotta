@@ -37,6 +37,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.AdaptedClassDumper;
+import com.tc.util.InitialClassDumper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +54,14 @@ import java.util.Set;
  * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur </a>
  */
 public class DefaultWeavingStrategy implements WeavingStrategy {
+
+  static {
+    // Load the InitialClassDumper class in the same class loader as the
+    // current class to ensure that it will not be transformed while
+    // being loaded by a child class loader as this would result in a
+    // ClassCircularityError exception
+    InitialClassDumper dummy = InitialClassDumper.INSTANCE;
+  }
 
   private final DSOClientConfigHelper m_configHelper;
   private final InstrumentationLogger m_logger;
@@ -76,6 +85,8 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
   public void transform(String className, final InstrumentationContext context) {
     try {
       final byte[] bytecode = context.getInitialBytecode();
+      InitialClassDumper.INSTANCE.write(className, bytecode);
+
       final ClassLoader loader = context.getLoader();
 
       Map aspectModules = m_configHelper.getAspectModules();
@@ -275,7 +286,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         }
       }
 
-      AdaptedClassDumper.write(className, context.getCurrentBytecode());
+      AdaptedClassDumper.INSTANCE.write(className, context.getCurrentBytecode());
     } catch (Throwable t) {
       t.printStackTrace();
       throw new WrappedRuntimeException(t);
