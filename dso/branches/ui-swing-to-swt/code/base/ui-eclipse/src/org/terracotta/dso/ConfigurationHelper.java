@@ -3273,7 +3273,7 @@ public class ConfigurationHelper {
     }
   }
 
-  private TcConfig getConfig() {
+  public TcConfig getConfig() {
     return m_plugin.getConfiguration(m_project);
   }
 
