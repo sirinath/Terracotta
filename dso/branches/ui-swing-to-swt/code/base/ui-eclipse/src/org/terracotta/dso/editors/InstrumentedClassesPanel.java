@@ -21,10 +21,16 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.terracotta.dso.editors.chooser.ClassBehavior;
+import org.terracotta.dso.editors.chooser.ExpressionChooser;
+import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigContext;
+import org.terracotta.dso.editors.xmlbeans.XmlConfigEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlConfigUndoContext;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.util.event.UpdateEvent;
+import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.ClassExpression;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.InstrumentedClasses;
@@ -62,7 +68,8 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
   }
 
   public synchronized void refreshContent() {
-
+    m_layout.reset();
+    initTableItems();
   }
 
   // ================================================================================
@@ -88,8 +95,133 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
           m_layout.m_moveUpButton.setEnabled(true);
           m_layout.m_moveDownButton.setEnabled(true);
         }
+        TableItem item = m_layout.m_table.getItem(m_layout.m_table.getSelectionIndex());
+        if (item.getText(Layout.RULE_COLUMN).equals(INCLUDE)) {
+          initIncludeAttributes();
+        } else if (item.getText(Layout.RULE_COLUMN).equals(EXCLUDE)) {
+          m_layout.resetIncludeAttributes();
+        }
       }
     });
+    // - add class
+    m_layout.m_addButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        setActive(false);
+        m_layout.m_table.forceFocus();
+        NavigatorBehavior behavior = new ClassBehavior();
+        ExpressionChooser chooser = new ExpressionChooser(getShell(), behavior.getTitle(), ClassBehavior.ADD_MSG,
+            m_state.project, behavior);
+        chooser.addValueListener(new UpdateEventListener() {
+          public void handleUpdate(UpdateEvent updateEvent) {
+            String[] items = (String[]) updateEvent.data;
+            for (int i = 0; i < items.length; i++) {
+              XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.CREATE_INSTRUMENTED_CLASS);
+              event.data = items[i];
+              m_state.xmlContext.notifyListeners(event);
+            }
+          }
+        });
+        setActive(true);
+        chooser.open();
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        createIncludeTableItem((Include) event.element);
+      }
+    }, XmlConfigEvent.NEW_INSTRUMENTED_CLASS, this);
+    // - remove class
+    m_layout.m_removeButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        setActive(false);
+        m_layout.m_table.forceFocus();
+        int selected = m_layout.m_table.getSelectionIndex();
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.DELETE_INSTRUMENTED_CLASS);
+        event.index = selected;
+        XmlObject data = (XmlObject) m_layout.m_table.getItem(selected).getData();
+        event.data = data.getDomNode();
+        setActive(true);
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_table.remove(((XmlConfigEvent) e).index);
+        m_layout.m_removeButton.setEnabled(false);
+      }
+    }, XmlConfigEvent.REMOVE_INSTRUMENTED_CLASS, this);
+    // - element order buttons
+    m_layout.m_moveUpButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        setActive(false);
+        m_layout.m_table.forceFocus();
+        int selected = m_layout.m_table.getSelectionIndex();
+        if (selected - 1 < 0) return;
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_UP);
+        event.element = (XmlObject) m_layout.m_table.getItem(selected).getData();
+        event.data = m_layout.m_table.getItem(selected - 1).getData();
+        event.variable = m_state.xmlContext.getParentElementProvider().hasInstrumentedClasses();
+        event.index = selected;
+        setActive(true);
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    m_layout.m_moveDownButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        setActive(false);
+        m_layout.m_table.forceFocus();
+        int selected = m_layout.m_table.getSelectionIndex();
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN);
+        event.element = (XmlObject) m_layout.m_table.getItem(selected).getData();
+        if (selected + 2 < m_layout.m_table.getItemCount()) event.data = m_layout.m_table.getItem(selected + 2)
+            .getData();
+        event.variable = m_state.xmlContext.getParentElementProvider().hasInstrumentedClasses();
+        event.index = selected;
+        setActive(true);
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    // - element order listeners
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        int index = event.index;
+        if (index == 0) return;
+        TableItem item = m_layout.m_table.getItem(index);
+        TableItem movedItem = new TableItem(m_layout.m_table, SWT.NONE, index - 1);
+        movedItem.setText(new String[] { item.getText(Layout.RULE_COLUMN), item.getText(Layout.EXPRESSION_COLUMN) });
+        m_layout.m_table.remove(m_layout.m_table.indexOf(item));
+        refreshTableItemXmlData();
+        m_layout.m_table.select(m_layout.m_table.indexOf(movedItem));
+        if (m_layout.m_table.indexOf(movedItem) == 0) m_layout.m_moveUpButton.setEnabled(false);
+        m_layout.m_moveDownButton.setEnabled(true);
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_UP, this);
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        int index = event.index;
+        int count = m_layout.m_table.getItemCount();
+        if (index == count - 1) return;
+        TableItem item = m_layout.m_table.getItem(index);
+        TableItem movedItem = new TableItem(m_layout.m_table, SWT.NONE, index + 2);
+        movedItem.setText(new String[] { item.getText(Layout.RULE_COLUMN), item.getText(Layout.EXPRESSION_COLUMN) });
+        m_layout.m_table.remove(m_layout.m_table.indexOf(item));
+        refreshTableItemXmlData();
+        m_layout.m_table.select(m_layout.m_table.indexOf(movedItem));
+        if (m_layout.m_table.indexOf(movedItem) == count - 1) m_layout.m_moveDownButton.setEnabled(false);
+        m_layout.m_moveUpButton.setEnabled(true);
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN, this);
   }
 
   // ================================================================================
@@ -108,6 +240,20 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         createExcludeTableItem((ClassExpression) classes[i]);
       }
     }
+  }
+
+  // this can fall out of sync if the table and model don't match. Timing is imperative
+  private void refreshTableItemXmlData() {
+    InstrumentedClasses classesElement = m_state.xmlContext.getParentElementProvider().hasInstrumentedClasses();
+    if (classesElement == null) return;
+    XmlObject[] classes = classesElement.selectPath("*");
+    for (int i = 0; i < classes.length; i++) {
+      m_layout.m_table.getItem(i).setData(classes[i]);
+    }
+  }
+
+  private void initIncludeAttributes() {
+    m_layout.enableIncludeAttributes();
   }
 
   private void createIncludeTableItem(Include include) {
@@ -174,9 +320,20 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
     private Button              m_removeButton;
     private Button              m_moveUpButton;
     private Button              m_moveDownButton;
+    private Group               m_onLoadGroup;
+    private Group               m_detailGroup;
 
     private void reset() {
       m_table.removeAll();
+      m_removeButton.setEnabled(false);
+      m_moveUpButton.setEnabled(false);
+      m_moveDownButton.setEnabled(false);
+      resetIncludeAttributes();
+    }
+
+    private void resetIncludeAttributes() {
+      m_detailGroup.setEnabled(false);
+      m_onLoadGroup.setEnabled(false);
       m_honorTransientCheck.setSelection(false);
       m_honorTransientCheck.setEnabled(false);
       m_doNothingCheck.setSelection(false);
@@ -189,9 +346,15 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       m_executeCodeCheck.setEnabled(false);
       m_executeCodeText.setText("");
       m_executeCodeText.setEnabled(false);
-      m_removeButton.setEnabled(false);
-      m_moveUpButton.setEnabled(false);
-      m_moveDownButton.setEnabled(false);
+    }
+
+    private void enableIncludeAttributes() {
+      m_detailGroup.setEnabled(true);
+      m_onLoadGroup.setEnabled(true);
+      m_honorTransientCheck.setEnabled(true);
+      m_doNothingCheck.setEnabled(true);
+      m_callAMethodCheck.setEnabled(true);
+      m_executeCodeCheck.setEnabled(true);
     }
 
     private Layout(Composite parent) {
@@ -235,58 +398,58 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       expressionColumn.setText(EXPRESSION);
       expressionColumn.pack();
 
-      Group detailGroup = new Group(sidePanel, SWT.BORDER);
-      detailGroup.setText(DETAILS);
-      detailGroup.setEnabled(false);
+      m_detailGroup = new Group(sidePanel, SWT.BORDER);
+      m_detailGroup.setText(DETAILS);
+      m_detailGroup.setEnabled(false);
       gridLayout = new GridLayout();
       gridLayout.numColumns = 1;
       gridLayout.marginWidth = 5;
       gridLayout.marginHeight = 5;
-      detailGroup.setLayout(gridLayout);
-      detailGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+      m_detailGroup.setLayout(gridLayout);
+      m_detailGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-      m_honorTransientCheck = new Button(detailGroup, SWT.CHECK);
+      m_honorTransientCheck = new Button(m_detailGroup, SWT.CHECK);
       m_honorTransientCheck.setText(HONOR_TRANSIENT);
       m_honorTransientCheck.setEnabled(false);
 
-      new Label(detailGroup, SWT.NONE); // filler
+      new Label(m_detailGroup, SWT.NONE); // filler
 
-      Group onLoadGroup = new Group(detailGroup, SWT.BORDER);
-      onLoadGroup.setText(ON_LOAD);
-      onLoadGroup.setEnabled(false);
+      m_onLoadGroup = new Group(m_detailGroup, SWT.BORDER);
+      m_onLoadGroup.setText(ON_LOAD);
+      m_onLoadGroup.setEnabled(false);
       gridLayout = new GridLayout();
       gridLayout.numColumns = 2;
       gridLayout.marginWidth = 5;
       gridLayout.marginHeight = 5;
-      onLoadGroup.setLayout(gridLayout);
-      onLoadGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+      m_onLoadGroup.setLayout(gridLayout);
+      m_onLoadGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-      m_doNothingCheck = new Button(onLoadGroup, SWT.RADIO);
+      m_doNothingCheck = new Button(m_onLoadGroup, SWT.RADIO);
       m_doNothingCheck.setText(DO_NOTHING);
       m_doNothingCheck.setEnabled(false);
       GridData gridData = new GridData();
       gridData.horizontalSpan = 2;
       m_doNothingCheck.setLayoutData(gridData);
 
-      m_callAMethodCheck = new Button(onLoadGroup, SWT.RADIO);
+      m_callAMethodCheck = new Button(m_onLoadGroup, SWT.RADIO);
       m_callAMethodCheck.setText(CALL_A_METHOD);
       m_callAMethodCheck.setEnabled(false);
 
-      m_callAMethodText = new Text(onLoadGroup, SWT.BORDER);
+      m_callAMethodText = new Text(m_onLoadGroup, SWT.BORDER);
       m_callAMethodText.setEnabled(false);
       int width = SWTUtil.textColumnsToPixels(m_callAMethodText, 50);
       gridData = new GridData(GridData.GRAB_HORIZONTAL);
       gridData.minimumWidth = width;
       m_callAMethodText.setLayoutData(gridData);
 
-      m_executeCodeCheck = new Button(onLoadGroup, SWT.RADIO);
+      m_executeCodeCheck = new Button(m_onLoadGroup, SWT.RADIO);
       m_executeCodeCheck.setEnabled(false);
       m_executeCodeCheck.setText(EXECUTE_CODE);
       gridData = new GridData();
       gridData.horizontalSpan = 2;
       m_executeCodeCheck.setLayoutData(gridData);
 
-      m_executeCodeText = new Text(onLoadGroup, SWT.BORDER | SWT.MULTI);
+      m_executeCodeText = new Text(m_onLoadGroup, SWT.BORDER | SWT.MULTI);
       m_executeCodeText.setEnabled(false);
       gridData = new GridData(GridData.FILL_BOTH | GridData.GRAB_VERTICAL);
       gridData.horizontalSpan = 2;

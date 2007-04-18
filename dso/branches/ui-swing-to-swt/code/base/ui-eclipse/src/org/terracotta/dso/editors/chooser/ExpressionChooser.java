@@ -40,7 +40,7 @@ public class ExpressionChooser extends MessageDialog {
   private boolean                m_isAddButton;
   private SelectionListener      m_exploreListener;
   private SelectionListener      m_addListener;
-  private MethodChooserLayout    m_layout;
+  private Layout                 m_layout;
   private NavigatorBehavior      m_behavior;
 
   public ExpressionChooser(Shell shell, String title, String message, IProject project, NavigatorBehavior behavior) {
@@ -61,11 +61,11 @@ public class ExpressionChooser extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    initLayout(m_layout = new MethodChooserLayout(parent));
+    initLayout(m_layout = new Layout(parent));
     return parent;
   }
 
-  private void initLayout(final MethodChooserLayout layout) {
+  private void initLayout(final Layout layout) {
     layout.m_exploreButton.addSelectionListener(m_exploreListener = new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         PackageNavigator dialog = new PackageNavigator(getShell(), m_behavior.getTitle(), m_project, m_behavior);
@@ -130,14 +130,14 @@ public class ExpressionChooser extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
-  private static class MethodChooserLayout {
+  private static class Layout {
 
     final Text   m_selectField;
     final Button m_exploreButton;
     final List   m_list;
     GridData     m_gridData;
 
-    private MethodChooserLayout(Composite parent) {
+    private Layout(Composite parent) {
       Composite comp = new Composite(parent, SWT.NONE);
 
       GridLayout gridLayout = new GridLayout();

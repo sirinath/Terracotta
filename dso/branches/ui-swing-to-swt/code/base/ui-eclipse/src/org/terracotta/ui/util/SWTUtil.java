@@ -162,24 +162,29 @@ public final class SWTUtil {
             if (rect.contains(pt)) {
               final int column = indices[i];
               final Text text = new Text(table, SWT.NONE);
+              final String initialValue = item.getText(indices[i]);
               Listener textListener = new Listener() {
                 public void handleEvent(final Event e) {
                   Event updateEvent = new Event();
                   switch (e.type) {
                     case SWT.FocusOut:
                       item.setText(column, text.getText());
-                      updateEvent.item = item;
-                      updateEvent.index = column;
-                      table.notifyListeners(SWT.SetData, updateEvent);
+                      if (!initialValue.equals(text.getText())) {
+                        updateEvent.item = item;
+                        updateEvent.index = column;
+                        table.notifyListeners(SWT.SetData, updateEvent);
+                      }
                       text.dispose();
                       break;
                     case SWT.Traverse:
                       switch (e.detail) {
                         case SWT.TRAVERSE_RETURN:
                           item.setText(column, text.getText());
-                          updateEvent.item = item;
-                          updateEvent.index = column;
-                          table.notifyListeners(SWT.SetData, updateEvent);
+                          if (!initialValue.equals(text.getText())) {
+                            updateEvent.item = item;
+                            updateEvent.index = column;
+                            table.notifyListeners(SWT.SetData, updateEvent);
+                          }
                           // FALL THROUGH
                         case SWT.TRAVERSE_ESCAPE:
                           text.dispose();
@@ -192,7 +197,7 @@ public final class SWTUtil {
               text.addListener(SWT.FocusOut, textListener);
               text.addListener(SWT.Traverse, textListener);
               editor.setEditor(text, item, indices[i]);
-              text.setText(item.getText(indices[i]));
+              text.setText(initialValue);
               text.setFocus();
               return;
             }

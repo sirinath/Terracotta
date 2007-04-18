@@ -10,6 +10,7 @@ import org.eclipse.core.resources.IProject;
 import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.editors.ConfigurationEditor;
 import org.terracotta.ui.util.SWTComponentModel;
+import org.w3c.dom.Node;
 
 import com.tc.util.event.EventMulticaster;
 import com.tc.util.event.UpdateEvent;
@@ -22,6 +23,7 @@ import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.DsoClientDebugging;
 import com.terracottatech.config.DsoServerData;
+import com.terracottatech.config.Include;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.NamedLock;
@@ -43,8 +45,6 @@ public final class XmlConfigContext {
   public static final String                           DEFAULT_NAME = "dev";
   public static final String                           DEFAULT_HOST = "localhost";
 
-  private final EventMulticaster                       m_xmlStructureChangedObserver;
-  private UpdateEventListener                          m_xmlStructureChangedListener;
   private final EventMulticaster                       m_serverNameObserver;
   private UpdateEventListener                          m_serverNameListener;
   private final EventMulticaster                       m_serverHostObserver;
@@ -119,6 +119,20 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_locksNamedMethodListener;
   private final EventMulticaster                       m_locksNamedLevelObserver;
   private UpdateEventListener                          m_locksNamedLevelListener;
+  private final EventMulticaster                       m_instrumentedClassExpressionObserver;
+  private UpdateEventListener                          m_instrumentedClassExpressionListener;
+  private final EventMulticaster                       m_instrumentedClassRuleObserver;
+  private UpdateEventListener                          m_instrumentedClassRuleListener;
+  private final EventMulticaster                       m_instrumentedClassOrderUpObserver;
+  private UpdateEventListener                          m_instrumentedClassOrderUpListener;
+  private final EventMulticaster                       m_instrumentedClassOrderDownObserver;
+  private UpdateEventListener                          m_instrumentedClassOrderDownListener;
+  private final EventMulticaster                       m_includeHonorTransientObserver;
+  private UpdateEventListener                          m_includeHonorTransientListener;
+  private final EventMulticaster                       m_includeOnLoadExecuteObserver;
+  private UpdateEventListener                          m_includeOnLoadExecuteListener;
+  private final EventMulticaster                       m_includeOnLoadMethodObserver;
+  private UpdateEventListener                          m_includeOnLoadMethodListener;
   // context new/remove element observers
   private final EventMulticaster                       m_newServerObserver;
   private final EventMulticaster                       m_removeServerObserver;
@@ -138,6 +152,8 @@ public final class XmlConfigContext {
   private final EventMulticaster                       m_removeLockAutoObserver;
   private final EventMulticaster                       m_newLockNamedObserver;
   private final EventMulticaster                       m_removeLockNamedObserver;
+  private final EventMulticaster                       m_newInstrumentedClassObserver;
+  private final EventMulticaster                       m_removeInstrumentedClassObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
@@ -157,6 +173,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteLockAutoListener;
   private UpdateEventListener                          m_createLockNamedListener;
   private UpdateEventListener                          m_deleteLockNamedListener;
+  private UpdateEventListener                          m_createInstrumentedClassListener;
+  private UpdateEventListener                          m_deleteInstrumentedClassListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final Map<SWTComponentModel, List>           m_componentModels;
@@ -171,7 +189,6 @@ public final class XmlConfigContext {
     this.m_provider = new XmlConfigParentElementProvider(m_project);
     m_contexts.put(project, this);
     // standard observers
-    this.m_xmlStructureChangedObserver = new EventMulticaster();
     this.m_serverNameObserver = new EventMulticaster();
     this.m_serverHostObserver = new EventMulticaster();
     this.m_serverDSOPortObserver = new EventMulticaster();
@@ -209,6 +226,13 @@ public final class XmlConfigContext {
     this.m_locksNamedNameObserver = new EventMulticaster();
     this.m_locksNamedMethodObserver = new EventMulticaster();
     this.m_locksNamedLevelObserver = new EventMulticaster();
+    this.m_instrumentedClassExpressionObserver = new EventMulticaster();
+    this.m_instrumentedClassRuleObserver = new EventMulticaster();
+    this.m_instrumentedClassOrderUpObserver = new EventMulticaster();
+    this.m_instrumentedClassOrderDownObserver = new EventMulticaster();
+    this.m_includeHonorTransientObserver = new EventMulticaster();
+    this.m_includeOnLoadExecuteObserver = new EventMulticaster();
+    this.m_includeOnLoadMethodObserver = new EventMulticaster();
     // "new" and "remove" element observers
     this.m_newServerObserver = new EventMulticaster();
     this.m_removeServerObserver = new EventMulticaster();
@@ -228,6 +252,8 @@ public final class XmlConfigContext {
     this.m_removeLockAutoObserver = new EventMulticaster();
     this.m_newLockNamedObserver = new EventMulticaster();
     this.m_removeLockNamedObserver = new EventMulticaster();
+    this.m_newInstrumentedClassObserver = new EventMulticaster();
+    this.m_removeInstrumentedClassObserver = new EventMulticaster();
     init();
   }
 
@@ -325,7 +351,7 @@ public final class XmlConfigContext {
     }, type);
   }
 
-  // HELPERS
+  // HELPER
   public static String[] getListDefaults(Class parentType, int type) {
     return XmlConfigPersistenceManager.getListDefaults(parentType, XmlConfigEvent.m_elementNames[type]);
   }
@@ -337,13 +363,6 @@ public final class XmlConfigContext {
   }
 
   private void registerEventListeners() {
-    addListener(m_xmlStructureChangedListener = new UpdateEventListener() {
-      public void handleUpdate(UpdateEvent data) {
-        // GENERAL EVENT TO PROVOKE ALL EVENT LISTENERS TO UPDATE THEIR VALUES
-        // NOT IMPLEMENTED
-        System.out.println(data.data);// XXX
-      }
-    }, XmlConfigEvent.XML_STRUCTURE_CHANGED);
     // server
     addListener(m_serverNameListener = newWriter(), XmlConfigEvent.SERVER_NAME);
     addListener(m_serverHostListener = newWriter(), XmlConfigEvent.SERVER_HOST);
@@ -405,6 +424,30 @@ public final class XmlConfigContext {
     addListener(m_locksNamedNameListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_NAME);
     addListener(m_locksNamedMethodListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_METHOD);
     addListener(m_locksNamedLevelListener = newLocksNamedWriter(), XmlConfigEvent.LOCKS_NAMED_LEVEL);
+    addListener(m_instrumentedClassOrderUpListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        if (event.variable == null || event.data == null) return;
+        Node node = event.element.getDomNode();
+        Node sibling = ((XmlObject) event.data).getDomNode();
+        Node parent = ((XmlObject) event.variable).getDomNode();
+        parent.insertBefore(node, sibling);
+        setDirty(); // XXX
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_UP);
+    addListener(m_instrumentedClassOrderDownListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        if (event.variable == null) return;
+        Node node = event.element.getDomNode();
+        Node sibling = (event.data != null) ? ((XmlObject) event.data).getDomNode() : null;
+        Node parent = ((XmlObject) event.variable).getDomNode();
+        // NOTE: sibling must be either two elements greater than the current node or null to place the current node at
+        // the end of the list
+        parent.insertBefore(node, sibling);
+        setDirty(); // XXX
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN);
   }
 
   private UpdateEventListener newRootsNameWriter() {
@@ -764,9 +807,42 @@ public final class XmlConfigContext {
       public void handleUpdate(UpdateEvent e) {
         int index = ((XmlConfigEvent) e).index;
         m_config.getApplication().getDso().getLocks().removeNamedLock(index);
+        if (m_config.getApplication().getDso().getLocks().sizeOfAutolockArray() == 0
+            && m_config.getApplication().getDso().getLocks().sizeOfNamedLockArray() == 0) {
+          m_config.getApplication().getDso().unsetLocks();
+          removeDsoElementIfEmpty();
+        }
         XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_LOCK_NAMED);
         event.index = index;
         m_removeLockNamedObserver.fireUpdateEvent(event);
+        setDirty(); // XXX
+      }
+    };
+    m_createInstrumentedClassListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        ensureDsoElement();
+        if (m_config.getApplication().getDso().getInstrumentedClasses() == null) {
+          m_config.getApplication().getDso().addNewInstrumentedClasses();
+        }
+        Include include = m_config.getApplication().getDso().getInstrumentedClasses().addNewInclude();
+        include.setClassExpression((String) e.data);
+        m_newInstrumentedClassObserver.fireUpdateEvent(new XmlConfigEvent(include,
+            XmlConfigEvent.NEW_INSTRUMENTED_CLASS));
+        setDirty(); // XXX
+      }
+    };
+    m_deleteInstrumentedClassListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        m_config.getApplication().getDso().getInstrumentedClasses().getDomNode().removeChild((Node) e.data);
+        if (m_config.getApplication().getDso().getInstrumentedClasses().sizeOfExcludeArray() == 0
+            && m_config.getApplication().getDso().getInstrumentedClasses().sizeOfIncludeArray() == 0) {
+          m_config.getApplication().getDso().getDomNode().removeChild(
+              m_config.getApplication().getDso().getInstrumentedClasses().getDomNode());
+          removeDsoElementIfEmpty();
+        }
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.REMOVE_INSTRUMENTED_CLASS);
+        event.index = ((XmlConfigEvent) e).index;
+        m_removeInstrumentedClassObserver.fireUpdateEvent(event);
         setDirty(); // XXX
       }
     };
@@ -793,9 +869,6 @@ public final class XmlConfigContext {
   private void doAction(XmlAction action, int type) {
     XmlConfigEvent event = action.getEvent();
     switch (type) {
-      case XmlConfigEvent.XML_STRUCTURE_CHANGED:
-        action.exec(m_xmlStructureChangedObserver, m_xmlStructureChangedListener);
-        break;
       case XmlConfigEvent.SERVER_NAME:
         action.exec(m_serverNameObserver, m_serverNameListener);
         break;
@@ -991,6 +1064,34 @@ public final class XmlConfigContext {
       case XmlConfigEvent.LOCKS_NAMED_LEVEL:
         action.exec(m_locksNamedLevelObserver, m_locksNamedLevelListener);
         break;
+
+      // XXX: <----------------------------------- !!!
+      case XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION:
+        if (event != null) {
+          event.element = m_provider.ensureInstrumentedClasses();
+          setDirty(); // XXX
+        }
+        action.exec(m_instrumentedClassExpressionObserver, m_instrumentedClassExpressionListener);
+        break;
+      case XmlConfigEvent.INSTRUMENTED_CLASS_RULE:
+        action.exec(m_instrumentedClassRuleObserver, m_instrumentedClassRuleListener);
+        break;
+      case XmlConfigEvent.INCLUDE_HONOR_TRANSIENT:
+        action.exec(m_includeHonorTransientObserver, m_includeHonorTransientListener);
+        break;
+      case XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE:
+        action.exec(m_includeOnLoadExecuteObserver, m_includeOnLoadExecuteListener);
+        break;
+      case XmlConfigEvent.INCLUDE_ON_LOAD_METHOD:
+        action.exec(m_includeOnLoadMethodObserver, m_includeOnLoadMethodListener);
+        break;
+      case XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_UP:
+        action.exec(m_instrumentedClassOrderUpObserver, m_instrumentedClassOrderUpListener);
+        break;
+      case XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN:
+        action.exec(m_instrumentedClassOrderDownObserver, m_instrumentedClassOrderDownListener);
+        break;
+
       // NEW and REMOVE EVENTS - Notified after corresponding creation or deletion
       case XmlConfigEvent.NEW_SERVER:
         action.exec(m_newServerObserver, null);
@@ -1061,6 +1162,12 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.REMOVE_LOCK_NAMED:
         action.exec(m_removeLockNamedObserver, null);
+        break;
+      case XmlConfigEvent.NEW_INSTRUMENTED_CLASS:
+        action.exec(m_newInstrumentedClassObserver, null);
+        break;
+      case XmlConfigEvent.REMOVE_INSTRUMENTED_CLASS:
+        action.exec(m_removeInstrumentedClassObserver, null);
         break;
 
       default:
@@ -1141,6 +1248,12 @@ public final class XmlConfigContext {
         break;
       case XmlConfigEvent.DELETE_LOCK_NAMED:
         m_deleteLockNamedListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.CREATE_INSTRUMENTED_CLASS:
+        m_createInstrumentedClassListener.handleUpdate(event);
+        break;
+      case XmlConfigEvent.DELETE_INSTRUMENTED_CLASS:
+        m_deleteInstrumentedClassListener.handleUpdate(event);
         break;
 
       default:

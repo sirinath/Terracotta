@@ -11,9 +11,8 @@ import com.tc.util.event.UpdateEventListener;
 
 public final class XmlConfigEvent extends UpdateEvent {
 
+  // if the config xml structure is changed, rename the effected event type (producing errors) to locate it's listeners
   public static final int      ALT_RANGE_CONSTANT                  = 999999;
-  // if the config xml structure changes rename (producing errors) the effected event type to locate it's listeners
-  public static final int      XML_STRUCTURE_CHANGED               = 5;
   public static final int      SERVER_NAME                         = 10;
   public static final int      SERVER_HOST                         = 15;
   public static final int      SERVER_DSO_PORT                     = 20;
@@ -54,6 +53,13 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      LOCKS_NAMED_NAME                    = 195;
   public static final int      LOCKS_NAMED_METHOD                  = 200;
   public static final int      LOCKS_NAMED_LEVEL                   = 205;
+  public static final int      INSTRUMENTED_CLASS_EXPRESSION       = 210;
+  public static final int      INSTRUMENTED_CLASS_RULE             = 215;
+  public static final int      INCLUDE_HONOR_TRANSIENT             = 220;
+  public static final int      INCLUDE_ON_LOAD_EXECUTE             = 225;
+  public static final int      INCLUDE_ON_LOAD_METHOD              = 230;
+  public static final int      INSTRUMENTED_CLASS_ORDER_UP         = 235;
+  public static final int      INSTRUMENTED_CLASS_ORDER_DOWN       = 240;
   // only this context may listen to "create" and "delete" events - corresponding "new" and "remove" events are
   // broadcast
   public static final int      NULL                                = -1;
@@ -75,6 +81,8 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      DELETE_LOCK_AUTO                    = -80;
   public static final int      CREATE_LOCK_NAMED                   = -85;
   public static final int      DELETE_LOCK_NAMED                   = -90;
+  public static final int      CREATE_INSTRUMENTED_CLASS           = -95;
+  public static final int      DELETE_INSTRUMENTED_CLASS           = -100;
   // only this context may notify "new" and "remove" events after receiving a corresponding "create" or "delete" event
   public static final int      NEW_SERVER                          = ALT_RANGE_CONSTANT + 5;
   public static final int      REMOVE_SERVER                       = ALT_RANGE_CONSTANT + 10;
@@ -94,6 +102,8 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      REMOVE_LOCK_AUTO                    = ALT_RANGE_CONSTANT + 80;
   public static final int      NEW_LOCK_NAMED                      = ALT_RANGE_CONSTANT + 85;
   public static final int      REMOVE_LOCK_NAMED                   = ALT_RANGE_CONSTANT + 90;
+  public static final int      NEW_INSTRUMENTED_CLASS              = ALT_RANGE_CONSTANT + 95;
+  public static final int      REMOVE_INSTRUMENTED_CLASS           = ALT_RANGE_CONSTANT + 100;
   // container elements with no associated events
   public static final String   PARENT_ELEM_APPLICATION             = "application";
   public static final String   PARENT_ELEM_DSO                     = "dso";
@@ -139,7 +149,7 @@ public final class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_METHOD_EXPRESSION              = "method-expression";
   private static final String  ELEM_LOCK_NAME                      = "lock-name";
 
-  public static final String[] m_elementNames                      = new String[205 + 1];
+  public static final String[] m_elementNames                      = new String[240 + 1];
   static {
     m_elementNames[SERVER_NAME] = ELEM_NAME;
     m_elementNames[SERVER_HOST] = ELEM_HOST;
