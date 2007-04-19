@@ -6,12 +6,12 @@ package com.tc.admin;
 
 import com.tc.config.schema.L2Info;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +22,6 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-import javax.swing.Timer;
 
 public class ServerConnectionManager implements NotificationListener {
   private L2Info                  m_l2Info;
@@ -45,6 +44,8 @@ public class ServerConnectionManager implements NotificationListener {
   
   private static final int        CONNECT_MONITOR_PERIOD = 1000;
 
+  private static final Object     m_connectTestLock = new Object();
+  
   static {
     Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
   }
@@ -98,17 +99,28 @@ public class ServerConnectionManager implements NotificationListener {
     return (String[])connEnv.get("jmx.remote.credentials");
   }
 
-  public static String[] getCachedCredentials(String host) {
-    return (String[])m_credentialsMap.get(host);
+  static void cacheCredentials(ServerConnectionManager scm, String[] credentials) {
+    m_credentialsMap.put(scm.toString(), credentials);
+    m_credentialsMap.put(scm.getHostname(), credentials);
+  }
+  
+  public static String[] getCachedCredentials(ServerConnectionManager scm) {
+    String[] result = (String[])m_credentialsMap.get(scm.toString());
+    if(result == null) {
+      result = (String[])m_credentialsMap.get(scm.getHostname());
+    }
+    return result;
   }
   
   public void setAutoConnect(boolean autoConnect) {
-    if ((m_autoConnect = autoConnect) == true) {
-      if (!m_connected) {
-        startConnect();
+    if (m_autoConnect != autoConnect) {
+      if ((m_autoConnect = autoConnect) == true) {
+        if (!m_connected) {
+          startConnect();
+        }
+      } else {
+        cancelActiveServices();
       }
-    } else {
-      cancelActiveServices();
     }
   }
 
@@ -131,7 +143,7 @@ public class ServerConnectionManager implements NotificationListener {
     setConnected(true);
   }
 
-  protected void setConnected(boolean connected) {
+  protected synchronized void setConnected(boolean connected) {
     if (m_connected != connected) {
       m_connected = connected;
       if (m_connected == false) {
@@ -141,7 +153,7 @@ public class ServerConnectionManager implements NotificationListener {
           startConnect();
         }
       } else { // connected
-        m_credentialsMap.put(m_l2Info.host(), getCredentials());
+        cacheCredentials(ServerConnectionManager.this, getCredentials());
         m_started = true;
         if ((m_active = internalIsActive()) == false) {
           addActivationListener();
@@ -176,7 +188,6 @@ public class ServerConnectionManager implements NotificationListener {
     if (m_connectEnv == null) {
       m_connectEnv = new HashMap();
       m_connectEnv.put("jmx.remote.x.client.connection.check.period", new Long(0));
-      m_connectEnv.put(JMXConnectorFactory.PROTOCOL_PROVIDER_CLASS_LOADER, getClass().getClassLoader());
     }
     return m_connectEnv;
   }
@@ -192,8 +203,8 @@ public class ServerConnectionManager implements NotificationListener {
       m_connectThread = new ConnectThread();
       m_connectThread.start();
     } catch (Exception e) {
+      m_connectException = e;
       if (m_connectListener != null) {
-        m_connectException = e;
         m_connectListener.handleException();
       }
     }
@@ -202,7 +213,7 @@ public class ServerConnectionManager implements NotificationListener {
   private void cancelConnectThread() {
     if (m_connectThread != null && m_connectThread.isAlive()) {
       try {
-        m_connectThread.interrupt();
+        m_connectThread.cancel();
         m_connectThread = null;
       } catch (Exception ignore) {/**/
       }
@@ -210,38 +221,52 @@ public class ServerConnectionManager implements NotificationListener {
   }
 
   public boolean testIsConnected() throws Exception {
-    if (m_connectCntx.jmxc == null) {
-      initConnector();
+    synchronized(m_connectTestLock) {
+      if (m_connectCntx.jmxc == null) {
+        initConnector();
+      }
+      m_connectCntx.jmxc.connect(getConnectionEnvironment());
+      m_connectCntx.mbsc = m_connectCntx.jmxc.getMBeanServerConnection();
+      m_connectException = null;
+  
+      return true;
     }
-    m_connectCntx.jmxc.connect();
-    m_connectCntx.mbsc = m_connectCntx.jmxc.getMBeanServerConnection();
-    m_connectException = null;
-
-    return true;
   }
 
   class ConnectThread extends Thread {
+    private boolean m_cancel = false;
+    
     ConnectThread() {
       super();
       setPriority(MIN_PRIORITY);
     }
 
     public void run() {
-      while (!m_connected) {
+      try {
+        sleep(500);
+      } catch (InterruptedException ie) {/**/}
+      
+      while (!m_cancel && !m_connected) {
         try {
-          setConnected(testIsConnected());
+          boolean isConnected = testIsConnected();
+          if(!m_cancel) {
+            setConnected(isConnected);
+          }
           return;
         } catch (Exception e) {
-          if (m_connectListener != null) {
-            if (e instanceof SecurityException) {
-              setAutoConnect(false);
-              fireToggleAutoConnectEvent();
-              m_connectException = e;
-              m_connectListener.handleException();
-              return;
-            }
+          if(m_cancel) {
+            return;
+          } else {
             m_connectException = e;
-            m_connectListener.handleException();
+            if (m_connectListener != null) {
+              if (e instanceof SecurityException) {
+                setAutoConnect(false);
+                fireToggleAutoConnectEvent();
+                m_connectListener.handleException();
+                return;
+              }
+              m_connectListener.handleException();
+            }
           }
         }
 
@@ -254,6 +279,10 @@ public class ServerConnectionManager implements NotificationListener {
           return;
         }
       }
+    }
+
+    void cancel() {
+      m_cancel = true;
     }
   }
 
@@ -312,38 +341,38 @@ public class ServerConnectionManager implements NotificationListener {
   void initConnectionMonitor() {
     if (m_connectMonitorAction == null) {
       m_connectMonitorAction = new ConnectionMonitorAction();
-      m_connectMonitorTimer = new Timer(CONNECT_MONITOR_PERIOD, m_connectMonitorAction);
     }
-    m_connectMonitorTimer.start();
-  }
+    if (m_connectMonitorTimer == null) {
+      m_connectMonitorTimer = new Timer();
+      m_connectMonitorTimer.schedule(m_connectMonitorAction, CONNECT_MONITOR_PERIOD, CONNECT_MONITOR_PERIOD);
+    }
+   }
 
-  private class ConnectionMonitorAction implements ActionListener {
-    public void actionPerformed(ActionEvent evt) {
+  private class ConnectionMonitorAction extends TimerTask {
+    public void run() {
       if (m_connectCntx.isConnected()) {
         try {
           m_connectCntx.testConnection();
         } catch (Exception e) {
+          cancelConnectionMonitor();
           setConnected(false);
         }
-      }
-    }
-
-    void stop() {
-      if (m_connectMonitorTimer != null && m_connectMonitorTimer.isRunning()) {
-        m_connectMonitorTimer.stop();
       }
     }
   }
 
   void cancelConnectionMonitor() {
-    if (m_connectMonitorAction != null) {
-      m_connectMonitorAction.stop();
+    if (m_connectMonitorTimer != null) {
+      m_connectMonitorTimer.cancel();
+      m_connectMonitorAction.cancel();
+      m_connectMonitorAction = null;
+      m_connectMonitorTimer = null;
     }
   }
 
   /**
-   * Register for a JMX callback when the server transitions from started->active. We do this when we notice that the
-   * server is started but not yet active.
+   * Register for a JMX callback when the server transitions from started->...->active.
+   * We do this when we notice that the server is started but not yet active.
    */
   void addActivationListener() {
     try {
@@ -393,7 +422,7 @@ public class ServerConnectionManager implements NotificationListener {
     cancelConnectThread();
     cancelConnectionMonitor();
 
-    if (m_started && !m_active) {
+    if (m_started) {
       removeActivationListener();
     }
     if (m_connectCntx != null) {

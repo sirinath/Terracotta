@@ -281,6 +281,11 @@ public final class ConnectDialog extends Dialog {
     }
 
     private synchronized void connectionJoin() {
+      if(m_connectionTimer.isAlive()) {
+        m_connectionTimer.stopTimer();
+        m_connectionTimer.interrupt();
+      }
+
       m_join = true;
       m_isConnecting = false;
       notifyAll();
