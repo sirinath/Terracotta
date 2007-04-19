@@ -120,6 +120,8 @@ public class LinkedJavaProcess {
   public synchronized void start() throws IOException {
     if (this.running) throw new IllegalStateException("This LinkedJavaProcess is already running.");
 
+    LinkedJavaProcessPollingAgent.startHeartBeatServer();
+    
     List fullCommandList = new LinkedList();
     List allJavaArguments = new ArrayList();
 
