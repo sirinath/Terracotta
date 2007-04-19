@@ -182,10 +182,6 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       throw new RuntimeException(e);
     }
 
-    // XXX: Only non-session container tests work in glassfish at the moment
-    if (isSessionTest() && NewAppServerFactory.GLASSFISH.equals(config.appserverFactoryName())) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
-    }
   }
 
   protected int getJMXPort() {
