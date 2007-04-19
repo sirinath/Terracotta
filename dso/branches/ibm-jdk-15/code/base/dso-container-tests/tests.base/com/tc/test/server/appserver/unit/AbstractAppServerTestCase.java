@@ -91,7 +91,7 @@ import javax.servlet.http.HttpSessionListener;
  * the appserver)
  * </ul>
  * <p>
- *
+ * 
  * <pre>
  *                            outer class:
  *                            ...
@@ -108,7 +108,7 @@ import javax.servlet.http.HttpSessionListener;
  *                            out.println(&quot;false&quot;);
  *                            ...
  * </pre>
- *
+ * 
  * <p>
  * <h3>Debugging Information:</h3>
  * There are a number of locations and files to consider when debugging appserver unit tests. Below is a list followed
@@ -143,7 +143,7 @@ import javax.servlet.http.HttpSessionListener;
  * <p>
  * As a final note: the <tt>UttpUtil</tt> class should be used (and added to as needed) to page servlets and validate
  * assertions.
- *
+ * 
  * @author eellis
  */
 public abstract class AbstractAppServerTestCase extends TCTestCase {
@@ -158,8 +158,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private final List                      roots            = new ArrayList();
   private final List                      locks            = new ArrayList();
   private final List                      includes         = new ArrayList();
+  private final TestConfigObject          config;
 
-  private TestConfigObject                config;
   private File                            serverInstallDir;
   private File                            workingDir;
   private File                            tempDir;
@@ -175,6 +175,17 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   public AbstractAppServerTestCase() {
     // keep the regular thread dump behavior for windows and macs
     setDumpThreadsOnTimeout(Os.isWindows() || Os.isMac());
+
+    try {
+      config = TestConfigObject.getInstance();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // XXX: Only non-session container tests work in glassfish at the moment
+    if (isSessionTest() && NewAppServerFactory.GLASSFISH.equals(config.appserverFactoryName())) {
+      disableAllUntil(new Date(Long.MAX_VALUE));
+    }
   }
 
   protected int getJMXPort() {
@@ -188,7 +199,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     LinkedJavaProcessPollingAgent.startHeartBeatServer();
 
     isSynchronousWrite = false;
-    config = TestConfigObject.getInstance();
+
     tempDir = getTempDirectory();
     serverInstallDir = makeDir(config.appserverServerInstallDir());
     File workDir;
@@ -318,7 +329,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   *
+   * 
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -407,9 +418,20 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     return createUrl(port, servletClass, "");
   }
 
+  private boolean awaitShutdown(int timewait) throws Exception {
+    long start = System.currentTimeMillis();
+    boolean foundAlive = false;
+    do {
+      Thread.sleep(1000);
+      foundAlive = LinkedJavaProcessPollingAgent.isAnyAppServerAlive();
+    } while (foundAlive && System.currentTimeMillis() - start < timewait);
+
+    return foundAlive;
+  }
+
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   *
+   * 
    * @throws Exception
    */
   protected void tearDown() throws Exception {
@@ -419,22 +441,18 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         Server server = (Server) iter.next();
         server.stop();
       }
-
+      awaitShutdown(10 * 1000);
       System.out.println("Shutdown heartbeat server and its children...");
       LinkedJavaProcessPollingAgent.shutdown();
-
       if (dsoServer != null && dsoServer.isRunning()) dsoServer.stop();
-
     } finally {
       VmStat.stop();
       synchronized (workingDirLock) {
         File dest = new File(tempDir, getName());
+        com.tc.util.io.FileUtils.copyFile(workingDir, dest);
         try {
-          workingDir.renameTo(dest);
-          // XXX: check return value?!!?
-
-        } catch (Throwable e) {
-          throw new RuntimeException("Error moving logs files. There might be zombie processes.", e);
+          FileUtils.forceDelete(workingDir);
+        } catch (IOException ignored) { /* nop */
         }
       }
     }
