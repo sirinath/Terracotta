@@ -8,7 +8,6 @@ import com.tc.config.Directories;
 import com.tc.exception.ImplementMe;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.test.TestConfigObject;
-import com.tc.test.server.appserver.glassfishv1.GlassfishV1AppServerFactory;
 import com.tc.test.server.appserver.jboss4x.JBoss4xAppServerFactory;
 import com.tc.test.server.appserver.tomcat5x.Tomcat5xAppServerFactory;
 import com.tc.test.server.appserver.war.War;
@@ -34,7 +33,6 @@ public abstract class NewAppServerFactory {
   public static final String       JBOSS     = "jboss";
   public static final String       TOMCAT    = "tomcat";
   public static final String       WASCE     = "wasce";
-  public static final String       GLASSFISH = "glassfish";
 
   protected final TestConfigObject config;
   private boolean                  licenseIsSet;
@@ -75,10 +73,8 @@ public abstract class NewAppServerFactory {
       if ("1".equals(majorVersion)) return new Wasce1xAppServerFactory(new ProtectedKey(), config);
     } else if (JBOSS.equals(factoryName)) {
       if ("4".equals(majorVersion)) return new JBoss4xAppServerFactory(new ProtectedKey(), config);
-    } else if (GLASSFISH.equals(factoryName)) {
-      if ("v1".equals(majorVersion)) return new GlassfishV1AppServerFactory(new ProtectedKey(), config);
     }
-
+    
     throw new ImplementMe("App server named '" + factoryName + "' with major version " + majorVersion
                           + " is not yet supported.");
   }
