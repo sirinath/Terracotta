@@ -4,6 +4,7 @@
 package com.tc.test.server.appserver;
 
 import com.tc.util.ZipBuilder;
+import com.tc.util.runtime.Os;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -67,15 +68,13 @@ final class ConcreteReadOnlyAppServerInstallation {
   }
 
   private static String resolvePlatform() {
-    return "generic";
-    //return System.getProperty("os.name").replaceAll("\\s", "_").toLowerCase();
+    return Os.platform();
   }
 
   private static URL appendPath(URL host, String serverType, String majorVersion, String minorVersion) throws Exception {
     String baseUrl = host.toExternalForm();
-    String appendedPath = serverType + "/" + resolvePlatform() + "/" +
-        majorVersion + "/" + majorVersion + "." + minorVersion + "/" +
-        serverType + "-" + majorVersion + "." + minorVersion + ".zip";
+    String appendedPath = serverType + "/" + resolvePlatform() + "/" + serverType.toLowerCase() + "-" + majorVersion.toLowerCase()
+                          + "." + minorVersion.toLowerCase() + ".zip";
     return new URL(baseUrl + "/" + appendedPath);
   }
 }

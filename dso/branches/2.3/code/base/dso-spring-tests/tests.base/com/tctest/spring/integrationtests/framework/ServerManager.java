@@ -201,7 +201,7 @@ public class ServerManager {
   }
 
   public StandardTerracottaAppServerConfig getConfig() {
-    return factory.createTcConfig(installation.getDataDirectory());
+    return factory.createTcConfig(installation.dataDirectory());
   }
 
   public void stopAllWebServers() {
