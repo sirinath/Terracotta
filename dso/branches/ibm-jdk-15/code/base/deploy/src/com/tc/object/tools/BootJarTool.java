@@ -303,7 +303,8 @@ public class BootJarTool {
       loadTerracottaClass(JavaLangArrayHelpers.class.getName());
 
       loadTerracottaClass(Vm.class.getName());
-      loadTerracottaClass(Vm.class.getName() + "$Version");
+      loadTerracottaClass(Vm.Version.class.getName());
+      loadTerracottaClass(Vm.UnknownJvmVersionException.class.getName());
       addManagementClasses();
 
       addRuntimeClasses();
