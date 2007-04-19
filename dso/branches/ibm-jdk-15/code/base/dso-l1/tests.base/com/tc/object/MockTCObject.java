@@ -7,6 +7,7 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.util.runtime.Vm;
 
 import gnu.trove.TLinkable;
 
@@ -52,7 +53,15 @@ public class MockTCObject implements TCObject {
   }
 
   public void booleanFieldChanged(String classname, String fieldname, boolean newValue, int index) {
-    throw new ImplementMe();
+    if (Vm.isIBM() &&
+        "java.lang.reflect.AccessibleObject.override".equals(fieldname)) {
+      // do nothing since the IBM JDK support for AccessibleObject looks up the
+      // TCObject instance in the currently active ClientObjectManager, which causes
+      // and exception to be thrown during the tests since their accessible status is
+      // always set to 'true' before execution
+    } else {
+      throw new ImplementMe();
+    }
   }
 
   public void byteFieldChanged(String classname, String fieldname, byte newValue, int index) {
