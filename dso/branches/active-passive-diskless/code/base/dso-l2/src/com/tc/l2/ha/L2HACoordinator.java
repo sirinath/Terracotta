@@ -89,7 +89,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     this.stateManager = new StateManagerImpl(consoleLogger, groupManager, stateChangeSink);
     this.stateManager.registerForStateChangeEvents(this);
 
-    this.l2ObjectStateManager = new L2ObjectStateManagerImpl(transactionManager);
+    this.l2ObjectStateManager = new L2ObjectStateManagerImpl(objectManager, transactionManager);
 
     final Sink objectsSyncSink = stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_STAGE,
                                                           new L2ObjectSyncHandler(this.l2ObjectStateManager), 1,
