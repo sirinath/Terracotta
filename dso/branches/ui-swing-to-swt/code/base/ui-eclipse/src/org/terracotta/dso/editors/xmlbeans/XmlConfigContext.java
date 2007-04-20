@@ -454,6 +454,7 @@ public final class XmlConfigContext {
         XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION);
     addListener(m_instrumentedClassRuleListener = newInstrumentedClassesRuleWriter(),
         XmlConfigEvent.INSTRUMENTED_CLASS_RULE);
+    addListener(m_includeHonorTransientListener = newWriter(), XmlConfigEvent.INCLUDE_HONOR_TRANSIENT);
   }
 
   private UpdateEventListener newInstrumentedClassesRuleWriter() {
@@ -480,7 +481,7 @@ public final class XmlConfigContext {
         Node node = xml.getDomNode();
         Node parentNode = parent.getDomNode();
         parentNode.replaceChild(newNode.getDomNode(), node);
-        event.element = newNode; 
+        event.element = newNode;
         setDirty(); // XXX
       }
     };

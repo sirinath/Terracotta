@@ -252,9 +252,9 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         XmlConfigEvent event = castEvent(e);
+        refreshTableItemXmlData();
         if (event.element instanceof Include) initIncludeAttributes();
         else m_layout.enableIncludeAttributes(false);
-        refreshTableItemXmlData();
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_RULE, this);
     m_state.xmlContext.addListener(new UpdateEventListener() {
@@ -270,6 +270,28 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         }
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION, this);
+    // - honor transient
+    m_layout.m_honorTransientCheck.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        int selected = m_layout.m_table.getSelectionIndex();
+        XmlObject include = (XmlObject) m_layout.m_table.getItem(selected).getData();
+        m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + m_layout.m_honorTransientCheck.getSelection(),
+            (UpdateEventListener) m_layout.m_honorTransientCheck.getData(), include,
+            XmlConfigEvent.INCLUDE_HONOR_TRANSIENT));
+      }
+    });
+    UpdateEventListener checkListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        boolean select = Boolean.parseBoolean((String) event.data);
+        m_layout.m_honorTransientCheck.setEnabled(true);
+        m_layout.m_honorTransientCheck.setSelection(select);
+      }
+    };
+    m_layout.m_honorTransientCheck.setData(checkListener);
+    m_state.xmlContext.addListener(checkListener, XmlConfigEvent.INCLUDE_HONOR_TRANSIENT, this);
   }
 
   // ================================================================================
@@ -302,6 +324,11 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
 
   private void initIncludeAttributes() {
     m_layout.enableIncludeAttributes(true);
+    int selected = m_layout.m_table.getSelectionIndex();
+    XmlObject include = (XmlObject) m_layout.m_table.getItem(selected).getData();
+    XmlConfigEvent honorTransientEvent = new XmlConfigEvent(XmlConfigEvent.INCLUDE_HONOR_TRANSIENT);
+    honorTransientEvent.element = include;
+    m_state.xmlContext.updateListeners(honorTransientEvent);
   }
 
   private void createIncludeTableItem(Include include) {
