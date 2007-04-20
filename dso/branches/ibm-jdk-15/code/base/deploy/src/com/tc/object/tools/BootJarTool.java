@@ -1649,10 +1649,6 @@ public class BootJarTool {
     cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
     ClassNode jCN = new ClassNode();
     jCR.accept(jCN, ClassReader.SKIP_DEBUG);
-    jData = cw.toByteArray();
-
-    jCR = new ClassReader(jData);
-    cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
 
     ClassInfo jClassInfo = AsmClassInfo.getClassInfo(jClassNameDots, systemLoader);
     TransparencyClassAdapter dsoAdapter = config.createDsoClassAdapterFor(cw, jClassInfo, instrumentationLogger,
