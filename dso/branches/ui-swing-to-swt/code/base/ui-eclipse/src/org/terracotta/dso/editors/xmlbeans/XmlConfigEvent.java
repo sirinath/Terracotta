@@ -148,6 +148,8 @@ public final class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_LOCK_LEVEL                     = "lock-level";
   private static final String  ELEM_METHOD_EXPRESSION              = "method-expression";
   private static final String  ELEM_LOCK_NAME                      = "lock-name";
+  private static final String  ELEM_INCLUDE                        = "include";
+  private static final String  ELEM_INSTRUMENTED_CLASS_EXPRESSION  = "class-expression";
 
   public static final String[] m_elementNames                      = new String[240 + 1];
   static {
@@ -185,6 +187,8 @@ public final class XmlConfigEvent extends UpdateEvent {
     m_elementNames[LOCKS_NAMED_LEVEL] = ELEM_LOCK_LEVEL;
     m_elementNames[LOCKS_NAMED_METHOD] = ELEM_METHOD_EXPRESSION;
     m_elementNames[LOCKS_NAMED_NAME] = ELEM_LOCK_NAME;
+    m_elementNames[INSTRUMENTED_CLASS_RULE] = ELEM_INCLUDE;
+    m_elementNames[INSTRUMENTED_CLASS_EXPRESSION] = ELEM_INSTRUMENTED_CLASS_EXPRESSION;
   }
 
   public final int             type;

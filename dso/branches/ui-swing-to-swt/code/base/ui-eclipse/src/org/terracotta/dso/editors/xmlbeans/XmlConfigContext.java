@@ -18,12 +18,14 @@ import com.tc.util.event.UpdateEventListener;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.Autolock;
+import com.terracottatech.config.ClassExpression;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.DsoClientDebugging;
 import com.terracottatech.config.DsoServerData;
 import com.terracottatech.config.Include;
+import com.terracottatech.config.InstrumentedClasses;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.NamedLock;
@@ -448,6 +450,52 @@ public final class XmlConfigContext {
         setDirty(); // XXX
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN);
+    addListener(m_instrumentedClassExpressionListener = newInstrumentedClassesExpressionWriter(),
+        XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION);
+    addListener(m_instrumentedClassRuleListener = newInstrumentedClassesRuleWriter(),
+        XmlConfigEvent.INSTRUMENTED_CLASS_RULE);
+  }
+
+  private UpdateEventListener newInstrumentedClassesRuleWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        XmlObject xml = event.element;
+        InstrumentedClasses parent = (InstrumentedClasses) event.variable;
+        XmlObject newNode = null;
+        if (xml instanceof Include && !((String) event.data).equals(XmlConfigEvent.m_elementNames[event.type])) {
+          Include include = (Include) xml;
+          ClassExpression expr = parent.addNewExclude();
+          expr.setStringValue(include.getClassExpression());
+          newNode = expr;
+        } else if ((!(xml instanceof Include))
+            && ((String) event.data).equals(XmlConfigEvent.m_elementNames[event.type])) {
+          ClassExpression expr = (ClassExpression) xml;
+          Include include = parent.addNewInclude();
+          include.setClassExpression(expr.getStringValue());
+          newNode = include;
+        } else {
+          return;
+        }
+        Node node = xml.getDomNode();
+        Node parentNode = parent.getDomNode();
+        parentNode.replaceChild(newNode.getDomNode(), node);
+        event.element = newNode; 
+        setDirty(); // XXX
+      }
+    };
+  }
+
+  private UpdateEventListener newInstrumentedClassesExpressionWriter() {
+    return new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        final String element = XmlConfigEvent.m_elementNames[event.type];
+        XmlObject xml = event.element;
+        XmlConfigPersistenceManager.writeElement(xml, element, (String) event.data);
+        setDirty(); // XXX
+      }
+    };
   }
 
   private UpdateEventListener newRootsNameWriter() {
@@ -1064,13 +1112,7 @@ public final class XmlConfigContext {
       case XmlConfigEvent.LOCKS_NAMED_LEVEL:
         action.exec(m_locksNamedLevelObserver, m_locksNamedLevelListener);
         break;
-
-      // XXX: <----------------------------------- !!!
       case XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION:
-        if (event != null) {
-          event.element = m_provider.ensureInstrumentedClasses();
-          setDirty(); // XXX
-        }
         action.exec(m_instrumentedClassExpressionObserver, m_instrumentedClassExpressionListener);
         break;
       case XmlConfigEvent.INSTRUMENTED_CLASS_RULE:

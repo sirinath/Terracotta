@@ -2673,6 +2673,7 @@ public class ConfigurationHelper {
   private static String LOCK_PROBLEM_MARKER = "org.terracotta.dso.LockMethodProblemMarker";
 
   private static String getRawString(XmlString xmlString) {
+    if (xmlString == null) return "";
     String s = xmlString.toString();
     s = s.substring(s.indexOf('>') + 1);
     if (s.length() == 0) return "";

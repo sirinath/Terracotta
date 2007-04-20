@@ -230,6 +230,7 @@ public final class SWTUtil {
             for (int i = 0; i < values.length; i++) {
               combo.add(values[i]);
             }
+            final String initialValue = item.getText(column);
             final boolean[] isMouseOverCombo = new boolean[] { false };
             Listener comboListener = new Listener() {
               public void handleEvent(final Event e) {
@@ -237,7 +238,7 @@ public final class SWTUtil {
                 switch (e.type) {
                   case SWT.FocusOut:
                     if (isMouseOverCombo[0]) return;
-                    if (combo.getSelectionIndex() != -1) {
+                    if (combo.getSelectionIndex() != -1 && !initialValue.equals(combo.getText())) {
                       item.setText(column, combo.getText());
                       updateEvent.item = item;
                       updateEvent.index = column;
@@ -248,7 +249,7 @@ public final class SWTUtil {
                   case SWT.Traverse:
                     switch (e.detail) {
                       case SWT.TRAVERSE_RETURN:
-                        if (combo.getSelectionIndex() != -1) {
+                        if (combo.getSelectionIndex() != -1 && !initialValue.equals(combo.getText())) {
                           item.setText(column, combo.getText());
                           updateEvent.item = item;
                           updateEvent.index = column;

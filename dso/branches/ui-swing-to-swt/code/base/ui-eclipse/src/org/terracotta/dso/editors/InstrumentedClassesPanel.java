@@ -15,8 +15,10 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
@@ -222,6 +224,52 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         m_layout.m_moveUpButton.setEnabled(true);
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN, this);
+    // - table cell update
+    m_layout.m_table.addListener(SWT.SetData, new Listener() {
+      public void handleEvent(Event event) {
+        if (!m_isActive) return;
+        TableItem item = (TableItem) event.item;
+        XmlObject xmlObj = (XmlObject) item.getData();
+        int type = -1;
+        switch (event.index) {
+          case Layout.RULE_COLUMN:
+            type = XmlConfigEvent.INSTRUMENTED_CLASS_RULE;
+            break;
+          case Layout.EXPRESSION_COLUMN:
+            type = XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION;
+            break;
+          default:
+            break;
+        }
+        XmlConfigEvent e = new XmlConfigEvent(item.getText(event.index), null, xmlObj, type);
+        if (type == XmlConfigEvent.INSTRUMENTED_CLASS_RULE) {
+          e.variable = m_state.xmlContext.getParentElementProvider().hasInstrumentedClasses();
+        }
+        m_state.xmlContext.notifyListeners(e);
+      }
+    });
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        if (event.element instanceof Include) initIncludeAttributes();
+        else m_layout.enableIncludeAttributes(false);
+        refreshTableItemXmlData();
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_RULE, this);
+    m_state.xmlContext.addListener(new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        if (event.data == null) event.data = "";
+        TableItem[] items = m_layout.m_table.getItems();
+        for (int i = 0; i < items.length; i++) {
+          if (items[i].getData() == event.element) {
+            items[i].setText(Layout.EXPRESSION_COLUMN, (String) event.data);
+          }
+        }
+      }
+    }, XmlConfigEvent.INSTRUMENTED_CLASS_EXPRESSION, this);
   }
 
   // ================================================================================
@@ -253,13 +301,13 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
   }
 
   private void initIncludeAttributes() {
-    m_layout.enableIncludeAttributes();
+    m_layout.enableIncludeAttributes(true);
   }
 
   private void createIncludeTableItem(Include include) {
     TableItem item = new TableItem(m_layout.m_table, SWT.NONE);
     item.setText(Layout.RULE_COLUMN, INCLUDE);
-    item.setText(Layout.EXPRESSION_COLUMN, include.getClassExpression());
+    item.setText(Layout.EXPRESSION_COLUMN, include.getClassExpression() + "");
     item.setData(include);
   }
 
@@ -348,13 +396,13 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       m_executeCodeText.setEnabled(false);
     }
 
-    private void enableIncludeAttributes() {
-      m_detailGroup.setEnabled(true);
-      m_onLoadGroup.setEnabled(true);
-      m_honorTransientCheck.setEnabled(true);
-      m_doNothingCheck.setEnabled(true);
-      m_callAMethodCheck.setEnabled(true);
-      m_executeCodeCheck.setEnabled(true);
+    private void enableIncludeAttributes(boolean enable) {
+      m_detailGroup.setEnabled(enable);
+      m_onLoadGroup.setEnabled(enable);
+      m_honorTransientCheck.setEnabled(enable);
+      m_doNothingCheck.setEnabled(enable);
+      m_callAMethodCheck.setEnabled(enable);
+      m_executeCodeCheck.setEnabled(enable);
     }
 
     private Layout(Composite parent) {
