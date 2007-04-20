@@ -214,6 +214,9 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
     }
     MessageID requestID = gmsg.inResponseTo();
     NodeID from = new NodeID(sender.getName(), sender.getUniqueId());
+    if (!nodes.containsKey(from)) {
+      logger.warn("BAD : Message from non-existing member " + sender + " nodes = " + nodes);
+    }
     gmsg.setMessageOrginator(from);
     if (requestID.isNull() || !notifyPendingRequests(requestID, gmsg, sender)) {
       fireMessageReceivedEvent(from, gmsg);
@@ -272,7 +275,8 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
   private void fireNodeEvent(NodeID newNode, boolean joined) {
     if (debug) {
-      logger.info("fireNodeEvent: joined=" + joined + ", name=" + newNode.getName() + ", uid=" + Conversion.bytesToHex(newNode.getUID()));
+      logger.info("fireNodeEvent: joined=" + joined + ", name=" + newNode.getName() + ", uid="
+                  + Conversion.bytesToHex(newNode.getUID()));
     }
 
     Iterator i = groupListeners.iterator();
@@ -288,9 +292,10 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
   public void memberDisappeared(Member member) {
     if (debug) {
-      logger.info("memberDisappeared -> name=" + member.getName() + ", uid=" + Conversion.bytesToHex(member.getUniqueId()));
+      logger.info("memberDisappeared -> name=" + member.getName() + ", uid="
+                  + Conversion.bytesToHex(member.getUniqueId()));
     }
-    
+
     NodeID node = new NodeID(member.getName(), member.getUniqueId());
     if ((nodes.remove(node)) != null) {
       fireNodeEvent(node, false);
@@ -341,7 +346,8 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
     if (debug) {
-      logger.info(this.thisNodeID + " : Sending to : " + node + " msg " + msg.getMessageID() + " node.name=" + node.getName() + ", node.uid=" + node.getUID());
+      logger.info(this.thisNodeID + " : Sending to : " + node + " msg " + msg.getMessageID() + " node.name="
+                  + node.getName() + ", node.uid=" + Conversion.bytesToHex(node.getUID()));
     }
     try {
       Member member = nodes.get(node);
