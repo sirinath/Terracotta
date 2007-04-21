@@ -113,7 +113,7 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
   private final class L2ObjectStateImpl implements L2ObjectState {
 
     private final NodeID             nodeID;
-    
+
     private Set                      missingOids;
     private Map                      missingRoots;
     private Set                      existingOids;
@@ -176,8 +176,8 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
       }
       existingOids = null; // Let GC work for us
       missingRoots.values().retainAll(this.missingOids);
-      logger.info(nodeID + " : is missing " + missingOids.size() + " out of " + objectCount + " object of which "
-                  + missingRoots.size() + " are roots");
+      logger.info(nodeID + " : is missing " + missingOids.size() + " out of " + objectCount
+                  + " objects of which missing roots = " + missingRoots.size());
       if (!missingHere.isEmpty()) {
         // XXX:: This is possible because some message (Transaction message with new object creation or object delete
         // message from GC) from previous active reached the other node and not this node and the active crashed

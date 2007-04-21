@@ -132,6 +132,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   private void handleObjectListRequest(NodeID nodeID, ObjectListSyncMessage clusterMsg) throws GroupException {
     Assert.assertFalse(stateManager.isActiveCoordinator());
     Set knownIDs = objectManager.getAllObjectIDs();
+    logger.info("Send response to Active's query : known id lists = " + knownIDs.size());
     groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncResponseMessage(clusterMsg, knownIDs));
   }
 
