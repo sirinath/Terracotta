@@ -153,6 +153,7 @@ public class BootClassesPanel extends ConfigurationEditorPanel {
         dialog.setMessage(CLASS_SELECT_MESSAGE);
         dialog.open();
         Object[] items = dialog.getResult();
+        if (items == null) return;
         for (int i = 0; i < items.length; i++) {
           XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.CREATE_BOOT_CLASS);
           event.data = ((IType) items[i]).getFullyQualifiedName();

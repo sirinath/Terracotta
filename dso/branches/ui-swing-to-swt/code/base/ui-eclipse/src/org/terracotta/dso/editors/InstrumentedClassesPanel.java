@@ -7,6 +7,10 @@ package org.terracotta.dso.editors;
 import org.apache.xmlbeans.XmlObject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -39,8 +43,11 @@ import com.terracottatech.config.InstrumentedClasses;
 
 public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
 
-  private static final String INCLUDE = "include";
-  private static final String EXCLUDE = "exclude";
+  private static final String INCLUDE             = "include";
+  private static final String EXCLUDE             = "exclude";
+  private static final int    DO_NOTHING_INDEX    = 0;
+  private static final int    CALL_A_METHOD_INDEX = 1;
+  private static final int    EXECUTE_CODE_INDEX  = 2;
   private final Layout        m_layout;
   private State               m_state;
 
@@ -72,6 +79,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
   public synchronized void refreshContent() {
     m_layout.reset();
     initTableItems();
+    if (m_state.selectionIndex < m_layout.m_table.getItemCount()) {
+      m_layout.m_table.setSelection(m_state.selectionIndex);
+      handleTableSelection();
+    }
   }
 
   // ================================================================================
@@ -81,28 +92,8 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
   private void createContextListeners() {
     m_layout.m_table.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        if (!m_isActive) return;
-        m_layout.m_removeButton.setEnabled(true);
-        int index = m_layout.m_table.getSelectionIndex();
-        if (index == -1) {
-          m_layout.m_moveUpButton.setEnabled(false);
-          m_layout.m_moveDownButton.setEnabled(false);
-        } else if (index == 0) {
-          m_layout.m_moveUpButton.setEnabled(false);
-          m_layout.m_moveDownButton.setEnabled(true);
-        } else if (index == m_layout.m_table.getItemCount() - 1) {
-          m_layout.m_moveUpButton.setEnabled(true);
-          m_layout.m_moveDownButton.setEnabled(false);
-        } else {
-          m_layout.m_moveUpButton.setEnabled(true);
-          m_layout.m_moveDownButton.setEnabled(true);
-        }
-        TableItem item = m_layout.m_table.getItem(m_layout.m_table.getSelectionIndex());
-        if (item.getText(Layout.RULE_COLUMN).equals(INCLUDE)) {
-          initIncludeAttributes();
-        } else if (item.getText(Layout.RULE_COLUMN).equals(EXCLUDE)) {
-          m_layout.resetIncludeAttributes();
-        }
+        handleTableSelection();
+        m_state.selectionIndex = m_layout.m_table.getSelectionIndex();
       }
     });
     // - add class
@@ -132,7 +123,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         XmlConfigEvent event = castEvent(e);
-        createIncludeTableItem((Include) event.element);
+        TableItem item = createIncludeTableItem((Include) event.element);
+        m_layout.m_table.setSelection(item);
+        handleTableSelection();
+        m_state.selectionIndex = m_layout.m_table.getSelectionIndex();
       }
     }, XmlConfigEvent.NEW_INSTRUMENTED_CLASS, this);
     // - remove class
@@ -154,7 +148,9 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         m_layout.m_table.remove(((XmlConfigEvent) e).index);
+        handleTableSelection();
         m_layout.m_removeButton.setEnabled(false);
+        m_state.selectionIndex = m_layout.m_table.getSelectionIndex();
       }
     }, XmlConfigEvent.REMOVE_INSTRUMENTED_CLASS, this);
     // - element order buttons
@@ -205,6 +201,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         m_layout.m_table.select(m_layout.m_table.indexOf(movedItem));
         if (m_layout.m_table.indexOf(movedItem) == 0) m_layout.m_moveUpButton.setEnabled(false);
         m_layout.m_moveDownButton.setEnabled(true);
+        m_state.selectionIndex = m_layout.m_table.getSelectionIndex();
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_UP, this);
     m_state.xmlContext.addListener(new UpdateEventListener() {
@@ -222,6 +219,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         m_layout.m_table.select(m_layout.m_table.indexOf(movedItem));
         if (m_layout.m_table.indexOf(movedItem) == count - 1) m_layout.m_moveDownButton.setEnabled(false);
         m_layout.m_moveUpButton.setEnabled(true);
+        m_state.selectionIndex = m_layout.m_table.getSelectionIndex();
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_ORDER_DOWN, this);
     // - table cell update
@@ -254,7 +252,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         XmlConfigEvent event = castEvent(e);
         refreshTableItemXmlData();
         if (event.element instanceof Include) initIncludeAttributes();
-        else m_layout.enableIncludeAttributes(false);
+        else m_layout.resetIncludeAttributes();
       }
     }, XmlConfigEvent.INSTRUMENTED_CLASS_RULE, this);
     m_state.xmlContext.addListener(new UpdateEventListener() {
@@ -281,7 +279,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
             XmlConfigEvent.INCLUDE_HONOR_TRANSIENT));
       }
     });
-    UpdateEventListener checkListener = new UpdateEventListener() {
+    UpdateEventListener honorTransientListener = new UpdateEventListener() {
       public void handleUpdate(UpdateEvent e) {
         if (!m_isActive) return;
         XmlConfigEvent event = castEvent(e);
@@ -290,8 +288,113 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
         m_layout.m_honorTransientCheck.setSelection(select);
       }
     };
-    m_layout.m_honorTransientCheck.setData(checkListener);
-    m_state.xmlContext.addListener(checkListener, XmlConfigEvent.INCLUDE_HONOR_TRANSIENT, this);
+    m_layout.m_honorTransientCheck.setData(honorTransientListener);
+    m_state.xmlContext.addListener(honorTransientListener, XmlConfigEvent.INCLUDE_HONOR_TRANSIENT, this);
+    // - radio buttons
+    final UpdateEventListener removeOnLoadListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        handleRemoveOnLoad();
+      }
+    };
+    m_state.xmlContext.addListener(removeOnLoadListener, XmlConfigEvent.REMOVE_INCLUDE_ON_LOAD, this);
+    m_layout.m_doNothingRadio.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        handleRemoveOnLoad();
+        XmlConfigEvent event = new XmlConfigEvent(XmlConfigEvent.DELETE_INCLUDE_ON_LOAD);
+        event.source = removeOnLoadListener;
+        int selected = m_layout.m_table.getSelectionIndex();
+        event.element = (XmlObject) m_layout.m_table.getItem(selected).getData();
+        m_state.xmlContext.notifyListeners(event);
+      }
+    });
+    m_layout.m_callAMethodRadio.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_callAMethodText.setEnabled(true);
+        m_layout.m_executeCodeText.setText("");
+        m_layout.m_executeCodeText.setEnabled(false);
+      }
+    });
+    m_layout.m_executeCodeRadio.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (!m_isActive) return;
+        m_layout.m_executeCodeText.setEnabled(true);
+        m_layout.m_callAMethodText.setText("");
+        m_layout.m_callAMethodText.setEnabled(false);
+      }
+    });
+    // - radio update listeners
+    UpdateEventListener behaviorListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        m_layout.enableIncludeAttributes();
+        XmlConfigEvent event = castEvent(e);
+        XmlConfigEvent newEvent;
+        switch (event.index) {
+          case DO_NOTHING_INDEX:
+            m_layout.m_doNothingRadio.setSelection(true);
+            break;
+          case CALL_A_METHOD_INDEX:
+            m_layout.m_callAMethodRadio.setSelection(true);
+            m_layout.m_callAMethodText.setEnabled(true);
+            newEvent = new XmlConfigEvent(XmlConfigEvent.INCLUDE_ON_LOAD_METHOD);
+            newEvent.element = ((Include) event.element).getOnLoad();
+            m_state.xmlContext.updateListeners(newEvent);
+            break;
+          case EXECUTE_CODE_INDEX:
+            m_layout.m_executeCodeRadio.setSelection(true);
+            m_layout.m_executeCodeText.setEnabled(true);
+            newEvent = new XmlConfigEvent(XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE);
+            newEvent.element = ((Include) event.element).getOnLoad();
+            m_state.xmlContext.updateListeners(newEvent);
+            break;
+
+          default:
+            break;
+        }
+      }
+    };
+    m_state.xmlContext.addListener(behaviorListener, XmlConfigEvent.INCLUDE_BEHAVIOR, this);
+    // - include method field
+    registerFieldNotificationListener(XmlConfigEvent.INCLUDE_ON_LOAD_METHOD, m_layout.m_callAMethodText);
+    UpdateEventListener methodListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        if (event.data == null) event.data = "";
+        m_layout.m_callAMethodText.setText((String) event.data);
+      }
+    };
+    m_state.xmlContext.addListener(methodListener, XmlConfigEvent.INCLUDE_ON_LOAD_METHOD, this);
+    m_layout.m_callAMethodText.setData(methodListener);
+    // - include execute field
+    registerFieldNotificationListener(XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE, m_layout.m_executeCodeText);
+    UpdateEventListener executeListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        if (!m_isActive) return;
+        XmlConfigEvent event = castEvent(e);
+        if (event.data == null) event.data = "";
+        m_layout.m_executeCodeText.setText((String) event.data);
+      }
+    };
+    m_state.xmlContext.addListener(executeListener, XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE, this);
+    m_layout.m_executeCodeText.setData(executeListener);
+  }
+
+  // - handle field notifications
+  private void registerFieldNotificationListener(final int type, final Text text) {
+    text.addFocusListener(new FocusAdapter() {
+      public void focusLost(FocusEvent e) {
+        handleFieldEvent(text, type);
+      }
+    });
+    text.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.keyCode == SWT.Selection) {
+          handleFieldEvent(text, type);
+        }
+      }
+    });
   }
 
   // ================================================================================
@@ -322,27 +425,76 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
     }
   }
 
+  private void handleFieldEvent(Text text, int type) {
+    if (!m_isActive) return;
+    int selected = m_layout.m_table.getSelectionIndex();
+    XmlObject include = (XmlObject) m_layout.m_table.getItem(selected).getData();
+    m_state.xmlContext.notifyListeners(new XmlConfigEvent(text.getText(), (UpdateEventListener) text.getData(),
+        include, type));
+  }
+
+  private void handleRemoveOnLoad() {
+    if (!m_isActive) return;
+    m_layout.m_callAMethodText.setText("");
+    m_layout.m_callAMethodText.setEnabled(false);
+    m_layout.m_executeCodeText.setText("");
+    m_layout.m_executeCodeText.setEnabled(false);
+  }
+
   private void initIncludeAttributes() {
-    m_layout.enableIncludeAttributes(true);
+    m_layout.resetIncludeAttributes();
+    m_layout.enableIncludeAttributes();
     int selected = m_layout.m_table.getSelectionIndex();
     XmlObject include = (XmlObject) m_layout.m_table.getItem(selected).getData();
     XmlConfigEvent honorTransientEvent = new XmlConfigEvent(XmlConfigEvent.INCLUDE_HONOR_TRANSIENT);
     honorTransientEvent.element = include;
     m_state.xmlContext.updateListeners(honorTransientEvent);
+    XmlConfigEvent behaviorEvent = new XmlConfigEvent(XmlConfigEvent.INCLUDE_BEHAVIOR);
+    behaviorEvent.element = include;
+    m_state.xmlContext.updateListeners(XmlConfigEvent.INCLUDE_BEHAVIOR, behaviorEvent);
   }
 
-  private void createIncludeTableItem(Include include) {
+  private TableItem createIncludeTableItem(Include include) {
     TableItem item = new TableItem(m_layout.m_table, SWT.NONE);
     item.setText(Layout.RULE_COLUMN, INCLUDE);
     item.setText(Layout.EXPRESSION_COLUMN, include.getClassExpression() + "");
     item.setData(include);
+    return item;
   }
 
-  private void createExcludeTableItem(ClassExpression exclude) {
+  private TableItem createExcludeTableItem(ClassExpression exclude) {
     TableItem item = new TableItem(m_layout.m_table, SWT.NONE);
     item.setText(Layout.RULE_COLUMN, EXCLUDE);
     item.setText(Layout.EXPRESSION_COLUMN, exclude.getStringValue());
     item.setData(exclude);
+    return item;
+  }
+
+  private void handleTableSelection() {
+    if (!m_isActive) return;
+    int selection = m_layout.m_table.getSelectionIndex();
+    if (selection == -1) return;
+    m_layout.m_removeButton.setEnabled(true);
+    int index = m_layout.m_table.getSelectionIndex();
+    if (index == -1) {
+      m_layout.m_moveUpButton.setEnabled(false);
+      m_layout.m_moveDownButton.setEnabled(false);
+    } else if (index == 0) {
+      m_layout.m_moveUpButton.setEnabled(false);
+      m_layout.m_moveDownButton.setEnabled(true);
+    } else if (index == m_layout.m_table.getItemCount() - 1) {
+      m_layout.m_moveUpButton.setEnabled(true);
+      m_layout.m_moveDownButton.setEnabled(false);
+    } else {
+      m_layout.m_moveUpButton.setEnabled(true);
+      m_layout.m_moveDownButton.setEnabled(true);
+    }
+    TableItem item = m_layout.m_table.getItem(selection);
+    if (item.getText(Layout.RULE_COLUMN).equals(INCLUDE)) {
+      initIncludeAttributes();
+    } else if (item.getText(Layout.RULE_COLUMN).equals(EXCLUDE)) {
+      m_layout.resetIncludeAttributes();
+    }
   }
 
   // ================================================================================
@@ -353,6 +505,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
     final IProject             project;
     final XmlConfigContext     xmlContext;
     final XmlConfigUndoContext xmlUndoContext;
+    int                        selectionIndex;
 
     private State(IProject project) {
       this.project = project;
@@ -386,10 +539,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
 
     private Table               m_table;
     private Button              m_honorTransientCheck;
-    private Button              m_doNothingCheck;
-    private Button              m_callAMethodCheck;
+    private Button              m_doNothingRadio;
+    private Button              m_callAMethodRadio;
     private Text                m_callAMethodText;
-    private Button              m_executeCodeCheck;
+    private Button              m_executeCodeRadio;
     private Text                m_executeCodeText;
     private Button              m_addButton;
     private Button              m_removeButton;
@@ -411,25 +564,25 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       m_onLoadGroup.setEnabled(false);
       m_honorTransientCheck.setSelection(false);
       m_honorTransientCheck.setEnabled(false);
-      m_doNothingCheck.setSelection(false);
-      m_doNothingCheck.setEnabled(false);
-      m_callAMethodCheck.setSelection(false);
-      m_callAMethodCheck.setEnabled(false);
+      m_doNothingRadio.setSelection(false);
+      m_doNothingRadio.setEnabled(false);
+      m_callAMethodRadio.setSelection(false);
+      m_callAMethodRadio.setEnabled(false);
       m_callAMethodText.setText("");
       m_callAMethodText.setEnabled(false);
-      m_executeCodeCheck.setSelection(false);
-      m_executeCodeCheck.setEnabled(false);
+      m_executeCodeRadio.setSelection(false);
+      m_executeCodeRadio.setEnabled(false);
       m_executeCodeText.setText("");
       m_executeCodeText.setEnabled(false);
     }
-
-    private void enableIncludeAttributes(boolean enable) {
-      m_detailGroup.setEnabled(enable);
-      m_onLoadGroup.setEnabled(enable);
-      m_honorTransientCheck.setEnabled(enable);
-      m_doNothingCheck.setEnabled(enable);
-      m_callAMethodCheck.setEnabled(enable);
-      m_executeCodeCheck.setEnabled(enable);
+    
+    private void enableIncludeAttributes() {
+      m_detailGroup.setEnabled(true);
+      m_onLoadGroup.setEnabled(true);
+      m_honorTransientCheck.setEnabled(true);
+      m_doNothingRadio.setEnabled(true);
+      m_callAMethodRadio.setEnabled(true);
+      m_executeCodeRadio.setEnabled(true);
     }
 
     private Layout(Composite parent) {
@@ -499,16 +652,16 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       m_onLoadGroup.setLayout(gridLayout);
       m_onLoadGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-      m_doNothingCheck = new Button(m_onLoadGroup, SWT.RADIO);
-      m_doNothingCheck.setText(DO_NOTHING);
-      m_doNothingCheck.setEnabled(false);
+      m_doNothingRadio = new Button(m_onLoadGroup, SWT.RADIO);
+      m_doNothingRadio.setText(DO_NOTHING);
+      m_doNothingRadio.setEnabled(false);
       GridData gridData = new GridData();
       gridData.horizontalSpan = 2;
-      m_doNothingCheck.setLayoutData(gridData);
+      m_doNothingRadio.setLayoutData(gridData);
 
-      m_callAMethodCheck = new Button(m_onLoadGroup, SWT.RADIO);
-      m_callAMethodCheck.setText(CALL_A_METHOD);
-      m_callAMethodCheck.setEnabled(false);
+      m_callAMethodRadio = new Button(m_onLoadGroup, SWT.RADIO);
+      m_callAMethodRadio.setText(CALL_A_METHOD);
+      m_callAMethodRadio.setEnabled(false);
 
       m_callAMethodText = new Text(m_onLoadGroup, SWT.BORDER);
       m_callAMethodText.setEnabled(false);
@@ -517,12 +670,12 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
       gridData.minimumWidth = width;
       m_callAMethodText.setLayoutData(gridData);
 
-      m_executeCodeCheck = new Button(m_onLoadGroup, SWT.RADIO);
-      m_executeCodeCheck.setEnabled(false);
-      m_executeCodeCheck.setText(EXECUTE_CODE);
+      m_executeCodeRadio = new Button(m_onLoadGroup, SWT.RADIO);
+      m_executeCodeRadio.setEnabled(false);
+      m_executeCodeRadio.setText(EXECUTE_CODE);
       gridData = new GridData();
       gridData.horizontalSpan = 2;
-      m_executeCodeCheck.setLayoutData(gridData);
+      m_executeCodeRadio.setLayoutData(gridData);
 
       m_executeCodeText = new Text(m_onLoadGroup, SWT.BORDER | SWT.MULTI);
       m_executeCodeText.setEnabled(false);

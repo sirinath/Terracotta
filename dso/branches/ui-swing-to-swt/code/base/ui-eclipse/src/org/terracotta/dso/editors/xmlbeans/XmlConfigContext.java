@@ -29,6 +29,7 @@ import com.terracottatech.config.InstrumentedClasses;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.NamedLock;
+import com.terracottatech.config.OnLoad;
 import com.terracottatech.config.QualifiedClassName;
 import com.terracottatech.config.QualifiedFieldName;
 import com.terracottatech.config.Root;
@@ -131,6 +132,8 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_instrumentedClassOrderDownListener;
   private final EventMulticaster                       m_includeHonorTransientObserver;
   private UpdateEventListener                          m_includeHonorTransientListener;
+  private final EventMulticaster                       m_includeBehaviorObserver;
+  private UpdateEventListener                          m_includeBehaviorListener;
   private final EventMulticaster                       m_includeOnLoadExecuteObserver;
   private UpdateEventListener                          m_includeOnLoadExecuteListener;
   private final EventMulticaster                       m_includeOnLoadMethodObserver;
@@ -156,6 +159,7 @@ public final class XmlConfigContext {
   private final EventMulticaster                       m_removeLockNamedObserver;
   private final EventMulticaster                       m_newInstrumentedClassObserver;
   private final EventMulticaster                       m_removeInstrumentedClassObserver;
+  private final EventMulticaster                       m_removeIncludeOnLoadObserver;
   // context create/delete listeners
   private UpdateEventListener                          m_createServerListener;
   private UpdateEventListener                          m_deleteServerListener;
@@ -177,6 +181,7 @@ public final class XmlConfigContext {
   private UpdateEventListener                          m_deleteLockNamedListener;
   private UpdateEventListener                          m_createInstrumentedClassListener;
   private UpdateEventListener                          m_deleteInstrumentedClassListener;
+  private UpdateEventListener                          m_deleteIncludeOnLoadListener;
 
   private static final Map<IProject, XmlConfigContext> m_contexts   = new HashMap<IProject, XmlConfigContext>();
   private final Map<SWTComponentModel, List>           m_componentModels;
@@ -233,6 +238,7 @@ public final class XmlConfigContext {
     this.m_instrumentedClassOrderUpObserver = new EventMulticaster();
     this.m_instrumentedClassOrderDownObserver = new EventMulticaster();
     this.m_includeHonorTransientObserver = new EventMulticaster();
+    this.m_includeBehaviorObserver = new EventMulticaster();
     this.m_includeOnLoadExecuteObserver = new EventMulticaster();
     this.m_includeOnLoadMethodObserver = new EventMulticaster();
     // "new" and "remove" element observers
@@ -256,6 +262,7 @@ public final class XmlConfigContext {
     this.m_removeLockNamedObserver = new EventMulticaster();
     this.m_newInstrumentedClassObserver = new EventMulticaster();
     this.m_removeInstrumentedClassObserver = new EventMulticaster();
+    this.m_removeIncludeOnLoadObserver = new EventMulticaster();
     init();
   }
 
@@ -288,6 +295,29 @@ public final class XmlConfigContext {
         return event;
       }
     }, event.type);
+  }
+
+  /**
+   * Update listeners using a predefined custom behavior
+   */
+  public synchronized void updateListeners(int eventType, XmlConfigEvent event) {
+    switch (eventType) {
+      case XmlConfigEvent.INCLUDE_BEHAVIOR:
+        Include include = (Include) event.element;
+        OnLoad onLoad = include.getOnLoad();
+        if (onLoad == null) {
+          event.index = 0; // do nothing
+        } else if (onLoad.getMethod() != null) { // method
+          event.index = 1;
+        } else { // execute
+          event.index = 2;
+        }
+        notifyListeners(event);
+        break;
+
+      default:
+        break;
+    }
   }
 
   /**
@@ -455,6 +485,27 @@ public final class XmlConfigContext {
     addListener(m_instrumentedClassRuleListener = newInstrumentedClassesRuleWriter(),
         XmlConfigEvent.INSTRUMENTED_CLASS_RULE);
     addListener(m_includeHonorTransientListener = newWriter(), XmlConfigEvent.INCLUDE_HONOR_TRANSIENT);
+    addListener(m_includeOnLoadMethodListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        Include include = (Include) event.element;
+        ensureIncludeOnLoadElement(include);
+        if (include.getOnLoad().getExecute() != null) include.getOnLoad().unsetExecute();
+        include.getOnLoad().setMethod((String) event.data);
+        setDirty(); // XXX
+      }
+    }, XmlConfigEvent.INCLUDE_ON_LOAD_METHOD);
+    addListener(m_includeOnLoadExecuteListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        Include include = (Include) event.element;
+        ensureIncludeOnLoadElement(include);
+        if (include.getOnLoad().getMethod() != null) include.getOnLoad().unsetMethod();
+        include.getOnLoad().setExecute((String) event.data);
+        System.out.println(include.getOnLoad().getExecute());// XXX
+        setDirty(); // XXX
+      }
+    }, XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE);
   }
 
   private UpdateEventListener newInstrumentedClassesRuleWriter() {
@@ -895,6 +946,17 @@ public final class XmlConfigContext {
         setDirty(); // XXX
       }
     };
+    m_deleteIncludeOnLoadListener = new UpdateEventListener() {
+      public void handleUpdate(UpdateEvent e) {
+        XmlConfigEvent event = (XmlConfigEvent) e;
+        Include include = (Include) event.element;
+        if (include.isSetOnLoad()) include.unsetOnLoad();
+        XmlConfigEvent newEvent = new XmlConfigEvent(XmlConfigEvent.REMOVE_INCLUDE_ON_LOAD);
+        newEvent.source = e.source;
+        m_removeIncludeOnLoadObserver.fireUpdateEvent(newEvent);
+        setDirty(); // XXX
+      }
+    };
   }
 
   private void removeModulesElementIfEmpty() {
@@ -1122,6 +1184,9 @@ public final class XmlConfigContext {
       case XmlConfigEvent.INCLUDE_HONOR_TRANSIENT:
         action.exec(m_includeHonorTransientObserver, m_includeHonorTransientListener);
         break;
+      case XmlConfigEvent.INCLUDE_BEHAVIOR:
+        action.exec(m_includeBehaviorObserver, m_includeBehaviorListener);
+        break;
       case XmlConfigEvent.INCLUDE_ON_LOAD_EXECUTE:
         action.exec(m_includeOnLoadExecuteObserver, m_includeOnLoadExecuteListener);
         break;
@@ -1212,6 +1277,9 @@ public final class XmlConfigContext {
       case XmlConfigEvent.REMOVE_INSTRUMENTED_CLASS:
         action.exec(m_removeInstrumentedClassObserver, null);
         break;
+      case XmlConfigEvent.REMOVE_INCLUDE_ON_LOAD:
+        action.exec(m_removeIncludeOnLoadObserver, null);
+        break;
 
       default:
         break;
@@ -1298,6 +1366,9 @@ public final class XmlConfigContext {
       case XmlConfigEvent.DELETE_INSTRUMENTED_CLASS:
         m_deleteInstrumentedClassListener.handleUpdate(event);
         break;
+      case XmlConfigEvent.DELETE_INCLUDE_ON_LOAD:
+        m_deleteIncludeOnLoadListener.handleUpdate(event);
+        break;
 
       default:
         break;
@@ -1358,6 +1429,10 @@ public final class XmlConfigContext {
     XmlObject debugging = ensureClientDsoDebuggingElement();
     return XmlConfigPersistenceManager.ensureXml(debugging, DsoClientDebugging.class,
         XmlConfigEvent.PARENT_ELEM_RUNTIME_LOGGING);
+  }
+
+  private XmlObject ensureIncludeOnLoadElement(XmlObject include) {
+    return XmlConfigPersistenceManager.ensureXml(include, Include.class, XmlConfigEvent.PARENT_ELEM_INCLUDE_ON_LOAD);
   }
 
   // --------------------------------------------------------------------------------

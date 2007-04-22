@@ -56,10 +56,11 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      INSTRUMENTED_CLASS_EXPRESSION       = 210;
   public static final int      INSTRUMENTED_CLASS_RULE             = 215;
   public static final int      INCLUDE_HONOR_TRANSIENT             = 220;
-  public static final int      INCLUDE_ON_LOAD_EXECUTE             = 225;
-  public static final int      INCLUDE_ON_LOAD_METHOD              = 230;
-  public static final int      INSTRUMENTED_CLASS_ORDER_UP         = 235;
-  public static final int      INSTRUMENTED_CLASS_ORDER_DOWN       = 240;
+  public static final int      INCLUDE_BEHAVIOR                    = 225;
+  public static final int      INCLUDE_ON_LOAD_EXECUTE             = 230;
+  public static final int      INCLUDE_ON_LOAD_METHOD              = 235;
+  public static final int      INSTRUMENTED_CLASS_ORDER_UP         = 240;
+  public static final int      INSTRUMENTED_CLASS_ORDER_DOWN       = 245;
   // only this context may listen to "create" and "delete" events - corresponding "new" and "remove" events are
   // broadcast
   public static final int      NULL                                = -1;
@@ -83,6 +84,7 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      DELETE_LOCK_NAMED                   = -90;
   public static final int      CREATE_INSTRUMENTED_CLASS           = -95;
   public static final int      DELETE_INSTRUMENTED_CLASS           = -100;
+  public static final int      DELETE_INCLUDE_ON_LOAD              = -105;
   // only this context may notify "new" and "remove" events after receiving a corresponding "create" or "delete" event
   public static final int      NEW_SERVER                          = ALT_RANGE_CONSTANT + 5;
   public static final int      REMOVE_SERVER                       = ALT_RANGE_CONSTANT + 10;
@@ -104,6 +106,7 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final int      REMOVE_LOCK_NAMED                   = ALT_RANGE_CONSTANT + 90;
   public static final int      NEW_INSTRUMENTED_CLASS              = ALT_RANGE_CONSTANT + 95;
   public static final int      REMOVE_INSTRUMENTED_CLASS           = ALT_RANGE_CONSTANT + 100;
+  public static final int      REMOVE_INCLUDE_ON_LOAD              = ALT_RANGE_CONSTANT + 105;
   // container elements with no associated events
   public static final String   PARENT_ELEM_APPLICATION             = "application";
   public static final String   PARENT_ELEM_DSO                     = "dso";
@@ -116,6 +119,7 @@ public final class XmlConfigEvent extends UpdateEvent {
   public static final String   PARENT_ELEM_AUTOLOCK                = "autolock";
   public static final String   PARENT_ELEM_NAMED_LOCK              = "named-lock";
   public static final String   PARENT_ELEM_MODULES                 = "modules";
+  public static final String   PARENT_ELEM_INCLUDE_ON_LOAD         = "on-load";
   // element names
   private static final String  ELEM_NAME                           = "name";
   private static final String  ELEM_HOST                           = "host";
@@ -151,8 +155,10 @@ public final class XmlConfigEvent extends UpdateEvent {
   private static final String  ELEM_INCLUDE                        = "include";
   private static final String  ELEM_INSTRUMENTED_CLASS_EXPRESSION  = "class-expression";
   private static final String  ELEM_INCLUDE_HONOR_TRANSIENT        = "honor-transient";
+  private static final String  ELEM_INCLUDE_ON_LOAD_METHOD         = "method";
+  private static final String  ELEM_INCLUDE_ON_LOAD_EXECUTE        = "execute";
 
-  public static final String[] m_elementNames                      = new String[240 + 1];
+  public static final String[] m_elementNames                      = new String[245 + 1];
   static {
     m_elementNames[SERVER_NAME] = ELEM_NAME;
     m_elementNames[SERVER_HOST] = ELEM_HOST;
@@ -191,6 +197,8 @@ public final class XmlConfigEvent extends UpdateEvent {
     m_elementNames[INSTRUMENTED_CLASS_RULE] = ELEM_INCLUDE;
     m_elementNames[INSTRUMENTED_CLASS_EXPRESSION] = ELEM_INSTRUMENTED_CLASS_EXPRESSION;
     m_elementNames[INCLUDE_HONOR_TRANSIENT] = ELEM_INCLUDE_HONOR_TRANSIENT;
+    m_elementNames[INCLUDE_ON_LOAD_METHOD] = ELEM_INCLUDE_ON_LOAD_METHOD;
+    m_elementNames[INCLUDE_ON_LOAD_EXECUTE] = ELEM_INCLUDE_ON_LOAD_EXECUTE;
   }
 
   public final int             type;
