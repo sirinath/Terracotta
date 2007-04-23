@@ -198,6 +198,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 
   public void doSave(IProgressMonitor monitor) {
     m_xmlEditor.doSave(monitor);
+    clearDirty();
   }
 
   public void doSaveAs() {
@@ -397,6 +398,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
       }
     } else {
       m_isXmlEditorVisible = true;
+      clearDirty();
     }
     m_currentPage = newPageIndex;
   }
@@ -427,7 +429,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
             if (configFile != null && configFile.equals(res)) {
               // plugin.reloadConfiguration(m_project);
               // initPanels();
-              clearDirty();
+//              clearDirty();
 
               return false;
             }

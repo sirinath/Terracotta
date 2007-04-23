@@ -276,7 +276,6 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     check.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
-        System.out.println("selected");// XXX
         Server server = getSelectedServer();
         m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + check.getSelection(), (UpdateEventListener) check
             .getData(), server, type));
