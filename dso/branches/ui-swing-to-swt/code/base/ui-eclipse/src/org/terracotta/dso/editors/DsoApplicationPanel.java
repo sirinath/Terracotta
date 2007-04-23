@@ -62,6 +62,15 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel {
     m_layout.m_roots.refreshContent();
     m_layout.m_transientFields.refreshContent();
   }
+  
+  public void detach() {
+    m_layout.m_bootClasses.detach();
+    m_layout.m_distributedMethods.detach();
+    m_layout.m_instrumentedClasses.detach();
+    m_layout.m_locks.detach();
+    m_layout.m_roots.detach();
+    m_layout.m_transientFields.detach();
+  }
 
   // ================================================================================
   // STATE
@@ -83,7 +92,7 @@ public class DsoApplicationPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final int         MIN_HEIGHT                = 400;
     private static final String      ROOTS_ICON                = "/com/tc/admin/icons/hierarchicalLayout.gif";

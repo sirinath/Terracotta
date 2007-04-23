@@ -83,6 +83,10 @@ public final class ClientsPanel extends ConfigurationEditorPanel {
     initModuleRepositories(modules);
     initModules(modules);
   }
+  
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
 
   // ================================================================================
   // INIT LISTENERS
@@ -386,7 +390,7 @@ public final class ClientsPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final int    WIDTH_HINT               = 500;
     private static final int    HEIGHT_HINT              = 600;

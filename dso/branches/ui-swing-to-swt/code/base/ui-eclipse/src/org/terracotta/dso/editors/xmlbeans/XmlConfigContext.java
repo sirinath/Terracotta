@@ -365,6 +365,7 @@ public final class XmlConfigContext {
 
   public synchronized void detachComponentModel(SWTComponentModel model) {
     List<MulticastListenerPair> pairs = m_componentModels.get(model);
+    if (pairs == null) return;
     for (Iterator<MulticastListenerPair> iter = pairs.iterator(); iter.hasNext();) {
       MulticastListenerPair pair = iter.next();
       pair.multicaster.removeListener(pair.listener);

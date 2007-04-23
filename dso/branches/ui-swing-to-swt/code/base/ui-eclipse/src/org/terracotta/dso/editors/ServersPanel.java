@@ -91,7 +91,11 @@ public final class ServersPanel extends ConfigurationEditorPanel {
       handleTableSelection();
     }
   }
-
+  
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+  
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -239,6 +243,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         if (e.keyCode == SWT.Selection) {
           spinner.getParent().forceFocus();
           spinner.forceFocus();
+          handleSpinnerEvent(spinner, type);
         }
       }
     });
@@ -271,6 +276,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     check.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
+        System.out.println("selected");// XXX
         Server server = getSelectedServer();
         m_state.xmlContext.notifyListeners(new XmlConfigEvent("" + check.getSelection(), (UpdateEventListener) check
             .getData(), server, type));
@@ -289,7 +295,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
       }
     };
     check.setData(checkListener);
-    m_state.xmlContext.addListener(checkListener, type);
+    m_state.xmlContext.addListener(checkListener, type, this);
   }
 
   // - combo behavior
@@ -403,6 +409,8 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         type));
   }
 
+  // XXX: <------------------------------------------------------------------------------!!!
+  // close & reopen editor, invalid thread access exception
   private void handleSpinnerEvent(Spinner spinner, int type) {
     if (!m_isActive) return;
     TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
@@ -441,7 +449,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout implements SWTLayout {
+  private class Layout implements SWTLayout {
 
     private static final int    WIDTH_HINT         = 500;
     private static final int    HEIGHT_HINT        = 120;

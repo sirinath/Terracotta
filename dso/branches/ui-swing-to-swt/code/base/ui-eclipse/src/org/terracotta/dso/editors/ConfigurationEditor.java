@@ -179,18 +179,19 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
 
   protected void createPages() {
     createXMLEditorPage(XML_EDITOR_PAGE_INDEX);
-
     if (haveActiveConfig()) {
       createDsoApplicationPage(DSO_APPLICATION_PAGE_INDEX);
       createServersPage(SERVERS_PAGE_INDEX);
       createClientPage(CLIENT_PAGE_INDEX);
-
       ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
     }
     initPanels();
   }
 
   public void dispose() {
+    m_dsoAppPanel.detach();
+    m_serversPanel.detach();
+    m_clientsPanel.detach();
     ResourcesPlugin.getWorkspace().removeResourceChangeListener(this);
     super.dispose();
   }
@@ -379,9 +380,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     super.pageChange(newPageIndex);
     if (m_currentPage == XML_EDITOR_PAGE_INDEX) {
       m_isXmlEditorVisible = false;
-      internalSetDirty(Boolean.FALSE);
-      syncXmlModel();
-      XmlConfigContext.getInstance(m_project).refreshXmlConfig();
+      updateXmlConfig();
       switch (newPageIndex) {
         case DSO_APPLICATION_PAGE_INDEX:
           m_dsoAppPanel.refreshContent();
@@ -479,17 +478,15 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     }
   }
 
+  private void updateXmlConfig() {
+    internalSetDirty(Boolean.FALSE);
+    syncXmlModel();
+    XmlConfigContext.getInstance(m_project).refreshXmlConfig();
+  }
+
   public void updateInstrumentedClassesPanel() {
-    syncXmlDocument();
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
-    // m_dsoAppPanel.updateInstrumentedClassesPanel();
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
     TcPlugin.getDefault().updateDecorators(
         new String[] {
           AdaptedModuleDecorator.DECORATOR_ID,
@@ -500,70 +497,33 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   }
 
   public void updateTransientsPanel() {
-    syncXmlDocument();
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
-    // m_dsoAppPanel.updateTransientsPanel();
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
     TcPlugin.getDefault().updateDecorator(TransientDecorator.DECORATOR_ID);
   }
 
   public void updateRootsPanel() {
-    syncXmlDocument();
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
-    // m_dsoAppPanel.updateRootsPanel();
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
     TcPlugin.getDefault().updateDecorator(RootDecorator.DECORATOR_ID);
   }
 
   public void updateDistributedMethodsPanel() {
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
-    // m_dsoAppPanel.updateDistributedMethodsPanel();
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
     TcPlugin.getDefault().updateDecorator(DistributedMethodDecorator.DECORATOR_ID);
   }
 
   public void updateLocksPanel() {
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable () {
-    // public void run() {
-    // m_dsoAppPanel.updateLocksPanel();
-    // }
-    // });
-    // } catch(Exception e) {
-    // e.printStackTrace();
-    // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
     TcPlugin.getDefault().updateDecorators(
         new String[] { NameLockedDecorator.DECORATOR_ID, AutolockedDecorator.DECORATOR_ID });
   }
 
   public void updateBootClassesPanel() {
-  // try {
-  // SwingUtilities.invokeAndWait(new Runnable () {
-  // public void run() {
-  // m_dsoAppPanel.updateBootClassesPanel();
-  // }
-  // });
-  // } catch(Exception e) {
-  // e.printStackTrace();
-  // }
+    updateXmlConfig();
+    m_dsoAppPanel.refreshContent();
   }
 
   private void disablePanels() {
@@ -586,25 +546,17 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     switch (event.getType()) {
       case IResourceChangeEvent.PRE_DELETE:
       case IResourceChangeEvent.PRE_CLOSE: {
-        asyncExec(new Runnable() {
-          public void run() {
-            if (m_project.equals(event.getResource())) {
-              ConfigurationEditor.this.closeEditor();
-            }
-          }
-        });
+        if (m_project.equals(event.getResource())) {
+          ConfigurationEditor.this.closeEditor();
+        }
         break;
       }
       case IResourceChangeEvent.POST_CHANGE: {
-        asyncExec(new Runnable() {
-          public void run() {
-            try {
-              event.getDelta().accept(getResourceDeltaVisitor());
-            } catch (CoreException ce) {
-              ce.printStackTrace();
-            }
-          }
-        });
+        try {
+          event.getDelta().accept(getResourceDeltaVisitor());
+        } catch (CoreException ce) {
+          ce.printStackTrace();
+        }
         break;
       }
     }

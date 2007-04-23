@@ -68,12 +68,15 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel {
     initTableItems();
   }
 
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
 
   private void createContextListeners() {
-
     m_layout.m_table.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
@@ -193,7 +196,7 @@ public class TransientFieldsPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final String TRANSIENT_FIELDS = "Transient Fields";
     private static final String ADD              = "Add...";

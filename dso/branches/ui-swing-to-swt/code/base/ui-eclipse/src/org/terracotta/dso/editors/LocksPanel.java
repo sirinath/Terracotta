@@ -70,6 +70,10 @@ public class LocksPanel extends ConfigurationEditorPanel {
     initTableItems();
   }
 
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+  
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================

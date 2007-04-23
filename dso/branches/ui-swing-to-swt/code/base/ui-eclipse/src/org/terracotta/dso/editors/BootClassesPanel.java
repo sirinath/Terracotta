@@ -76,6 +76,10 @@ public class BootClassesPanel extends ConfigurationEditorPanel {
     m_layout.reset();
     initTableItems();
   }
+  
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
 
   // ================================================================================
   // INIT LISTENERS
@@ -209,7 +213,7 @@ public class BootClassesPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final String BOOT_CLASSES = "Boot Classes";
     private static final String ADD          = "Add...";

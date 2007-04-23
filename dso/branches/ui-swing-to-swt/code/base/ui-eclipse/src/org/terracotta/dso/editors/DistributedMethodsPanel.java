@@ -66,12 +66,17 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel {
     m_layout.reset();
     initTableItems();
   }
-
+  
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+  
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
 
   private void createContextListeners() {
+    m_state.xmlContext.detachComponentModel(this); // clear existing
     m_layout.m_table.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
@@ -194,7 +199,7 @@ public class DistributedMethodsPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final String DISTRIBUTED_METHODS = "Distributed Methods";
     private static final String ADD                 = "Add...";

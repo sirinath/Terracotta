@@ -85,6 +85,10 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
     }
   }
 
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+  
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -518,7 +522,7 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final int    RULE_COLUMN           = 0;
     private static final int    EXPRESSION_COLUMN     = 1;

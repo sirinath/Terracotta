@@ -69,7 +69,11 @@ public final class RootsPanel extends ConfigurationEditorPanel {
     m_layout.reset();
     initTableItems();
   }
-
+  
+  public void detach() {
+    m_state.xmlContext.detachComponentModel(this);
+  }
+  
   // ================================================================================
   // INIT LISTENERS
   // ================================================================================
@@ -201,7 +205,7 @@ public final class RootsPanel extends ConfigurationEditorPanel {
   // LAYOUT
   // ================================================================================
 
-  private static class Layout {
+  private class Layout {
 
     private static final String ROOTS  = "Roots";
     private static final String FIELD  = "Field";

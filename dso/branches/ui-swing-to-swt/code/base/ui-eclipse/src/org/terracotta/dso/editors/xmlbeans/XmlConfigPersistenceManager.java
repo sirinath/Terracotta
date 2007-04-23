@@ -92,8 +92,6 @@ final class XmlConfigPersistenceManager {
     if (method == null) {
       System.err.println("Unable to save XML value for: " + parent + " " + elementName + " " + value);// XXX
     }
-
-    if (method != null) System.out.println(value);// XXX
   }
 
   static String[] getListDefaults(Class parentType, String elementName) {

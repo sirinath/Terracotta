@@ -23,4 +23,7 @@ public abstract class ConfigurationEditorPanel extends AbstractSWTPanel {
   }
 
   protected abstract void refreshContent();
+  
+  protected abstract void detach();
+   
 }
