@@ -13,7 +13,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
 import com.tc.object.config.schema.Lock;
 import com.tc.object.config.schema.Root;
-import com.tc.process.LinkedJavaProcessPollingAgent;
+import com.tc.process.HeartBeatService;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.test.TestConfigObject;
@@ -198,10 +198,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   protected void setUp() throws Exception {
     // XXX: temporary hack to discover how often glassfish tests are being run
     if (NewAppServerFactory.GLASSFISH.equals(config.appserverFactoryName())) {
-      Debug.sendTestDetails(config.appserverFactoryName() + " " + getClass().getName() + "." + getName());
+      Debug.sendTestDetails("[" + config.appserverFactoryName() + "] " + getClass().getName() + "." + getName());
     }
-
-    LinkedJavaProcessPollingAgent.startHeartBeatServer();
 
     tempDir = getTempDirectory();
     serverInstallDir = makeDir(config.appserverServerInstallDir());
@@ -435,7 +433,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     boolean foundAlive = false;
     do {
       Thread.sleep(1000);
-      foundAlive = LinkedJavaProcessPollingAgent.isAnyAppServerAlive();
+      foundAlive = HeartBeatService.anyAppServerAlive();
     } while (foundAlive && System.currentTimeMillis() - start < timewait);
 
     return foundAlive;
@@ -455,8 +453,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       }
       awaitShutdown(10 * 1000);
       if (dsoServer != null && dsoServer.isRunning()) dsoServer.stop();
-      System.out.println("Shutdown heartbeat server and its children...");
-      LinkedJavaProcessPollingAgent.shutdown();
+      System.out.println("Send kill signal to app servers...");
+      HeartBeatService.sendKillSignalToChildren();
     } finally {
       VmStat.stop();
       synchronized (workingDirLock) {
