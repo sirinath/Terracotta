@@ -176,7 +176,7 @@ public class PackageNavigator extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
-  private static class Layout {
+  private class Layout {
 
     final TreeViewer m_viewer;
     GridData         m_gridData;

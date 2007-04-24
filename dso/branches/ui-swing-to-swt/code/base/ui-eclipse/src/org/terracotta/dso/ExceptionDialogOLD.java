@@ -17,7 +17,7 @@ import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class ExceptionDialog extends Dialog {
+public class ExceptionDialogOLD extends Dialog {
   private static DialogResource m_dialogRes;
   
   private XTextArea  m_errorText;
@@ -30,7 +30,7 @@ public class ExceptionDialog extends Dialog {
 //      TcPlugin.getDefault().getResources().findDialog("ExceptionDialog"); 
 //  }
   
-  public ExceptionDialog() {
+  public ExceptionDialogOLD() {
     super(m_dialogRes);
     
     m_errorText   = (XTextArea)findComponent("ErrorText");
@@ -44,7 +44,7 @@ public class ExceptionDialog extends Dialog {
     });
   }
   
-  public ExceptionDialog(String message, Throwable t) {
+  public ExceptionDialogOLD(String message, Throwable t) {
     this();
 
     if(t != null) {

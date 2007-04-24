@@ -35,7 +35,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
 import org.terracotta.dso.BootJarHelper;
-import org.terracotta.dso.ExceptionDialog;
+import org.terracotta.dso.ExceptionDialogOLD;
 import org.terracotta.dso.ProjectNature;
 import org.terracotta.dso.TcPlugin;
 
@@ -105,7 +105,7 @@ public class BuildBootJarAction extends Action
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           Throwable       t = ite.getCause();
-          ExceptionDialog d = new ExceptionDialog();
+          ExceptionDialogOLD d = new ExceptionDialogOLD();
           
           d.setTitle("Terracotta DSO");
           d.setMessage("Problem building BootJar");
@@ -118,7 +118,7 @@ public class BuildBootJarAction extends Action
     catch(final Exception e) {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
-          ExceptionDialog d = new ExceptionDialog();
+          ExceptionDialogOLD d = new ExceptionDialogOLD();
           
           d.setTitle("Terracotta DSO");
           d.setMessage("Problem building BootJar");
