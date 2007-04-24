@@ -186,7 +186,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
     // - browse data button
     m_layout.m_dataBrowse.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        if (!m_isActive) return;
+        if (!m_isActive) return;if (!m_isActive) return;
         NavigatorBehavior behavior = new FolderBehavior();
         PackageNavigator dialog = new PackageNavigator(getShell(), behavior.getTitle(), m_state.project, behavior);
         dialog.addValueListener(new UpdateEventListener() {

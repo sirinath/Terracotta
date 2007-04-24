@@ -4,8 +4,6 @@
  */
 package org.terracotta.dso.wizards;
 
-import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -19,19 +17,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
-import org.terracotta.dso.editors.chooser.ProjectFileNavigator;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.SwingUtilities;
 
 public class SetupWizardPage extends WizardPage {
   private final Display        m_display;
   private IJavaProject         m_javaProject;
   private Text                 m_configPathField;
   private Button               m_configFileButton;
-  private ProjectFileNavigator m_fileNavigator;
+//  private ProjectFileNavigator m_fileNavigator;
   private Text                 m_serverOptionsField;
   private Button               m_resetOptionsButton;
 
@@ -79,19 +71,20 @@ public class SetupWizardPage extends WizardPage {
     m_configFileButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END));
     m_configFileButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        if (m_fileNavigator == null) {
-          m_fileNavigator = new ProjectFileNavigator(null, "xml");
-          m_fileNavigator.setActionListener(new NavigatorListener());
-        }
-        m_fileNavigator.init(m_javaProject.getProject());
-        m_fileNavigator.center();
-        m_display.asyncExec(new Runnable() {
-          public void run() {
-            m_fileNavigator.setVisible(true);
-            m_fileNavigator.toFront();
-            m_fileNavigator.setAlwaysOnTop(true);
-          }
-        });
+//        if (m_fileNavigator == null) {
+//          m_fileNavigator = new ProjectFileNavigator(null, "xml");
+//          m_fileNavigator.setActionListener(new NavigatorListener());
+//        }
+//        m_fileNavigator.init(m_javaProject.getProject());
+//        m_fileNavigator.center();
+//        m_display.asyncExec(new Runnable() {
+//          public void run() {
+//            m_fileNavigator.setVisible(true);
+//            m_fileNavigator.toFront();
+//            m_fileNavigator.setAlwaysOnTop(true);
+//          }
+//        });
+        System.out.println("Display file navigator");// XXX
       }
     });
     Group serverOptions = new Group(topComp, SWT.SHADOW_ETCHED_IN);
@@ -120,26 +113,26 @@ public class SetupWizardPage extends WizardPage {
     setControl(topComp);
   }
 
-  class NavigatorListener implements ActionListener {
-    public void actionPerformed(ActionEvent e) {
-      SwingUtilities.invokeLater(new Runnable() {
-        public void run() {
-          IResource member = m_fileNavigator.getSelectedMember();
-          if (member != null) {
-            if (member instanceof IFolder) {
-              member = ((IFolder) member).getFile(DEFAULT_CONFIG_FILENAME);
-            }
-            final IResource finalMember = member;
-            m_display.asyncExec(new Runnable() {
-              public void run() {
-                m_configPathField.setText(finalMember.getProjectRelativePath().toString());
-              }
-            });
-          }
-        }
-      });
-    }
-  }
+//  class NavigatorListener implements ActionListener {
+//    public void actionPerformed(ActionEvent e) {
+//      SwingUtilities.invokeLater(new Runnable() {
+//        public void run() {
+//          IResource member = m_fileNavigator.getSelectedMember();
+//          if (member != null) {
+//            if (member instanceof IFolder) {
+//              member = ((IFolder) member).getFile(DEFAULT_CONFIG_FILENAME);
+//            }
+//            final IResource finalMember = member;
+//            m_display.asyncExec(new Runnable() {
+//              public void run() {
+//                m_configPathField.setText(finalMember.getProjectRelativePath().toString());
+//              }
+//            });
+//          }
+//        }
+//      });
+//    }
+//  }
 
   public boolean isPageComplete() {
     return true;

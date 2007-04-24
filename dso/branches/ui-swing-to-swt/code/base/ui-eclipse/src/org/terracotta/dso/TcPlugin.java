@@ -8,7 +8,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.dijon.DictionaryResource;
 import org.eclipse.core.commands.common.EventManager;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -171,7 +170,6 @@ public class TcPlugin extends AbstractUIPlugin
              TcPluginStatusConstants
 {
   private static TcPlugin           m_plugin;
-  private DictionaryResource        m_topRes;
   private Loader                    m_configLoader;
   private CompilationUnitVisitor    m_compilationUnitVisitor;
   private ResourceListener          m_resourceListener;
@@ -272,19 +270,6 @@ public class TcPlugin extends AbstractUIPlugin
       /**/
     }
     
-    InputStream is = null;
-    try {
-      is       = getClass().getResourceAsStream(RESOURCE_FILE);
-      m_topRes = DictionaryResource.load(is);
-      is       = null;
-    } catch(Exception e) {
-      throw new RuntimeException("Error loading resource file '"+RESOURCE_FILE+"'", e);
-    } finally {
-      if(is != null) {
-        IOUtils.closeQuietly(is);
-      }
-    }
-
     JavaCore.addElementChangedListener(
       new ElementChangedListener(),
       ElementChangedEvent.POST_RECONCILE);
@@ -372,10 +357,6 @@ public class TcPlugin extends AbstractUIPlugin
       new TcPlugin();
     }
     return m_plugin;
-  }
-
-  public DictionaryResource getResources() {
-    return m_topRes;
   }
 
   public void setup(IProject project, String configFilePath, String serverOpts) {

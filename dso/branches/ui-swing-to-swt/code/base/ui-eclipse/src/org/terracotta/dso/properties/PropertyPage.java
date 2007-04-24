@@ -4,9 +4,7 @@
  */
 package org.terracotta.dso.properties;
 
-import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -20,18 +18,12 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
 import org.terracotta.dso.TcPlugin;
-import org.terracotta.dso.editors.chooser.ProjectFileNavigator;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.SwingUtilities;
 
 public final class PropertyPage extends org.eclipse.ui.dialogs.PropertyPage {
   private final Display        m_display;
   private Text                 m_configPathField;
   private Button               m_configFileButton;
-  private ProjectFileNavigator m_fileNavigator;
+//  private ProjectFileNavigator m_fileNavigator;
   private Text                 m_serverOptionsField;
   private Button               m_resetOptionsButton;
 
@@ -73,19 +65,20 @@ public final class PropertyPage extends org.eclipse.ui.dialogs.PropertyPage {
     m_configFileButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END));
     m_configFileButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        if (m_fileNavigator == null) {
-          m_fileNavigator = new ProjectFileNavigator(null, "xml");
-          m_fileNavigator.setActionListener(new NavigatorListener());
-        }
-        m_fileNavigator.init(getProject());
-        m_fileNavigator.center();
-        m_display.asyncExec(new Runnable() {
-          public void run() {
-            m_fileNavigator.setVisible(true);
-            m_fileNavigator.toFront();
-            m_fileNavigator.setAlwaysOnTop(true);
-          }
-        });
+//        if (m_fileNavigator == null) {
+//          m_fileNavigator = new ProjectFileNavigator(null, "xml");
+//          m_fileNavigator.setActionListener(new NavigatorListener());
+//        }
+//        m_fileNavigator.init(getProject());
+//        m_fileNavigator.center();
+//        m_display.asyncExec(new Runnable() {
+//          public void run() {
+//            m_fileNavigator.setVisible(true);
+//            m_fileNavigator.toFront();
+//            m_fileNavigator.setAlwaysOnTop(true);
+//          }
+//        });
+        System.out.println("Display file navigator");// XXX
       }
     });
 
@@ -118,26 +111,26 @@ public final class PropertyPage extends org.eclipse.ui.dialogs.PropertyPage {
     return topComp;
   }
 
-  class NavigatorListener implements ActionListener {
-    public void actionPerformed(ActionEvent e) {
-      SwingUtilities.invokeLater(new Runnable() {
-        public void run() {
-          IResource member = m_fileNavigator.getSelectedMember();
-          if (member != null) {
-            if (member instanceof IFolder) {
-              member = ((IFolder) member).getFile(TcPlugin.DEFAULT_CONFIG_FILENAME);
-            }
-            final IResource finalMember = member;
-            m_display.asyncExec(new Runnable() {
-              public void run() {
-                m_configPathField.setText(finalMember.getProjectRelativePath().toString());
-              }
-            });
-          }
-        }
-      });
-    }
-  }
+//  class NavigatorListener implements ActionListener {
+//    public void actionPerformed(ActionEvent e) {
+//      SwingUtilities.invokeLater(new Runnable() {
+//        public void run() {
+//          IResource member = m_fileNavigator.getSelectedMember();
+//          if (member != null) {
+//            if (member instanceof IFolder) {
+//              member = ((IFolder) member).getFile(TcPlugin.DEFAULT_CONFIG_FILENAME);
+//            }
+//            final IResource finalMember = member;
+//            m_display.asyncExec(new Runnable() {
+//              public void run() {
+//                m_configPathField.setText(finalMember.getProjectRelativePath().toString());
+//              }
+//            });
+//          }
+//        }
+//      });
+//    }
+//  }
 
   protected void performDefaults() {
     m_configPathField.setText(DEFAULT_CONFIG_FILENAME);
