@@ -10,36 +10,38 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 public class HeartBeatServer {
-  public static final String PULSE               = "PULSE";
-  public static final String KILL                = "KILL";
-  public static final String IS_APP_SERVER_ALIVE = "IS_APP_SERVER_ALIVE";
-  public static final String IM_ALIVE            = "IM_ALIVE";
-  public static final int    PULSE_INTERVAL      = 15 * 1000;
+  public static final String      PULSE               = "PULSE";
+  public static final String      KILL                = "KILL";
+  public static final String      IS_APP_SERVER_ALIVE = "IS_APP_SERVER_ALIVE";
+  public static final String      IM_ALIVE            = "IM_ALIVE";
+  public static final int         PULSE_INTERVAL      = 15 * 1000;
+  private static final DateFormat dateFormat          = new SimpleDateFormat("HH:mm:ss.SSS");
 
-  private static final List  heartBeatThreads    = Collections.synchronizedList(new ArrayList());
+  private ListenThread            listenThread;
+  // @GuardBy(this)
+  private final List              heartBeatThreads    = new ArrayList();
 
-  private ListenThread       listenThread;
-
-  public HeartBeatServer() {
-    //
+  public void start() {
+    if (listenThread == null) {
+      listenThread = new ListenThread(this);
+      listenThread.setDaemon(true);
+      listenThread.start();
+    }
   }
 
-  public synchronized void start() {
-    listenThread = new ListenThread(this);
-    listenThread.setDaemon(true);
-    listenThread.start();
-  }
-
-  public synchronized void shutdown() {
+  public void shutdown() {
     try {
       listenThread.shutdown();
       listenThread.join();
+      listenThread = null;
     } catch (InterruptedException ignored) {
       // nop
     }
@@ -63,13 +65,18 @@ public class HeartBeatServer {
     return alive;
   }
 
-  public synchronized int listeningPort() {
-    if (!listenThread.isAlive()) throw new IllegalStateException("Heartbeat server has not started");
-    return listenThread.listeningPort();
+  public synchronized void removeDeadClient(HeartBeatThread thread) {
+    log("Dead client detected... removing " + thread.getName());
+    heartBeatThreads.remove(thread);
   }
 
-  public void removeDeadClient(HeartBeatThread thread) {
-    heartBeatThreads.remove(thread);
+  public synchronized void addThread(HeartBeatThread hb) {
+    heartBeatThreads.add(hb);
+  }
+
+  public int listeningPort() {
+    if (!listenThread.isAlive()) throw new IllegalStateException("Heartbeat server has not started");
+    return listenThread.listeningPort();
   }
 
   private static class ListenThread extends Thread {
@@ -99,17 +106,18 @@ public class HeartBeatServer {
           listeningPort = serverSocket.getLocalPort();
           this.notifyAll();
         }
-        System.out.println("Heartbeat server is online...");
+        log("Heartbeat server is online...");
         Socket clientSocket;
         while ((clientSocket = serverSocket.accept()) != null) {
-          System.out.println("Heartbeat server got new client...");
+          log("Heartbeat server got new client...");
           HeartBeatThread hb = new HeartBeatThread(server, clientSocket);
-          heartBeatThreads.add(hb);
+          hb.setDaemon(true);
           hb.start();
+          server.addThread(hb);
         }
       } catch (Exception e) {
         if (isShutdown) {
-          System.out.println("Heartbeat server is shutdown");
+          log("Heartbeat server is shutdown");
         } else {
           throw new RuntimeException(e);
         }
@@ -135,6 +143,7 @@ public class HeartBeatServer {
     private BufferedReader  in;
     private PrintWriter     out;
     private HeartBeatServer server;
+    private boolean         killed = false;
 
     public HeartBeatThread(HeartBeatServer server, Socket s) {
       this.server = server;
@@ -152,19 +161,25 @@ public class HeartBeatServer {
       try {
         while (true) {
           out.println(PULSE);
-          Thread.sleep(PULSE_INTERVAL);
+          reallySleep(PULSE_INTERVAL);
         }
       } catch (Exception e) {
-        server.removeDeadClient(this);
+        if (!killed) {
+          // only removed itself if client isn't being sent a kill signal
+          // this avoids ConcurrentModificationException in sendKillSignalToChildren
+          // iteration
+          server.removeDeadClient(this);
+        }
       }
     }
 
     public void sendKillSignal() {
       try {
+        killed = true;
         out.println(KILL);
         socket.close();
       } catch (Exception e) {
-        // ignored
+        // ignored - considered killed
       }
     }
 
@@ -184,4 +199,20 @@ public class HeartBeatServer {
 
   }
 
+  private static void log(String msg) {
+    System.out.println("Heartbeat: [" + dateFormat.format(new Date()) + "] " + msg);
+  }
+
+  public static void reallySleep(long millis) {
+    try {
+      long millisLeft = millis;
+      while (millisLeft > 0) {
+        long start = System.currentTimeMillis();
+        Thread.sleep(millisLeft);
+        millisLeft -= System.currentTimeMillis() - start;
+      }
+    } catch (InterruptedException ie) {
+      // nop
+    }
+  }
 }
