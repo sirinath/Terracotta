@@ -156,7 +156,6 @@ public final class ServersPanel extends ConfigurationEditorPanel {
       public void widgetSelected(SelectionEvent e) {
         if (!m_isActive) return;
         handleTableSelection();
-        m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
       }
     });
     // - context delete server
@@ -179,7 +178,7 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         m_state.serverIndices.remove(server);
         m_layout.m_serverTable.remove(row);
         m_layout.m_serverTable.deselectAll();
-        m_layout.resetServerFields();
+        m_layout.resetServerFields(false);
         m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
       }
     }, XmlConfigEvent.REMOVE_SERVER, this);
@@ -408,8 +407,6 @@ public final class ServersPanel extends ConfigurationEditorPanel {
         type));
   }
 
-  // XXX: <------------------------------------------------------------------------------!!!
-  // close & reopen editor, invalid thread access exception
   private void handleSpinnerEvent(Spinner spinner, int type) {
     if (!m_isActive) return;
     TableItem item = m_layout.m_serverTable.getItem(m_layout.m_serverTable.getSelectionIndex());
@@ -419,6 +416,8 @@ public final class ServersPanel extends ConfigurationEditorPanel {
   }
   
   private void handleTableSelection() {
+    if (m_state.selectionIndex == -1) m_layout.resetServerFields(true);
+    m_state.selectionIndex = m_layout.m_serverTable.getSelectionIndex();
     m_layout.m_removeServerButton.setEnabled(true);
     Server server = getSelectedServer();
     updateServerListeners(server);
@@ -487,32 +486,32 @@ public final class ServersPanel extends ConfigurationEditorPanel {
 
     public void reset() {
       m_serverTable.removeAll();
-      resetServerFields();
+      resetServerFields(false);
     }
 
-    private void resetServerFields() {
+    private void resetServerFields(boolean enabled) {
       m_nameField.setText("");
-      m_nameField.setEnabled(false);
+      m_nameField.setEnabled(enabled);
       m_hostField.setText("");
-      m_hostField.setEnabled(false);
+      m_hostField.setEnabled(enabled);
       m_dsoPortField.setText("");
-      m_dsoPortField.setEnabled(false);
+      m_dsoPortField.setEnabled(enabled);
       m_jmxPortField.setText("");
-      m_jmxPortField.setEnabled(false);
+      m_jmxPortField.setEnabled(enabled);
       m_dataLocation.setText("");
-      m_dataLocation.setEnabled(false);
+      m_dataLocation.setEnabled(enabled);
       m_logsLocation.setText("");
-      m_logsLocation.setEnabled(false);
+      m_logsLocation.setEnabled(enabled);
       m_persistenceModeCombo.deselectAll();
-      m_persistenceModeCombo.setEnabled(false);
-      m_gcCheck.setSelection(false);
-      m_gcCheck.setEnabled(false);
+      m_persistenceModeCombo.setEnabled(enabled);
+      m_gcCheck.setSelection(enabled);
+      m_gcCheck.setEnabled(enabled);
       m_gcIntervalSpinner.setSelection(0);
-      m_gcIntervalSpinner.setEnabled(false);
-      m_verboseCheck.setSelection(false);
-      m_verboseCheck.setEnabled(false);
-      m_dataBrowse.setEnabled(false);
-      m_logsBrowse.setEnabled(false);
+      m_gcIntervalSpinner.setEnabled(enabled);
+      m_verboseCheck.setSelection(enabled);
+      m_verboseCheck.setEnabled(enabled);
+      m_dataBrowse.setEnabled(enabled);
+      m_logsBrowse.setEnabled(enabled);
     }
 
     private Layout(Composite parent) {

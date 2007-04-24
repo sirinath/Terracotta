@@ -4,12 +4,13 @@
  */
 package org.terracotta.dso.editors.chooser;
 
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ViewerFilter;
 
 public interface NavigatorBehavior {
 
-  ViewerFilter getFilter();
+  ViewerFilter getFilter(IJavaProject javaProject);
 
   ISelectionChangedListener getSelectionChangedListener(PackageNavigator navigator);
 

@@ -106,7 +106,7 @@ public class PackageNavigator extends MessageDialog {
     IJavaElement root = jproj.getJavaModel();
     layout.m_viewer.setInput(root);
     layout.m_viewer.addSelectionChangedListener(m_behavior.getSelectionChangedListener(this));
-    layout.m_viewer.addFilter(m_behavior.getFilter());
+    layout.m_viewer.addFilter(m_behavior.getFilter(jproj));
   }
 
   protected void buttonPressed(int buttonId) {

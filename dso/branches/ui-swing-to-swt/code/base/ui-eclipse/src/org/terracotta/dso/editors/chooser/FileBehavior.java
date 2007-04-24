@@ -5,6 +5,7 @@
 package org.terracotta.dso.editors.chooser;
 
 import org.eclipse.core.internal.resources.Folder;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -13,9 +14,9 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
 
-public final class FolderBehavior implements NavigatorBehavior {
+public final class FileBehavior implements NavigatorBehavior {
 
-  private static final String SELECT_FOLDER = "Select Folder";
+  private static final String SELECT_FILE = "Select File";
   private String              m_selectedValue;
 
   public int style() {
@@ -23,14 +24,14 @@ public final class FolderBehavior implements NavigatorBehavior {
   }
 
   public String getTitle() {
-    return SELECT_FOLDER;
+    return SELECT_FILE;
   }
 
   public ViewerFilter getFilter(final IJavaProject javaProject) {
     return new ViewerFilter() {
       public boolean select(Viewer viewer, Object parentElement, Object element) {
         if (element instanceof IJavaProject && element.equals(javaProject)) return true;
-        if (element instanceof Folder) return true;
+        if (element instanceof Folder || element instanceof IFile) return true;
         return false;
       }
     };
@@ -44,14 +45,14 @@ public final class FolderBehavior implements NavigatorBehavior {
         if (!selection.isEmpty()) {
           Object element = selection.getFirstElement();
           if (element != null) {
-            if (element instanceof IJavaProject) {
+            if (element instanceof IJavaProject || element instanceof Folder) {
               nav.enableSelection(false, this);
               event.getSelectionProvider().setSelection(null);
               nav.enableSelection(true, this);
               nav.okButtonEnabled(false);
-            } else if (element instanceof Folder) {
-              Folder folder = (Folder) element;
-              m_selectedValue = folder.getProjectRelativePath().toString();
+            } else if (element instanceof IFile) {
+              IFile file = (IFile) element;
+              m_selectedValue = file.getProjectRelativePath().toString();
               nav.okButtonEnabled(true);
             }
           }

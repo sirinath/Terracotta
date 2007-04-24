@@ -42,11 +42,12 @@ public final class MethodBehavior implements NavigatorBehavior {
     return SELECT_METHOD;
   }
 
-  public ViewerFilter getFilter() {
+  public ViewerFilter getFilter(final IJavaProject javaProject) {
     return new ViewerFilter() {
       public boolean select(Viewer viewer, Object parentElement, Object element) {
-        if (element instanceof ClassPathContainer || element instanceof IJavaProject
-            || element instanceof IPackageFragment || element instanceof ICompilationUnit || element instanceof IType
+        if (element instanceof IJavaProject && element.equals(javaProject)) return true;
+        if (element instanceof ClassPathContainer || element instanceof IPackageFragment
+            || element instanceof ICompilationUnit || element instanceof IType
             || element instanceof IPackageFragmentRoot || element instanceof IClassFile || element instanceof IMethod) { return true; }
         return false;
       }
