@@ -115,7 +115,7 @@ public class ClusterMembershipEventTestApp extends ServerCrashingAppBase impleme
   private void check(int expectedMin, int actual, String msg) {
     // NOTE: on some systems (Solaris, Win) we get multiple disconnect/connect events
     // per one logical disconnect/connect occurance.
-    if (expectedMin < actual) notifyError(msg + " expectedMin=" + expectedMin + ", actual=" + actual + ", thisNodeId="
+    if (actual < expectedMin) notifyError(msg + " expectedMin=" + expectedMin + ", actual=" + actual + ", thisNodeId="
                                         + thisNode);
   }
 
