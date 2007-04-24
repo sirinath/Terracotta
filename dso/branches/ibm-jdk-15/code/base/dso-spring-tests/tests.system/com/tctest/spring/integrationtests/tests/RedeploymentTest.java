@@ -4,12 +4,12 @@
 
 package com.tctest.spring.integrationtests.tests;
 
+import com.tc.test.server.appserver.deployment.Deployment;
+import com.tc.test.server.appserver.deployment.Server;
+import com.tc.test.server.appserver.deployment.TestCallback;
+import com.tc.test.server.appserver.deployment.WebApplicationServer;
 import com.tctest.spring.bean.RedeploymentBean;
-import com.tctest.spring.integrationtests.framework.AbstractDeploymentTest;
-import com.tctest.spring.integrationtests.framework.Deployment;
-import com.tctest.spring.integrationtests.framework.Server;
-import com.tctest.spring.integrationtests.framework.TestCallback;
-import com.tctest.spring.integrationtests.framework.WebApplicationServer;
+import com.tctest.spring.integrationtests.SpringDeploymentTest;
 
 import java.util.Date;
 
@@ -31,10 +31,10 @@ import java.util.Date;
  *
  * TODO currently it is not possible to hot deploy or undeploy wars on Tomcat
  */
-public class RedeploymentTest extends AbstractDeploymentTest {
+public class RedeploymentTest extends SpringDeploymentTest {
 
   public RedeploymentTest() {
-    disableAllUntil("2007-09-20");
+    disableAllUntil("2010-09-20");
   }
 
   public void testRedeployment() throws Throwable {

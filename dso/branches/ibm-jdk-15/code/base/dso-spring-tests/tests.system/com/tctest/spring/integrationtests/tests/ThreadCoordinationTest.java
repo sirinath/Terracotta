@@ -4,10 +4,11 @@
 
 package com.tctest.spring.integrationtests.tests;
 
+import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
+import com.tc.test.server.appserver.deployment.DeploymentBuilder;
+import com.tc.test.server.appserver.deployment.TestCallback;
 import com.tctest.spring.bean.IActiveBean;
-import com.tctest.spring.integrationtests.framework.AbstractTwoServerDeploymentTest;
-import com.tctest.spring.integrationtests.framework.DeploymentBuilder;
-import com.tctest.spring.integrationtests.framework.TestCallback;
+import com.tctest.spring.integrationtests.SpringTwoServerTestSetup;
 
 import junit.framework.Test;
 
@@ -139,7 +140,7 @@ public class ThreadCoordinationTest extends AbstractTwoServerDeploymentTest {
   }
   
   
-  private static class ThreadCoordinationTestSetup extends TwoSvrSetup {
+  private static class ThreadCoordinationTestSetup extends SpringTwoServerTestSetup {
     private ThreadCoordinationTestSetup() {
       super(ThreadCoordinationTest.class, "/tc-config-files/thread-coordination-tc-config.xml", "thread-coordination-test");
     }
