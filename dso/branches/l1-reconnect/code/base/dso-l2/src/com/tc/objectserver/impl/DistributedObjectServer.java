@@ -37,7 +37,10 @@ import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.Node;
-import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
+import com.tc.net.protocol.NetworkStackHarnessFactory;
+import com.tc.net.protocol.delivery.OOOEventHandler;
+import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
+import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.HydrateHandler;
@@ -367,8 +370,14 @@ public class DistributedObjectServer extends SEDA {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
 
-    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(),
-                                                          new PlainNetworkStackHarnessFactory(), connectionPolicy);
+    // final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
+    final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+    final NetworkStackHarnessFactory networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
+                                                                                                    new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
+                                                                                                    oooStage.getSink());
+
+    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                          connectionPolicy);
 
     final DSOApplicationEvents appEvents;
     try {

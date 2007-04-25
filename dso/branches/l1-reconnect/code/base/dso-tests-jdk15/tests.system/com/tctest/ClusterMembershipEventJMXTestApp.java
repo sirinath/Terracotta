@@ -40,7 +40,7 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
   private final ApplicationConfig config;
 
   private final int               initialNodeCount = getParticipantCount();
-  private final CyclicBarrier     barrier           = new CyclicBarrier(initialNodeCount);
+  private final CyclicBarrier     barrier          = new CyclicBarrier(initialNodeCount);
 
   private MBeanServer             server           = null;
   private ObjectName              clusterBean      = null;
@@ -92,10 +92,10 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
     Thread.sleep(5000);
     barrier.await();
     synchronized (eventsCount) {
-      Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.nodeDisconnected")).intValue());
-      Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.nodeConnected")).intValue());
-      Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.thisNodeDisconnected")).intValue());
-      Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.thisNodeConnected")).intValue());
+      Assert.assertEquals(1, ((Integer) eventsCount.get("com.tc.cluster.event.nodeDisconnected")).intValue());
+      Assert.assertEquals(1, ((Integer) eventsCount.get("com.tc.cluster.event.nodeConnected")).intValue());
+      Assert.assertEquals(1, ((Integer) eventsCount.get("com.tc.cluster.event.thisNodeDisconnected")).intValue());
+      Assert.assertEquals(1, ((Integer) eventsCount.get("com.tc.cluster.event.thisNodeConnected")).intValue());
     }
   }
 

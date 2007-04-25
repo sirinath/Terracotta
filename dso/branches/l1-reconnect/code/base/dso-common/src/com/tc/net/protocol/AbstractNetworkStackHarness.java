@@ -12,7 +12,7 @@ import com.tc.net.protocol.transport.MessageTransportFactory;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
 
-abstract class AbstractNetworkStackHarness implements NetworkStackHarness {
+public abstract class AbstractNetworkStackHarness implements NetworkStackHarness {
   protected MessageTransport                transport;
   protected MessageChannelInternal          channel;
   private final ServerMessageChannelFactory channelFactory;
@@ -20,14 +20,14 @@ abstract class AbstractNetworkStackHarness implements NetworkStackHarness {
   private final boolean                     isClientStack;
   private final SetOnceFlag                 finalized = new SetOnceFlag();
 
-  AbstractNetworkStackHarness(ServerMessageChannelFactory channelFactory, MessageTransport transport) {
+  protected AbstractNetworkStackHarness(ServerMessageChannelFactory channelFactory, MessageTransport transport) {
     this.channelFactory = channelFactory;
     this.transportFactory = null;
     this.transport = transport;
     this.isClientStack = false;
   }
 
-  AbstractNetworkStackHarness(MessageTransportFactory transportFactory, MessageChannelInternal channel) {
+  protected AbstractNetworkStackHarness(MessageTransportFactory transportFactory, MessageChannelInternal channel) {
     this.transportFactory = transportFactory;
     this.channelFactory = null;
     this.channel = channel;
