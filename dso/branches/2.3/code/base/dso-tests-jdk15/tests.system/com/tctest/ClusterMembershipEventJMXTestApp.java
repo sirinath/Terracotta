@@ -89,7 +89,6 @@ public class ClusterMembershipEventJMXTestApp extends AbstractTransparentApp imp
       Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.nodeConnected")).intValue());
       Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.thisNodeDisconnected")).intValue());
       Assert.assertEquals(1, ((Integer)eventsCount.get("com.tc.cluster.event.thisNodeConnected")).intValue());
->>>>>>> .merge-right.r2707
     }
   }
 
