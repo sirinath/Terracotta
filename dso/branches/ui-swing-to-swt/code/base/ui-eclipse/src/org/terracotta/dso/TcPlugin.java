@@ -118,9 +118,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
 /**
  * The Terracotta plugin.  The whole enchilada centers around this singleton.
  *
@@ -180,8 +177,7 @@ public class TcPlugin extends AbstractUIPlugin
   private BootClassHelper           m_bootClassHelper;
   
   public  static final String PLUGIN_ID     = "org.terracotta.dso";
-  private static final String RESOURCE_FILE = "Resources.xml";
-  
+
   public static final String DEFAULT_CONFIG_FILENAME = "tc-config.xml";
   public static final String DEFAULT_SERVER_OPTIONS  = "-Xms256m -Xmx256m";
   
@@ -263,12 +259,6 @@ public class TcPlugin extends AbstractUIPlugin
     // TODO: after we remove 3.1 support, change to FileLocator.resolve
     URL url = Platform.resolve(context.getBundle().getEntry("/"));
     m_location = new Path(url.getPath()).removeTrailingSeparator();
-
-    try {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch(Exception e) {
-      /**/
-    }
     
     JavaCore.addElementChangedListener(
       new ElementChangedListener(),
@@ -1541,16 +1531,7 @@ public class TcPlugin extends AbstractUIPlugin
   }
   
   public void openError(final String msg) {
-    if(SwingUtilities.isEventDispatchThread()) {
-      Display.getDefault().syncExec(new Runnable() {
-        public void run(){
-          MessageDialog.openError(null, "Terracotta Plugin", msg);
-        }
-      });
-    }
-    else {
-      MessageDialog.openError(null, "Terracotta Plugin", msg);
-    }
+    MessageDialog.openError(null, "Terracotta Plugin", msg);
   }
   
   public boolean continueWithConfigProblems(final IProject project) throws CoreException {

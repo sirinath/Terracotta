@@ -26,6 +26,8 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.terracotta.dso.dialogs.AddModuleDialog;
+import org.terracotta.dso.dialogs.RepoLocationDialog;
 import org.terracotta.dso.editors.chooser.FolderBehavior;
 import org.terracotta.dso.editors.chooser.NavigatorBehavior;
 import org.terracotta.dso.editors.chooser.PackageNavigator;
