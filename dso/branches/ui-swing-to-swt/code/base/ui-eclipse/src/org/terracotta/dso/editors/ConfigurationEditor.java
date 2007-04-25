@@ -32,6 +32,7 @@ import org.eclipse.jface.text.ITextInputListener;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
@@ -68,12 +69,8 @@ import com.terracottatech.config.System;
 import com.terracottatech.config.TcConfigDocument;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.MessageFormat;
-
-import javax.swing.Timer;
 
 public class ConfigurationEditor extends MultiPageEditorPart implements IResourceChangeListener, IGotoMarker {
 
@@ -94,8 +91,10 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   private DocumentListener         m_docListener;
   private ElementStateListener     m_elementStateListener;
   private TextInputListener        m_textInputListener;
-  private Timer                    m_parseTimer;
+  private Runnable                 m_parseTimer;
   private boolean                  m_isXmlEditorVisible       = true;
+  private int                      m_currentPage              = -1;
+  private Display                  m_display;
 
   static {
     try {
@@ -111,9 +110,19 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     m_docListener = new DocumentListener();
     m_elementStateListener = new ElementStateListener();
     m_textInputListener = new TextInputListener();
-    m_parseTimer = new Timer(2000, new ParseTimerAction());
+    m_parseTimer = new ParseTimer();
+    m_display = Display.getDefault();
+  }
 
-    m_parseTimer.setRepeats(false);
+  private void setTimer(boolean start) {
+    if (start) m_display.timerExec(2000, m_parseTimer);
+    else m_display.timerExec(-1, m_parseTimer);
+  }
+
+  private class ParseTimer implements Runnable {
+    public void run() {
+      if (m_isXmlEditorVisible) syncXmlModel();
+    }
   }
 
   void createDsoApplicationPage(int pageIndex) {
@@ -334,10 +343,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     getSite().getShell().getDisplay().syncExec(runner);
   }
 
-  private void asyncExec(Runnable runner) {
-    getSite().getShell().getDisplay().asyncExec(runner);
-  }
-
   public void init(IEditorSite site, IEditorInput editorInput) throws PartInitException {
     if (!(editorInput instanceof IFileEditorInput)) { throw new PartInitException(
         "Invalid Input: Must be IFileEditorInput"); }
@@ -374,8 +379,6 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
   public boolean isSaveAsAllowed() {
     return true;
   }
-
-  private int m_currentPage;
 
   protected void pageChange(int newPageIndex) {
     super.pageChange(newPageIndex);
@@ -429,7 +432,7 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
             if (configFile != null && configFile.equals(res)) {
               // plugin.reloadConfiguration(m_project);
               // initPanels();
-//              clearDirty();
+              // clearDirty();
 
               return false;
             }
@@ -670,23 +673,9 @@ public class ConfigurationEditor extends MultiPageEditorPart implements IResourc
     public void documentAboutToBeChanged(DocumentEvent event) {/**/}
 
     public void documentChanged(DocumentEvent event) {
-      if (haveActiveConfig()) m_parseTimer.stop();
+      if (haveActiveConfig()) setTimer(false);
       internalSetDirty(Boolean.TRUE);
-      if (haveActiveConfig()) m_parseTimer.start();
-    }
-  }
-
-  class ParseTimerAction implements ActionListener {
-    public void actionPerformed(ActionEvent ae) {
-      asyncExec(new Runnable() {
-        public void run() {
-          // Fix for problem occurring when xml is edited, then before 2 seconds have elapsed, the page is changed to
-          // the graphical editor. After modifying the element, switching back to the xml editor looses the change. This
-          // was happening because the TcConfig was being reset after the UI was displayed leaving it in an inconsistent
-          // state. An update event would be more appropriate and amenable to this type of situation.
-          if (m_isXmlEditorVisible) syncXmlModel();
-        }
-      });
+      if (haveActiveConfig()) setTimer(true);
     }
   }
 
