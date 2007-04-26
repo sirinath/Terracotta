@@ -5,13 +5,23 @@ package com.tc.net.protocol;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
+import com.tc.logging.NullTCLogger;
+import com.tc.net.TCSocketAddress;
+import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayer;
+import com.tc.net.protocol.transport.AbstractMessageTransport;
+import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.MessageTransport;
+import com.tc.net.protocol.transport.WireProtocolMessage;
 
 /**
  * 
  */
-public class MockOnceAndOnlyOnceProtocolNetworkLayer implements OnceAndOnlyOnceProtocolNetworkLayer {
+public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTransport implements OnceAndOnlyOnceProtocolNetworkLayer {
+
+  public MockOnceAndOnlyOnceProtocolNetworkLayer() {
+    super(new NullTCLogger());
+  }
 
   public NetworkLayer sendLayer;
   public NetworkLayer receiveLayer;
@@ -58,6 +68,33 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer implements OnceAndOnlyOnceP
 
   public void notifyTransportClosed(MessageTransport transport) {
     throw new ImplementMe();
+  }
+
+  public void attachNewConnection(TCConnection connection) {
+    throw new ImplementMe();
+    
+  }
+
+  public ConnectionID getConnectionId() {
+    throw new ImplementMe();
+  }
+
+  public TCSocketAddress getLocalAddress() {
+    throw new ImplementMe();
+  }
+
+  public TCSocketAddress getRemoteAddress() {
+    throw new ImplementMe();
+  }
+
+  public void receiveTransportMessage(WireProtocolMessage message) {
+    throw new ImplementMe();
+    
+  }
+
+  public void sendToConnection(TCNetworkMessage message) {
+    throw new ImplementMe();
+    
   }
 
 }

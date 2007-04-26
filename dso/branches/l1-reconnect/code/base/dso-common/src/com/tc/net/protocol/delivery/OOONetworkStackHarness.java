@@ -34,11 +34,12 @@ public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
   protected void connectStack() {
     channel.setSendLayer(oooLayer);
     oooLayer.setReceiveLayer(channel);
+    oooLayer.addTransportListener(channel);
+    
 
     oooLayer.setSendLayer(transport);
     transport.setReceiveLayer(oooLayer);
     transport.addTransportListener(oooLayer);
-    transport.addTransportListener(channel);
   }
 
   protected void createIntermediateLayers() {
