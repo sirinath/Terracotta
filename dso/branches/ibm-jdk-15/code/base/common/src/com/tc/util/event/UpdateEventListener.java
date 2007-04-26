@@ -4,7 +4,9 @@
  */
 package com.tc.util.event;
 
-public interface UpdateEventListener {
+import java.util.EventListener;
 
-  void handleUpdate(Object arg);
+public interface UpdateEventListener extends EventListener {
+
+  void handleUpdate(UpdateEvent e);
 }
