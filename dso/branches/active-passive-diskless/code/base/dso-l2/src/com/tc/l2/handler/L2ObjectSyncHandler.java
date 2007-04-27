@@ -21,6 +21,7 @@ import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransaction;
+import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchReader;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
 import com.tc.objectserver.tx.TransactionalObjectManager;
@@ -40,7 +41,8 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
   private TransactionBatchReaderFactory batchReaderFactory;
 
   private Sink                          dehydrateSink;
-  private Sink sendSink;
+  private Sink                          sendSink;
+  private ServerTransactionManager      transactionManager;
 
   public L2ObjectSyncHandler(L2ObjectStateManager l2StateManager) {
     l2ObjectStateMgr = l2StateManager;
@@ -62,7 +64,7 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
     }
   }
 
-  //TODO:: Implement throttling between active/passive
+  // TODO:: Implement throttling between active/passive
   private void ackTransactions(RelayedCommitTransactionMessage commitMessage, Set serverTxnIDs) {
     ServerTxnAckMessage msg = ServerTxnAckMessageFactory.createServerTxnAckMessage(commitMessage, serverTxnIDs);
     sendSink.add(msg);
@@ -79,8 +81,8 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
         txns.add(txn);
         serverTxnIDs.add(txn.getServerTransactionID());
       }
-      // TODO:: remove channelID.NULL_ID thingy
-      txnObjectMgr.addTransactions(ChannelID.NULL_ID, txns, reader.addAcknowledgedTransactionIDsTo(new HashSet()));
+      transactionManager.incomingTransactions(reader.getChannelID(), serverTxnIDs, false);
+      txnObjectMgr.addTransactions(txns, reader.addAcknowledgedTransactionIDsTo(new HashSet()));
       return serverTxnIDs;
     } catch (IOException e) {
       throw new AssertionError(e);
@@ -91,8 +93,10 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
     ArrayList txns = new ArrayList(1);
     ServerTransaction txn = ServerTransactionFactory.createTxnFrom(syncMsg);
     txns.add(txn);
-    // TODO:: remove channelID.NULL_ID thingy
-    txnObjectMgr.addTransactions(ChannelID.NULL_ID, txns, Collections.EMPTY_LIST);
+    HashSet txnIDs = new HashSet(1);
+    txnIDs.add(txn.getServerTransactionID());
+    transactionManager.incomingTransactions(ChannelID.L2_SERVER_ID, txnIDs, false);
+    txnObjectMgr.addTransactions(txns, Collections.EMPTY_LIST);
   }
 
   // TODO:: Update stats so that admin console reflects these data
@@ -111,6 +115,7 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
     this.batchReaderFactory = oscc.getTransactionBatchReaderFactory();
     this.objectManager = oscc.getObjectManager();
     this.txnObjectMgr = oscc.getTransactionalObjectManager();
+    this.transactionManager = oscc.getTransactionManager();
     this.dehydrateSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE).getSink();
     this.sendSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE).getSink();
   }

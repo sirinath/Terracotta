@@ -90,4 +90,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     // NOP
   }
 
+  public void goToActiveMode() {
+    throw new ImplementMe();
+  }
+
 }

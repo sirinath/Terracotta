@@ -55,7 +55,7 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
   }
 
   public void commit(PersistenceTransaction persistenceTransaction, ServerTransactionID stxID) {
-    if (!stxID.isServerGeneratedTransacation()) {
+    if (!stxID.isServerGeneratedTransaction()) {
       GlobalTransactionDescriptor desc = transactionStore.getTransactionDescriptor(stxID);
       Assert.assertNotNull(desc);
       transactionStore.commitTransactionDescriptor(persistenceTransaction, desc);

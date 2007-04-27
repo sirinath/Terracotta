@@ -83,7 +83,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       } else {
         transactionManager.incomingTransactions(channelID, serverTxnIDs, false);
       }
-      txnObjectManager.addTransactions(channelID, txns, completedTxnIds);
+      txnObjectManager.addTransactions(txns, completedTxnIds);
     } catch (Exception e) {
       logger.error("Error reading transaction batch. : ", e);
       MessageChannel c = ctm.getChannel();

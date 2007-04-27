@@ -89,5 +89,7 @@ public interface ServerTransactionManager {
   public void setResentTransactionIDs(ChannelID channelID, Collection transactionIDs);
 
   public void start(Set cids);
+  
+  public void goToActiveMode();
 
 }
