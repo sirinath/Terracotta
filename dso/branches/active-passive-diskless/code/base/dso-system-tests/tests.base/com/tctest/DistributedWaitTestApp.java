@@ -14,7 +14,7 @@ import com.tc.util.Assert;
 
 public class DistributedWaitTestApp extends AbstractTransparentApp {
 
-  private static final long WAIT_TIME = 30 * 1000;
+  private static final long WAIT_TIME = 15 * 1000;
   private Object            myRoot    = new Object();
 
   public DistributedWaitTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -27,7 +27,7 @@ public class DistributedWaitTestApp extends AbstractTransparentApp {
         long start = System.currentTimeMillis();
         myRoot.wait(WAIT_TIME);
         long end = System.currentTimeMillis();
-        Assert.assertEquals((double) WAIT_TIME, (double) (end - start), 3*1000.0);
+        Assert.assertEquals((double) WAIT_TIME, (double) (end - start), 3 * 1000.0);
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }

@@ -41,6 +41,7 @@ import javax.management.MBeanServerConnection;
 
 import junit.framework.Assert;
 
+
 public class GenericServer extends AbstractStoppable implements WebApplicationServer {
 
   private int                         jmxRemotePort;
@@ -78,8 +79,26 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
 
     parameters = (StandardAppServerParameters) factory.createParameters("server_" + serverId);
 
-    parameters.enableDSO(new TerracottaServerConfigGenerator(tempDir,
-        terracottaConfig), new File(config.normalBootJar()));
+    TerracottaServerConfigGenerator configGenerator = new TerracottaServerConfigGenerator(tempDir, terracottaConfig);
+    File bootJarFile = new File(config.normalBootJar());
+
+    /*
+     * String[] commandLine = new String[] { "-f", configGenerator.configPath()};
+     * StandardTVSConfigurationSetupManagerFactory configManagerFactory = // new
+     * StandardTVSConfigurationSetupManagerFactory(commandLine, false, new FatalIllegalConfigurationChangeHandler());
+     * 
+     * boolean quiet = false; TCLogger tclogger = quiet ? new NullTCLogger() : CustomerLogging.getConsoleLogger();
+     * L1TVSConfigurationSetupManager configManager =
+     * configManagerFactory.createL1TVSConfigurationSetupManager(tclogger);
+     * 
+     * ClassLoader systemLoader = ClassLoader.getSystemClassLoader(); StandardDSOClientConfigHelper configHelper = new
+     * StandardDSOClientConfigHelper(configManager, false);
+     * 
+     * 
+     * new BootJarTool(configHelper, bootJarFile, systemLoader, quiet).generateJar();
+     */
+
+    parameters.enableDSO(configGenerator, bootJarFile);
     parameters.appendSysProp("com.sun.management.jmxremote");
     parameters.appendSysProp("com.sun.management.jmxremote.authenticate", false);
     parameters.appendSysProp("com.sun.management.jmxremote.ssl", false);
@@ -105,6 +124,8 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
       parameters.appendSysProp("aspectwerkz.transform.details", true);
     }
     
+    parameters.appendSysProp("tc.tests.configuration.modules.url", System.getProperty("tc.tests.configuration.modules.url"));
+
     proxyBuilderMap.put(RmiServiceExporter.class, new RMIProxyBuilder());
     proxyBuilderMap.put(HttpInvokerServiceExporter.class, new HttpInvokerProxyBuilder());
   }
@@ -206,10 +227,11 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     String fullURL = "http://localhost:" + result.serverPort() + url;
     logger.debug("Getting page: " + fullURL);
     
-    WebResponse page = wc.getResponse(fullURL);
-    Assert.assertEquals(200, page.getResponseCode());
+    wc.setExceptionsThrownOnErrorStatus(false);
+    WebResponse response = wc.getResponse(fullURL);
+    Assert.assertEquals("Server error:/n" + response.getText(), 200, response.getResponseCode());
     logger.debug("Got page: " + fullURL);
-    return page;
+    return response;
   }
 
   public void redeployWar(Deployment warDeployment, String context) {
