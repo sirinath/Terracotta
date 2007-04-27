@@ -80,6 +80,9 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel
         int row = m_ruleTable.getSelectedRow();
         
         m_ruleModel.removeRuleAt(row);
+        if(m_ruleModel.getRowCount() == 0) {
+          m_dsoApp.unsetInstrumentedClasses();
+        }
         m_ruleModel.fireTableDataChanged();
       }
     };
@@ -209,8 +212,8 @@ public class InstrumentedClassesPanel extends ConfigurationEditorPanel
   }
   
   private void internalAddInclude(String classExpr) {
+    ensureXmlObject();
     int row = m_ruleModel.getRowCount();
-    
     m_ruleModel.addInclude(classExpr);
     m_ruleModel.fireTableRowsInserted(row, row);
   }

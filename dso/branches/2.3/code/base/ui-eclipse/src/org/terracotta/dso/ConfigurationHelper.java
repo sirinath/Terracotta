@@ -265,6 +265,35 @@ public class ConfigurationHelper {
     return m_plugin.isBootClass(classExpr);
   }
 
+  public boolean declaresRoot(IType type) {
+    return declaresRoot(type.getFullyQualifiedName());
+  }
+  
+  public boolean declaresRoot(String typeName) {
+    if(typeName == null) return false;
+    
+    Roots roots = getRoots();
+    if(roots != null) {
+      String rootFieldName;
+      String rootTypeName;
+      
+      for(int i = 0; i < roots.sizeOfRootArray(); i++) {
+        rootFieldName = roots.getRootArray(i).getFieldName();
+        if(rootFieldName != null && rootFieldName.length() > 0) {
+          int dotIndex = rootFieldName.lastIndexOf('.');
+          if(dotIndex != -1) {
+            rootTypeName  = rootFieldName.substring(0, dotIndex);
+            if(typeName.equals(rootTypeName)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   public void ensureAdaptable(IJavaElement element) {
     if(element instanceof ICompilationUnit) {
       ensureAdaptable((ICompilationUnit)element);
@@ -359,12 +388,14 @@ public class ConfigurationHelper {
   private void internalEnsureAdaptable(IType type) {
     internalEnsureAdaptable(PatternHelper.getFullyQualifiedName(type));
     
-    int              filter   = IJavaSearchScope.SYSTEM_LIBRARIES;
-    IJavaElement[]   elements = new IJavaElement[]{m_javaProject};
-    IJavaSearchScope scope    = SearchEngine.createJavaSearchScope(elements, filter);
-    
-    if(scope.encloses(type)) {
-      internalEnsureBootJarClass(type);
+    if(!isBootJarClass(type)) {
+      int              filter   = IJavaSearchScope.SYSTEM_LIBRARIES;
+      IJavaElement[]   elements = new IJavaElement[]{m_javaProject};
+      IJavaSearchScope scope    = SearchEngine.createJavaSearchScope(elements, filter);
+      
+      if(scope.encloses(type)) {
+        internalEnsureBootJarClass(type);
+      }
     }
   }
   
@@ -531,6 +562,8 @@ public class ConfigurationHelper {
         }
       }
     } catch(JavaModelException jme) {/**/}
+    
+    testRemoveInstrumentedClasses();
   }
 
   public void ensureNotAdaptable(final IPackageDeclaration packageDecl) {
@@ -1011,19 +1044,10 @@ public class ConfigurationHelper {
   
   public void ensureRoot(IField field) {
     if(!isRoot(field)) {
-      IType   declaringType      = field.getDeclaringType();
       boolean updateInstrumented = false;
       boolean updateTransients   = false;
-      
-      if(declaringType != null       &&
-         !isInterface(declaringType) &&
-         !isAdaptable(declaringType))
-      {
-        internalEnsureAdaptable(declaringType);
-        updateInstrumented = true;
-      }
-      
-      IType fieldType = getFieldType(field);
+      IType   fieldType          = getFieldType(field);
+
       if(fieldType != null       &&
          !isInterface(fieldType) &&
          !isAdaptable(fieldType))
@@ -2993,22 +3017,11 @@ public class ConfigurationHelper {
       if(fieldType != null       &&
          !isInterface(fieldType) &&
          !isPrimitive(fieldType) &&
-         !isAdaptable(fieldType))
+         !isAdaptable(fieldType) &&
+         !isBootJarClass(fieldType))
       {
         String fullName = PatternHelper.getFullyQualifiedName(fieldType);
         msg = "Root type '" + fullName + "' not instrumented";
-      }
-      else {
-        IType declaringType = field.getDeclaringType();
-        
-        if(declaringType != null       &&
-           !isInterface(declaringType) &&
-           !isPrimitive(declaringType) &&
-           !isAdaptable(declaringType))
-        {
-          String fullName = PatternHelper.getFullyQualifiedName(declaringType);
-          msg = "Declaring type '" + fullName + "' not instrumented";
-        }
       }
     }
     
@@ -3042,7 +3055,7 @@ public class ConfigurationHelper {
       IField field         = getField(fieldName);
       IType  declaringType = field.getDeclaringType();
       
-      if(declaringType != null && !isAdaptable(declaringType)) {
+      if(declaringType != null && !isAdaptable(declaringType) && !isBootJarClass(declaringType)) {
         String fullName = PatternHelper.getFullyQualifiedName(declaringType);
         msg = "Declaring type '" + fullName + "' not instrumented";
       }
@@ -3740,6 +3753,16 @@ public class ConfigurationHelper {
     return classes;
   }
   
+  private void testRemoveInstrumentedClasses() {
+    InstrumentedClasses ic = getInstrumentedClasses();
+    if(ic != null) {
+      if(ic.sizeOfExcludeArray() == 0 && ic.sizeOfIncludeArray() == 0) {
+        getDsoApplication().unsetInstrumentedClasses();
+        testRemoveDsoApplication();
+      }
+    }
+  }
+  
   private AdditionalBootJarClasses getAdditionalBootJarClasses() {
     return ensureDsoApplication().getAdditionalBootJarClasses();
   }
@@ -3852,7 +3875,7 @@ public class ConfigurationHelper {
     ConfigurationEditor editor = getConfigurationEditor();
     
     if(false && editor != null) {
-      editor._setDirty();
+      editor.setDirty();
     }
     else {
       m_plugin.saveConfiguration(m_project);

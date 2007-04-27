@@ -7,9 +7,8 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
-import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.dialogs.LockAttributesDialog;
-import org.terracotta.dso.editors.ConfigurationEditor;
+
 import com.terracottatech.config.LockLevel;
 
 /**
@@ -50,13 +49,6 @@ public class NameLockedAction extends BaseAction {
     }
     else {
       getConfigHelper().ensureNotNameLocked(m_element);
-    }
-
-    TcPlugin            plugin = TcPlugin.getDefault();
-    ConfigurationEditor editor = plugin.getConfigurationEditor(getProject());
-
-    if(editor != null) {
-      editor.modelChanged();
     }
 
     inspectCompilationUnit();

@@ -58,7 +58,7 @@ public class ConfigurationEditorPanel extends Container {
         ConfigurationEditor editor = plugin.getConfigurationEditor(project);
     
         if(editor != null) {
-          editor._setDirty();
+          editor.setDirty();
         }
       }
     });

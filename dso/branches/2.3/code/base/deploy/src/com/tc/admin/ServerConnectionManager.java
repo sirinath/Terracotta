@@ -188,6 +188,7 @@ public class ServerConnectionManager implements NotificationListener {
     if (m_connectEnv == null) {
       m_connectEnv = new HashMap();
       m_connectEnv.put("jmx.remote.x.client.connection.check.period", new Long(0));
+      m_connectEnv.put("jmx.remote.default.class.loader", getClass().getClassLoader());
     }
     return m_connectEnv;
   }

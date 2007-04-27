@@ -184,6 +184,8 @@ public class CompilationUnitVisitor extends ASTVisitor {
         
       m_ast = (CompilationUnit)parser.createAST(monitor);
       m_ast.accept(CompilationUnitVisitor.this);
+      
+      m_configHelper.validateAll();
     }
   }
   
@@ -344,14 +346,10 @@ public class CompilationUnitVisitor extends ASTVisitor {
   
         if(m_configHelper.isRoot(fieldName)) {
           addMarker("rootMarker", "DSO Root Field", node.getName());
-          
-          if(!m_configHelper.isAdaptable(parentClass)) {
-            addProblemMarker("DeclaringTypeNotInstrumentedMarker", "Declaring type not instrumented", node.getName());
-          }
         } else if(m_configHelper.isTransient(fieldName)) {
           addMarker("transientFieldMarker", "DSO Transient Field", node.getName());
           
-          if(!m_configHelper.isAdaptable(parentClass)) {
+          if(!m_configHelper.isAdaptable(parentClass) && !m_configHelper.declaresRoot(parentClass)) {
             addProblemMarker("DeclaringTypeNotInstrumentedMarker", "Declaring type not instrumented", node.getName());
           }
         }
@@ -386,14 +384,10 @@ public class CompilationUnitVisitor extends ASTVisitor {
   
         if(m_configHelper.isRoot(fieldName)) {
           addMarker("rootMarker", "DSO Root Field", node.getName());
-          
-          if(!m_configHelper.isAdaptable(parentClass)) {
-            addProblemMarker("DeclaringTypeNotInstrumentedMarker", "Declaring type not instrumented", node);
-          }
         } else if(m_configHelper.isTransient(fieldName)) {
           addMarker("transientFieldMarker", "DSO Transient Field", node.getName());
           
-          if(!m_configHelper.isAdaptable(parentClass)) {
+          if(!m_configHelper.isAdaptable(parentClass) && !m_configHelper.declaresRoot(parentClass)) {
             addProblemMarker("DeclaringTypeNotInstrumentedMarker", "Declaring type not instrumented", node);
           }
         }
@@ -520,7 +514,9 @@ public class CompilationUnitVisitor extends ASTVisitor {
       IMethod method = (IMethod)binding.getJavaElement();
       
       if(method != null) {
-        return m_configHelper.isAdaptable(method.getDeclaringType());
+        IType type = method.getDeclaringType();
+        return m_configHelper.isAdaptable(type) ||
+               m_configHelper.declaresRoot(type);
       }
     }
     

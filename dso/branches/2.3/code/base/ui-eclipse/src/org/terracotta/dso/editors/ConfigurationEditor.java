@@ -665,7 +665,6 @@ public class ConfigurationEditor extends MultiPageEditorPart
       doc.set(configDoc.xmlText(opts));
       doc.addDocumentListener(m_docListener);
     }
-    plugin.fireConfigurationChange(m_project);
   }
 
   public synchronized void syncXmlModel() {
@@ -686,18 +685,13 @@ public class ConfigurationEditor extends MultiPageEditorPart
    */
   public synchronized void setDirty() {
     syncXmlDocument();
-    doSave(null);
-  }
-
-  public synchronized void _setDirty() {
-    syncXmlDocument();
     internalSetDirty(Boolean.TRUE);
 
+    TcPlugin plugin = TcPlugin.getDefault(); 
+    plugin.getConfigurationHelper(m_project).validateAll();
     JavaSetupParticipant.inspectAll();
-    TcPlugin.getDefault().updateDecorators();
-    TcPlugin.getDefault().fireConfigurationChange(m_project);
-    
-    //TcPlugin.getDefault().saveConfigurationQuietly(m_project);
+    plugin.updateDecorators();
+    plugin.fireConfigurationChange(m_project);
   }
 
   private void clearDirty() {

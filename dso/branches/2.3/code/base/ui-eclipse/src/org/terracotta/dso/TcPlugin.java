@@ -1109,12 +1109,6 @@ public class TcPlugin extends AbstractUIPlugin
     IProject project,
     Boolean  dirty)
   {
-    if(dirty.booleanValue()) {
-      clearSerializedConfigFile(project);
-      setSessionProperty(project, CONFIGURATION_LINE_LENGTHS, null);
-      setSessionProperty(project, CONFIGURATION, null);
-    }
-    
     setSessionProperty(project, IS_DIRTY, dirty);
   }
 
