@@ -5,16 +5,11 @@
 package com.tc.test.server.appserver.cargo;
 
 import com.tc.process.LinkedJavaProcessPollingAgent;
-import com.tc.process.StartupAppender;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -50,8 +45,6 @@ public final class CargoLinkedChildProcess {
     LinkedJavaProcessPollingAgent.startClientWatchdogService(port, className, true);
     loadProperties();
 
-    invokeStartupAppender();
-
     try {
       Class startServer = Class.forName(className);
       Method main = startServer.getMethod("main", new Class[] { String[].class });
@@ -82,18 +75,4 @@ public final class CargoLinkedChildProcess {
     }
   }
 
-  private static void invokeStartupAppender() throws Exception {
-    File startupAppenderJar = new File(instanceDir.getParent() + File.separator + StartupAppender.FILE_NAME);
-    if (!startupAppenderJar.exists()) return;
-    URL url = new URL("jar:file:" + startupAppenderJar.getAbsolutePath() + "!/");
-    ClassLoader classLoader = new URLClassLoader(new URL[] { url }, CargoLinkedChildProcess.class.getClassLoader());
-    URL appenderTypeUrl = new URL("jar:file:" + startupAppenderJar.getAbsolutePath() + "!/"
-                                  + StartupAppender.APPENDER_TYPE_FILENAME);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(appenderTypeUrl.openStream()));
-    String appenderType = reader.readLine();
-    reader.close();
-    Class appenderTypeClass = classLoader.loadClass(appenderType);
-    StartupAppender appender = (StartupAppender) appenderTypeClass.newInstance();
-    appender.append();
-  }
 }
