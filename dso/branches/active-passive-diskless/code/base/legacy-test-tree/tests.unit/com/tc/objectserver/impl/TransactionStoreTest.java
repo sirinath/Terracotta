@@ -40,6 +40,7 @@ public class TransactionStoreTest extends TCTestCase {
     List gtxs = new LinkedList();
     for (int i = 0; i < 100; i++) {
       ServerTransactionID sid1 = new ServerTransactionID(new ChannelID(i), new TransactionID(i));
+      store.getOrCreateTransactionDescriptor(sid1);
       store.commitTransactionDescriptor(null, sid1);
       GlobalTransactionDescriptor desc = store.getTransactionDescriptor(sid1);
       assertNotNull(desc);
@@ -96,6 +97,7 @@ public class TransactionStoreTest extends TCTestCase {
     int max = 200;
     for (int i = min; i < max; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i), new TransactionID(i));
+      store.getOrCreateTransactionDescriptor(stxid);
       store.commitTransactionDescriptor(null, stxid);
     }
 
@@ -179,7 +181,7 @@ public class TransactionStoreTest extends TCTestCase {
     // create more
     for (int i = initialMax; i < laterMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
-      store.getGlobalTransactionID(stxid);
+      store.getOrCreateTransactionDescriptor(stxid);
       store.commitTransactionDescriptor(null, stxid);
     }
     GlobalTransactionID lowmk2 = store.getLeastGlobalTransactionID();
