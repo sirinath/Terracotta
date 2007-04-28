@@ -1,0 +1,160 @@
+<project name="createWebServer" default="createWebServerIfRequested" basedir=".">
+
+    <taskdef name="wscmtlog" classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+
+    <taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>   
+		
+    <taskdef name="replaceStringRegExp" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.ReplaceStringRegExpAntTask"/> 
+        
+    <target name="detectCurrentOSFamily"
+            description="Detects the current OS family (UNIX or Windows)">
+        
+
+        <wscmtlog>os Name  :  ${os.name}</wscmtlog>
+        <wscmtlog>webServerOS :  ${webServerOS}</wscmtlog>
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${webServerOS}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <equals arg1="${webServerOS}" arg2="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">
+            <not><equals arg1="${webServerOS}" arg2="windows"/></not>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+
+        <condition property="isZOS">
+            <os family="z/os"/>
+        </condition>
+
+        <wscmtlog>Is z/OS: ${isZOS}</wscmtlog>
+    </target>
+
+    <target name="setOSFileSeparator"
+            description="Sets the current file separator for this platform (file.separator is unreliable on ANT 1.5.4)">
+            
+        <condition property="separatorFile" value="/">
+            <not><equals arg1="${currentOSFamily}" arg2="windows"/></not>
+        </condition>
+
+        <condition property="separatorFile" value="\\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>    
+
+    <target name="normalizePaths">
+    
+
+        <condition property="webdirslash" value="/">
+            <not><equals arg1="${currentOSFamily}" arg2="windows"/></not>
+        </condition>
+
+        <condition property="webdirslash" value="\\\\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+
+        <condition property="webregexp" value="\\">
+            <not><equals arg1="${currentOSFamily}" arg2="windows"/></not>
+        </condition>
+
+        <condition property="webregexp" value="/">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+
+
+        <wscmtlog>WebServerInstallPath without normalization :  ${webServerInstallPath}</wscmtlog>
+        
+        <replaceStringRegExp string="${webServerInstallPath}"
+            regexp="${webregexp}"
+            value="${separatorFile}"
+            property="changedWebServerInstallPath"/>           
+
+        <wscmtlog>normalizationWebServerInstallPath after webregexp  :  ${changedWebServerInstallPath}</wscmtlog>
+
+        <replaceStringRegExp string="${changedWebServerInstallPath}"
+            regexp="${separatorFile}"
+            value="${webdirslash}"
+            property="changed2WebServerInstallPath"/>           
+
+        <wscmtlog>normalizationWebServerInstallPath after webdirslash:  ${changed2WebServerInstallPath}</wscmtlog>
+        
+        <condition property="normalizedWebServerInstallPath" value=" ">
+            <equals arg1="${changed2WebServerInstallPath}" arg2=""/>
+        </condition>
+        <condition property="normalizedWebServerInstallPath" value="${changed2WebServerInstallPath}">
+            <not><equals arg1="${changed2WebServerInstallPath}" arg2=""/></not>
+        </condition>
+        
+        
+        <replaceStringRegExp string="${webServerPluginPath}"
+            regexp="${webregexp}"
+            value="${separatorFile}"
+            property="changedWebServerPluginPath"/>           
+        <wscmtlog>changedPluginInstallPath  after webregexp :  ${changedWebServerPluginPath}</wscmtlog>
+        
+        <replaceStringRegExp string="${changedWebServerPluginPath}"
+            regexp="${separatorFile}"
+            value="${webdirslash}"
+            property="normalizedWebServerPluginPath"/>           
+        <wscmtlog>normalizedWebServerPluginInstallPath  after webdirclash:  ${normalizedWebServerPluginPath}</wscmtlog>
+ 
+
+    </target>
+
+    <target name="queryWebServerCheckFlag"
+            description="Determine the flag to create a web server is checked">
+
+        <condition property="creatingWebServer" value="true">
+            <equals arg1="${webServerCheck}" arg2="true"/>
+        </condition>
+
+        <wscmtlog>Detected webServerCheck to be: ${creatingWebServer}</wscmtlog>
+    </target>
+
+
+    <target name="createWebServer" description="Create a Web Server Definition"
+        depends="detectCurrentOSFamily,
+            setOSFileSeparator,
+             normalizePaths"
+	if="creatingWebServer">
+            
+        <wscmtlog>Creating a Web Server definition, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/createWebServer.log</wscmtlog>
+        
+         <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/createWebServer.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 script="${templatePath}/actions/scripts/createWebServerDefinition.jacl"
+                 lang="jacl"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <arg value="${webServerName}"/>
+	         <arg value="${webServerType}"/>
+	         <arg value="${normalizedWebServerInstallPath}"/>
+	         <arg value="${webServerPort}"/>
+	         <arg value="${normalizedWebServerPluginPath}"/>
+	         <arg value="${webServerHostname}"/>
+	         <arg value="${webServerOS}"/>
+	         <arg value="${hostName}"/>
+	         <arg value="${nodeName}"/>
+        </wsadmin>  
+    </target>
+
+    <target name="createWebServerIfRequested" description="Create a Web Server Definition if requested"
+        depends="queryWebServerCheckFlag">
+	<antcall target="createWebServer"/>
+    </target>
+
+</project>

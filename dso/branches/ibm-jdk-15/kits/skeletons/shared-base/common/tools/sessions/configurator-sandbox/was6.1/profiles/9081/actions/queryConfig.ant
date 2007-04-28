@@ -1,0 +1,110 @@
+<project name="QueryConfig" default="QueryConfig" basedir=".">
+	<taskdef name="wscmtlog"
+	        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+
+	<taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>   
+	
+    <property name="serverName" value="server1"/>
+
+    <target name="zSetServerName"
+            description="For z/OS only, set serverName to user provided value" if="isCurrentOSzOS">
+
+         <property name="serverName" value="${serverName}"/>
+
+    </target>
+
+    <target name="detectCurrentOSFamily"
+            description="Detects the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <!-- z/OS setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="z/os">
+             <os family="z/os"/>
+        </condition>
+
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+
+    <target name="setCurrentOSFamily"
+            description="Sets the current OS family">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="isCurrentOSOS400" value="true">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+
+        <!-- z/OS setting must come before the unix setting -->
+        <condition property="isCurrentOSzOS" value="true">
+            <os family="z/os"/>
+        </condition>
+        
+        <condition property="isCurrentOSWindows" value="true">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="isCurrentOSUNIX" value="true">
+            <os family="unix"/>
+        </condition>
+    </target>
+
+    <target name="convertWASHomeToUNIXStylePath">
+        <path id="id.was.home">
+            <pathelement location="${WAS_HOME}"/>
+        </path>
+    
+        <pathconvert targetos="unix" 
+            property="WAS_HOME_UNIX_STYLE" 
+            refid="id.was.home"/>
+    </target>
+    
+    <target name="configureQuery"
+            description="Run the configuration Query Jacl file using wsadmin.bat">
+ 
+	    <wscmtlog>Installing query.ear, output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/query_config.log</wscmtlog>
+
+	<wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/query_config.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 script="${WAS_HOME}/util/queryInstall.jacl"
+                 lang="jacl"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                <arg value="-nodeName"/>
+    		<arg value="${nodeName}"/>
+    		<arg value="-cellName"/>
+    		<arg value="${cellName}"/>
+    		<arg value="-serverName"/>
+    		<arg value="${serverName}"/>
+    		<arg value="-installRoot"/>
+    		<arg value="${WAS_HOME_UNIX_STYLE}"/>
+    		<arg value="INSTALL"/>
+      </wsadmin>  
+    </target>
+
+    <target name="QueryConfig"
+        description="Install query.ear"
+        depends="detectCurrentOSFamily,
+            setCurrentOSFamily,
+            convertWASHomeToUNIXStylePath,
+            zSetServerName,
+            configureQuery"/>
+</project>

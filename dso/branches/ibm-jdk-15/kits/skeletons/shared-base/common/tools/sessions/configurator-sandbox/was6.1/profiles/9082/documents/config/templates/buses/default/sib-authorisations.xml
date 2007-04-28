@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:sibresources="http://www.ibm.com/websphere/appserver/schemas/6.0/sibresources.xmi">
+  <sibresources:SIBAuthSpace  xmi:id="SIBAuthSpace_DEFAULT6">
+    <group xmi:id="SIBAuthGroup_2222222222222" identifier="AllAuthenticated"/>
+
+    <busConnect xmi:id="SIBAuthBusConnect_3333333333333" group="SIBAuthGroup_2222222222222"/>
+
+    <default xmi:id="SIBAuthDefault_4444444444444">
+      <browser xmi:id="SIBAuthBrowser_5555555555555" group="SIBAuthGroup_2222222222222"/>
+      <receiver xmi:id="SIBAuthReceiver_6666666666666" group="SIBAuthGroup_2222222222222"/>
+      <sender xmi:id="SIBAuthSender_7777777777777" group="SIBAuthGroup_2222222222222"/>
+      <creator xmi:id="SIBAuthCreator_8888888888888" group="SIBAuthGroup_2222222222222"/>
+    </default>
+
+  </sibresources:SIBAuthSpace>
+
+  <sibresources:SIBAuthSpace xmi:id="SIBAuthSpace_DEFAULT61">
+
+    <group xmi:id="SIBAuthGroup_2222222222222" identifier="AllAuthenticated"/>
+    <group xmi:id="SIBAuthGroup_2222222222223" identifier="Server"/>
+
+    <busConnect xmi:id="SIBAuthBusConnect_3333333333333" group="SIBAuthGroup_2222222222223"/>
+
+
+    <default xmi:id="SIBAuthDefault_4444444444444">
+      <browser xmi:id="SIBAuthBrowser_5555555555555" group="SIBAuthGroup_2222222222222"/>
+      <receiver xmi:id="SIBAuthReceiver_6666666666666" group="SIBAuthGroup_2222222222222"/>
+      <sender xmi:id="SIBAuthSender_7777777777777" group="SIBAuthGroup_2222222222222"/>
+      <creator xmi:id="SIBAuthCreator_8888888888888" group="SIBAuthGroup_2222222222222"/>
+    </default>
+
+  </sibresources:SIBAuthSpace>
+
+</xmi:XMI>

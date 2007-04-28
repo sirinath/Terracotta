@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:properties="http://www.ibm.com/websphere/appserver/schemas/5.0/properties.xmi">
+  <properties:Property xmi:id="Property_1" name="name" value="GENERIC_SERVER"/>
+  <properties:Property xmi:id="Property_2" name="createTemplateCommand" value="createGenericServerTemplate"/>
+  <properties:Property xmi:id="Property_3" name="createCommand" value="createGenericServer"/>
+  <properties:Property xmi:id="Property_4" name="version" value="6.0"/>
+  <properties:Property xmi:id="Property_5" name="defaultTemplateName" value="default"/>
+  <properties:Property xmi:id="Property_6" name="defaultzOSTemplateName" value="defaultZOS"/>
+</xmi:XMI>

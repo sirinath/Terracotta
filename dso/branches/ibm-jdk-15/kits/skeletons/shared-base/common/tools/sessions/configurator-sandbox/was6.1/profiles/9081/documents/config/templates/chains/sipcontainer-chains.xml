@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" 
+                           xmlns:channelservice="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.xmi"
+                           xmlns:channelservice.channels="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.channels.xmi">
+
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v6.0 Default Template Files</contact>
+  </xmi:Documentation>
+
+  <channelservice.channels:UDPInboundChannel          xmi:id="UDPInboundChannel_1"          name="UDP"/>
+  <channelservice.channels:TCPInboundChannel          xmi:id="TCPInboundChannel_1"          name="TCP"/>
+  <channelservice.channels:SSLInboundChannel          xmi:id="SSLInboundChannel_1"          name="SSL" sslConfigAlias="$(node.name)/DefaultSSLSettings" discriminationWeight="1"/>
+  <channelservice.channels:SIPInboundChannel          xmi:id="SIPInboundChannel_1"          name="SIP" discriminationWeight="10"/>
+  <channelservice.channels:SIPContainerInboundChannel xmi:id="SIPContainerInboundChannel_1" name="SIPCC" discriminationWeight="100"/>
+
+  <!-- Default Web Container Chain Template -->
+  <channelservice:Chain xmi:id="Chain_1" name="SIPContainer" enable="true" transportChannels="TCPInboundChannel_1 SIPInboundChannel_1 SIPContainerInboundChannel_1"/>
+  
+  <!-- Default Web Container Secure Chain Template -->
+  <channelservice:Chain xmi:id="Chain_2" name="SIPContainer-Secure" enable="true" transportChannels="TCPInboundChannel_1 SSLInboundChannel_1 SIPInboundChannel_1 SIPContainerInboundChannel_1"/>
+
+  <!-- Default Web Container Chain Template -->
+  <channelservice:Chain xmi:id="Chain_3" name="SIPContainer-UDP" enable="true" transportChannels="UDPInboundChannel_1 SIPInboundChannel_1 SIPContainerInboundChannel_1"/>
+  
+</xmi:XMI>

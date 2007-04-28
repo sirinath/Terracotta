@@ -1,0 +1,32 @@
+<project name="unzipProfile" default="unzip" basedir=".">
+    
+	<taskdef name="wscmtlog" classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+	
+	<taskdef name="unziptask" classname="com.ibm.ws.profile.anttasks.UNZIPAntTask"/>
+
+    <target name="unzip" 
+        description="uses the defined task to unzip a given profile archive">
+        
+        <unziptask file="${backupFile}"
+        outputdir="${profilePath}"
+        NativeFilelibdirectory= "$WAS_HOME}/bin"/>        
+
+        <wscmtlog>UnZipping profile.. </wscmtlog>
+
+        <!-- Need to set explicit private authorities for i5/OS -->
+        <available file="${WAS_HOME}/bin/_fixprofileauthorities" property="setAuthorities" value="true"/>
+        <antcall target="seti5osauth"/>
+
+    </target>
+
+    <target name="seti5osauth" if="setAuthorities">
+       <wscmtlog>Executing ${WAS_HOME}/bin/_fixprofileauthorities ${profilePath} ALL</wscmtlog>
+       <exec executable="${WAS_HOME}/bin/_fixprofileauthorities" failonerror="false"
+             output="${WS_CMT_LOG_HOME}/restoreProfile_fixauth.log">
+          <arg value="${profilePath}"/>
+          <arg value="ALL"/>
+       </exec>
+    </target>
+    
+    
+</project>

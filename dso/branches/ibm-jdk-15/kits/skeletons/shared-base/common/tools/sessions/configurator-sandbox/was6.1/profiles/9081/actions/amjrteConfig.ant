@@ -1,0 +1,196 @@
+<project name="amjrteConfig" default="amjrteConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+
+        <condition property="currentOSFamily" value="z/OS">            
+            <os family="z/os"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+    
+    <target name="setOSFileSeparator"
+            description="Sets the current file separator for this platform (file.separator is unreliable on ANT 1.5.4)">
+            
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="z/OS"/>
+        </condition>
+        
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="separatorFile" value="\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+    
+    <target name="resolveWASJAVAExecutableForTheCurrentPlatform"
+            description="Sets WAS_JAVA_EXECUTABLE to the WAS Java interpretor for the current platform">
+        <!-- On OS/400, invoke the pdjrtecfg script - this will allow using Classic or J9 and ensures consistency -->    
+        <condition property="WAS_PDJRTE_EXECUTABLE" value="${WAS_HOME}/bin/pdjrtecfg">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+
+        <condition property="WAS_JAVA_EXECUTABLE" value="java">
+            <equals arg1="${currentOSFamily}" arg2="z/OS"/>
+        </condition>
+        
+        <condition property="WAS_JAVA_EXECUTABLE" value="${WAS_HOME}/java/jre/bin/java">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="WAS_JAVA_EXECUTABLE" value="${WAS_HOME}/java/jre/bin/javaw.exe">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+
+        <!-- Java invocation is different on iSeries/OS400, use properties to distinguish which to run -->
+        <condition property="EXEC_OS400" value="true">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="EXEC_NONOS400" value="true">
+        <and>
+            <not>
+                 <equals arg1="${currentOSFamily}" arg2="os/400"/>
+            </not>
+            <not>
+                <equals arg1="${currentOSFamily}" arg2="z/OS"/>
+            </not>
+        </and>
+        </condition>
+               
+        <condition property="EXEC_OS390" value="true">
+            <equals arg1="${currentOSFamily}" arg2="z/OS"/>
+        </condition>
+
+        <wscmtlog>JAVA interpretor set to: ${WAS_JAVA_EXECUTABLE}</wscmtlog>
+    </target>
+    
+    <target name="resolveClasspathForTheCurrentPlatform"
+            description="Sets AMJRTE_CLASSPATH to the correct classpath for the current platform">
+            
+        <condition property="AMJRTE_CLASSPATH" 
+                value="${WAS_HOME}/java/ext/PD.jar:${WAS_HOME}/java/ext/ibmjceprovider.jar:${WAS_HOME}/java/endorsed/ibmpkcs.jar">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+
+        <condition property="AMJRTE_CLASSPATH" 
+                value="${WAS_HOME}/java/jre/lib/ext/PD.jar:${WAS_HOME}/java/lib/ext/ibmjceprovider.jar:${WAS_HOME}/java/lib/ibmpkcs.jar">
+            <equals arg1="${currentOSFamily}" arg2="z/OS"/>
+        </condition>
+        
+        <condition property="AMJRTE_CLASSPATH" 
+                value="${WAS_HOME}/java/jre/lib/ext/PD.jar:${WAS_HOME}/java/jre/lib/ext/ibmjceprovider.jar:${WAS_HOME}/java/jre/lib/ext/ibmpkcs.jar">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="AMJRTE_CLASSPATH" 
+                value="${WAS_HOME}/java/jre/lib/ext/PD.jar;${WAS_HOME}/java/jre/lib/ext/ibmjceprovider.jar;${WAS_HOME}/java/jre/lib/ext/ibmpkcs.jar">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+        
+        <wscmtlog>JAVA interpretor set to: ${WAS_JAVA_EXECUTABLE}</wscmtlog>
+    </target>
+
+    <target name="configTivoliAccessManagerOS390"
+            description="Run the Tivoli config command"
+            if="EXEC_OS390">
+            
+        <wscmtlog>Configuring Tivoli Access Manager, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log</wscmtlog>
+            
+        <exec executable="${WAS_JAVA_EXECUTABLE}"
+                output="${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log">
+            <arg value="-classpath"/>
+            <arg value="${AMJRTE_CLASSPATH}"/>
+            <arg value="-Dpd.home=${WAS_HOME}/java/jre/PolicyDirector"/>
+            <arg value="com.tivoli.pd.jcfg.PDJrteCfg"/>
+            <arg value="-action"/>
+            <arg value="config"/>
+            <arg value="-was"/>
+            <arg value="-config_type"/>
+            <arg value="standalone"/>
+            <arg value="-java_home"/>
+            <arg value="${WAS_HOME}${separatorFile}java"/>
+            <arg value="-cfgfiles_path"/>
+            <arg value="${WAS_HOME}/java"/>
+            <env key="JAVA_HOME" value="${WAS_HOME}${separatorFile}java"/>
+        </exec>
+    </target>
+
+
+
+    <target name="configTivoliAccessManager"
+            description="Run the Tivoli config command"
+            if="EXEC_NONOS400">
+            
+        <wscmtlog>Configuring Tivoli Access Manager, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log</wscmtlog>
+            
+        <exec executable="${WAS_JAVA_EXECUTABLE}"
+                output="${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log">
+            <arg value="-classpath"/>
+            <arg value="${AMJRTE_CLASSPATH}"/>
+            <arg value="-Djava.ext.dirs"/>
+            <arg value="-Dpd.home=${WAS_HOME}/java/jre/PolicyDirector"/>
+            <arg value="com.tivoli.pd.jcfg.PDJrteCfg"/>
+            <arg value="-action"/>
+            <arg value="config"/>
+            <arg value="-was"/>
+            <arg value="-config_type"/>
+            <arg value="standalone"/>
+            <arg value="-java_home"/>
+            <arg value="${WAS_HOME}${separatorFile}java${separatorFile}jre"/>
+            <env key="JAVA_HOME" value="${WAS_HOME}${separatorFile}java${separatorFile}jre"/>
+        </exec>
+    </target>
+
+    <target name="configTivoliAccessManagerOS400"
+            description="Run the Tivoli config command"
+            if="EXEC_OS400">
+            
+        <wscmtlog>Configuring Tivoli Access Manager, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log</wscmtlog>
+            
+        <exec executable="${WAS_PDJRTE_EXECUTABLE}"
+                output="${WS_CMT_LOG_HOME}/${profileName}/amjrte_config.log">
+            <arg value="-action"/>
+            <arg value="config"/>
+            <arg value="-cfgfiles_path"/>
+            <arg value="${profilePath}/etc/pd"/>
+            <arg value="-was"/>
+            <arg value="-config_type"/>
+            <arg value="standalone"/>
+            <env key="WAS_USER_SCRIPT" value="${profilePath}${separatorFile}bin${separatorFile}setupCmdLine"/>
+        </exec>
+    </target>
+
+    <target name="amjrteConfig"
+        description="Configures Tivoli Access Manager"
+        depends="detectCurrentOSFamily,
+            setOSFileSeparator,
+            resolveWASJAVAExecutableForTheCurrentPlatform,
+            resolveClasspathForTheCurrentPlatform,
+            configTivoliAccessManager,
+            configTivoliAccessManagerOS390,
+            configTivoliAccessManagerOS400"/>
+</project>

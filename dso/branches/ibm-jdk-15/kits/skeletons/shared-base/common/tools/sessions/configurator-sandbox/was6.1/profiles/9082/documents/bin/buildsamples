@@ -1,0 +1,14 @@
+#!/bin/sh
+
+binDir=`dirname $0`
+. $binDir/setupCmdLine.sh
+
+ANTCLASSPATH="$JAVA_HOME/lib/tools.jar:$WAS_HOME/lib/j2ee.jar:$WAS_HOME/plugins/com.ibm.ws.runtime_6.1.0.jar:$WAS_HOME/plugins/com.ibm.ws.runtime.dist_6.1.0.jar:$WAS_HOME/plugins/com.ibm.ws.emf_2.1.0.jar:$CLASSPATH"
+
+export ANTCLASSPATH
+
+ANTCLASSPATH="$JAVA_HOME/lib/tools.jar:$WAS_HOME/lib/j2ee.jar:$WAS_HOME/plugins/com.ibm.ws.runtime_6.1.0.jar:$WAS_HOME/plugins/com.ibm.ws.runtime.dist_6.1.0.jar:$WAS_HOME/plugins/com.ibm.ws.sib.webservices_1.0.0.jar:$WAS_HOME/plugins/com.ibm.ws.webcontainer_2.0.0.jar:$WAS_HOME/plugins/com.ibm.ws.emf_2.1.0.jar:$WAS_HOME/plugins/com.ibm.ws.wccm_6.1.0.jar:$WAS_HOME/lib/bootstrap.jar:$WAS_HOME/samples/src/FacesClientTutorial/FacesClientTutorialWeb/WebContent/WEB-INF/lib/sdo_access_beans.jar:$WAS_HOME/optionalLibraries/IBM/JWL/2.0/odc-jsf.jar:$WAS_HOME/optionalLibraries/IBM/JWL/2.0/jsf-ibm.jar:$WAS_HOME/plugins/com.ibm.ws.bootstrap_6.1.0.jar:$WAS_HOME/plugins/org.eclipse.core.runtime_3.1.2.jar:$CLASSPATH"
+
+export ANTCLASSPATH
+
+"$JAVA_HOME/jre/bin/java" $WAS_LOGGING -classpath $ANTCLASSPATH org.apache.tools.ant.Main -Dbasedir="$USER_INSTALL_ROOT/samples" -Dwas_home="$WAS_HOME" $@

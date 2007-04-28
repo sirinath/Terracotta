@@ -1,0 +1,45 @@
+    <target name="update.virtualhosts.xml">
+    
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="WC_defaulthost"/>	
+        		<param name="portValue" value="${WC_defaulthost}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_1&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_1&quot;\1port=&quot;${WC_defaulthost}&quot;"/>
+		</antcall>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="WC_defaulthost_secure"/>
+        		<param name="portValue" value="${WC_defaulthost_secure}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_3&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_3&quot;\1port=&quot;${WC_defaulthost_secure}&quot;"/>
+		</antcall>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="WC_adminhost"/>
+        		<param name="portValue" value="${WC_adminhost}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_4&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_4&quot;\1port=&quot;${WC_adminhost}&quot;"/>
+		</antcall>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="WC_adminhost_secure"/>
+        		<param name="portValue" value="${WC_adminhost_secure}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_5&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_5&quot;\1port=&quot;${WC_adminhost_secure}&quot;"/>
+		</antcall>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="SIP_DEFAULTHOST"/>
+        		<param name="portValue" value="${SIP_DEFAULTHOST}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_6&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_6&quot;\1port=&quot;${SIP_DEFAULTHOST}&quot;"/>
+		</antcall>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="SIP_DEFAULTHOST_SECURE"/>
+        		<param name="portValue" value="${SIP_DEFAULTHOST_SECURE}"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;HostAlias_7&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;HostAlias_7&quot;\1port=&quot;${SIP_DEFAULTHOST_SECURE}&quot;"/>
+		</antcall>
+    </target>

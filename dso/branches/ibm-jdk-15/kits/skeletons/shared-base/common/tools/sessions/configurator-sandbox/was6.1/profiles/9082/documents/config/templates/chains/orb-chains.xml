@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" 
+                           xmlns:channelservice="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.xmi"
+                           xmlns:channelservice.channels="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.channels.xmi">
+
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v7.0 Default Template Files</contact>
+  </xmi:Documentation>
+
+  <channelservice.channels:TCPInboundChannel          xmi:id="TCPInboundChannel_1"          name="TCP"/>
+  <channelservice.channels:SSLInboundChannel          xmi:id="SSLInboundChannel_1"          name="SSL" sslConfigAlias="$(node.name)/DefaultSSLSettings" discriminationWeight="2"/>
+  <channelservice.channels:ORBInboundChannel          xmi:id="ORBInboundChannel_1"          name="ORB" discriminationWeight="1"/>
+  
+  <!-- Default ORB Chain Template -->
+  <channelservice:Chain xmi:id="Chain_1" name="ORB" enable="true" transportChannels="TCPInboundChannel_1 ORBInboundChannel_1"/>
+
+  <!-- Default ORB Secure Chain Template -->
+  <channelservice:Chain xmi:id="Chain_2" name="ORB-Secure" enable="true" transportChannels="TCPInboundChannel_1 SSLInboundChannel_1 ORBInboundChannel_1"/>
+
+</xmi:XMI>

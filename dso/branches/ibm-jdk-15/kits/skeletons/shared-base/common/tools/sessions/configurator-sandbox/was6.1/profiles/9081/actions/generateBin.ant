@@ -1,0 +1,230 @@
+<project name="generateProfileBin" default="generateProfileBin" basedir=".">
+
+    <taskdef name="wscmtlog" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+    <taskdef name="foreach" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.ForEachAntTask"/>
+    <taskdef name="filename" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.FileNameAntTask"/>
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+
+    <target name="detectProductLevel">
+        <!-- The existance of the WAS.product file tells us we are on a full WAS Base install.
+             Otherwise we are on the Embed product.  EWAS.product should exist instead. -->
+       <condition property="isBase">
+          <available file="${WAS_HOME}/properties/version/WAS.product"/>
+       </condition>
+       <condition property="isEmbed">
+          <isfalse value="${isBase}"/>
+       </condition>
+    </target>
+
+    <target name="defineOSSpecificConfigFlag"
+            description="Defines either configUNIX or configWindows depending on the current OS">
+            
+        <condition property="configOS400" value="true">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="configUNIX" value="true">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="configWindows" value="true">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+        
+    <target name="setOSFileSeparator"
+            description="Sets the current file separator for this platform (file.separator is unreliable on ANT 1.5.4)">
+            
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="separatorFile" value="\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+
+    <target name="setOSCRLFSequence"
+            description="Sets CRLF to whatever is the appropriate CRLF sequence for this platform">
+
+        <condition property="CRLF" value="&#10;">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        <condition property="CRLF" value="&#10;">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        <condition property="CRLF" value="&#13;&#10;">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+
+    <target name="setOSShellScriptExtension"
+            description="Sets the variable shellScriptExt to current OS's shell script extension">
+            
+        <condition property="shellScriptExt" value="">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="shellScriptExt" value="sh">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="shellScriptExt" value="bat">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+    
+    <target name="generateProxyShellScriptForThisFileOS400"
+            description="Generates a proxy shell script for the given shell script for OS400"
+            if="configOS400">
+            
+        <filename path="${pathShellScriptThis}" property="fileShellScriptThis"/>        
+        
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="false">#!/usr/bin/qsh${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">export WAS_USER_SCRIPT=${profilePath}/bin/setupCmdLine${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">${pathShellScriptThis} &quot;$@&quot;${CRLF}</echo>
+        
+    </target>
+
+    <target name="generateProxyShellScriptForThisFileUNIX"
+            description="Generates a proxy shell script for the given shell script for UNIX"
+            if="configUNIX">
+            
+        <filename path="${pathShellScriptThis}" property="fileShellScriptThis"/>        
+        
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="false">#!/bin/sh${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">WAS_USER_SCRIPT=${profilePath}/bin/setupCmdLine.sh${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">export WAS_USER_SCRIPT${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">${pathShellScriptThis} &quot;$@&quot;${CRLF}</echo>
+        
+    </target>
+
+    <target name="chmodFilePermissionsUNIX"
+            description="Changes file permissions for a shell scripts for UNIX"
+            if="configUNIX">
+
+        <wscmtlog>chmod file permissions for directory: ${profilePath}/bin</wscmtlog>
+
+        <chmod dir="${profilePath}/bin" perm="u+rwx,g+rx-w,o+rx-w" includes="**/*.sh" excludes="setupCmdLine.sh" />
+        
+        <wscmtlog>File permissions updated for directory: ${profilePath}/bin</wscmtlog>
+
+    </target>
+
+
+    <target name="generateProxyShellScriptForThisFileWindows"
+            description="Generates a proxy shell script for the given shell script for Windows"
+            if="configWindows">
+            
+        <filename path="${pathShellScriptThis}" property="fileShellScriptThis"/>
+        
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="false">@echo off${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">SETLOCAL${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">set WAS_USER_SCRIPT=${profilePath}\bin\setupCmdLine.bat${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">call &quot;${pathShellScriptThis}&quot; %*${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">ENDLOCAL${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">set MYERRORLEVEL=%ERRORLEVEL%${CRLF}</echo>
+        <echo file="${profilePath}/bin/${fileShellScriptThis}" append="true">if defined PROFILE_CONFIG_ACTION exit %MYERRORLEVEL% else exit /b %MYERRORLEVEL%${CRLF}</echo>
+
+    </target>
+        
+    <target name="generateProxyShellScriptForThisFile"
+            description="Generates the proxy shell script for the given file">
+            
+        <antcall target="generateProxyShellScriptForThisFileOS400">
+            <param name="pathShellScriptThis" value="${pathShellScriptThis}"/>
+        </antcall>
+        <antcall target="generateProxyShellScriptForThisFileUNIX">
+            <param name="pathShellScriptThis" value="${pathShellScriptThis}"/>
+        </antcall>
+        <antcall target="generateProxyShellScriptForThisFileWindows">
+            <param name="pathShellScriptThis" value="${pathShellScriptThis}"/>
+        </antcall>            
+    </target>
+        
+    <target name="generateProxyShellScriptsForProfileBinOS400"
+            description="Generates shell scripts in profile bin directory"
+            if="configOS400">
+            
+        <foreach target="generateProxyShellScriptForThisFile"
+                propertyName="pathShellScriptThis">  
+                                  
+            <fileset dir="${WAS_HOME}/bin">                
+                <include name="*"/>
+                <exclude name="*.*"/>
+                <exclude name="setupCmdLine"/>
+                <exclude name="_fixprofileauthorities"/>
+                <exclude name="_postinstallexit"/>
+                <exclude name="_preuninstall"/>
+                <exclude name="_setupNative"/>
+                <exclude name="crtjavapgm"/>
+                <exclude name="deleteProdLod"/>
+            </fileset>
+        </foreach>            
+
+        <!-- Some DBCS system fail on i5/OS if Qshell script files are not set to CCSID 819 -->
+        <exec executable="setccsid">
+          <arg value="-R"/>
+          <arg value="819"/>
+          <arg value="${profilePath}/bin"/>
+        </exec>
+
+    </target>
+
+    <target name="generateProxyShellScriptsForProfileBin"
+            description="Generates shell scripts in profile bin directory"
+            unless="configOS400">
+            
+        <foreach target="generateProxyShellScriptForThisFile"
+                propertyName="pathShellScriptThis">  
+                                  
+            <fileset dir="${WAS_HOME}/bin">                
+                <include name="**/*.${shellScriptExt}"/>
+                <exclude name="**/setupCmdLine.${shellScriptExt}"/>
+            </fileset>
+        </foreach>            
+
+        <antcall target="chmodFilePermissionsUNIX" />
+    </target>
+    
+    <target name="copyConsoleScriptToProfile" unless="isEmbed">
+        <copy file="${WAS_HOME}/bin/deployConsole.py" todir="${profilePath}/bin"/>
+    </target>
+
+    <target name="generateProfileBin"
+        description="Generates all the bin shell scripts in the profile bin folder"
+        depends="detectCurrentOSFamily,
+		detectProductLevel,
+            defineOSSpecificConfigFlag,
+            setOSFileSeparator,
+            setOSCRLFSequence,
+            setOSShellScriptExtension,
+            generateProxyShellScriptsForProfileBinOS400,
+            generateProxyShellScriptsForProfileBin,
+	    copyConsoleScriptToProfile"/>                      
+</project>

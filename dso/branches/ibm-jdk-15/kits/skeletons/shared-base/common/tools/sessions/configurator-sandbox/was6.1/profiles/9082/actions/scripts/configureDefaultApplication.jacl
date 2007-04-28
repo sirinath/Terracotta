@@ -1,0 +1,422 @@
+#
+#----------------------------------------------------------------------
+# configureDefaultApplication.jacl
+#    - JACL script for the Default Application resource configuration
+#----------------------------------------------------------------------
+#
+#   This Jacl file configures the resources on the node that
+#   the default application requires.  The resources include:
+#      JDBC Providers
+#      Datasources
+#      Connection Factories
+#
+#   This script is designed to be called during install.  It expects
+#   the node name to be passed in.
+#  
+#   Here is an example of how to invoke it.
+#   
+#      wsadmin -conntype none -f configureDefaultApplication.jacl myNodeName
+#
+#----------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+# Set global constants
+#--------------------------------------------------------------------
+set TRACE_ENABLED false
+
+proc createJDBCProvider {nodeName serverName templateName providerName} {
+
+  #--------------------------------------------------------------------
+  # Set up globals
+  #--------------------------------------------------------------------
+  
+  global AdminConfig
+
+  #--------------------------------------------------------------------
+  # Create Provider
+  #--------------------------------------------------------------------
+
+  puts ""
+  puts "---------------------------------------------------------------"
+  puts "              Create JDBC provider                             "
+  puts "---------------------------------------------------------------"
+  puts " Scope:                                                        "
+  puts "    node                $nodeName                              "
+  puts "    server              $serverName                            "
+  puts " JDBC provider:                                                "
+  puts "    template            $templateName                          "
+  puts "    name                $providerName                          "
+  puts "---------------------------------------------------------------"
+  puts ""
+
+  #--------------------------------------------------------------------
+  # Get all templates whose name contain templateName
+  #--------------------------------------------------------------------
+
+  set templates [$AdminConfig listTemplates JDBCProvider $templateName]
+  
+  #--------------------------------------------------------------------
+  # Get the template that is named templateName
+  #--------------------------------------------------------------------
+
+  foreach templateEntry $templates {
+    set name [$AdminConfig showAttribute $templateEntry name] 
+    putTrace "Checking for match with $name"
+    if {$name == $templateName} {
+      set template $templateEntry
+      break;
+    }
+  }
+
+  if {![info exists template]} {
+    throw "The $templateName JDBC provider template could not be found."
+  }
+
+  #--------------------------------------------------------------------
+  # Get the config id for the node 
+  #--------------------------------------------------------------------
+  
+  putTrace "Get the ID for /Node:$nodeName/Server:$serverName." 
+  
+  set scope [$AdminConfig getid /Node:$nodeName/Server:$serverName]
+  if {[llength $scope] == 0} {
+     throw "The ID for /Node:$nodeName/Server:$serverName could not be found." 
+  }
+
+  #--------------------------------------------------------------------
+  # Create a new JDBCProvider using this template 
+  #--------------------------------------------------------------------
+
+  set jdbcProvider [$AdminConfig getid /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName]
+  if {[llength $jdbcProvider] == 0} {
+  
+    putTrace "Create the $providerName JDBC provider."
+    
+    set name_attr [list name $providerName]
+    set attrs [list $name_attr]
+    set newProv [$AdminConfig createUsingTemplate JDBCProvider $scope $attrs $template]
+    
+    #--------------------------------------------------------------------
+    # Remove the default Datasource that is added when the JDBC Provider
+    # was created 
+    #--------------------------------------------------------------------
+    
+    putTrace "Remove the default data source from $providerName."
+    
+    set defaultDS [$AdminConfig getid /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName/DataSource:/]
+    $AdminConfig remove $defaultDS
+
+  } else {
+    putInfo "The $providerName JDBC provider already exists."
+  }
+
+} 
+
+proc createDatasource {nodeName serverName providerName templateName dsName dsJNDI dsDesc dsAuthMech dbName authAlias connAttrs} {
+
+  #--------------------------------------------------------------------
+  # Set up globals
+  #--------------------------------------------------------------------
+
+  global AdminConfig
+
+  #--------------------------------------------------------------------
+  # Create DataSource
+  #--------------------------------------------------------------------
+
+  puts ""
+  puts "---------------------------------------------------------------"
+  puts "              Create data source                               "
+  puts "---------------------------------------------------------------"
+  puts " Scope:                                                        "
+  puts "    node                $nodeName                              "
+  puts "    server              $serverName                            "
+  puts " JDBC provider:                                                "
+  puts "    name                $providerName                          "
+  puts " Datasource:                                                   "
+  puts "    template            $templateName                          "
+  puts "    name                $dsName                                "
+  puts "    JNDI                $dsJNDI                                "
+  puts "    description         $dsDesc                                "
+  puts "    database name       $dbName                                "
+  puts "    auth alias          $authAlias                             "
+  puts "    connection attrs    $connAttrs                             "
+  puts "---------------------------------------------------------------"
+  puts ""
+
+  set ds [$AdminConfig getid /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName/DataSource:$dsName]
+  if {[llength $ds] != 0} {
+    putInfo "The $dsName data source already exists."
+    return
+  }
+  
+  #--------------------------------------------------------------------
+  # Get the config id for a DataSource Template
+  # Use "lindex" in case there is more than one matching templates (we
+  # just get the first one) 
+  #--------------------------------------------------------------------
+
+  putTrace "Get the $templateName data source template."
+  
+  set template [lindex [$AdminConfig listTemplates DataSource $templateName] 0]
+  if {[llength $template] == 0} {
+     throw "The $templateName data source template could not be found."
+  } 
+
+  #--------------------------------------------------------------------
+  # Get the config id for the provider 
+  #--------------------------------------------------------------------
+  
+  putTrace "Get the ID for the $providerName provider."
+  
+  set provider [$AdminConfig getid /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName]
+  if {[llength $provider] == 0} {
+     throw "The ID for the /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName could not be found."
+  } 
+  
+  #--------------------------------------------------------------------
+  # Create a new Datasource using this template 
+  # Note: This datasource will use the built in default RRA
+  #--------------------------------------------------------------------
+  
+  putTrace "Create a new data source named $dsName." 
+
+  set rraID [$AdminConfig getid "/Node:$nodeName/Server:$serverName/J2CResourceAdapter:WebSphere Relational Resource Adapter/"]
+
+  set name_attr         [list name $dsName]
+  set jndiName_attr     [list jndiName $dsJNDI]
+  set desc_attr         [list description $dsDesc]
+  set rra [list relationalResourceAdapter $rraID]
+  set authMechPref_attr [list authMechanismPreference $dsAuthMech]
+  set databaseName_prop [list [list name databaseName] [list value $dbName] [list type java.lang.String]]
+  set shutdownDB_prop   [list [list name shutdownDatabase] [list value ""] [list type java.lang.String]]
+  set dataSrcName_prop  [list [list name dataSourceName] [list value ""] [list type java.lang.String]]
+  set description_prop  [list [list name description] [list value ""] [list type java.lang.String]]
+  set connAttribs_prop  [list [list name connectionAttributes] [list value $connAttrs] [list type java.lang.String]]
+  set createDB_prop     [list [list name createDatabase] [list value ""] [list type java.lang.String]]
+  set newprops          [list $databaseName_prop $shutdownDB_prop $dataSrcName_prop $description_prop $connAttribs_prop $createDB_prop]
+  set resprops          [list resourceProperties $newprops]
+  set ps_attr           [list propertySet [list $resprops]]
+  # check if mapping needed
+  if { !($authAlias == "N_O_N_E") } {
+    set map_auth_attr   [list authDataAlias $authAlias] 
+    set map_configalias_attr [list mappingConfigAlias "DefaultPrincipalMapping"] 
+    set map_attrs       [list $map_auth_attr $map_configalias_attr]
+    set mapping_attr    [list mapping $map_attrs]
+    set attrs           [list $name_attr $jndiName_attr $desc_attr $rra $authMechPref_attr $map_auth_attr $ps_attr $mapping_attr]
+  } else {
+    set attrs           [list $name_attr $jndiName_attr $desc_attr $rra $authMechPref_attr $ps_attr]
+  }
+  set newDS [$AdminConfig createUsingTemplate DataSource $provider $attrs $template]
+
+}
+
+proc createConnectionFactory {nodeName serverName providerName dsName cfName cfAuthMech authAlias cfi} {
+
+  #--------------------------------------------------------------------
+  # Set up globals
+  #--------------------------------------------------------------------
+  
+  global AdminConfig
+
+  #--------------------------------------------------------------------
+  # Create connection factory
+  #--------------------------------------------------------------------
+
+  puts ""
+  puts "---------------------------------------------------------------"
+  puts "              Create connection factory                        "
+  puts "---------------------------------------------------------------"
+  puts " Scope:                                                        "
+  puts "    node                $nodeName                              "
+  puts "    server              $serverName                            "
+  puts " JDBC provider:                                                "
+  puts "    name                $providerName                          "
+  puts " Datasource:                                                   "
+  puts "    name                $dsName                                "
+  puts " Connection factory:                                           "
+  puts "    name                $cfName                                "
+  puts "    auth mechanism      $cfAuthMech                            "
+  puts "    auth alias          $authAlias                             "
+  puts "    interface           $cfi                                   "
+  puts "---------------------------------------------------------------"
+  puts ""
+
+  set cf [$AdminConfig getid "/Node:$nodeName/Server:$serverName/J2CResourceAdapter:WebSphere Relational Resource Adapter/CMPConnectorFactory:$cfName"]
+  if {[llength $cf] != 0} {
+    putInfo "The $cfName connection factory already exists."
+    return
+  }
+
+  #--------------------------------------------------------------------
+  # Get IDs that we will need to make the CF
+  #--------------------------------------------------------------------
+
+  putTrace "Get the ID for the default relational resource adapter and the ID for the $dsName data source."
+  
+  set rraID [$AdminConfig getid "/Node:$nodeName/Server:$serverName/J2CResourceAdapter:WebSphere Relational Resource Adapter/"]
+  set dsID [$AdminConfig getid /Node:$nodeName/Server:$serverName/JDBCProvider:$providerName/DataSource:$dsName/]
+
+  #--------------------------------------------------------------------
+  # Create CF using default RRA
+  #--------------------------------------------------------------------
+
+  putTrace "Create the $cfName connection factory for the $dsName database."
+  
+  set name_attr       [list name $cfName]
+  set authmech_attr   [list authMechanismPreference $cfAuthMech]
+  set cmpds_attr      [list cmpDatasource $dsID]
+
+  #--------------------------------------------------------------------
+  # Get ConnectionDefinition
+  #--------------------------------------------------------------------
+
+  set dd [$AdminConfig showAttribute $rraID deploymentDescriptor]
+  set radapter [$AdminConfig showAttribute $dd resourceAdapter]
+  set out  [$AdminConfig showAttribute $radapter outboundResourceAdapter]
+  set cdlist [lindex [$AdminConfig showAttribute $out connectionDefinitions] 0]
+
+  putTrace "Locate the $cfi connection factory interface."
+  foreach cd $cdlist {
+    set intf [$AdminConfig showAttribute $cd connectionFactoryInterface] 
+    if {$intf == $cfi } {
+      break;
+    }
+  }
+  set cd_attr [list connectionDefinition $cd]
+
+  putTrace "Create a new connection factory named $cfName."
+
+  # check if mapping needed
+  if { !($authAlias == "N_O_N_E") } {
+    set map_auth_attr [list authDataAlias $authAlias] 
+    set map_attrs     [list $map_auth_attr]
+    set mapping_attr  [list mapping $map_attrs]
+    set attrs         [list $name_attr $authmech_attr $cmpds_attr $mapping_attr $cd_attr]
+  } else {
+    set attrs         [list $name_attr $authmech_attr $cmpds_attr $cd_attr]
+  }
+  set newCF [$AdminConfig create CMPConnectorFactory $rraID $attrs]
+  
+}
+
+#--------------------------------------------------------------------
+# Prints an information message
+#--------------------------------------------------------------------
+proc putInfo {msg} {
+  puts "SAMP INFO: $msg"
+}
+
+#--------------------------------------------------------------------
+# Prints a trace message
+#--------------------------------------------------------------------
+proc putTrace {msg} {
+  global TRACE_ENABLED
+  if { $TRACE_ENABLED } {
+    puts "SAMP TRACE: $msg"
+  }
+}
+
+#--------------------------------------------------------------------
+# Throws an error message
+#--------------------------------------------------------------------
+proc throw {msg} {
+  return -code error [formatError $msg]
+}
+
+proc save {} {
+
+  #--------------------------------------------------------------------
+  # Set up globals
+  #--------------------------------------------------------------------
+  
+  global AdminConfig
+
+  #--------------------------------------------------------------------
+  # Save all the changes
+  #--------------------------------------------------------------------
+  
+  puts ""
+  puts "---------------------------------------------------------------"
+  puts "              Save                                             "
+  puts "---------------------------------------------------------------"
+  puts ""
+  
+  $AdminConfig save
+
+}
+
+#----------------------------------------------------------------------
+# Main
+#----------------------------------------------------------------------
+
+if { !($argc >= 1) } {
+  puts "configureDefaultApplication.jacl: This script requires 1 parameter"
+  puts "                Node - the name of the node under which to configure"
+  puts "                Default Application resources"
+  puts "Optional parameter:"
+  puts "                Server - the name of the server under which to configure"
+  puts "                Default Application resources"
+  puts ""
+  puts "                e.g.: configureDefaultApplication.jacl myNodeName"
+  puts "                      configureDefaultApplication.jacl myNodeName myServerName"
+} else {
+
+  puts ""
+  puts "configureDefaultApplication.jacl: Configure Default Application resources"
+  puts ""
+
+  #--------------------------------------------------------------------
+  # Get arguments
+  #--------------------------------------------------------------------
+  
+  set node [lindex $argv 0]
+  if { ($argc >= 2) } {
+     set server [lindex $argv 1]
+  } else {
+     set server "server1"
+  }
+
+  #--------------------------------------------------------------------
+  # Create JDBC Provider
+  #--------------------------------------------------------------------
+  
+  set templName    "Derby JDBC Provider"
+  # All Samples that need a JDBC Provider should use/share this one
+  set provName     "Derby JDBC Provider"
+  createJDBCProvider $node $server $templName $provName
+  
+  #--------------------------------------------------------------------
+  # Create Datasource
+  #--------------------------------------------------------------------
+  
+  set templName    "Derby JDBC Driver DataSource"
+  set dsName       "Default Datasource"
+  set dsJNDI       "DefaultDatasource"
+  set dsDesc       "Datasource for the WebSphere Default Application"
+  set dsAuthMech   "BASIC_PASSWORD"
+  set dbName       "\${APP_INSTALL_ROOT}/\${CELL}/DefaultApplication.ear/DefaultDB"
+  set secAuthAlias "N_O_N_E"
+  set connAttrs    "upgrade=true"
+  createDatasource $node $server $provName $templName $dsName $dsJNDI $dsDesc $dsAuthMech $dbName $secAuthAlias $connAttrs
+  
+  #--------------------------------------------------------------------
+  # Create Connection Factory (use builtin_rra)
+  #--------------------------------------------------------------------
+  
+  set dsName       "Default Datasource"
+  set cfName       "Default_CF"
+  set cfAuthMech   "BASIC_PASSWORD"
+  set secAuthAlias "N_O_N_E"
+  set cfi          "javax.resource.cci.ConnectionFactory"
+  createConnectionFactory $node $server $provName $dsName $cfName $cfAuthMech $secAuthAlias $cfi
+  
+  #--------------------------------------------------------------------
+  # Save configuration
+  #--------------------------------------------------------------------
+  
+  save
+
+  puts ""
+  puts "configureDefaultApplication.jacl: The script completed successfully."
+}

@@ -1,0 +1,164 @@
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:resources="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.xmi" xmlns:resources.jdbc="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.jdbc.xmi" xmlns:resources.url="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.url.xmi" xmlns:resources.mail="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.mail.xmi">
+    <!--
+     // 5724-I63, 5724-H88 (C) COPYRIGHT International Business Machines Corp. 2001, 2004
+     // All Rights Reserved * Licensed Materials - Property of IBM
+     -->
+
+    <!--  Default (User-defined) Provider Template  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_0" name="User-defined JDBC Provider Only" providerType="User-defined JDBC Provider" description="Custom JDBC2.0-compliant Provider configuration" implementationClassName="com.{???}ConnectionPoolDataSource" >
+        <classpath>${User-defined_JDBC_DRIVER_PATH}/databaseBinary.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  DB2 Universal driver Provider Template  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DB2_UNI_1" name="DB2 Universal JDBC Driver Provider Only" providerType="DB2 Universal JDBC Driver Provider" description="Non-XA DB2 Universal JDBC Driver-compliant Provider.
+  Datasources created under this provider support only 1-phase commit processing except in the case where driver type 2 is used under WAS z/OS. On WAS z/OS, driver type 2
+  uses RRS and supports 2-phase commit processing" implementationClassName="com.ibm.db2.jcc.DB2ConnectionPoolDataSource" xa="false">
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc.jar</classpath>
+        <classpath>${UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc_license_cu.jar</classpath>
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc_license_cisuz.jar</classpath>
+        <nativepath>${DB2UNIVERSAL_JDBC_DRIVER_NATIVEPATH}</nativepath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DB2_UNI_2" name="DB2 Universal JDBC Driver Provider Only (XA)" providerType="DB2 Universal JDBC Driver Provider (XA)" description="XA DB2 Universal JDBC Driver-compliant Provider. Datasources created under this provider support the use of XA to perform
+   2-phase commit processing. Use of driver type 2 on WAS z/OS is not supported for datasources created under this provider." implementationClassName="com.ibm.db2.jcc.DB2XADataSource" xa="true">
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc.jar</classpath>
+        <classpath>${UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc_license_cu.jar</classpath>
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc_license_cisuz.jar</classpath>
+        <nativepath>${DB2UNIVERSAL_JDBC_DRIVER_NATIVEPATH}</nativepath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Standard DB2 Provider Templates  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_3" name="DB2 Legacy CLI-based Type 2 JDBC Driver Provider Only" providerType="DB2 Legacy CLI-based Type 2 JDBC Driver" description="Deprecated - minVer null - maxVer 6.0.2 - DB2 JDBC2-compliant Provider" implementationClassName="COM.ibm.db2.jdbc.DB2ConnectionPoolDataSource" xa="false">
+        <classpath>${DB2_JDBC_DRIVER_PATH}/db2java.zip</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_4" name="DB2 Legacy CLI-based Type 2 JDBC Driver Provider Only (XA)" providerType="DB2 Legacy CLI-based Type 2 JDBC Driver (XA)" description="Deprecated - minVer null - maxVer 6.0.2 - DB2 JDBC2-compliant Provider" implementationClassName="COM.ibm.db2.jdbc.DB2XADataSource" xa="true">
+        <classpath>${DB2_JDBC_DRIVER_PATH}/db2java.zip</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!-- iSeries Native Driver -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2400_1" name="DB2 UDB for iSeries Provider Only (Native)" providerType="DB2 UDB for iSeries (Native)" description="IBM Developer Kit for Java JDBC Driver for local DB2 connections on iSeries. This driver is not recommended for remote access. The jar file for this driver is /QIBM/ProdData/Java400/ext/db2_classes.jar" implementationClassName="com.ibm.db2.jdbc.app.UDBConnectionPoolDataSource" xa="false">
+        <classpath>${OS400_NATIVE_JDBC_DRIVER_PATH}/db2_classes.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2400_2" name="DB2 UDB for iSeries Provider Only (Native XA)" providerType="DB2 UDB for iSeries (Native XA)" description="IBM Developer Kit for Java XA-compliant JDBC Driver for local DB2 connections on iSeries. This driver is not recommended for remote access. The jar file for this driver is /QIBM/ProdData/Java400/ext/db2_classes.jar" implementationClassName="com.ibm.db2.jdbc.app.UDBXADataSource" xa="true">
+        <classpath>${OS400_NATIVE_JDBC_DRIVER_PATH}/db2_classes.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!-- iSeries Toolbox Driver  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2400_7" name="DB2 UDB for iSeries Provider Only (Toolbox)" providerType="DB2 UDB for iSeries (Toolbox)" description="IBM Toolbox for Java JDBC Driver for remote DB2 connections on iSeries. This driver is recommended over the IBM Developer Kit for Java JDBC Driver for access to remote DB2 UDB for iSeries. The jar file for this driver is /QIBM/ProdData/Http/Public/jt400/lib/jt400.jar" implementationClassName="com.ibm.as400.access.AS400JDBCConnectionPoolDataSource" xa="false">
+        <classpath>${OS400_TOOLBOX_JDBC_DRIVER_PATH}/jt400.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2400_8" name="DB2 UDB for iSeries Provider Only (Toolbox XA)" providerType="DB2 UDB for iSeries (Toolbox XA)" description="XA-compliant IBM Toolbox for Java JDBC Driver for remote DB2 connections on iSeries. This driver is recommended over the IBM Developer Kit for Java JDBC Driver for remote connections on iSeries, and provides JTA support. The jar file for this driver is /QIBM/ProdData/Http/Public/jt400/lib/jt400.jar" implementationClassName="com.ibm.as400.access.AS400JDBCXADataSource" xa="true">
+        <classpath>${OS400_TOOLBOX_JDBC_DRIVER_PATH}/jt400.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  DB2 for z/OS Local RRS-enabled datasource - feature WS14621.01 -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DB2_RRS_zOS" name="DB2 for zOS Local JDBC Provider Only (RRS)" providerType="DB2 for zOS Local JDBC Provider (RRS)" description="minVer null - maxVer 6.0.2 - DB2 for z/OS Local JDBC2-compliant Provider" implementationClassName="com.ibm.db2.jcc.DB2ConnectionPoolDataSource" xa="false">
+        <classpath>${DB2390_JDBC_DRIVER_PATH}/classes/db2j2classes.zip</classpath>
+        <nativepath>${DB2390_JDBC_DRIVER_PATH}/lib</nativepath>
+        <!--  4.0-style connection mgmt. -->
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Cloudscape Embedded JDBC Provider   -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2j_3" name="Cloudscape JDBC Provider Only" providerType="Cloudscape JDBC Provider" description="Deprecated - minVer null - maxVer 6.0.2 - Cloudscape 51 embedded JDBC2-compliant Provider. This provider has been deprecated and is only configurable in version 6.0.2.x and earlier nodes" implementationClassName="com.ibm.db2j.jdbc.DB2jConnectionPoolDataSource" xa="false">
+        <classpath>${CLOUDSCAPE_JDBC_DRIVER_PATH}/db2j.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2j_4" name="Cloudscape JDBC Provider Only (XA)" providerType="Cloudscape JDBC Provider (XA)" description="Deprecated - minVer null - maxVer 6.0.2 - Cloudscape 51 embedded JDBC2-compliant Provider. This provider has been deprecated and is only configurable in version 6.0.2.x and earlier nodes" implementationClassName="com.ibm.db2j.jdbc.DB2jXADataSource" xa="true">
+        <classpath>${CLOUDSCAPE_JDBC_DRIVER_PATH}/db2j.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Cloudscape NetworkServer JDBC Provider using universal driver  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_db2jN_1" name="Cloudscape Network Server Using Universal JDBC Driver Provider Only" providerType="Cloudscape Network Server Using Universal JDBC Driver" description="Deprecated - minVer null - maxVer 6.0.2 - Cloudscape NetworkServer Provider using db2 universal driver. This provider has been deprecated and is only configurable in version 6.0.2.x and earlier nodes" implementationClassName="com.ibm.db2.jcc.DB2ConnectionPoolDataSource" xa="false">
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc.jar</classpath>
+        <classpath>${CLOUDSCAPE_JDBC_DRIVER_PATH}/otherJars/db2jcc.jar</classpath>
+        <classpath>${CLOUDSCAPE_JDBC_DRIVER_PATH}/db2j.jar</classpath>
+        <classpath>${UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc_license_cu.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Informix Driver Templates   -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Informix_1" name="Informix JDBC Driver Provider Only" providerType="Informix JDBC Driver" description="Informix JDBC Driver" implementationClassName="com.informix.jdbcx.IfxConnectionPoolDataSource" xa="false">
+        <classpath>${INFORMIX_JDBC_DRIVER_PATH}/ifxjdbc.jar</classpath>
+        <classpath>${INFORMIX_JDBC_DRIVER_PATH}/ifxjdbcx.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Informix_2" name="Informix JDBC Driver Provider Only (XA)" providerType="Informix JDBC Driver (XA)" description="Informix JDBC Driver for JTA/XA (two-phase commit)" implementationClassName="com.informix.jdbcx.IfxXADataSource" xa="true">
+        <classpath>${INFORMIX_JDBC_DRIVER_PATH}/ifxjdbc.jar</classpath>
+        <classpath>${INFORMIX_JDBC_DRIVER_PATH}/ifxjdbcx.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Sybase jConnect 5.5 Driver Templates  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Sybase_3" name="Sybase JDBC 2 Driver Provider Only" providerType="Sybase JDBC 2 Driver" description="Sybase JDBC 2 Driver" implementationClassName="com.sybase.jdbc2.jdbc.SybConnectionPoolDataSource" xa="false">
+        <classpath>${SYBASE_JDBC_DRIVER_PATH}/jconn2.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Sybase_4" name="Sybase JDBC 2 Driver Provider Only (XA)" providerType="Sybase JDBC 2 Driver (XA)" description="Sybase JDBC 2 Driver for two-phase commit (JTA/XA)" implementationClassName="com.sybase.jdbc2.jdbc.SybXADataSource" xa="true">
+        <classpath>${SYBASE_JDBC_DRIVER_PATH}/jconn2.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Sybase jConnect 6.0 Driver Templates  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Sybase_5" name="Sybase JDBC 3 Driver Provider Only" providerType="Sybase JDBC 3 Driver" description="minVer 6.1 - maxVer null - Sybase JDBC 3 Driver. This provider is only configurable in version 6.1 and later nodes" implementationClassName="com.sybase.jdbc3.jdbc.SybConnectionPoolDataSource" xa="false">
+        <classpath>${SYBASE_JDBC_DRIVER_PATH}/jconn3.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Sybase_6" name="Sybase JDBC 3 Driver Provider Only (XA)" providerType="Sybase JDBC 3 Driver (XA)" description="minVer 6.1 - maxVer null - Sybase JDBC 3 Driver for two-phase commit (JTA/XA). This provider is only configurable in version 6.1 and later nodes" implementationClassName="com.sybase.jdbc3.jdbc.SybXADataSource" xa="true">
+        <classpath>${SYBASE_JDBC_DRIVER_PATH}/jconn3.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Oracle Driver Templates    -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Oracle_5" name="Oracle JDBC Driver Provider Only" providerType="Oracle JDBC Driver" description="Oracle JDBC Driver" implementationClassName="oracle.jdbc.pool.OracleConnectionPoolDataSource" xa="false">
+        <classpath>${ORACLE_JDBC_DRIVER_PATH}/ojdbc14.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_Oracle_6" name="Oracle JDBC Driver Provider Only (XA)" providerType="Oracle JDBC Driver (XA)" description="Oracle JDBC Driver (XA)" implementationClassName="oracle.jdbc.xa.client.OracleXADataSource" xa="true">
+        <classpath>${ORACLE_JDBC_DRIVER_PATH}/ojdbc14.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  DataDirect ConnectJDBC (Type 4) Driver for MS SQL Server - (for unbranded ) Template    -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DataDirect_1" name="DataDirect ConnectJDBC type 4 driver for MS SQL Server Provider Only" providerType="DataDirect ConnectJDBC type 4 driver for MS SQL Server" description="DataDirect ConnectJDBC type 4 driver for MS SQL Server." implementationClassName="com.ddtek.jdbcx.sqlserver.SQLServerDataSource" xa="false">
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/sqlserver.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/base.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/util.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/../spy/spy.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DataDirect_2" name="DataDirect ConnectJDBC type 4 driver for MS SQL Server Provider Only (XA)" providerType="DataDirect ConnectJDBC type 4 driver for MS SQL Server (XA)" description="DataDirect ConnectJDBC type 4 driver for MS SQL Server(XA)." implementationClassName="com.ddtek.jdbcx.sqlserver.SQLServerDataSource" xa="true">
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/sqlserver.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/base.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/util.jar</classpath>
+        <classpath>${CONNECTJDBC_JDBC_DRIVER_PATH}/../spy/spy.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  "WebSphere embedded ConnectJDBC driver for MS SQL Server" - ( WS branded) Template   -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DataDirect_1a" name="WebSphere embedded ConnectJDBC driver for MS SQL Server Provider Only" providerType="WebSphere embedded ConnectJDBC driver for MS SQL Server" description="WebSphere embedded ConnectJDBC driver for MS SQL Server." implementationClassName="com.ibm.websphere.jdbcx.sqlserver.SQLServerDataSource" xa="false">
+        <classpath>${WAS_LIBS_DIR}/sqlserver.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/base.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/util.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/spy.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_DataDirect_2a" name="WebSphere embedded ConnectJDBC driver for MS SQL Server Provider Only (XA)" providerType="WebSphere embedded ConnectJDBC driver for MS SQL Server (XA)" description="WebSphere embedded ConnectJDBC driver for MS SQL Server(XA)." implementationClassName="com.ibm.websphere.jdbcx.sqlserver.SQLServerDataSource" xa="true">
+        <classpath>${WAS_LIBS_DIR}/sqlserver.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/base.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/util.jar</classpath>
+        <classpath>${WAS_LIBS_DIR}/spy.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Derby Embedded JDBC Provider   -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_derby_3" name="Derby JDBC Provider Only" providerType="Derby JDBC Provider" description="minVer 6.0.2 - maxVer null - Derby embedded non-XA  JDBC Provider. This provider is only configurable in version 6.0.2 and later nodes" implementationClassName="org.apache.derby.jdbc.EmbeddedConnectionPoolDataSource" xa="false">
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/derby.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+    
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_derby_4" name="Derby JDBC Provider Only (XA)" providerType="Derby JDBC Provider (XA)" description="minVer 6.0.2 - maxVer null - Derby embedded XA JDBC Provider. This provider is only configurable in version 6.0.2 and later nodes" implementationClassName="org.apache.derby.jdbc.EmbeddedXADataSource" xa="true">
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/derby.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Derby NetworkServer JDBC Provider using universal driver  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_derbyNS_1" name="Derby Network Server Using Universal JDBC Driver Provider Only" providerType="Derby Network Server Using Universal JDBC Driver" description="Deprecated - minVer 6.0.2 - maxVer 6.0.2 - Derby Network Server Provider using DB2 universal driver. This provider has been deprecated and should only be used in version 6.0.2 nodes.  Use the JDBC provider with the provider type, &quot;Derby Network Server using Derby Client Only&quot;." implementationClassName="com.ibm.db2.jcc.DB2ConnectionPoolDataSource" xa="false">
+        <classpath>${DB2UNIVERSAL_JDBC_DRIVER_PATH}/db2jcc.jar</classpath>    
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/deprecated/db2jcc.jar</classpath>
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/deprecated/db2jcc_license_c.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Derby NetworkServer JDBC Provider  -->    
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_derbyNS_2" name="Derby Network Server Using Derby Client Only" providerType="Derby Network Server Using Derby Client" description="minVer 6.1 - maxVer null - Derby Network Server Provider that uses the Derby Client. This provider is only configurable in version 6.1 and later nodes" implementationClassName="org.apache.derby.jdbc.ClientConnectionPoolDataSource" xa="false">
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/derbyClient.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+
+    <!--  Provider: Derby NetworkServer JDBC Provider (XA)  -->
+    <resources.jdbc:JDBCProvider xmi:id="JDBCProvider_derbyNS_3" name="Derby Network Server Using Derby Client Only (XA)" providerType="Derby Network Server Using Derby Client (XA)" description="minVer 6.1 - maxVer null - Derby Network Server (XA) Provider that uses the Derby Client. This provider is only configurable in version 6.1 and later nodes" implementationClassName="org.apache.derby.jdbc.ClientXADataSource" xa="true">
+        <classpath>${DERBY_JDBC_DRIVER_PATH}/derbyClient.jar</classpath>
+    </resources.jdbc:JDBCProvider>
+           
+</xmi:XMI>

@@ -1,0 +1,104 @@
+<project name="executeSecuritySettingConfig" default="executeSecuritySettingConfig" basedir="."> 
+     
+    <taskdef name="wscmtlog" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/> 
+ 
+    <taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>   
+        
+    <target name="detectCurrentOSFamily"
+            description="Detects the current OS family (UNIX or Windows)">
+        <wscmtlog>here</wscmtlog>
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+    
+       <!-- z/OS setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="z/os">
+            <os family="z/os"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/> 
+        </condition>
+
+        <condition property="currentOSFamily" value="unix">
+            <os family="unix"/>
+        </condition>
+
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog> 
+    </target>
+
+
+    <target name="checkAdminUser"
+            description="If enableAdminSecurity is set to false, pass in null string for the adminUserName">
+	<condition property="user" value="nullstring">
+		<equals arg1="${enableAdminSecurity}" arg2="false"/>
+	</condition>
+	<condition property="user" value="${adminUserName}">
+		<equals arg1="${enableAdminSecurity}" arg2="true"/>
+	</condition>
+    </target>
+
+    <target name="checkAdminPwd"
+            description="If enableAdminSecurity is set to false, pass in null string for the adminPassword">
+	<condition property="password" value="nullstring">
+		<equals arg1="${enableAdminSecurity}" arg2="false"/>
+	</condition>
+	<condition property="password" value="${adminPassword}">
+		<equals arg1="${enableAdminSecurity}" arg2="true"/>
+	</condition>
+    </target>
+
+    <target name="checkIfUsingSAF"
+            description="Check to see if SAF is chosen user repository on Z rather than WIM and set the USING_SAF value appropriately">
+
+        <condition property="USING_SAF" value="true">
+        <and>
+                <equals arg1="${currentOSFamily}" arg2="z/os"/>
+                <equals arg1="${useSAFSecurity}" arg2="true"/>
+        </and>
+        </condition>
+    </target>
+
+
+
+
+    <target name="runSetSecurityJACL"
+            description="Runs the JACL script to update the default security template with the security settings and create a user in the WIM file-based repository"
+            unless="USING_SAF">
+
+        <wscmtlog>Setting the security settings in the default security template, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/SetSecurity.log</wscmtlog>
+        <wscmtlog>wsadmin</wscmtlog>     
+        <wscmtlog>${enableAdminSecurity}</wscmtlog>
+	<wscmtlog>${adminUserName}</wscmtlog>
+        <wscmtlog>${templatePath}</wscmtlog>
+        
+          <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/SetSecurity.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 command="$AdminTask applyProfileSecuritySettings {-enableAdmin ${enableAdminSecurity} -adminUser ${user} -adminPwd {${password}}}"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+        </wsadmin> 
+
+        <wscmtlog>finished execing wsadmin</wscmtlog>
+    </target> 
+ 
+    <target name="executeSecuritySettingConfig"
+        description="Sets security settings"           
+        depends="detectCurrentOSFamily,
+                 checkAdminUser,
+		 checkAdminPwd,
+                 checkIfUsingSAF,
+                 runSetSecurityJACL">
+    </target>
+
+</project>

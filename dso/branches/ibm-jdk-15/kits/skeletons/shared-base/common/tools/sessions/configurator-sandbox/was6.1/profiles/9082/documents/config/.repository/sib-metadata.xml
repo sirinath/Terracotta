@@ -1,0 +1,297 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<!-- WorkSpace Meta Data for SIB -->
+
+<!--
+@start_restricted_prolog@
+Version: @(#) 1.15 SIB/ws/code/sib.admin.config/src/config/.repository/sib-metadata.xml, SIB.admin.config, WAS61.SIB, b0620.04 06/01/04 04:07:22 [5/15/06 17:21:29]
+
+Licensed Materials - Property of IBM
+
+"Restricted Materials of IBM"
+
+5724-I63, 5724-H88, 5655-N02, 5733-W70
+
+(C) Copyright IBM Corp. 2003, 2006 All Rights Reserved.
+
+US Government Users Restricted Rights - Use, duplication or
+disclosure restricted by GSA ADP Schedule Contract with
+IBM Corp.
+@end_restricted_prolog@
+-->
+
+<metadata>
+
+	<metadata-name>SIB</metadata-name>
+
+	<contexts>
+
+		<context>
+			<context-name>cells</context-name>
+            <child-document-names>
+                <child-document-name>MQ Servers</child-document-name>
+            </child-document-names>
+	    	<child-context-names>
+		    	<child-context-name>buses</child-context-name>
+	    	</child-context-names>
+		</context>
+
+	    <context>
+	    	<context-name>default</context-name>
+	    	<child-context-names>
+	    	    <child-context-name>buses</child-context-name>
+	    	</child-context-names>
+        </context>
+
+	    <context>
+	    	<context-name>buses</context-name>
+	    	<root-document-type>Bus</root-document-type>
+	    	<child-document-names>
+				<child-document-name>Bus</child-document-name>
+                <child-document-name>Destinations</child-document-name>
+                <child-document-name>Mediations</child-document-name>
+                <child-document-name>Authorisations</child-document-name>
+                <child-document-name>MQServerBusMembers</child-document-name>
+	    	</child-document-names>
+   		</context>
+
+		<context>
+			<context-name>servers</context-name>
+			<child-document-names>
+				<child-document-name>SIB Service</child-document-name>
+				<child-document-name>Messaging Engines</child-document-name>
+			</child-document-names>
+		</context>
+
+		<context>
+			<context-name>clusters</context-name>
+			<child-document-names>
+				<child-document-name>Messaging Engines</child-document-name>
+			</child-document-names>
+		</context>
+
+	</contexts>
+
+	<documents>
+
+		<document>
+      <document-name>Authorisations</document-name>
+      <file-pattern>sib-authorisations.xml</file-pattern>
+      <root-refobject-types>
+        <root-refobject-type>SIBAuthSpace</root-refobject-type>
+      </root-refobject-types>
+      <child-validator-names>
+        <child-validator-name>SIBAuthorisations Base</child-validator-name>
+        <child-validator-name>SIBAuthorisations Cross</child-validator-name>
+      </child-validator-names>
+    </document>
+
+    <document>
+			<document-name>Bus</document-name>
+			<file-pattern>sib-bus.xml</file-pattern>
+			<root-refobject-types>
+				<root-refobject-type>SIBus</root-refobject-type>
+			</root-refobject-types>
+			<child-validator-names>
+				<child-validator-name>SIBus Base</child-validator-name>
+				<child-validator-name>SIBus Cross</child-validator-name>
+			</child-validator-names>
+		</document>
+
+        <document>
+			<document-name>Destinations</document-name>
+			<file-pattern>sib-destinations.xml</file-pattern>
+			<root-refobject-types>
+				<root-refobject-type>SIBQueue</root-refobject-type>
+				<root-refobject-type>SIBTopicSpace</root-refobject-type>
+                <root-refobject-type>SIBDestinationAlias</root-refobject-type>
+                <root-refobject-type>SIBDestinationForeign</root-refobject-type>
+                <root-refobject-type>SIBPort</root-refobject-type>
+                <root-refobject-type>SIBWebService</root-refobject-type>
+            </root-refobject-types>
+			<child-validator-names>
+        <child-validator-name>SIBDestinations Base</child-validator-name>
+        <child-validator-name>SIBDestinations Cross</child-validator-name>
+			</child-validator-names>
+		</document>
+
+        <document>
+			<document-name>Mediations</document-name>
+			<file-pattern>sib-mediations.xml</file-pattern>
+			<root-refobject-types>
+				<root-refobject-type>SIBDestinationMediation</root-refobject-type>
+			</root-refobject-types>
+			<child-validator-names>
+        <child-validator-name>SIBMediations Base</child-validator-name>
+        <child-validator-name>SIBMediations Cross</child-validator-name>
+			</child-validator-names>
+		</document>
+
+        <document>
+      <document-name>Messaging Engines</document-name>
+      <file-pattern>sib-engines.xml</file-pattern>
+			<root-refobject-types>
+        <root-refobject-type>SIBMessagingEngine</root-refobject-type>
+			</root-refobject-types>
+			<child-validator-names>
+        <child-validator-name>SIBMessagingEngines Base</child-validator-name>
+        <child-validator-name>SIBMessagingEngines Cross</child-validator-name>
+			</child-validator-names>
+		</document>
+
+		<document>
+			<document-name>SIB Service</document-name>
+			<file-pattern>sib-service.xml</file-pattern>
+			<root-refobject-types>
+				<root-refobject-type>SIBService</root-refobject-type>
+			</root-refobject-types>
+			<child-validator-names>
+				<child-validator-name>SIBService Base</child-validator-name>
+				<child-validator-name>SIBService Cross</child-validator-name>
+			</child-validator-names>
+		</document>
+
+        <document>
+            <document-name>MQ Servers</document-name>
+            <file-pattern>sib-mqservers.xml</file-pattern>
+            <root-refobject-types>
+                <root-refobject-type>SIBMQServer</root-refobject-type>
+            </root-refobject-types>
+            <child-validator-names>
+                <child-validator-name>SIBMQServer Base</child-validator-name>
+                <child-validator-name>SIBMQServer Cross</child-validator-name>
+            </child-validator-names>
+        </document>
+
+        <document>
+            <document-name>MQServerBusMembers</document-name>
+            <file-pattern>sib-mqserverbusmembers.xml</file-pattern>
+            <root-refobject-types>
+                <root-refobject-type>SIBMQServerBusMember</root-refobject-type>
+            </root-refobject-types>
+            <child-validator-names>
+                <child-validator-name>SIBMQServerBusMember Base</child-validator-name>
+                <child-validator-name>SIBMQServerBusMember Cross</child-validator-name>
+            </child-validator-names>
+        </document>
+
+	</documents>
+
+  <validators>
+
+    <validator>
+      <validator-name>SIBAuthorisations Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBAuthorisationsValidator</validator-class-name>
+      <validator-description>SIBAuthorisations Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBAuthorisations Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBAuthorisationsCrossValidator</validator-class-name>
+      <validator-description>SIBAuthorisations Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBus Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBusValidator</validator-class-name>
+      <validator-description>SIBus Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBus Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBusCrossValidator</validator-class-name>
+      <validator-description>SIBus Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBDestinations Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBDestinationsValidator</validator-class-name>
+      <validator-description>SIBDestinations Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBDestinations Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBDestinationsCrossValidator</validator-class-name>
+      <validator-description>SIBDestinations Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMediations Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMediationsValidator</validator-class-name>
+      <validator-description>SIBMediations Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMediations Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMediationsCrossValidator</validator-class-name>
+      <validator-description>SIBMediations Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMessagingEngines Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMessagingEnginesValidator</validator-class-name>
+      <validator-description>SIBMessagingEngines Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMessagingEngines Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMessagingEnginesCrossValidator</validator-class-name>
+      <validator-description>SIBMessagingEngines Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMQServer Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMQServerValidator</validator-class-name>
+      <validator-description>SIBMQServer Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMQServer Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMQServerCrossValidator</validator-class-name>
+      <validator-description>SIBMQServer Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMQServerBusMember Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMQServerBusMemberValidator</validator-class-name>
+      <validator-description>SIBMQServerBusMember Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBMQServerBusMember Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBMQServerBusMemberCrossValidator</validator-class-name>
+      <validator-description>SIBMQServerBusMember Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBService Base</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBServiceValidator</validator-class-name>
+      <validator-description>SIBService Base</validator-description>
+      <cross-document>false</cross-document>
+    </validator>
+
+    <validator>
+      <validator-name>SIBService Cross</validator-name>
+      <validator-class-name>com.ibm.websphere.validation.sib.SIBServiceCrossValidator</validator-class-name>
+      <validator-description>SIBService Cross</validator-description>
+      <cross-document>true</cross-document>
+    </validator>
+
+  </validators>
+
+</metadata>
+

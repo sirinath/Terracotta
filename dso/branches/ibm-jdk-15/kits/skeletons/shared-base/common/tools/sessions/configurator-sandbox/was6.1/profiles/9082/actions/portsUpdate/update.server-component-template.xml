@@ -1,0 +1,9 @@
+    <target name="update.server-component-template.xml">
+    
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="WC_defaulthost_secure"/>
+			<param name="file" value="${file}"/>
+			<param name="token" value="xmi:id=&quot;EndPoint_2&quot;(.*)port=&quot;(.*)&quot;"/>
+			<param name="tokenValue" value="xmi:id=&quot;EndPoint_2&quot;\1port=&quot;${WC_defaulthost_secure}&quot;"/>
+		</antcall>
+    </target>

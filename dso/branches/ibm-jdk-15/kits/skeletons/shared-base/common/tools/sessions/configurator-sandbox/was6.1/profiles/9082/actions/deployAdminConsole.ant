@@ -1,0 +1,144 @@
+<project name="webuiConfig" default="webuiConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+        
+    <taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>
+    
+    <property name="NODE_NAME" value="${WS_CMT_NODE_NAME}"/>
+    <property name="CELL_NAME" value="${WS_CMT_CELL_NAME}"/>
+    <property name="serverName" value="server1"/>
+
+    <target name="zSetServerName"
+        description="For z/OS only, set serverName to user provided value" if="isCurrentOSzOS">						
+        <property name="serverName" value="${serverName}"/>
+    </target>    
+    
+    <target name="convertWASHomeToUNIXStylePath">
+        <path id="id.was.home">
+            <pathelement location="${WAS_HOME}"/>
+        </path>
+    
+        <pathconvert targetos="unix" 
+            property="WAS_HOME_UNIX_STYLE" 
+            refid="id.was.home"/>
+    </target>
+    
+    <target name="deployAdminConsole"
+            description="Deploys Admin Console" >
+            
+        <wscmtlog>Deploying admin console, the output will be recorded in: ${WAS_HOME}/logs/webui_config.log</wscmtlog>
+            
+       <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/webui_config.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <command value="$AdminApp install &quot;${WAS_HOME_UNIX_STYLE}/systemApps/isclite.ear&quot; {-node ${NODE_NAME} -server ${serverName} -appname isclite -copy.sessionmgr.servername ${serverName} -zeroEarCopy -skipPreparation -installed.ear.destination $(WAS_INSTALL_ROOT)/systemApps }"/>
+                 <command value="$$AdminConfig save"/>
+                 <command value="$AdminApp edit isclite { -MapWebModToVH {{.* .* admin_host}}}"/>
+                 <command value="$$AdminConfig save"/>
+        </wsadmin>      
+    </target>
+
+    <target name="setCellVar" description="Sets a cell-scoped variable named WAS_CELL_NAME">
+        <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/webui_config.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <command value="set varMap [$$AdminConfig getid /Cell:${CELL_NAME}/VariableMap:/]"/>
+                 <command value="set nameattr1 [list symbolicName WAS_CELL_NAME]"/>
+                 <command value="set valattr1 [list value ${CELL_NAME}]"/>
+                 <command value="set attr1 [list $nameattr1 $valattr1]"/>
+                 <command value="set attrs [list $attr1]"/>
+                 <command value="$$AdminConfig modify $$varMap [subst {{entries {$$attrs}}}]"/>
+                 <command value="$$AdminConfig save"/>
+        </wsadmin>
+    </target>
+
+    
+    <target name="updateDeploymentXml"
+            description="Updates the deployment.xml to add a sharedLibBypass property">
+            
+        <wscmtlog>Updating deployment.xml, the output will be recorded in: ${WAS_HOME}/logs/deploy_config.log</wscmtlog>
+        
+        <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/deploy_config.log"
+                 appendTrace="true"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <command value="set deployment [$AdminConfig getid /Deployment:isclite/]"/>
+                 <command value="set appDeploy [$AdminConfig showAttribute $deployment deployedObject]"/>
+                 <command value="set nameAttr [list name com.ibm.ws.classloader.sharedLibBypass]"/>
+                 <command value="set valueAttr [list value true]"/>
+                 <command value="set reqAttr [list required false]"/>
+                 <command value="set propAttr [list $nameAttr $valueAttr $reqAttr]"/>
+                 <command value="$AdminConfig create Property $appDeploy $propAttr"/>
+                 <command value="$$AdminConfig save"/>
+                 <command value="set configs [lindex [$AdminConfig showAttribute $appDeploy configs] 0]"/>
+                 <command value="set appConfig [lindex $configs 0]"/>
+                 <command value="set SM [$AdminConfig showAttribute $appConfig sessionManagement]"/>
+                 <command value="set theCookie [$AdminConfig showAttribute $SM defaultCookieSettings]"/>
+                 <command value="$$AdminConfig modify $theCookie {{path /ibm}}"/>
+                 <command value="$$AdminConfig save"/>
+        </wsadmin>   
+    </target>
+
+    
+    <target name="setupIehs" description="sets the classloader for iehs.war to PARENT_LAST">
+
+        <wscmtlog>Setting IEHS classloader to PARENT_LAST, the output will be recorded in: ${WAS_HOME}/logs/webui_config.log</wscmtlog>
+
+        <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/deploy_config.log"
+                 appendTrace="true"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <command value="set isclite [$$AdminConfig getid /Deployment:isclite/]"/>
+                 <command value="set iscliteDepObject [$$AdminConfig showAttribute $$isclite deployedObject]"/>
+                 <command value="set modules [lindex [$$AdminConfig showAttribute $$iscliteDepObject modules] 0]"/>
+                 <command value="foreach module $$modules { if {[regexp iehs [$$AdminConfig showAttribute $$module uri]] == 1} {$$AdminConfig modify $$module {{classloaderMode PARENT_LAST}}}}"/>
+                 <command value="$$AdminConfig save"/>
+        	</wsadmin>
+    </target>
+     
+    <target name="webuiConfig"
+        description="Configures WebUI"
+        depends="zSetServerName,
+            convertWASHomeToUNIXStylePath,
+            deployAdminConsole,
+            setCellVar,
+            setupIehs,
+            updateDeploymentXml"/>
+</project>

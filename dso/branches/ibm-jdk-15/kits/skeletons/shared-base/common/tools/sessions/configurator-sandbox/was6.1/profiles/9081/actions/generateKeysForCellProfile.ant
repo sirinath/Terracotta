@@ -1,0 +1,107 @@
+<project name="generateKeysForCellProfile" default="generateKeysForCellProfile" basedir="."> 
+     
+    <taskdef name="wscmtlog" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/> 
+  
+    <taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>
+ 
+    <target name="printKeyGenerationStart" 
+            description="Prints the beginning message."> 
+        <wscmtlog>Starting generateKeysForCellProfile ANT.</wscmtlog> 
+    </target> 
+
+    <target name="printKeyGenerationEnd" 
+            description="Prints the beginning message."> 
+        <wscmtlog>Ending generateKeysForCellProfile ANT.</wscmtlog> 
+    </target> 
+
+    <target name="detectCurrentOSFamily" 
+            description="Detects the current OS family (UNIX or Windows)"> 
+        <wscmtlog>here</wscmtlog> 
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows"> 
+            <os family="windows"/> 
+        </condition> 
+         
+        <condition property="currentOSFamily" value="unix">             
+            <os family="unix"/> 
+        </condition> 
+         
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog> 
+    </target> 
+
+		<target name="checkIfDmgrProfileExists" 
+	    description="check if the dmgr profile path exists">
+       <wscmtlog>start of check</wscmtlog>
+       <condition property="dmgr.profile.exists" value ="true"> 
+        
+            <available file="${dmgrProfilePath}" type="dir"/>
+       </condition>
+       <wscmtlog>end of check</wscmtlog>
+    </target>
+
+    <target name="runPrepareKeysForCellProfileForDmgr" if="nodeProfilePath" 
+            description="Runs the prepareKeysForCellProfile task on the dmgr."> 
+             
+        <wscmtlog>Setting the security settings in the default security template, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/keyGeneration.log</wscmtlog>
+        <wscmtlog>${templatePath}</wscmtlog>
+        
+        <wsadmin conntype="none"
+                  failonerror="true"
+                  tracefile="${WS_CMT_LOG_HOME}/${profileName}/keyGeneration.log"
+                  wasHome="${WAS_HOME}"
+                  wasInstallRoot="${WAS_HOME}"
+                  wasRepositoryRoot="${profilePath}/config"
+                  userInstallRoot="${profilePath}"
+                  localCell="${cellName}"
+                  localNode="${nodeName}"
+                  wsadminProps="${profilePath}/properties/wsadmin.properties"
+                  ipcFilename="${profilePath}/temp/wsadmin"
+                  >
+                  <command value="$AdminTask prepareKeysForCellProfile {-dmgrProfileRoot {${profilePath}} -nodeProfileRoot {${nodeProfilePath}} -cellName ${cellName}}"/>
+          </wsadmin> 
+          
+        <wscmtlog>finished executing wsadmin</wscmtlog>
+    </target> 
+
+
+    <target name="runPrepareKeysForCellProfileForNode" if="dmgr.profile.exists" 
+            description="Runs the prepareKeysForCellProfile task on the node."> 
+             
+        <wscmtlog>Setting the security settings in the default security template, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/keyGeneration.log</wscmtlog>
+        <wscmtlog>${templatePath}</wscmtlog>
+        
+        	<wsadmin conntype="none"
+                  failonerror="true"
+                  tracefile="${WS_CMT_LOG_HOME}/${profileName}/keyGeneration.log"
+                  wasHome="${WAS_HOME}"
+                  wasInstallRoot="${WAS_HOME}"
+                  wasRepositoryRoot="${profilePath}/config"
+                  userInstallRoot="${profilePath}"
+                  localCell="${cellName}"
+                  localNode="${nodeName}"
+                  wsadminProps="${profilePath}/properties/wsadmin.properties"
+                  ipcFilename="${profilePath}/temp/wsadmin"
+                  >
+                  <command value="$AdminTask prepareKeysForCellProfile {-dmgrProfileRoot {${dmgrProfilePath}} -nodeProfileRoot {${profilePath}} -cellName ${cellName}}"/>
+          </wsadmin> 
+          
+          <wscmtlog>finished executing wsadmin</wscmtlog>
+    </target> 
+ 
+    <target name="generateKeysForCellProfile"
+        description="Starts the tasks."           
+        depends="printKeyGenerationStart,
+                 detectCurrentOSFamily,
+                 checkIfDmgrProfileExists,
+                 runPrepareKeysForCellProfileForNode,
+                 runPrepareKeysForCellProfileForDmgr,
+                 printKeyGenerationEnd">
+    </target>
+
+</project>
+

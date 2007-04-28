@@ -1,0 +1,21 @@
+#---------------------------------------------------------------
+# Remove the SIP chains
+#---------------------------------------------------------------
+foreach chain [$AdminConfig list Chain] {
+    set name [$AdminConfig showAttribute $chain name]
+    if {  [string first "SIPCInbound" $name] >= 0 } {
+      puts "  removing $chain ..."
+      $AdminConfig remove $chain
+    }
+}
+
+foreach channel [$AdminConfig list SIPContainerInboundChannel] {
+  puts "  removing channel $channel ..."
+  $AdminConfig remove $channel
+}
+
+#---------------------------------------------------------------
+# Save the changes to the repository 
+#---------------------------------------------------------------
+
+$AdminConfig save

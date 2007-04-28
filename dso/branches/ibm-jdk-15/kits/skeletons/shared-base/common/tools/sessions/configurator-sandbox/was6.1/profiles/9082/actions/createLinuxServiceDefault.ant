@@ -1,0 +1,204 @@
+<project name="linuxserviceConfig" default="linuxserviceConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+        
+    <property name="NODE_NAME" value="${WS_CMT_NODE_NAME}"/>
+    <property name="CELL_NAME" value="${WS_CMT_CELL_NAME}"/>
+    <property name="serverName" value="server1"/>
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <!-- Linux setting must come before the unix setting -->
+	<condition property="currentOSFamily" value="linux">            
+            <equals arg1="${os.name}" arg2="Linux"/>
+        </condition>
+	
+        <condition property="currentOSFamily" value="unix">
+            <os family="unix"/>
+        </condition>
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+    
+    <target name="defineOSSpecificConfigFlag"
+            description="Defines either configLinux or configWindows depending on the current OS">
+            
+        <condition property="configOS400" value="true">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="configUNIX" value="true">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="configWindows" value="true">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+	
+        <condition property="configLinux" value="true">
+            <equals arg1="${currentOSFamily}" arg2="linux"/>
+        </condition>
+    </target>
+
+    <target name="queryEnableServiceFlag"
+            description="Determine the flag to create WAS service"
+            if="configLinux">
+	    
+        <condition property="createWASService" value="true">
+            <equals arg1="${enableService}" arg2="true"/>
+        </condition>
+        
+        <wscmtlog>Detected EnableServiceFlag to be: ${enableService}</wscmtlog>
+    </target>
+    
+    <target name="queryIsServiceSupportedLinuxFlag"
+            description="Determine the flag of if a particular Linux version supports Service or not"
+            if="createWASService">
+        
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log" failonerror="false" resultproperty="servicesupportedresult"> 
+            <arg value="-issupportedplatform"/>          
+        </exec>
+        
+        <condition property="servicesupported" value="true">
+            <equals arg1="${servicesupportedresult}" arg2="0"/>
+	</condition>
+        
+        <wscmtlog>Detected ServiceSupportedLinuxFlag to be: ${servicesupported}</wscmtlog>        
+    </target>
+    
+    <target name="logServiceNotSupported"
+            description="Print out information in the log to indicate Linux service is not supported on this platform"
+	    if="createWASService" unless="servicesupported">
+    
+        <wscmtlog>Linux service is currently not supported on this platform</wscmtlog>
+		        
+        <fail>
+	  <condition>
+	    <not>
+	      <isset property="servicesupported"/>
+	    </not>
+	  </condition>
+	</fail>
+		
+    </target>
+    
+    <target name="queryHasInstallPermisionsFlag"
+            description="Determine the flag of if the current user has permission to create WASservice on Linux"
+	    if="createWASService">
+        
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+               output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log" failonerror="false" resultproperty="haspermissionresult"> 
+	       <arg value="-hasinstallpermissions"/> 
+        </exec>
+	           
+        <condition property="hasInstallPermissions" value="true">
+            <equals arg1="${haspermissionresult}" arg2="0"/>
+        </condition>
+        
+        <wscmtlog>Detected CurrentUserHasPermissionFlag to be: ${hasInstallPermissions}</wscmtlog>        
+    </target>
+       
+    <target name="logCurrentUserDoesNotHasPermission"
+            description="Print out information in the log to indicate current user does not has the permission to setup service"
+	    if="createWASService" unless="hasInstallPermissions">
+	    
+        <wscmtlog>The current user does not have sufficient permission to setup service</wscmtlog>
+		           
+        <fail>
+	  <condition>
+	    <not>
+	      <isset property="hasInstallPermissions"/>
+	    </not>
+	  </condition>
+	</fail> 
+	
+    </target>
+    
+    <target name="queryLinuxServiceCreate"
+            description="Determine if to create WAS Service on Linux">
+            
+        <condition property="createLinuxService" value="true">
+	    <and>
+		<equals arg1="${servicesupported}" arg2="true"/>
+		<equals arg1="${hasInstallPermissions}" arg2="true"/>
+	    </and>
+        </condition>
+       
+        <wscmtlog>Detected CreateLinuxServiceFlag to be: ${createLinuxService}</wscmtlog>        
+    </target>
+
+    <target name="createLinuxWASServiceUsingDefaultRoot"
+            description="Creates the Linux WAS Service using root account"
+            unless="serviceUserName">
+            
+        <wscmtlog>Creating the Linux WAS service using root account, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log</wscmtlog>
+            
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log"> 
+            <arg value="-add"/>
+            <arg value="${WS_CMT_NODE_NAME}"/>
+            <arg value="-serverName"/>
+            <arg value="${serverName}"/>             
+            <arg value="-profilePath"/>
+            <arg value="${profilePath}"/>          
+        </exec> 
+	
+        <wscmtlog>Linux WAS service command: ${WAS_HOME}/bin/wasservice.sh -add ${WS_CMT_NODE_NAME} -servername ${serverName} -profilePath ${profilePath}</wscmtlog>
+    
+    </target>
+
+    <target name="createLinuxWASServiceUsingSpecifiedUser"
+            description="Creates the Linux WAS Service using specified user account"
+            if="serviceUserName">
+            
+        <wscmtlog>Creating the Linux WAS service using specified user account, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log</wscmtlog>
+            
+            <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log">   
+            <arg value="-add"/>
+            <arg value="${WS_CMT_NODE_NAME}"/>
+            <arg value="-serverName"/>
+            <arg value="${serverName}"/>            
+            <arg value="-profilePath"/>
+            <arg value="${profilePath}"/>
+	    <arg value="-userid"/>
+            <arg value="${serviceUserName}"/>
+        </exec> 
+	
+        <wscmtlog>Linux WAS service command: ${WAS_HOME}/bin/wasservice.sh -add ${WS_CMT_NODE_NAME} -servername ${serverName} -profilePath ${profilePath} -userid ${serviceUserName}</wscmtlog>
+	
+    </target>
+            
+    <target name="createLinuxWASService"
+            description="Creates the Linux WAS Service"
+            if="createLinuxService" unless="configWindows">
+            
+            <antcall target="createLinuxWASServiceUsingDefaultRoot"/>
+            <antcall target="createLinuxWASServiceUsingSpecifiedUser"/>				
+    </target>
+	    
+    <target name="linuxserviceConfig"
+        description="Configures Linux WAS service"
+        if="configLinux"
+        depends="detectCurrentOSFamily,
+            defineOSSpecificConfigFlag,
+	    queryEnableServiceFlag,
+            queryIsServiceSupportedLinuxFlag,
+	    logServiceNotSupported,
+	    queryHasInstallPermisionsFlag,
+	    logCurrentUserDoesNotHasPermission,	    
+	    queryLinuxServiceCreate,         
+            createLinuxWASService"/>                              
+
+</project>

@@ -1,0 +1,345 @@
+# 5724-I63, 5724-H88, 5655-N02, 5733-W70 (C) COPYRIGHT International Business Machines Corp. 2005
+# All Rights Reserved 
+# Licensed Materials - Property of IBM
+#
+###############################################################################
+#                                                                             #
+#                     createWebServerDefinition.jacl                          #
+#                     ------------------------------                          #
+#                                                                             #
+#                                                                             #
+# Purpose:                                                                    #
+#                                                                             #
+#    This script is designed to create a Web server definition                #
+#                                                                             #
+#    A) Create an unmanaged node definition if necessary                      #
+#    B) Create the web server defintion                                       #
+#                                                                             #
+#                                                                             #
+###############################################################################
+
+
+#--------------------------------------------------------------
+# Print the usage
+#--------------------------------------------------------------
+proc printUsage {} {
+    puts " "
+    puts "Usage is as follows:"
+    puts ""
+    puts "wsadmin.sh -f \${WAS_HOME}/profileTemplates/default/actions/scripts/createWebServerDefinition.jacl"
+    puts "                   webServerName"
+    puts "                   webServerType"
+    puts "                   webServerInstallPath"
+    puts "                   webServerPort"
+    puts "                   webServerPluginPath"
+    puts "                   webServerHostname"
+    puts "                   webServerOS"
+    puts "                   hostName"
+    puts "                   nodeName"
+    puts ""
+    puts "webServerName        : Name of the webServer to be defined"
+    puts "webServerType        : Type of the web server."
+    puts "                           IHS APACHE IPLANET DOMINO IIS"
+    puts "webServerInstallPath : Location of the websserver install"
+    puts "webServerPort        : Listening port of the web server"
+    puts "webServerPluginPath  : Location of the plugin install"
+    puts "webServerHostname    : Host name of the web server"
+    puts "webServerOS          : Operation system of the web server machine"
+    puts "                           windows solaris aix hpux linux os400 os390"
+    puts "hostName             : application server host name"
+    puts "nodeName             : application server node name"
+    puts ""
+
+   exit 1
+}
+
+#--------------------------------------------------------------
+# Check if all parameters are passed
+#--------------------------------------------------------------
+if { ($argc != 9 ) } {
+    puts ""
+    puts "Expecting 9 arguments but found $argc ."
+    printUsage
+}
+
+#--------------------------------------------------------------
+# Get the input parameters
+#--------------------------------------------------------------
+
+# Get the Web server name
+set webServerName            [lindex $argv 0]
+
+# Get the Web server type
+set webServerType            [string toupper [lindex $argv 1]]
+
+# Get the Web server install location
+set webServerInstallPath     [lindex $argv 2]
+
+# Get the Web server port
+set webServerPort            [lindex $argv 3]
+
+# Get the plugin install location
+set webServerPluginPath      [lindex $argv 4]
+
+# Get the Web server host name
+set webServerHostname        [lindex $argv 5]
+
+# Get the Web server operating system type
+set webServerOS              [string tolower [lindex $argv 6]]
+
+# Get the node host name
+set hostName                 [lindex $argv 7]
+
+# Get the node name
+set nodeName                 [lindex $argv 8]
+
+#--------------------------------------------------------------
+# Check webserverType and blank "" webServerInstallPath if non-IHS
+# 	-We have to do this because if we don't we received garbage
+# 	from the ANT file  due to a bug in "normalizePath"
+#--------------------------------------------------------------
+if { (!(($webServerType == "IHS") || ($webServerType == "HTTPSERVER_ZOS"))) } {
+        set webServerInstallPath     \"\"
+}
+
+#--------------------------------------------------------------
+# Display the input parameters
+#--------------------------------------------------------------
+puts ""
+puts "Input parameters:"
+puts "   Web server name             - $webServerName"
+puts "   Web server type             - $webServerType"
+puts "   Web server install location - $webServerInstallPath"
+puts "   Web server port             - $webServerPort"
+puts "   Plugin install location     - $webServerPluginPath"
+puts "   Web server host name        - $webServerHostname"
+puts "   Web server operating system - $webServerOS"
+puts "   App server host name        - $hostName"
+puts "   App server node name        - $nodeName"
+
+#--------------------------------------------------------------
+# Check if the Web server type is valid
+#--------------------------------------------------------------
+if { (!(($webServerType == "IHS") || ($webServerType == "APACHE") || ($webServerType == "SUNJAVASYSTEM") || ($webServerType == "DOMINO") || ($webServerType == "IIS") || ($webServerType == "HTTPSERVER_ZOS"))) } {
+
+    puts ""
+    puts "Invalid webServer type specified."
+    printUsage
+}
+
+#--------------------------------------------------------------
+# Check if the Web server opertating system is valid
+#--------------------------------------------------------------
+if { (!(($webServerOS == "windows") || ($webServerOS == "solaris") || ($webServerOS == "aix") || ($webServerOS == "hpux") || ($webServerOS == "linux") || ($webServerOS == "os400")|| ($webServerOS == "os390"))) } {
+
+    puts ""
+    puts "Invalid webServer operating system specified."
+    printUsage
+}
+
+#--------------------------------------------------------------
+# See if the webserver hostname is the same as the app server hostname
+#--------------------------------------------------------------
+     puts "WebserverHostName $webServerHostname."
+     puts "AppHostName $hostName."
+
+#--------------------------------------------------------------
+# Check if the webServer node already exists
+#--------------------------------------------------------------
+
+#--------------------------------------------------------------
+# Check if the webServer already exists
+#--------------------------------------------------------------
+
+ 
+    #--------------------------------------------------------------
+    # Create the Web server defintion
+    #--------------------------------------------------------------
+ 
+     puts ""
+     puts "Creating the web server definition for $webServerName."
+
+    #--------------------------------------------------------------
+    # Define other parameters for creating webServer definition
+    # Can be changed to suit the current environment
+    #--------------------------------------------------------------
+    set serviceName    \"\"
+    set errorLogfile   \"\"
+    set accessLogfile  \"\"
+    set webProtocol    \"\"
+    set webServerConfigLocation  \"\"
+
+    #--------------------------------------------------------------
+    # Define other parameters for administering IHS webServer
+    # Can be changed to suit the current environment
+    #--------------------------------------------------------------
+    set adminPort      \"\"
+    set adminUserID    \"\"
+    set adminPasswd    \"\"
+    set adminProtocol  \"\"
+ 
+    #--------------------------------------------------------------
+    # Compute webServer steps
+    #--------------------------------------------------------------
+#    set serverConfigStep  "$webServerPort \"$webServerInstallPath\" \"$webServerPluginPath\" \"$webServerConfigLocation\" $serviceName $errorLogfile $accessLogfile $webProtocol"
+#    set remoteServerConfigStep  "$adminPort $adminUserID $adminPasswd $adminProtocol"
+ 
+    if { ($webServerType == "IHS") } {
+ 
+       puts "Parameters for administering IHS web server should be updated using wsadmin script or admin console."
+ 
+    }
+ 
+    #--------------------------------------------------------------
+    # Check if webServer is running on os390
+    #--------------------------------------------------------------
+    if { ((($webServerType == "IHS") && ($webServerOS == "os390")) || ($webServerType == "HTTPSERVER_ZOS")) } {
+ 
+       # Set the Web server template for os390
+       set webServerType HTTPSERVERZOS
+ 
+       puts "The template HTTPSERVERZOS is used for creating the webServer."
+    }
+ 
+    #--------------------------------------------------------------
+    # Handle  InstallPath and PluginPath with spaces,
+    # so we add quotes "".
+    #--------------------------------------------------------------
+    if { (($webServerType == "IHS") || ($webServerType == "HTTPSERVER_ZOS")) } {
+        set webServerInstallPath     \"$webServerInstallPath\"
+    }    
+    if {[catch {$AdminTask createWebServerByHostName "-hostName $webServerHostname -platform $webServerOS -webserverName $webServerName   -templateName $webServerType -webPort $webServerPort -webInstallRoot $webServerInstallPath -pluginInstallRoot $webServerPluginPath"} result]} {
+       puts "Web server definition for $webServerName is not created, exception = $result"
+       return -code error
+       
+    } else {
+ 
+       set serverID [$AdminConfig getid /Server:$webServerName]
+       if { (!( $serverID == "" ))  } {
+       	 set serverName [$AdminConfig showAttribute $serverID name]
+         if { ( $serverName == $webServerName )  } {
+       		set serverType [$AdminConfig showAttribute $serverID serverType]
+		if { ($serverType  == "WEB_SERVER") } {
+       			puts " Web server type $serverType. "
+             		set webServerID [$AdminConfig list WebServer $serverID]
+                        puts "Web server definition for $webServerName is created."
+       		} else {        
+       			puts " WEB_SERVER type $webServerName was not created"
+       		}
+         }  else {
+       		puts " Server $webServerName was not created"
+         }
+       } else { 
+       	 puts " Server ID for $webServerName was not created"
+       }
+ 
+    }
+
+
+#--------------------------------------------------------------
+# Compute the plugin properties config ID
+#--------------------------------------------------------------
+puts ""
+puts "Start computing the plugin properties ID."
+
+if {[catch {set pluginPropertiesIDList [$AdminConfig list PluginProperties]} result]} {
+
+    puts "Plugin properties ID is not computed, exception = $result"
+
+} else {
+
+    set endIndex [string first | $webServerID]
+    set webID    [string range $webServerID 0 $endIndex]
+
+    foreach webServerPluginPropertiesID $pluginPropertiesIDList {
+
+        set endIndex    [string first | $webServerPluginPropertiesID]
+        set pluginWebID [string range $webServerPluginPropertiesID 0 $endIndex]
+
+        set idx [string first $pluginWebID $webID]
+        if { ($idx > 0) } {
+
+            puts "Plugin properties ID is computed."
+
+            break
+        }
+    }
+}
+
+#--------------------------------------------------------------
+# Set the attribute plugin install root
+#--------------------------------------------------------------
+puts ""
+puts "Start updating the plugin install location."
+
+if {[catch {$AdminConfig modify $webServerPluginPropertiesID "{PluginInstallRoot {$webServerPluginPath}}"} result]} {
+
+    puts "Plugin install location is not updated, exception = $result"
+
+} else {
+
+    puts "Plugin install location is updated."
+}
+
+#--------------------------------------------------------------
+# Set the attribute plugin log location
+#--------------------------------------------------------------
+puts ""
+puts "Start updating the plugin log file location."
+
+if {[catch {$AdminConfig modify $webServerPluginPropertiesID "{LogFilename {$webServerPluginPath/logs/$webServerName/http_plugin.log}}"} result]} {
+
+    puts "Plugin log file location is not updated, exception = $result"
+
+} else {
+
+    puts "Plugin log file location is updated."
+}
+
+#--------------------------------------------------------------
+# Set the attribute RemoteConfigFilename
+#--------------------------------------------------------------
+puts " "
+puts "Start updating the RemoteConfigFilename location."
+
+if {[catch {$AdminConfig modify $webServerPluginPropertiesID "{RemoteConfigFilename {$webServerPluginPath/config/$webServerName/plugin-cfg.xml}}"} result]} {
+
+   puts "Plugin remote config file location is not updated, exception = $result"
+
+} else {
+
+   puts "Plugin remote config file location is updated."
+}
+
+#--------------------------------------------------------------
+# Set the attribute RemoteKeyRingFileName
+#--------------------------------------------------------------
+puts " "
+puts "Start updating the RemoteKeyRingFileName location."
+
+if {[catch {$AdminConfig modify $webServerPluginPropertiesID "{RemoteKeyRingFilename {$webServerPluginPath/config/$webServerName/plugin-key.kdb}}"} result]} {
+
+   puts "Plugin remote keyring file location is not updated, exception = $result"
+
+} else {
+
+   puts "Plugin remote keyring file location is updated."
+}
+
+#--------------------------------------------------------------
+# Save the configuration
+#--------------------------------------------------------------
+puts ""
+puts "Start saving the configuration."
+
+if {[catch {$AdminConfig save} result]} {
+
+    puts ""
+    puts "Configuration save is not complete, exception = $result"
+
+} else {
+
+    puts ""
+    puts "Configuration save is complete."
+}
+

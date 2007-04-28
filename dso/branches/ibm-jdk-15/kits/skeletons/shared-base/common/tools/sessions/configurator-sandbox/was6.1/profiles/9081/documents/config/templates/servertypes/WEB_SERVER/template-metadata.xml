@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:properties="http://www.ibm.com/websphere/appserver/schemas/5.0/properties.xmi">
+
+<properties:PropertySet  xmi:id="PropertySet_1">
+  <properties xmi:id="Property_1" name="name" value="IHS_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="true"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IHS Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_2">
+  <properties xmi:id="Property_1" name="name" value="APACHE_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The APACHE Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_3">
+  <properties xmi:id="Property_1" name="name" value="IIS_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IIS Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_4">
+  <properties xmi:id="Property_1" name="name" value="DOMINO_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The Domino Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_5">
+  <properties xmi:id="Property_1" name="name" value="SUNJAVASYSTEM_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The SUN JAVA SYSTEM Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_6">
+  <properties xmi:id="Property_1" name="name" value="IHSZOS_60X"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value="os390"/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="true"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IHS OS390 Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_7">
+  <properties xmi:id="Property_1" name="name" value="IHS"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="true"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IHS Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_8">
+  <properties xmi:id="Property_1" name="name" value="APACHE"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The APACHE Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_9">
+  <properties xmi:id="Property_1" name="name" value="IIS"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IIS Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_10">
+  <properties xmi:id="Property_1" name="name" value="DOMINO"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The Domino Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_11">
+  <properties xmi:id="Property_1" name="name" value="SUNJAVASYSTEM"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value=""/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="false"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The SUN JAVA SYSTEM Web Server Template"/>
+</properties:PropertySet>
+
+<properties:PropertySet  xmi:id="PropertySet_12">
+  <properties xmi:id="Property_1" name="name" value="HTTPSERVERZOS"/>
+  <properties xmi:id="Property_2" name="com.ibm.websphere.baseProductVersion" value="6.1.0.0"/>
+  <properties xmi:id="Property_3" name="com.ibm.websphere.baseProductMinorVersion" value="0.0"/>
+  <properties xmi:id="Property_4" name="com.ibm.websphere.baseProductMajorVersion" value="6.1"/>
+  <properties xmi:id="Property_5" name="com.ibm.websphere.nodeOperatingSystem" value="os390"/>
+  <properties xmi:id="Property_6" name="isDefaultTemplate" value="true"/>
+  <properties xmi:id="Property_7" name="isSystemTemplate" value="true"/>
+  <properties xmi:id="Property_8" name="description" value="The IHS OS390 Web Server Template"/>
+</properties:PropertySet>
+
+</xmi:XMI>

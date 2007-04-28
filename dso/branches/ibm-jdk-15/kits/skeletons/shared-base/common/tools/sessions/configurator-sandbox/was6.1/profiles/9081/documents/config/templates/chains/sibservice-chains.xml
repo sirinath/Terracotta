@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" 
+                           xmlns:channelservice="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.xmi"
+                           xmlns:channelservice.channels="http://www.ibm.com/websphere/appserver/schemas/6.0/channelservice.channels.xmi">
+
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v6.0 Default Template Files</contact>
+  </xmi:Documentation>
+
+  <channelservice.channels:TCPInboundChannel          xmi:id="SIBTCPInboundChannel_1"    name="SIBTCP"/>
+  <channelservice.channels:SSLInboundChannel          xmi:id="SIBSSLInboundChannel_1"    name="SIBSSL" sslConfigAlias="$(node.name)/DefaultSSLSettings" discriminationWeight="1"/>
+  <channelservice.channels:HTTPInboundChannel         xmi:id="SIBHTTPInboundChannel_1"   name="SIBHTTP" maximumPersistentRequests="100" readTimeout="60" writeTimeout="60" persistentTimeout="30" keepAlive="true" discriminationWeight="1"/>
+  <channelservice.channels:HTTPTunnelInboundChannel   xmi:id="SIBHTTPTunnelInboundChannel_1" name="SIBHTTPTunnel" discriminationWeight="1"/>
+  <channelservice.channels:JFAPInboundChannel         xmi:id="SIBJFAPInboundChannel_1"   name="SIB" discriminationWeight="1"/>
+  <channelservice.channels:MQFAPInboundChannel        xmi:id="SIBMQFAPInboundChannel_1"  name="SIBMQ" discriminationWeight="1"/>
+
+  <!-- SIB Service Inbound Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_1" name="SIB Inbound" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBJFAPInboundChannel_1"/>
+
+  <!-- SIB Service Secure Inbound Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_2" name="SIB Inbound-Secure" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBSSLInboundChannel_1 SIBJFAPInboundChannel_1"/>
+
+  <!-- SIB Service Inbound over HTTP Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_3" name="SIB Inbound over HTTP" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBHTTPInboundChannel_1 SIBHTTPTunnelInboundChannel_1 SIBJFAPInboundChannel_1"/>
+
+  <!-- SIB Service Inbound over HTTPS Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_4" name="SIB Inbound-Secure over HTTP" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBSSLInboundChannel_1 SIBHTTPInboundChannel_1 SIBHTTPTunnelInboundChannel_1 SIBJFAPInboundChannel_1"/>
+
+  <!-- SIB Service MQ Inbound Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_5" name="SIB MQ Inbound" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBMQFAPInboundChannel_1"/>
+
+  <!-- SIB Service MQ Secure Inbound Chain Template -->
+  <channelservice:Chain xmi:id="SIBChain_6" name="SIB MQ Inbound-Secure" enable="true" transportChannels="SIBTCPInboundChannel_1 SIBSSLInboundChannel_1 SIBMQFAPInboundChannel_1"/>
+
+</xmi:XMI>
+

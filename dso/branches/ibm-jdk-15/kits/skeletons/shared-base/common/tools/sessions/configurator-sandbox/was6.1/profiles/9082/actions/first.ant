@@ -1,0 +1,268 @@
+<project name="copyTemplateDocs" default="copyTemplate" basedir=".">
+
+    <!-- fstewart Change detectIfWindows to detectPlatform -->
+    <target name="detectPlatform"
+            description="Detects the current OS family (OS400, z/OS, UNIX or Windows)">
+        
+        <condition property="isCurrentPlatformWindows" value="true">
+            <os family="windows"/>
+        </condition>
+
+      <!-- fstewart Add property for OS400 and for Unix -->
+      <!-- belina Updated to add property for z/OS -->
+        <condition property="isCurrentPlatformOS400" value="true">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+
+        <condition property="isCurrentPlatformZOS" value="true">
+            <os family="z/os"/>
+        </condition>
+
+        <condition property="isDmgrProfileZOS" value="true">
+          <and>
+           <equals arg1="${serverName}" arg2="dmgr"/>
+           <os family="z/os"/>
+          </and>
+        </condition>
+
+        <condition property="isCurrentPlatformUnix" value="true">
+          <and>
+            <os family="unix"/>
+            <and>
+            <not>
+              <isset property="isCurrentPlatformZOS"/>
+            </not>
+            <not>
+              <isset property="isCurrentPlatformOS400"/>
+            </not>
+          </and>
+          </and>
+        </condition>
+      <!-- fstewart End add property for OS400 and Unix -->
+        
+        <wscmtlog>Current platform is: ${os.name}</wscmtlog>
+    </target>
+
+    <target name="detectProductLevel">
+        <!-- The existance of the WAS.product file tells us we are on a full WAS Base install.
+             Otherwise we are on the Embed product.  EWAS.product should exist instead. -->
+       <condition property="isBase">
+          <available file="${WAS_HOME}/properties/version/WAS.product"/>
+       </condition>
+       <condition property="isEmbed">
+          <isfalse value="${isBase}"/>
+       </condition>
+    </target>
+    
+    <taskdef name="wscmtlog" classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+    <taskdef name="replaceStringRegExp"
+             classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.ReplaceStringRegExpAntTask"/>
+
+    <target name="copyTemplate" 
+        depends="detectPlatform, detectProductLevel"
+        description="Copy template documents into instance location">
+        
+        <wscmtlog>Copying template documents to location: ${profilePath}</wscmtlog>
+        
+        <!-- temporary work around for log directory creation -->
+        <mkdir dir="${WS_CMT_LOG_HOME}/${profileName}/"/>
+
+        <!-- temporary work-around while installer doesn't create empty directories -->
+        <mkdir dir="${profilePath}/etc"/>
+        <mkdir dir="${profilePath}/installedApps"/>
+        <mkdir dir="${profilePath}/installedConnectors"/>
+        <mkdir dir="${profilePath}/logs"/>
+        <mkdir dir="${profilePath}/properties"/>
+        <mkdir dir="${profilePath}/properties/version"/>
+        <mkdir dir="${profilePath}/temp"/>
+        <mkdir dir="${profilePath}/wstemp"/>   
+        <mkdir dir="${profilePath}/installableApps"/>                            
+        <antcall target="copyDocsWindows" />
+        <antcall target="copyDocsUNIX" />
+        <!-- fstewart Add call to copyDocsOS400 -->
+        <antcall target="copyDocsOS400" />
+        <!-- belina Add call to copyDocsZOS -->
+        <antcall target="copyDocsZOS" />
+        <!-- belina Add call to symlinkXformsZOS -->
+        <antcall target="symlinkXformsZOS" />
+        <antcall target="copyVersionFile" />
+        <antcall target="updateVersionFile" />
+    </target>
+
+    <target name="copyDocsUNIX" if="isCurrentPlatformUnix">
+        <wscmtlog>cp -r -p -f ${templatePath}/documents/* ${profilePath}</wscmtlog>
+        <exec executable="sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/copyFiles.log">
+            <arg value="-c"/>
+            <arg value="cp -r -f -p &quot;${templatePath}&quot;/documents/* &quot;${profilePath}&quot;"/>
+        </exec>
+        
+    </target>
+    
+    
+    <target name="copyDocsWindows" if="isCurrentPlatformWindows">
+        <exec executable="xcopy"
+                      output="${WS_CMT_LOG_HOME}/${profileName}/copyFiles.log">
+           <arg value="${templatePath}\documents\*"/>
+           <arg value="${profilePath}"/>
+           <arg value="/Q"/>
+           <arg value="/Y"/>
+           <arg value="/K"/>
+           <arg value="/R"/>
+           <arg value="/E"/>
+           <arg value="/I"/>
+        </exec>
+    </target>
+
+    <!-- fstewart add for OS400 -->
+    <target name="copyDocsOS400" if="isCurrentPlatformOS400">
+        <!-- Create additional directory for TAM for OS/400 -->
+        <mkdir dir="${profilePath}/etc/pd"/>
+
+        <copy todir="${profilePath}">
+            <fileset dir="${templatePath}/documents"/>
+        </copy>
+
+        <!-- Set the instance.name property to the profile's name -->
+        <replace file="${profilePath}/bin/setupCmdLine"
+            token="$$(instance.name)"
+            value="${profileName}"/>
+
+        <!-- Additional updates for TAM for OS/400 -->
+        <available file="${profilePath}/config/cells/AdvancedDeploymentCell/amwas.amjacc.template.properties" property="amjaccfile.filename" value="${profilePath}/config/cells/AdvancedDeploymentCell/amwas.amjacc.template.properties"/>
+        <available file="${profilePath}/config/cells/BaseApplicationServerCell/amwas.amjacc.template.properties" property="amjaccfile.filename" value="${profilePath}/config/cells/BaseApplicationServerCell/amwas.amjacc.template.properties"/>
+        <antcall target="updateTamProps"/>
+
+        <!-- Load the installed product information (for multiple install support) -->
+        <loadproperties srcFile="${WAS_HOME}/properties/product.properties"/>
+        <!-- Determine if we are supposed to use J9 instead of iSeries JDK -->
+        <condition property="instance.use.j9" value="true">
+          <equals arg1="${was.use.j9}" arg2="true"/>
+        </condition>
+        <antcall target="setJ9Usage"/>
+
+    </target>
+
+    <!-- fstewart add for OS400 -->
+    <target name="setJ9Usage" 
+            depends="setJ9Off,
+                     setJ9On">
+   </target>
+
+    <!-- fstewart add for OS400 -->
+    <target name="setJ9Off" unless="instance.use.j9">
+        <wscmtlog>Updating java variables for J9 usage</wscmtlog>
+        <!-- Update values in setupCmdLine -->
+        <replace file="${profilePath}/bin/setupCmdLine"
+            token="$(use.j9)"
+            value="false"/>
+
+    </target>
+
+    <!-- fstewart add for OS400 -->
+    <target name="setJ9On" if="instance.use.j9">
+        <wscmtlog>Updating java variables for J9 usage</wscmtlog>
+        <!-- Update values in setupCmdLine -->
+        <replace file="${profilePath}/bin/setupCmdLine"
+            token="$(use.j9)"
+            value="true"/>
+
+        <replace file="${profilePath}/bin/setupCmdLine"
+            token="$(j9path)"
+            value="${was.j9.path}"/>
+
+    </target>
+
+    <!-- belina add for z/OS -->
+    <target name="copyDocsZOS" if="isCurrentPlatformZOS">
+        <wscmtlog>Copy ${templatePath}/documents/* to ${profilePath}</wscmtlog>
+        
+        <copy todir="${profilePath}">
+         <fileset dir="${templatePath}/documents"/>
+        </copy>
+        
+        <copy file="${WAS_HOME}/properties/orb.properties" todir="${profilePath}/properties" overwrite="true"/>
+        
+    </target>
+
+    <!-- belina add for z/OS -->
+    <!-- The files under the xforms dir should be symbolic links, not copies, on z/OS -->
+    <target name="symlinkXformsZOS" if="isDmgrProfileZOS" description="For z/OS only, creates symbolic links for the xform files instead of leaving them as copies">
+       <wscmtlog>Symlink files in ${templatePath}/documents/config/xforms/ to ${profilePath}/config/xforms </wscmtlog>
+
+        <exec executable="sh"
+                output="${profilePath}/logs/copyFiles.log">
+           <arg value="-c"/>
+           <arg line='"rm -r -f ${profilePath}/config/xforms/*"'/>
+        </exec>
+
+        <exec executable="sh"
+                output="${profilePath}/logs/copyFiles.log">
+            <arg value="-c"/>
+            <arg line='"ln -fsr ${templatePath}/documents/config/xforms/ ${profilePath}/config/xforms/"'/>
+        </exec>
+
+    </target>
+
+    <!-- fstewart add for OS400 -->
+    <target name="updateTamProps" if="amjaccfile.filename">
+               <concat destfile="${amjaccfile.filename}" append="yes">com.tivoli.pd.as.jacc.PDHome=${profilePath}/etc/pd/PolicyDirector&#10;</concat>
+               <concat destfile="${amjaccfile.filename}" append="yes">com.tivoli.pd.as.jacc.CommonFileLocation=${profilePath}/etc/pd&#10;</concat>
+    </target>
+
+    <target name="copyVersionFile">
+        <condition property="productVersion" value="WAS" else="EWAS">
+            <istrue value="${isBase}"/>
+        </condition>
+        <copy file="${WAS_HOME}/properties/version/${productVersion}.product" tofile="${profilePath}/properties/version/profile.version"/>
+    </target>
+
+    <target name="updateVersionFile" description="Change the profile.version file to have Profile tags instead of Product tags">
+        <wscmtlog>Inserting profile labels into version file</wscmtlog>
+        <replaceregexp file="${profilePath}/properties/version/profile.version"
+            match="product"
+            replace="profile"
+            byline="true"
+            flags="gi"/>
+            
+        <replaceregexp file="${profilePath}/properties/version/profile.version"
+        		match="&lt;!DOCTYPE(.)*&gt;"
+        		replace=""
+        		byline="true"
+        		flags="i"/>
+               
+        <replaceregexp file="${profilePath}/properties/version/profile.version"
+            match="&lt;profile name=&quot;(.)+&quot;&gt;"
+            replace="&lt;profile&gt;"
+            byline="true"
+            flags="i"/>
+
+        <replaceStringRegExp string="${templatePath}"
+            regexp="\/$"
+            value=""
+            property="templatePathwithNoEndingSlash"/>
+            
+        <replaceStringRegExp string="${templatePathwithNoEndingSlash}"
+            regexp="\\$"
+            value=""
+            property="templatePathwithNoEndingBackslash"/>
+        
+        <replaceStringRegExp string="${templatePathwithNoEndingBackslash}"
+            regexp="(.+\\)*"
+            value=""
+            property="templatePathwithNoBackslash"/>
+            
+        <replaceStringRegExp string="${templatePathwithNoBackslash}"
+            regexp="(.+\/)*"
+            value=""
+            property="templateName"/>           
+            
+        <wscmtlog>Inserting profile Template Name into version file</wscmtlog>
+        <replaceregexp file="${profilePath}/properties/version/profile.version"
+            match="&lt;id&gt;(.)+&lt;\/id&gt;"
+            replace="&lt;id&gt;${templateName}&lt;\/id&gt;"
+            byline="true"
+            flags="i"/> 
+  </target>
+
+</project>

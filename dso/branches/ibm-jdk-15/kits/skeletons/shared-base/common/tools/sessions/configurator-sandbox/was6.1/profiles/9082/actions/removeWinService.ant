@@ -1,0 +1,66 @@
+<project name="removeWinserviceConfig" default="removeWinserviceConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+        
+    <property name="NODE_NAME" value="${WS_CMT_NODE_NAME}"/>
+    <property name="CELL_NAME" value="${WS_CMT_CELL_NAME}"/>    
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+    
+    <target name="defineOSSpecificConfigFlag"
+            description="Defines either configUNIX or configWindows depending on the current OS">
+            
+        <condition property="configOS400" value="true">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="configUNIX" value="true">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="configWindows" value="true">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>  
+
+    <target name="removeWindowsWASService"
+            description="Remove the Windows WAS Service"
+            if="configWindows">
+        
+        <property file="${profilePath}\properties\winservice.props"/>   
+        <exec executable="${WAS_HOME}\bin\wasservice.exe">
+            <arg value="-remove"/>
+            <arg value="${nodeName}"/>            
+        </exec>			
+        <exec executable="${WAS_HOME}\bin\wasservice.exe">
+            <arg value="-remove"/>
+            <arg value="${nodeName}_nodeagent"/>
+        </exec>       	
+    </target>
+
+    <target name="removeWinserviceConfig"
+        description="Configures Windows WAS service"
+        if="configWindows"
+        depends="detectCurrentOSFamily,
+            defineOSSpecificConfigFlag,                    
+            removeWindowsWASService"/>    
+
+</project>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is used as a template when creating new resource providers, datasources,
+  and connection factories.    It should provide the default values for any of these
+  resource definitions.
+  -->
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:resources.jdbc="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.jdbc.xmi" xmlns:resources="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.xmi" xmlns:resources.mail="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.mail.xmi" xmlns:resources.url="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.url.xmi" xmlns:resources.jms="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.jms.xmi" xmlns:resources.jms.internalmessaging="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.jms.internalmessaging.xmi" xmlns:resources.jms.mqseries="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.jms.mqseries.xmi" xmlns:resources.j2c="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.j2c.xmi" xmlns:resources.env="http://www.ibm.com/websphere/appserver/schemas/5.0/resources.env.xmi">
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v5.0 Default Configuration Files v1.27 8/5/04</contact>
+  </xmi:Documentation>
+
+<!-- Template MQQueue Configuration -->
+<resources.jms.mqseries:MQQueue xmi:id="MQQueue_1" persistence="APPLICATION_DEFINED" priority="APPLICATION_DEFINED" expiry="APPLICATION_DEFINED"/>
+
+<!-- Template MQQueueConnectionFactory Configuration -->
+<resources.jms.mqseries:MQQueueConnectionFactory xmi:id="MQQueueConnectionFactory_1" authMechanismPreference="BASIC_PASSWORD" XAEnabled="true" transportType="BINDINGS" msgRetention="true">
+      <connectionPool xmi:id="ConnectionPool_1"/>
+</resources.jms.mqseries:MQQueueConnectionFactory>
+
+<!-- Template DataSource Configuration -->
+<resources.jdbc:DataSource xmi:id="DataSource_1" name="TemplateDataSource" description="Data source template" authMechanismPreference="BASIC_PASSWORD">
+      <connectionPool xmi:id="ConnectionPool_1" connectionTimeout="180" maxConnections="10" minConnections="1" reapTime="180" unusedTimeout="1800" agedTimeout="0" purgePolicy="EntirePool"
+                  testConnection="false" testConnectionInterval="0" surgeCreationInterval = "0" surgeThreshold="-1" stuckTime="0" stuckTimerTime="0" stuckThreshold="0"
+                  freePoolDistributionTableSize="0" numberOfFreePoolPartitions="0" numberOfSharedPoolPartitions="0" numberOfUnsharedPoolPartitions="0">
+      </connectionPool>
+</resources.jdbc:DataSource>
+
+<!-- Template WAS40DataSource Configuration -->
+<resources.jdbc:WAS40DataSource xmi:id="WAS40DataSource_1" name="WAS40 Datasource template" description="Datasource template for WebSphere" databaseName="${USER_INSTALL_ROOT}/databases/DefaultDB">
+      <propertySet xmi:id="J2EEResourcePropertySet_1">
+      </propertySet>
+      <connectionPool xmi:id="WAS40ConnectionPool_1" minimumPoolSize="1" maximumPoolSize="30" connectionTimeout="1000" idleTimeout="2000" orphanTimeout="3000"/>
+</resources.jdbc:WAS40DataSource>
+
+
+<!-- Template URLProvider Configuration -->
+<resources.url:URLProvider xmi:id="URLProvider_1" name="Template URL Provider" description="The default resource factory to use for creating URL's" protocol="" streamHandlerClassName="com.ibm.resources.URLResourceProvider">
+</resources.url:URLProvider>
+
+<!-- Template J2CConnectorFactory Configuration -->
+<resources.j2c:J2CConnectionFactory xmi:id="J2CConnectionFactory_1" name="J2CConnectionFactoryTemplate">
+    <connectionPool xmi:id="ConnectionPool_2" connectionTimeout="180" maxConnections="10" minConnections="1" reapTime="180" unusedTimeout="1800" agedTimeout="0" purgePolicy="EntirePool"
+        testConnection="false" testConnectionInterval="0" surgeCreationInterval = "0" surgeThreshold="-1" stuckTime="0" stuckTimerTime="0" stuckThreshold="0"
+        freePoolDistributionTableSize="0" numberOfFreePoolPartitions="0" numberOfSharedPoolPartitions="0" numberOfUnsharedPoolPartitions="0">
+    </connectionPool>
+</resources.j2c:J2CConnectionFactory>
+
+<!-- Template CMPConnectorFactory Configuration -->
+<resources.jdbc:CMPConnectorFactory xmi:id="CMPConnectorFactory_1" name="CMPConnectorFactory" authMechanismPreference="BASIC_PASSWORD" >
+</resources.jdbc:CMPConnectorFactory>
+
+</xmi:XMI>

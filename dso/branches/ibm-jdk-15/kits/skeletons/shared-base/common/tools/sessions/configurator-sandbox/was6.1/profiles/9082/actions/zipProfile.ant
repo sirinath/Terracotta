@@ -1,0 +1,19 @@
+<project name="zipProfile" default="zip" basedir=".">
+    
+	<taskdef name="wscmtlog" classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+
+	<taskdef name="ziptask" classname="com.ibm.ws.profile.anttasks.ZIPAntTask"/>
+
+    <target name="zip" 
+        description="uses the defined ziptask to backup a profile into a zip archive">
+        
+        <ziptask dir="${profilePath}"
+        file="${backupFile}"
+        NativeFilelibdirectory= "${WAS_HOME}/bin"
+       filesToExclude=""/>
+        
+        <wscmtlog>Zipping profile.. </wscmtlog>
+
+    </target>
+
+</project>

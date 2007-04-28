@@ -1,0 +1,9 @@
+<actions>
+    <action path="actions/deleteFirst.ant" priority="1" isFatal="false"/>
+    <action path="actions/runNodeUninst.ant" priority="90" isFatal="false"/>
+    <action path="actions/removeLinuxService.ant" priority="90" isFatal="false"/>
+    <action path="actions/stopWinService.ant" priority="89" isFatal="false"/>
+    <action path="actions/removeWinService.ant" priority="90" isFatal="false"/>
+    <action path="actions/deleteProfileShortCutFromStartMenu.ant" priority="90" isFatal="false"/>
+    <action path="actions/deleteProfile.ant" priority="99" isFatal="false"/> 
+</actions>

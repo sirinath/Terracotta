@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:variables="http://www.ibm.com/websphere/appserver/schemas/5.0/variables.xmi">
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v5.0 Default Configuration Files v1.4.1.2 3/22/06</contact>
+  </xmi:Documentation>
+  <variables:VariableMap xmi:id="VariableMap_1">
+  </variables:VariableMap>
+</xmi:XMI>

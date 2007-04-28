@@ -1,0 +1,202 @@
+<actions>
+    <action path="actions/first.ant" priority="01" isFatal="true">
+        <argument key="profileName" values="1" required="true" >
+            <defaulter path="defaulters/profileNameDefaulter.ijc" priority="10"/>
+            <validator path="validators/profileNameValidator.ijc"/>
+            <validator path="validators/noSpacesValidator.ijc"/>
+            <validator path="validators/noInvalidCharactersValidator.ijc"/>
+        </argument>
+        <argument key="profilePath" values="1" required="true" >
+            <defaulter path="defaulters/profileLocationDefaulter.ijc" priority="20"/>
+            <validator path="validators/directoryValidator.ijc"/>
+            <validator path="validators/diskSpaceValidator.ijc"/>
+            <validator path="validators/profilePathLengthValidator.ijc"/>
+        </argument>
+        <argument key="hostName" values="1" required="true" >
+            <defaulter path="defaulters/hostNameDefaulter.ijc" priority="10"/>
+            <validator path="validators/hostnameValidator.ijc"/>
+        </argument>
+        <argument key="nodeName" values="1" required="true" >
+            <defaulter path="defaulters/nodeNameDefaulter.ijc" priority="20"/>
+            <validator path="validators/noSpacesValidator.ijc"/>
+            <validator path="validators/noInvalidCharactersValidator.ijc"/>
+        </argument>
+        <argument key="cellName" values="1" required="true" >
+            <defaulter path="defaulters/cellNameDefaulter.ijc" priority="20"/>
+            <validator path="validators/noSpacesValidator.ijc"/>
+            <validator path="validators/noInvalidCharactersValidator.ijc"/>
+        </argument>
+    </action>
+    <action path="actions/generateBin.ant" priority="10" isFatal="true"/>
+    <action path="actions/bootStrapWCCMFiles.ant" priority="10" isFatal="true"/>
+    <action path="actions/convertCodepageForProfileBatchFiles.ant" priority="10" isFatal="false"/>
+    <action path="actions/collectNodeMetadata.ant" priority="10" isFatal="true"/>
+    <action path="actions/bootStrapSASClient.ant" priority="10" isFatal="true"/>
+    <action path="actions/os400.ant" priority="11" isFatal="true">
+          <argument key="serverName" values="1" required="false" platform="os400">
+                <defaulter path="defaulters/serverNameDefaulter.ijc" priority="25"/>
+          </argument>
+          <argument key="os400passwords" values="0" required="false" platform="os400"/>
+          <argument key="validationlist" values="1" required="false" platform="os400"/>
+          <argument key="exthttp" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/launchWsAdminListener.ant" priority="11" isFatal="true"/>
+    <action path="actions/generateKeysForSingleProfile.ant" priority="11" isFatal="true"/>
+    <action path="actions/executeSecuritySettingConfig.ant" priority="11" isFatal="true">
+          <argument key="enableAdminSecurity" values="1" required="true">
+              <defaulter path="defaulters/enableAdminSecurityDefaulter.ijc"/>
+              <validator path="validators/booleanValidator.ijc"/>
+          </argument>
+          <argument key="adminUserName" values="1" required="false">
+              <validator path="validators/adminSecurityNoInvalidCharactersValidator.ijc"/>
+              <validator path="validators/adminSecurityArgIsSetValidator.ijc"/>
+          </argument>
+          <argument key="adminPassword" values="1" required="false">
+              <validator path="validators/adminSecurityArgIsSetValidator.ijc"/>
+          </argument>
+          <argument key="useSAFSecurity" values="1" required="false">
+              <defaulter path="defaulters/falseDefaulter.ijc"/>
+              <validator path="validators/useSAFValidator.ijc"/>
+          </argument>
+    </action>
+    <action path="actions/zInitialSecuritySetup.ant" priority="13" isFatal="true">
+          <argument key="enableAdminSecurity" values="1" required="true"/>
+          <argument key="useSAFSecurity" values="1" required="false"/>
+    </action>
+    <action path="actions/executeSIBTemplateConfig.ant" priority="15" isFatal="true"/>
+    <action path="actions/createDefaultServer.ant" priority="20" isFatal="true">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+          <argument key="isDeveloperServer" values="0" required="false"/>
+    </action>
+    <action path="actions/zUpdateServer.ant" priority="20" isFatal="true"/>
+    <action path="actions/installMEJBApp.ant" priority="20" isFatal="true">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/installFileTransferApp.ant" priority="20" isFatal="true">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/createDefaultLibraries.ant" priority="20" isFatal="false"/>
+    <action path="actions/deployAdminConsole.ant" priority="90" isFatal="false" isOptional="true" descriptionBundle="com.ibm.ws.profiletemplates.resourcebundle.DefaultActionDescriptions">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/deploySIBdefault.ant" priority="90" isFatal="true"/>
+    <action path="actions/defaultAppDeployAndConfig.ant" priority="90" isFatal="false" isOptional="true" descriptionBundle="com.ibm.ws.profiletemplates.resourcebundle.DefaultActionDescriptions">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/deployIVTApp.ant" priority="90" isFatal="false">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/schedConfig.ant" priority="90" isFatal="false">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/queryConfig.ant" priority="90" isFatal="false">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>
+    <action path="actions/amjrteConfig.ant" priority="90" isFatal="false"/>
+    <action path="actions/hamanagerConfig.ant" priority="90" isFatal="false"/>
+    <action path="actions/zCreateUUIDs.ant" priority="90" isFatal="false"/>
+    <action path="actions/configFirstStepsDefault.ant" priority="90" isFatal="false"/>
+    <action path="actions/createLinuxServiceDefault.ant" priority="90" isFatal="false">
+           <argument key="enableService" values="1" required="false" platform="linux">
+               <defaulter path="defaulters/falseDefaulter.ijc" priority="45"/>
+               <validator path="validators/booleanValidator.ijc" />
+           </argument>
+           <argument key="serviceUserName" values="1" required="false" platform="linux">
+               <validator path="validators/serviceUserAccountValidator.ijc"/>
+           </argument>
+    </action>
+    <action path="actions/createWinServiceDefault.ant" priority="90" isFatal="false">
+           <argument key="winserviceCheck" values="1" required="false" platform="windows">
+               <defaulter path="defaulters/falseDefaulter.ijc" priority="45"/>
+               <validator path="validators/booleanValidator.ijc" />
+           </argument>
+           <argument key="winserviceAccountType" values="1" required="false" platform="windows">
+               <defaulter path="defaulters/winserviceAccountTypeDefaulter.ijc" priority="50"/>
+               <validator path="validators/winserviceAccountTypeValidator.ijc" />
+           </argument>
+           <argument key="winserviceUserName" values="1" required="false" platform="windows">
+               <defaulter path="defaulters/winserviceUserNameDefaulter.ijc" priority="50"/>
+               <validator path="validators/serviceUserAccountValidator.ijc"/>
+               <validator path="validators/userAdminPrivilegeValidator.ijc"/>
+           </argument>
+           <argument key="winservicePassword" values="1" required="false" platform="windows">
+               <validator path="validators/serviceUserAccountValidator.ijc"/>
+           </argument>
+           <argument key="winserviceStartupType" values="1" required="false" platform="windows">
+               <defaulter path="defaulters/winserviceStartupTypeDefaulter.ijc" priority="50"/>
+               <validator path="validators/winserviceStartupTypeValidator.ijc"/>
+           </argument>
+           <argument key="enableAdminSecurity" values="1" required="false"/>
+           <argument key="adminUserName" values="1" required="false"/>
+           <argument key="adminPassword" values="1" required="false"/>
+           <argument key="serverName" values="1" required="false" platform="os400"/>
+    </action>          
+    <action path="actions/updatePorts.ant" priority="91" isFatal="false">
+        <argument key="portsFile" values="1" required="false">
+	    <validator path="validators/fileValidator.ijc"/>
+	</argument>
+        <argument key="startingPort" values="1" required="false">
+            <validator path="validators/startingPortPositiveIntValidator.ijc"/>
+            <validator path="validators/startingPortPortValueInRangeValidator.ijc"/>
+            <validator path="validators/startingPortNoSpacesValidator.ijc"/>
+        </argument>
+        <argument key="defaultPorts" values="0" required="false"/>
+        <argument key="validatePorts" values="0" required="false">
+            <validator path="validators/portsCmdLineValidator.ijc" />
+        </argument>
+    </action>
+    <action path="actions/zUpdateHosts.ant" priority="91" isFatal="false"/>
+    <action path="actions/updateDebugPort.ant" priority="92" isFatal="false">
+        <argument key="portsFile" values="1" required="false"/>
+        <argument key="startingPort" values="1" required="false"/>
+        <argument key="defaultPorts" values="0" required="false"/>
+    </action>
+    <action path="actions/samplesInstallAndConfig.ant" priority="90" isFatal="false" isOptional="true" descriptionBundle="com.ibm.ws.profiletemplates.resourcebundle.DefaultActionDescriptions">
+          <argument key="serverName" values="1" required="false" platform="os400"/>
+          <argument key="samplesPassword" values="1" required="false"/>
+    </action>
+    <action path="actions/createProfileShortCut2StartMenuDefault.ant" priority="93" isFatal="false"/>
+    <action path="actions/adjustProfileForEmbed.ant" priority="95" isFatal="true"/>
+    <action path="actions/generateCollectorBin.ant" priority="10" isFatal="false"/>
+    <action path="actions/os400finish.ant" priority="98" isFatal="false"/>
+    <action path="actions/deleteUnecessaryScriptsInProfileBin.ant" priority="99" isFatal="false"/>
+    <action path="actions/createVirtualHost.ant" priority="100" isFatal="false"/>
+    <action path="actions/createWebServerDefinition.ant" priority="90" isFatal="true">
+          <argument key="webServerCheck" values="1" required="false">
+              <defaulter path="defaulters/webServerCheckDefaulter.ijc" priority="60"/>
+              <validator path="validators/booleanValidator.ijc"/>
+          </argument>
+          <argument key="webServerType" values="1" required="false">
+              <validator path="validators/webServerTypeValidator.ijc"/>
+              <validator path="validators/webServerDefinitionComboValidator.ijc"/>
+          </argument>
+          <argument key="webServerOS" values="1" required="false">
+              <validator path="validators/webServerOSValidator.ijc"/>
+              <validator path="validators/webServerDefinitionComboValidator.ijc"/>
+          </argument>
+          <argument key="webServerName" values="1" required="false">
+              <defaulter path="defaulters/webServerNameDefaulter.ijc" priority="65"/>
+              <validator path="validators/webServerNoInvalidCharactersValidator.ijc"/>
+              <validator path="validators/webServerNoSpacesValidator.ijc"/>
+          </argument>
+          <argument key="webServerHostname" values="1" required="false">
+              <defaulter path="defaulters/webServerHostNameDefaulter.ijc" priority="65"/>
+              <validator path="validators/webServerHostNameValidator.ijc"/>
+          </argument>
+          <argument key="webServerPort" values="1" required="false">
+              <defaulter path="defaulters/webServerPortDefaulter.ijc" priority="65"/>
+              <validator path="validators/webServerPortValueInRangeValidator.ijc"/>
+          </argument>
+          <argument key="webServerInstallPath" values="1" required="false">
+              <defaulter path="defaulters/webServerInstallPathDefaulter.ijc" priority="65"/>
+              <validator path="validators/webServerProperlyFormedPathValidator.ijc"/>
+          </argument>
+          <argument key="webServerPluginPath" values="1" required="false">
+              <defaulter path="defaulters/webServerPluginPathDefaulter.ijc" priority="65"/>
+              <validator path="validators/webServerProperlyFormedPathValidator.ijc"/>
+          </argument>
+    </action>
+    <action path="actions/stopWsAdminListener.ant" priority="100" isFatal="false"/>
+    <action path="actions/clearClassCache.ant" priority="100" isFatal="true"/>
+    <action path="actions/aboutThisProfileDefault.ant" priority="100" isFatal="false"/>
+</actions>

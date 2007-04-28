@@ -1,0 +1,12 @@
+<project name="setupForDelete" default="createLogLocation" basedir=".">
+<taskdef name="wscmtlog" classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+    <target name="createLogLocation" 
+        description="Creates a logging location">
+        
+        <wscmtlog>Create logging location: ${WS_CMT_LOG_HOME}/${profileName}/ </wscmtlog>
+        
+        <mkdir dir="${WS_CMT_LOG_HOME}/${profileName}/"/>
+
+    </target>
+
+</project>

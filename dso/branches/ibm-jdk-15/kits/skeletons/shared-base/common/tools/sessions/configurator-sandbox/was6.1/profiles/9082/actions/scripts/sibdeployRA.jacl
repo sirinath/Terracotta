@@ -1,0 +1,98 @@
+##
+## sibdeployRA.jacl
+##
+## Deploys the SIB JMS RA to all scopes from a system template
+##
+## The correct usage is wsadmin -f sibdeployra.jacl [nodeName]
+##
+## Note that nodeName is optional, and is the name of the node to which the SIB
+## JMS RA is to be deployed. If not supplied, deployment is made to all nodes.
+##
+
+## No need to get the supplied node name because it's not used anywhere!
+
+##
+## Set up static variables.
+##
+
+set sibratpl (templates/system|sibjmsresources-ra.xml#SIBJMSResourceAdapter_1)
+set sibraname "SIB JMS Resource Adapter"
+
+##
+## Get a list of all application server templates.
+##
+
+set serverids [$AdminConfig listTemplates Server templates/servertypes/APPLICATION_SERVER/servers]
+
+if {[llength $serverids] == 0} {
+  puts ""
+  puts "ERROR: Unable to find any Server templates: templates/servertypes/APPLICATION_SERVER/servers"
+  puts ""
+  exit 1
+}
+
+##
+## Add the SIB JMS RA to each application server template.
+##
+
+foreach serverid $serverids {
+
+  set serverName [$AdminConfig showAttribute $serverid name]
+    
+  puts "Adding SIB JMS RA to application server template $serverName...."
+  
+  set sibcopyparms [list -scope $serverid -name $sibraname]
+  set sibra_server [$AdminTask copyResourceAdapter $sibratpl $sibcopyparms]
+} 
+
+##
+## Add the SIB JMS RA to all node scopes.
+##
+
+set nodeList [$AdminConfig list Node]
+
+if {[llength $nodeList] == 0} {
+  puts ""
+  puts "ERROR: Unable to locate any configured nodes in the current profile."
+  puts ""
+  exit 1
+}
+
+foreach node $nodeList {
+
+  set thisNodeName [$AdminConfig showAttribute $node name]
+  
+  puts "Adding SIB JMS RA to node $thisNodeName...."
+    
+  set sibcopyparms [list -scope $node -name $sibraname]
+  set sibra_server [$AdminTask copyResourceAdapter $sibratpl $sibcopyparms]
+}
+
+##
+## Add SIB JMS RA to Cell scope resources.
+##
+
+set cellList [$AdminConfig list Cell]
+
+if {[llength $cellList] == 0} {
+  puts ""
+  puts "ERROR: Unable to locate a configured cell in the current profile."
+  puts ""
+  exit 1
+}
+
+set thisCell [lindex $cellList 0]
+set thisCellName [$AdminConfig showAttribute $thisCell name]
+
+puts "Adding SIB JMS RA to cell $thisCellName...."
+
+set sibcopyparms [list -scope $thisCell -name $sibraname]
+set sibra_server [$AdminTask copyResourceAdapter $sibratpl $sibcopyparms]
+
+##
+## Save the modified configuration.
+##
+
+puts "Saving updated configuration...."
+
+$AdminConfig save

@@ -1,0 +1,90 @@
+<project name="nodeUninstConfig" default="nodeUninstConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <condition property="isOS400" value="true">
+           <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+    
+    <target name="setOSFileSeparator"
+            description="Sets the current file separator for this platform (file.separator is unreliable on ANT 1.5.4)">
+            
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="separatorFile" value="\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+    
+    <target name="resolveNodeUninstScriptForTheCurrentPlatform"
+            description="Sets NODE_UNINST_SCRIPT to the right script for the current platform">
+            
+        <condition property="NODE_UNINST_SCRIPT" value="${profilePath}/bin/_nodeuninst">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="NODE_UNINST_SCRIPT" value="${profilePath}/bin/_nodeuninst.sh">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="NODE_UNINST_SCRIPT" value="${profilePath}/bin/_nodeuninst.bat">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+        
+        <wscmtlog>Node uninstall script set to: ${NODE_UNINST_SCRIPT}</wscmtlog>
+    </target>
+    
+    <target name="runNodeUninstScript" unless="isOS400"
+            description="Runs the node uninstall command">
+            
+        <wscmtlog>Running node uninstall script, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/nodeUninst_config.log</wscmtlog>
+            
+        <exec executable="${NODE_UNINST_SCRIPT}" failonerror="true"
+                output="${WS_CMT_LOG_HOME}/${profileName}/nodeUninst_config.log">
+            <env key="JAVA_HOME" value="${WAS_HOME}${separatorFile}java${separatorFile}jre"/>
+        </exec>
+    </target>
+
+    <target name="runNodeUninstScriptOS400" if="isOS400"
+            description="Runs the node uninstall command">
+            
+        <wscmtlog>Running node uninstall script, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/nodeUninst_config.log</wscmtlog>
+            
+        <exec executable="${NODE_UNINST_SCRIPT}" failonerror="true"
+                output="${WS_CMT_LOG_HOME}/${profileName}/nodeUninst_config.log">
+        </exec>
+    </target>
+
+    <target name="nodeUninstConfig"
+        description="Runs node uninstall utility"
+        depends="detectCurrentOSFamily,
+            setOSFileSeparator,
+            resolveNodeUninstScriptForTheCurrentPlatform,
+            runNodeUninstScript,
+            runNodeUninstScriptOS400"/>
+</project>

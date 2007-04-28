@@ -1,0 +1,88 @@
+<project name="executeSIBTemplateConfig" default="executeSIBTemplateConfig" basedir="."> 
+     
+    <taskdef name="wscmtlog" 
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/> 
+ 
+ 		<taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>
+ 
+    <target name="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii"
+            description="Replaces all instances of the given token for the given file with the given value">
+
+        <wscmtlog>Replacing token: ${token}, with ${tokenValue}, in file ${file}</wscmtlog>
+
+        <replace file="${file}"
+            token="${token}"
+            encoding="UTF-8"
+            value="${tokenValue}"/>
+    </target>
+ 
+    <target name="runSIBDefineChainsJACL" 
+            description="Runs the JACL script to update the default server template with the SIB transport chains"> 
+             
+        <wscmtlog>Defining SIB transport chains and ports in the default server template, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/SIBDefineChains.log</wscmtlog>
+             
+        <echo>${profileName}</echo>
+        <echo>user.install.root value=${profilePath}</echo>
+        <echo>was.install.root value=${WAS_HOME}</echo>
+        <echo>was.repository.root value=${profilePath}/config</echo>
+        <echo>local.cell value=${cellName}</echo>
+        <echo>local.node value=${nodeName}</echo>
+
+        <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/SIBDefineChains.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 script="${templatePath}/actions/scripts/sibdefinechains.jacl"
+                 lang="jacl"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <arg value="${nodeName}"/>
+        </wsadmin>  
+             
+    </target> 
+ 
+    <target name="runSIBDeploySIBJMSRAJACL" 
+            description="Runs the JACL script to update the default server resources template with the SIB RA"> 
+
+        <wscmtlog>Adding SIB JMS RA to the Cell, Node, and default server template, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/SIBDeployRA.log</wscmtlog>
+             
+        <wsadmin conntype="none"
+                 failonerror="true"
+                 tracefile="${WS_CMT_LOG_HOME}/${profileName}/SIBDeployRA.log"
+                 wasHome="${WAS_HOME}"
+                 wasInstallRoot="${WAS_HOME}"
+                 wasRepositoryRoot="${profilePath}/config"
+                 userInstallRoot="${profilePath}"
+                 localCell="${cellName}"
+                 localNode="${nodeName}"
+                 wsadminProps="${profilePath}/properties/wsadmin.properties"
+                 script="${templatePath}/actions/scripts/sibdeployRA.jacl"
+                 lang="jacl"
+                 ipcFilename="${profilePath}/temp/wsadmin"
+                 >
+                 <arg value="${nodeName}"/>
+        </wsadmin>       
+        
+    </target> 
+             
+    <target name="executeSIBTemplateConfig"
+        description="Configures templates for SIB component"
+        depends="runSIBDeploySIBJMSRAJACL,
+                 runSIBDefineChainsJACL">
+
+        <!-- Added for 228437 -->
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+           <param name="file" value="${profilePath}/config/templates/chains/sibservice-chains.xml"/>
+           <param name="token" value="$$(node.name)"/>
+           <param name="tokenValue" value="${nodeName}"/>
+        </antcall>
+
+    </target>
+
+</project>

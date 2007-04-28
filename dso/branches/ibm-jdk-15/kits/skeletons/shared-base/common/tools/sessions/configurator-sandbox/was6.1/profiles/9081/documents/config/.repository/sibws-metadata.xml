@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<!-- WorkSpace Meta Data for SIBus Webservices -->
+
+<!--
+@start_restricted_prolog@
+Version: @(#) 1.2 SIB/ws/code/sib.webservices/src/config/.repository/sibws-metadata.xml, SIB.webservices.runtime, WAS61.SIB, b0620.04 05/01/26 08:26:10 [5/15/06 17:11:29]
+
+Licensed Materials - Property of IBM
+
+"Restricted Materials of IBM"
+
+5724-I63, 5724-H88, 5655-N01, 5733-W60         
+
+(C) Copyright IBM Corp. 2004 All Rights Reserved.
+
+US Government Users Restricted Rights - Use, duplication or
+disclosure restricted by GSA ADP Schedule Contract with
+IBM Corp.
+@end_restricted_prolog@
+-->
+
+
+<metadata>
+	<metadata-name>SIBWS</metadata-name>
+
+    <!-- Document names and their config parents for the SIBWS Component -->
+    <contexts>
+        <context>
+            <context-name>cells</context-name>
+            <root-document-type>Cell</root-document-type>
+            <child-document-names>
+    		    	<child-document-name>WebServices</child-document-name>
+            </child-document-names>
+    	</context>
+        <context>
+            <context-name>buses</context-name>
+            <root-document-type>Bus</root-document-type>
+            <child-document-names>
+                <child-document-name>InboundServices</child-document-name>
+                <child-document-name>OutboundServices</child-document-name>
+                <child-document-name>GatewayServices</child-document-name>
+            </child-document-names>
+        </context>
+        <context>
+            <context-name>servers</context-name>
+            <root-document-type>Server</root-document-type>
+            <child-document-names>
+ 		    	<child-document-name>EndPointListeners</child-document-name>
+           </child-document-names>
+        </context>
+	</contexts>
+    <context>
+        <context-name>clusters</context-name>
+        <child-document-names>
+            <child-document-name>EndPointListeners</child-document-name>
+        </child-document-names>
+    </context>
+
+
+    <!-- File names for each SIBWS document, plus a list of the top level objects stored
+         in each file. Children of the top level objects will be stored automatically, so
+         they don't need to be named explicitly. -->
+    <!-- If a new XML file is added to this list, please also update the
+    file list in com.ibm.ws.sib.webservices.configuration.ConfigurationUpdates
+    in order to enabled dynamic configuration updates.
+    -->
+	<documents>
+      	<document>
+      		<document-name>WebServices</document-name>            
+	      	<file-pattern>sibws-webservices.xml</file-pattern>
+	      	<root-refobject-types>
+    	  		<root-refobject-type>JAXRPCHandlerList</root-refobject-type>
+    	  		<root-refobject-type>JAXRPCHandler</root-refobject-type>
+    	  		<root-refobject-type>UDDIReference</root-refobject-type>
+                <child-validator-names>
+                    <child-validator-name>WebServices Base</child-validator-name>
+                    <child-validator-name>WebServices Cross</child-validator-name>
+                </child-validator-names>
+      		</root-refobject-types>
+    	</document>
+		<document>
+            <document-name>InboundServices</document-name>
+            <file-pattern>sibws-inbound.xml</file-pattern>
+            <root-refobject-types>
+                <root-refobject-type>SIBWSInboundService</root-refobject-type>
+            </root-refobject-types>
+			<child-validator-names>
+				<child-validator-name>InboundValidator Base</child-validator-name>
+                <child-validator-name>InboundValidator Cross</child-validator-name>
+			</child-validator-names>
+        </document>
+        <document>
+			<document-name>OutboundServices</document-name>
+            <file-pattern>sibws-outbound.xml</file-pattern>
+            <root-refobject-types>
+                <root-refobject-type>SIBWSOutboundService</root-refobject-type>
+            </root-refobject-types>
+			<child-validator-names>
+				<child-validator-name>OutboundValidator Base</child-validator-name>
+				<child-validator-name>OutboundValidator Cross</child-validator-name>
+			</child-validator-names>
+        </document>
+        <document>
+			<document-name>GatewayServices</document-name>
+            <file-pattern>sibws-gateway.xml</file-pattern>
+            <root-refobject-types>
+                <root-refobject-type>WSGWInstance</root-refobject-type>
+            </root-refobject-types>
+			<child-validator-names>
+				<child-validator-name>GatewayValidator Base</child-validator-name>
+				<child-validator-name>GatewayValidator Cross</child-validator-name>
+			</child-validator-names>
+            <child-validator-name>GatewayValidator Base</child-validator-name>
+        </document>
+      	<document>
+      		<document-name>EndPointListeners</document-name>
+	      	<file-pattern>sibws-epl.xml</file-pattern>
+	      	<root-refobject-types>
+    	  		<root-refobject-type>SIBWSEndpointListener</root-refobject-type>
+      		</root-refobject-types>
+            <child-validator-names>
+                <child-validator-name>EPLValidator Base</child-validator-name>
+                <child-validator-name>EPLValidator Cross</child-validator-name>
+            </child-validator-names>
+    	</document>
+	</documents>
+
+    <!-- Validators for the SIBWS documents and the validator classname. Note that 
+    if the relevant class isn't found you'll get an error in trace (when the 
+    validation trace is enabled) but that is the only symptom -->
+    <validators>
+        <validator>
+            <validator-name>InboundValidator Base</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsInboundValidator</validator-class-name>
+            <validator-description>InboundValidator Base</validator-description>
+            <cross-document>false</cross-document>
+        </validator>
+        <validator>
+            <validator-name>InboundValidator Cross</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsInboundCrossValidator</validator-class-name>
+            <validator-description>InboundValidator Cross</validator-description>
+            <cross-document>true</cross-document>
+        </validator>
+        <validator>
+            <validator-name>OutboundValidator Base</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsOutboundValidator</validator-class-name>
+            <validator-description>OutboundValidator Base</validator-description>
+            <cross-document>false</cross-document>
+        </validator>
+        <validator>
+            <validator-name>OutboundValidator Cross</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsOutboundCrossValidator</validator-class-name>
+            <validator-description>OutboundValidator Cross</validator-description>
+            <cross-document>true</cross-document>
+        </validator>
+        <validator>
+            <validator-name>GatewayValidator Base</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsGatewayValidator</validator-class-name>
+            <validator-description>GatewayValidator Base</validator-description>
+            <cross-document>false</cross-document>
+        </validator>
+        <validator>
+            <validator-name>GatewayValidator Cross</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.SibwsGatewayCrossValidator</validator-class-name>
+            <validator-description>GatewayValidator Cross</validator-description>
+            <cross-document>true</cross-document>
+        </validator>
+        <validator>
+            <validator-name>WebServices Base</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.WSValidator</validator-class-name>
+            <validator-description>WebServices Base</validator-description>
+            <cross-document>false</cross-document>
+        </validator>
+        <validator>
+            <validator-name>WebServices Cross</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.WSCrossValidator</validator-class-name>
+            <validator-description>WebServices Cross</validator-description>
+            <cross-document>true</cross-document>
+        </validator>
+        <validator>
+            <validator-name>EPLValidator Base</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.EPLValidator</validator-class-name>
+            <validator-description>EPLValidator Base</validator-description>
+            <cross-document>false</cross-document>
+        </validator>
+        <validator>
+            <validator-name>EPLValidator Cross</validator-name>
+            <validator-class-name>com.ibm.websphere.validation.sibws.EPLCrossValidator</validator-class-name>
+            <validator-description>EPLValidator Cross</validator-description>
+            <cross-document>true</cross-document>
+        </validator>
+    </validators>
+</metadata>

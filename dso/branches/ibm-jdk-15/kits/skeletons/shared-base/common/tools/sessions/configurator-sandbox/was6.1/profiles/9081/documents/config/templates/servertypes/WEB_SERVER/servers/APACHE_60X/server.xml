@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:process="http://www.ibm.com/websphere/appserver/schemas/5.0/process.xmi" xmlns:properties="http://www.ibm.com/websphere/appserver/schemas/5.0/properties.xmi"   xmlns:webserver="http://www.ibm.com/websphere/appserver/schemas/6.0/webserver.xmi"  xmlns:processexec="http://www.ibm.com/websphere/appserver/schemas/5.0/processexec.xmi"  >
+  <xmi:Documentation>
+    <contact>WebSphere WEB Server v6.0 Default Configuration Files v1.40.1.1 4/4/03</contact>
+  </xmi:Documentation>
+
+<!-- Default Web Server shell Configuration Template -->
+
+<process:Server xmi:id="Webserver_1" name="webserver1" >
+
+  <components xmi:type="webserver:WebServer" xmi:id="Webserver_1" webserverType="APACHE" 
+   webserverProtocol="HTTP"  webserverInstallRoot="">
+    <stateManagement xmi:id="StateManageable_4" initialState="STOP"/>
+    
+    <pluginProperties xmi:id="PluginProperties_1" PluginInstallRoot = "" ConfigFilename = "plugin-cfg.xml" RefreshInterval = "60" IgnoreDNSFailures = "false" LogLevel = "ERROR" LogFilename = "" ResponseChunkSize = "64" ASDisableNagle = "false" IISDisableNagle = "false" IISPluginPriority = "HIGH" AcceptAllContent = "false" ChunkedResponse = "false" ESIEnable = "true" ESIMaxCacheSize = "1024" ESIInvalidationMonitor = "false" AppServerPortPreference = "HOSTHEADER" VHostMatchingCompat = "false" PluginPropagation = "AUTOMATIC" PluginGeneration = "AUTOMATIC">  
+       <pluginServerClusterProperties xmi:id="PluginServerClusterProperties_1" LoadBalance = "ROUND_ROBIN" RetryInterval = "60" RemoveSpecialHeaders = "true" CloneSeparatorChange = "false" PostSizeLimit = "-1" />
+    </pluginProperties> 
+  
+  </components>
+ 
+  <processDefinitions xmi:type="processexec:JavaProcessDef" xmi:id="JavaProcessDef_1" executableName="" workingDirectory="" startCommand="" stopCommand="">
+    <startCommandArgs></startCommandArgs>
+    <stopCommandArgs></stopCommandArgs>
+    <execution xmi:id="ProcessExecution_1090345309156" processPriority="20" runAsUser="" runAsGroup=""/>
+    <jvmEntries xmi:id="JavaVirtualMachine_1090345309156" verboseModeClass="false" verboseModeGarbageCollection="false" verboseModeJNI="false" runHProf="false" hprofArguments="" debugMode="false" debugArgs="" genericJvmArguments=""/>
+  </processDefinitions>
+
+
+</process:Server>
+</xmi:XMI>

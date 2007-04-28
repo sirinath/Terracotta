@@ -1,0 +1,331 @@
+## sibdefinechains.jacl
+##
+## Creates the default set of SIB chains.
+##
+
+if {[llength $argv] < 1} {
+  puts ""
+  puts "ERROR: Incorrect usage."
+  puts ""
+  puts "Usage: wsadmin -f sibdefinechains.jacl nodeName"
+  puts ""
+  exit 1
+}
+
+set nodeName [lindex $argv 0]
+
+##
+## Set up static variables
+##
+
+## End points
+
+set epJFAP                       SIB_ENDPOINT_ADDRESS
+set epJFAP_port                  7276
+set epJFAPSSL                    SIB_ENDPOINT_SECURE_ADDRESS
+set epJFAPSSL_port               7286
+set epMQFAP                      SIB_MQ_ENDPOINT_ADDRESS
+set epMQFAP_port                 5558
+set epMQFAPSSL                   SIB_MQ_ENDPOINT_SECURE_ADDRESS
+set epMQFAPSSL_port              5578
+
+## Inbound Chains
+
+set chInboundBasic               InboundBasicMessaging
+set chInboundSecure              InboundSecureMessaging
+set chInboundBasicMQ             InboundBasicMQLink
+set chInboundSecureMQ            InboundSecureMQLink
+
+## ThreadPool for inbound chains
+
+set sibInboundFapThreadPoolName  SIBFAPInboundThreadPool
+set sibInboundFapThreadPoolDesc  "Service integration bus FAP inbound channel thread pool"
+
+## ThreadPool for outbound chains
+
+set sibOutboundFapThreadPoolName SIBFAPThreadPool
+set sibOutboundFapThreadPoolDesc "Service integration bus FAP outbound channel thread pool"
+
+## Outbound Chains
+
+set chOutboundBasic              BootstrapBasicMessaging
+set chOutboundSecure             BootstrapSecureMessaging
+set chOutboundTunneled           BootstrapTunneledMessaging
+set chOutboundTunneledSecure     BootstrapTunneledSecureMessaging
+set chOutboundBasicMQ            OutboundBasicMQLink
+set chOutboundSecureMQ           OutboundSecureMQLink
+set chOutboundBasicRMQ           OutboundBasicWMQClient
+set chOutboundSecureRMQ          OutboundSecureWMQClient
+
+##
+## Get a list of all application server templates.
+##
+
+set serverIds [$AdminConfig listTemplates Server templates/servertypes/APPLICATION_SERVER/servers]
+
+if {[llength $serverIds] == 0} {
+  puts ""
+  puts "ERROR: unable to find any Server template: templates/servertypes/APPLICATION_SERVER/servers"
+  puts ""
+  exit 1
+}
+
+##
+## Get a list of all application server template server entries.
+##
+
+set serverEntries [$AdminConfig listTemplates ServerEntry templates/servertypes/APPLICATION_SERVER]
+
+if {[llength $serverEntries] == 0} {
+  puts ""
+  puts "ERROR: unable to find any ServerEntry templates: templates/servertypes/APPLICATION_SERVER"
+  puts ""
+  exit 1
+}
+
+##
+## Modify all application server templates and their server entries.
+##
+
+foreach serverId $serverIds {
+
+  set serverName [$AdminConfig showAttribute $serverId name]
+  
+  set default_60X "default_60X"
+  set defaultZOS_60X "defaultZOS_60X"
+  
+  set default_5X "default_5X"
+  set defaultZOS_5X "defaultZOS_5X"
+  if {[string equal $default_5X $serverName]} {
+      continue;
+  }
+  if {[string equal $defaultZOS_5X $serverName]} {
+      continue;
+  }
+  
+  puts "Application server template: $serverName"
+  
+  ##
+  ## Find the server entry whose name matches the server name.
+  ##
+  
+  set serverEntry ""
+  
+  foreach se $serverEntries {
+    set serverEntryName [$AdminConfig showAttribute $se serverName]  
+    if {[string equal $serverEntryName $serverName]} {
+      set serverEntry $se
+      break;
+    }
+  }
+  
+  if {[llength $serverEntry] == 0} {
+    puts ""
+    puts "ERROR: unable to find default ServerEntry template: templates/servertypes/APPLICATION_SERVER/$serverName"
+    puts ""
+    exit 1
+  }
+
+  puts "...Application server template: $serverEntryName"
+  
+  ##
+  ## Create the end points
+  ##
+
+  puts "Creating SIB endpoints"
+
+  set namedEndPointJFAP     [$AdminConfig create NamedEndPoint $serverEntry "{endPointName $epJFAP}"]
+  set namedEndPointJFAPSSL  [$AdminConfig create NamedEndPoint $serverEntry "{endPointName $epJFAPSSL}"]
+  set namedEndPointMQFAP    [$AdminConfig create NamedEndPoint $serverEntry "{endPointName $epMQFAP}"]
+  set namedEndPointMQFAPSSL [$AdminConfig create NamedEndPoint $serverEntry "{endPointName $epMQFAPSSL}"]
+
+  set endPointJFAP          [$AdminConfig create EndPoint $namedEndPointJFAP     "{host *} {port $epJFAP_port}"]
+  set endPointJFAPSSL       [$AdminConfig create EndPoint $namedEndPointJFAPSSL  "{host *} {port $epJFAPSSL_port}"]
+  set endPointMQFAP         [$AdminConfig create EndPoint $namedEndPointMQFAP    "{host *} {port $epMQFAP_port}"]
+  set endPointMQFAPSSL      [$AdminConfig create EndPoint $namedEndPointMQFAPSSL "{host *} {port $epMQFAPSSL_port}"]
+
+  ##
+  ## TransportChannelService
+  ##
+
+  ## Create threadpools. First we need to get hold of the thread pool manager...
+  
+  set tpm                      [$AdminConfig list ThreadPoolManager $serverId]
+
+  ## Create a threadpool for the inbound chains.
+  
+  puts "Creating SIB inbound thread pool"
+  set sibInboundFapThreadPool  [$AdminConfig create ThreadPool $tpm "{name $sibInboundFapThreadPoolName} {description \"$sibInboundFapThreadPoolDesc\"} {maximumSize 50} {minimumSize 4}"]
+
+  ## Create a threadpool for the outbound chains.
+  
+  puts "Creating SIB outbound thread pool"
+  set sibOutboundFapThreadPool [$AdminConfig create ThreadPool $tpm "{name $sibOutboundFapThreadPoolName} {description \"$sibOutboundFapThreadPoolDesc\"} {maximumSize 50} {minimumSize 4}"]
+
+  ## This is the parent of all Channel and Chain objects and hence is
+  ## require as an argument to the create command.
+
+  set tcs [$AdminConfig list TransportChannelService $serverId]
+
+  ##
+  ## Create inbound channels and chains
+  ##
+
+  puts "Creating SIB inbound channels"
+
+  set tcpChannelJFAP           [$AdminConfig create TCPInboundChannel   $tcs "{name SIB_TCP_JFAP}      {endPointName $epJFAP}     {threadPool $sibInboundFapThreadPool}"]
+  set tcpChannelJFAPSSL        [$AdminConfig create TCPInboundChannel   $tcs "{name SIB_TCP_JFAP_SSL}  {endPointName $epJFAPSSL}  {threadPool $sibInboundFapThreadPool}"]
+  set tcpChannelMQFAP          [$AdminConfig create TCPInboundChannel   $tcs "{name SIB_TCP_MQFAP}     {endPointName $epMQFAP}    {threadPool $sibInboundFapThreadPool}"]
+  set tcpChannelMQFAPSSL       [$AdminConfig create TCPInboundChannel   $tcs "{name SIB_TCP_MQFAP_SSL} {endPointName $epMQFAPSSL} {threadPool $sibInboundFapThreadPool}"]
+  
+  set sslChannelJFAP           [$AdminConfig create SSLInboundChannel   $tcs "{name SIB_SSL_JFAP}      {discriminationWeight 1}"]
+  set sslChannelMQFAP          [$AdminConfig create SSLInboundChannel   $tcs "{name SIB_SSL_MQFAP}     {discriminationWeight 1}"]
+  
+  set jfapChannel              [$AdminConfig create JFAPInboundChannel  $tcs "{name SIB_JFAP}          {discriminationWeight 1}"]
+  set jfapChannelSSL           [$AdminConfig create JFAPInboundChannel  $tcs "{name SIB_JFAP_SSL}      {discriminationWeight 1}"]
+  
+  set mqfapChannel             [$AdminConfig create MQFAPInboundChannel $tcs "{name SIB_MQFAP}         {discriminationWeight 1}"]
+  set mqfapChannelSSL          [$AdminConfig create MQFAPInboundChannel $tcs "{name SIB_MQFAP_SSL}     {discriminationWeight 1}"]
+
+  puts "Creating SIB inbound channel chains"
+
+  # InboundBasicMessaging
+  set chainJFAP                [$AdminConfig create Chain $tcs "{name $chInboundBasic} {enable true} {transportChannels {$tcpChannelJFAP $jfapChannel}}"]
+
+  # InboundSecureMessaging
+  set chainJFAPSSL             [$AdminConfig create Chain $tcs "{name $chInboundSecure} {enable true} {transportChannels {$tcpChannelJFAPSSL $sslChannelJFAP $jfapChannelSSL}}"]
+
+  # InboundBasicMQLink
+  set chainMQFAP               [$AdminConfig create Chain $tcs "{name $chInboundBasicMQ} {enable true} {transportChannels {$tcpChannelMQFAP $mqfapChannel}}"]
+
+  # InboundSecureMQLink
+  set chainMQFAPSSL            [$AdminConfig create Chain $tcs "{name $chInboundSecureMQ} {enable true} {transportChannels {$tcpChannelMQFAPSSL $sslChannelMQFAP $mqfapChannelSSL}}"]
+
+  ##
+  ## Create outbound channels and chains
+  ##
+
+  puts "Creating SIB outbound channels"
+
+  set tcpChannelJFAPOut        [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_JFAP_OUT}         {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  set tcpChannelJFAPSSLOut     [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_JFAP_SSL_OUT}     {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  set tcpChannelJFAPTUNOut     [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_JFAP_TUN_OUT}     {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  set tcpChannelJFAPTUNSSLOut  [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_JFAP_TUN_SSL_OUT} {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  set tcpChannelMQFAPOut       [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_MQFAP_OUT}        {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  set tcpChannelMQFAPSSLOut    [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_MQFAP_SSL_OUT}    {threadPool $sibOutboundFapThreadPool} {inactivityTimeout 60}"]
+  
+  set sslChannelMQFAPSSLOut    [$AdminConfig create SSLOutboundChannel        $tcs "{name SIB_SSL_MQFAP_SSL_OUT}"]
+  set sslChannelJFAPSSLOut     [$AdminConfig create SSLOutboundChannel        $tcs "{name SIB_SSL_JFAP_SSL_OUT}"]
+  set sslChannelJFAPTUNSSLOut  [$AdminConfig create SSLOutboundChannel        $tcs "{name SIB_SSL_JFAP_TUN_SSL_OUT}"]
+  set httpChannelJFAPTUNOut    [$AdminConfig create HTTPOutboundChannel       $tcs "{name SIB_HTTP_JFAP_TUN_OUT}"]
+  set httpChannelJFAPTUNSSLOut [$AdminConfig create HTTPOutboundChannel       $tcs "{name SIB_HTTP_JFAP_TUN_SSL_OUT}"]
+  set htcChannelJFAPTUNOut     [$AdminConfig create HTTPTunnelOutboundChannel $tcs "{name SIB_HTC_JFAP_TUN_OUT}"]
+  set htcChannelJFAPTUNSSLOut  [$AdminConfig create HTTPTunnelOutboundChannel $tcs "{name SIB_HTC_JFAP_TUN_SSL_OUT}"]
+  set jfapChannelJFAPOut       [$AdminConfig create JFAPOutboundChannel       $tcs "{name SIB_JFAP_JFAP_OUT}"]
+  set jfapChannelJFAPSSLOut    [$AdminConfig create JFAPOutboundChannel       $tcs "{name SIB_JFAP_JFAP_SSL_OUT}"]
+  set jfapChannelJFAPTUNOut    [$AdminConfig create JFAPOutboundChannel       $tcs "{name SIB_JFAP_JFAP_TUN_OUT}"]
+  set jfapChannelJFAPTUNSSLOut [$AdminConfig create JFAPOutboundChannel       $tcs "{name SIB_JFAP_JFAP_TUN_SSL_OUT}"]
+  set mqfapChannelMQFAPSSLOut  [$AdminConfig create MQFAPOutboundChannel      $tcs "{name SIB_MQFAP_MQFAP_SSL_OUT}"]
+  set mqfapChannelMQFAPOut     [$AdminConfig create MQFAPOutboundChannel      $tcs "{name SIB_MQFAP_MQFAP_OUT}"]
+  
+  if {![string equal $default_60X $serverName] && ![string equal $defaultZOS_60X $serverName]} {
+    set tcpChannelRMQOut         [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_RMQ_OUT}          {threadPool $sibOutboundFapThreadPool}"]
+    set tcpChannelRMQSSLOut      [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_RMQ_SSL_OUT}      {threadPool $sibOutboundFapThreadPool}"]
+    set sslChannelRMQSSLOut      [$AdminConfig create SSLOutboundChannel        $tcs "{name SIB_SSL_RMQ_SSL_OUT}"]
+    set rmqChannelRMQSSLOut      [$AdminConfig create RMQOutboundChannel        $tcs "{name SIB_RMQ_RMQ_SSL_OUT}"]
+    set rmqChannelRMQOut         [$AdminConfig create RMQOutboundChannel        $tcs "{name SIB_RMQ_RMQ_OUT}"]
+  }  
+
+  puts "Creating SIB outbound channel chains"
+
+  # BootstrapBasicMessaging
+  set chainJFAPOut             [$AdminConfig create Chain $tcs "{name $chOutboundBasic}          {transportChannels {$jfapChannelJFAPOut $tcpChannelJFAPOut}}"]
+
+  # BootstapSecureMessaging
+  set chainJFAPSSLOut          [$AdminConfig create Chain $tcs "{name $chOutboundSecure}         {transportChannels {$jfapChannelJFAPSSLOut $sslChannelJFAPSSLOut $tcpChannelJFAPSSLOut}}"]
+
+  # BootstrapTunneledMessaging
+  set chainJFAPTUNOut          [$AdminConfig create Chain $tcs "{name $chOutboundTunneled}       {transportChannels {$jfapChannelJFAPTUNOut $htcChannelJFAPTUNOut $httpChannelJFAPTUNOut $tcpChannelJFAPTUNOut}}"]
+
+  # BootstrapTunneledSecureMessaging
+  set chainJFAPTUNSSLOut       [$AdminConfig create Chain $tcs "{name $chOutboundTunneledSecure} {transportChannels {$jfapChannelJFAPTUNSSLOut $htcChannelJFAPTUNSSLOut $httpChannelJFAPTUNSSLOut $sslChannelJFAPTUNSSLOut $tcpChannelJFAPTUNSSLOut}}"]
+
+  # OutboundBasicMQLink
+  set chainMQFAPOut            [$AdminConfig create Chain $tcs "{name $chOutboundBasicMQ}        {transportChannels {$mqfapChannelMQFAPOut $tcpChannelMQFAPOut}}"]
+
+  # OutboundSecureMQLink
+  set chainMQFAPSSLOut         [$AdminConfig create Chain $tcs "{name $chOutboundSecureMQ}       {transportChannels {$mqfapChannelMQFAPSSLOut $sslChannelMQFAPSSLOut $tcpChannelMQFAPSSLOut}}"]
+  
+  if {![string equal $default_60X $serverName] && ![string equal $defaultZOS_60X $serverName]} {
+    # OutboundBasicWMQClient
+    set chainRMQOut              [$AdminConfig create Chain $tcs "{name $chOutboundBasicRMQ}       {transportChannels {$rmqChannelRMQOut $tcpChannelRMQOut}}"]
+
+    # OutboundSecureWMQClient
+    set chainRMQSSLOut           [$AdminConfig create Chain $tcs "{name $chOutboundSecureRMQ}      {transportChannels {$rmqChannelRMQSSLOut $sslChannelRMQSSLOut $tcpChannelRMQSSLOut}}"]
+  }
+}
+
+
+##
+## Add RMQ chains to dmgr server if present
+##
+
+puts "Checking for dmgr server"
+set serverIds [$AdminConfig list Server]
+
+if {[llength $serverIds] > 0} {
+
+  foreach serverId $serverIds {
+
+    set serverName [$AdminConfig showAttribute $serverId name]
+  
+    if {[string equal $serverName "dmgr"]} {
+    
+      puts "Adding remote WebSphere MQ client transport chains to dmgr"
+  
+      ##
+      ## TransportChannelService
+      ##
+      ## This is the parent of all Channel and Chain objects and hence is
+      ## require as an argument to the create command.
+     
+      set tcs [$AdminConfig list TransportChannelService $serverId]
+
+      ## Create threadpools. First we need to get hold of the thread pool manager...
+
+      set tpm                      [$AdminConfig list ThreadPoolManager $serverId]
+
+      ## Create a threadpool for the outbound chains.
+
+      puts "Creating SIB outbound thread pool on dmgr"
+      set sibOutboundFapThreadPool [$AdminConfig create ThreadPool $tpm "{name $sibOutboundFapThreadPoolName} {description \"$sibOutboundFapThreadPoolDesc\"} {maximumSize 50} {minimumSize 4}"]
+
+      ##
+      ## Create outbound channels and chains
+      ##
+
+      puts "Creating SIB remote WebSphere MQ client outbound channels on dmgr"
+
+      set tcpChannelRMQOut         [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_RMQ_OUT}          {threadPool $sibOutboundFapThreadPool}"]
+      set tcpChannelRMQSSLOut      [$AdminConfig create TCPOutboundChannel        $tcs "{name SIB_TCP_RMQ_SSL_OUT}      {threadPool $sibOutboundFapThreadPool}"]
+      set sslChannelRMQSSLOut      [$AdminConfig create SSLOutboundChannel        $tcs "{name SIB_SSL_RMQ_SSL_OUT}"]
+      set rmqChannelRMQSSLOut      [$AdminConfig create RMQOutboundChannel        $tcs "{name SIB_RMQ_RMQ_SSL_OUT}"]
+      set rmqChannelRMQOut         [$AdminConfig create RMQOutboundChannel        $tcs "{name SIB_RMQ_RMQ_OUT}"]
+
+      puts "Creating SIB remote WebSphere MQ client outbound channel chains on dmgr"
+
+      # OutboundBasicWMQClient
+      set chainRMQOut              [$AdminConfig create Chain $tcs "{name $chOutboundBasicRMQ}       {transportChannels {$rmqChannelRMQOut $tcpChannelRMQOut}}"]
+     
+      # OutboundSecureWMQClient
+      set chainRMQSSLOut           [$AdminConfig create Chain $tcs "{name $chOutboundSecureRMQ}      {transportChannels {$rmqChannelRMQSSLOut $sslChannelRMQSSLOut $tcpChannelRMQSSLOut}}"]
+    }
+  }
+}
+
+##
+## Save
+##
+
+$AdminConfig save
+

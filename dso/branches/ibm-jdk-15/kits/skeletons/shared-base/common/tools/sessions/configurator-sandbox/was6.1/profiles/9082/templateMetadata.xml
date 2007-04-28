@@ -1,0 +1,16 @@
+<profileTemplate>
+	<resourceBundle>
+		<path>lib/defaultResource.jar</path>
+		<baseName>com.ibm.ws.profiletemplates.resourcebundle.DefaultProfileTemplateResourceBundle</baseName>
+	</resourceBundle>
+	<name>Default.name</name>
+	<type>default</type>
+	<version>0.0001</version>
+	<shortDescription>Default.shortDescription</shortDescription>
+	<longDescription>Default.longDescription</longDescription>
+	<buildDate>06/02/05</buildDate>
+	<isCreateTemplate>true</isCreateTemplate>
+	<isAugmentTemplate>false</isAugmentTemplate>
+	<isRepeatable>false</isRepeatable>
+        <size>200</size>
+</profileTemplate>

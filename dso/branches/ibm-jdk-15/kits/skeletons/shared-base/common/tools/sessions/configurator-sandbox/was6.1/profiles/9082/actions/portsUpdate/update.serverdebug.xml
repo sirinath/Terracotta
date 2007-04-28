@@ -1,0 +1,10 @@
+    <target name="update.serverdebug.xml">
+        <wscmtlog>port=debugPortNum file=${file}</wscmtlog>
+        <echo message="port=debugPortNum file=${file}"/>
+        <antcall target="replaceRegExpAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+        		<param name="port" value="debugPortNum"/>        		
+			<param name="file" value="${file}"/>
+			<param name="token" value="jvmEntries xmi:id=&quot;JavaVirtualMachine(.*)debugArgs=&quot;(.*)address=(.*)&quot; genericJvmArguments="/>
+			<param name="tokenValue" value="jvmEntries xmi:id=&quot;JavaVirtualMachine\1debugArgs=&quot;\2address=${resolvedDebugPortNum}&quot; genericJvmArguments="/>
+        </antcall>
+    </target>

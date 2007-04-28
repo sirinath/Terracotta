@@ -1,0 +1,33 @@
+#---------------------------------------------------------------
+# Set the JWL Specific Information 
+#---------------------------------------------------------------
+
+set jwlLibName JWLLib
+set jwlPath1 \$\{WAS_INSTALL_ROOT\}/optionalLibraries/IBM/JWL/2.0/odc-jsf.jar
+set jwlPath2 \$\{WAS_INSTALL_ROOT\}/optionalLibraries/IBM/JWL/2.0/jsf-ibm.jar
+
+#---------------------------------------------------------------
+# Set the Environment Information 
+#---------------------------------------------------------------
+
+set cellName [lindex $argv 0]
+set nodeName [lindex $argv 1]
+
+set node [$AdminConfig getid /Cell:${cellName}/Node:${nodeName}/]
+set server [$AdminConfig getid /Cell:${cellName}/Node:${nodeName}/Server:/]
+
+#---------------------------------------------------------------
+# Create the JWL Shared Library On the Server 
+#---------------------------------------------------------------
+
+set nameAttr [list name $jwlLibName]
+
+set jwlLib [$AdminConfig create Library $server [list $nameAttr]]
+$AdminConfig modify $jwlLib [list [list classPath $jwlPath1]]
+$AdminConfig modify $jwlLib [list [list classPath $jwlPath2]]
+
+#---------------------------------------------------------------
+# Save the changes to the repository 
+#---------------------------------------------------------------
+
+$AdminConfig save

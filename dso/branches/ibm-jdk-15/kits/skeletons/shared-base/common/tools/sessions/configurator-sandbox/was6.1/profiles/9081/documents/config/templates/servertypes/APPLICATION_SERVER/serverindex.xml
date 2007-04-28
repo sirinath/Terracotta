@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:serverindex="http://www.ibm.com/websphere/appserver/schemas/5.0/serverindex.xmi" xmlns:ipc="http://www.ibm.com/websphere/appserver/schemas/5.0/ipc.xmi">
+  <xmi:Documentation>
+    <contact>WebSphere Application Server v5.0 Default Configuration Files v1.9 5/4/04</contact>
+  </xmi:Documentation>
+  <serverindex:ServerIndex xmi:id="ServerIndex_1" endPointRefs="" hostName="$(node.host.name)">
+    <serverEntries xmi:id="ServerEntry_1" serverName="default" serverType="APPLICATION_SERVER">
+      <specialEndpoints xmi:id="NamedEndPoint_1" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_1" host="$(node.host.name)" port="2809"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_2" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_2" host="$(node.host.name)" port="8880"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_6" endPointName="SAS_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_6" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_7" endPointName="CSIV2_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_7" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_8" endPointName="CSIV2_SSL_MUTUALAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_8" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_9" endPointName="WC_adminhost">
+        <endPoint xmi:id="EndPoint_9" host="*" port="9061"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_10" endPointName="WC_defaulthost">
+        <endPoint xmi:id="EndPoint_10" host="*" port="9081"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_11" endPointName="DCS_UNICAST_ADDRESS">
+        <endPoint xmi:id="EndPoint_11" host="*" port="9354"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_12" endPointName="WC_adminhost_secure">
+        <endPoint xmi:id="EndPoint_12" host="*" port="9044"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_13" endPointName="WC_defaulthost_secure">
+        <endPoint xmi:id="EndPoint_13" host="*" port="9444"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_51" endPointName="SIP_DEFAULTHOST">
+        <endPoint xmi:id="EndPoint_51" host="*" port="5062"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_52" endPointName="SIP_DEFAULTHOST_SECURE">
+        <endPoint xmi:id="EndPoint_52" host="*" port="5064"/>
+      </specialEndpoints>      
+    </serverEntries>
+    <serverEntries xmi:id="ServerEntry_2" serverDisplayName="defaultZOS" serverName="defaultZOS" serverType="APPLICATION_SERVER" serverUniqueId="BB80B67909190083000000DC0000000209390F07">
+        <specialEndpoints xmi:id="NamedEndPoint_14" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_14" host="$(node.host.name)" port="2810"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_15" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_15" host="$(node.host.name)" port="8881"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_19" endPointName="WC_adminhost">
+        <endPoint xmi:id="EndPoint_19" host="*" port="9061"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_20" endPointName="WC_defaulthost">
+        <endPoint xmi:id="EndPoint_20" host="*" port="9081"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_21" endPointName="DCS_UNICAST_ADDRESS">
+        <endPoint xmi:id="EndPoint_21" host="*" port="9354"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_22" endPointName="ORB_SSL_LISTENER_ADDRESS">
+          <endPoint xmi:id="EndPoint_22" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_23" endPointName="WC_adminhost_secure">
+        <endPoint xmi:id="EndPoint_23" host="*" port="9044"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_24" endPointName="WC_defaulthost_secure">
+        <endPoint xmi:id="EndPoint_24" host="*" port="9444"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_53" endPointName="SIP_DEFAULTHOST">
+        <endPoint xmi:id="EndPoint_53" host="*" port="5061"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_54" endPointName="SIP_DEFAULTHOST_SECURE">
+        <endPoint xmi:id="EndPoint_54" host="*" port="5063"/>
+      </specialEndpoints>       
+      </serverEntries>
+          <serverEntries xmi:id="ServerEntry_3" serverName="default_5X" serverType="APPLICATION_SERVER">
+      <specialEndpoints xmi:id="NamedEndPoint_25" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_25" host="$(node.host.name)" port="2810"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_26" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_26" host="$(node.host.name)" port="8881"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_27" endPointName="SAS_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_27" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_28" endPointName="CSIV2_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_28" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_29" endPointName="CSIV2_SSL_MUTUALAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_29" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+    </serverEntries>
+    <serverEntries xmi:id="ServerEntry_4" serverDisplayName="defaultZOS_5X" serverName="defaultZOS_5X" serverType="APPLICATION_SERVER" serverUniqueId="BB80B67909190083000000DC0010200209390F08">
+        <specialEndpoints xmi:id="NamedEndPoint_31" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_31" host="$(node.host.name)" port="2810"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_32" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_32" host="$(node.host.name)" port="8881"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_33" endPointName="ORB_SSL_LISTENER_ADDRESS">
+          <endPoint xmi:id="EndPoint_33" host="*" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_34" endPointName="ORB_LISTENER_ADDRESS">
+          <endPoint xmi:id="EndPoint_34" host="*" port="0"/>
+      </specialEndpoints>
+      </serverEntries>
+    <serverEntries xmi:id="ServerEntry_5" serverName="default_60X" serverType="APPLICATION_SERVER">
+      <specialEndpoints xmi:id="NamedEndPoint_35" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_35" host="$(node.host.name)" port="2810"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_36" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_36" host="$(node.host.name)" port="8881"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_37" endPointName="SAS_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_37" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_38" endPointName="CSIV2_SSL_SERVERAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_38" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_39" endPointName="CSIV2_SSL_MUTUALAUTH_LISTENER_ADDRESS">
+        <endPoint xmi:id="EndPoint_39" host="$(node.host.name)" port="0"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_40" endPointName="WC_adminhost">
+        <endPoint xmi:id="EndPoint_40" host="*" port="9061"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_41" endPointName="WC_defaulthost">
+        <endPoint xmi:id="EndPoint_41" host="*" port="9081"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_42" endPointName="DCS_UNICAST_ADDRESS">
+        <endPoint xmi:id="EndPoint_42" host="*" port="9354"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_43" endPointName="WC_adminhost_secure">
+        <endPoint xmi:id="EndPoint_43" host="*" port="9044"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_44" endPointName="WC_defaulthost_secure">
+        <endPoint xmi:id="EndPoint_44" host="*" port="9444"/>
+      </specialEndpoints>
+    </serverEntries>
+    <serverEntries xmi:id="ServerEntry_6" serverDisplayName="defaultZOS_60X" serverName="defaultZOS_60X" serverType="APPLICATION_SERVER" serverUniqueId="BB80B67909190083000000DC0000000209390F09">
+        <specialEndpoints xmi:id="NamedEndPoint_45" endPointName="BOOTSTRAP_ADDRESS">
+        <endPoint xmi:id="EndPoint_45" host="$(node.host.name)" port="2810"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_46" endPointName="SOAP_CONNECTOR_ADDRESS">
+        <endPoint xmi:id="EndPoint_46" host="$(node.host.name)" port="8881"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_49" endPointName="DCS_UNICAST_ADDRESS">
+        <endPoint xmi:id="EndPoint_49" host="*" port="9354"/>
+      </specialEndpoints>
+      <specialEndpoints xmi:id="NamedEndPoint_50" endPointName="ORB_SSL_LISTENER_ADDRESS">
+          <endPoint xmi:id="EndPoint_50" port="0"/>
+      </specialEndpoints>
+    </serverEntries>
+  <serverEntries xmi:id="ServerEntry_7" serverName="DeveloperServer" serverType="APPLICATION_SERVER">
+    <specialEndpoints xmi:id="NamedEndPoint_61" endPointName="BOOTSTRAP_ADDRESS">
+      <endPoint xmi:id="EndPoint_61" host="$(node.host.name)" port="9814"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_61" endPointName="SOAP_CONNECTOR_ADDRESS">
+      <endPoint xmi:id="EndPoint_61" host="$(node.host.name)" port="8881"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_62" endPointName="SAS_SSL_SERVERAUTH_LISTENER_ADDRESS">
+      <endPoint xmi:id="EndPoint_62" host="$(node.host.name)" port="9404"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_63" endPointName="CSIV2_SSL_SERVERAUTH_LISTENER_ADDRESS">
+      <endPoint xmi:id="EndPoint_63" host="$(node.host.name)" port="9406"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_64" endPointName="CSIV2_SSL_MUTUALAUTH_LISTENER_ADDRESS">
+      <endPoint xmi:id="EndPoint_64" host="$(node.host.name)" port="9405"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_65" endPointName="WC_adminhost">
+      <endPoint xmi:id="EndPoint_65" host="*" port="9061"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_66" endPointName="WC_defaulthost">
+      <endPoint xmi:id="EndPoint_66" host="*" port="9081"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_67" endPointName="DCS_UNICAST_ADDRESS">
+      <endPoint xmi:id="EndPoint_67" host="*" port="9354"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_68" endPointName="WC_adminhost_secure">
+      <endPoint xmi:id="EndPoint_68" host="*" port="9044"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_69" endPointName="WC_defaulthost_secure">
+      <endPoint xmi:id="EndPoint_69" host="*" port="9444"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_74" endPointName="ORB_LISTENER_ADDRESS">
+      <endPoint xmi:id="EndPoint_74" host="$(node.host.name)" port="9101"/>
+    </specialEndpoints>
+  </serverEntries>
+  </serverindex:ServerIndex>
+</xmi:XMI>

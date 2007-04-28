@@ -1,0 +1,143 @@
+<project name="adjustProfileForEmbed" default="adjustProfileForEmbed" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+        
+    <taskdef name="wsadmin" classname="com.ibm.websphere.ant.tasks.WsAdminInProcess"/>
+        
+    <target name="adjustProfileForEmbed"
+        description="Tailor profile for Embed product."
+        depends="detectCurrentOSFamily,
+                 setOSFileSeparator,
+                 detectProductLevel"
+        if="isEmbed">
+        <antcall target="doWork"/>
+    </target>
+
+    <target name="doWork"
+        depends="customizeConfig,
+            disableSipChannels"/>
+
+
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="unix">            
+            <os family="unix"/>
+        </condition>
+        
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+
+    <target name="detectProductLevel">
+        <!-- The existance of the WAS.product file tells us we are on a full WAS Base install.
+             Otherwise we are on the Embed product.  EWAS.product should exist instead. -->
+        <condition property="isEmbed">
+	    <not>
+            <available file="${WAS_HOME}/properties/version/WAS.product"/>
+          </not>
+        </condition>
+    </target>
+
+    <target name="setOSFileSeparator"
+            description="Sets the current file separator for this platform (file.separator is unreliable on ANT 1.5.4)">
+            
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="separatorFile" value="/">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="separatorFile" value="\">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+    </target>
+ 
+    <target name="disableSipChannels"
+            description="Runs the Jacl script to disable the SIP channels">
+            
+        <wscmtlog>Disable the SIP channels, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/adjustProfileForEmbed.log</wscmtlog>
+        
+         <wsadmin conntype="none"
+                  failonerror="true"
+                  tracefile="${WS_CMT_LOG_HOME}/${profileName}/adjustProfileForEmbed.log"
+                  wasHome="${WAS_HOME}"
+                  wasInstallRoot="${WAS_HOME}"
+                  wasRepositoryRoot="${profilePath}/config"
+                  userInstallRoot="${profilePath}"
+                  localCell="${cellName}"
+                  localNode="${nodeName}"
+                  wsadminProps="${profilePath}/properties/wsadmin.properties"
+                  script="${templatePath}/actions/scripts/disableSipChannels.jacl"
+                  lang="jacl"                  
+                  ipcFilename="${profilePath}/temp/wsadmin"
+                  >
+  								<arg value="${cellName}"/>
+            			<arg value="${nodeName}"/> 
+          </wsadmin>
+          
+    </target>
+
+
+   <target name="customizeConfig" description="Main target to clean up profile action registry">
+
+      <wscmtlog>Modify some profile settings not needed by embed: ${WS_CMT_LOG_HOME}/${profileName}/adjustProfileForEmbed.log</wscmtlog>
+
+	<property name="pref.initial.heap.size" value="16"/>
+	
+	<!-- remove any initial heap sizes (should not be any)-->
+	<replaceregexp match="initialHeapSize=&quot;[0-9]+&quot;" replace="" flags="g" byline="true">
+		<fileset dir="${profilePath}${separatorFile}config" includes="**/server.xml" />
+	</replaceregexp>
+	
+	<!-- insert new heap size -->
+	<replaceregexp match="(xmi:id=&quot;JavaVirtualMachine_1&quot;)" replace="\1 initialHeapSize=&quot;${pref.initial.heap.size}&quot;" flags="g" byline="true">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/server.xml" />
+	</replaceregexp>
+
+	<replaceregexp match="^.*(.*DCS.*).*\n" replace="" flags="gim" byline="false">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/server.xml" />
+	</replaceregexp>
+	
+	<!-- disable some services by default -->
+	<replaceregexp match="^(.*pmiservice:PMIService.*)enable=&quot;true" replace="\1 enable=&quot;false" flags="gi" byline="true">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/server.xml" />
+	</replaceregexp>
+	
+	<replaceregexp match="^(.*xmi:id=&quot;PluginConfigService.*)enable=&quot;true" replace="\1 enable=&quot;false" flags="gi" byline="true">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/server.xml" />
+	</replaceregexp>
+	
+	<replaceregexp match="^(.*applicationserver:DynamicCache.*)enable=&quot;true" replace="\1 enable=&quot;false" flags="gi" byline="true">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/server.xml" />
+	</replaceregexp>
+
+	<replaceregexp	match="^((\s*)&lt;authorizationProviders\s+xmi:id=&quot;AuthorizationProvider([^&quot;]*)&quot;\s+.*?j2eePolicyImplClassName=&quot;com.tivoli.pd.as.jacc.TAMPolicy&quot;.*(\n))"
+				replace="\2&lt;authorizationProviders xmi:id=&quot;AuthorizationProvider\3&quot; j2eePolicyImplClassName=&quot;&quot; name=&quot;&quot; policyConfigurationFactoryImplClassName=&quot;&quot; roleConfigurationFactoryImplClassName=&quot;&quot; initializeJACCProviderClassName=&quot;&quot; requiresEJBArgumentsPolicyContextHandler=&quot;false&quot; supportsDynamicModuleUpdates=&quot;true&quot;/&gt;\4"
+				flags="gim" byline="false">
+		<fileset dir="${profilePath}${separatorFile}config"  includes="**/security.xml" />
+	</replaceregexp>
+
+	<replaceregexp
+		match="^.*&lt;channel:InstalledChannelRef xmi:id=&quot;(JFAP|DCSChannel|MQFAP)&quot;.*\n"
+		replace=""
+		flags="gim"
+		byline="false">
+			<fileset dir="${profilePath}${separatorFile}config"  includes="**/installed-channels.xml" />
+	</replaceregexp>
+   </target>
+
+</project>
+

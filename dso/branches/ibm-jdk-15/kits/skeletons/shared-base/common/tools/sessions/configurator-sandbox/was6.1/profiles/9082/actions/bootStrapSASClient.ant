@@ -1,0 +1,218 @@
+<project name="bootstrapSASClient" default="bootstrapSASClient" basedir=".">
+ 
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+    <taskdef name="replaceStringRegExp"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.ReplaceStringRegExpAntTask"/>
+ 
+    <property name="NODE_NAME" value="${WS_CMT_NODE_NAME}"/>
+    <property name="CELL_NAME" value="${WS_CMT_CELL_NAME}"/>
+ 
+    <target name="setCurrentOSFamily"
+            description="Detects the current OS family (ZOS or OS400)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="isCurrentOSOS400" value="true">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+
+        <condition property="isCurrentOSZOS" value="true">
+            <equals arg1="${os.name}" arg2="z/OS"/>
+        </condition>
+
+        <condition property="isCurrentOSZosOrOS400" value="true">
+          <or>
+            <equals arg1="${isCurrentOSZOS}" arg2="true"/>
+            <equals arg1="${isCurrentOSOS400}" arg2="true"/>
+          </or>
+        </condition>
+        <wscmtlog>isCurrentOSZosOrOS400 is resolved to ${isCurrentOSZosOrOS400}</wscmtlog>
+    </target>                                                   
+
+    <target name="resolveProfilePathForPropertyFiles"
+            description="Sets the property PROFILE_PATH_FOR_PROPERTY_FILES with slash characters etc. adjusted for property files">
+         
+        <replaceStringRegExp string="${profilePath}"
+            regexp="\\"
+            value="/"
+            property="PROFILE_PATH_FOR_PROPERTY_FILES_FIRST_PASS"/>
+             
+        <replaceStringRegExp string="${PROFILE_PATH_FOR_PROPERTY_FILES_FIRST_PASS}"
+            regexp="/:"
+            value="\:/"
+            property="PROFILE_PATH_FOR_PROPERTY_FILES"/>
+             
+        <wscmtlog>PROFILE_PATH_FOR_PROPERTY_FILES for property files was resolved to be: ${PROFILE_PATH_FOR_PROPERTY_FILES}</wscmtlog>
+    </target>
+ 
+    <target name="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">        
+    
+        <replace file="${file}"
+            token="${token}"
+            value="${tokenValue}"/>
+    </target>
+     
+    <target name="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">        
+    
+        <replace file="${file}"
+            token="${token}"
+            encoding="UTF-8"
+            value="${tokenValue}"/>
+    </target>
+
+    <target name="replaceAllNecessaryTokensWithRightValuesForAllSASClientFiles"
+            unless="isCurrentOSZOS">
+    
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/ssl.client.props"/>
+            <param name="token" value="$$(CELL.NAME)"/>
+            <param name="tokenValue" value="${CELL_NAME}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/ssl.client.props"/>
+            <param name="token" value="$$(NODE.NAME)"/>
+            <param name="tokenValue" value="${NODE_NAME}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/ssl.client.props"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/sas.client.props"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/sas.stdclient.properties"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFile">
+            <param name="file" value="${profilePath}/properties/sas.tools.properties"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+    </target>
+
+    <target name="replaceAllNecessaryTokensWithRightValuesForAllSASClientFilesZOS"
+            if="isCurrentOSZOS">
+    
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+            <param name="file" value="${profilePath}/properties/ssl.client.props"/>
+            <param name="token" value="$$(CELL.NAME)"/>
+            <param name="tokenValue" value="${CELL_NAME}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+            <param name="file" value="${profilePath}/properties/ssl.client.props"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+            <param name="file" value="${profilePath}/properties/sas.client.props"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+            <param name="file" value="${profilePath}/properties/sas.stdclient.properties"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+        <antcall target="replaceAllInstancesOfGivenTokenWithGivenValueForTheGivenFileAscii">
+            <param name="file" value="${profilePath}/properties/sas.tools.properties"/>
+            <param name="token" value="$$(WASROOT)"/>
+            <param name="tokenValue" value="${PROFILE_PATH_FOR_PROPERTY_FILES}"/>
+        </antcall>
+    </target>
+
+    <target name="executeNative2Ascii" 
+            description="Converts files from native encoding to ASCII with escaped Unicode"
+            unless="isCurrentOSZosOrOS400">
+
+        <exec executable="${WAS_HOME}/java/bin/native2ascii">
+            <arg value="${profilePath}/properties/ssl.client.props"/>
+            <arg value="${profilePath}/temp/ssl.client.props"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/ssl.client.props"
+              tofile="${profilePath}/properties/ssl.client.props"
+              overwrite="true"/>
+
+        <exec executable="${WAS_HOME}/java/bin/native2ascii">
+            <arg value="${profilePath}/properties/sas.client.props"/>
+            <arg value="${profilePath}/temp/sas.client.props"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.client.props"
+              tofile="${profilePath}/properties/sas.client.props"
+              overwrite="true"/>
+
+        <exec executable="${WAS_HOME}/java/bin/native2ascii">
+            <arg value="${profilePath}/properties/sas.stdclient.properties"/>
+            <arg value="${profilePath}/temp/sas.stdclient.properties"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.stdclient.properties"
+              tofile="${profilePath}/properties/sas.stdclient.properties"
+              overwrite="true"/>
+
+        <exec executable="${WAS_HOME}/java/bin/native2ascii">
+            <arg value="${profilePath}/properties/sas.tools.properties"/>
+            <arg value="${profilePath}/temp/sas.tools.properties"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.tools.properties"
+              tofile="${profilePath}/properties/sas.tools.properties"
+              overwrite="true"/>
+    </target>
+            
+    <target name="executeNative2AsciiOS400" 
+            description="Converts files from native encoding to ASCII with escaped Unicode"
+            if="isCurrentOSOS400">
+
+        <exec executable="native2ascii">
+            <arg value="${profilePath}/properties/ssl.client.props"/>
+            <arg value="${profilePath}/temp/ssl.client.props"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/ssl.client.props"
+              tofile="${profilePath}/properties/ssl.client.props"
+              overwrite="true"/>
+
+        <exec executable="native2ascii">
+            <arg value="${profilePath}/properties/sas.stdclient.properties"/>
+            <arg value="${profilePath}/temp/sas.stdclient.properties"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.stdclient.properties"
+              tofile="${profilePath}/properties/sas.stdclient.properties"
+              overwrite="true"/>
+
+        <exec executable="native2ascii">
+            <arg value="${profilePath}/properties/sas.client.props"/>
+            <arg value="${profilePath}/temp/sas.client.props"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.client.props"
+              tofile="${profilePath}/properties/sas.client.props"
+              overwrite="true"/>
+
+        <exec executable="native2ascii">
+            <arg value="${profilePath}/properties/sas.tools.properties"/>
+            <arg value="${profilePath}/temp/sas.tools.properties"/>
+        </exec>
+
+        <copy file="${profilePath}/temp/sas.tools.properties"
+              tofile="${profilePath}/properties/sas.tools.properties"
+              overwrite="true"/>
+    </target>
+
+    <target name="bootstrapSASClient"
+        description="Bootstrap SAS Client"
+        depends="setCurrentOSFamily,
+            resolveProfilePathForPropertyFiles,
+            replaceAllNecessaryTokensWithRightValuesForAllSASClientFiles,
+            replaceAllNecessaryTokensWithRightValuesForAllSASClientFilesZOS,
+            executeNative2Ascii,
+            executeNative2AsciiOS400"/>
+</project>

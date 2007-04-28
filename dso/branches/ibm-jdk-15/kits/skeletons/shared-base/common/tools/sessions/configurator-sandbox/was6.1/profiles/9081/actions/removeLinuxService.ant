@@ -1,0 +1,173 @@
+<project name="removelinuxserviceConfig" default="removelinuxserviceConfig" basedir=".">
+    
+    <taskdef name="wscmtlog"
+        classname="com.ibm.ws.install.configmanager.actionengine.ant.utils.AntTaskToLogToConfigManagersLogFiles"/>
+        
+    <property name="NODE_NAME" value="${WS_CMT_NODE_NAME}"/>
+    <property name="CELL_NAME" value="${WS_CMT_CELL_NAME}"/>
+
+    <target name="detectCurrentOSFamily"
+            description="Detecs the current OS family (UNIX or Windows)">
+        
+        <!-- OS/400 setting must come before the unix setting -->
+        <condition property="currentOSFamily" value="os/400">
+            <equals arg1="${os.name}" arg2="OS/400"/>
+        </condition>
+        
+        <condition property="currentOSFamily" value="windows">
+            <os family="windows"/>
+        </condition>
+        
+        <!-- Linux setting must come before the unix setting -->
+	<condition property="currentOSFamily" value="linux">            
+            <equals arg1="${os.name}" arg2="Linux"/>
+        </condition>
+	
+        <condition property="currentOSFamily" value="unix">
+            <os family="unix"/>
+        </condition>
+        <wscmtlog>Detected current OS family to be: ${currentOSFamily}</wscmtlog>
+    </target>
+    
+    <target name="defineOSSpecificConfigFlag"
+            description="Defines either configLinux or configWindows depending on the current OS">
+            
+        <condition property="configOS400" value="true">
+            <equals arg1="${currentOSFamily}" arg2="os/400"/>
+        </condition>
+        
+        <condition property="configUNIX" value="true">
+            <equals arg1="${currentOSFamily}" arg2="unix"/>
+        </condition>
+        
+        <condition property="configWindows" value="true">
+            <equals arg1="${currentOSFamily}" arg2="windows"/>
+        </condition>
+	
+        <condition property="configLinux" value="true">
+            <equals arg1="${currentOSFamily}" arg2="linux"/>
+        </condition>
+    </target>
+
+    <target name="queryIsServiceSupportedLinuxFlag"
+            description="Determine the flag of if a particular Linux version supports Service or not"
+            if="configLinux">
+        
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log" failonerror="false" resultproperty="servicesupportedresult"> 
+            <arg value="-issupportedplatform"/>          
+        </exec>
+        
+        <condition property="servicesupported" value="true">
+            <equals arg1="${servicesupportedresult}" arg2="0"/>
+	</condition>
+        
+        <wscmtlog>Detected ServiceSupportedLinuxFlag to be: ${servicesupported}</wscmtlog>        
+    </target>
+    
+    <target name="logServiceNotSupported"
+            description="Print out information in the log to indicate Linux service is not supported on this platform"
+	    unless="servicesupported">
+    
+        <wscmtlog>Linux service is currently not supported on this platform</wscmtlog>
+		        
+        <fail>
+	  <condition>
+	    <not>
+	      <isset property="servicesupported"/>
+	    </not>
+	  </condition>
+	</fail>
+		
+    </target>
+    
+    <target name="queryHasInstallPermisionsFlag"
+            description="Determine the flag of if the current user has permission to create WASservice on Linux"
+	    if="configLinux">
+        
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+               output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log" failonerror="false" resultproperty="haspermissionresult"> 
+               <arg value="-hasinstallpermissions"/> 
+	</exec>
+	           
+        <condition property="hasInstallPermissions" value="true">
+            <equals arg1="${haspermissionresult}" arg2="0"/>
+        </condition>
+        
+        <wscmtlog>Detected CurrentUserHasPermissionFlag to be: ${hasInstallPermissions}</wscmtlog>        
+    </target>
+       
+       
+    <target name="logCurrentUserDoesNotHasPermission"
+            description="Print out information in the log to indicate current user does not has the permission to remove service"
+	    unless="hasInstallPermissions">
+	    
+        <wscmtlog>The current user does not have sufficient permission to remove service. If the service hasn't been created, ignore this FAILURE msg.</wscmtlog>
+		           
+        <fail>
+	  <condition>
+	    <not>
+	      <isset property="hasInstallPermissions"/>
+	    </not>
+	  </condition>
+	</fail> 
+	
+    </target>
+    
+    <target name="queryLinuxServiceRemove"
+            description="Determine if to create WAS Service on Linux">
+            
+        <condition property="removeLinuxService" value="true">
+	    <and>
+		<equals arg1="${servicesupported}" arg2="true"/>
+		<equals arg1="${hasInstallPermissions}" arg2="true"/>
+	    </and>
+        </condition>
+       
+        <wscmtlog>Detected RemovelinuxServiceFlag to be: ${removeLinuxService}</wscmtlog>        
+    </target>
+    
+    <target name="stopLinuxWASService"
+            description="Stop the Linux WAS Service"
+            if="removeLinuxService">
+            
+        <wscmtlog>Stopping the Linux WAS service, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log</wscmtlog>
+            
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log"> 
+            <arg value="-stop"/>
+            <arg value="${nodeName}"/>        
+        </exec> 
+	
+        <wscmtlog>Linux WAS service command: ${WAS_HOME}/bin/wasservice.sh -stop ${nodeName}</wscmtlog>   
+    </target>
+    
+    <target name="removeLinuxWASService"
+            description="Removes the Linux WAS Service"
+            if="removeLinuxService">
+            
+        <wscmtlog>Removing the Linux WAS service, the output will be recorded in: ${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log</wscmtlog>
+            
+        <exec executable="${WAS_HOME}/bin/wasservice.sh"
+                output="${WS_CMT_LOG_HOME}/${profileName}/wasservice_config.log"> 
+            <arg value="-remove"/>
+            <arg value="${nodeName}"/>        
+        </exec> 
+	
+        <wscmtlog>Linux WAS service command: ${WAS_HOME}/bin/wasservice.sh -remove ${nodeName}</wscmtlog>   
+    </target>
+	    
+    <target name="removelinuxserviceConfig"
+        description="Configures Linux WAS service"
+        if="configLinux"
+        depends="detectCurrentOSFamily,
+            defineOSSpecificConfigFlag,
+            queryIsServiceSupportedLinuxFlag, 
+	    logServiceNotSupported,
+	    queryHasInstallPermisionsFlag,
+	    logCurrentUserDoesNotHasPermission, 	    
+	    queryLinuxServiceRemove,
+	    stopLinuxWASService,       
+            removeLinuxWASService"/>                              
+
+</project>
