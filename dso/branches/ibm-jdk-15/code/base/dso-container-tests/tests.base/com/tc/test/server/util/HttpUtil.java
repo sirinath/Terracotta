@@ -60,6 +60,7 @@ public final class HttpUtil {
   }
   
   public static String getResponseBody(URL url, HttpClient client, boolean retryIfFail) throws HttpException, IOException {
+    StringBuffer response = new StringBuffer(100);
     Cookie[] cookies = client.getState().getCookies();
     for (int i = 0; i < cookies.length; i++) {
       debugPrint("localClient... cookie " + i + ": " + cookies[i].toString());
@@ -75,25 +76,24 @@ public final class HttpUtil {
       get.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, NoRetryHandler.INSTANCE);
     }
 
+    BufferedReader reader = null;
     try {
       int status = client.executeMethod(get);
       if (status != HttpStatus.SC_OK) {
         // make formatter sane
         throw new HttpException("The http client has encountered a status code other than ok for the url: " + url
                                    + " status: " + HttpStatus.getStatusText(status));
-
-      }
-      StringBuffer response = new StringBuffer(100);
-      BufferedReader reader = new BufferedReader(new InputStreamReader(get.getResponseBodyAsStream()));
+      }      
+      reader = new BufferedReader(new InputStreamReader(get.getResponseBodyAsStream()));
       String line;
       while ((line = reader.readLine()) != null) {
         response.append(line).append("\n");
       }
-      reader.close();
-      return response.toString().trim();
     } finally {
+      if (reader != null) reader.close();
       get.releaseConnection();
     }
+    return response.toString().trim();
   }
 
   public static int getInt(URL url, HttpClient client) throws ConnectException, IOException {
