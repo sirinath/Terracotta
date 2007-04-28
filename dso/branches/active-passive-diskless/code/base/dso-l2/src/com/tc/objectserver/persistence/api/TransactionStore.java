@@ -13,7 +13,7 @@ import java.util.Set;
 
 public interface TransactionStore {
 
-  public void commitTransactionDescriptor(PersistenceTransaction transaction, GlobalTransactionDescriptor txID);
+  public void commitTransactionDescriptor(PersistenceTransaction transaction, ServerTransactionID stxID);
   
   public GlobalTransactionDescriptor getTransactionDescriptor(ServerTransactionID serverTransactionID);
   
@@ -33,5 +33,7 @@ public interface TransactionStore {
   public void shutdownAllClientsExcept(PersistenceTransaction tx, Set cids);
   
   public void createGlobalTransactionDesc(ServerTransactionID stxnID, GlobalTransactionID globalTransactionID);
+
+  public void commitAllTransactionDescriptor(PersistenceTransaction persistenceTransaction, Collection stxIDs);
   
 }

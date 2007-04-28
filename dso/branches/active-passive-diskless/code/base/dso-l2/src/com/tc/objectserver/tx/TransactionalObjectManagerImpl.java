@@ -79,7 +79,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   }
 
   // ProcessTransactionHandler Method
-  public void addTransactions(List txns, Collection completedTxnIds) {
+  public void addTransactions(Collection txns, Collection completedTxnIds) {
     sequencer.addTransactions(txns);
     addCompletedTxnIds(completedTxnIds);
     txnStageCoordinator.initiateLookup();

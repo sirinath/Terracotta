@@ -27,10 +27,10 @@ import com.tc.objectserver.tx.TransactionBatchReaderFactory;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class L2ObjectSyncHandler extends AbstractEventHandler {
@@ -75,28 +75,24 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
     try {
       final TransactionBatchReader reader = batchReaderFactory.newTransactionBatchReader(commitMessage);
       ServerTransaction txn;
-      List txns = new ArrayList(reader.getNumTxns());
-      Set serverTxnIDs = new HashSet(reader.getNumTxns());
+      Map txns = new HashMap(reader.getNumTxns());
       while ((txn = reader.getNextTransaction()) != null) {
-        txns.add(txn);
-        serverTxnIDs.add(txn.getServerTransactionID());
+        txns.put(txn.getServerTransactionID(), txn);
       }
-      transactionManager.incomingTransactions(reader.getChannelID(), serverTxnIDs, false);
-      txnObjectMgr.addTransactions(txns, reader.addAcknowledgedTransactionIDsTo(new HashSet()));
-      return serverTxnIDs;
+      transactionManager.incomingTransactions(reader.getChannelID(), txns, false);
+      txnObjectMgr.addTransactions(txns.values(), reader.addAcknowledgedTransactionIDsTo(new HashSet()));
+      return txns.keySet();
     } catch (IOException e) {
       throw new AssertionError(e);
     }
   }
 
   private void doSyncObjectsResponse(ObjectSyncMessage syncMsg) {
-    ArrayList txns = new ArrayList(1);
+    Map txns = new HashMap(1);
     ServerTransaction txn = ServerTransactionFactory.createTxnFrom(syncMsg);
-    txns.add(txn);
-    HashSet txnIDs = new HashSet(1);
-    txnIDs.add(txn.getServerTransactionID());
-    transactionManager.incomingTransactions(ChannelID.L2_SERVER_ID, txnIDs, false);
-    txnObjectMgr.addTransactions(txns, Collections.EMPTY_LIST);
+    txns.put(txn.getServerTransactionID(), txn);
+    transactionManager.incomingTransactions(ChannelID.L2_SERVER_ID, txns, false);
+    txnObjectMgr.addTransactions(txns.values(), Collections.EMPTY_LIST);
   }
 
   // TODO:: Update stats so that admin console reflects these data

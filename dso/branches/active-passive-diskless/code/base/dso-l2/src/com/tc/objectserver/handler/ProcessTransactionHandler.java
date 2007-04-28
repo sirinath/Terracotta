@@ -26,11 +26,10 @@ import com.tc.objectserver.tx.TransactionBatchReaderFactory;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.util.SequenceValidator;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public class ProcessTransactionHandler extends AbstractEventHandler {
   private static final TCLogger            logger = TCLogging.getLogger(ProcessTransactionHandler.class);
@@ -64,8 +63,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       Collection completedTxnIds = reader.addAcknowledgedTransactionIDsTo(new HashSet());
       ServerTransaction txn;
 
-      List txns = new ArrayList(reader.getNumTxns());
-      Set serverTxnIDs = new HashSet(reader.getNumTxns());
+      Map txns = new HashMap(reader.getNumTxns());
       ChannelID channelID = reader.getChannelID();
       // NOTE::XXX:: GlobalTransactionID id assigned in the process transaction stage. The transaction could be
       // re-ordered before apply. This is not a problem because for an transaction to be re-ordered, it should not
@@ -73,17 +71,16 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       // before g1, only when g2 has not common objects with g1. If this is not true then we cant assign gid here.
       while ((txn = reader.getNextTransaction()) != null) {
         sequenceValidator.setCurrent(channelID, txn.getClientSequenceID());
-        txns.add(txn);
-        serverTxnIDs.add(txn.getServerTransactionID());
+        txns.put(txn.getServerTransactionID(), txn);
       }
-      messageRecycler.addMessage(ctm, serverTxnIDs);
+      messageRecycler.addMessage(ctm, txns.keySet());
       if (replicatedObjectMgr.relayTransactions()) {
-        transactionManager.incomingTransactions(channelID, serverTxnIDs, true);
-        txnRelaySink.add(new IncomingTransactionContext(channelID, ctm, txns, serverTxnIDs));
+        transactionManager.incomingTransactions(channelID, txns, true);
+        txnRelaySink.add(new IncomingTransactionContext(channelID, ctm, txns));
       } else {
-        transactionManager.incomingTransactions(channelID, serverTxnIDs, false);
+        transactionManager.incomingTransactions(channelID, txns, false);
       }
-      txnObjectManager.addTransactions(txns, completedTxnIds);
+      txnObjectManager.addTransactions(txns.values(), completedTxnIds);
     } catch (Exception e) {
       logger.error("Error reading transaction batch. : ", e);
       MessageChannel c = ctm.getChannel();

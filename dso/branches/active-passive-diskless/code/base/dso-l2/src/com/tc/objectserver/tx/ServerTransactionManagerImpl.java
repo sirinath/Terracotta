@@ -171,7 +171,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     TransactionAccount ci = getTransactionAccount(channelID);
     if (ci != null) ci.applyStarted(txnID);
 
-    boolean active = (state == ACTIVE_MODE);
+    boolean active = isActive();
 
     for (Iterator i = changes.iterator(); i.hasNext();) {
       DNA orgDNA = (DNA) i.next();
@@ -199,12 +199,9 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
         objectManager.createRoot(rootName, newID);
       }
     }
+    gtxm.applyComplete(stxnID);
     if (active) {
-      gtxm.applyComplete(stxnID);
       channelStats.notifyTransaction(channelID);
-    } else if (!stxnID.isServerGeneratedTransaction()) {
-      gtxm.createGlobalTransactionDesc(stxnID, gtxID);
-      gtxm.applyComplete(stxnID);
     }
     transactionRateCounter.increment();
 
@@ -243,16 +240,25 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void incomingTransactions(ChannelID cid, Set serverTxnIDs, boolean relayed) {
+  public void incomingTransactions(ChannelID cid, Map txns, boolean relayed) {
+    boolean active = isActive();
     TransactionAccount ci = getOrCreateTransactionAccount(cid);
-    for (Iterator i = serverTxnIDs.iterator(); i.hasNext();) {
-      final ServerTransactionID txnId = (ServerTransactionID) i.next();
-      final TransactionID txnID = txnId.getClientTransactionID();
+    for (Iterator i = txns.values().iterator(); i.hasNext();) {
+      final ServerTransaction txn = (ServerTransaction) i.next();
+      final ServerTransactionID stxnID = txn.getServerTransactionID();
+      final TransactionID txnID = stxnID.getClientTransactionID();
       if (!relayed) {
         ci.relayTransactionComplete(txnID);
       }
+      if(!active) {
+        gtxm.createGlobalTransactionDesc(stxnID, txn.getGlobalTransactionID());
+      }
     }
-    fireIncomingTransactionsEvent(cid, serverTxnIDs);
+    fireIncomingTransactionsEvent(cid, txns.keySet());
+  }
+
+  private boolean isActive() {
+    return (state == ACTIVE_MODE);
   }
 
   public void transactionsRelayed(ChannelID channelID, Set serverTxnIDs) {

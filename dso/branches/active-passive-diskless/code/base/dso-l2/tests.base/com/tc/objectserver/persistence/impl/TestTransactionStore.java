@@ -57,11 +57,11 @@ public class TestTransactionStore implements TransactionStore {
     map.put(txID.getServerTransactionID(), txID);
   }
 
-  public void commitTransactionDescriptor(PersistenceTransaction persistenceTransaction,
-                                          GlobalTransactionDescriptor txID) {
+  public void commitTransactionDescriptor(PersistenceTransaction transaction, ServerTransactionID stxID) {
+    GlobalTransactionDescriptor txID = getTransactionDescriptor(stxID);
     if (txID.isCommitted()) { throw new TransactionCommittedError("Already committed : " + txID); }
     try {
-      commitContextQueue.put(new Object[] { persistenceTransaction, txID });
+      commitContextQueue.put(new Object[] { transaction, txID });
       if (!volatileMap.containsValue(txID)) throw new AssertionError();
       basicPut(durableMap, txID);
       txID.commitComplete();
@@ -117,4 +117,12 @@ public class TestTransactionStore implements TransactionStore {
   public void shutdownAllClientsExcept(PersistenceTransaction tx, Set cids) {
     throw new ImplementMe();
   }
+
+  public void commitAllTransactionDescriptor(PersistenceTransaction persistenceTransaction, Collection stxIDs) {
+    for (Iterator i = stxIDs.iterator(); i.hasNext();) {
+      ServerTransactionID sid = (ServerTransactionID) i.next();
+      commitTransactionDescriptor(persistenceTransaction, sid);
+    }
+  }
+
 }
