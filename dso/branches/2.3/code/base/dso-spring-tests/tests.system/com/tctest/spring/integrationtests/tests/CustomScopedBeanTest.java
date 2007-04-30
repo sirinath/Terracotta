@@ -56,6 +56,7 @@ public class CustomScopedBeanTest extends AbstractTwoServerDeploymentTest {
   
   public CustomScopedBeanTest() {
     this.disableVariant(TestConfigObject.SPRING_VARIANT, "128");
+    disableAllUntil("2007-05-14");
   }
   
   public void testSharedFields() throws Exception {
