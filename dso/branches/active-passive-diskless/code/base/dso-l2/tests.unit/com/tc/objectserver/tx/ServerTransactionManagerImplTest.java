@@ -85,6 +85,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                                this.clientStateManager, this.objectManager,
                                                                this.action, this.transactionRateCounter,
                                                                this.channelStats);
+    this.transactionManager.goToActiveMode();
   }
 
   public void testRootCreatedEvent() {

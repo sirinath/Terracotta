@@ -124,15 +124,6 @@ public class TransactionStoreImpl implements TransactionStore {
     }
   }
 
-  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
-    GlobalTransactionDescriptor gdesc = (GlobalTransactionDescriptor) serverTransactionIDMap.get(stxnID);
-    if (gdesc == null) {
-      return GlobalTransactionID.NULL_ID;
-    } else {
-      return gdesc.getGlobalTransactionID();
-    }
-  }
-
   public void shutdownClient(PersistenceTransaction tx, ChannelID client) {
     Collection stxIDs = new HashSet();
     synchronized (serverTransactionIDMap) {

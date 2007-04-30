@@ -63,10 +63,6 @@ public class ServerGlobalTransactionManagerImpl implements ServerGlobalTransacti
     return transactionStore.getLeastGlobalTransactionID();
   }
 
-  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
-    return transactionStore.getGlobalTransactionID(stxnID);
-  }
-
   public GlobalTransactionID getOrCreateGlobalTransactionID(ServerTransactionID serverTransactionID) {
     GlobalTransactionDescriptor gdesc = transactionStore.getOrCreateTransactionDescriptor(serverTransactionID);
     return gdesc.getGlobalTransactionID();

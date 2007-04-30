@@ -228,7 +228,6 @@ public class TransactionStoreTest extends TCTestCase {
     ServerTransactionID stxid2 = new ServerTransactionID(channel2, tx2);
 
     assertNull(store.getTransactionDescriptor(stxid1));
-    assertEquals(GlobalTransactionID.NULL_ID, store.getGlobalTransactionID(stxid1));
     GlobalTransactionDescriptor gtx1 = store.getOrCreateTransactionDescriptor(stxid1);
     assertEquals(gtx1, store.getTransactionDescriptor(stxid1));
 
@@ -236,7 +235,6 @@ public class TransactionStoreTest extends TCTestCase {
 
     assertNull(store.getTransactionDescriptor(stxid2));
     GlobalTransactionDescriptor gtx2 = store.getOrCreateTransactionDescriptor(stxid2);
-    store.getGlobalTransactionID(stxid2);
     assertEquals(gtx2, store.getTransactionDescriptor(stxid2));
 
     PersistenceTransaction ptx = new TestPersistenceTransaction();
@@ -277,7 +275,6 @@ public class TransactionStoreTest extends TCTestCase {
       ServerTransactionID stxid = new ServerTransactionID(new ChannelID(i % 2), new TransactionID(i));
       GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) sid2Gid.get(stxid);
       assertEquals(desc, store.getTransactionDescriptor(stxid));
-      assertEquals(desc.getGlobalTransactionID(), store.getGlobalTransactionID(stxid));
       if(desc.getGlobalTransactionID().toLong() > maxID.toLong()) {
         maxID = desc.getGlobalTransactionID();
       }

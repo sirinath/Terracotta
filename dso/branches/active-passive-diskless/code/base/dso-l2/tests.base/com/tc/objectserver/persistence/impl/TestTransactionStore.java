@@ -47,9 +47,12 @@ public class TestTransactionStore implements TransactionStore {
   }
 
   public GlobalTransactionDescriptor getOrCreateTransactionDescriptor(ServerTransactionID stxid) {
-    nextTransactionIDContextQueue.put(stxid);
-    GlobalTransactionDescriptor rv = new GlobalTransactionDescriptor(stxid, new GlobalTransactionID(idSequence++));
-    basicPut(volatileMap, rv);
+    GlobalTransactionDescriptor rv = (GlobalTransactionDescriptor) volatileMap.get(stxid);
+    if (rv == null) {
+      nextTransactionIDContextQueue.put(stxid);
+      rv = new GlobalTransactionDescriptor(stxid, new GlobalTransactionID(idSequence++));
+      basicPut(volatileMap, rv);
+    }
     return rv;
   }
 
@@ -92,16 +95,6 @@ public class TestTransactionStore implements TransactionStore {
         ids.remove(gdesc.getGlobalTransactionID());
       }
       durableMap.remove(sid);
-    }
-  }
-
-  public GlobalTransactionID getGlobalTransactionID(ServerTransactionID stxnID) {
-    loadContextQueue.put(stxnID);
-    GlobalTransactionDescriptor gdesc = (GlobalTransactionDescriptor) volatileMap.get(stxnID);
-    if (gdesc == null) {
-      return GlobalTransactionID.NULL_ID;
-    } else {
-      return gdesc.getGlobalTransactionID();
     }
   }
 
