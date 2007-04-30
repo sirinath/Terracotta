@@ -35,6 +35,7 @@ import com.tc.test.server.util.VmStat;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
+import com.tc.util.runtime.Vm;
 import com.tc.util.runtime.ThreadDump;
 import com.terracotta.session.util.ConfigProperties;
 
@@ -376,7 +377,9 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
                            + "=true");
 
       params.appendJvmArgs("-verbose:gc");
-      params.appendJvmArgs("-Xloggc:" + new File(this.workingDir, "node-" + nodeNumber + ".gc.log"));
+      if (!Vm.isIBM()) {
+        params.appendJvmArgs("-Xloggc:" + new File(this.workingDir, "node-" + nodeNumber + ".gc.log"));
+      }
       params.appendJvmArgs("-XX:+PrintGCDetails");
 
       if (false && nodeNumber == 0) {
