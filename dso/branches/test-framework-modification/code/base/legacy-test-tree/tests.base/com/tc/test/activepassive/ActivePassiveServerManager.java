@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -30,6 +31,7 @@ public class ActivePassiveServerManager {
   private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
   private static final boolean                   DEBUG            = false;
   private static final int                       NULL_VAL         = -1;
+  private static final long                      SEED             = 5349;
 
   private final File                             tempDir;
   private final PortChooser                      portChooser;
@@ -58,6 +60,7 @@ public class ActivePassiveServerManager {
   private ActivePassiveServerCrasher             serverCrasher;
   private int                                    maxCrashCount;
   private final TestState                        testState;
+  private final Random                           random;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout)
@@ -98,6 +101,7 @@ public class ActivePassiveServerManager {
 
     errors = new ArrayList();
     testState = new TestState();
+    random = new Random(SEED);
   }
 
   private void resetActiveIndex() {
@@ -199,7 +203,8 @@ public class ActivePassiveServerManager {
       activeIndex = 0;
     }
 
-    if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)) {
+    if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)
+        || serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
       startContinuousCrash();
     }
   }
@@ -383,6 +388,42 @@ public class ActivePassiveServerManager {
     throw new Exception("Server crash did not complete.");
   }
 
+  private void crashPassive(int passiveToCrash) throws Exception {
+    if (!testState.isRunning()) {
+      debugPrintln("***** test state is not running ... skipping crash passive");
+      return;
+    }
+
+    ServerControl server = servers[passiveToCrash].getServerControl();
+    debugPrintln("***** Crashing passive:  port=[" + server.getDsoPort() + "]");
+    server.crash();
+    debugPrintln("***** Sleeping after crashing passive server ");
+    waitForServerCrash(server);
+    debugPrintln("***** Done sleeping after crashing passive server ");
+
+    lastCrashedIndex = passiveToCrash;
+    debugPrintln("***** lastCrashedIndex[" + lastCrashedIndex + "] ");
+  }
+
+  private void crashRandomServer() throws Exception {
+    if (!testState.isRunning()) {
+      debugPrintln("***** test state is not running ... skipping crash random server");
+      return;
+    }
+
+    if (activeIndex < 0) { throw new AssertionError("Active index was not set."); }
+
+    debugPrintln("***** Choosing random server... ");
+
+    int crashIndex = random.nextInt(serverCount);
+
+    if (crashIndex == activeIndex) {
+      crashActive();
+    } else {
+      crashPassive(crashIndex);
+    }
+  }
+
   public void restartLastCrashedServer() throws Exception {
     if (!testState.isRunning()) {
       debugPrintln("***** test state is not running ... skipping restart");
@@ -504,4 +545,11 @@ public class ActivePassiveServerManager {
     }
   }
 
+  public void crashServer() throws Exception {
+    if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)) {
+      crashActive();
+    } else if (serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
+      crashRandomServer();
+    }
+  }
 }
