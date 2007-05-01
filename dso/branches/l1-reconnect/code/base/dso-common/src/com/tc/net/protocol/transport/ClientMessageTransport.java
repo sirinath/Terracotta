@@ -33,7 +33,7 @@ import java.util.List;
  * Client implementation of the transport network layer.
  */
 public class ClientMessageTransport extends MessageTransportBase {
-  private static final TCLogger             logger          = TCLogging.getLogger(ClientMessageTransport.class);
+  private static final TCLogger             cmtLogger          = TCLogging.getLogger(ClientMessageTransport.class);
   private static final long                 SYN_ACK_TIMEOUT = 120000; // 2 minutes timeout
   private final int                         maxReconnectTries;
   private final ClientConnectionEstablisher connectionEstablisher;
@@ -43,7 +43,7 @@ public class ClientMessageTransport extends MessageTransportBase {
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
 
-  /**
+  /**O
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
    * create an unopened MessageTransport.
    * 
@@ -73,12 +73,12 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, logger);
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, cmtLogger);
     this.maxReconnectTries = maxReconnectTries;
     this.connAddressProvider = connInfoProvider;
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
 
-    this.connectionEstablisher = new ClientConnectionEstablisher(this, connManager, connAddressProvider, logger,
+    this.connectionEstablisher = new ClientConnectionEstablisher(this, connManager, connAddressProvider, cmtLogger,
                                                                  maxReconnectTries, timeout);
   }
 
