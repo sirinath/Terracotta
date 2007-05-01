@@ -1,0 +1,13 @@
+
+Nightly Build from Trunk
+
+
+Documentation: http://www.terracotta.org/confluence/display/docs1/Terracotta+Product+Documentation
+Forums:        http://forums.terracotta.org/forums/forums/list.page
+Mailing Lists: http://lists.terracotta.org
+Support:       http://www.terracotta.org/confluence/display/orgsite/Support
+
+
+
+Copyright (c) 2007, Terracotta, Inc.
+http://www.terracotta.org
