@@ -27,8 +27,8 @@ import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.util.SequenceValidator;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ProcessTransactionHandler extends AbstractEventHandler {
@@ -63,12 +63,13 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
       Collection completedTxnIds = reader.addAcknowledgedTransactionIDsTo(new HashSet());
       ServerTransaction txn;
 
-      Map txns = new HashMap(reader.getNumTxns());
+      //XXX:: Has to be ordered.
+      Map txns = new LinkedHashMap(reader.getNumTxns());
       ChannelID channelID = reader.getChannelID();
       // NOTE::XXX:: GlobalTransactionID id assigned in the process transaction stage. The transaction could be
       // re-ordered before apply. This is not a problem because for an transaction to be re-ordered, it should not
-      // have any common objects between them. hence if g1 is the first txn and g2 is the second txn, g2 will be applied 
-      // before g1, only when g2 has not common objects with g1. If this is not true then we cant assign gid here.
+      // have any common objects between them. hence if g1 is the first txn and g2 is the second txn, g2 will be applied
+      // before g1, only when g2 has no common objects with g1. If this is not true then we cant assign gid here.
       while ((txn = reader.getNextTransaction()) != null) {
         sequenceValidator.setCurrent(channelID, txn.getClientSequenceID());
         txns.put(txn.getServerTransactionID(), txn);

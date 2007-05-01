@@ -250,7 +250,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       if (!relayed) {
         ci.relayTransactionComplete(txnID);
       }
-      if(!active) {
+      if (!active) {
         gtxm.createGlobalTransactionDesc(stxnID, txn.getGlobalTransactionID());
       }
     }

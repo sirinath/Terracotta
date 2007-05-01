@@ -28,8 +28,8 @@ import com.tc.objectserver.tx.TransactionalObjectManager;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -75,7 +75,8 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
     try {
       final TransactionBatchReader reader = batchReaderFactory.newTransactionBatchReader(commitMessage);
       ServerTransaction txn;
-      Map txns = new HashMap(reader.getNumTxns());
+      // XXX:: Order has to be maintained.
+      Map txns = new LinkedHashMap(reader.getNumTxns());
       while ((txn = reader.getNextTransaction()) != null) {
         txns.put(txn.getServerTransactionID(), txn);
       }
@@ -88,7 +89,7 @@ public class L2ObjectSyncHandler extends AbstractEventHandler {
   }
 
   private void doSyncObjectsResponse(ObjectSyncMessage syncMsg) {
-    Map txns = new HashMap(1);
+    Map txns = new LinkedHashMap(1);
     ServerTransaction txn = ServerTransactionFactory.createTxnFrom(syncMsg);
     txns.put(txn.getServerTransactionID(), txn);
     transactionManager.incomingTransactions(ChannelID.L2_SERVER_ID, txns, false);
