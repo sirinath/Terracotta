@@ -1,139 +1,87 @@
 /*
-@COPYRIGHT@
-*/
+ @COPYRIGHT@
+ */
 package demo.sharedqueue;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import org.mortbay.http.HttpContext;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpHandler;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
 
-public class SimpleHttpHandler
-       implements HttpHandler {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-   private boolean started = false;
-   private HttpContext context;
-   private Queue queue;
-   private final String htmlPath;
-   /**
-    *  Description of the Field
-    */
-   public static final String ACTION = "/webapp/";
-   /**
-    *  Description of the Field
-    */
-   public static final String UNITS_OF_WORK = "unitsOfWork";
+import org.mortbay.jetty.HttpConnection;
+import org.mortbay.jetty.Request;
+import org.mortbay.jetty.handler.AbstractHandler;
 
-   /**
-    *@param  queue     Description of Parameter
-    *@param  htmlPath  Description of Parameter
-    */
-   public SimpleHttpHandler(Queue queue, String htmlPath) {
-      this.queue = queue;
-      this.htmlPath = htmlPath;
-   }
+public class SimpleHttpHandler extends AbstractHandler {
 
-   /**
-    *@return    The Name value
-    */
-   public String getName() {
-      return "Simple Http Handler";
-   }
+	private final demo.sharedqueue.Queue queue;
 
-   /**
-    *@return    The HttpContext value
-    */
-   public HttpContext getHttpContext() {
-      return context;
-   }
+	public final static String ACTION = "/webapp";
 
-   /**
-    *@return    The Started value
-    */
-   public boolean isStarted() {
-      return started;
-   }
+	public final static String ACTION_ADDWORK = "/addWork";
 
-   /**
-    *@param  pathInContext      Description of Parameter
-    *@param  pathParams         Description of Parameter
-    *@param  request            Description of Parameter
-    *@param  response           Description of Parameter
-    *@exception  HttpException  Description of Exception
-    *@exception  IOException    Description of Exception
-    */
-   public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response)
-          throws HttpException, IOException {
-      if (pathInContext.equals("/add_work_item.asp")) {
-         final int unitsOfWork = getIntForParameter(request, UNITS_OF_WORK);
-         Thread processor = new Thread(
-                  new Runnable() {
-                     public void run() {
-                        for (int i = 0; i < unitsOfWork; i++) {
-                           queue.addJob();
-                           try {
-                              Thread.sleep(50);
-                           }
-                           // added slight delay to improve visuals
-                           catch (InterruptedException ie) {
-                              System.err.println(ie.getMessage());
-                           }
-                        }
-                     }
-                  });
-         processor.start();
-         response.sendRedirect(ACTION);
-      }
+	public final static String ACTION_GETINFO = "/getInfo";
 
-      else if (pathInContext.equals("/get_info_xml.asp")) {
-         response.setContentType("text/xml");
-         response.setField("Cache-Control", "no-cache");
-         OutputStream os = response.getOutputStream();
-         os.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>".getBytes());
-         os.write("<root>".getBytes());
-         os.write(queue.getXmlData().getBytes());
-         os.write("</root>".getBytes());
-         response.commit();
-         request.setHandled(true);
-      }
-   }
+	public final static String UNITS_OF_WORK = "unitsOfWork";
 
-   /**
-    *@param  initContext  Description of Parameter
-    */
-   public void initialize(HttpContext initContext) {
-      this.context = initContext;
-   }
+	public SimpleHttpHandler(Queue queue) {
+		this.queue = queue;
+	}
 
-   /**
-    *@exception  Exception  Description of Exception
-    */
-   public void start()
-          throws Exception {
-      this.started = true;
-   }
+	private final int getIntForParameter(HttpServletRequest request,
+			final String name) {
+		String param = request.getParameter(name);
+		try {
+			return param == null ? 0 : Integer.parseInt(param);
+		} catch (NumberFormatException nfe) {
+			return 0;
+		}
+	}
 
-   /**
-    */
-   public void stop() {
-      started = false;
-   }
+	public final void handle(String target, HttpServletRequest request,
+			HttpServletResponse response, int dispatch) throws IOException,
+			ServletException {
+		Request base_request = (request instanceof Request) ? (Request) request
+				: HttpConnection.getCurrentConnection().getRequest();
+		if (target.equals(ACTION_ADDWORK)) {
+			doAddWork(base_request, response);
+		} else if (target.equals(ACTION_GETINFO)) {
+			doGetInfo(base_request, response);
+		}
+	}
 
-   /**
-    *@param  request  Description of Parameter
-    *@param  name     Description of Parameter
-    *@return          The IntForParameter value
-    */
-   private int getIntForParameter(HttpRequest request, String name) {
-      String param = request.getParameter(name);
-      try {
-         return param == null ? 0 : Integer.parseInt(param);
-      }
-      catch (NumberFormatException nfe) {
-         return 0;
-      }
-   }
+	private final void doAddWork(Request request, HttpServletResponse response)
+			throws IOException {
+		final int unitsOfWork = getIntForParameter(request, UNITS_OF_WORK);
+		final Thread processor = new Thread(new Runnable() {
+			public void run() {
+				for (int i = 0; i < unitsOfWork; i++) {
+					queue.addJob();
+					// added slight delay to improve visuals
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException ie) {
+						System.err.println(ie.getMessage());
+					}
+				}
+			}
+		});
+		processor.start();
+		response.sendRedirect(ACTION);
+	}
+
+	private final void doGetInfo(Request request, HttpServletResponse response)
+			throws IOException {
+		response.setContentType("text/xml");
+		response.setStatus(HttpServletResponse.SC_OK);
+		response
+				.getWriter()
+				.println(
+						"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+		response.getWriter().println("<root>");
+		response.getWriter().println(queue.getXmlData());
+		response.getWriter().println("</root>");
+		request.setHandled(true);
+	}
 }
