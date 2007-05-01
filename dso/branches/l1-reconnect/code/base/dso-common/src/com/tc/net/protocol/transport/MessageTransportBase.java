@@ -101,7 +101,11 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
    */
   public final void close() {
     synchronized (isOpen) {
-      Assert.eval("Can only close an open connection", isOpen.get());
+      if (!isOpen.get()) {
+        // see DEV-659:  we used to throw an assertion error here if already closed
+        logger.warn("Can only close an open connection");
+        return;
+      }
       isOpen.set(false);
       fireTransportClosedEvent();
     }
