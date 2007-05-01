@@ -28,11 +28,11 @@
     </target>
 
   <target name="get-source">
-    <mkdir dir="src"/>
+    <mkdir dir="src/org/apache/catalina"/>
     <exec executable="svn">
       <arg value="co"/>
       <arg value="http://svn.apache.org/repos/asf/tomcat/tc6.0.x/trunk/java/org/apache/catalina/tribes"/>
-      <arg value="src/tribes"/>
+      <arg value="src/org/apache/catalina/tribes"/>
     </exec>
   </target>
 
@@ -41,10 +41,10 @@
     <mkdir dir="build/META-INF"/>
     <exec executable="svn" output="build/META-INF/svn.info">
       <arg value="info" />
-      <arg value="src/tribes" />
+      <arg value="src/org/apache/catalina/tribes" />
     </exec>
     <tstamp/>
-    <jar destfile="dist/catalina-tribes-snapshot-${DSTAMP}.jar" basedir="build" />
+    <jar destfile="dist/catalina-tribes-6.0.11-${DSTAMP}.jar" basedir="build" />
   </target>
 
 </project>
