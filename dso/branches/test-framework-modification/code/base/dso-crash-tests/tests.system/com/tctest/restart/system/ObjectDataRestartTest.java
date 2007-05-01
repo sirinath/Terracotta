@@ -34,10 +34,16 @@ public class ObjectDataRestartTest extends TransparentTestBase implements TestCo
   }
 
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
-    setupManager.setServerCount(3);
-    setupManager.setServerCrashMode(ActivePassiveCrashMode.RANDOM_SERVER_CRASH);
+    setupManager.setServerCount(2);
+    setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(30);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.DISK);
     setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
+
+//     setupManager.setServerCount(3);
+//     setupManager.setServerCrashMode(ActivePassiveCrashMode.RANDOM_SERVER_CRASH);
+//     setupManager.setServerCrashWaitTimeInSec(20);
+//     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.DISK);
+//     setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
   }
 }

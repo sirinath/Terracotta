@@ -30,10 +30,15 @@ public class MutateValidateArrayTest extends TransparentTestBase {
 
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     setupManager.setServerCount(2);
-    setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashMode(ActivePassiveCrashMode.CRASH_AFTER_MUTATE);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
     setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.TEMPORARY_SWAP_ONLY);
-    setupManager.setServerCrashWaitTimeInSec(15);
+    
+//    setupManager.setServerCount(3);
+//    setupManager.setServerCrashMode(ActivePassiveCrashMode.RANDOM_SERVER_CRASH);
+//    setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
+//    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.TEMPORARY_SWAP_ONLY);
+//    setupManager.setServerCrashWaitTimeInSec(15);
   }
 
   protected boolean canRunActivePassive() {

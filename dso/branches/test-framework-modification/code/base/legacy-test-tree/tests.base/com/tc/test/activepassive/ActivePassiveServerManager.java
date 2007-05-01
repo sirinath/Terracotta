@@ -31,7 +31,7 @@ public class ActivePassiveServerManager {
   private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
   private static final boolean                   DEBUG            = false;
   private static final int                       NULL_VAL         = -1;
-  private static final long                      SEED             = 5349;
+  private static final long                      SEED             = 237;
 
   private final File                             tempDir;
   private final PortChooser                      portChooser;
@@ -352,9 +352,9 @@ public class ActivePassiveServerManager {
       return;
     }
 
-    debugPrintln("***** Crashing active server ");
-
     if (activeIndex < 0) { throw new AssertionError("Active index was not set."); }
+
+    System.out.println("Crashing active server: dsoPort=[" + servers[activeIndex].getDsoPort() + "]");
 
     debugPrintln("***** wait to find an appropriate passive server.");
     waitForPassive();
@@ -394,8 +394,9 @@ public class ActivePassiveServerManager {
       return;
     }
 
+    System.out.println("Crashing passive server: dsoPort=[" + servers[passiveToCrash].getDsoPort() + "]");
+
     ServerControl server = servers[passiveToCrash].getServerControl();
-    debugPrintln("***** Crashing passive:  port=[" + server.getDsoPort() + "]");
     server.crash();
     debugPrintln("***** Sleeping after crashing passive server ");
     waitForServerCrash(server);
