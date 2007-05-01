@@ -24,7 +24,7 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
     super(appId, cfg, listenerProvider);
     this.appId = appId;
     myArrayTestRoot = new String[] { "hee", "hoo", "haa" };
-    iterationCount1 = 300;
+    iterationCount1 = 30000;
     validationArray = new ArrayList();
   }
 
@@ -34,7 +34,10 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
         int index = (i + 1) % myArrayTestRoot.length;
         String val = myArrayTestRoot[index];
         validationArray.add(val);
-        debugPrintln("****** appId[" + appId + "]:   val added=[" + val + "] index=[" + index + "]");
+
+        if (i % 100 == 0) {
+          debugPrintln("****** appId[" + appId + "]:   val added=[" + val + "] index=[" + index + "]");
+        }
       }
     }
   }
@@ -42,8 +45,11 @@ public class MutateValidateArrayTestApp extends AbstractMutateValidateTransparen
   protected void validate() throws Throwable {
     synchronized (validationArray) {
       for (int i = 0; i < iterationCount1 * getParticipantCount(); i++) {
-        debugPrintln("****** appId[" + appId + "]:   index=[" + i + "]");
-        debugPrintln("***** " + validationArray.get(i));
+
+        if (i % 100 == 0) {
+          debugPrintln("****** appId[" + appId + "]:   index=[" + i + "]");
+          debugPrintln("***** " + validationArray.get(i));
+        }
 
         boolean val = myArrayTestRoot[(i + 1) % myArrayTestRoot.length].equals(validationArray.get(i));
         if (!val) {
