@@ -23,6 +23,7 @@ public class WebsphereLoaderNaming {
   private static final String   EAR                = "ear:";
   private static final String   EAR_DEPENDENCY     = "earDep:";
   private static final String   OSGI_BUNDLE        = "osgi-bundle:";
+  private static final String   BOOTSTRAP_EXT      = "bootExt";
 
   public static void nameAndRegisterOsgiLoader(NamedClassLoader loader) {
     Object hostData = invokeMethod(loader, "getHostData");
@@ -42,6 +43,10 @@ public class WebsphereLoaderNaming {
     String vhost = (String) invokeMethod(bindings, "getVirtualHostName");
     String contextRoot = (String) invokeMethod(webModule, "getContextRoot");
     nameAndRegister(loader, EAR + getEarName(earFile) + ":" + vhost + contextRoot);
+  }
+
+  public static void nameAndRegisterBootstrapExtLoader(NamedClassLoader loader) {
+    nameAndRegister(loader, BOOTSTRAP_EXT);
   }
 
   private static void nameAndRegister(NamedClassLoader loader, String name) {

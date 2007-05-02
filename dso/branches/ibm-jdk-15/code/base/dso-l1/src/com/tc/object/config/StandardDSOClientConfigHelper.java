@@ -77,6 +77,7 @@ import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.tc.websphere.transform.ClassGraphAdapter;
 import com.tc.websphere.transform.DefaultClassLoaderAdapter;
 import com.tc.websphere.transform.JarClassLoaderAdapter;
+import com.tc.websphere.transform.WSLauncherAdapter;
 import com.tcclient.util.DSOUnsafe;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
@@ -501,8 +502,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                   "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
     spec.addDistributedMethodCall("fireTreeStructureChanged",
                                   "(Ljava/lang/Object;[Ljava/lang/Object;[I[Ljava/lang/Object;)V", false);
-    spec.addDistributedMethodCall("fireTreeStructureChanged", "(Ljava/lang/Object;Ljavax/swing/tree/TreePath;)V",
-                                  false);
+    spec
+        .addDistributedMethodCall("fireTreeStructureChanged", "(Ljava/lang/Object;Ljavax/swing/tree/TreePath;)V", false);
 
     spec = getOrCreateSpec("javax.swing.AbstractListModel");
     spec.addTransient("listenerList");
@@ -545,7 +546,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
     // "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized * java.util.Hashtable.keys(..)",
     // "synchronized * java.util.Hashtable.size(..)", "synchronized * java.util.Hashtable.toString(..)" });
-
     spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
     addWriteAutolock("synchronized * java.util.Properties.*(..)");
 
@@ -760,6 +760,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addCustomAdapter("org.eclipse.osgi.framework.adaptor.core.DefaultClassLoader", new DefaultClassLoaderAdapter());
     addCustomAdapter("com.ibm.ws.classloader.JarClassLoader", new JarClassLoaderAdapter());
     addCustomAdapter("com.ibm.ws.classloader.ClassGraph", new ClassGraphAdapter());
+    addCustomAdapter("com.ibm.wsspi.bootstrap.WSLauncher", new WSLauncherAdapter());
 
     // TODO for the Event Swing sample only
     ld = new LockDefinition("setTextArea", ConfigLockLevel.WRITE);
