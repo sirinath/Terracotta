@@ -47,7 +47,6 @@ import com.tc.object.SerializationUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
-import com.tc.object.bytecode.AccessibleObjectAdapter;
 import com.tc.object.bytecode.BufferedWriterAdapter;
 import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
@@ -125,7 +124,6 @@ import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.Vm;
-import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
@@ -140,7 +138,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.AccessibleObject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -153,7 +150,7 @@ import java.util.Set;
  * Tool for creating the DSO boot jar
  */
 public class BootJarTool {
-  private final static String         OUTPUT_FILE_OPTION           = "o";
+  private final static String         TARGET_FILE_OPTION           = "o";
   private final static boolean        WRITE_OUT_TEMP_FILE          = true;
 
   private static final String         DEFAULT_CONFIG_PATH          = "default-config.xml";
@@ -192,8 +189,17 @@ public class BootJarTool {
     this(configuration, outputFile, systemProvider, false);
   }
 
+  private boolean isAtLeastJDK15() {
+    try {
+      getBytesForClass("java.lang.StringBuilder", systemLoader);
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
+  }
+
   private void addJdk15SpecificPreInstrumentedClasses() {
-    if (Vm.isJDK15Compliant()) {
+    if (isAtLeastJDK15()) {
       TransparencyClassSpec spec = config.getOrCreateSpec("java.math.MathContext");
       spec.markPreInstrumented();
 
@@ -202,6 +208,35 @@ public class BootJarTool {
       addInstrumentedJavaUtilConcurrentHashMap();
       addInstrumentedJavaUtilConcurrentCyclicBarrier();
       addInstrumentedJavaUtilConcurrentFutureTask();
+    }
+  }
+
+  public void scanJar(File bootJarFile) {
+    try {
+      final Set missing = new HashSet();
+      final Map internalSpecs = getTCSpecs();
+      final Map userSpecs = massageSpecs(getUserDefinedSpecs(internalSpecs), false);
+      final BootJar bootJar1 = BootJar.getBootJarForReading(bootJarFile);
+      Set bootJarClassNames = bootJar1.getAllPreInstrumentedClasses();
+      for (Iterator i = userSpecs.keySet().iterator(); i.hasNext();) {
+        String userClassName = (String) i.next();
+        if (!bootJarClassNames.contains(userClassName)) {
+          missing.add(userClassName);
+        }
+      }
+      if (!missing.isEmpty()) {
+        System.err.println("\nThe following classes was declared in the <additional-boot-jar-classes/> section "
+                           + "of your tc-config file but is not a part of your boot JAR file:");
+        for (Iterator i = missing.iterator(); i.hasNext();) {
+          System.err.println("- " + i.next());
+        }
+        System.err.println("\nUse the make-boot-jar tool to re-create and include these classes in your boot JAR.");
+        System.exit(1);
+      }
+    } catch (BootJarException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -224,6 +259,7 @@ public class BootJarTool {
       addInstrumentedHashMap();
       addInstrumentedHashtable();
       addInstrumentedJavaUtilCollection();
+
       addJdk15SpecificPreInstrumentedClasses();
 
       addInstrumentedWeakHashMap();
@@ -268,7 +304,6 @@ public class BootJarTool {
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(JettyLoaderNaming.class.getName());
-      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
@@ -301,19 +336,18 @@ public class BootJarTool {
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
+
       loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
-      loadTerracottaClass(ProxyInstance.class.getName());
+
       loadTerracottaClass(JavaLangArrayHelpers.class.getName());
 
-      loadTerracottaClass(Vm.class.getName());
-      loadTerracottaClass(Vm.Version.class.getName());
-      loadTerracottaClass(Vm.UnknownJvmVersionException.class.getName());
+      loadTerracottaClass(ProxyInstance.class.getName());
+
       addManagementClasses();
 
       addRuntimeClasses();
 
       addSunStandardLoaders();
-      addInstrumentedAccessibleObject();
       addInstrumentedJavaLangThrowable();
       addInstrumentedJavaLangStringBuffer();
       addInstrumentedClassLoader();
@@ -332,6 +366,7 @@ public class BootJarTool {
 
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
+
     } catch (Exception e) {
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }
@@ -1159,26 +1194,8 @@ public class BootJarTool {
     }
   }
 
-  private void addInstrumentedAccessibleObject() {
-    String classname = AccessibleObject.class.getName();
-    byte[] bytes = getSystemBytes(classname);
-
-    // instrument the state changing methods in AccessibleObject
-    ClassReader cr = new ClassReader(bytes);
-    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    ClassVisitor cv = new AccessibleObjectAdapter(cw);
-    cr.accept(cv, 0);
-    bytes = cw.toByteArray();
-
-    // regular DSO instrumentation
-    TransparencyClassSpec spec = config.getOrCreateSpec(classname);
-    spec.markPreInstrumented();
-
-    bootJar.loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
-  }
-
   private void addPortableStringBuffer() {
-    boolean isJDK15 = Vm.isJDK15Compliant();
+    boolean isJDK15 = isAtLeastJDK15();
     if (isJDK15) {
       addAbstractStringBuilder();
     }
@@ -1226,20 +1243,9 @@ public class BootJarTool {
     // even if we aren't making StringBu[ild|ff]er portable, we still need to make
     // sure it calls the fast getChars() methods on String
 
-    boolean isJDK15 = Vm.isJDK15Compliant();
+    boolean isJDK15 = isAtLeastJDK15();
 
-    if (isJDK15) {
-      if (Vm.isIBM()) {
-        addNonPortableStringBuffer("java.lang.StringBuilder");
-      } else {
-        addNonPortableStringBuffer("java.lang.AbstractStringBuilder");
-      }
-    }
-
-    addNonPortableStringBuffer("java.lang.StringBuffer");
-  }
-
-  private void addNonPortableStringBuffer(String className) {
+    String className = isJDK15 ? "java.lang.AbstractStringBuilder" : "java.lang.StringBuffer";
     TransparencyClassSpec spec = config.getOrCreateSpec(className);
     spec.markPreInstrumented();
 
@@ -1345,7 +1351,7 @@ public class BootJarTool {
    * This instrumentation is temporary to add debug statements to the CyclicBarrier class.
    */
   private void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
-    if (!Vm.isJDK15Compliant()) { return; }
+    if (!isAtLeastJDK15()) { return; }
 
     byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
 
@@ -1362,7 +1368,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentHashMap() {
-    if (!Vm.isJDK15Compliant()) { return; }
+    if (!isAtLeastJDK15()) { return; }
 
     loadTerracottaClass("com.tcclient.util.ConcurrentHashMapEntrySetWrapper");
     loadTerracottaClass("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$IteratorWrapper");
@@ -1428,7 +1434,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentLinkedBlockingQueue() {
-    if (!Vm.isJDK15Compliant()) { return; }
+    if (!isAtLeastJDK15()) { return; }
 
     // Instrumentation for Itr inner class
     byte[] bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue$Itr");
@@ -1484,7 +1490,7 @@ public class BootJarTool {
 
   private void addInstrumentedJavaUtilConcurrentFutureTask() {
 
-    if (!Vm.isJDK15Compliant()) { return; }
+    if (!isAtLeastJDK15()) { return; }
     Map instrumentedContext = new HashMap();
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.FutureTask");
@@ -1547,12 +1553,7 @@ public class BootJarTool {
     spec.addAlwaysLogSpec(SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_AT_SIGNATURE);
-    // the Vector.addAll(Collection) implementation in the IBM JDK simply delegates
-    // to Vector.addAllAt(int, Collection), if addAll is instrumented as well, the
-    // vector elements are added twice to the collection
-    if (!Vm.isIBM()) {
-      spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
-    }
+    spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ELEMENT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ALL_ELEMENTS_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ELEMENT_AT_SIGNATURE);
@@ -1642,20 +1643,18 @@ public class BootJarTool {
     byte[] jData = getSystemBytes(jClassNameDots);
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
-
     ClassVisitor cv1 = new LinkedHashMapClassAdapter(cw);
+
     jCR.accept(cv1, ClassReader.SKIP_DEBUG);
     jData = cw.toByteArray();
 
     jCR = new ClassReader(jData);
     cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
-    ClassNode jCN = new ClassNode();
-    jCR.accept(jCN, ClassReader.SKIP_DEBUG);
 
     ClassInfo jClassInfo = AsmClassInfo.getClassInfo(jClassNameDots, systemLoader);
     TransparencyClassAdapter dsoAdapter = config.createDsoClassAdapterFor(cw, jClassInfo, instrumentationLogger,
                                                                           getClass().getClassLoader(), true);
-    ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots, jCN,
+    ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
                                                                               instrumentedContext));
     jCR.accept(cv, 0);
@@ -1730,7 +1729,7 @@ public class BootJarTool {
   }
 
   private void addInstrumentedJavaUtilConcurrentLocksReentrantLock() {
-    if (!Vm.isJDK15Compliant()) { return; }
+    if (!isAtLeastJDK15()) { return; }
 
     byte[] bytes = getSystemBytes("com.tc.util.concurrent.locks.ReentrantLock");
     TransparencyClassSpec spec = config.getOrCreateSpec("com.tc.util.concurrent.locks.ReentrantLock");
@@ -1837,13 +1836,16 @@ public class BootJarTool {
     }
   }
 
+  private static final String MAKE_MODE = "make";
+  private static final String SCAN_MODE = "scan";
+
   public static void main(String[] args) throws Exception {
     File installDir = getInstallationDir();
-    String outputFileOptionMsg = "path to store boot JAR"
+    String outputFileOptionMsg = "path to boot JAR file"
                                  + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/lib/dso-boot" : "");
-    Option targetFileOption = new Option(OUTPUT_FILE_OPTION, true, outputFileOptionMsg);
+    Option targetFileOption = new Option(TARGET_FILE_OPTION, true, outputFileOptionMsg);
     targetFileOption.setArgName("file");
-    targetFileOption.setLongOpt("output-file");
+    targetFileOption.setLongOpt("bootjar-file");
     targetFileOption.setArgs(1);
     targetFileOption.setRequired(installDir == null);
     targetFileOption.setType(String.class);
@@ -1867,17 +1869,26 @@ public class BootJarTool {
     options.addOption(verboseOption);
     options.addOption(helpOption);
 
+    String mode = MAKE_MODE;
     CommandLine commandLine = null;
-
     try {
       commandLine = new PosixParser().parse(options, args);
+      if (commandLine.getArgList().size() > 0) {
+        mode = commandLine.getArgList().get(0).toString().toLowerCase();
+      }
     } catch (ParseException pe) {
       new HelpFormatter().printHelp("java " + BootJarTool.class.getName(), options);
       System.exit(1);
     }
 
+    final String MAKE_OR_SCAN_MODE = "<" + MAKE_MODE + "|" + SCAN_MODE + ">";
+    if (!mode.equals(MAKE_MODE) && !mode.equals(SCAN_MODE)) {
+      new HelpFormatter().printHelp("java " + BootJarTool.class.getName() + " " + MAKE_OR_SCAN_MODE, options);
+      System.exit(1);
+    }
+
     if (commandLine.hasOption("h")) {
-      new HelpFormatter().printHelp("java " + BootJarTool.class.getName(), options);
+      new HelpFormatter().printHelp("java " + BootJarTool.class.getName() + " " + MAKE_OR_SCAN_MODE, options);
       System.exit(1);
     }
 
@@ -1908,20 +1919,20 @@ public class BootJarTool {
     TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();
     L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(logger);
 
-    File outputFile;
+    File targetFile;
 
-    if (!commandLine.hasOption(OUTPUT_FILE_OPTION)) {
+    if (!commandLine.hasOption(TARGET_FILE_OPTION)) {
       File libDir = new File(installDir, "lib");
-      outputFile = new File(libDir, "dso-boot");
-      if (!outputFile.exists()) {
-        outputFile.mkdirs();
+      targetFile = new File(libDir, "dso-boot");
+      if (!targetFile.exists()) {
+        targetFile.mkdirs();
       }
     } else {
-      outputFile = new File(commandLine.getOptionValue(OUTPUT_FILE_OPTION)).getAbsoluteFile();
+      targetFile = new File(commandLine.getOptionValue(TARGET_FILE_OPTION)).getAbsoluteFile();
     }
 
-    if (outputFile.isDirectory()) {
-      outputFile = new File(outputFile, BootJarSignature.getBootJarNameForThisVM());
+    if (targetFile.isDirectory()) {
+      targetFile = new File(targetFile, BootJarSignature.getBootJarNameForThisVM());
     }
 
     // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
@@ -1929,7 +1940,17 @@ public class BootJarTool {
     // WAS: systemProvider = new RuntimeJarBytesProvider(...)
 
     ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
-    new BootJarTool(new StandardDSOClientConfigHelper(config, false), outputFile, systemLoader, !verbose).generateJar();
+    BootJarTool bjTool = new BootJarTool(new StandardDSOClientConfigHelper(config, false), targetFile, systemLoader,
+                                         !verbose);
+    if (mode.equals(MAKE_MODE)) {
+      bjTool.generateJar();
+    } else {
+      if (!targetFile.exists()) {
+        System.err.println("\nDSO boot JAR file not found: '" + targetFile
+                           + "'; you can specify the boot JAR file to scan using the -o or --bootjar-file option.");
+        System.exit(1);
+      }
+      bjTool.scanJar(targetFile);
+    }
   }
-
 }
