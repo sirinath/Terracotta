@@ -125,6 +125,7 @@ import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.Vm;
+import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
@@ -267,6 +268,7 @@ public class BootJarTool {
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(JettyLoaderNaming.class.getName());
+      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
@@ -309,7 +311,7 @@ public class BootJarTool {
       addManagementClasses();
 
       addRuntimeClasses();
- 
+
       addSunStandardLoaders();
       addInstrumentedAccessibleObject();
       addInstrumentedJavaLangThrowable();
@@ -330,7 +332,7 @@ public class BootJarTool {
 
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
-   } catch (Exception e) {
+    } catch (Exception e) {
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }
 
@@ -387,7 +389,7 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.asm.commons.EmptyVisitor");
     loadTerracottaClass("com.tc.asm.commons.SerialVersionUIDAdder");
     loadTerracottaClass("com.tc.asm.commons.SerialVersionUIDAdder$Item");
-    
+
     // FIXME extract AW runtime classes
     loadTerracottaClass("com.tc.aspectwerkz.AspectContext");
     loadTerracottaClass("com.tc.aspectwerkz.DeploymentModel$PointcutControlledDeploymentModel");
@@ -1156,7 +1158,7 @@ public class BootJarTool {
       addNonPortableStringBuffer();
     }
   }
-  
+
   private void addInstrumentedAccessibleObject() {
     String classname = AccessibleObject.class.getName();
     byte[] bytes = getSystemBytes(classname);
@@ -1171,7 +1173,7 @@ public class BootJarTool {
     // regular DSO instrumentation
     TransparencyClassSpec spec = config.getOrCreateSpec(classname);
     spec.markPreInstrumented();
-    
+
     bootJar.loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
@@ -1233,7 +1235,7 @@ public class BootJarTool {
         addNonPortableStringBuffer("java.lang.AbstractStringBuilder");
       }
     }
-    
+
     addNonPortableStringBuffer("java.lang.StringBuffer");
   }
 

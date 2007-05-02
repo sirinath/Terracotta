@@ -43,6 +43,9 @@ public class ByteCodeUtil implements Opcodes {
   public static final String         TRANSPARENT_ACCESS_CLASS          = "com/tc/object/bytecode/TransparentAccess";
   public static final String         TRANSPARENT_ACCESS_TYPE           = "L" + TRANSPARENT_ACCESS_CLASS + ";";
 
+  public static final String         NAMEDCLASSLOADER_CLASS            = "com/tc/object/loaders/NamedClassLoader";
+  public static final String         NAMEDCLASSLOADER_TYPE             = "L" + NAMEDCLASSLOADER_CLASS + ";";
+
   private static final LiteralValues LITERAL_VALUES                    = new LiteralValues();
 
   public static String[] addInterfaces(String[] existing, String[] toAdd) {
