@@ -668,6 +668,7 @@ public class DistributedObjectServer extends SEDA {
   }
 
   public boolean startActiveMode() throws IOException {
+    transactionManager.goToActiveMode();
     Set existingConnections = Collections.unmodifiableSet(connectionIdFactory.loadConnectionIDs());
     context.getClientHandshakeManager().setStarting(existingConnections);
     l1Listener.start(existingConnections);
