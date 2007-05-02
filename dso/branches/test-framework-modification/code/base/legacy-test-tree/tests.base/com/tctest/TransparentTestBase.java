@@ -348,7 +348,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
-  protected File writeMinimalConfig(int port, int adminPort) throws IOException {
+  protected File writeMinimalConfig(int port, int adminPort) {
     TerracottaConfigBuilder builder = createConfigBuilder(port, adminPort);
     FileOutputStream out = null;
     File configFile = null;
