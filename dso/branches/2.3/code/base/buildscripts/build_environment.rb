@@ -108,6 +108,12 @@ class BuildEnvironment < Environment
     version_string
   end
 
+  # This version string is for our InstallerAnywhere to display
+  # in the About box
+  def version_string_for_ia
+    @config_source['version-ia'] || specified_build_version()
+  end
+  
   # When was this build started? This returns a timestamp (a Time object) that's created in
   # the constructor of this object.
   def build_timestamp
