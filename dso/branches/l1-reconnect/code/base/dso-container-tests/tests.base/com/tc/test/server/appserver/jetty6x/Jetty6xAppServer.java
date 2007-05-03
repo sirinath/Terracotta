@@ -10,18 +10,18 @@ import com.tc.test.server.appserver.AbstractAppServer;
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.AppServerResult;
 import com.tc.test.server.appserver.cargo.CargoLinkedChildProcess;
+import com.tc.test.server.util.AppServerUtil;
 import com.tc.util.PortChooser;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Jetty6xAppServer extends AbstractAppServer {
@@ -72,47 +72,19 @@ public class Jetty6xAppServer extends AbstractAppServer {
     }
   }
 
-  private static void waitForPort(int port) {
-    final long timeout = System.currentTimeMillis() + START_STOP_TIMEOUT;
-    while (System.currentTimeMillis() < timeout) {
-      Socket s = null;
-      try {
-        s = new Socket("127.0.0.1", port);
-        return;
-      } catch (IOException ioe) {
-        // try again
-      } finally {
-        if (s != null) {
-          try {
-            s.close();
-          } catch (IOException ioe) {
-            // ignore
-          }
-        }
-      }
-
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-
-    throw new RuntimeException("Port " + port + " cannot be reached, timeout = " + START_STOP_TIMEOUT);
-  }
-
   private AppServerResult startJetty(AppServerParameters params) throws Exception {
     prepareDeployment(params);
-    
-    List cmd = new ArrayList();
-    cmd.add(JAVA_CMD);
+
+    String[] jvmargs = params.jvmArgs().replaceAll("'", "").split("\\s+");
+    List cmd = new ArrayList(Arrays.asList(jvmargs));
+    cmd.add(0, JAVA_CMD);
+    cmd.add("-cp");
+    cmd.add(this.serverInstallDirectory() + File.separator + "start.jar" + File.pathSeparator
+            + TestConfigObject.getInstance().linkedChildProcessClasspath());
     cmd.add("-Djetty.home=" + this.serverInstallDirectory());
     cmd.add("-Djetty.port=" + jetty_port);
     cmd.add("-DSTOP.PORT=" + stop_port);
     cmd.add("-DSTOP.KEY=" + STOP_KEY);
-    cmd.add("-cp");
-    cmd.add(this.serverInstallDirectory() + File.separator + "start.jar" + File.pathSeparator
-            + TestConfigObject.getInstance().linkedChildProcessClasspath());
     cmd.add(CargoLinkedChildProcess.class.getName());
     cmd.add(JETTY_MAIN_CLASS);
     cmd.add(String.valueOf(HeartBeatService.listenPort()));
@@ -136,7 +108,7 @@ public class Jetty6xAppServer extends AbstractAppServer {
     };
     runner.start();
     System.err.println("Starting jetty " + instanceName + " on port " + jetty_port + "...");
-    waitForPort(jetty_port);
+    AppServerUtil.waitForPort(jetty_port, START_STOP_TIMEOUT);
     System.err.println("Started " + instanceName + " on port " + jetty_port);
     return new AppServerResult(jetty_port, this);
   }
@@ -147,10 +119,10 @@ public class Jetty6xAppServer extends AbstractAppServer {
     stop_port = portChooser.chooseRandomPort();
 
     instanceName = params.instanceName();
-    instanceDir = new File (sandboxDirectory(), instanceName);
-    if (new File(instanceDir, "logs").mkdirs() == false) {
-      throw new Exception("Can't create logs directory for jetty instance: " + instanceName);
-    }
+    instanceDir = new File(sandboxDirectory(), instanceName);
+    if (new File(instanceDir, "logs").mkdirs() == false) { throw new Exception(
+                                                                               "Can't create logs directory for jetty instance: "
+                                                                                   + instanceName); }
     setProperties(params, jetty_port, instanceDir);
     createConfigFile();
   }
@@ -158,10 +130,8 @@ public class Jetty6xAppServer extends AbstractAppServer {
   private void createConfigFile() throws Exception {
     String origialConfig = this.serverInstallDirectory().getAbsolutePath() + File.separator + "etc" + File.separator
                            + "jetty.xml";
-    if (new File(origialConfig).exists() == false) {
-      throw new Exception(origialConfig + " doesn't exist.");
-    }
-    
+    if (new File(origialConfig).exists() == false) { throw new Exception(origialConfig + " doesn't exist."); }
+
     StringBuffer buffer = new StringBuffer(1024);
     BufferedReader in = null;
     PrintWriter out = null;
