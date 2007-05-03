@@ -7,11 +7,9 @@ package com.tc.net.protocol.transport;
 import com.tc.logging.TCLogger;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 public abstract class AbstractMessageTransport implements MessageTransport {
 
@@ -28,8 +26,9 @@ public abstract class AbstractMessageTransport implements MessageTransport {
   }
 
   public final void addTransportListeners(List toAdd) {
-    synchronized (listeners) {
-      basicAddTransportListeners(toAdd);
+    for (Iterator i = toAdd.iterator(); i.hasNext();) {
+      MessageTransportListener l = (MessageTransportListener) i.next();
+      addTransportListener(l);
     }
   }
 
@@ -37,20 +36,12 @@ public abstract class AbstractMessageTransport implements MessageTransport {
     return new ArrayList(listeners);
   }
 
-  public final void addTransportListener(MessageTransportListener listener) {
+  public void addTransportListener(MessageTransportListener listener) {
     synchronized (listeners) {
-      List toAdd = new ArrayList(1);
-      toAdd.add(listener);
-      basicAddTransportListeners(toAdd);
+      if (listeners.contains(listener)) throw new AssertionError("Attempt to add the same listener more than once: "
+                                                                 + listener);
+      listeners.add(listener);
     }
-  }
-
-  private void basicAddTransportListeners(List toAdd) {
-    Set intersection = new HashSet(toAdd);
-    intersection.retainAll(listeners);
-    if (!intersection.isEmpty()) throw new AssertionError("Attempt to add the same listeners more than once: "
-                                                          + intersection);
-    this.listeners.addAll(toAdd);
   }
 
   public final void removeTransportListeners() {
