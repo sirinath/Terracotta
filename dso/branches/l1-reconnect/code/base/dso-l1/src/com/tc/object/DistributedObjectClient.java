@@ -24,6 +24,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
+import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOOEventHandler;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
@@ -165,11 +166,20 @@ public class DistributedObjectClient extends SEDA {
 
     // stageManager.turnTracingOn();
 
-    // final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
-    final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
-    final NetworkStackHarnessFactory networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
-                                                                                                    new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                                    oooStage.getSink());
+    // //////////////////////////////////
+    // create NetworkStackHarnessFactory
+    final boolean useOOOLayer = true; // this could come from config
+    final NetworkStackHarnessFactory networkStackHarnessFactory;
+    if (useOOOLayer) {
+      final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
+      networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
+                                                                     new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
+                                                                     oooStage.getSink());
+    } else {
+      networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
+    }
+    // //////////////////////////////////
+
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
                                                           new NullConnectionPolicy());
 
