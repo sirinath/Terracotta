@@ -11,9 +11,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang.StringUtils;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -26,43 +23,27 @@ import java.util.Properties;
  * Utility class to retrieve the build information for the product.
  */
 public final class ProductInfo {
-  private static final ResourceBundleHelper bundleHelper              = new ResourceBundleHelper(ProductInfo.class);
+  private static final ResourceBundleHelper bundleHelper                   = new ResourceBundleHelper(ProductInfo.class);
 
-  private static final DateFormat           DATE_FORMAT               = new SimpleDateFormat("yyyyMMdd-HHmmss");
+  private static final DateFormat           DATE_FORMAT                    = new SimpleDateFormat("yyyyMMdd-HHmmss");
 
-  private static final String               BUILD_DATA_RESOURCE_NAME  = "/build-data.txt";
+  private static final String               BUILD_DATA_RESOURCE_NAME       = "/build-data.txt";
 
-  private static final String               BUILD_DATA_ROOT_KEY       = "terracotta.build.";
-  private static final String               BUILD_DATA_VERSION_KEY    = "version";
-  private static final String               BUILD_DATA_VERSION_IA_KEY = "version-ia";
-  private static final String               BUILD_DATA_TIMESTAMP_KEY  = "timestamp";
-  private static final String               BUILD_DATA_HOST_KEY       = "host";
-  private static final String               BUILD_DATA_USER_KEY       = "user";
-  private static final String               BUILD_DATA_CHANGESET_KEY  = "revision";
-  private static final String               BUILD_DATA_CHANGE_TAG_KEY = "change-tag";
-  private static final String               BUILD_DATA_BRANCH_KEY     = "branch";
+  private static final String               BUILD_DATA_ROOT_KEY            = "terracotta.build.";
+  private static final String               BUILD_DATA_VERSION_KEY         = "version";
+  private static final String               BUILD_DATA_DISPLAY_VERSION_KEY = "display-version";
+  private static final String               BUILD_DATA_TIMESTAMP_KEY       = "timestamp";
+  private static final String               BUILD_DATA_HOST_KEY            = "host";
+  private static final String               BUILD_DATA_USER_KEY            = "user";
+  private static final String               BUILD_DATA_CHANGESET_KEY       = "revision";
+  private static final String               BUILD_DATA_CHANGE_TAG_KEY      = "change-tag";
+  private static final String               BUILD_DATA_BRANCH_KEY          = "branch";
 
-  private static final String               UNKNOWN_VALUE             = "[unknown]";
-
-  // WARNING: DO NOT DO NOT DO NOT MOVE THIS DECLARATION HIGHER!
-  //
-  // Yes, this is really obnoxious. What's going on is this: TCLogging, in its static initializer, actually calls back
-  // into this class so that it can write out the product version. However, if this class (ProductInfo) is actually
-  // initialized first, before TCLogging (as, for example, is the case when you invoke its main() method to print out
-  // the version), then what *was* happening is that it would first try to initialize the logger, which triggers
-  // TCLogging's static initializer, which calls back into this class's getThisProductInfo() method, which in turn calls
-  // the constructor, which would try to use the DATE_FORMAT constant...which is a perfectly reasonable thing to do, but
-  // in this one case, DATE_FORMAT wouldn't be initialized yet, since this declaration used to be above all the
-  // constants above and thus would be called first. Moving it lower, below all the other constants, corrects this
-  // problem.
-  //
-  // Yup, order of static initializers still *can* be a problem in Java, clearly. At least the order is defined, though.
-  // ;)
-  private static final TCLogger             logger                    = TCLogging.getLogger(ProductInfo.class);
+  private static final String               UNKNOWN_VALUE                  = "[unknown]";
 
   private final String                      moniker;
   private final String                      version;
-  private final String                      version_ia;
+  private final String                      displayVersion;
   private final Date                        timestamp;
   private final String                      host;
   private final String                      user;
@@ -79,12 +60,13 @@ public final class ProductInfo {
       try {
         properties.load(in);
       } catch (IOException ioe) {
-        logger.warn(bundleHelper.format("load.properties.failure", new Object[] { fromWhere }));
+        ioe.printStackTrace();
+        System.exit(1);
       }
     }
 
     this.version = getProperty(properties, BUILD_DATA_VERSION_KEY, UNKNOWN_VALUE);
-    this.version_ia = getProperty(properties, BUILD_DATA_VERSION_IA_KEY, UNKNOWN_VALUE);
+    this.displayVersion = getProperty(properties, BUILD_DATA_DISPLAY_VERSION_KEY, UNKNOWN_VALUE);
     String timestampString = getProperty(properties, BUILD_DATA_TIMESTAMP_KEY, null);
     this.host = getProperty(properties, BUILD_DATA_HOST_KEY, UNKNOWN_VALUE);
     this.user = getProperty(properties, BUILD_DATA_USER_KEY, UNKNOWN_VALUE);
@@ -97,7 +79,8 @@ public final class ProductInfo {
       try {
         realTimestamp = DATE_FORMAT.parse(timestampString);
       } catch (ParseException pe) {
-        logger.warn(bundleHelper.format("invalid.timestamp", new Object[] { timestampString }));
+        pe.printStackTrace();
+        System.exit(1);
       }
     }
 
@@ -135,6 +118,10 @@ public final class ProductInfo {
 
   public String buildVersion() {
     return this.version;
+  }
+  
+  public String displayVersion() {
+    return this.displayVersion;
   }
 
   public Date buildTimestamp() {

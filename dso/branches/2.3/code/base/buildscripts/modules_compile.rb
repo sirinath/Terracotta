@@ -126,7 +126,7 @@ class BuildSubtree
         file.puts("terracotta.build.revision=#{build_environment.current_revision}")
         file.puts("terracotta.build.change-tag=#{build_environment.current_revision_tag}")
         file.puts("terracotta.build.branch=#{build_environment.current_branch}")
-        file.puts("terracotta.build.version-ia=#{build_environment.version_string_for_ia}")
+        file.puts("terracotta.build.display-version=#{build_environment.display_version_string}")
       end
     end
 end
