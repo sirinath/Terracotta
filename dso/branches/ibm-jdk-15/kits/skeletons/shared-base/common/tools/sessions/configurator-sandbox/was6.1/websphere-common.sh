@@ -59,6 +59,11 @@ function _createProfile() {
     fi
 }
 
+function _runWsAdmin() {
+    "${WAS_HOME}/bin/wsadmin.sh" -lang jython -profileName "${1}" -javaoption -DprofileName="${1}" -f "${2}"
+    return $?
+}
+
 function _startWebSphere() {
     if test "${2}" != "nodso"; then
         # Instrument WebSphere for use with Terracotta

@@ -40,6 +40,8 @@ else
     for war in "${binDir}/${port}"/webapps/*.war; do
         _warn Not hot deploying WAR "${war}" because Nat is not finished yet
     done
+    # WebSphere starts in the background, we call a script to monitor its state, and
+    # exit when WebSphere exits
+    _runWsAdmin "${port}" "${binDir}/wait-for-server-stop.py"
+    return $?
 fi
-_info WebSphere Application Server started on port "${port}"
-exit 0
