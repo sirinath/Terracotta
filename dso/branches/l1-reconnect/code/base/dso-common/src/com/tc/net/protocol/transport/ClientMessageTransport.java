@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -21,6 +22,7 @@ import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
+import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayer;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.concurrent.TCExceptionResultException;
@@ -33,8 +35,10 @@ import java.util.List;
  * Client implementation of the transport network layer.
  */
 public class ClientMessageTransport extends MessageTransportBase {
-  private static final TCLogger             cmtLogger          = TCLogging.getLogger(ClientMessageTransport.class);
-  private static final long                 SYN_ACK_TIMEOUT = 120000; // 2 minutes timeout
+  private static final TCLogger             cmtLogger       = TCLogging.getLogger(ClientMessageTransport.class);
+  private static final long                 SYN_ACK_TIMEOUT = 120000;                                           // 2
+  // minutes
+  // timeout
   private final int                         maxReconnectTries;
   private final ClientConnectionEstablisher connectionEstablisher;
   private boolean                           wasOpened       = false;
@@ -43,8 +47,8 @@ public class ClientMessageTransport extends MessageTransportBase {
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
 
-  /**O
-   * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
+  /**
+   * O Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
    * create an unopened MessageTransport.
    * 
    * @param commsManager CommmunicationsManager
@@ -309,4 +313,11 @@ public class ClientMessageTransport extends MessageTransportBase {
     }
   }
 
+  public void addTransportListener(MessageTransportListener listener) {
+    final boolean isOk = listener instanceof OnceAndOnlyOnceProtocolNetworkLayer
+                         || listener instanceof ClientConnectionEstablisher;
+    if (!isOk) { throw new AssertionError("This type of listener is not allowed in ClientMessageTransport: "
+                                          + listener.getClass().getName()); }
+    super.addTransportListener(listener);
+  }
 }
