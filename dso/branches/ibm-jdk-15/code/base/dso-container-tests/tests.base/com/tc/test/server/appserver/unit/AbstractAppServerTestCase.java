@@ -559,7 +559,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         configBuilder.addWebApplication(testName());
       }
     }
-
+    
+    if (NewAppServerFactory.JETTY.equals(config.appserverFactoryName())) {
+      configBuilder.addModule("clustered-jetty", "6.1");
+    }
+    
     configBuilder.addInclude("com.tctest..*");
     configBuilder.addInclude("com.tctest..*$*");
 
