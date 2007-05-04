@@ -23,33 +23,33 @@ import java.util.Properties;
  * Utility class to retrieve the build information for the product.
  */
 public final class ProductInfo {
-  private static final ResourceBundleHelper bundleHelper                   = new ResourceBundleHelper(ProductInfo.class);
+  private static final ResourceBundleHelper bundleHelper              = new ResourceBundleHelper(ProductInfo.class);
 
-  private static final DateFormat           DATE_FORMAT                    = new SimpleDateFormat("yyyyMMdd-HHmmss");
+  private static final DateFormat           DATE_FORMAT               = new SimpleDateFormat("yyyyMMdd-HHmmss");
 
-  private static final String               BUILD_DATA_RESOURCE_NAME       = "/build-data.txt";
+  private static final String               BUILD_DATA_RESOURCE_NAME  = "/build-data.txt";
 
-  private static final String               BUILD_DATA_ROOT_KEY            = "terracotta.build.";
-  private static final String               BUILD_DATA_VERSION_KEY         = "version";
-  private static final String               BUILD_DATA_DISPLAY_VERSION_KEY = "display-version";
-  private static final String               BUILD_DATA_TIMESTAMP_KEY       = "timestamp";
-  private static final String               BUILD_DATA_HOST_KEY            = "host";
-  private static final String               BUILD_DATA_USER_KEY            = "user";
-  private static final String               BUILD_DATA_CHANGESET_KEY       = "revision";
-  private static final String               BUILD_DATA_CHANGE_TAG_KEY      = "change-tag";
-  private static final String               BUILD_DATA_BRANCH_KEY          = "branch";
+  private static final String               BUILD_DATA_ROOT_KEY       = "terracotta.build.";
+  private static final String               BUILD_DATA_VERSION_KEY    = "version";
+  private static final String               BUILD_DATA_EDITION_KEY    = "edition";
+  private static final String               BUILD_DATA_TIMESTAMP_KEY  = "timestamp";
+  private static final String               BUILD_DATA_HOST_KEY       = "host";
+  private static final String               BUILD_DATA_USER_KEY       = "user";
+  private static final String               BUILD_DATA_CHANGESET_KEY  = "revision";
+  private static final String               BUILD_DATA_CHANGE_TAG_KEY = "change-tag";
+  private static final String               BUILD_DATA_BRANCH_KEY     = "branch";
 
-  private static final String               UNKNOWN_VALUE                  = "[unknown]";
+  private static final String               UNKNOWN_VALUE             = "[unknown]";
 
   private final String                      moniker;
   private final String                      version;
-  private final String                      displayVersion;
   private final Date                        timestamp;
   private final String                      host;
   private final String                      user;
   private final String                      changeset;
   private final String                      changeTag;
   private final String                      branch;
+  private final String                      edition;
 
   private ProductInfo(InputStream in, String fromWhere) {
     Properties properties = new Properties();
@@ -66,7 +66,7 @@ public final class ProductInfo {
     }
 
     this.version = getProperty(properties, BUILD_DATA_VERSION_KEY, UNKNOWN_VALUE);
-    this.displayVersion = getProperty(properties, BUILD_DATA_DISPLAY_VERSION_KEY, UNKNOWN_VALUE);
+    this.edition = getProperty(properties, BUILD_DATA_EDITION_KEY, "");
     String timestampString = getProperty(properties, BUILD_DATA_TIMESTAMP_KEY, null);
     this.host = getProperty(properties, BUILD_DATA_HOST_KEY, UNKNOWN_VALUE);
     this.user = getProperty(properties, BUILD_DATA_USER_KEY, UNKNOWN_VALUE);
@@ -119,10 +119,6 @@ public final class ProductInfo {
   public String buildVersion() {
     return this.version;
   }
-  
-  public String displayVersion() {
-    return this.displayVersion;
-  }
 
   public Date buildTimestamp() {
     return this.timestamp;
@@ -158,7 +154,7 @@ public final class ProductInfo {
   }
 
   public String toShortString() {
-    return this.moniker + " version " + buildVersion();
+    return this.moniker + " " + ("opensource".equals(edition) ? "" : (edition + " ")) + buildVersion();
   }
 
   public String toLongString() {

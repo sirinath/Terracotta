@@ -94,24 +94,13 @@ class BuildEnvironment < Environment
 
   # What version are we building? This returns '[none]' if no 'version'
   # property is set in the configuration source supplied in the constructor.
-  def specified_build_version
-    version_string = @config_source['version']
-    branch = current_branch.to_s
-    revision = current_revision.to_s
-    
-    if version_string
-      version_string.sub!(/\{branch\}/, branch)
-      version_string.sub!(/\{revision\}/, revision)      
-    else      
-      version_string = "#{branch}"
-    end
-    version_string
+  def version
+    @config_source['version'] || @config_source['tc.build-control.version'] || @config_source['branch'] || 'unknown'
   end
 
-  # This version string is for our InstallerAnywhere to display
-  # in the About box
-  def display_version_string
-    @config_source['display-version'] || specified_build_version()
+  # Edition info: opensource or enterprise  
+  def edition
+    @config_source['edition'] || "opensource"
   end
   
   # When was this build started? This returns a timestamp (a Time object) that's created in
