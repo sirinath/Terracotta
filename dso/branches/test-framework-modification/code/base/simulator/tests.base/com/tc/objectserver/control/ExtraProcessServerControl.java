@@ -11,6 +11,7 @@ import com.tc.config.Directories;
 import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
 import com.tc.process.LinkedJavaProcess;
 import com.tc.process.StreamCopier;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.server.TCServerMain;
 import com.tc.test.TestConfigObject;
 
@@ -23,6 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ExtraProcessServerControl extends ServerControlBase {
+  private static final String NOT_VALID = "";
+
   private final String        name;
   private final boolean       mergeOutput;
 
@@ -41,30 +44,42 @@ public class ExtraProcessServerControl extends ServerControlBase {
     this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, mergeOutput);
   }
 
-  public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
-                                   String servername, List additionalJvmArgs) throws FileNotFoundException {
-    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(),
-         mergeOutput, servername, additionalJvmArgs);
-  }
-
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, boolean mergeOutput) throws FileNotFoundException {
     // 2006-07-11 andrew -- We should get rid of the reference to Directories.getInstallationRoot() here.
     // Tests don't run in an environment where such a thing even exists. If the server needs an
     // "installation directory", the tests should be creating one themselves.
     this(debugParams, host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(), mergeOutput,
-         null, new ArrayList());
+         null, new ArrayList(), NOT_VALID);
   }
 
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, File runningDirectory, File installationRoot,
-                                   boolean mergeOutput, String serverName, List additionalJvmArgs) {
+                                   boolean mergeOutput, List jvmArgs, String undefString) {
+    this(debugParams, host, dsoPort, adminPort, configFileLoc, runningDirectory, installationRoot, mergeOutput, null,
+         jvmArgs, undefString);
+  }
+
+  public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
+                                   String servername, List additionalJvmArgs) throws FileNotFoundException {
+    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(),
+         mergeOutput, servername, additionalJvmArgs, NOT_VALID);
+  }
+
+  public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
+                                   String configFileLoc, File runningDirectory, File installationRoot,
+                                   boolean mergeOutput, String serverName, List additionalJvmArgs, String undefString) {
     super(host, dsoPort, adminPort);
     this.serverName = serverName;
     jvmArgs = new ArrayList();
 
-    if (additionalJvmArgs != null && additionalJvmArgs.size() > 0) {
-      jvmArgs.addAll(additionalJvmArgs);
+    if (additionalJvmArgs != null) {
+      for (Iterator i = additionalJvmArgs.iterator(); i.hasNext();) {
+        String next = (String) i.next();
+        if (!next.equals(undefString)) {
+          this.jvmArgs.add(next);
+        }
+      }
     }
 
     this.configFileLoc = configFileLoc;
@@ -74,29 +89,21 @@ public class ExtraProcessServerControl extends ServerControlBase {
     jvmArgs.add("-D" + Directories.TC_INSTALL_ROOT_PROPERTY_NAME + "=" + installationRoot);
     jvmArgs.add("-D" + Directories.TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME + "=true");
     debugParams.addDebugParamsTo(jvmArgs);
+    jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ".tc.management.test.mbeans.enabled=true");
+    addClasspath(jvmArgs, installationRoot);
+    addLibPath(jvmArgs);
   }
 
-  public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
-                                   String configFileLoc, File runningDirectory, File installationRoot,
-                                   boolean mergeOutput, List jvmArgs, String undefString) {
-    super(host, dsoPort, adminPort);
-    serverName = null;
+  private void addLibPath(List args) {
+    String libPath = System.getProperty("java.library.path");
+    if (libPath == null || libPath.equals("")) { throw new AssertionError("java.library.path is not set!"); }
+    args.add("-Djava.library.path=" + libPath);
+  }
 
-    this.jvmArgs = new ArrayList();
-    for (Iterator i = jvmArgs.iterator(); i.hasNext();) {
-      String next = (String) i.next();
-      if (!next.equals(undefString)) {
-        this.jvmArgs.add(next);
-      }
-    }
-
-    this.configFileLoc = configFileLoc;
-    this.mergeOutput = mergeOutput;
-    this.name = "DSO process @ " + getHost() + ":" + getDsoPort();
-    this.runningDirectory = runningDirectory;
-    this.jvmArgs.add("-D" + Directories.TC_INSTALL_ROOT_PROPERTY_NAME + "=" + installationRoot);
-    this.jvmArgs.add("-D" + Directories.TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME + "=true");
-    debugParams.addDebugParamsTo(jvmArgs);
+  private void addClasspath(List args, File installationRoot) {
+    String classpath = System.getProperty("java.class.path");
+    if (classpath == null || classpath.equals("")) { throw new AssertionError("java.class.path is not set!"); }
+    args.add("-Djava.class.path=" + classpath);
   }
 
   public void mergeSTDOUT() {
@@ -110,12 +117,11 @@ public class ExtraProcessServerControl extends ServerControlBase {
   protected String getMainClassName() {
     return TCServerMain.class.getName();
   }
-  
+
   protected File getJavaHome() {
     try {
       return new File(TestConfigObject.getInstance().getL2StartupJavaHome());
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       return null;
     }
   }

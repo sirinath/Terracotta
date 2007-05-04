@@ -50,7 +50,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private TestTVSConfigurationSetupManagerFactory configFactory;
   private DSOClientConfigHelper                   configHelper;
   protected DistributedTestRunner                 runner;
-  private DistributedTestRunnerConfig             runnerConfig = new DistributedTestRunnerConfig(getTimeoutValueInSeconds());
+  private DistributedTestRunnerConfig             runnerConfig            = new DistributedTestRunnerConfig(
+                                                                                                            getTimeoutValueInSeconds());
   private TransparentAppConfig                    transparentAppConfig;
   private ApplicationConfigBuilder                possibleApplicationConfigBuilder;
 
@@ -66,8 +67,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected TestConfigObject getTestConfigObject() {
     try {
       return TestConfigObject.getInstance();
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException("Couldn't get instance of TestConfigObject.", e);
     }
   }
@@ -121,22 +121,20 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     throw new AssertionError("The sub-class (test) should override this method.");
   }
-  
+
   protected boolean useExternalProcess() {
     return getTestConfigObject().isL2StartupModeExternal();
   }
 
-  protected void setUpExternalProcess(TestTVSConfigurationSetupManagerFactory factory,
-                                      DSOClientConfigHelper helper, int serverPort, int adminPort,
-                                      String configFile) throws Exception {
+  protected void setUpExternalProcess(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
+                                      int serverPort, int adminPort, String configFile) throws Exception {
     String javaHome = getTestConfigObject().getL2StartupJavaHome();
-    if (javaHome == null) {
-      throw new IllegalStateException(TestConfigObject.L2_STARTUP_JAVA_HOME + " must be set to a valid JAVA_HOME");
-    }
+    if (javaHome == null) { throw new IllegalStateException(TestConfigObject.L2_STARTUP_JAVA_HOME
+                                                            + " must be set to a valid JAVA_HOME"); }
 
     serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true);
     setUp(factory, helper);
-    
+
     configFactory().addServerToL1Config(null, serverPort, adminPort);
     configFactory().addServerToL2Config(null, serverPort, adminPort);
   }
@@ -228,18 +226,12 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
-    this.runner = new DistributedTestRunner(runnerConfig,
-                                            configFactory,
-                                            configHelper,
-                                            getApplicationClass(),
-                                            getOptionalAttributes(),
-                                            getApplicationConfigBuilder().newApplicationConfig(),
-                                            transparentAppConfig.getClientCount(),
+    this.runner = new DistributedTestRunner(runnerConfig, configFactory, configHelper, getApplicationClass(),
+                                            getOptionalAttributes(), getApplicationConfigBuilder()
+                                                .newApplicationConfig(), transparentAppConfig.getClientCount(),
                                             transparentAppConfig.getApplicationInstancePerClientCount(),
-                                            getStartServer(),
-                                            isMutateValidateTest,
-                                            transparentAppConfig.getValidatorCount(),
-                                            (isActivePassive() && canRunActivePassive()),
+                                            getStartServer(), isMutateValidateTest, transparentAppConfig
+                                                .getValidatorCount(), (isActivePassive() && canRunActivePassive()),
                                             apServerManager);
   }
 
@@ -274,7 +266,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
         try {
-          this.runner.dumpServer();
+          dumpServers();
         } finally {
           ThreadDump.dumpThreadsMany(3, 1000L);
         }
@@ -288,6 +280,21 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     } else {
       System.err.println("NOTE: " + getClass().getName() + " can't be run in mode '" + mode()
                          + "', and thus will be skipped.");
+    }
+  }
+
+  private void dumpServers() throws Exception {
+    if (controlledCrashMode && !isActivePassive()) {
+      // TODO: do the same for crash tests
+    } else if (controlledCrashMode) {
+      apServerManager.dumpAllServers();
+    } else if (useExternalProcess()) {
+      // TODO: do the same for this
+    }
+    if (runner != null) {
+      runner.dumpServer();
+    } else {
+      System.err.println("Runner is null !!");
     }
   }
 
@@ -305,11 +312,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   protected void doDumpServerDetails() {
     try {
-      if (this.runner != null) {
-        this.runner.dumpServer();
-      } else {
-        System.err.println("Runner is null !!");
-      }
+      dumpServers();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -359,7 +362,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     } catch (Exception e) {
       throw Assert.failure("Can't create config file", e);
     } finally {
-      try { out.close(); } catch (Exception e) { /* oh well, we tried */ }
+      try {
+        out.close();
+      } catch (Exception e) { /* oh well, we tried */
+      }
     }
 
     return configFile;

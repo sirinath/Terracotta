@@ -5,6 +5,7 @@
 package com.tc.test.activepassive;
 
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
+import com.tc.management.beans.L2DumperMBean;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.objectserver.control.ExtraProcessServerControl;
@@ -342,6 +343,22 @@ public class ActivePassiveServerManager {
     }
   }
 
+  public void dumpAllServers() throws Exception {
+    synchronized (testState) {
+      for (int i = 0; i < serverCount; i++) {
+        if (servers[i].getServerControl().isRunning()) {
+          debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
+          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
+          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+          L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler
+              .newProxyInstance(mbs, L2MBeanNames.DUMPER, L2DumperMBean.class, true);
+          mbean.doServerDump();
+          mbean.doThreadDump();
+        }
+      }
+    }
+  }
+
   public void crashActive() throws Exception {
     if (!testState.isRunning()) {
       debugPrintln("***** test state is not running ... skipping crash active");
@@ -356,10 +373,8 @@ public class ActivePassiveServerManager {
     waitForPassive();
     debugPrintln("***** finished waiting to find an appropriate passive server.");
 
+    verifyActiveServerState();
     ServerControl server = servers[activeIndex].getServerControl();
-    if (!server.isRunning()) { throw new AssertionError("Server[" + servers[activeIndex].getDsoPort()
-                                                        + "] is not running as expected!"); }
-    server.crash();
     debugPrintln("***** Sleeping after crashing active server ");
     waitForServerCrash(server);
     debugPrintln("***** Done sleeping after crashing active server ");
@@ -373,8 +388,23 @@ public class ActivePassiveServerManager {
     debugPrintln("***** activeIndex[" + activeIndex + "] ");
   }
 
+  private void verifyActiveServerState() throws Exception {
+    ServerControl server = servers[activeIndex].getServerControl();
+    if (!server.isRunning()) { throw new AssertionError("Server[" + servers[activeIndex].getDsoPort()
+                                                        + "] is not running as expected!"); }
+    JMXConnector jmxConnector = getJMXConnector(jmxPorts[activeIndex]);
+    MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+    TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
+        .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+    if (!mbean.isActive()) {
+      jmxConnector.close();
+      throw new AssertionError("Server[" + servers[activeIndex].getDsoPort() + "] is not an active server as expected!");
+    }
+    jmxConnector.close();
+  }
+
   private void waitForServerCrash(ServerControl server) throws Exception {
-    long duration = 5000;
+    long duration = 10000;
     long startTime = System.currentTimeMillis();
     while (duration > (System.currentTimeMillis() - startTime)) {
       if (server.isRunning()) {
