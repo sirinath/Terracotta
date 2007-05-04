@@ -1,5 +1,4 @@
 #! /bin/sh
-set -x
 
 ###########################################################################################
 ##
@@ -36,12 +35,13 @@ if test "$?" != "0"; then
     _stopWebSphere "${port}"
     exit 1
 else
-    # Hot deploy the .war files in the webapps directory
-    for war in "${binDir}/${port}"/webapps/*.war; do
-        _warn Not hot deploying WAR "${war}" because Nat is not finished yet
-    done
-    # WebSphere starts in the background, we call a script to monitor its state, and
-    # exit when WebSphere exits
-    _deployWars "${port}" "${binDir}/${port}/webapps" "${binDir}/deploy-and-wait.py"
-    exit $?
+    _deployWars "${port}" "${binDir}/${port}/webapps"
+    if test "$?" != "0"; then
+        _error unable to deploy web applications to WebSphere Application Server on port "${port}"
+        _stopWebSphere "${port}"
+        exit 1
+    else
+        _runWsAdmin "${port}" "${binDir}/wait-for-shutdown.py"
+        exit $?
+    fi
 fi

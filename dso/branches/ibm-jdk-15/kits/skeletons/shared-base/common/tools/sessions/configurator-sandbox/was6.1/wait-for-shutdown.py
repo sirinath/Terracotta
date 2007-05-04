@@ -3,7 +3,6 @@ import time.sleep
 import java.lang.System
 
 _profile = java.lang.System.getProperty('profileName')
-_warDir  = java.lang.System.getProperty('warDirectory')
 
 ################################################################################
 ## Helper functions
@@ -14,9 +13,6 @@ def _info(s):
 
 def _error(s):
     print '[ERROR] ' + s
-
-#def _deployWar(warFile):
-#    print 'YES!'
 
 ################################################################################
 ## Main program
