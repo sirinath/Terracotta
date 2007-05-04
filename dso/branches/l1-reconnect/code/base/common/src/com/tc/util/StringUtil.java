@@ -138,7 +138,7 @@ public class StringUtil {
     return rv.toString();
   }
   public static final String toString(Object[] objs) {
-    return toString(objs, null, null, null);
+    return toString(objs, ", ", null, null);
   }
 
   public static final String toString(int[] objs, String separator, String prefix, String postfix) {
