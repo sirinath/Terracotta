@@ -29,11 +29,11 @@ public class ConfigBasedConnectionAddressProvider implements ConnectionAddressPr
     this.currentAddresses.addAll(Arrays.asList(newAddresses));
   }
 
-  public String toString() {
+  public synchronized String toString() {
     return "ConnectionAddressProvider(" + currentAddresses + ")";
   }
 
-  public ConnectionAddressIterator getIterator(int policy) {
+  public synchronized ConnectionAddressIterator getIterator(int policy) {
     if (!(policy == ConnectionAddressProvider.LINEAR || policy == ConnectionAddressProvider.ROUND_ROBIN)) throw new IllegalArgumentException(
                                                                                                                                              "Invalid policy: "
                                                                                                                                                  + policy);
