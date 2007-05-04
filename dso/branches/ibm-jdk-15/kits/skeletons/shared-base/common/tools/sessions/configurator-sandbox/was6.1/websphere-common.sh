@@ -59,8 +59,8 @@ function _createProfile() {
     fi
 }
 
-function _runWsAdmin() {
-    "${WAS_HOME}/bin/wsadmin.sh" -lang jython -profileName "${1}" -javaoption -DprofileName="${1}" -f "${2}"
+function _deployWars() {
+    "${WAS_HOME}/bin/wsadmin.sh" -lang jython -profileName "${1}" -javaoption -DprofileName="${1}" -javaoption -DwarDirectory="${2}" -f "${3}"
     return $?
 }
 

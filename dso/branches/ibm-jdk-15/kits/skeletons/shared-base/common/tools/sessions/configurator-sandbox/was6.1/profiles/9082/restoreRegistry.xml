@@ -1,5 +1,0 @@
-<actions>
-    <action path="actions/unzipProfile.ant" priority="01" isFatal="true">
-        <argument key="backupFile" values="1" required="true"/>
-    </action>
-</actions>

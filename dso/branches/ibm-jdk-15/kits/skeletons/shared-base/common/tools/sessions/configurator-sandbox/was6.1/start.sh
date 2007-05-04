@@ -1,4 +1,5 @@
 #! /bin/sh
+set -x
 
 ###########################################################################################
 ##
@@ -41,6 +42,6 @@ else
     done
     # WebSphere starts in the background, we call a script to monitor its state, and
     # exit when WebSphere exits
-    _runWsAdmin "${port}" "${binDir}/wait-for-server-stop.py"
+    _deployWars "${port}" "${binDir}/${port}/webapps" "${binDir}/deploy-and-wait.py"
     exit $?
 fi

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:topology.cell="http://www.ibm.com/websphere/appserver/schemas/5.0/topology.cell.xmi" xmlns:ipc="http://www.ibm.com/websphere/appserver/schemas/5.0/ipc.xmi">
-  <xmi:Documentation>
-    <contact>WebSphere Application Server v5.0 Default Configuration Files v1.7 7/31/02</contact>
-  </xmi:Documentation>
-  <topology.cell:Cell xmi:id="Cell_1" name="$(cell.name)" cellDiscoveryProtocol="TCP" cellType="STANDALONE">
-  </topology.cell:Cell>
-</xmi:XMI>
