@@ -48,9 +48,6 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
     # Some more objects we need.
     root_dir = FilePath.new(@basedir.to_s, "..", "..").canonicalize.to_s
-    if root_dir.to_s =~ /community/
-      root_dir = FilePath.new(root_dir, "..")
-    end
     @build_environment = BuildEnvironment.new(platform, config_source, root_dir)
     @static_resources = StaticResources.new(basedir)
     @archive_tag = ArchiveTag.new(@build_environment)
