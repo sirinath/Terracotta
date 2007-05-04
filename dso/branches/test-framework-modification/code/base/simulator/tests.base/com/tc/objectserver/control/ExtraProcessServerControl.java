@@ -13,7 +13,6 @@ import com.tc.process.LinkedJavaProcess;
 import com.tc.process.StreamCopier;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.server.TCServerMain;
-import com.tc.test.TestConfigObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,7 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ExtraProcessServerControl extends ServerControlBase {
-  private static final String NOT_VALID = "";
+  private static final String NOT_DEF = "";
 
   private final String        name;
   private final boolean       mergeOutput;
@@ -34,42 +33,64 @@ public class ExtraProcessServerControl extends ServerControlBase {
   protected final List        jvmArgs;
   private final File          runningDirectory;
   private final String        serverName;
+  private File                javaHome;
   private File                out;
   private FileOutputStream    fileOut;
   private StreamCopier        outCopier;
   private StreamCopier        errCopier;
 
+  // constructor 1:  used by container tests
   public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput)
       throws FileNotFoundException {
     this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, mergeOutput);
   }
 
+  // constructor 2:  used by ExtraL1ProceddControl and constructor 1
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, boolean mergeOutput) throws FileNotFoundException {
     // 2006-07-11 andrew -- We should get rid of the reference to Directories.getInstallationRoot() here.
     // Tests don't run in an environment where such a thing even exists. If the server needs an
     // "installation directory", the tests should be creating one themselves.
     this(debugParams, host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(), mergeOutput,
-         null, new ArrayList(), NOT_VALID);
+         null, new ArrayList(), NOT_DEF, null);
   }
-
+  
+  // constructor 3:  used by ControlSetup, Setup, and container tests
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, File runningDirectory, File installationRoot,
                                    boolean mergeOutput, List jvmArgs, String undefString) {
     this(debugParams, host, dsoPort, adminPort, configFileLoc, runningDirectory, installationRoot, mergeOutput, null,
-         jvmArgs, undefString);
+         jvmArgs, undefString, null);
   }
 
+  // constructor 4:  used by TransparentTestBase for single failure case
   public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
-                                   String servername, List additionalJvmArgs) throws FileNotFoundException {
-    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(),
-         mergeOutput, servername, additionalJvmArgs, NOT_VALID);
+                                   File javaHome) throws FileNotFoundException {
+    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, mergeOutput, javaHome);
   }
 
+  // constructor 5: used by active-passive tests
+  public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
+                                   String servername, List additionalJvmArgs, File javaHome) throws FileNotFoundException {
+    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(),
+         mergeOutput, servername, additionalJvmArgs, NOT_DEF, javaHome);
+  }
+
+  // constructor 6:  used by constructor 4, crash tests, and normal tests running in 1.4 jvm
+  public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
+                                   String configFileLoc, boolean mergeOutput, File javaHome)
+      throws FileNotFoundException {
+    this(debugParams, host, dsoPort, adminPort, configFileLoc, null, Directories.getInstallationRoot(), mergeOutput,
+         null, new ArrayList(), NOT_DEF, javaHome);
+  }
+
+  // only called by constructors in this class
   public ExtraProcessServerControl(DebugParams debugParams, String host, int dsoPort, int adminPort,
                                    String configFileLoc, File runningDirectory, File installationRoot,
-                                   boolean mergeOutput, String serverName, List additionalJvmArgs, String undefString) {
+                                   boolean mergeOutput, String serverName, List additionalJvmArgs, String undefString,
+                                   File javaHome) {
     super(host, dsoPort, adminPort);
+    this.javaHome = javaHome;
     this.serverName = serverName;
     jvmArgs = new ArrayList();
 
@@ -118,12 +139,11 @@ public class ExtraProcessServerControl extends ServerControlBase {
     return TCServerMain.class.getName();
   }
 
-  protected File getJavaHome() {
-    try {
-      return new File(TestConfigObject.getInstance().getL2StartupJavaHome());
-    } catch (Exception e) {
-      return null;
-    }
+  /**
+   * The JAVA_HOME for the JVM to use when creating a {@link LinkedChildProcess}.
+   */
+  public File getJavaHome() {
+    return javaHome;
   }
 
   protected String[] getMainClassArguments() {

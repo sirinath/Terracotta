@@ -59,6 +59,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private ServerControl                           serverControl;
   private boolean                                 controlledCrashMode     = false;
   private ServerCrasher                           crasher;
+  private File javaHome;
 
   // for active-passive tests
   private ActivePassiveServerManager              apServerManager;
@@ -71,12 +72,26 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throw new RuntimeException("Couldn't get instance of TestConfigObject.", e);
     }
   }
+  
+  protected void setJavaHome() {
+    if (javaHome == null) {
+      String javaHome_local = getTestConfigObject().getL2StartupJavaHome();
+      if (javaHome_local == null) { throw new IllegalStateException(TestConfigObject.L2_STARTUP_JAVA_HOME
+                                                              + " must be set to a valid JAVA_HOME"); }
+      javaHome = new File(javaHome_local);
+    }
+  }
 
   protected void setUp() throws Exception {
     setUp(configFactory(), configHelper());
 
     RestartTestHelper helper = null;
-    if (isCrashy() && canRunCrash()) {
+    if ((isCrashy() && canRunCrash()) || useExternalProcess()) {
+      // javaHome is set here only to enforce that java home is defined in the test config
+      // javaHome is set again inside RestartTestEnvironment because how that class is used 
+      //TODO: clean this up
+      setJavaHome();  
+      
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
@@ -88,12 +103,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers();
-    } else if (useExternalProcess()) {
-      PortChooser portChooser = new PortChooser();
-      int serverPort = portChooser.chooseRandomPort();
-      int adminPort = portChooser.chooseRandomPort();
-      this.setUpExternalProcess(configFactory(), getConfigHelper(), serverPort, adminPort,
-                                writeMinimalConfig(serverPort, adminPort).getAbsolutePath());
     } else {
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(0);
     }
@@ -109,12 +118,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private final void setUpActivePassiveServers() throws Exception {
     controlledCrashMode = true;
+    setJavaHome();
     apSetupManager = new ActivePassiveTestSetupManager();
     setupActivePassiveTest(apSetupManager);
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), new PortChooser(),
                                                      ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
-                                                     runnerConfig.startTimeout());
+                                                     runnerConfig.startTimeout(), javaHome);
     apServerManager.addServersToL1Config(configFactory);
   }
 
@@ -128,11 +138,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   protected void setUpExternalProcess(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
                                       int serverPort, int adminPort, String configFile) throws Exception {
-    String javaHome = getTestConfigObject().getL2StartupJavaHome();
-    if (javaHome == null) { throw new IllegalStateException(TestConfigObject.L2_STARTUP_JAVA_HOME
-                                                            + " must be set to a valid JAVA_HOME"); }
-
-    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true);
+    setJavaHome();
+    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true,
+                                                  javaHome);
     setUp(factory, helper);
 
     configFactory().addServerToL1Config(null, serverPort, adminPort);
@@ -199,11 +207,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected ApplicationConfigBuilder getApplicationConfigBuilder() {
     if (possibleApplicationConfigBuilder != null) return possibleApplicationConfigBuilder;
     else return transparentAppConfig;
-  }
-
-  public int getServerPort() {
-    if (getStartServer()) return this.runner.getServerPort();
-    else return new Integer(getServerPortProp()).intValue();
   }
 
   protected abstract Class getApplicationClass();

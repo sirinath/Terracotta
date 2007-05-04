@@ -62,9 +62,10 @@ public class ActivePassiveServerManager {
   private int                                    maxCrashCount;
   private final TestState                        testState;
   private final Random                           random;
+  private final File javaHome;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
-                                    String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout)
+                                    String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout, File javaHome)
       throws Exception {
     if (!isActivePassiveTest) { throw new AssertionError("A non-ActivePassiveTest is trying to use this class."); }
 
@@ -102,6 +103,7 @@ public class ActivePassiveServerManager {
 
     errors = new ArrayList();
     testState = new TestState();
+    this.javaHome = javaHome;
     random = new Random(SEED);
   }
 
@@ -185,7 +187,7 @@ public class ActivePassiveServerManager {
     if (serverNetworkShare) {
       jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ".l2.ha.network.enabled=true");
     }
-    return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, jvmArgs);
+    return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, jvmArgs, javaHome);
   }
 
   public void startServers() throws Exception {
