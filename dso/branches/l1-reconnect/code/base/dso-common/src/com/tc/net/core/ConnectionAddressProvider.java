@@ -13,18 +13,5 @@ public interface ConnectionAddressProvider {
                                              * normal condition current >= addresses.size() - end condition
                                              */
 
-  String getHostname();
-
-  int getPortNumber();
-
-  int getCount();
-
-  boolean hasNext();
-
-  ConnectionInfo getConnectionInfo();
-
-  ConnectionInfo next();
-
-  void setPolicy(int policy);
-
+  ConnectionAddressIterator getIterator(int policy);
 }

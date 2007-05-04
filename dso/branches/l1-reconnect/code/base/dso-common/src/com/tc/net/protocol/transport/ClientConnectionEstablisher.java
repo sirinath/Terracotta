@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -8,7 +9,9 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import com.tc.logging.TCLogger;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.core.ConnectionAddressIterator;
 import com.tc.net.core.ConnectionAddressProvider;
+import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
 import com.tc.util.Assert;
@@ -82,18 +85,19 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
   }
 
   private void connectTryAllOnce() throws TCTimeoutException, IOException {
-    connAddressProvider.setPolicy(ConnectionAddressProvider.LINEAR);
-    do {
+    final ConnectionAddressIterator addresses = connAddressProvider.getIterator(ConnectionAddressProvider.LINEAR);
+    while (addresses.hasNext()) {
+      final ConnectionInfo connInfo = addresses.next();
       try {
-        connect();
+        final TCSocketAddress csa = createSocketAddress(connInfo);
+        connect(csa);
         return;
       } catch (TCTimeoutException e) {
-        if (!connAddressProvider.hasNext()) { throw e; }
+        if (!addresses.hasNext()) { throw e; }
       } catch (IOException e) {
-        if (!connAddressProvider.hasNext()) { throw e; }
+        if (!addresses.hasNext()) { throw e; }
       }
-    } while (connAddressProvider.hasNext() && (connAddressProvider.next() != null));
-
+    }
   }
 
   /**
@@ -103,12 +107,12 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
    * @throws IOException
    * @throws MaxConnectionsExceededException
    */
-  void connect() throws TCTimeoutException, IOException {
+  void connect(TCSocketAddress sa) throws TCTimeoutException, IOException {
 
     TCConnection connection = this.connManager.createConnection(transport.getProtocolAdapter());
     transport.wireNewConnection(connection);
     transport.fireTransportConnectAttemptEvent();
-    TCSocketAddress address = createSocketAddress();
+    TCSocketAddress address = sa;
     connection.connect(address, timeout);
   }
 
@@ -116,9 +120,9 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
     transport.close();
   }
 
-  private TCSocketAddress createSocketAddress() throws UnknownHostException {
-    TCSocketAddress socketAddress = new TCSocketAddress(InetAddress.getByName(connAddressProvider.getHostname()),
-                                                        connAddressProvider.getPortNumber());
+  private static TCSocketAddress createSocketAddress(ConnectionInfo connInfo) throws UnknownHostException {
+    TCSocketAddress socketAddress = new TCSocketAddress(InetAddress.getByName(connInfo.getHostname()), connInfo
+        .getPort());
     return socketAddress;
   }
 
@@ -130,17 +134,17 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
 
     try {
       boolean connected = false;
-      connAddressProvider.setPolicy(ConnectionAddressProvider.ROUND_ROBIN);
+      ConnectionAddressIterator addresses = connAddressProvider.getIterator(ConnectionAddressProvider.ROUND_ROBIN);
       for (int i = 0; ((maxReconnectTries < 0) || (i < maxReconnectTries)) && !connected; i++) {
-        for (int j = 0; j < connAddressProvider.getCount() && !connected; j++, connAddressProvider.next()) {
+        for (int j = 0; addresses.hasNext() && !connected; j++) {
           // if (!this.transport.isOpen.get()) return;
-
+          final ConnectionInfo connInfo = addresses.next();
           try {
             if (i % 20 == 0) {
-              logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to "
-                          + connAddressProvider.getConnectionInfo() + ", timeout=" + timeout);
+              logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to " + connInfo + ", timeout="
+                          + timeout);
             }
-            connect();
+            connect(createSocketAddress(connInfo));
             transport.reconnect();
             connected = true;
           } catch (MaxConnectionsExceededException e) {
