@@ -85,7 +85,7 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
   }
 
   private void connectTryAllOnce() throws TCTimeoutException, IOException {
-    final ConnectionAddressIterator addresses = connAddressProvider.getIterator(ConnectionAddressProvider.LINEAR);
+    final ConnectionAddressIterator addresses = connAddressProvider.getIterator();
     while (addresses.hasNext()) {
       final ConnectionInfo connInfo = addresses.next();
       try {
@@ -131,13 +131,11 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
   }
 
   public void reconnect() throws MaxConnectionsExceededException {
-
     try {
       boolean connected = false;
-      ConnectionAddressIterator addresses = connAddressProvider.getIterator(ConnectionAddressProvider.ROUND_ROBIN);
       for (int i = 0; ((maxReconnectTries < 0) || (i < maxReconnectTries)) && !connected; i++) {
-        for (int j = 0; addresses.hasNext() && !connected; j++) {
-          // if (!this.transport.isOpen.get()) return;
+        ConnectionAddressIterator addresses = connAddressProvider.getIterator();
+        while(addresses.hasNext() && !connected) {
           final ConnectionInfo connInfo = addresses.next();
           try {
             if (i % 20 == 0) {
@@ -158,9 +156,7 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
           }
         }
       }
-
       transport.endIfDisconnected();
-
     } finally {
       connecting.set(false);
     }

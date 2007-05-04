@@ -6,22 +6,19 @@ package com.tc.net.core;
 
 public class ConnectionAddressIterator {
 
-  private final int              policy;
   private final ConnectionInfo[] cis;
   private int                    current = -1;
 
-  public ConnectionAddressIterator(int policy, ConnectionInfo[] cis) {
-    this.policy = policy;
+  public ConnectionAddressIterator(ConnectionInfo[] cis) {
     this.cis = cis;
   }
 
   public boolean hasNext() {
-    return (policy == ConnectionAddressProvider.ROUND_ROBIN) ? cis.length != 0 : (current < (cis.length - 1));
+    return current < (cis.length - 1);
   }
 
   public ConnectionInfo next() {
     if (!hasNext()) return null;
-    current = (current + 1) % cis.length;
-    return cis[current];
+    return cis[++current];
   }
 }

@@ -4,14 +4,5 @@
 package com.tc.net.core;
 
 public interface ConnectionAddressProvider {
-  
-  public static final int ROUND_ROBIN = 0; /*
-                                             * current = -1 - initial condition current >= 0 - normal condition
-                                             */
-  public static final int LINEAR      = 1; /*
-                                             * current = -1 - initial condition current >= 0 and < addresses.size() -
-                                             * normal condition current >= addresses.size() - end condition
-                                             */
-
-  ConnectionAddressIterator getIterator(int policy);
+  ConnectionAddressIterator getIterator();
 }

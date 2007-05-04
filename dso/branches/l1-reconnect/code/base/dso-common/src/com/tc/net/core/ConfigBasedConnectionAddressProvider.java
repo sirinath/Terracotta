@@ -33,12 +33,9 @@ public class ConfigBasedConnectionAddressProvider implements ConnectionAddressPr
     return "ConnectionAddressProvider(" + currentAddresses + ")";
   }
 
-  public synchronized ConnectionAddressIterator getIterator(int policy) {
-    if (!(policy == ConnectionAddressProvider.LINEAR || policy == ConnectionAddressProvider.ROUND_ROBIN)) throw new IllegalArgumentException(
-                                                                                                                                             "Invalid policy: "
-                                                                                                                                                 + policy);
+  public synchronized ConnectionAddressIterator getIterator() {
     final ConnectionInfo[] arr = (ConnectionInfo[]) currentAddresses
         .toArray(new ConnectionInfo[currentAddresses.size()]);
-    return new ConnectionAddressIterator(policy, arr);
+    return new ConnectionAddressIterator(arr);
   }
 }
