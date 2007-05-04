@@ -11,7 +11,7 @@ class SvnUpdate
     log(monkey_name)
     # get path to top folder of the repo
     @topdir = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..")
-    @topdir = File.join(@topdir, "..") if @topdir =~ /community/
+    #@topdir = File.join(@topdir, "..") if @topdir =~ /community/
 
     # default build-archive-dir in monkeys
     build_archive_dir = "/shares/monkeyoutput"
