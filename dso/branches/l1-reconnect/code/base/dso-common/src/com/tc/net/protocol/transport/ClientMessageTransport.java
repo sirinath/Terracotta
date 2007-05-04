@@ -22,7 +22,6 @@ import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
-import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayer;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.concurrent.TCExceptionResultException;
@@ -311,13 +310,5 @@ public class ClientMessageTransport extends MessageTransportBase {
     public boolean isMaxConnectionsExceeded() {
       return this.maxConnectionsExceeded;
     }
-  }
-
-  public void addTransportListener(MessageTransportListener listener) {
-    final boolean isOk = listener instanceof OnceAndOnlyOnceProtocolNetworkLayer
-                         || listener instanceof ClientConnectionEstablisher;
-    if (!isOk) { throw new AssertionError("This type of listener is not allowed in ClientMessageTransport: "
-                                          + listener.getClass().getName()); }
-    super.addTransportListener(listener);
   }
 }
