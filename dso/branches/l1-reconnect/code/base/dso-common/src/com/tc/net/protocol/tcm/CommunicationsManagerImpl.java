@@ -6,12 +6,10 @@ package com.tc.net.protocol.tcm;
 
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
-import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.Constants;
 import com.tc.net.core.TCConnection;
@@ -118,11 +116,11 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
   public ClientMessageChannel createClientChannel(final SessionProvider sessionProvider, final int maxReconnectTries,
                                                   String hostname, int port, final int timeout,
-                                                  ConfigItem connectionInfoSource) {
+                                                  ConnectionAddressProvider addressProvider) {
     // XXX: maxReconnectTries MUST be non-zero if we have a
     // once and only once protocol stack.
 
-    final ConnectionAddressProvider provider = new ConfigBasedConnectionAddressProvider(connectionInfoSource);
+    final ConnectionAddressProvider provider = addressProvider;
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(new TCMessageFactoryImpl(sessionProvider, monitor),
                                                                new TCMessageRouterImpl());

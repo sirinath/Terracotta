@@ -6,16 +6,13 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
-import com.tc.config.schema.dynamic.FixedValueConfigItem;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCInternalError;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
-import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionAddressProvider;
-import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
 import com.tc.net.core.event.TCConnectionEvent;
@@ -35,9 +32,8 @@ import java.util.List;
  */
 public class ClientMessageTransport extends MessageTransportBase {
   private static final TCLogger             cmtLogger       = TCLogging.getLogger(ClientMessageTransport.class);
-  private static final long                 SYN_ACK_TIMEOUT = 120000;                                           // 2
-  // minutes
-  // timeout
+  // 2 minutes timeout
+  private static final long                 SYN_ACK_TIMEOUT = 120000;
   private final int                         maxReconnectTries;
   private final ClientConnectionEstablisher connectionEstablisher;
   private boolean                           wasOpened       = false;
@@ -45,25 +41,6 @@ public class ClientMessageTransport extends MessageTransportBase {
   private final ConnectionAddressProvider   connAddressProvider;
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
-
-  /**
-   * O Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
-   * create an unopened MessageTransport.
-   * 
-   * @param commsManager CommmunicationsManager
-   */
-
-  public ClientMessageTransport(int maxReconnectTries, ConnectionInfo connInfo, int timeout,
-                                TCConnectionManager connManager, TransportHandshakeErrorHandler handshakeErrorHandler,
-                                TransportHandshakeMessageFactory messageFactory,
-                                WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
-    // FIXME 2005-12-08 andrew -- This (usage of a ConfigBasedConnectionAddressProvider with a fixed value here) seems
-    // like a big hack. However, because it's not clear to me exactly what the semantics of the object passed in here
-    // should be, this is the safest thing for me to do right now.
-    this(maxReconnectTries,
-         new ConfigBasedConnectionAddressProvider(new FixedValueConfigItem(new ConnectionInfo[] { connInfo })),
-         timeout, connManager, handshakeErrorHandler, messageFactory, wireProtocolAdaptorFactory);
-  }
 
   /**
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will

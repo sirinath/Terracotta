@@ -3,12 +3,12 @@
  */
 package com.tc.memorydatastore.client;
 
-import com.tc.config.schema.dynamic.FixedValueConfigItem;
 import com.tc.exception.TCRuntimeException;
 import com.tc.memorydatastore.message.MemoryDataStoreRequestMessage;
 import com.tc.memorydatastore.message.MemoryDataStoreResponseMessage;
 import com.tc.memorydatastore.server.MemoryDataStoreServer;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
@@ -58,7 +58,7 @@ public class MemoryDataStoreClient implements MemoryDataMap {
   private void setupClient(String serverHost, int serverPort) {
 
     this.channel = communicationsManager.createClientChannel(new NullSessionManager(), -1, serverHost, serverPort,
-        10000, new FixedValueConfigItem(new ConnectionInfo[] { new ConnectionInfo(serverHost, serverPort) }));
+        10000, new ConfigBasedConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverHost, serverPort) }));
 
     channel.addClassMapping(TCMessageType.MEMORY_DATA_STORE_RESPONSE_MESSAGE, MemoryDataStoreResponseMessage.class);
     channel.addClassMapping(TCMessageType.MEMORY_DATA_STORE_REQUEST_MESSAGE, MemoryDataStoreRequestMessage.class);

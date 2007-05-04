@@ -5,8 +5,8 @@ package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
-import com.tc.config.schema.dynamic.FixedValueConfigItem;
 import com.tc.exception.TCRuntimeException;
+import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
@@ -69,7 +69,7 @@ public class Ping implements TCMessageSink {
     ClientMessageChannel channel = null;
     try {
       channel = comms.createClientChannel(new NullSessionManager(), 0, this.hostname, this.port, 3000,
-                                          new FixedValueConfigItem(new ConnectionInfo[0]));
+                                          new ConfigBasedConnectionAddressProvider(new ConnectionInfo[0]));
       channel.open();
       channel.routeMessageType(TCMessageType.PING_MESSAGE, this);
       for (int i = 0; i < 400; i++) {

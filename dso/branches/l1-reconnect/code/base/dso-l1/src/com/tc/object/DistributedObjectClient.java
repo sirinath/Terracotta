@@ -22,6 +22,7 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
@@ -187,13 +188,14 @@ public class DistributedObjectClient extends SEDA {
 
     ConfigItem connectionInfoItem = this.connectionComponents.createConnectionInfoConfigItem();
     ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItem.getObject();
+    ConfigBasedConnectionAddressProvider addrProvider = new ConfigBasedConnectionAddressProvider(connectionInfo);
 
     String serverHost = connectionInfo[0].getHostname();
     int serverPort = connectionInfo[0].getPort();
 
     channel = new DSOClientMessageChannelImpl(communicationsManager.createClientChannel(sessionProvider, -1,
                                                                                         serverHost, serverPort, 10000,
-                                                                                        connectionInfoItem));
+                                                                                        addrProvider));
     ChannelIDLoggerProvider cidLoggerProvider = new ChannelIDLoggerProvider(channel.getChannelIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 

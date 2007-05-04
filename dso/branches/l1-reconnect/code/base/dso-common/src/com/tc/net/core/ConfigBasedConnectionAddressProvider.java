@@ -5,26 +5,25 @@
 package com.tc.net.core;
 
 import com.tc.config.schema.dynamic.ConfigItem;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.tc.util.StringUtil;
 
 public class ConfigBasedConnectionAddressProvider implements ConnectionAddressProvider {
 
-  private List             currentAddresses = new ArrayList();
+  private final ConnectionInfo[] addresses;
 
   public ConfigBasedConnectionAddressProvider(ConfigItem source) {
-    this.currentAddresses.addAll(Arrays.asList((ConnectionInfo[]) source.getObject()));
+    this((ConnectionInfo[]) source.getObject());
+  }
+
+  public ConfigBasedConnectionAddressProvider(ConnectionInfo[] addresses) {
+    this.addresses = (addresses  == null) ? ConnectionInfo.EMPTY_ARRAY : addresses;
   }
 
   public synchronized String toString() {
-    return "ConnectionAddressProvider(" + currentAddresses + ")";
+    return "ConnectionAddressProvider(" + StringUtil.toString(addresses) + ")";
   }
 
   public synchronized ConnectionAddressIterator getIterator() {
-    final ConnectionInfo[] arr = (ConnectionInfo[]) currentAddresses
-        .toArray(new ConnectionInfo[currentAddresses.size()]);
-    return new ConnectionAddressIterator(arr);
+    return new ConnectionAddressIterator(addresses);
   }
 }
