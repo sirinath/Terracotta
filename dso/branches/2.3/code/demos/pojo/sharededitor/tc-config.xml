@@ -94,7 +94,7 @@
            section tells DSO to assume a lock on those objects for the duration of the call-->
       <locks>
         <autolock>
-          <method-expression>* *..*.*(..)</method-expression>
+          <method-expression>* demo..*.*(..)</method-expression>
         </autolock>
         <autolock>
           <method-expression>* demo.sharededitor.models.ObjectManager.notifyListeners(..)</method-expression>
