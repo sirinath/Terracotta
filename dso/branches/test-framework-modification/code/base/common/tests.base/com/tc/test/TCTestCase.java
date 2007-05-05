@@ -60,7 +60,7 @@ public class TCTestCase extends TestCase {
 
   private Date                             allDisabledUntil;
   private final Map                        disabledUntil             = new Hashtable();
-  private boolean                          allDisabledLogged = false;
+  private boolean                          allDisabledLogged         = false;
 
   // This stuff is static since Junit new()'s up an instance of the test case for each test method,
   // and the timeout covers the entire test case (ie. all methods). It wouldn't be very effective to start
@@ -263,6 +263,7 @@ public class TCTestCase extends TestCase {
   }
 
   private static final String disabledTestLogPrefix = "!disabled_test: ";
+
   protected void logDisabledTest(String testName, Date until, String platform) {
     StringBuffer message = new StringBuffer();
     message.append(disabledTestLogPrefix);
@@ -564,5 +565,13 @@ public class TCTestCase extends TestCase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected int getThreadDumpCount() {
+    return numThreadDumps;
+  }
+
+  protected long getThreadDumpInterval() {
+    return dumpInterval;
   }
 }

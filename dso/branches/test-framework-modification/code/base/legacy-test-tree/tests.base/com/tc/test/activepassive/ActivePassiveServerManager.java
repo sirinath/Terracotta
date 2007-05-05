@@ -30,7 +30,7 @@ public class ActivePassiveServerManager {
   private static final String                    HOST             = "localhost";
   private static final String                    SERVER_NAME      = "testserver";
   private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
-  private static final boolean                   DEBUG            = false;
+  private static final boolean                   DEBUG            = true;
   private static final int                       NULL_VAL         = -1;
   private static final long                      SEED             = 237;
 
@@ -306,7 +306,7 @@ public class ActivePassiveServerManager {
     }
   }
 
-  private JMXConnector getJMXConnector(int jmxPort) throws IOException {
+  public JMXConnector getJMXConnector(int jmxPort) throws IOException {
     String url = "service:jmx:rmi:///jndi/rmi://" + HOST + ":" + jmxPort + "/jmxrmi";
     JMXServiceURL jmxServerUrl = new JMXServiceURL(url);
     JMXConnector jmxConnector = JMXConnectorFactory.newJMXConnector(jmxServerUrl, null);
@@ -348,29 +348,26 @@ public class ActivePassiveServerManager {
   }
 
   // only have one of the processes do a dump when kill signal is being sent to entire process group
-  public void dumpAllServers() {
-    try {
-      synchronized (testState) {
-        for (int i = 0; i < serverCount; i++) {
-          if (servers[i].getServerControl().isRunning()) {
-            debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
-            JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
-            MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
-            L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs,
-                                                                                                L2MBeanNames.DUMPER,
-                                                                                                L2DumperMBean.class,
-                                                                                                true);
-            mbean.doServerDump();
-            if (pid != 0) {
-              pid = mbean.doThreadDump();
-              debugPrintln("***** server=[" + dsoPorts[i] + "] thread dumping pid=[" + pid + "]");
-            }
+  public void dumpAllServers(int currentPid, int dumpCount, long dumpInterval) throws Exception {
+    synchronized (testState) {
+      pid = currentPid;
+      for (int i = 0; i < serverCount; i++) {
+        if (servers[i].getServerControl().isRunning()) {
+          debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
+          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
+          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+          L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler
+              .newProxyInstance(mbs, L2MBeanNames.DUMPER, L2DumperMBean.class, true);
+          mbean.doServerDump();
+          if (pid != 0) {
+            mbean.setThreadDumpCount(dumpCount);
+            mbean.setThreadDumpInterval(dumpInterval);
+            pid = mbean.doThreadDump();
+            debugPrintln("***** server=[" + dsoPorts[i] + "] thread dumping pid=[" + pid + "]");
           }
+          jmxConnector.close();
         }
       }
-    } catch (Exception e) {
-      debugPrintln("***** error while trying to dumpAllServer: " + e.getMessage());
-      e.printStackTrace();
     }
   }
 

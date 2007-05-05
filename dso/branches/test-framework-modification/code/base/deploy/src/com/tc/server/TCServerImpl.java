@@ -336,9 +336,7 @@ public class TCServerImpl extends SEDA implements TCServer, TCDumper {
     mBeanServer.registerMBean(mgmtContext.getDSOAppEventsMBean(), L2MBeanNames.DSO_APP_EVENTS);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
-      //TODO: remove
-      logger.info("*******  test mbean should be registered");
-
+      logger.info("Registering test related mbean.");
       mBeanServer.registerMBean(new L2Dumper(this), L2MBeanNames.DUMPER);
     }
   }

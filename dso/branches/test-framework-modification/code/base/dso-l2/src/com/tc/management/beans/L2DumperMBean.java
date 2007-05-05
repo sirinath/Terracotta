@@ -10,4 +10,8 @@ public interface L2DumperMBean extends TerracottaMBean {
   void doServerDump();
 
   int doThreadDump() throws Exception;
+
+  void setThreadDumpCount(int count);
+
+  void setThreadDumpInterval(long interval);
 }

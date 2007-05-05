@@ -10,6 +10,8 @@ import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
+import com.tc.management.beans.L2DumperMBean;
+import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.objectserver.control.ExtraProcessServerControl;
@@ -38,6 +40,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.remote.JMXConnector;
 
 import junit.framework.AssertionFailedError;
 
@@ -267,8 +273,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       }
       this.runner.run();
 
-      if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
-//      if (true) {
+      // if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
+      if (true) {
         try {
           dumpServers();
         } finally {
@@ -276,7 +282,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
             // TODO: remove
             System.err.println("***** thread dumping test process");
 
-            ThreadDump.dumpThreadsMany(1, 0L);
+            ThreadDump.dumpThreadsMany(getThreadDumpCount(), getThreadDumpInterval());
           }
         }
       }
@@ -293,13 +299,28 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   private void dumpServers() throws Exception {
-    if (controlledCrashMode && !isActivePassive()) {
-      // TODO: do the same for crash tests
-    } else if (controlledCrashMode) {
-      apServerManager.dumpAllServers();
+    if (serverControl != null) {
+      // TODO: remove
+      System.err.println("***** dumping server=[" + serverControl.getDsoPort() + "]");
+
+      JMXConnector jmxConnector = apServerManager.getJMXConnector(serverControl.getAdminPort());
+      MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+      L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
+                                                                                          L2DumperMBean.class, true);
+      mbean.doServerDump();
+      if (pid != 0) {
+        mbean.setThreadDumpCount(getThreadDumpCount());
+        mbean.setThreadDumpInterval(getThreadDumpInterval());
+        pid = mbean.doThreadDump();
+
+        // TODO: remove
+        System.err.println("***** server=[" + serverControl.getDsoPort() + "] thread dumping pid=[" + pid + "]");
+      }
+      jmxConnector.close();
+    }
+    if (apServerManager != null) {
+      apServerManager.dumpAllServers(pid, getThreadDumpCount(), getThreadDumpInterval());
       pid = apServerManager.getPid();
-    } else if (useExternalProcess()) {
-      // TODO: do the same for this
     }
     if (runner != null) {
       runner.dumpServer();

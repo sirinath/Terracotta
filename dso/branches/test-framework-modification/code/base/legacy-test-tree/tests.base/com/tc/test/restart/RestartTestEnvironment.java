@@ -312,5 +312,10 @@ public class RestartTestEnvironment {
       assertServerNotNull();
       return server.getDsoPort();
     }
+
+    public int getAdminPort() {
+      assertServerNotNull();
+      return server.getAdminPort();
+    }
   }
 }
