@@ -59,7 +59,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private ServerControl                           serverControl;
   private boolean                                 controlledCrashMode     = false;
   private ServerCrasher                           crasher;
-  private File javaHome;
+  private File                                    javaHome;
+  private int                                     pid                     = -1;
 
   // for active-passive tests
   private ActivePassiveServerManager              apServerManager;
@@ -72,12 +73,12 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throw new RuntimeException("Couldn't get instance of TestConfigObject.", e);
     }
   }
-  
+
   protected void setJavaHome() {
     if (javaHome == null) {
       String javaHome_local = getTestConfigObject().getL2StartupJavaHome();
       if (javaHome_local == null) { throw new IllegalStateException(TestConfigObject.L2_STARTUP_JAVA_HOME
-                                                              + " must be set to a valid JAVA_HOME"); }
+                                                                    + " must be set to a valid JAVA_HOME"); }
       javaHome = new File(javaHome_local);
     }
   }
@@ -88,10 +89,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     RestartTestHelper helper = null;
     if ((isCrashy() && canRunCrash()) || useExternalProcess()) {
       // javaHome is set here only to enforce that java home is defined in the test config
-      // javaHome is set again inside RestartTestEnvironment because how that class is used 
-      //TODO: clean this up
-      setJavaHome();  
-      
+      // javaHome is set again inside RestartTestEnvironment because how that class is used
+      // TODO: clean this up
+      setJavaHome();
+
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), new PortChooser(),
                                                                 RestartTestEnvironment.PROD_MODE));
@@ -139,8 +140,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected void setUpExternalProcess(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
                                       int serverPort, int adminPort, String configFile) throws Exception {
     setJavaHome();
-    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true,
-                                                  javaHome);
+    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true, javaHome);
     setUp(factory, helper);
 
     configFactory().addServerToL1Config(null, serverPort, adminPort);
@@ -268,10 +268,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       this.runner.run();
 
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
+//      if (true) {
         try {
           dumpServers();
         } finally {
-          ThreadDump.dumpThreadsMany(3, 1000L);
+          if (pid != 0) {
+            // TODO: remove
+            System.err.println("***** thread dumping test process");
+
+            ThreadDump.dumpThreadsMany(1, 0L);
+          }
         }
       }
 
@@ -291,6 +297,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       // TODO: do the same for crash tests
     } else if (controlledCrashMode) {
       apServerManager.dumpAllServers();
+      pid = apServerManager.getPid();
     } else if (useExternalProcess()) {
       // TODO: do the same for this
     }

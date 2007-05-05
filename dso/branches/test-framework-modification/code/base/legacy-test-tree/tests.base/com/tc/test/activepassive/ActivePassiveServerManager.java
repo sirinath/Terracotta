@@ -62,11 +62,12 @@ public class ActivePassiveServerManager {
   private int                                    maxCrashCount;
   private final TestState                        testState;
   private final Random                           random;
-  private final File javaHome;
+  private final File                             javaHome;
+  private int                                    pid              = -1;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
-                                    String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout, File javaHome)
-      throws Exception {
+                                    String configModel, ActivePassiveTestSetupManager setupManger, long startTimeout,
+                                    File javaHome) throws Exception {
     if (!isActivePassiveTest) { throw new AssertionError("A non-ActivePassiveTest is trying to use this class."); }
 
     this.setupManger = setupManger;
@@ -187,7 +188,8 @@ public class ActivePassiveServerManager {
     if (serverNetworkShare) {
       jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ".l2.ha.network.enabled=true");
     }
-    return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, jvmArgs, javaHome);
+    return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, jvmArgs,
+                                         javaHome);
   }
 
   public void startServers() throws Exception {
@@ -345,20 +347,35 @@ public class ActivePassiveServerManager {
     }
   }
 
-  public void dumpAllServers() throws Exception {
-    synchronized (testState) {
-      for (int i = 0; i < serverCount; i++) {
-        if (servers[i].getServerControl().isRunning()) {
-          debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
-          JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
-          MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
-          L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler
-              .newProxyInstance(mbs, L2MBeanNames.DUMPER, L2DumperMBean.class, true);
-          mbean.doServerDump();
-          mbean.doThreadDump();
+  // only have one of the processes do a dump when kill signal is being sent to entire process group
+  public void dumpAllServers() {
+    try {
+      synchronized (testState) {
+        for (int i = 0; i < serverCount; i++) {
+          if (servers[i].getServerControl().isRunning()) {
+            debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
+            JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
+            MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
+            L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs,
+                                                                                                L2MBeanNames.DUMPER,
+                                                                                                L2DumperMBean.class,
+                                                                                                true);
+            mbean.doServerDump();
+            if (pid != 0) {
+              pid = mbean.doThreadDump();
+              debugPrintln("***** server=[" + dsoPorts[i] + "] thread dumping pid=[" + pid + "]");
+            }
+          }
         }
       }
+    } catch (Exception e) {
+      debugPrintln("***** error while trying to dumpAllServer: " + e.getMessage());
+      e.printStackTrace();
     }
+  }
+
+  public int getPid() {
+    return pid;
   }
 
   public void crashActive() throws Exception {
@@ -377,6 +394,7 @@ public class ActivePassiveServerManager {
 
     verifyActiveServerState();
     ServerControl server = servers[activeIndex].getServerControl();
+    server.crash();
     debugPrintln("***** Sleeping after crashing active server ");
     waitForServerCrash(server);
     debugPrintln("***** Done sleeping after crashing active server ");

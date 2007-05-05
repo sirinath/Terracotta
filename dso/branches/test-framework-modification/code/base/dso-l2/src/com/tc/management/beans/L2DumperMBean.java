@@ -9,5 +9,5 @@ import com.tc.management.TerracottaMBean;
 public interface L2DumperMBean extends TerracottaMBean {
   void doServerDump();
 
-  void doThreadDump() throws Exception;
+  int doThreadDump() throws Exception;
 }
