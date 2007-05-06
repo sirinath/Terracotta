@@ -35,7 +35,6 @@ import com.tctest.runner.TransparentAppConfig;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -73,11 +72,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private ActivePassiveTestSetupManager           apSetupManager;
 
   protected TestConfigObject getTestConfigObject() {
-    try {
-      return TestConfigObject.getInstance();
-    } catch (IOException e) {
-      throw new RuntimeException("Couldn't get instance of TestConfigObject.", e);
-    }
+    return TestConfigObject.getInstance();
   }
 
   protected void setJavaHome() {
@@ -148,7 +143,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     setJavaHome();
     serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true, javaHome);
     setUp(factory, helper);
-
     configFactory().addServerToL1Config(null, serverPort, adminPort);
     configFactory().addServerToL2Config(null, serverPort, adminPort);
   }
