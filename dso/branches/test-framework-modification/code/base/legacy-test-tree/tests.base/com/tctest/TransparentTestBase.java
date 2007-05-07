@@ -273,9 +273,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
           dumpServers();
         } finally {
           if (pid != 0) {
-            // TODO: remove
-            System.err.println("***** thread dumping test process");
-
+            System.out.println("Thread dumping test process");
             ThreadDump.dumpThreadsMany(getThreadDumpCount(), getThreadDumpInterval());
           }
         }
@@ -294,8 +292,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private void dumpServers() throws Exception {
     if (serverControl != null && serverControl.isRunning()) {
-      // TODO: remove
-      System.err.println("***** dumping server=[" + serverControl.getDsoPort() + "]");
+      System.out.println("Dumping server=[" + serverControl.getDsoPort() + "]");
 
       JMXConnector jmxConnector = ActivePassiveServerManager.getJMXConnector(serverControl.getAdminPort());
       MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
@@ -306,9 +303,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
         mbean.setThreadDumpCount(getThreadDumpCount());
         mbean.setThreadDumpInterval(getThreadDumpInterval());
         pid = mbean.doThreadDump();
-
-        // TODO: remove
-        System.err.println("***** server=[" + serverControl.getDsoPort() + "] thread dumping pid=[" + pid + "]");
+        System.out.println("Thread dumping server=[" + serverControl.getDsoPort() + "] pid=[" + pid + "]");
       }
       jmxConnector.close();
     }

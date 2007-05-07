@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 import javax.management.NotCompliantMBeanException;
 
 public class L2Dumper extends AbstractTerracottaMBean implements L2DumperMBean {
-  private static final boolean DEBUG                         = true;
+  private static final boolean DEBUG                         = false;
 
   public static final String   THREAD_DUMP_METHOD_NAME       = "dumpThreadsMany";
   public static final Class[]  THREAD_DUMP_METHOD_PARAMETERS = new Class[] { int.class, long.class };

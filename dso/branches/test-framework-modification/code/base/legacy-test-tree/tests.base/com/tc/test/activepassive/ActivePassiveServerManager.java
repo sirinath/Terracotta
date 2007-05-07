@@ -30,7 +30,7 @@ public class ActivePassiveServerManager {
   private static final String                    HOST             = "localhost";
   private static final String                    SERVER_NAME      = "testserver";
   private static final String                    CONFIG_FILE_NAME = "active-passive-server-config.xml";
-  private static final boolean                   DEBUG            = true;
+  private static final boolean                   DEBUG            = false;
   private static final int                       NULL_VAL         = -1;
   private static final long                      SEED             = 237;
 
@@ -357,7 +357,7 @@ public class ActivePassiveServerManager {
           continue;
         }
         if (servers[i].getServerControl().isRunning()) {
-          debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
+          System.out.println("Dumping server=[" + dsoPorts[i] + "]");
           JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
           MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
           L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler
@@ -367,7 +367,7 @@ public class ActivePassiveServerManager {
             mbean.setThreadDumpCount(dumpCount);
             mbean.setThreadDumpInterval(dumpInterval);
             pid = mbean.doThreadDump();
-            debugPrintln("***** server=[" + dsoPorts[i] + "] thread dumping pid=[" + pid + "]");
+            System.out.println("Thread dumping server=[" + dsoPorts[i] + "] pid=[" + pid + "]");
           }
           jmxConnector.close();
         }

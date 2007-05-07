@@ -393,6 +393,7 @@ public class DistributedTestRunner implements ResultsListener {
 
   public void dumpServer() {
     if (server != null && startServer) {
+      System.out.println("Dumping intra-process server");
       server.dump();
     }
   }
