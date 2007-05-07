@@ -141,7 +141,6 @@ modules:
       dependencies:
         - common
         - dso-l1
-        - dso-l2
         - dso-common
         - dso-common-jdk15
         - deploy
@@ -162,7 +161,6 @@ modules:
       dependencies:
         - common
         - dso-l1
-        - dso-l2
         - dso-common
         - dso-common-jdk15
         - deploy
@@ -173,7 +171,6 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
-        - dso-l2
         - dso-l1
         - deploy
         - aspectwerkz
@@ -207,7 +204,6 @@ modules:
         - management
         - deploy
         - dso-l1
-        - dso-l2
         - legacy-test-tree
         - simulator
         - thirdparty
@@ -241,7 +237,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -297,7 +292,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l1-session
-        - dso-l2
         - management
         - simulator
         - deploy
@@ -314,7 +308,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - dso-l1-weblogic
         - dso-spring
         - simulator
@@ -334,7 +327,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - legacy-test-tree
         - simulator
         - linked-child-process
@@ -357,7 +349,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - dso-l1-weblogic
         - dso-spring
         - simulator
@@ -377,7 +368,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l1-jdk15
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -403,7 +393,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -431,7 +420,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -447,7 +435,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - legacy-test-tree
         - linked-child-process
         - management
@@ -467,7 +454,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -487,7 +473,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -507,7 +492,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l1-weblogic
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -526,7 +510,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -545,7 +528,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -563,7 +545,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - simulator
         - deploy
         - thirdparty
@@ -571,7 +552,7 @@ modules:
         - dso-container-tests
         - modules-common-1.0
 
-# these groups are used by the monkeys to run tests in each module. 
+# these groups are used by the monkeys to run tests in each module.
 
 module-groups:
   container:
@@ -597,7 +578,7 @@ module-groups:
     - dso-l1-tomcat55
     - dso-l2
     - deploy
-    - simulator    
+    - simulator
     - examples
     - legacy-test-tree
     - dso-system-tests
@@ -607,15 +588,15 @@ module-groups:
     - dso-memory-datastore
   framework:
     - clustered-rife-1.6.0
-    - clustered-wicket-1.3  
+    - clustered-wicket-1.3
     - clustered-lucene-2.0.0
     - clustered-cglib-2.1.3
     - clustered-apache-struts-1.1
     - clustered-ehcache-1.2.4
     - clustered-commons-collections-3.1
     - clustered-jetty-6.1
-    - clustered-iBatis-2.2.0    
-    - clustered-hibernate-3.1.2  
+    - clustered-iBatis-2.2.0
+    - clustered-hibernate-3.1.2
     - modules-common-1.0
   gui:
     - ui-configurator
