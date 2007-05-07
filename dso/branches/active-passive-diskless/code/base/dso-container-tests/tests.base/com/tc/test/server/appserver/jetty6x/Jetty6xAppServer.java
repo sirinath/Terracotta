@@ -1,5 +1,7 @@
 package com.tc.test.server.appserver.jetty6x;
 
+import org.apache.commons.io.IOUtils;
+
 import com.tc.process.Exec;
 import com.tc.process.HeartBeatService;
 import com.tc.process.Exec.Result;
@@ -10,17 +12,14 @@ import com.tc.test.server.appserver.AbstractAppServer;
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.AppServerResult;
 import com.tc.test.server.appserver.cargo.CargoLinkedChildProcess;
+import com.tc.test.server.util.AppServerUtil;
 import com.tc.util.PortChooser;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +36,7 @@ public class Jetty6xAppServer extends AbstractAppServer {
   private String              configFile;
   private String              instanceName;
   private File                instanceDir;
+  private File                workDir;
 
   private int                 jetty_port         = 0;
   private int                 stop_port          = 0;
@@ -73,39 +73,10 @@ public class Jetty6xAppServer extends AbstractAppServer {
     }
   }
 
-  private static void waitForPort(int port) {
-    final long timeout = System.currentTimeMillis() + START_STOP_TIMEOUT;
-    while (System.currentTimeMillis() < timeout) {
-      Socket s = null;
-      try {
-        s = new Socket("127.0.0.1", port);
-        return;
-      } catch (IOException ioe) {
-        // try again
-      } finally {
-        if (s != null) {
-          try {
-            s.close();
-          } catch (IOException ioe) {
-            // ignore
-          }
-        }
-      }
-
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-
-    throw new RuntimeException("Port " + port + " cannot be reached, timeout = " + START_STOP_TIMEOUT);
-  }
-
   private AppServerResult startJetty(AppServerParameters params) throws Exception {
     prepareDeployment(params);
 
-    String[] jvmargs = getJVMArgs(params);
+    String[] jvmargs = params.jvmArgs().replaceAll("'", "").split("\\s+");
     List cmd = new ArrayList(Arrays.asList(jvmargs));
     cmd.add(0, JAVA_CMD);
     cmd.add("-cp");
@@ -115,6 +86,7 @@ public class Jetty6xAppServer extends AbstractAppServer {
     cmd.add("-Djetty.port=" + jetty_port);
     cmd.add("-DSTOP.PORT=" + stop_port);
     cmd.add("-DSTOP.KEY=" + STOP_KEY);
+    cmd.add("-Djava.io.tmpdir=" + workDir.getAbsolutePath());
     cmd.add(CargoLinkedChildProcess.class.getName());
     cmd.add(JETTY_MAIN_CLASS);
     cmd.add(String.valueOf(HeartBeatService.listenPort()));
@@ -138,7 +110,7 @@ public class Jetty6xAppServer extends AbstractAppServer {
     };
     runner.start();
     System.err.println("Starting jetty " + instanceName + " on port " + jetty_port + "...");
-    waitForPort(jetty_port);
+    AppServerUtil.waitForPort(jetty_port, START_STOP_TIMEOUT);
     System.err.println("Started " + instanceName + " on port " + jetty_port);
     return new AppServerResult(jetty_port, this);
   }
@@ -150,6 +122,9 @@ public class Jetty6xAppServer extends AbstractAppServer {
 
     instanceName = params.instanceName();
     instanceDir = new File(sandboxDirectory(), instanceName);
+    workDir = new File(sandboxDirectory(), "work");
+    workDir.mkdirs();
+    
     if (new File(instanceDir, "logs").mkdirs() == false) { throw new Exception(
                                                                                "Can't create logs directory for jetty instance: "
                                                                                    + instanceName); }
@@ -186,35 +161,8 @@ public class Jetty6xAppServer extends AbstractAppServer {
       out.println(buffer.toString());
 
     } finally {
-      closeQuietly(in);
-      closeQuietly(out);
+      IOUtils.closeQuietly(in);
+      IOUtils.closeQuietly(out);
     }
   }
-
-  private String[] getJVMArgs(AppServerParameters params) {
-    String raw = params.jvmArgs().replaceAll("'", "");
-    String[] args = raw.split("\\s+");
-    return args;
-  }
-
-  private void closeQuietly(Reader reader) {
-    try {
-      if (reader != null) {
-        reader.close();
-      }
-    } catch (Exception e) {
-      // ignored
-    }
-  }
-
-  private void closeQuietly(Writer writer) {
-    try {
-      if (writer != null) {
-        writer.close();
-      }
-    } catch (Exception e) {
-      // ignored
-    }
-  }
-
 }

@@ -4,7 +4,7 @@
  */
 package com.tc.util;
 
-import org.apache.commons.io.CopyUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -111,16 +111,24 @@ public class ZipBuilder implements ArchiveBuilder {
   }
 
   public static void unzip(InputStream archive, File destDir) throws IOException {
-    ZipInputStream zis = new ZipInputStream(archive);
-    ZipEntry entry;
-    while ((entry = zis.getNextEntry()) != null) {
-      File file = new File(destDir, entry.getName());
-      if (!entry.getName().endsWith("/")) {
-        CopyUtils.copy(zis, new FileOutputStream(file));
-      } else {
-        file.mkdirs();
+    ZipInputStream zis = null;
+    try {
+      zis = new ZipInputStream(archive);
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        File file = new File(destDir, entry.getName());
+        if (entry.isDirectory()) {
+          file.mkdirs();
+        } else {
+          IOUtils.copy(zis, new FileOutputStream(file));
+        }
+        zis.closeEntry();
       }
-      zis.closeEntry();
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw e;
+    } finally {
+      if (zis != null) zis.close();
     }
   }
 }
