@@ -112,6 +112,16 @@ modules:
       dependencies:
         - dso-common
         - common
+  - dso-l2-common:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - dso-common
+        - dso-common-jdk15
+        - thirdparty
+        - management
+        - dso-memory-datastore
   - dso-l2:
       options:
         jdk: J2SE-1.4
@@ -119,6 +129,7 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
+        - dso-l2-common
         - thirdparty
         - management
         - dso-memory-datastore
@@ -131,6 +142,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l2
+        - dso-l2-common
         - dso-l1
         - thirdparty
         - aspectwerkz
@@ -151,7 +163,7 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
-        - dso-l2
+        - dso-l2-common
         - dso-l1
         - deploy
         - aspectwerkz
@@ -188,6 +200,7 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l2
+        - dso-l2-common
         - dso-l1-weblogic
         - simulator
         - deploy
@@ -220,6 +233,7 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l2
+        - dso-l2-common
         - dso-l1-weblogic
         - simulator
         - deploy
@@ -258,6 +272,7 @@ modules:
         - dso-l1-jdk15
         - legacy-test-tree
         - dso-l2
+        - dso-l2-common
         - management
   - dso-crash-tests:
       options:
@@ -271,6 +286,7 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l2
+        - dso-l2-common
         - dso-l1-weblogic
         - simulator
         - deploy
@@ -576,6 +592,7 @@ module-groups:
     - dso-l1-tomcat
     - dso-l1-tomcat50
     - dso-l1-tomcat55
+    - dso-l2-common
     - dso-l2
     - deploy
     - simulator
