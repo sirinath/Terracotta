@@ -12,6 +12,7 @@ import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.PortChooser;
+import com.tctest.TestState;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -592,27 +593,6 @@ public class ActivePassiveServerManager {
 
     public String getLogLocation() {
       return logLocation;
-    }
-  }
-
-  /*
-   * State inner class
-   */
-  public static class TestState {
-    public static final int RUNNING  = 0;
-    public static final int STOPPING = 1;
-    private int             state;
-
-    public TestState() {
-      state = RUNNING;
-    }
-
-    public synchronized void setTestState(int state) {
-      this.state = state;
-    }
-
-    public synchronized boolean isRunning() {
-      return state == RUNNING;
     }
   }
 

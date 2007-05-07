@@ -70,6 +70,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   // for active-passive tests
   private ActivePassiveServerManager              apServerManager;
   private ActivePassiveTestSetupManager           apSetupManager;
+  private TestState                               crashTestState;
 
   protected TestConfigObject getTestConfigObject() {
     return TestConfigObject.getInstance();
@@ -112,8 +113,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.doSetUp(this);
 
     if (isCrashy() && canRunCrash()) {
+      crashTestState = new TestState(false);
       crasher = new ServerCrasher(serverControl, helper.getServerCrasherConfig().getRestartInterval(), helper
-          .getServerCrasherConfig().isCrashy());
+          .getServerCrasherConfig().isCrashy(), crashTestState);
       crasher.startAutocrash();
     }
   }
@@ -321,9 +323,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     if (controlledCrashMode) {
       if (isActivePassive() && canRunActivePassive()) {
         apServerManager.stopAllServers();
-        apServerManager = null;
       } else if (isCrashy() && canRunCrash()) {
-        crasher.stop();
+        synchronized (crashTestState) {
+          crashTestState.setTestState(TestState.STOPPING);
+          if (serverControl.isRunning()) {
+            serverControl.shutdown();
+          }
+        }
       }
     }
     super.tearDown();
@@ -398,4 +404,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     return out;
   }
+
+  /*
+   * State inner class
+   */
+
 }

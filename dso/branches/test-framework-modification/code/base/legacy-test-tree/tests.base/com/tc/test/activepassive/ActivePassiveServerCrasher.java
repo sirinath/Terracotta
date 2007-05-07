@@ -4,7 +4,7 @@
  */
 package com.tc.test.activepassive;
 
-import com.tc.test.activepassive.ActivePassiveServerManager.TestState;
+import com.tctest.TestState;
 
 public class ActivePassiveServerCrasher implements Runnable {
   private static boolean                   DEBUG      = false;
