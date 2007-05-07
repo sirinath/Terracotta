@@ -352,6 +352,10 @@ public class ActivePassiveServerManager {
     synchronized (testState) {
       pid = currentPid;
       for (int i = 0; i < serverCount; i++) {
+        if (!serverNetworkShare && i != activeIndex) {
+          debugPrintln("***** skipping dumping server=[" + dsoPorts[i] + "]");
+          continue;
+        }
         if (servers[i].getServerControl().isRunning()) {
           debugPrintln("***** dumping server=[" + dsoPorts[i] + "]");
           JMXConnector jmxConnector = getJMXConnector(jmxPorts[i]);
