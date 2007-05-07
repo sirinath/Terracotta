@@ -306,7 +306,7 @@ public class ActivePassiveServerManager {
     }
   }
 
-  public JMXConnector getJMXConnector(int jmxPort) throws IOException {
+  public static JMXConnector getJMXConnector(int jmxPort) throws IOException {
     String url = "service:jmx:rmi:///jndi/rmi://" + HOST + ":" + jmxPort + "/jmxrmi";
     JMXServiceURL jmxServerUrl = new JMXServiceURL(url);
     JMXConnector jmxConnector = JMXConnectorFactory.newJMXConnector(jmxServerUrl, null);

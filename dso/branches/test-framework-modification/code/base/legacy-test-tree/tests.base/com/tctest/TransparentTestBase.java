@@ -293,11 +293,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   private void dumpServers() throws Exception {
-    if (serverControl != null) {
+    if (serverControl != null && serverControl.isRunning()) {
       // TODO: remove
       System.err.println("***** dumping server=[" + serverControl.getDsoPort() + "]");
 
-      JMXConnector jmxConnector = apServerManager.getJMXConnector(serverControl.getAdminPort());
+      JMXConnector jmxConnector = ActivePassiveServerManager.getJMXConnector(serverControl.getAdminPort());
       MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
                                                                                           L2DumperMBean.class, true);
