@@ -267,8 +267,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       }
       this.runner.run();
 
-      // if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
-      if (true) {
+      if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
         try {
           dumpServers();
         } finally {
