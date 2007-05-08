@@ -269,8 +269,15 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       }
       this.runner.run();
 
-      if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
+      // TODO: remove
+      // if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
+      if (true) {
         try {
+          System.err.println("##### About to shutdown server crasher");
+          synchronized (crashTestState) {
+            crashTestState.setTestState(TestState.STOPPING);
+          }
+          System.err.println("##### About to dump server");
           dumpServers();
         } finally {
           if (pid != 0) {
@@ -331,7 +338,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
           }
         }
       }
-    } else if(useExternalProcess()) {
+    } else if (useExternalProcess()) {
       if (serverControl.isRunning()) {
         serverControl.shutdown();
       }

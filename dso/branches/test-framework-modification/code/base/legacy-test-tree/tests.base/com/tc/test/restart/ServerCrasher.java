@@ -60,6 +60,9 @@ public class ServerCrasher implements Runnable {
           } catch (Exception e) {
             throw new TCRuntimeException(e);
           }
+        } else {
+          System.err.println("Shutting down server crasher.");
+          break;
         }
       }
     }
