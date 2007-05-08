@@ -67,7 +67,7 @@ public class ClassGraphAdapter extends ClassAdapter implements ClassAdapterFacto
                       "Lcom/ibm/ws/classloader/JarClassLoader;");
     mv.visitVarInsn(ALOAD, 1);
     mv.visitVarInsn(ALOAD, 4);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/websphere/WebsphereLoaderNaming", "nameAndRegisterWebAppLoader",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/websphere/WebsphereLoaderNaming", "registerAndInjectClassPathToWebAppLoader",
                        "(Lcom/tc/object/loaders/NamedClassLoader;Ljava/lang/Object;Ljava/lang/Object;)V");
 
     mv.visitInsn(RETURN);

@@ -7,6 +7,7 @@ package com.tc.websphere;
 import com.tc.logging.TCLogger;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
+import com.tc.object.bytecode.hook.impl.SessionsHelper;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
 
@@ -35,14 +36,22 @@ public class WebsphereLoaderNaming {
   public synchronized static void nameAndRegisterDependencyLoader(NamedClassLoader loader, Object earFile) {
     nameAndRegister(loader, EAR_DEPENDENCY + getEarName(earFile));
   }
-
-  public static void nameAndRegisterWebAppLoader(NamedClassLoader loader, Object earFile, Object moduleRef) {
+  
+  public static void registerAndInjectClassPathToWebAppLoader(NamedClassLoader loader, Object earFile, Object moduleRef) {
     Object webModule = invokeMethod(moduleRef, "getModule");
     Object webModuleFile = invokeMethod(moduleRef, "getModuleFile");
     Object bindings = invokeMethod(webModuleFile, "getBindings");
     String vhost = (String) invokeMethod(bindings, "getVirtualHostName");
     String contextRoot = (String) invokeMethod(webModule, "getContextRoot");
+    
     nameAndRegister(loader, EAR + getEarName(earFile) + ":" + vhost + contextRoot);
+    if (ClassProcessorHelper.isDSOSessions(contextRoot)) {
+      try {
+        SessionsHelper.injectClasses((ClassLoader)loader);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    }
   }
 
   public static void nameAndRegisterBootstrapExtLoader(NamedClassLoader loader) {
