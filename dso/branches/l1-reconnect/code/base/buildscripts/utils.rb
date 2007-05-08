@@ -7,9 +7,9 @@
 # A basic assertion facility for Ruby. Takes a block, and fails if
 # the block returns false.
 def assert(message="Assertion Failed")
-    raise RuntimeError, message unless yield
+  raise RuntimeError, message unless yield
 end
-
+  
 module CallWithVariableArguments
     # A method to call a procedure that may take variable arguments, but
     # which issues much nicer error messages when something fails than

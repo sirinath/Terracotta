@@ -14,19 +14,28 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.util.sequence.SequenceGenerator;
 
 import java.util.Iterator;
 import java.util.Map;
 
 public class L2ObjectSyncDehydrateHandler extends AbstractEventHandler {
 
+  private final SequenceGenerator sequenceGenerator;
+
   private Sink                    sendSink;
   private ObjectManager           objectManager;
 
+  public L2ObjectSyncDehydrateHandler(SequenceGenerator sequenceGenerator) {
+    this.sequenceGenerator = sequenceGenerator;
+  }
+
   public void handleEvent(EventContext context) {
     ManagedObjectSyncContext mosc = (ManagedObjectSyncContext) context;
+    // XXX::Note:: this sequence id is assigned before releasing any objects to ensure that transactions are not missed
+    // for object in flight for PASSIVE-UNINITIALIED L2.
+    mosc.setSequenceID(sequenceGenerator.getNextSequence(mosc.getNodeID()));
     Map moObjects = mosc.getObjects();
-    // Only send objects that are NOT already there in the client. Look at the comment below.
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     TCByteBufferOutputStream out = new TCByteBufferOutputStream();
     for (Iterator i = moObjects.values().iterator(); i.hasNext();) {
