@@ -9,7 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.core.ConfigBasedConnectionAddressProvider;
+import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.MockConnectionManager;
 import com.tc.net.core.MockTCConnection;
@@ -227,9 +227,8 @@ public class MessageTransportTest extends TCTestCase {
 
   private void createClientTransport(int maxReconnectTries) throws Exception {
     final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, 0);
-    this.clientTransport = new ClientMessageTransport(
-                                                      maxReconnectTries,
-                                                      new ConfigBasedConnectionAddressProvider(new ConnectionInfo[] { connInfo }),
+    this.clientTransport = new ClientMessageTransport(maxReconnectTries,
+                                                      new ConnectionAddressProvider(new ConnectionInfo[] { connInfo }),
                                                       0, connManager, createHandshakeErrorHandler(),
                                                       this.transportHandshakeMessageFactory,
                                                       new WireProtocolAdaptorFactoryImpl());

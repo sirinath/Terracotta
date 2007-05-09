@@ -9,7 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.core.ConfigBasedConnectionAddressProvider;
+import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.MockConnectionManager;
 import com.tc.net.core.MockTCConnection;
@@ -58,10 +58,8 @@ public class ClientMessageTransportTest extends TCTestCase {
 
     };
     final ConnectionInfo connectionInfo = new ConnectionInfo("", 0);
-    transport = new ClientMessageTransport(
-                                           maxRetries,
-                                           new ConfigBasedConnectionAddressProvider(
-                                                                                    new ConnectionInfo[] { connectionInfo }),
+    transport = new ClientMessageTransport(maxRetries,
+                                           new ConnectionAddressProvider(new ConnectionInfo[] { connectionInfo }),
                                            5000, this.connectionManager, handshakeErrorHandler,
                                            this.transportMessageFactory, new WireProtocolAdaptorFactoryImpl());
   }
@@ -121,9 +119,8 @@ public class ClientMessageTransportTest extends TCTestCase {
     int port = listener.getBindPort();
 
     final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, port);
-    transport = new ClientMessageTransport(0,
-                                           new ConfigBasedConnectionAddressProvider(new ConnectionInfo[] { connInfo }),
-                                           1000, commsMgr.getConnectionManager(), this.handshakeErrorHandler,
+    transport = new ClientMessageTransport(0, new ConnectionAddressProvider(new ConnectionInfo[] { connInfo }), 1000,
+                                           commsMgr.getConnectionManager(), this.handshakeErrorHandler,
                                            this.transportMessageFactory, new WireProtocolAdaptorFactoryImpl());
     transport.open();
     assertTrue(transport.isConnected());
