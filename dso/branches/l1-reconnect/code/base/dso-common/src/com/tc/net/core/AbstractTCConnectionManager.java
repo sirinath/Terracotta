@@ -30,7 +30,8 @@ abstract class AbstractTCConnectionManager implements TCConnectionManager {
     privateComm = (comm == null);
 
     if (privateComm) {
-      this.comm = (AbstractTCComm) new TCCommFactory().getInstance(true);
+      this.comm = new TCCommJDK14();
+      this.comm.start();
     } else {
       this.comm = (AbstractTCComm) comm;
     }
