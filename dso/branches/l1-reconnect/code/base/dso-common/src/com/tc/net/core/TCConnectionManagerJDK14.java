@@ -21,7 +21,7 @@ import java.nio.channels.ServerSocketChannel;
  */
 public class TCConnectionManagerJDK14 extends AbstractTCConnectionManager {
   public TCConnectionManagerJDK14() {
-    super(null);
+    super();
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {

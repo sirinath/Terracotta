@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.core;
 
@@ -21,20 +22,15 @@ import java.util.Set;
 
 /**
  * Base class for ConnectionManagers
- *
+ * 
  * @author teck
  */
 abstract class AbstractTCConnectionManager implements TCConnectionManager {
 
-  AbstractTCConnectionManager(TCComm comm) {
-    privateComm = (comm == null);
+  AbstractTCConnectionManager() {
 
-    if (privateComm) {
-      this.comm = new TCCommJDK14();
-      this.comm.start();
-    } else {
-      this.comm = (AbstractTCComm) comm;
-    }
+    this.comm = new TCCommJDK14();
+    this.comm.start();
 
     this.connEvents = new ConnectionEvents();
     this.listenerEvents = new ListenerEvents();
@@ -134,10 +130,7 @@ abstract class AbstractTCConnectionManager implements TCConnectionManager {
     if (shutdown.attemptSet()) {
       closeAllListeners();
       asynchCloseAllConnections();
-
-      if (privateComm) {
-        comm.stop();
-      }
+      comm.stop();
     }
   }
 
@@ -230,7 +223,6 @@ abstract class AbstractTCConnectionManager implements TCConnectionManager {
   private final Set                     connections            = new HashSet();
   private final Set                     listeners              = new HashSet();
   private final SetOnceFlag             shutdown               = new SetOnceFlag();
-  private final boolean                 privateComm;
   private final ConnectionEvents        connEvents;
   private final ListenerEvents          listenerEvents;
 
