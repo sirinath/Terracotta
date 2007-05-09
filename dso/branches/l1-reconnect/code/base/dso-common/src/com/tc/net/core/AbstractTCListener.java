@@ -48,11 +48,7 @@ abstract class AbstractTCListener implements TCListener {
     this.port = ss.getLocalPort();
     this.sockAddr = new TCSocketAddress(this.addr, this.port);
     this.factory = factory;
-    this.staticEvent = new TCListenerEvent() {
-      public TCListener getSource() {
-        return AbstractTCListener.this;
-      }
-    };
+    this.staticEvent = new TCListenerEvent(this);
   }
 
   abstract protected void stopImpl(Runnable callback);
