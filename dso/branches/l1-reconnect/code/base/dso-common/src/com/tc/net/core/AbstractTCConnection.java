@@ -36,7 +36,7 @@ import java.util.List;
  */
 abstract class AbstractTCConnection implements TCConnection {
 
-  AbstractTCConnection(TCConnectionEventListener listener, TCProtocolAdaptor adaptor, AbstractTCConnectionManager parent) {
+  AbstractTCConnection(TCConnectionEventListener listener, TCProtocolAdaptor adaptor, TCConnectionManagerJDK14 parent) {
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
 
@@ -314,25 +314,25 @@ abstract class AbstractTCConnection implements TCConnection {
     }
   }
 
-  public static final long                  NO_CONNECT_TIME     = -1L;
-  protected static final TCLogger           logger              = TCLogging.getLogger(TCConnection.class);
+  public static final long               NO_CONNECT_TIME     = -1L;
+  protected static final TCLogger        logger              = TCLogging.getLogger(TCConnection.class);
 
-  private static final int                  CONNECT             = 0;
-  private static final int                  EOF                 = 1;
-  private static final int                  ERROR               = 2;
-  private static final int                  CLOSE               = 3;
+  private static final int               CONNECT             = 0;
+  private static final int               EOF                 = 1;
+  private static final int               ERROR               = 2;
+  private static final int               CLOSE               = 3;
 
-  private final AbstractTCConnectionManager parent;
-  private final SetOnceFlag[]               eventFlags          = new SetOnceFlag[4];
-  private final SynchronizedLong            lastActivityTime    = new SynchronizedLong(System.currentTimeMillis());
-  private final SynchronizedLong            connectTime         = new SynchronizedLong(NO_CONNECT_TIME);
-  private final TCConnectionEvent           staticEvent;
-  private final List                        eventListeners      = new CopyOnWriteArrayList();
-  private final TCProtocolAdaptor           protocolAdaptor;
-  private final SynchronizedBoolean         isSocketEndpoint    = new SynchronizedBoolean(false);
-  private final SetOnceFlag                 closed              = new SetOnceFlag();
-  private final SynchronizedBoolean         connected           = new SynchronizedBoolean(false);
-  private final SetOnceRef                  localSocketAddress  = new SetOnceRef();
-  private final SetOnceRef                  remoteSocketAddress = new SetOnceRef();
+  private final TCConnectionManagerJDK14 parent;
+  private final SetOnceFlag[]            eventFlags          = new SetOnceFlag[4];
+  private final SynchronizedLong         lastActivityTime    = new SynchronizedLong(System.currentTimeMillis());
+  private final SynchronizedLong         connectTime         = new SynchronizedLong(NO_CONNECT_TIME);
+  private final TCConnectionEvent        staticEvent;
+  private final List                     eventListeners      = new CopyOnWriteArrayList();
+  private final TCProtocolAdaptor        protocolAdaptor;
+  private final SynchronizedBoolean      isSocketEndpoint    = new SynchronizedBoolean(false);
+  private final SetOnceFlag              closed              = new SetOnceFlag();
+  private final SynchronizedBoolean      connected           = new SynchronizedBoolean(false);
+  private final SetOnceRef               localSocketAddress  = new SetOnceRef();
+  private final SetOnceRef               remoteSocketAddress = new SetOnceRef();
 
 }

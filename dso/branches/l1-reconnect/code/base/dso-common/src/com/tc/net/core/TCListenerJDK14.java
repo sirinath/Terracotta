@@ -31,24 +31,24 @@ import java.util.Iterator;
  * @author teck
  */
 final class TCListenerJDK14 implements TCListener {
-  protected final static TCLogger           logger          = TCLogging.getLogger(TCListener.class);
+  protected final static TCLogger         logger          = TCLogging.getLogger(TCListener.class);
 
-  private final ServerSocketChannel         ssc;
-  private final TCCommJDK14                 comm;
-  private final TCConnectionEventListener   listener;
-  private final AbstractTCConnectionManager parent;
-  private final InetAddress                 addr;
-  private final int                         port;
-  private final TCSocketAddress             sockAddr;
-  private final TCListenerEvent             staticEvent;
-  private final SetOnceFlag                 closeEventFired = new SetOnceFlag();
-  private final SetOnceFlag                 stopPending     = new SetOnceFlag();
-  private final SetOnceFlag                 stopped         = new SetOnceFlag();
-  private final CopyOnWriteArraySet         listeners       = new CopyOnWriteArraySet();
-  private final ProtocolAdaptorFactory      factory;
+  private final ServerSocketChannel       ssc;
+  private final TCCommJDK14               comm;
+  private final TCConnectionEventListener listener;
+  private final TCConnectionManagerJDK14  parent;
+  private final InetAddress               addr;
+  private final int                       port;
+  private final TCSocketAddress           sockAddr;
+  private final TCListenerEvent           staticEvent;
+  private final SetOnceFlag               closeEventFired = new SetOnceFlag();
+  private final SetOnceFlag               stopPending     = new SetOnceFlag();
+  private final SetOnceFlag               stopped         = new SetOnceFlag();
+  private final CopyOnWriteArraySet       listeners       = new CopyOnWriteArraySet();
+  private final ProtocolAdaptorFactory    factory;
 
   TCListenerJDK14(ServerSocketChannel ssc, ProtocolAdaptorFactory factory, TCCommJDK14 comm,
-                  TCConnectionEventListener listener, AbstractTCConnectionManager parent) {
+                  TCConnectionEventListener listener, TCConnectionManagerJDK14 managerJDK14) {
     this.addr = ssc.socket().getInetAddress();
     this.port = ssc.socket().getLocalPort();
     this.sockAddr = new TCSocketAddress(this.addr, this.port);
@@ -57,7 +57,7 @@ final class TCListenerJDK14 implements TCListener {
     this.ssc = ssc;
     this.comm = comm;
     this.listener = listener;
-    this.parent = parent;
+    this.parent = managerJDK14;
   }
 
   protected void stopImpl(Runnable callback) {

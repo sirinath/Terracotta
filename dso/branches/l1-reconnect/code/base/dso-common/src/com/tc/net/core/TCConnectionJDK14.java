@@ -41,13 +41,13 @@ final class TCConnectionJDK14 extends AbstractTCConnection implements TCJDK14Cha
 
   // for creating unconnected client connections
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor,
-                    AbstractTCConnectionManager parent) {
-    this(listener, comm, adaptor, null, parent);
+                    TCConnectionManagerJDK14 managerJDK14) {
+    this(listener, comm, adaptor, null, managerJDK14);
   }
 
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor, SocketChannel ch,
-                    AbstractTCConnectionManager parent) {
-    super(listener, adaptor, parent);
+                    TCConnectionManagerJDK14 managerJDK14) {
+    super(listener, adaptor, managerJDK14);
 
     Assert.assertNotNull(comm);
     this.comm = comm;
