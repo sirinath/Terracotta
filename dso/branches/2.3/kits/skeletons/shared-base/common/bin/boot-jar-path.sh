@@ -23,20 +23,28 @@ esac
 # For Cygwin, ensure paths are in UNIX format before anything is touched
 if $cygwin; then
   [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
-  [ -n "$TC_INSTALL_DIR" ] && JAVA_HOME=`cygpath --unix "$TC_INSTALL_DIR"`
+  [ -n "$TC_INSTALL_DIR" ] && TC_INSTALL_DIR=`cygpath --unix "$TC_INSTALL_DIR"`
+fi
+
+if [ ! -d "$JAVA_HOME" ]; then
+  echo "JAVA_HOME is not set properly."
+  exit 1
+fi
+
+if [ ! -d "$TC_INSTALL_DIR" ]; then
+  echo "TC_INSTALL_DIR is not set properly."
+  exit 1
 fi
 
 JAVACMD=${JAVA_HOME}/bin/java
 TC_JAR=${TC_INSTALL_DIR}/lib/tc.jar
 
-# For Cygwin, ensure paths are in UNIX format before anything is touched
 if $cygwin; then
-  [ -n "$JAVACMD" ] && JAVA_HOME=`cygpath --windows "$JAVACMD"`
-  [ -n "$TC_JAR" ] && TC_INSTALL_DIR=`cygpath --windows "$TC_JAR"`
+  [ -n "$TC_JAR" ] && TC_JAR=`cygpath --windows "$TC_JAR"`
 fi
 
 if test -z "$DSO_BOOT_JAR"; then
-  DSO_BOOT_JAR_NAME="`"${JAVACMD}" -cp "${TC_JAR}" com.tc.object.tools.BootJarSignature`"
+  DSO_BOOT_JAR_NAME=`"${JAVACMD}" -cp "${TC_JAR}" com.tc.object.tools.BootJarSignature`
   __BOOT_JAR_SIG_EXIT_CODE="$?"
   if test "$__BOOT_JAR_SIG_EXIT_CODE" != 0; then
     echo "$0: We were unable to determine the correct"
@@ -52,18 +60,18 @@ if test -z "$DSO_BOOT_JAR"; then
   DSO_BOOT_JAR="${TC_INSTALL_DIR}/lib/dso-boot/${DSO_BOOT_JAR_NAME}"
 fi
 
-# For Cygwin, ensure paths are in UNIX format before anything is touched
-if $cygwin; then
-  [ -n "$DSO_BOOT_JAR" ] && JAVA_HOME=`cygpath --windows "$DSO_BOOT_JAR"`
-fi
-
 if test \! -f "${DSO_BOOT_JAR}"; then
+  if $cygwin; then
+    [ -n "$DSO_BOOT_JAR" ] && DSO_BOOT_JAR=`cygpath --windows "$DSO_BOOT_JAR"`
+    [ -n "$TC_INSTALL_DIR" ] && TC_INSTALL_DIR=`cygpath --windows "$TC_INSTALL_DIR"`
+  fi
+
   if test -n "${TC_CONFIG_PATH}"; then
    "${JAVACMD}" -Dtc.install-root="${TC_INSTALL_DIR}" -cp "${TC_JAR}" com.tc.object.tools.BootJarTool -o "${DSO_BOOT_JAR}" -f "${TC_CONFIG_PATH}"
   else
    "${JAVACMD}" -Dtc.install-root="${TC_INSTALL_DIR}" -cp "${TC_JAR}" com.tc.object.tools.BootJarTool -o "${DSO_BOOT_JAR}"
   fi
-  if test $? != 0; then
+  if test "$?" != 0; then
     exit 14
   fi
 fi

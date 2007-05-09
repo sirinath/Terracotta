@@ -22,6 +22,16 @@ rem
 ::                  specific location under %TC_INSTALL_DIR%\lib\dso-boot.
 ::
 
+if not "x%TC_INSTALL_DIR%"=="x" goto tc_have_install_root
+echo "TC_INSTALL_ROOT must be set to the Terracotta kit location."
+exit 1
+
+:tc_have_install_root
+if not exist "%TC_INSTALL_ROOT%\lib\tc.jar" goto tc_have_valid_install_root
+echo "TC_INSTALL_ROOT is not set properly."
+exit 2
+
+:tc_have_valid_install_root
 if not exist "%JAVA_HOME%" set JAVA_HOME=%TC_INSTALL_DIR%\jre
 set JAVACMD=%JAVA_HOME%\bin\java
 
