@@ -7,8 +7,11 @@ package com.tc.net.core;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.TCInternalError;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.core.event.TCListenerEvent;
+import com.tc.net.core.event.TCListenerEventListener;
 import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.runtime.Os;
@@ -36,7 +39,9 @@ import java.util.Set;
  * 
  * @author teck
  */
-class TCCommJDK14 extends AbstractTCComm {
+class TCCommJDK14 implements TCComm, TCListenerEventListener {
+
+  protected static final TCLogger logger = TCLogging.getLogger(TCComm.class);
 
   TCCommJDK14() {
     // nada
@@ -497,6 +502,37 @@ class TCCommJDK14 extends AbstractTCComm {
       }
 
       cleanupChannel(sc, null);
+    }
+  }
+
+  public final boolean isStarted() {
+    return started;
+  }
+
+  public final boolean isStopped() {
+    return !started;
+  }
+
+  public final synchronized void start() {
+    if (!started) {
+      started = true;
+      if (logger.isDebugEnabled()) {
+        logger.debug("Start requested");
+      }
+
+      startImpl();
+    }
+  }
+
+  private volatile boolean started = false;
+
+  public final synchronized void stop() {
+    if (started) {
+      started = false;
+      if (logger.isDebugEnabled()) {
+        logger.debug("Stop requested");
+      }
+      stopImpl();
     }
   }
 

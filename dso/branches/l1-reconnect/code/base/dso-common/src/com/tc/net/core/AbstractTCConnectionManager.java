@@ -218,7 +218,7 @@ abstract class AbstractTCConnectionManager implements TCConnectionManager {
 
   protected static final TCLogger       logger                 = TCLogging.getLogger(TCConnectionManager.class);
 
-  protected final AbstractTCComm        comm;
+  protected final TCCommJDK14           comm;
 
   private final Set                     connections            = new HashSet();
   private final Set                     listeners              = new HashSet();
