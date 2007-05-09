@@ -424,7 +424,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
           logger.info(errMsg);
         }
 
-        conn.fireErrorEvent(errMsg);
+        conn.fireErrorEvent(new Exception(errMsg), null);
       }
     } catch (IOException ioe) {
       if (logger.isInfoEnabled()) {

@@ -14,8 +14,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.core.event.TCConnectionErrorEvent;
-import com.tc.net.core.event.TCConnectionEvent;
+import com.tc.net.core.event.TCConnectionEventCaller;
 import com.tc.net.core.event.TCConnectionEventListener;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
@@ -36,7 +35,6 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,19 +47,14 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
   private static final long              NO_CONNECT_TIME     = -1L;
   private static final TCLogger          logger              = TCLogging.getLogger(TCConnection.class);
-  private static final int               CONNECT             = 0;
-  private static final int               EOF                 = 1;
-  private static final int               ERROR               = 2;
-  private static final int               CLOSE               = 3;
   private static final long              WARN_THRESHOLD      = 0x400000L;                                       // 4MB
 
   private final LinkedList               writeContexts       = new LinkedList();
   private final TCCommJDK14              comm;
   private final TCConnectionManagerJDK14 parent;
-  private final SetOnceFlag[]            eventFlags          = new SetOnceFlag[4];
+  private final TCConnectionEventCaller  eventCaller         = new TCConnectionEventCaller(logger);
   private final SynchronizedLong         lastActivityTime    = new SynchronizedLong(System.currentTimeMillis());
   private final SynchronizedLong         connectTime         = new SynchronizedLong(NO_CONNECT_TIME);
-  private final TCConnectionEvent        staticEvent;
   private final List                     eventListeners      = new CopyOnWriteArrayList();
   private final TCProtocolAdaptor        protocolAdaptor;
   private final SynchronizedBoolean      isSocketEndpoint    = new SynchronizedBoolean(false);
@@ -86,15 +79,6 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     this.protocolAdaptor = adaptor;
 
     if (listener != null) addListener(listener);
-
-    staticEvent = new TCConnectionEvent(this);
-
-    eventFlags[CONNECT] = new SetOnceFlag();
-    eventFlags[EOF] = new SetOnceFlag();
-    eventFlags[ERROR] = new SetOnceFlag();
-    eventFlags[CLOSE] = new SetOnceFlag();
-
-    Assert.assertNoNullElements(eventFlags);
 
     Assert.assertNotNull(comm);
     this.comm = comm;
@@ -123,7 +107,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     Assert.assertNotNull("channel", channel);
     recordSocketAddress(channel.socket());
     setConnected(true);
-    fireConnectEvent();
+    eventCaller.fireConnectEvent(eventListeners, this);
   }
 
   private void connectImpl(TCSocketAddress addr, int timeout) throws IOException, TCTimeoutException {
@@ -227,7 +211,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         logger.info("error reading from channel " + channel.toString() + ": " + ioe.getMessage());
       }
 
-      fireErrorEvent(ioe, null);
+      eventCaller.fireErrorEvent(eventListeners, this, ioe, null);
       return;
     }
 
@@ -238,7 +222,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
       if (debug) logger.debug("EOF read on connection " + channel.toString());
 
-      fireEndOfFileEvent();
+      eventCaller.fireEndOfFileEvent(eventListeners, this);
       return;
     }
 
@@ -290,7 +274,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
           break;
         }
 
-        fireErrorEvent(ioe, context.message);
+        eventCaller.fireErrorEvent(eventListeners, this, ioe, context.message);
       }
 
       if (debug) logger.debug("Wrote " + bytesWritten + " bytes on connection " + channel.toString());
@@ -418,7 +402,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         parent.connectionClosed(TCConnectionJDK14.this);
 
         if (fireClose) {
-          fireCloseEvent();
+          eventCaller.fireCloseEvent(eventListeners, TCConnectionJDK14.this);
         }
 
         if (latch != null) latch.release();
@@ -549,7 +533,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     try {
       protocolAdaptor.addReadData(this, data, length);
     } catch (Exception e) {
-      fireErrorEvent(e, null);
+      eventCaller.fireErrorEvent(eventListeners, this, e, null);
       return;
     }
   }
@@ -563,71 +547,13 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     return protocolAdaptor.getReadBuffers();
   }
 
-  protected final void fireErrorEvent(String message) {
-    fireErrorEvent(new Exception(message), null);
-  }
-
-  protected final void fireErrorEvent(String message, TCNetworkMessage context) {
-    fireErrorEvent(new Exception(message), context);
-  }
-
-  final void fireErrorEvent(final Exception exception, final TCNetworkMessage context) {
-    final TCConnectionErrorEvent event = new TCConnectionErrorEvent(this, exception, context);
-    fireEvent(ERROR, event);
-  }
-
-  private final void fireConnectEvent() {
-    fireEvent(CONNECT, staticEvent);
-  }
-
-  private final void fireEndOfFileEvent() {
-    fireEvent(EOF, staticEvent);
-  }
-
-  private final void fireCloseEvent() {
-    fireEvent(CLOSE, staticEvent);
+  protected final void fireErrorEvent(Exception e, TCNetworkMessage context) {
+    eventCaller.fireErrorEvent(eventListeners, this, e, context);
   }
 
   public final Socket detach() throws IOException {
     this.parent.removeConnection(this);
     return detachImpl();
-  }
-
-  private final void fireEvent(final int type, final TCConnectionEvent event) {
-    final SetOnceFlag flag = eventFlags[type];
-    Assert.assertNotNull("event flag for type " + type, flag);
-
-    if (flag.attemptSet()) {
-      for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
-        TCConnectionEventListener listener = (TCConnectionEventListener) iter.next();
-        Assert.assertNotNull("listener", listener);
-        try {
-          switch (type) {
-            case EOF: {
-              listener.endOfFileEvent(event);
-              break;
-            }
-            case CLOSE: {
-              listener.closeEvent(event);
-              break;
-            }
-            case ERROR: {
-              listener.errorEvent((TCConnectionErrorEvent) event);
-              break;
-            }
-            case CONNECT: {
-              listener.connectEvent(event);
-              break;
-            }
-            default: {
-              throw new InternalError("unknown event type " + type);
-            }
-          }
-        } catch (Exception e) {
-          logger.error("Unhandled exception in event handler", e);
-        }
-      }
-    }
   }
 
   private static class WriteContext {
