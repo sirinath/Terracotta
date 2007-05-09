@@ -40,8 +40,6 @@ public abstract class BaseObject implements IFillStyleConsts, ImageObserver {
 
 	private transient ImageIcon image;
 
-	private transient BufferedImage imageCache;
-
 	private List listeners;
 
 	private int grabbedAnchor;
