@@ -14,7 +14,7 @@ import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.Constants;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.core.TCConnectionManagerFactory;
+import com.tc.net.core.TCConnectionManagerJDK14;
 import com.tc.net.core.TCListener;
 import com.tc.net.protocol.NetworkStackHarness;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
@@ -84,7 +84,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     privateConnMgr = (connMgr == null);
 
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerFactory().getInstance();
+      this.connectionManager = new TCConnectionManagerJDK14();
     } else {
       this.connectionManager = connMgr;
     }

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.core;
 
@@ -18,22 +19,17 @@ import java.nio.channels.ServerSocketChannel;
  * 
  * @author teck
  */
-class TCConnectionManagerJDK14 extends AbstractTCConnectionManager {
-  TCConnectionManagerJDK14(TCComm comm) {
-    super(comm);
-
-    if (comm != null) {
-      if (!(comm instanceof TCCommJDK14)) { throw new IllegalArgumentException("Illegal TCComm instance type: "
-                                                                               + comm.getClass().getName()); }
-    }
+public class TCConnectionManagerJDK14 extends AbstractTCConnectionManager {
+  public TCConnectionManagerJDK14() {
+    super(null);
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {
     return new TCConnectionJDK14(listener, (TCCommJDK14) comm, adaptor, this);
   }
 
-  protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog, boolean reuseAddr)
-      throws IOException {
+  protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog,
+                                          boolean reuseAddr) throws IOException {
     ServerSocketChannel ssc = ServerSocketChannel.open();
     ssc.configureBlocking(false);
     ServerSocket serverSocket = ssc.socket();
@@ -43,7 +39,8 @@ class TCConnectionManagerJDK14 extends AbstractTCConnectionManager {
     try {
       serverSocket.bind(new InetSocketAddress(addr.getAddress(), addr.getPort()), backlog);
     } catch (IOException ioe) {
-      logger.warn("Unable to bind socket on address " + addr.getAddress() + ", port " + addr.getPort() + ", " + ioe.getMessage());
+      logger.warn("Unable to bind socket on address " + addr.getAddress() + ", port " + addr.getPort() + ", "
+                  + ioe.getMessage());
       throw ioe;
     }
 
