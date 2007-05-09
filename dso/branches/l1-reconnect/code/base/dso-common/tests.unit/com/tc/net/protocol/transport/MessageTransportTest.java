@@ -13,7 +13,6 @@ import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.MockConnectionManager;
 import com.tc.net.core.MockTCConnection;
-import com.tc.net.core.TCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
@@ -140,11 +139,7 @@ public class MessageTransportTest extends TCTestCase {
     assertTrue(clientEventMonitor.waitForConnect(1000));
     assertTrue(extraMonitor.waitForConnect(1000));
 
-    TCConnectionEvent event = new TCConnectionEvent() {
-      public TCConnection getSource() {
-        return clientConnection;
-      }
-    };
+    TCConnectionEvent event = new TCConnectionEvent(clientConnection);
 
     clientTransport.closeEvent(event);
     assertTrue(clientEventMonitor.waitForDisconnect(1000));
@@ -167,11 +162,7 @@ public class MessageTransportTest extends TCTestCase {
     TransportEventMonitor extraMonitor = new TransportEventMonitor();
     serverTransport.addTransportListener(extraMonitor);
 
-    TCConnectionEvent event = new TCConnectionEvent() {
-      public TCConnection getSource() {
-        return serverConnection;
-      }
-    };
+    TCConnectionEvent event = new TCConnectionEvent(serverConnection);
 
     serverTransport.closeEvent(event);
     assertTrue(serverEventMonitor.waitForDisconnect(1000));

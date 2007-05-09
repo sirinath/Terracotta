@@ -13,7 +13,6 @@ import com.tc.net.core.ConfigBasedConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.core.MockConnectionManager;
 import com.tc.net.core.MockTCConnection;
-import com.tc.net.core.TCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManager;
@@ -81,11 +80,7 @@ public class ClientMessageTransportTest extends TCTestCase {
     }
 
     connection.fail = true;
-    transport.closeEvent(new TCConnectionEvent() {
-      public TCConnection getSource() {
-        return connection;
-      }
-    });
+    transport.closeEvent(new TCConnectionEvent(connection));
 
     // FIXME 2005-12-14 -- We should restore this test.
     // assertNull(connection.connectCalls.poll(3000));

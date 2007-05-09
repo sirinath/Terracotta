@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.core;
 
@@ -30,7 +31,7 @@ import java.util.List;
 
 /**
  * TCConnection implementation that is <b>not </b> specific to a particular IO library and/or JDK release
- *
+ * 
  * @author teck
  */
 abstract class AbstractTCConnection implements TCConnection {
@@ -44,15 +45,7 @@ abstract class AbstractTCConnection implements TCConnection {
 
     if (listener != null) addListener(listener);
 
-    staticEvent = new TCConnectionEvent() {
-      public TCConnection getSource() {
-        return AbstractTCConnection.this;
-      }
-
-      public String toString() {
-        return AbstractTCConnection.this.toString();
-      }
-    };
+    staticEvent = new TCConnectionEvent(this);
 
     eventFlags[CONNECT] = new SetOnceFlag();
     eventFlags[EOF] = new SetOnceFlag();
@@ -256,26 +249,7 @@ abstract class AbstractTCConnection implements TCConnection {
   }
 
   protected void fireErrorEvent(final Exception exception, final TCNetworkMessage context) {
-    final TCConnectionErrorEvent event = new TCConnectionErrorEvent() {
-      public Exception getException() {
-        return exception;
-      }
-
-      public TCConnection getSource() {
-        return AbstractTCConnection.this;
-      }
-
-      public TCNetworkMessage getMessageContext() {
-        return context;
-      }
-
-      public String toString() {
-        return AbstractTCConnection.this + ", exception: "
-               + ((exception != null) ? exception.toString() : "[null exception]") + ", message context: "
-               + ((context != null) ? context.toString() : "[no message context]");
-      }
-    };
-
+    final TCConnectionErrorEvent event = new TCConnectionErrorEvent(this, exception, context);
     fireEvent(ERROR, event);
   }
 
