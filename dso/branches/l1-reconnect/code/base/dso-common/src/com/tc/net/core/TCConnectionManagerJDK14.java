@@ -187,7 +187,7 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
     }
   }
 
-  void removeConnection(AbstractTCConnection connection) {
+  void removeConnection(TCConnection connection) {
     synchronized (connections) {
       connections.remove(connection);
     }
