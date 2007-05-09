@@ -175,7 +175,6 @@ modules:
         - dso-l1
         - dso-common
         - dso-common-jdk15
-        - deploy
   - ui-eclipse:
       options:
         jdk: J2SE-1.5
@@ -215,7 +214,6 @@ modules:
         - dso-common
         - dso-common-jdk15
         - management
-        - deploy
         - dso-l1
         - legacy-test-tree
         - simulator
@@ -252,7 +250,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
   - dso-tests-jdk15:
@@ -267,7 +264,6 @@ modules:
         - linked-child-process
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - dso-l1-jdk15
         - legacy-test-tree
@@ -289,7 +285,6 @@ modules:
         - dso-l2-common
         - dso-l1-weblogic
         - simulator
-        - deploy
         - thirdparty
         - dso-system-tests
         - legacy-test-tree
@@ -310,7 +305,6 @@ modules:
         - dso-l1-session
         - management
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
   - dso-spring-tests:
@@ -327,7 +321,6 @@ modules:
         - dso-l1-weblogic
         - dso-spring
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
@@ -350,7 +343,6 @@ modules:
         - dso-spring
         - dso-spring-tests
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
@@ -368,7 +360,6 @@ modules:
         - dso-l1-weblogic
         - dso-spring
         - simulator
-        - deploy
         - thirdparty
         - dso-system-tests
         - legacy-test-tree
@@ -385,7 +376,6 @@ modules:
         - dso-l1
         - dso-l1-jdk15
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
   - modules-common-1.0:
@@ -410,7 +400,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
@@ -437,7 +426,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
   - clustered-commons-collections-3.1:
@@ -447,7 +435,6 @@ modules:
       dependencies:
         - aspectwerkz
         - common
-        - deploy
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -471,7 +458,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
@@ -490,7 +476,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
@@ -509,7 +494,6 @@ modules:
         - dso-l1
         - dso-l1-weblogic
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
@@ -527,7 +511,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
   - clustered-hibernate-3.1.2:
@@ -545,7 +528,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
@@ -562,7 +544,6 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - simulator
-        - deploy
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
