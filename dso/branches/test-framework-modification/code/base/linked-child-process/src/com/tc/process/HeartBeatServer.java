@@ -171,8 +171,7 @@ public class HeartBeatServer {
       } catch (Exception e) {
         if (!killed) {
           // only removed itself if client isn't being sent a kill signal
-          // this avoids ConcurrentModificationException in sendKillSignalToChildren
-          // iteration
+          log("Dead client detected: " + clientName + ". Exception message: " + e.getMessage());
           server.removeDeadClient(this);
         }
       }
