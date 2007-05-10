@@ -306,7 +306,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
                                                                                           L2DumperMBean.class, true);
-      mbean.doServerDump();
+      while (true) {
+        try {
+          mbean.doServerDump();
+          break;
+        } catch (Exception e) {
+          System.out.println("Could not find L2DumperMBean... sleep for 1 sec.");
+          Thread.sleep(1000);
+        }
+      }
+
       if (pid != 0) {
         mbean.setThreadDumpCount(getThreadDumpCount());
         mbean.setThreadDumpInterval(getThreadDumpInterval());

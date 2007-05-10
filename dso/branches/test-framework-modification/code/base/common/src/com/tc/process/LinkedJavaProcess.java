@@ -19,8 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 
 /**
  * A child Java process that uses a socket-based ping protocol to make sure that if the parent dies, the child dies a
@@ -158,16 +156,16 @@ public class LinkedJavaProcess {
     if (this.arguments != null) fullCommandList.addAll(Arrays.asList(this.arguments));
 
     String[] fullCommand = (String[]) fullCommandList.toArray(new String[fullCommandList.size()]);
-    
-    //TODO: remove -- block of code
+
+    // TODO: remove -- block of code
     String[] list = makeEnv(env);
     System.err.print("******  env=[ ");
     for (int i = 0; i < list.length; i++) {
       System.err.print(list[i] + ", ");
     }
     System.err.println(" ]");
-    
-//    this.process = Runtime.getRuntime().exec(fullCommand, makeEnv(env), this.directory);
+
+    // this.process = Runtime.getRuntime().exec(fullCommand, makeEnv(env), this.directory);
     this.process = Runtime.getRuntime().exec(fullCommand, list, this.directory);
     this.running = true;
   }
@@ -215,13 +213,23 @@ public class LinkedJavaProcess {
         path = path + File.pathSeparator + crappleDirs;
         env.put("PATH", path);
       }
-      
-      Properties props = System.getProperties();
-      Set keys = props.keySet();
-      for (Iterator iter = keys.iterator(); iter.hasNext();) {
-        String key = (String) iter.next();
-        String value = props.getProperty(key);
-        env.put(key, value);
+
+      // TODO: remove -- after testing
+      // Properties props = System.getProperties();
+      // Set keys = props.keySet();
+      // for (Iterator iter = keys.iterator(); iter.hasNext();) {
+      // String key = (String) iter.next();
+      // String value = props.getProperty(key);
+      // env.put(key, value);
+      // }
+
+      if (!env.containsKey("tc.base-dir")) {
+        String tcBaseDir = System.getProperty("tc.base-dir");
+
+        // TODO: remove
+        System.err.println("******  tcBaseDir=[" + tcBaseDir + "]");
+
+        env.put("tc.base-dir", tcBaseDir);
       }
     }
   }
