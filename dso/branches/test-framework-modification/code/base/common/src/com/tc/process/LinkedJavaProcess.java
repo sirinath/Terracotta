@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * A child Java process that uses a socket-based ping protocol to make sure that if the parent dies, the child dies a
@@ -212,6 +214,14 @@ public class LinkedJavaProcess {
         String path = (String) env.get("PATH");
         path = path + File.pathSeparator + crappleDirs;
         env.put("PATH", path);
+      }
+      
+      Properties props = System.getProperties();
+      Set keys = props.keySet();
+      for (Iterator iter = keys.iterator(); iter.hasNext();) {
+        String key = (String) iter.next();
+        String value = props.getProperty(key);
+        env.put(key, value);
       }
     }
   }
