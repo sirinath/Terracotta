@@ -30,6 +30,11 @@ function _executable() {
 }
 
 function _validateWasHome() {
+    _info validating the sandbox environment...
+    if test -z "${WAS_SANDBOX}"; then
+        _warn WAS_SANDBOX not defined
+        return 1
+    fi
     _info validating the WAS_HOME environment...
     if test -z "${WAS_HOME}"; then
         _warn WAS_HOME not defined
@@ -50,7 +55,7 @@ function _createProfile() {
         _info
         _info "	==> THIS CAN TAKE A LONG TIME SO PLEASE BE PATIENT <=="
         _info
-        if ! "${WAS_HOME}/bin/manageprofiles.sh" -create -templatePath "${WAS_HOME}/profileTemplates/default" -portsFile "${binDir}/profiles/${1}.port-defs" -profileName "tc-${1}" -enableAdminSecurity false -isDeveloperServer; then
+        if ! "${WAS_HOME}/bin/manageprofiles.sh" -create -templatePath "${WAS_HOME}/profileTemplates/default" -portsFile "${WAS_SANDBOX}/profiles/${1}.port-defs" -profileName "tc-${1}" -enableAdminSecurity false -isDeveloperServer; then
             _warn unable to create profile "tc-${1}" 'for' port "${1}"
             return 1
         fi
@@ -60,7 +65,7 @@ function _createProfile() {
 }
 
 function _runWsAdmin() {
-    "${WAS_HOME}/bin/wsadmin.sh" -lang jython -profileName "tc-${1}" -javaoption -DprofileName="${1}" -f "${2}"
+    "${WAS_HOME}/bin/wsadmin.sh" -lang jython "$@"
     return $?
 }
 
@@ -74,7 +79,18 @@ function _deployWars() {
 function _startWebSphere() {
     if test "${2}" != "nodso"; then
         # Instrument WebSphere for use with Terracotta
-        _error Do not know how to instrument 'for' Terracotta just yet....
+        _runWsAdmin -connType NONE -javaoption -Denable.dso="true" -f "${WAS_SANDBOX}/toggle-dso.py"
+        __retVal="$?"
+        if test "${__retVal}" != "0"; then
+            return "${__retVal}"
+        fi
+    else
+        # Make sure DSO is not enabled in WebSphere
+        _runWsAdmin -connType NONE -javaoption -Denable.dso="false" -f "${WAS_SANDBOX}/toggle-dso.py"
+        __retVal="$?"
+        if test "${__retVal}" != "0"; then
+            return "${__retVal}"
+        fi
     fi
     "${WAS_HOME}/bin/startServer.sh" server1 -profileName "tc-${1}"
     return $?
