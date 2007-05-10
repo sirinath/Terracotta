@@ -38,6 +38,7 @@ import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.Node;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
+import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOOEventHandler;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
@@ -180,7 +181,7 @@ import javax.management.NotCompliantMBeanException;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- *
+ * 
  * @author steve
  */
 public class DistributedObjectServer extends SEDA {
@@ -368,12 +369,16 @@ public class DistributedObjectServer extends SEDA {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
 
-    // final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
-    final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
-    final NetworkStackHarnessFactory networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
-                                                                                                    new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                                    oooStage.getSink());
-
+    final NetworkStackHarnessFactory networkStackHarnessFactory;
+    final boolean useOOOLayer = false;
+    if (useOOOLayer) {
+      final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
+                                                                     new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
+                                                                     oooStage.getSink());
+    } else {
+      networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
+    }
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
                                                           connectionPolicy);
 
