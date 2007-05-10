@@ -32,15 +32,15 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   private final GroupManager         groupManager;
   private final StateManager         stateManager;
   private final L2ObjectStateManager l2ObjectStateManager;
-  private final Sink                 objectsSyncSink;
+  private final Sink                 objectsSyncRequestSink;
 
   public ReplicatedObjectManagerImpl(GroupManager groupManager, StateManager stateManager,
                                      L2ObjectStateManager l2ObjectStateManager, ObjectManager objectManager,
-                                     Sink objectsSyncSink) {
+                                     Sink objectsSyncRequestSink) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     this.objectManager = objectManager;
-    this.objectsSyncSink = objectsSyncSink;
+    this.objectsSyncRequestSink = objectsSyncRequestSink;
     this.l2ObjectStateManager = l2ObjectStateManager;
     l2ObjectStateManager.registerForL2ObjectStateChangeEvents(this);
     this.groupManager.registerForMessages(ObjectListSyncMessage.class, this);
@@ -65,12 +65,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   // Query current state of the other L2
-  public void query(NodeID nodeID) {
-    try {
-      groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncRequestMessage());
-    } catch (GroupException e) {
-      logger.error("Error Writting Msg : ", e);
-    }
+  public void query(NodeID nodeID) throws GroupException {
+    groupManager.sendTo(nodeID, ObjectListSyncMessageFactory.createObjectListSyncRequestMessage());
   }
 
   // TODO::Verify that message order is maintained.
@@ -125,7 +121,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     if (missingObjects == 0) {
       stateManager.moveNodeToPassiveStandby(nodeID);
     } else {
-      objectsSyncSink.add(new SyncObjectsRequest(nodeID));
+      objectsSyncRequestSink.add(new SyncObjectsRequest(nodeID));
     }
   }
 
