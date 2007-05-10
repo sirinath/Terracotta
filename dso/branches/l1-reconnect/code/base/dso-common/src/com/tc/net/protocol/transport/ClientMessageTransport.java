@@ -79,7 +79,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     synchronized (isOpen) {
       Assert.eval("can't open an already open transport", !isOpen.get());
       try {
-        connectionEstablisher.open();
+        wireNewConnection(connectionEstablisher.open());
         HandshakeResult result = handShake();
         if (result.isMaxConnectionsExceeded()) {
           // Hack to make the connection clear
@@ -233,8 +233,9 @@ public class ClientMessageTransport extends MessageTransportBase {
     }
   }
 
-  void reconnect() throws Exception {
+  void reconnect(TCConnection connection) throws Exception {
     Assert.eval(!isConnected());
+    wireNewConnection(connection);
     try {
       HandshakeResult result = handShake();
       sendAck();

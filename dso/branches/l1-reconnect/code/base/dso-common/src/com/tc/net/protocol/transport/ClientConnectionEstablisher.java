@@ -23,7 +23,7 @@ import java.io.IOException;
 /**
  * This guy establishes a connection to the server for the Client.
  */
-class ClientConnectionEstablisher implements Runnable, MessageTransportListener {
+public class ClientConnectionEstablisher implements Runnable, MessageTransportListener {
 
   private static final long               CONNECT_RETRY_INTERVAL = 1000;
 
@@ -69,48 +69,51 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
    * @throws TCTimeoutException
    * @throws MaxConnectionsExceededException
    */
-  public void open() throws TCTimeoutException, IOException {
+  public TCConnection open() throws TCTimeoutException, IOException {
     synchronized (connecting) {
       Assert.eval("Can't call open() concurrently", !connecting.get());
       connecting.set(true);
 
       try {
-        connectTryAllOnce();
+        return connectTryAllOnce();
       } finally {
         connecting.set(false);
       }
     }
   }
 
-  private void connectTryAllOnce() throws TCTimeoutException, IOException {
+  private TCConnection connectTryAllOnce() throws TCTimeoutException, IOException {
     final ConnectionAddressIterator addresses = connAddressProvider.getIterator();
+    TCConnection rv = null;
     while (addresses.hasNext()) {
       final ConnectionInfo connInfo = addresses.next();
       try {
         final TCSocketAddress csa = new TCSocketAddress(connInfo);
-        connect(csa);
-        return;
+        rv = connect(csa);
+        break;
       } catch (TCTimeoutException e) {
         if (!addresses.hasNext()) { throw e; }
       } catch (IOException e) {
         if (!addresses.hasNext()) { throw e; }
       }
     }
+    return rv;
   }
 
   /**
    * Tries to make a connection. This is a blocking call.
    * 
+   * @return
    * @throws TCTimeoutException
    * @throws IOException
    * @throws MaxConnectionsExceededException
    */
-  void connect(TCSocketAddress sa) throws TCTimeoutException, IOException {
+  TCConnection connect(TCSocketAddress sa) throws TCTimeoutException, IOException {
 
     TCConnection connection = this.connManager.createConnection(transport.getProtocolAdapter());
-    transport.wireNewConnection(connection);
     transport.fireTransportConnectAttemptEvent();
     connection.connect(sa, timeout);
+    return connection;
   }
 
   void disconnect() {
@@ -133,8 +136,8 @@ class ClientConnectionEstablisher implements Runnable, MessageTransportListener 
               logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to " + connInfo + ", timeout="
                           + timeout);
             }
-            connect(new TCSocketAddress(connInfo));
-            transport.reconnect();
+            TCConnection connection = connect(new TCSocketAddress(connInfo));
+            transport.reconnect(connection);
             connected = true;
           } catch (MaxConnectionsExceededException e) {
             throw e;
