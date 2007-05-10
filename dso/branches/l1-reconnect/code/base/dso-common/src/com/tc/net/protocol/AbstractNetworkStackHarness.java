@@ -37,7 +37,7 @@ public abstract class AbstractNetworkStackHarness implements NetworkStackHarness
   /**
    * Connects a new transport to an existing stack (server-side).
    */
-  public MessageTransport attachNewConnection(TCConnection connection) {
+  public final MessageTransport attachNewConnection(TCConnection connection) {
     Assert.eval("Attempt to connect a transport to a stack that hasn't been finalized.", finalized.isSet());
     this.transport.attachNewConnection(connection);
     return this.transport;
@@ -46,7 +46,7 @@ public abstract class AbstractNetworkStackHarness implements NetworkStackHarness
   /**
    * Creates and connects a new stack.
    */
-  public void finalizeStack() {
+  public final void finalizeStack() {
     if (finalized.attemptSet()) {
       if (isClientStack) {
         Assert.assertNotNull(this.channel);

@@ -577,26 +577,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       StringBuffer buf = new StringBuffer();
 
       buf.append("Interest modify request: ").append(channel.toString()).append("\n");
-      buf.append("Ops: ");
-
-      if ((interestOps & SelectionKey.OP_ACCEPT) != 0) {
-        buf.append(" ACCEPT");
-      }
-
-      if ((interestOps & SelectionKey.OP_CONNECT) != 0) {
-        buf.append(" CONNECT");
-      }
-
-      if ((interestOps & SelectionKey.OP_READ) != 0) {
-        buf.append(" READ");
-      }
-
-      if ((interestOps & SelectionKey.OP_WRITE) != 0) {
-        buf.append(" WRITE");
-      }
-
-      buf.append("\n");
-
+      buf.append("Ops: ").append(Constants.interestOpsToString(interestOps)).append("\n");
       buf.append("Set: ").append(set).append(", Remove: ").append(remove).append(", Add: ").append(add).append("\n");
       buf.append("Attachment: ");
 
