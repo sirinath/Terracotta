@@ -115,6 +115,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
     addClasspath(jvmArgs);
     addLibPath(jvmArgs);
     addTcBaseDir(jvmArgs);
+    add(jvmArgs);
   }
 
   private void addLibPath(List args) {
@@ -133,6 +134,12 @@ public class ExtraProcessServerControl extends ServerControlBase {
     String tcBaseDir = System.getProperty("tc.base-dir");
     if (tcBaseDir == null || tcBaseDir.equals("")) { throw new AssertionError("tc.base-dir is not set!"); }
     args.add("-Dtc.base-dir=" + tcBaseDir);
+  }
+
+  private void add(List args) {
+    String val = System.getProperty("tc.tests.info.property-files");
+    if (val == null || val.equals("")) { throw new AssertionError("tc.tests.info.property-files is not set!"); }
+    args.add("-Dtc.tests.info.property-files=" + val);
   }
 
   public void mergeSTDOUT() {

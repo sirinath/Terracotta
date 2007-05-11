@@ -22,7 +22,7 @@ public class TCServerMain {
     // TODO: remove -- block of code
     Properties props = System.getProperties();
     Set keys = props.keySet();
-    System.err.print("******  env=[ ");
+    System.err.print("******  main env=[ ");
     for (Iterator iter = keys.iterator(); iter.hasNext();) {
       String key = (String) iter.next();
       String val = props.getProperty(key);

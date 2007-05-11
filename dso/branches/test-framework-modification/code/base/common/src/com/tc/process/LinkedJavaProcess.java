@@ -213,24 +213,6 @@ public class LinkedJavaProcess {
         path = path + File.pathSeparator + crappleDirs;
         env.put("PATH", path);
       }
-
-      // TODO: remove -- after testing
-      // Properties props = System.getProperties();
-      // Set keys = props.keySet();
-      // for (Iterator iter = keys.iterator(); iter.hasNext();) {
-      // String key = (String) iter.next();
-      // String value = props.getProperty(key);
-      // env.put(key, value);
-      // }
-
-//      if (!env.containsKey("tc.base-dir")) {
-//        String tcBaseDir = System.getProperty("tc.base-dir");
-//
-//        // TODO: remove
-//        System.err.println("******  tcBaseDir=[" + tcBaseDir + "]");
-//
-//        env.put("tc.base-dir", tcBaseDir);
-//      }
     }
   }
 
