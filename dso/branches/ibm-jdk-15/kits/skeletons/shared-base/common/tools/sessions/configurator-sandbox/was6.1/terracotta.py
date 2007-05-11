@@ -8,7 +8,7 @@ class DSO:
 
     def __init__(self, adminTask, verbose=1):
         # Verify our Terracotta environment
-        self.dsoArgs = []
+        self.dsoArgs = ["-Xshareclasses:none"]
         self.verbose = verbose
 
         # I know there is a special JVM property for the boot classpath, but I don't have time to investigate
