@@ -223,14 +223,14 @@ public class LinkedJavaProcess {
       // env.put(key, value);
       // }
 
-      if (!env.containsKey("tc.base-dir")) {
-        String tcBaseDir = System.getProperty("tc.base-dir");
-
-        // TODO: remove
-        System.err.println("******  tcBaseDir=[" + tcBaseDir + "]");
-
-        env.put("tc.base-dir", tcBaseDir);
-      }
+//      if (!env.containsKey("tc.base-dir")) {
+//        String tcBaseDir = System.getProperty("tc.base-dir");
+//
+//        // TODO: remove
+//        System.err.println("******  tcBaseDir=[" + tcBaseDir + "]");
+//
+//        env.put("tc.base-dir", tcBaseDir);
+//      }
     }
   }
 
