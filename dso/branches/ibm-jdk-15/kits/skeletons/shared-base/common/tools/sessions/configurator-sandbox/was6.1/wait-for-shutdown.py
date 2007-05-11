@@ -2,16 +2,16 @@
 import time.sleep
 import java.lang.System
 
-_profile = java.lang.System.getProperty('profileName')
+profile = java.lang.System.getProperty('profileName')
 
 ################################################################################
 ## Helper functions
 ################################################################################
 
-def _info(s):
+def info(s):
     print '[INFO]  ' + s
 
-def _error(s):
+def error(s):
     print '[ERROR] ' + s
 
 ################################################################################
@@ -20,29 +20,29 @@ def _error(s):
 
 try:
     serverSearchString = 'type=Server,j2eeType=J2EEServer,node=' + AdminControl.getNode() + ',cell=' + AdminControl.getCell() + ',*'
-    _serverInstances = AdminControl.queryMBeans(serverSearchString)
-    if _serverInstances.size() != 1:
-        _error('Found ' + str(_serverInstances.size()) + ' servers, expected 1: ' + str(_serverInstances))
+    serverInstances = AdminControl.queryMBeans(serverSearchString)
+    if serverInstances.size() != 1:
+        error('Found ' + str(serverInstances.size()) + ' servers, expected 1: ' + str(serverInstances))
         sys.exit(1)
-    _serverInstance = _serverInstances[0]
-    _serverName     = _serverInstance.getObjectName()
-    _serverProcess  = _serverName.getKeyProperty('process')
-    _info('Connected to WebSphere Application Server process[' + _serverProcess + '], waiting for shutdown.')
-    _connected          = 'True'
-    _stoppingStateFound = None
+    serverInstance = serverInstances[0]
+    serverName     = serverInstance.getObjectName()
+    serverProcess  = serverName.getKeyProperty('process')
+    info('Connected to WebSphere Application Server process[' + serverProcess + '], waiting for shutdown.')
+    connected          = 'True'
+    stoppingStateFound = None
     while 1:
-            _serverState = AdminControl.getAttribute(_serverName.toString(), "state")
-            if _serverState == 'STOPPED':
-                _info('Server is stopped')
+            serverState = AdminControl.getAttribute(serverName.toString(), "state")
+            if serverState == 'STOPPED':
+                info('Server is stopped')
                 sys.exit(0)
-            elif _serverState == 'STOPPING':
-                _stoppingStateFound = 'True'
+            elif serverState == 'STOPPING':
+                stoppingStateFound = 'True'
             sleep(3)
 except:
-    if _stoppingStateFound:
-        _info('Server is stopped')
-    elif _connected:
-        _error('Lost connection to server before we were able to see a STOPPING state, assuming server is now stopped')
+    if stoppingStateFound:
+        info('Server is stopped')
+    elif connected:
+        error('Lost connection to server before we were able to see a STOPPING state, assuming server is now stopped')
     else:
-        _error('Unable to connect to server ' + _server + ', assuming it is stopped')
+        error('Unable to connect to server ' + server + ', assuming it is stopped')
     sys.exit(0)
