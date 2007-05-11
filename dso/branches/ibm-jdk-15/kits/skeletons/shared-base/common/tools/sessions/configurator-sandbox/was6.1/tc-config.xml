@@ -46,11 +46,8 @@
       <instrumented-classes>
         <!-- Include all classes for DSO instrumentation -->
         <include>
-          <class-expression>*..*</class-expression>
+          <class-expression>demo..*</class-expression>
         </include>
-        <!-- But exclude IBM internals to improve performance -->
-        <exclude>org.eclipse..*</exclude>
-        <exclude>com.ibm..*</exclude>
       </instrumented-classes>
 
       <!-- Tell DSO which applications in your web container is using DSO -->
