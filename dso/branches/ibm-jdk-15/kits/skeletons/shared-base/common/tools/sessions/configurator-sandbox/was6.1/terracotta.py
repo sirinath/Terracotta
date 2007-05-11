@@ -1,5 +1,6 @@
 import operator
 import os
+import os.path
 import string
 
 class DSO:
@@ -64,4 +65,28 @@ class DSO:
 
     def p_info(self, s):
         if self.verbose: print "[INFO] " + s
+
+class AppUtil:
+
+    "Utility to deploy WAR files in WebSphere"
+
+    def __init__(self, adminApp, webappDir):
+        self.AdminApp = adminApp
+        self.webappDir = os.path.abspath(webappDir)
+
+    def installAll(self):
+        warFiles = filter(lambda x: len(x) > 4 and string.rfind(x, ".war") == len(x) - 4, os.listdir(self.webappDir))
+        for warFile in warFiles:
+            if not self.installed(warFile):
+                self.install(warFile)
+            else:
+                print "WebApp[" + warFile + "] is already installed"
+
+    def install(self, warFile):
+        context = string.split(warFile, ".")[0]
+        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + warFile + " -contextroot " + context + " -usedefaultbindings")
+        print "WebApp[" + warFile + "] installed"
+
+    def installed(self, warFile):
+        return operator.contains(string.split(self.AdminApp.list()), warFile)
 

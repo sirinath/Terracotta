@@ -69,13 +69,6 @@ function _runWsAdmin() {
     return $?
 }
 
-function _deployWars() {
-    for war in "${2}"/*.war; do
-        _warn Not hot deploying WAR "${war}" because Nat is not finished yet
-    done
-    return $?
-}
-
 function _startWebSphere() {
     if test "${2}" != "nodso"; then
         # Instrument WebSphere for use with Terracotta

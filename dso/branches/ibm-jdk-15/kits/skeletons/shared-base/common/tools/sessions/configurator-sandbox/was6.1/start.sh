@@ -40,16 +40,15 @@ if ! _createProfile "${port}"; then
     exit 1
 fi
 
-_info starting WebSphere Application Server on port "${port}"...
-_startWebSphere "${port}" "${2}"
+_runWsAdmin -connType NONE -profileName "tc-${port}" -javaoption -Dwebapp.dir="${WAS_SANDBOX}/${port}/webapps" -f "${WAS_SANDBOX}/deployApps.py"
 if test "$?" != "0"; then
-    _error unable to start WebSphere Application Server on port "${port}"
-    _stopWebSphere "${port}"
+    _error unable to deploy web applications to WebSphere Application Server on port "${port}"
     exit 1
 else
-    _deployWars "${port}" "${WAS_SANDBOX}/${port}/webapps"
+    _info starting WebSphere Application Server on port "${port}"...
+    _startWebSphere "${port}" "${2}"
     if test "$?" != "0"; then
-        _error unable to deploy web applications to WebSphere Application Server on port "${port}"
+        _error unable to start WebSphere Application Server on port "${port}"
         _stopWebSphere "${port}"
         exit 1
     else
