@@ -21,6 +21,11 @@ import com.uwyn.rife.servlet.RifeFilter;
 import com.uwyn.rife.tools.StringUtils;
 
 public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
+    public ContinuationsTest() {
+        disableTestUntil("testAllTypes", "2007-05-28");
+        disableTestUntil("testSimpleInterface", "2007-05-28");
+    }
+
 	public static Test suite() {
 		return new ContinuationsTestSetup();
 	}
