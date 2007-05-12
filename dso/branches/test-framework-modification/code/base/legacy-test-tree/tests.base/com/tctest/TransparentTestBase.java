@@ -269,9 +269,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       }
       this.runner.run();
 
-      // TODO: remove
-      // if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
-      if (true) {
+      if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
         try {
           System.err.println("##### About to shutdown server crasher");
           synchronized (crashTestState) {
