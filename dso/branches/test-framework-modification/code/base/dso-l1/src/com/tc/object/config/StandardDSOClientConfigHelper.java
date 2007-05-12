@@ -216,6 +216,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addPermanentExcludePattern("java.nio.channels.SocketChannel");
     addPermanentExcludePattern("java.util.logging.FileHandler");
     addPermanentExcludePattern("java.util.logging.SocketHandler");
+
     addUnsupportedJavaUtilConcurrentTypes();
 
     addAutoLockExcludePattern("* java.lang.Throwable.*(..)");
@@ -739,7 +740,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // END: weblogic stuff
 
     // BEGIN: tomcat stuff
-    addTomcatCustomAdapters();
+    // don't install tomcat-specific adaptors if this sys prop is defined
+    final boolean doTomcat = System.getProperty("com.tc.tomcat.disabled") == null;
+    if (doTomcat) addTomcatCustomAdapters();
     // END: tomcat stuff
 
     // Geronimo + WebsphereCE stuff
