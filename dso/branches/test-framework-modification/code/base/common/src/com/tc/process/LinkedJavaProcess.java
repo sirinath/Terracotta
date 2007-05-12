@@ -157,16 +157,7 @@ public class LinkedJavaProcess {
 
     String[] fullCommand = (String[]) fullCommandList.toArray(new String[fullCommandList.size()]);
 
-    // TODO: remove -- block of code
-    String[] list = makeEnv(env);
-    System.err.print("******  env=[ ");
-    for (int i = 0; i < list.length; i++) {
-      System.err.print(list[i] + ", ");
-    }
-    System.err.println(" ]");
-
-    // this.process = Runtime.getRuntime().exec(fullCommand, makeEnv(env), this.directory);
-    this.process = Runtime.getRuntime().exec(fullCommand, list, this.directory);
+    this.process = Runtime.getRuntime().exec(fullCommand, makeEnv(env), this.directory);
     this.running = true;
   }
 

@@ -114,8 +114,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
     jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ".tc.management.test.mbeans.enabled=true");
     addClasspath(jvmArgs);
     addLibPath(jvmArgs);
-    addTcBaseDir(jvmArgs);
-    add(jvmArgs);
+    addEnvVarsForWindows(jvmArgs);
   }
 
   private void addLibPath(List args) {
@@ -130,13 +129,10 @@ public class ExtraProcessServerControl extends ServerControlBase {
     args.add("-Djava.class.path=" + classpath);
   }
 
-  private void addTcBaseDir(List args) {
+  private void addEnvVarsForWindows(List args) {
     String tcBaseDir = System.getProperty("tc.base-dir");
     if (tcBaseDir == null || tcBaseDir.equals("")) { throw new AssertionError("tc.base-dir is not set!"); }
     args.add("-Dtc.base-dir=" + tcBaseDir);
-  }
-
-  private void add(List args) {
     String val = System.getProperty("tc.tests.info.property-files");
     if (val == null || val.equals("")) { throw new AssertionError("tc.tests.info.property-files is not set!"); }
     args.add("-Dtc.tests.info.property-files=" + val);

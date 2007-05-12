@@ -11,25 +11,9 @@ import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
 
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Set;
-
 public class TCServerMain {
 
   public static void main(final String[] args) {
-
-    // TODO: remove -- block of code
-    Properties props = System.getProperties();
-    Set keys = props.keySet();
-    System.err.print("******  main env=[ ");
-    for (Iterator iter = keys.iterator(); iter.hasNext();) {
-      String key = (String) iter.next();
-      String val = props.getProperty(key);
-      System.err.print(key + "=" + val + ", ");
-    }
-    System.err.println(" ]");
-
     ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(TCServerMain.class));
 
     try {

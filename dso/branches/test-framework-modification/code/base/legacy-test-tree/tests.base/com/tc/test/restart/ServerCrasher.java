@@ -15,14 +15,10 @@ public class ServerCrasher implements Runnable {
   private final long          crashInterval;
   private final TestState     testState;
 
-  // TODO: remove -- clean up code after refactoring
-  // private final boolean crash;
-
   public ServerCrasher(final ServerControl server, final long crashInterval, final boolean crash, TestState testState) {
     super();
     this.server = server;
     this.crashInterval = crashInterval;
-    // this.crash = crash;
     this.testState = testState;
   }
 
