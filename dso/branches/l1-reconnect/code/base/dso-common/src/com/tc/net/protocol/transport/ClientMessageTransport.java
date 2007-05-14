@@ -125,7 +125,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     TCConnection src = event.getSource();
     Assert.assertSame(getConnection(), src);
 
-    if (!(maxReconnectTries == 0)) {
+    if (maxReconnectTries != 0) {
       if (logger.isDebugEnabled()) {
         logger.debug("Caught connection close event: " + event);
       }
