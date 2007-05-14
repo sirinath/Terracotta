@@ -99,7 +99,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   /**
    * Moves the MessageTransport state to closed and closes the underlying connection, if any.
    */
-  public final void close() {
+  public void close() {
     synchronized (isOpen) {
       if (!isOpen.get()) {
         // see DEV-659:  we used to throw an assertion error here if already closed

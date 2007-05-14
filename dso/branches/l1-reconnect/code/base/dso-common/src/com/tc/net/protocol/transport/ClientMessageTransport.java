@@ -58,7 +58,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     this.connAddressProvider = connInfoProvider;
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
 
-    this.connectionEstablisher = new ClientConnectionEstablisher(this, connManager, connAddressProvider, cmtLogger,
+    this.connectionEstablisher = new ClientConnectionEstablisher(connManager, connAddressProvider, cmtLogger,
                                                                  maxReconnectTries, timeout);
   }
 
@@ -79,7 +79,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     synchronized (isOpen) {
       Assert.eval("can't open an already open transport", !isOpen.get());
       try {
-        wireNewConnection(connectionEstablisher.open());
+        wireNewConnection(connectionEstablisher.open(this));
         HandshakeResult result = handShake();
         if (result.isMaxConnectionsExceeded()) {
           // Hack to make the connection clear
@@ -134,7 +134,9 @@ public class ClientMessageTransport extends MessageTransportBase {
         logger.debug("Caught connection close event: " + event);
       }
       status.reset();
-      fireTransportDisconnectedEvent(); // This will make the connection establisher to try and reconnect.
+      fireTransportDisconnectedEvent();
+      // Also, make the connection establisher to try and reconnect.
+      this.connectionEstablisher.asyncReconnect(this);
     } else {
       super.closeEvent(event);
 
@@ -144,6 +146,10 @@ public class ClientMessageTransport extends MessageTransportBase {
     }
   }
 
+  public void close() {
+    connectionEstablisher.quitReconnectAttempts();
+    super.close();
+  }
   protected void receiveTransportMessageImpl(WireProtocolMessage message) {
     synchronized (status) {
       if (status.isSynSent()) {

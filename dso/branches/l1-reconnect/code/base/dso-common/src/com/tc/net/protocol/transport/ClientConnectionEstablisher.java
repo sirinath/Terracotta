@@ -23,14 +23,13 @@ import java.io.IOException;
 /**
  * This guy establishes a connection to the server for the Client.
  */
-public class ClientConnectionEstablisher implements Runnable, MessageTransportListener {
+public class ClientConnectionEstablisher {
 
   private static final long               CONNECT_RETRY_INTERVAL = 1000;
 
   private static final Object             RECONNECT              = new Object();
   private static final Object             QUIT                   = new Object();
 
-  private final ClientMessageTransport    transport;
   private final String                    desc;
   private final TCLogger                  logger;
   private final int                       maxReconnectTries;
@@ -44,10 +43,8 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
 
   private NoExceptionLinkedQueue          reconnectRequest       = new NoExceptionLinkedQueue();
 
-  ClientConnectionEstablisher(ClientMessageTransport transport, TCConnectionManager connManager,
-                              ConnectionAddressProvider connAddressProvider, TCLogger logger, int maxReconnectTries,
-                              int timeout) {
-    this.transport = transport;
+  ClientConnectionEstablisher(TCConnectionManager connManager, ConnectionAddressProvider connAddressProvider,
+                              TCLogger logger, int maxReconnectTries, int timeout) {
     this.connManager = connManager;
     this.logger = logger;
     this.connAddressProvider = connAddressProvider;
@@ -58,7 +55,6 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
     else if (maxReconnectTries < 0) desc = "unlimited";
     else desc = "" + maxReconnectTries;
 
-    this.transport.addTransportListener(this);
   }
 
   /**
@@ -69,27 +65,27 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
    * @throws TCTimeoutException
    * @throws MaxConnectionsExceededException
    */
-  public TCConnection open() throws TCTimeoutException, IOException {
+  public TCConnection open(ClientMessageTransport cmt) throws TCTimeoutException, IOException {
     synchronized (connecting) {
       Assert.eval("Can't call open() concurrently", !connecting.get());
       connecting.set(true);
 
       try {
-        return connectTryAllOnce();
+        return connectTryAllOnce(cmt);
       } finally {
         connecting.set(false);
       }
     }
   }
 
-  private TCConnection connectTryAllOnce() throws TCTimeoutException, IOException {
+  private TCConnection connectTryAllOnce(ClientMessageTransport cmt) throws TCTimeoutException, IOException {
     final ConnectionAddressIterator addresses = connAddressProvider.getIterator();
     TCConnection rv = null;
     while (addresses.hasNext()) {
       final ConnectionInfo connInfo = addresses.next();
       try {
         final TCSocketAddress csa = new TCSocketAddress(connInfo);
-        rv = connect(csa);
+        rv = connect(csa, cmt);
         break;
       } catch (TCTimeoutException e) {
         if (!addresses.hasNext()) { throw e; }
@@ -108,23 +104,19 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
    * @throws IOException
    * @throws MaxConnectionsExceededException
    */
-  TCConnection connect(TCSocketAddress sa) throws TCTimeoutException, IOException {
+  TCConnection connect(TCSocketAddress sa, ClientMessageTransport cmt) throws TCTimeoutException, IOException {
 
-    TCConnection connection = this.connManager.createConnection(transport.getProtocolAdapter());
-    transport.fireTransportConnectAttemptEvent();
+    TCConnection connection = this.connManager.createConnection(cmt.getProtocolAdapter());
+    cmt.fireTransportConnectAttemptEvent();
     connection.connect(sa, timeout);
     return connection;
-  }
-
-  void disconnect() {
-    transport.close();
   }
 
   public String toString() {
     return "ClientConnectionEstablisher[" + connAddressProvider + ", timeout=" + timeout + "]";
   }
 
-  public void reconnect() throws MaxConnectionsExceededException {
+  private void reconnect(ClientMessageTransport cmt) throws MaxConnectionsExceededException {
     try {
       boolean connected = false;
       for (int i = 0; ((maxReconnectTries < 0) || (i < maxReconnectTries)) && !connected; i++) {
@@ -136,8 +128,8 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
               logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to " + connInfo + ", timeout="
                           + timeout);
             }
-            TCConnection connection = connect(new TCSocketAddress(connInfo));
-            transport.reconnect(connection);
+            TCConnection connection = connect(new TCSocketAddress(connInfo), cmt);
+            cmt.reconnect(connection);
             connected = true;
           } catch (MaxConnectionsExceededException e) {
             throw e;
@@ -150,7 +142,7 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
           }
         }
       }
-      transport.endIfDisconnected();
+      cmt.endIfDisconnected();
     } finally {
       connecting.set(false);
     }
@@ -169,18 +161,14 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
     }
   }
 
-  public void notifyTransportConnected(MessageTransport mt) {
-    // NO OP
-  }
-
-  public void notifyTransportDisconnected(MessageTransport mt) {
+  public void asyncReconnect(ClientMessageTransport cmt) {
     synchronized (connecting) {
       if (connecting.get()) return;
 
       if (connectionEstablisher == null) {
         connecting.set(true);
         // First time
-        connectionEstablisher = new Thread(this, "ConnectionEstablisher");
+        connectionEstablisher = new Thread(new AsyncReconnect(cmt, this), "ConnectionEstablisher");
         connectionEstablisher.setDaemon(true);
         connectionEstablisher.start();
 
@@ -189,30 +177,35 @@ public class ClientConnectionEstablisher implements Runnable, MessageTransportLi
     }
   }
 
-  public void notifyTransportConnectAttempt(MessageTransport mt) {
-    // NO OP
-  }
-
-  public void notifyTransportClosed(MessageTransport mt) {
+  public void quitReconnectAttempts() {
     reconnectRequest.put(QUIT);
   }
 
-  public void run() {
-    Object request = null;
-    while ((request = reconnectRequest.take()) != null) {
-      if (request == RECONNECT) {
-        try {
-          reconnect();
-        } catch (MaxConnectionsExceededException e) {
-          logger.warn(e);
-          logger.warn("No longer trying to reconnect.");
-          return;
-        } catch (Throwable t) {
-          logger.warn("Reconnect failed !", t);
+  static class AsyncReconnect implements Runnable {
+    private final ClientMessageTransport      cmt;
+    private final ClientConnectionEstablisher cce;
+
+    public AsyncReconnect(ClientMessageTransport cmt, ClientConnectionEstablisher cce) {
+      this.cmt = cmt;
+      this.cce = cce;
+    }
+
+    public void run() {
+      Object request = null;
+      while ((request = cce.reconnectRequest.take()) != null) {
+        if (request == RECONNECT) {
+          try {
+            cce.reconnect(cmt);
+          } catch (MaxConnectionsExceededException e) {
+            cce.logger.warn(e);
+            cce.logger.warn("No longer trying to reconnect.");
+            return;
+          } catch (Throwable t) {
+            cce.logger.warn("Reconnect failed !", t);
+          }
+        } else if (request == QUIT) {
+          break;
         }
-      } else if (request == QUIT) {
-        connectionEstablisher = null;
-        break;
       }
     }
   }
