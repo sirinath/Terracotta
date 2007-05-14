@@ -6,7 +6,7 @@ dso = terracotta.DSO(AdminTask)
 
 if enableDso and not dso.isEnabled():
     dso.enable()
-elif dso.isEnabled():
+elif not enableDso and dso.isEnabled()
     dso.disable()
 
 if AdminConfig.hasChanges():
