@@ -45,8 +45,7 @@ public class ClientMessageTransport extends MessageTransportBase {
    * 
    * @param commsManager CommmunicationsManager
    */
-  public ClientMessageTransport(int maxReconnectTries,
-                                ClientConnectionEstablisher clientConnectionEstablisher,
+  public ClientMessageTransport(int maxReconnectTries, ClientConnectionEstablisher clientConnectionEstablisher,
                                 TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
@@ -125,21 +124,25 @@ public class ClientMessageTransport extends MessageTransportBase {
     TCConnection src = event.getSource();
     Assert.assertSame(getConnection(), src);
 
+    if (logger.isDebugEnabled()) {
+      logger.debug("Caught connection close event: " + event);
+    }
+
     if (maxReconnectTries != 0) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Caught connection close event: " + event);
-      }
-      status.reset();
-      fireTransportDisconnectedEvent();
-      // Also, make the connection establisher to try and reconnect.
-      this.connectionEstablisher.asyncReconnect(this);
+      asyncReconnect();
     } else {
       super.closeEvent(event);
-
       synchronized (status) {
         if (!status.isEnd()) status.end();
       }
     }
+  }
+
+  public void asyncReconnect() {
+    status.reset();
+    fireTransportDisconnectedEvent();
+    // Also, make the connection establisher to try and reconnect.
+    this.connectionEstablisher.asyncReconnect(this);
   }
 
   public void close() {
