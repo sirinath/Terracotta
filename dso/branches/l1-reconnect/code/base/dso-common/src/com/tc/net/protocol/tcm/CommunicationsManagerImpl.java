@@ -18,6 +18,7 @@ import com.tc.net.core.TCConnectionManagerJDK14;
 import com.tc.net.core.TCListener;
 import com.tc.net.protocol.NetworkStackHarness;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
+import com.tc.net.protocol.transport.ClientConnectionEstablisher;
 import com.tc.net.protocol.transport.ClientMessageTransport;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
@@ -155,9 +156,13 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
         };
 
-        return new ClientMessageTransport(maxReconnectTries, provider, timeout, connectionManager,
-                                          handshakeErrorHandler, transportHandshakeMessageFactory,
-                                          new WireProtocolAdaptorFactoryImpl());
+        ClientConnectionEstablisher clientConnectionEstablisher = new ClientConnectionEstablisher(connectionManager,
+                                                                                                  provider,
+                                                                                                  maxReconnectTries,
+                                                                                                  timeout);
+
+        return new ClientMessageTransport(maxReconnectTries, clientConnectionEstablisher, handshakeErrorHandler,
+                                          transportHandshakeMessageFactory, new WireProtocolAdaptorFactoryImpl());
       }
 
       public MessageTransport createNewTransport(ConnectionID connectionID, TransportHandshakeErrorHandler handler,

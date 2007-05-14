@@ -31,7 +31,6 @@ public class ClientConnectionEstablisher {
   private static final Object             QUIT                   = new Object();
 
   private final String                    desc;
-  private final TCLogger                  logger;
   private final int                       maxReconnectTries;
   private final int                       timeout;
   private final ConnectionAddressProvider connAddressProvider;
@@ -43,10 +42,9 @@ public class ClientConnectionEstablisher {
 
   private NoExceptionLinkedQueue          reconnectRequest       = new NoExceptionLinkedQueue();
 
-  ClientConnectionEstablisher(TCConnectionManager connManager, ConnectionAddressProvider connAddressProvider,
-                              TCLogger logger, int maxReconnectTries, int timeout) {
+  public ClientConnectionEstablisher(TCConnectionManager connManager, ConnectionAddressProvider connAddressProvider,
+                                     int maxReconnectTries, int timeout) {
     this.connManager = connManager;
-    this.logger = logger;
     this.connAddressProvider = connAddressProvider;
     this.maxReconnectTries = maxReconnectTries;
     this.timeout = timeout;
@@ -125,8 +123,8 @@ public class ClientConnectionEstablisher {
           final ConnectionInfo connInfo = addresses.next();
           try {
             if (i % 20 == 0) {
-              logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to " + connInfo + ", timeout="
-                          + timeout);
+              cmt.logger.warn("Reconnect attempt " + i + " of " + desc + " reconnect tries to " + connInfo
+                              + ", timeout=" + timeout);
             }
             TCConnection connection = connect(new TCSocketAddress(connInfo), cmt);
             cmt.reconnect(connection);
@@ -134,11 +132,11 @@ public class ClientConnectionEstablisher {
           } catch (MaxConnectionsExceededException e) {
             throw e;
           } catch (TCTimeoutException e) {
-            handleConnectException(e, false);
+            handleConnectException(e, false, cmt.logger);
           } catch (IOException e) {
-            handleConnectException(e, false);
+            handleConnectException(e, false, cmt.logger);
           } catch (Exception e) {
-            handleConnectException(e, true);
+            handleConnectException(e, true, cmt.logger);
           }
         }
       }
@@ -148,7 +146,7 @@ public class ClientConnectionEstablisher {
     }
   }
 
-  private void handleConnectException(Exception e, boolean logFullException) {
+  private void handleConnectException(Exception e, boolean logFullException, TCLogger logger) {
     if (logger.isDebugEnabled() || logFullException) {
       logger.error("Connect Exception", e);
     } else {
@@ -197,11 +195,11 @@ public class ClientConnectionEstablisher {
           try {
             cce.reconnect(cmt);
           } catch (MaxConnectionsExceededException e) {
-            cce.logger.warn(e);
-            cce.logger.warn("No longer trying to reconnect.");
+            cmt.logger.warn(e);
+            cmt.logger.warn("No longer trying to reconnect.");
             return;
           } catch (Throwable t) {
-            cce.logger.warn("Reconnect failed !", t);
+            cmt.logger.warn("Reconnect failed !", t);
           }
         } else if (request == QUIT) {
           break;

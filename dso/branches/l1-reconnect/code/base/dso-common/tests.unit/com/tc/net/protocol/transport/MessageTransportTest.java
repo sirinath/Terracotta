@@ -227,9 +227,13 @@ public class MessageTransportTest extends TCTestCase {
 
   private void createClientTransport(int maxReconnectTries) throws Exception {
     final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, 0);
-    this.clientTransport = new ClientMessageTransport(maxReconnectTries,
-                                                      new ConnectionAddressProvider(new ConnectionInfo[] { connInfo }),
-                                                      0, connManager, createHandshakeErrorHandler(),
+    final ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
+                                                                            connManager,
+                                                                            new ConnectionAddressProvider(
+                                                                                                          new ConnectionInfo[] { connInfo }),
+                                                                            maxReconnectTries, 0);
+
+    this.clientTransport = new ClientMessageTransport(maxReconnectTries, cce, createHandshakeErrorHandler(),
                                                       this.transportHandshakeMessageFactory,
                                                       new WireProtocolAdaptorFactoryImpl());
     this.clientResponder = new ClientHandshakeMessageResponder(this.clientResponderSentQueue,

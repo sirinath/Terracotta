@@ -12,9 +12,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
-import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.TCConnection;
-import com.tc.net.core.TCConnectionManager;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
@@ -38,7 +36,6 @@ public class ClientMessageTransport extends MessageTransportBase {
   private final ClientConnectionEstablisher connectionEstablisher;
   private boolean                           wasOpened       = false;
   private TCFuture                          waitForSynAckResult;
-  private final ConnectionAddressProvider   connAddressProvider;
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
 
@@ -48,18 +45,17 @@ public class ClientMessageTransport extends MessageTransportBase {
    * 
    * @param commsManager CommmunicationsManager
    */
-  public ClientMessageTransport(int maxReconnectTries, ConnectionAddressProvider connInfoProvider, int timeout,
-                                TCConnectionManager connManager, TransportHandshakeErrorHandler handshakeErrorHandler,
+  public ClientMessageTransport(int maxReconnectTries,
+                                ClientConnectionEstablisher clientConnectionEstablisher,
+                                TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
     super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, cmtLogger);
     this.maxReconnectTries = maxReconnectTries;
-    this.connAddressProvider = connInfoProvider;
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
 
-    this.connectionEstablisher = new ClientConnectionEstablisher(connManager, connAddressProvider, cmtLogger,
-                                                                 maxReconnectTries, timeout);
+    this.connectionEstablisher = clientConnectionEstablisher;
   }
 
   /**
@@ -150,6 +146,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     connectionEstablisher.quitReconnectAttempts();
     super.close();
   }
+
   protected void receiveTransportMessageImpl(WireProtocolMessage message) {
     synchronized (status) {
       if (status.isSynSent()) {

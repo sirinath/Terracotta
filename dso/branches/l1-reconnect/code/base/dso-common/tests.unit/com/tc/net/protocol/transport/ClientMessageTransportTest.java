@@ -58,10 +58,13 @@ public class ClientMessageTransportTest extends TCTestCase {
 
     };
     final ConnectionInfo connectionInfo = new ConnectionInfo("", 0);
-    transport = new ClientMessageTransport(maxRetries,
-                                           new ConnectionAddressProvider(new ConnectionInfo[] { connectionInfo }),
-                                           5000, this.connectionManager, handshakeErrorHandler,
-                                           this.transportMessageFactory, new WireProtocolAdaptorFactoryImpl());
+    ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
+                                                                      connectionManager,
+                                                                      new ConnectionAddressProvider(
+                                                                                                    new ConnectionInfo[] { connectionInfo }),
+                                                                      maxRetries, 5000);
+    transport = new ClientMessageTransport(maxRetries, cce, handshakeErrorHandler, this.transportMessageFactory,
+                                           new WireProtocolAdaptorFactoryImpl());
   }
 
   public void testRoundRobinReconnect() throws Exception {
@@ -119,9 +122,13 @@ public class ClientMessageTransportTest extends TCTestCase {
     int port = listener.getBindPort();
 
     final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, port);
-    transport = new ClientMessageTransport(0, new ConnectionAddressProvider(new ConnectionInfo[] { connInfo }), 1000,
-                                           commsMgr.getConnectionManager(), this.handshakeErrorHandler,
-                                           this.transportMessageFactory, new WireProtocolAdaptorFactoryImpl());
+    ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
+                                                                      commsMgr.getConnectionManager(),
+                                                                      new ConnectionAddressProvider(
+                                                                                                    new ConnectionInfo[] { connInfo }),
+                                                                      0, 1000);
+    transport = new ClientMessageTransport(0, cce, this.handshakeErrorHandler, this.transportMessageFactory,
+                                           new WireProtocolAdaptorFactoryImpl());
     transport.open();
     assertTrue(transport.isConnected());
     listener.stop(5000);
