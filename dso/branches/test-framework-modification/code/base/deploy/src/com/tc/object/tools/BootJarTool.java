@@ -255,9 +255,10 @@ public class BootJarTool {
     try {
       final Set missing = new HashSet();
       final Map internalSpecs = getTCSpecs();
+      
       final Map userSpecs = massageSpecs(getUserDefinedSpecs(internalSpecs), false);
-      final BootJar bootJar1 = BootJar.getBootJarForReading(bootJarFile);
-      Set bootJarClassNames = bootJar1.getAllPreInstrumentedClasses();
+      final BootJar bootJar = BootJar.getBootJarForReading(bootJarFile);
+      Set bootJarClassNames = bootJar.getAllPreInstrumentedClasses();
       for (Iterator i = userSpecs.keySet().iterator(); i.hasNext();) {
         String userClassName = (String) i.next();
         if (!bootJarClassNames.contains(userClassName)) {
@@ -293,6 +294,7 @@ public class BootJarTool {
       addInstrumentedJavaUtilCollection();
 
       addJdk15SpecificPreInstrumentedClasses();
+      addLinkedHashMapWrapper();
 
       addInstrumentedWeakHashMap();
 
@@ -1397,6 +1399,11 @@ public class BootJarTool {
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
     bytes = doDSOTransform(spec.getClassName(), bytes);
     bootJar.loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
+  }
+  
+  private final void addLinkedHashMapWrapper() {
+    TransparencyClassSpec spec = config.getOrCreateSpec("com.tcclient.util.LinkedHashMap");
+    spec.markPreInstrumented();
   }
 
   private final void addInstrumentedJavaUtilConcurrentHashMap() {
