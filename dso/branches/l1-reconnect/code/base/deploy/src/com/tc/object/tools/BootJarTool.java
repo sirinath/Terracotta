@@ -255,9 +255,10 @@ public class BootJarTool {
     try {
       final Set missing = new HashSet();
       final Map internalSpecs = getTCSpecs();
+      
       final Map userSpecs = massageSpecs(getUserDefinedSpecs(internalSpecs), false);
-      final BootJar bootJar1 = BootJar.getBootJarForReading(bootJarFile);
-      Set bootJarClassNames = bootJar1.getAllPreInstrumentedClasses();
+      final BootJar bootJar = BootJar.getBootJarForReading(bootJarFile);
+      Set bootJarClassNames = bootJar.getAllPreInstrumentedClasses();
       for (Iterator i = userSpecs.keySet().iterator(); i.hasNext();) {
         String userClassName = (String) i.next();
         if (!bootJarClassNames.contains(userClassName)) {
@@ -1022,6 +1023,16 @@ public class BootJarTool {
         continue;
       } else if (topClass.getClassLoader() != null) {
         if (!tcSpecs) {
+          
+          // HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK 
+          // This is a terrible hack to force the boot jar tool to allow
+          // com.tcclient.util.LinkedHashMap into the boot jar. Will get  
+          // rid of this ASAP... jg
+          // HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK 
+          if (topClass.getName().equals("com.tcclient.util.LinkedHashMap")) {
+            continue;
+          }
+          
           notBootstrapClasses.add(topClass.getName());
           continue;
         }
