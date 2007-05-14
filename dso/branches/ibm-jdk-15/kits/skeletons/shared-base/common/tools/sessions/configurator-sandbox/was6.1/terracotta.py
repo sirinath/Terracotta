@@ -83,8 +83,8 @@ class AppUtil:
                 print "WebApp[" + warFile + "] is already installed"
 
     def install(self, warFile):
-        context = string.split(warFile, ".")[0]
-        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + warFile + " -contextroot " + context + " -usedefaultbindings")
+        warName = string.split(warFile, ".")[0]
+        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + warName + " -contextroot " + warName + " -usedefaultbindings")
         print "WebApp[" + warFile + "] installed"
 
     def installed(self, warFile):
