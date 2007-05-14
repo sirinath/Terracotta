@@ -1231,7 +1231,6 @@ public class BootJarTool {
     }
   }
 
-<<<<<<< .working
   private void addInstrumentedAccessibleObject() {
     String classname = AccessibleObject.class.getName();
     byte[] bytes = getSystemBytes(classname);
@@ -1250,10 +1249,7 @@ public class BootJarTool {
     bootJar.loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
-  private void addPortableStringBuffer() {
-=======
   private final void addPortableStringBuffer() {
->>>>>>> .merge-right.r3042
     boolean isJDK15 = Vm.isJDK15Compliant();
     if (isJDK15) {
       addAbstractStringBuilder();
