@@ -86,6 +86,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   }
 
   private void closeImpl(Runnable callback) {
+    Assert.assertTrue(closed.isSet());
     try {
       if (channel != null) {
         comm.cleanupChannel(channel, callback);
@@ -94,10 +95,6 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       }
     } finally {
       synchronized (writeContexts) {
-        // this will blow up if it is set more than once. Super class should not allow this closeImpl() to
-        // be called more than once
-        closed.set();
-
         writeContexts.clear();
       }
     }
