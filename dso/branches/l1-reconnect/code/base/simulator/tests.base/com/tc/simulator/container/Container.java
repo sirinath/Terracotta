@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class Container implements Runnable {
-  private static final boolean             DEBUG = true;
+  private static final boolean             DEBUG = false;
 
   private final ContainerConfig            config;
   private final ContainerState             containerState;
@@ -153,7 +153,7 @@ public final class Container implements Runnable {
     boolean rv = false;
     try {
       println("Waiting for all containers to start...");
-      this.control.waitForStart(this.config.getContainerStartTimeout());
+      this.control.waitForStart();
       rv = true;
     } catch (TCTimeoutException e) {
       rv = false;
