@@ -15,8 +15,6 @@ import java.io.File;
 
 public class WebsphereLoaderNaming {
 
-  private static final TCLogger logger             = ManagerUtil.getLogger(WebsphereLoaderNaming.class.getName());
-
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[] {};
   private static final Class[]  EMPTY_CLASS_ARRAY  = new Class[] {};
 
@@ -72,7 +70,7 @@ public class WebsphereLoaderNaming {
 
       if (ear == null) {
         RuntimeException re = new RuntimeException("Cannot determine ear name from " + orig);
-        logger.error(re);
+        getLogger().error(re);
         throw re;
       }
 
@@ -86,9 +84,13 @@ public class WebsphereLoaderNaming {
     try {
       return obj.getClass().getMethod(name, EMPTY_CLASS_ARRAY).invoke(obj, EMPTY_OBJECT_ARRAY);
     } catch (Exception e) {
-      logger.error(e);
+      getLogger().error(e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static TCLogger getLogger() {
+    return ManagerUtil.getLogger(WebsphereLoaderNaming.class.getName());
   }
 
 }
