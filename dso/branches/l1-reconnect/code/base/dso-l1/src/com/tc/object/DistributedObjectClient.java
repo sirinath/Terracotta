@@ -156,6 +156,7 @@ public class DistributedObjectClient extends SEDA {
   }
 
   public void start() {
+    l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
     int maxSize = 50000;
     int faultCount = config.getFaultCount();
 
@@ -169,7 +170,7 @@ public class DistributedObjectClient extends SEDA {
 
     // //////////////////////////////////
     // create NetworkStackHarnessFactory
-    final boolean useOOOLayer = true; // this could come from config
+    final boolean useOOOLayer = l1Properties.getBoolean("reconnect.enabled");
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
@@ -238,7 +239,6 @@ public class DistributedObjectClient extends SEDA {
                                                 runtimeLogger, channel.getChannelIDProvider(), classProvider,
                                                 classFactory, objectFactory, config.getPortability(), channel);
 
-    l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
     TCProperties cacheManagerProperties = l1Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
       this.cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties));
