@@ -196,7 +196,7 @@ public class ClientConnectionEstablisher {
     public void run() {
       ConnectionRequest request = null;
       while ((request = (ConnectionRequest) cce.reconnectRequest.take()) != null) {
-        if (request == ConnectionRequest.RECONNECT) {
+        if (request.isReconnect()) {
           ClientMessageTransport cmt = request.getClientMessageTransport();
           try {
             cce.reconnect(cmt);
@@ -207,7 +207,7 @@ public class ClientConnectionEstablisher {
           } catch (Throwable t) {
             cmt.logger.warn("Reconnect failed !", t);
           }
-        } else if (request == ConnectionRequest.QUIT) {
+        } else if (request.isQuit()) {
           break;
         }
       }
@@ -216,26 +216,34 @@ public class ClientConnectionEstablisher {
 
   static class ConnectionRequest {
 
-    public static final Object           RECONNECT          = new Object();
-    public static final Object           QUIT               = new Object();
-    public static final Object           RESTORE_CONNECTION = new Object();
+    public static final int           RECONNECT          = 1;
+    public static final int           QUIT               = 2;
+    public static final int           RESTORE_CONNECTION = 3;
 
-    private final Object                 type;
+    private final int                    type;
     private final TCSocketAddress        sa;
     private final ClientMessageTransport cmt;
 
-    public ConnectionRequest(Object type, ClientMessageTransport cmt) {
+    public ConnectionRequest(int type, ClientMessageTransport cmt) {
       this(type, cmt, null);
     }
 
-    public ConnectionRequest(final Object type, final ClientMessageTransport cmt, final TCSocketAddress sa) {
+    public ConnectionRequest(final int type, final ClientMessageTransport cmt, final TCSocketAddress sa) {
       this.type = type;
       this.cmt = cmt;
       this.sa = sa;
     }
 
-    public Object getType() {
-      return type;
+    public boolean isReconnect() {
+      return type == RECONNECT;
+    }
+
+    public boolean isQuit() {
+      return type == QUIT;
+    }
+
+    public boolean isRestoreConnection() {
+      return type == RESTORE_CONNECTION;
     }
 
     public TCSocketAddress getSocketAddress() {
