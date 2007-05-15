@@ -371,7 +371,6 @@ public class DistributedObjectServer extends SEDA {
 
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     final boolean useOOOLayer = TCPropertiesImpl.getProperties().getBoolean("l1.reconnect.enabled");
-    System.err.println("\n\n@@@@@@@@@@@@@@ useOOOLayer = " + useOOOLayer);
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
