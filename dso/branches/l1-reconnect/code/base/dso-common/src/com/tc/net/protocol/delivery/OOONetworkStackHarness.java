@@ -8,6 +8,9 @@ import com.tc.async.api.Sink;
 import com.tc.net.protocol.AbstractNetworkStackHarness;
 import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.ServerMessageChannelFactory;
+import com.tc.net.protocol.transport.ClientConnectionEstablisher;
+import com.tc.net.protocol.transport.ClientMessageTransport;
+import com.tc.net.protocol.transport.ConnectionWatcher;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportFactory;
 
@@ -40,6 +43,15 @@ public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
     oooLayer.setSendLayer(transport);
     transport.setReceiveLayer(oooLayer);
     transport.addTransportListener(oooLayer);
+    
+    //XXX: this is super ugly, but...
+    if (transport instanceof ClientMessageTransport) {
+      ClientMessageTransport cmt = (ClientMessageTransport) transport;
+      ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
+      ConnectionWatcher cw = new ConnectionWatcher(cmt, cce);
+      cmt.addTransportListener(cw);
+    }
+
   }
 
   protected void createIntermediateLayers() {

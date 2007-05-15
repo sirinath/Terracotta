@@ -32,7 +32,6 @@ public class ClientMessageTransport extends MessageTransportBase {
   private static final TCLogger             cmtLogger       = TCLogging.getLogger(ClientMessageTransport.class);
   // 2 minutes timeout
   private static final long                 SYN_ACK_TIMEOUT = 120000;
-  private final int                         maxReconnectTries;
   private final ClientConnectionEstablisher connectionEstablisher;
   private boolean                           wasOpened       = false;
   private TCFuture                          waitForSynAckResult;
@@ -45,15 +44,13 @@ public class ClientMessageTransport extends MessageTransportBase {
    * 
    * @param commsManager CommmunicationsManager
    */
-  public ClientMessageTransport(int maxReconnectTries, ClientConnectionEstablisher clientConnectionEstablisher,
+  public ClientMessageTransport(ClientConnectionEstablisher clientConnectionEstablisher,
                                 TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
     super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, cmtLogger);
-    this.maxReconnectTries = maxReconnectTries;
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
-
     this.connectionEstablisher = clientConnectionEstablisher;
   }
 
@@ -112,42 +109,15 @@ public class ClientMessageTransport extends MessageTransportBase {
     return wasOpened;
   }
 
-  public boolean isOpen() {
+  public boolean isNotOpen() {
     return !isOpening.get() && !isOpen.get();
   }
 
   // TODO :: come back
   public void closeEvent(TCConnectionEvent event) {
-
-    if (isOpen()) return;
-
-    TCConnection src = event.getSource();
-    Assert.assertSame(getConnection(), src);
-
-    if (logger.isDebugEnabled()) {
-      logger.debug("Caught connection close event: " + event);
-    }
-
-    if (maxReconnectTries != 0) {
-      asyncReconnect();
-    } else {
-      super.closeEvent(event);
-      synchronized (status) {
-        if (!status.isEnd()) status.end();
-      }
-    }
-  }
-
-  public void asyncReconnect() {
+    if (isNotOpen()) return;
     status.reset();
-    fireTransportDisconnectedEvent();
-    // Also, make the connection establisher to try and reconnect.
-    this.connectionEstablisher.asyncReconnect(this);
-  }
-
-  public void close() {
-    connectionEstablisher.quitReconnectAttempts();
-    super.close();
+    super.closeEvent(event);
   }
 
   protected void receiveTransportMessageImpl(WireProtocolMessage message) {
@@ -269,13 +239,10 @@ public class ClientMessageTransport extends MessageTransportBase {
 
   void endIfDisconnected() {
     synchronized (this.status) {
-      if (!this.isConnected()) {
-        if (!this.status.isEnd()) {
-          this.status.end();
-        }
+      if (!this.isConnected() && !this.status.isEnd()) {
+        this.status.end();
       }
     }
-
   }
 
   private static final class HandshakeResult {
@@ -294,5 +261,9 @@ public class ClientMessageTransport extends MessageTransportBase {
     public boolean isMaxConnectionsExceeded() {
       return this.maxConnectionsExceeded;
     }
+  }
+
+  public ClientConnectionEstablisher getConnectionEstablisher() {
+    return connectionEstablisher;
   }
 }

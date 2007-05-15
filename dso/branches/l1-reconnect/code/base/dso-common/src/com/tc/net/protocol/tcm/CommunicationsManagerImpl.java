@@ -160,9 +160,9 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                                                   provider,
                                                                                                   maxReconnectTries,
                                                                                                   timeout);
-
-        return new ClientMessageTransport(maxReconnectTries, clientConnectionEstablisher, handshakeErrorHandler,
+        ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
                                           transportHandshakeMessageFactory, new WireProtocolAdaptorFactoryImpl());
+        return cmt;
       }
 
       public MessageTransport createNewTransport(ConnectionID connectionID, TransportHandshakeErrorHandler handler,

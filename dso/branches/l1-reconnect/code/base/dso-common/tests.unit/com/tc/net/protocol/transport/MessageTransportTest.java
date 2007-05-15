@@ -233,7 +233,7 @@ public class MessageTransportTest extends TCTestCase {
                                                                                                           new ConnectionInfo[] { connInfo }),
                                                                             maxReconnectTries, 0);
 
-    this.clientTransport = new ClientMessageTransport(maxReconnectTries, cce, createHandshakeErrorHandler(),
+    this.clientTransport = new ClientMessageTransport(cce, createHandshakeErrorHandler(),
                                                       this.transportHandshakeMessageFactory,
                                                       new WireProtocolAdaptorFactoryImpl());
     this.clientResponder = new ClientHandshakeMessageResponder(this.clientResponderSentQueue,

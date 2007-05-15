@@ -63,7 +63,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                       new ConnectionAddressProvider(
                                                                                                     new ConnectionInfo[] { connectionInfo }),
                                                                       maxRetries, 5000);
-    transport = new ClientMessageTransport(maxRetries, cce, handshakeErrorHandler, this.transportMessageFactory,
+    transport = new ClientMessageTransport(cce, handshakeErrorHandler, this.transportMessageFactory,
                                            new WireProtocolAdaptorFactoryImpl());
   }
 
@@ -127,7 +127,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                       new ConnectionAddressProvider(
                                                                                                     new ConnectionInfo[] { connInfo }),
                                                                       0, 1000);
-    transport = new ClientMessageTransport(0, cce, this.handshakeErrorHandler, this.transportMessageFactory,
+    transport = new ClientMessageTransport(cce, this.handshakeErrorHandler, this.transportMessageFactory,
                                            new WireProtocolAdaptorFactoryImpl());
     transport.open();
     assertTrue(transport.isConnected());
