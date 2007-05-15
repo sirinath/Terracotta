@@ -17,17 +17,22 @@ import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparentApp {
+/**
+ * Test for CDV-190 - auto-synchronize feature
+ * 
+ * @author hhuynh
+ */
+public class AutoSynchTestApp extends AbstractErrorCatchingTransparentApp {
   private final CyclicBarrier barrier;
-  private MyInterface root = new MyConcrete();
+  private BaseClass           root = new BaseClass();
 
-  public InterfaceInstrumentTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
+  public AutoSynchTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, com.tc.object.config.DSOClientConfigHelper config) {
-    String testClass = InterfaceInstrumentTestApp.class.getName();
+    String testClass = AutoSynchTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 
     String methodExpression = "* " + testClass + "*.*(..)";
@@ -36,49 +41,36 @@ public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparent
     spec.addRoot("root", "root");
     new CyclicBarrierSpec().visit(visitor, config);
 
-    String concreteClass = MyConcrete.class.getName();
-    String interfaceName = MyInterface.class.getName();
-    
-    config.addIncludePattern(interfaceName + "+");
-    
-    // THIS IS INTENTIONALLY COMMENTED OUT TO MAKE SURE
-    // THE TEST STILL PASSES. SEE CDV-144
-    // config.addIncludePattern(concreteClass);
-
-    config.addWriteAutolock("* " + concreteClass + "*.*(..)");
+    String baseClass = BaseClass.class.getName();
+    config.addIncludePattern(baseClass);
+    config.addAutoSynchronize("* " + baseClass + "*.*(..)");
   }
 
   protected void runTest() throws Throwable {
-    if (barrier.barrier() == 0) {
+    try {
       root.add("one");
       root.add("two");
+    } catch (Throwable t) {
+      t.printStackTrace();
     }
 
     barrier.barrier();
-    Assert.assertEquals(2, root.getSize());
+    Assert.assertEquals(4, root.getSize());
+  }
 
-  }
-  
-  static interface MyInterface {
-    int getSize();
-    void add(Object o);
-  }
-  
-  static class MyConcrete implements MyInterface {
+  static class BaseClass {
     protected List list = new ArrayList();
-    
+
     public void add(Object o) {
-      synchronized (list) {
-        list.add(o);
-      }
+      // intentionally not using synchronize
+      list.add(o);
     }
 
     public int getSize() {
-      synchronized (list) {
-        return list.size();
-      }
+      // intentionally not using synchronize
+      return list.size();
     }
+
   }
-  
-  
+
 }
