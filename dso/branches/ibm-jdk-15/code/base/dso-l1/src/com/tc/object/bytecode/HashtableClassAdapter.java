@@ -31,7 +31,7 @@ public class HashtableClassAdapter implements Opcodes {
    * 
    * <pre>
    * protected Map.Entry __tc_getEntry(Object obj) {
-   *   return super.getEntry();
+   *   return getEntry();
    * }
    * </pre>
    * 
@@ -45,7 +45,7 @@ public class HashtableClassAdapter implements Opcodes {
     if (Vm.isIBM()) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/Hashtable", "getEntry", "(Ljava/lang/Object;)Ljava/util/Hashtable$Entry;");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Hashtable", "getEntry", "(Ljava/lang/Object;)Ljava/util/Hashtable$Entry;");
     } else {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/Hashtable", "table", "[Ljava/util/Hashtable$Entry;");
