@@ -7,4 +7,4 @@ appUtil = terracotta.AppUtil(AdminApp, webappDir)
 appUtil.installAll()
 
 if AdminConfig.hasChanges():
-        AdminConfig.save()
+    AdminConfig.save()
