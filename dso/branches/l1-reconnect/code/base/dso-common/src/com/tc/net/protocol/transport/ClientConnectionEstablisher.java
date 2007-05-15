@@ -27,9 +27,6 @@ public class ClientConnectionEstablisher {
 
   private static final long               CONNECT_RETRY_INTERVAL = 1000;
 
-  private static final Object             RECONNECT              = new Object();
-  private static final Object             QUIT                   = new Object();
-
   private final String                    desc;
   private final int                       maxReconnectTries;
   private final int                       timeout;
@@ -40,7 +37,7 @@ public class ClientConnectionEstablisher {
 
   private Thread                          connectionEstablisher;
 
-  private NoExceptionLinkedQueue          reconnectRequest       = new NoExceptionLinkedQueue();
+  private NoExceptionLinkedQueue          reconnectRequest       = new NoExceptionLinkedQueue();  // <ConnectionRequest>
 
   public ClientConnectionEstablisher(TCConnectionManager connManager, ConnectionAddressProvider connAddressProvider,
                                      int maxReconnectTries, int timeout) {
@@ -171,12 +168,28 @@ public class ClientConnectionEstablisher {
         connectionEstablisher.start();
 
       }
-      reconnectRequest.put(RECONNECT);
+      reconnectRequest.put(new ConnectionRequest(ConnectionRequest.RECONNECT));
+    }
+  }
+
+  public void asyncRestoreConnection(ClientMessageTransport cmt, TCSocketAddress sa) {
+    synchronized (connecting) {
+      if (connecting.get()) return;
+
+      if (connectionEstablisher == null) {
+        connecting.set(true);
+        // First time
+        connectionEstablisher = new Thread(new AsyncReconnect(cmt, this), "ConnectionEstablisher");
+        connectionEstablisher.setDaemon(true);
+        connectionEstablisher.start();
+
+      }
+      reconnectRequest.put(new ConnectionRequest(ConnectionRequest.RESTORE_CONNECTION));
     }
   }
 
   public void quitReconnectAttempts() {
-    reconnectRequest.put(QUIT);
+    reconnectRequest.put(new ConnectionRequest(ConnectionRequest.QUIT));
   }
 
   static class AsyncReconnect implements Runnable {
@@ -189,9 +202,9 @@ public class ClientConnectionEstablisher {
     }
 
     public void run() {
-      Object request = null;
-      while ((request = cce.reconnectRequest.take()) != null) {
-        if (request == RECONNECT) {
+      ConnectionRequest request = null;
+      while ((request = (ConnectionRequest) cce.reconnectRequest.take()) != null) {
+        if (request == ConnectionRequest.RECONNECT) {
           try {
             cce.reconnect(cmt);
           } catch (MaxConnectionsExceededException e) {
@@ -201,11 +214,37 @@ public class ClientConnectionEstablisher {
           } catch (Throwable t) {
             cmt.logger.warn("Reconnect failed !", t);
           }
-        } else if (request == QUIT) {
+        } else if (request == ConnectionRequest.QUIT) {
           break;
         }
       }
     }
   }
 
+  static class ConnectionRequest {
+
+    public static final Object    RECONNECT          = new Object();
+    public static final Object    QUIT               = new Object();
+    public static final Object    RESTORE_CONNECTION = new Object();
+
+    private final Object          type;
+    private final TCSocketAddress sa;
+
+    public ConnectionRequest(Object type) {
+      this(type, null);
+    }
+
+    public ConnectionRequest(final Object type, final TCSocketAddress sa) {
+      this.type = type;
+      this.sa = sa;
+    }
+
+    public Object getType() {
+      return type;
+    }
+
+    public TCSocketAddress getSocketAddress() {
+      return sa;
+    }
+  }
 }
