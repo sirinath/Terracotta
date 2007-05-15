@@ -370,7 +370,7 @@ public class DistributedObjectServer extends SEDA {
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
 
     final NetworkStackHarnessFactory networkStackHarnessFactory;
-    final boolean useOOOLayer = false;
+    final boolean useOOOLayer = true;
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
