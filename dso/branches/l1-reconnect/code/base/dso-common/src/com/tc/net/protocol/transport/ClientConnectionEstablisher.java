@@ -159,45 +159,37 @@ public class ClientConnectionEstablisher {
   public void asyncReconnect(ClientMessageTransport cmt) {
     synchronized (connecting) {
       if (connecting.get()) return;
-
-      if (connectionEstablisher == null) {
-        connecting.set(true);
-        // First time
-        connectionEstablisher = new Thread(new AsyncReconnect(cmt, this), "ConnectionEstablisher");
-        connectionEstablisher.setDaemon(true);
-        connectionEstablisher.start();
-
-      }
-      reconnectRequest.put(new ConnectionRequest(ConnectionRequest.RECONNECT));
+      putReconnectRequest(new ConnectionRequest(ConnectionRequest.RECONNECT, cmt));
     }
   }
 
   public void asyncRestoreConnection(ClientMessageTransport cmt, TCSocketAddress sa) {
     synchronized (connecting) {
       if (connecting.get()) return;
-
-      if (connectionEstablisher == null) {
-        connecting.set(true);
-        // First time
-        connectionEstablisher = new Thread(new AsyncReconnect(cmt, this), "ConnectionEstablisher");
-        connectionEstablisher.setDaemon(true);
-        connectionEstablisher.start();
-
-      }
-      reconnectRequest.put(new ConnectionRequest(ConnectionRequest.RESTORE_CONNECTION));
+      putReconnectRequest(new ConnectionRequest(ConnectionRequest.RESTORE_CONNECTION, cmt, sa));
     }
   }
 
+  private void putReconnectRequest(ConnectionRequest request) {
+    if (connectionEstablisher == null) {
+      connecting.set(true);
+      // First time
+      connectionEstablisher = new Thread(new AsyncReconnect(this), "ConnectionEstablisher");
+      connectionEstablisher.setDaemon(true);
+      connectionEstablisher.start();
+
+    }
+    reconnectRequest.put(request);
+  }
+
   public void quitReconnectAttempts() {
-    reconnectRequest.put(new ConnectionRequest(ConnectionRequest.QUIT));
+    putReconnectRequest(new ConnectionRequest(ConnectionRequest.QUIT, null));
   }
 
   static class AsyncReconnect implements Runnable {
-    private final ClientMessageTransport      cmt;
     private final ClientConnectionEstablisher cce;
 
-    public AsyncReconnect(ClientMessageTransport cmt, ClientConnectionEstablisher cce) {
-      this.cmt = cmt;
+    public AsyncReconnect(ClientConnectionEstablisher cce) {
       this.cce = cce;
     }
 
@@ -205,6 +197,7 @@ public class ClientConnectionEstablisher {
       ConnectionRequest request = null;
       while ((request = (ConnectionRequest) cce.reconnectRequest.take()) != null) {
         if (request == ConnectionRequest.RECONNECT) {
+          ClientMessageTransport cmt = request.getClientMessageTransport();
           try {
             cce.reconnect(cmt);
           } catch (MaxConnectionsExceededException e) {
@@ -223,19 +216,21 @@ public class ClientConnectionEstablisher {
 
   static class ConnectionRequest {
 
-    public static final Object    RECONNECT          = new Object();
-    public static final Object    QUIT               = new Object();
-    public static final Object    RESTORE_CONNECTION = new Object();
+    public static final Object           RECONNECT          = new Object();
+    public static final Object           QUIT               = new Object();
+    public static final Object           RESTORE_CONNECTION = new Object();
 
-    private final Object          type;
-    private final TCSocketAddress sa;
+    private final Object                 type;
+    private final TCSocketAddress        sa;
+    private final ClientMessageTransport cmt;
 
-    public ConnectionRequest(Object type) {
-      this(type, null);
+    public ConnectionRequest(Object type, ClientMessageTransport cmt) {
+      this(type, cmt, null);
     }
 
-    public ConnectionRequest(final Object type, final TCSocketAddress sa) {
+    public ConnectionRequest(final Object type, final ClientMessageTransport cmt, final TCSocketAddress sa) {
       this.type = type;
+      this.cmt = cmt;
       this.sa = sa;
     }
 
@@ -245,6 +240,10 @@ public class ClientConnectionEstablisher {
 
     public TCSocketAddress getSocketAddress() {
       return sa;
+    }
+
+    public ClientMessageTransport getClientMessageTransport() {
+      return cmt;
     }
   }
 }
