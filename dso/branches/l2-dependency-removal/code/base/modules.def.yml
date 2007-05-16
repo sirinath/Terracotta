@@ -198,7 +198,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
+#       - dso-l2
         - dso-l2-common
         - dso-l1-weblogic
         - simulator
