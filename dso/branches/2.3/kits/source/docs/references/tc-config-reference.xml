@@ -76,12 +76,11 @@
          running on host 'artichoke'.
 
          If this is a relative path, then it is interpreted relative to
-         the current working directory of the server (that is, the directory
-         you were in when you started the server). It is thus recommended that
-         you specify an absolute path here.
+         the location of this file. It is thus recommended that you specify
+         an absolute path here.
 
-         Default: 'data'; this places the 'data' directory in the
-         directory you were in when you invoked 'start-tc-server'.
+         Default: 'data'; this places the 'data' directory in the same
+         directory as this config file.
       -->
       <data>/opt/terracotta/server-data</data>
 
@@ -91,12 +90,11 @@
          'server-logs-artichoke' if running on host 'artichoke'.
 
          If this is a relative path, then it is interpreted relative to
-         the current working directory of the server (that is, the directory
-         you were in when you started server). It is thus recommended that
-         you specify an absolute path here.
+         the location of this file. It is thus recommended that you specify
+         an absolute path here.
 
-         Default: 'logs'; this places the 'logs' directory in the
-         directory you were in when you invoked 'start-tc-server'.
+         Default: 'logs'; this places the 'logs' directory in the same
+         directory as this config file.
       -->
       <logs>/opt/terracotta/server-logs</logs>
 
