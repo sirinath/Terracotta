@@ -12,7 +12,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     ent_top = FilePath.new(@basedir, '..', '..', '..').canonicalize
     notices_dir = FilePath.new(ent_top, 'kits', 'source', 'docs', 'notices').canonicalize
     ant.copy(:todir => product_directory.to_s, :overwrite => true) {
-      ant.fileset(:dir => notices_dir.to_s, :includes => '*.txt')
+      ant.fileset(:dir => notices_dir.to_s, :includes => '*.txt, *.pdf')
     }
   end
 end
