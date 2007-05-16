@@ -43,13 +43,14 @@ public class PlainNetworkStackHarnessFactory implements NetworkStackHarnessFacto
     protected void connectStack() {
       channel.setSendLayer(transport);
       transport.setReceiveLayer(channel);
-      transport.addTransportListener(channel);
       //XXX: this is super ugly, but...
       if (transport instanceof ClientMessageTransport) {
         ClientMessageTransport cmt = (ClientMessageTransport) transport;
         ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
-        ConnectionWatcher cw = new ConnectionWatcher(cmt, cce);
-        cmt.addTransportListener(cw);
+        ConnectionWatcher cw = new ConnectionWatcher(cmt, channel, cce);
+        transport.addTransportListener(cw);
+      } else {
+        transport.addTransportListener(channel);
       }
     }
 

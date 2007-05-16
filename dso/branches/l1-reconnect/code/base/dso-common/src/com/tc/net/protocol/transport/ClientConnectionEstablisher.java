@@ -143,6 +143,35 @@ public class ClientConnectionEstablisher {
     }
   }
 
+  private void restoreConnection(ClientMessageTransport cmt, TCSocketAddress sa, long timeoutMillis,
+                                 RestoreConnectionCallback callback) {
+    final long deadline = System.currentTimeMillis() + timeoutMillis;
+    boolean connected = false;
+    for (int i = 0; true; i++) {
+      try {
+        System.err.println("\n\n@@@@ restore connection is HERE -> i = " + i);
+        TCConnection connection = connect(sa, cmt);
+        cmt.reconnect(connection);
+        connected = true;
+      } catch (MaxConnectionsExceededException e) {
+        // nothing
+      } catch (TCTimeoutException e) {
+        handleConnectException(e, false, cmt.logger);
+      } catch (IOException e) {
+        handleConnectException(e, false, cmt.logger);
+      } catch (Exception e) {
+        handleConnectException(e, true, cmt.logger);
+      }
+      if (connected || System.currentTimeMillis() > deadline) {
+        break;
+      }
+    }
+    connecting.set(false);
+    if (!connected) {
+      callback.restoreConnectionFailed(cmt);
+    }
+  }
+
   private void handleConnectException(Exception e, boolean logFullException, TCLogger logger) {
     if (logger.isDebugEnabled() || logFullException) {
       logger.error("Connect Exception", e);
@@ -163,10 +192,11 @@ public class ClientConnectionEstablisher {
     }
   }
 
-  public void asyncRestoreConnection(ClientMessageTransport cmt, TCSocketAddress sa) {
+  public void asyncRestoreConnection(ClientMessageTransport cmt, TCSocketAddress sa,
+                                     RestoreConnectionCallback callback, long timeoutMillis) {
     synchronized (connecting) {
       if (connecting.get()) return;
-      putReconnectRequest(new ConnectionRequest(ConnectionRequest.RESTORE_CONNECTION, cmt, sa));
+      putReconnectRequest(new RestoreConnectionRequest(cmt, sa, callback, timeoutMillis));
     }
   }
 
@@ -207,6 +237,10 @@ public class ClientConnectionEstablisher {
           } catch (Throwable t) {
             cmt.logger.warn("Reconnect failed !", t);
           }
+        } else if (request.isRestoreConnection()) {
+          RestoreConnectionRequest req = (RestoreConnectionRequest) request;
+          cce.restoreConnection(req.getClientMessageTransport(), req.getSocketAddress(), req.getTimeoutMillis(), req
+              .getCallback());
         } else if (request.isQuit()) {
           break;
         }
@@ -216,9 +250,9 @@ public class ClientConnectionEstablisher {
 
   static class ConnectionRequest {
 
-    public static final int           RECONNECT          = 1;
-    public static final int           QUIT               = 2;
-    public static final int           RESTORE_CONNECTION = 3;
+    public static final int              RECONNECT          = 1;
+    public static final int              QUIT               = 2;
+    public static final int              RESTORE_CONNECTION = 3;
 
     private final int                    type;
     private final TCSocketAddress        sa;
@@ -252,6 +286,27 @@ public class ClientConnectionEstablisher {
 
     public ClientMessageTransport getClientMessageTransport() {
       return cmt;
+    }
+  }
+
+  static class RestoreConnectionRequest extends ConnectionRequest {
+
+    private final RestoreConnectionCallback callback;
+    private final long                      timeoutMillis;
+
+    public RestoreConnectionRequest(ClientMessageTransport cmt, final TCSocketAddress sa,
+                                    RestoreConnectionCallback callback, long timeoutMillis) {
+      super(RESTORE_CONNECTION, cmt, sa);
+      this.callback = callback;
+      this.timeoutMillis = timeoutMillis;
+    }
+
+    public RestoreConnectionCallback getCallback() {
+      return callback;
+    }
+
+    public long getTimeoutMillis() {
+      return timeoutMillis;
     }
   }
 }

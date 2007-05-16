@@ -124,6 +124,10 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     receiveLayer.notifyTransportDisconnected(this);
   }
 
+  public void pause() {
+    this.delivery.pause();
+  }
+
   public void notifyTransportConnectAttempt(MessageTransport transport) {
     //
     receiveLayer.notifyTransportConnectAttempt(this);
