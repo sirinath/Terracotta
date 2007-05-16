@@ -4,6 +4,7 @@
  */
 package com.tc.bytes;
 
+import com.tc.lang.Recyclable;
 import com.tc.util.Assert;
 
 import java.nio.ByteBuffer;
@@ -14,7 +15,7 @@ import java.nio.ByteBuffer;
 
 // XXX: Should we wrap the native java.nio overflow, underflow and readOnly exceptions with the TC versions?
 // This would make the TCByteBuffer interface consistent w.r.t. exceptions (whilst being blind to JDK13 vs JDK14)
-public class TCByteBuffer {
+public class TCByteBuffer implements Recyclable {
 
   private final ByteBuffer   buffer;
   private final TCByteBuffer root;
