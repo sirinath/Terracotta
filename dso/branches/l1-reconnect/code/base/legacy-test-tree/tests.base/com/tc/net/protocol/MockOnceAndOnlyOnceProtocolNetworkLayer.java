@@ -97,4 +97,8 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
     
   }
 
+  public void pause() {
+    throw new ImplementMe();
+  }
+
 }
