@@ -247,4 +247,23 @@ public class StringUtil {
     }
     return result.toString();
   }
+  
+  /**
+   * Reduces the size that a string occupies to the minimal possible by 
+   * ensuring that the back-end char array contains exactly the characters that
+   * are needed, and no more.
+   * 
+   * Note that this method doesn't modify the original string as they are
+   * immutable, a new string is returned instead.
+   * 
+   * @param source the string that needs to be reduced
+   * @return the reduces string
+   */
+  public static final String reduce(String source) {
+    if (null == source) return null;
+    
+    char[] chars = new char[source.length()];
+    source.getChars(0, source.length(), chars, 0);
+    return new String(chars);
+  }
 }
