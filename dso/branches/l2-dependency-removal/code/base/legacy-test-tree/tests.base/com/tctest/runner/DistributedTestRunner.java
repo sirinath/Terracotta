@@ -15,7 +15,6 @@ import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.server.TCServerImpl;
 import com.tc.simulator.app.ApplicationBuilder;
 import com.tc.simulator.app.ApplicationConfig;
@@ -121,7 +120,7 @@ public class DistributedTestRunner implements ResultsListener {
 
     if (this.startServer) {
       server = new TCServerImpl(manager, new TCThreadGroup(new ThrowableHandler(TCLogging
-          .getLogger(DistributedObjectServer.class))));
+          .getLogger(DistributedTestRunner.class))));
     } else {
       server = null;
     }
