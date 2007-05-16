@@ -4,6 +4,7 @@
  */
 package com.tc.util.runtime;
 
+import com.tc.exception.TCRuntimeException;
 import com.tc.process.StreamCollector;
 import com.tc.test.TestConfigObject;
 import com.tc.util.concurrent.ThreadUtil;
@@ -33,7 +34,24 @@ public class ThreadDump {
   }
 
   public static int dumpThreadsMany(int iterations, long delay) {
-    int pid = -1;
+    int pid = 0;
+    RuntimeException windowsPidException = null;
+    try {
+      pid = GetPid.getPID();
+    } catch (RuntimeException re) {
+      if (Os.isWindows()) {
+        if (Vm.isIBM()) {
+          windowsPidException = re;
+        } else {
+          throw re;
+        }
+      } else {
+        System.err.println("Got exception trying to get the process ID, stacktrace is below:");
+        ExceptionUtil.dumpFullStackTrace(re, System.err);
+        System.err.flush();
+      }
+    }
+
     for (int i = 0; i < iterations; i++) {
       boolean doStandardDump = !Vm.isIBM();
       if (Vm.isIBM()) {
@@ -48,39 +66,37 @@ public class ThreadDump {
         }
       }
       if (doStandardDump) {
+        if (pid == 0) {
+          if (Os.isWindows()) {
+            throw new TCRuntimeException("Unable to find my process ID, cannot dump threads", windowsPidException);
+          } else {
+            System.err.println("My PID is not available, sending QUIT signal to process group (PID 0)");
+            System.err.flush();
+          }
+        }
         if (Os.isWindows()) {
-          doWindowsDump();
+          doWindowsDump(pid);
         } else {
-          pid = doUnixDump();
+          doUnixDump(pid);
         }
       }
       ThreadUtil.reallySleep(delay);
     }
+
     return pid;
   }
 
   public static void dumpProcessGroup() {
     if (!Os.isUnix()) { throw new AssertionError("unix only"); }
-    doSignal(new String[] { "-3" }, 0);
+    doUnixDump(0);
   }
 
-  private static int doUnixDump() {
-    int pid;
-    try {
-      pid = GetPid.getPID();
-    } catch (Throwable t) {
-      System.err.println("Got Exception trying to get the process ID. Sending Kill signal to entire process group. "
-          + t.getMessage());
-      System.err.flush();
-      pid = 0;
-    }
-
-    doSignal(new String[] { "-3" }, pid);
-    return pid;
+  private static void doUnixDump(int pid) {
+    doSignal(new String[] { "-QUIT" }, pid);
   }
 
-  private static void doWindowsDump() {
-    doSignal(new String[] {}, GetPid.getPID());
+  private static void doWindowsDump(int pid) {
+    doSignal(new String[] {}, pid);
   }
 
   private static void doIbmDump() throws ClassNotFoundException, SecurityException, NoSuchMethodException,
@@ -116,7 +132,6 @@ public class ThreadDump {
       System.err.flush();
       System.out.print(out.toString());
       System.out.flush();
-
     } catch (Exception e) {
       e.printStackTrace();
     }
