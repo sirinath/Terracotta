@@ -69,17 +69,41 @@ function _runWsAdmin() {
     return $?
 }
 
+function _addTerracottaToPolicy() {
+    grep -q "$DSO_BOOT_JAR" "${WAS_HOME}/profiles/tc-${1}/properties/server.policy"
+    if test "$?" != "0"; then
+        _info adding Terracotta codebase to server.policy in profile "tc-${1}" 'for' port "${1}"...
+        cat << __EOF__ >> "${WAS_HOME}/profiles/tc-${1}/properties/server.policy"
+
+grant codeBase "file:${TC_INSTALL_DIR}/lib/-" {
+      permission java.security.AllPermission;
+};
+
+grant codeBase "file:${TC_INSTALL_DIR}/lib/dso-boot/-" {
+      permission java.security.AllPermission;
+};
+__EOF__
+        return $?
+    fi
+}
+
 function _startWebSphere() {
     if test "${2}" != "nodso"; then
         # Instrument WebSphere for use with Terracotta
-        _runWsAdmin -connType NONE -profileName "$tc-${1}" -javaoption -Denable.dso="true" -f "${WAS_SANDBOX}/toggle-dso.py"
+        _addTerracottaToPolicy "${1}"
+        __retVal="$?"
+        if test "${__retVal}" != "0"; then
+            _error unable to modify server.policy settings to grant Terracotta code privileges
+            return "${__retVal}"
+        fi
+        _runWsAdmin -connType NONE -profileName "tc-${1}" -javaoption -Denable.dso="true" -f "${WAS_SANDBOX}/toggle-dso.py"
         __retVal="$?"
         if test "${__retVal}" != "0"; then
             return "${__retVal}"
         fi
     else
         # Make sure DSO is not enabled in WebSphere
-        _runWsAdmin -connType NONE -profileName "$tc-${1}" -javaoption -Denable.dso="false" -f "${WAS_SANDBOX}/toggle-dso.py"
+        _runWsAdmin -connType NONE -profileName "tc-${1}" -javaoption -Denable.dso="false" -f "${WAS_SANDBOX}/toggle-dso.py"
         __retVal="$?"
         if test "${__retVal}" != "0"; then
             return "${__retVal}"
