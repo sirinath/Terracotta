@@ -37,6 +37,8 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 		super(appId, cfg, listenerProvider);
 		barrier = new CyclicBarrier(getParticipantCount());
 		clusteredCacheManager = CacheManager.getInstance();
+		//clusteredCacheManager = new CacheManager();
+		//clusteredCacheManager = CacheManager.create();
 	}
 
 	/**
@@ -47,7 +49,7 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 	 */
 	public static void visitL1DSOConfig(final ConfigVisitor visitor,
 			final DSOClientConfigHelper config) {
-		config.addNewModule("clustered-commons-collections-3.1", "1.0.0");
+		config.addNewModule("clustered-commons-collections-3.1", "1.0.0"); 
 		config.addNewModule("clustered-ehcache-1.2.4", "1.0.0");
 		config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
 
