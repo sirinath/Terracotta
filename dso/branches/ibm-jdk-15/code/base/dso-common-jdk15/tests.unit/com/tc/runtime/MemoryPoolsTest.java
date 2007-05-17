@@ -23,7 +23,7 @@ public class MemoryPoolsTest extends TCTestCase {
       // make sure that these beans are actually not present in the IBM JDK,
       // in case this changes in later revisions
       try {
-        new TCMemoryManagerJdk15();
+        new TCMemoryManagerJdk15PoolMonitor();
         fail("Expecting AssertionError");
       } catch (AssertionError e) {
         assertNotNull(e);
@@ -43,7 +43,7 @@ public class MemoryPoolsTest extends TCTestCase {
       System.err.println(" Usage = " + mpBean.getUsage());
       System.err.println("=====================");
     }
-    JVMMemoryManager memManager = new TCMemoryManagerJdk15();
+    JVMMemoryManager memManager = new TCMemoryManagerJdk15PoolMonitor();
     assertTrue(memManager.isMemoryPoolMonitoringSupported());
     MemoryUsage mu1 = memManager.getOldGenUsage();
     assertNotNull(mu1);
