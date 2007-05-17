@@ -58,13 +58,12 @@ public class SendStateMachine extends AbstractStateMachine {
 
   private class AckRequestState extends AbstractState {
     public void enter() {
-      if (sent.get() > acked.get()) {
+      if(sent.get() == -1) {
+        switchToState(MESSAGE_WAIT_STATE);
+      } else {
         sendAckRequest();
         switchToState(ACK_WAIT_STATE);
-      } else {
-        switchToState(MESSAGE_WAIT_STATE);
-      }
-
+      } 
     }
   }
 
@@ -76,6 +75,12 @@ public class SendStateMachine extends AbstractStateMachine {
       //yuck
       if (protocolMessage.isSend()) return;
       
+      if (protocolMessage.getAckSequence() == -1) {
+        // new connection up, re-initialize
+        reset();
+        switchToState(MESSAGE_WAIT_STATE);
+        return;
+      }
       if (protocolMessage.getAckSequence() < sent.get()) {
         sendMessage(createProtocolMessage(sent.get()));
       } else {
@@ -109,5 +114,10 @@ public class SendStateMachine extends AbstractStateMachine {
     } catch (InterruptedException e) {
       throw new AssertionError(e);
     }
+  }
+  
+  private void reset() {
+    sent.set(-1);
+    acked.set(-1);
   }
 }

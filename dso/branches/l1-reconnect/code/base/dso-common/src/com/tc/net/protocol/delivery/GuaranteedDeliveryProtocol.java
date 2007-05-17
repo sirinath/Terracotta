@@ -37,6 +37,9 @@ class GuaranteedDeliveryProtocol implements DeliveryProtocol {
       receive.addEvent(new OOOProtocolEvent(protocolMessage));
     } else {
       send.addEvent(new OOOProtocolEvent(protocolMessage));
+      // pass ack=-1 to receiver for re-initialize
+      if(protocolMessage.getAckSequence() == -1)
+        receive.addEvent(new OOOProtocolEvent(protocolMessage));
     }
   }
 
