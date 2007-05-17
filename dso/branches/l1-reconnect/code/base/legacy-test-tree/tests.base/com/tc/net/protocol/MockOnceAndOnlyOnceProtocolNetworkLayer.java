@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol;
 
@@ -17,7 +18,8 @@ import com.tc.net.protocol.transport.WireProtocolMessage;
 /**
  * 
  */
-public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTransport implements OnceAndOnlyOnceProtocolNetworkLayer {
+public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTransport implements
+    OnceAndOnlyOnceProtocolNetworkLayer {
 
   public MockOnceAndOnlyOnceProtocolNetworkLayer() {
     super(new NullTCLogger());
@@ -31,9 +33,9 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
   }
 
   public void setReceiveLayer(NetworkLayer layer) {
-    	this.receiveLayer = layer;
+    this.receiveLayer = layer;
   }
-  
+
   public void send(TCNetworkMessage message) {
     throw new ImplementMe();
   }
@@ -72,7 +74,7 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
 
   public void attachNewConnection(TCConnection connection) {
     throw new ImplementMe();
-    
+
   }
 
   public ConnectionID getConnectionId() {
@@ -89,16 +91,21 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
 
   public void receiveTransportMessage(WireProtocolMessage message) {
     throw new ImplementMe();
-    
+
   }
 
   public void sendToConnection(TCNetworkMessage message) {
     throw new ImplementMe();
-    
+
   }
 
   public void pause() {
     throw new ImplementMe();
+  }
+
+  public void resume() {
+    throw new ImplementMe();
+
   }
 
 }

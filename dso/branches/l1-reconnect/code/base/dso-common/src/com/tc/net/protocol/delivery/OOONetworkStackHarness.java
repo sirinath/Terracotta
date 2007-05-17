@@ -46,8 +46,8 @@ public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
     if (transport instanceof ClientMessageTransport) {
       ClientMessageTransport cmt = (ClientMessageTransport) transport;
       ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
-//      final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
-//      OOOConnectionWatcher cw = new OOOConnectionWatcher(cmt, cce, oooLayer, timeout);
+      // final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
+      // OOOConnectionWatcher cw = new OOOConnectionWatcher(cmt, cce, oooLayer, timeout);
       ConnectionWatcher cw = new ConnectionWatcher(cmt, oooLayer, cce);
       cmt.addTransportListener(cw);
     } else {

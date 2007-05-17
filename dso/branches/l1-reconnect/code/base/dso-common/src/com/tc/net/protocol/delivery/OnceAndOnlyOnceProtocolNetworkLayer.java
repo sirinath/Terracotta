@@ -15,4 +15,6 @@ import com.tc.net.protocol.transport.MessageTransportListener;
  */
 public interface OnceAndOnlyOnceProtocolNetworkLayer extends NetworkLayer, MessageTransport, MessageTransportListener {
   void pause();
+
+  void resume();
 }
