@@ -74,10 +74,6 @@ import com.tc.weblogic.transform.ServerAdapter;
 import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
-import com.tc.websphere.transform.ClassGraphAdapter;
-import com.tc.websphere.transform.DefaultClassLoaderAdapter;
-import com.tc.websphere.transform.JarClassLoaderAdapter;
-import com.tc.websphere.transform.WSLauncherAdapter;
 import com.tcclient.util.DSOUnsafe;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
@@ -758,12 +754,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // JBoss adapters
     addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", new UCLAdapter());
     addCustomAdapter("org.jboss.Main", new MainAdapter());
-
-    // websphere 6.1 adapters
-    addCustomAdapter("org.eclipse.osgi.framework.adaptor.core.DefaultClassLoader", new DefaultClassLoaderAdapter());
-    addCustomAdapter("com.ibm.ws.classloader.JarClassLoader", new JarClassLoaderAdapter());
-    addCustomAdapter("com.ibm.ws.classloader.ClassGraph", new ClassGraphAdapter());
-    addCustomAdapter("com.ibm.wsspi.bootstrap.WSLauncher", new WSLauncherAdapter());
 
     // TODO for the Event Swing sample only
     ld = new LockDefinition("setTextArea", ConfigLockLevel.WRITE);
