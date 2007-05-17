@@ -6,6 +6,7 @@ package com.tc.object.tools;
 
 import com.tc.util.runtime.Vm;
 import com.tc.util.runtime.Vm.UnknownJvmVersionException;
+import com.tc.util.runtime.Vm.UnknownRuntimeVersionException;
 
 import java.util.Properties;
 
@@ -65,6 +66,10 @@ public class BootJarSignature {
         UnsupportedVMException uvme = new UnsupportedVMException("Unable to extract the JVM version with properties: "
                                                                  + source, ujve);
         throw uvme;
+      } catch (UnknownRuntimeVersionException urve) {
+        UnsupportedVMException uvme = new UnsupportedVMException("Unable to extract the JVM version with properties: "
+                                                                 + source, urve);
+        throw uvme;
       }
       if (vmVersion.isJRockit()) {
         // In at least one case, jrockit 1.4.2_05 on linux, you get "Sun Microsystems Inc." as the vendor...err
@@ -82,6 +87,9 @@ public class BootJarSignature {
       return vmVersion.toString().replaceAll("\\.", "");
     } catch (final UnknownJvmVersionException ujve) {
       final UnsupportedVMException uvme = new UnsupportedVMException("Cannot determine VM version", ujve);
+      throw uvme;
+    } catch (final UnknownRuntimeVersionException urve) {
+      final UnsupportedVMException uvme = new UnsupportedVMException("Cannot determine VM version", urve);
       throw uvme;
     }
   }
