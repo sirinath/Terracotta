@@ -77,16 +77,19 @@ class AppUtil:
     def installAll(self):
         warFiles = filter(lambda x: len(x) > 4 and string.rfind(x, ".war") == len(x) - 4, os.listdir(self.webappDir))
         for warFile in warFiles:
-            if not self.installed(warFile):
+            if not self.installed(self.appName(warFile)):
                 self.install(warFile)
             else:
                 print "WebApp[" + warFile + "] is already installed"
 
     def install(self, warFile):
-        warName = string.split(warFile, ".")[0]
-        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + warName + " -contextroot " + warName + " -usedefaultbindings")
-        print "WebApp[" + warFile + "] installed"
+        appName = self.appName(warFile)
+        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + appName + " -contextroot /" + appName + " -usedefaultbindings")
+        print "WebApp[" + appName + "] installed"
 
-    def installed(self, warFile):
-        return operator.contains(string.split(self.AdminApp.list()), warFile)
+    def installed(self, appName):
+        return operator.contains(string.split(self.AdminApp.list()), appName)
+
+    def appName(self, warFile):
+        return string.split(warFile, ".")[0]
 

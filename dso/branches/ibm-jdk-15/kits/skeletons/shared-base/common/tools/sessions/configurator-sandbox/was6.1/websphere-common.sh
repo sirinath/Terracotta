@@ -70,7 +70,7 @@ function _runWsAdmin() {
 }
 
 function _addTerracottaToPolicy() {
-    grep -q "$DSO_BOOT_JAR" "${WAS_HOME}/profiles/tc-${1}/properties/server.policy"
+    echo "${DSO_BOOT_JAR}" | grep -q "${WAS_HOME}/profiles/tc-${1}/properties/server.policy"
     if test "$?" != "0"; then
         _info adding Terracotta codebase to server.policy in profile "tc-${1}" 'for' port "${1}"...
         cat << __EOF__ >> "${WAS_HOME}/profiles/tc-${1}/properties/server.policy"
