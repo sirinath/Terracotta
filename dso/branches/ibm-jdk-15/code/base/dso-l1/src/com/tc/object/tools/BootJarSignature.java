@@ -57,7 +57,7 @@ public class BootJarSignature {
 
     if (vendor.toLowerCase().startsWith("bea ")) { return VM_VENDOR_BEA; }
     if (vendor.toLowerCase().startsWith("apple ")) { return VM_VENDOR_SUN; }
-    if (vendor.equals("IBM Corporation")) { return VM_VENDOR_IBM; }
+    if (vendor.toLowerCase().startsWith("ibm ")) { return VM_VENDOR_IBM; }
     if (vendor.toLowerCase().startsWith("sun ")) {
       final Vm.Version vmVersion;
       try {

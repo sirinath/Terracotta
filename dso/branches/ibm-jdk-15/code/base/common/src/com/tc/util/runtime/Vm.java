@@ -83,7 +83,6 @@ public class Vm {
   public final static class Version {
 
     private final String  vmVersion;
-    private final String  vendorVersion;
     private final int     mega;
     private final int     major;
     private final int     minor;
@@ -95,12 +94,11 @@ public class Vm {
       this(properties.getProperty("java.version", "<error: java.version not specified in properties>"),
           properties.getProperty("java.runtime.version", "<error: java.runtime.version not specified in properties>"),
           properties.getProperty("jrockit.version") != null || properties.getProperty("java.vm.name", "").toLowerCase().indexOf("jrockit") >= 0,
-          properties.getProperty("java.vendor", "").equals("IBM Corporation"));
+          properties.getProperty("java.vendor", "").toLowerCase().startsWith("ibm "));
     }
 
     public Version(final String vendorVersion, final String runtimeVersion, final boolean isJRockit, final boolean isIBM)
         throws UnknownJvmVersionException, UnknownRuntimeVersionException {
-      this.vendorVersion = vendorVersion;
       this.isIBM = isIBM;
       this.isJRockit = isJRockit;
       final Matcher versionMatcher = JVM_VERSION_PATTERN.matcher(vendorVersion);
@@ -108,20 +106,31 @@ public class Vm {
         mega = Integer.parseInt(versionMatcher.group(1));
         major = Integer.parseInt(versionMatcher.group(2));
         minor = Integer.parseInt(versionMatcher.group(3));
+        String version_patch = versionMatcher.groupCount() == 4 ? versionMatcher.group(4) : null;
         if (isIBM) {
           final Matcher runtimeMatcher = IBM_PATCH_PATTERN.matcher(runtimeVersion);
           if (runtimeMatcher.matches()) {
-            patch = runtimeMatcher.groupCount() == 1 ? runtimeMatcher.group(1).toLowerCase() : null;
+            String runtime_patch = runtimeMatcher.groupCount() == 1 ? runtimeMatcher.group(1).toLowerCase() : null;
+            if (null == version_patch &&
+                null == runtime_patch) {
+              patch = null;
+            } else if (null == version_patch) {
+              patch = runtime_patch;
+            } else if (null == runtime_patch) {
+              patch = version_patch;
+            } else {
+              patch = version_patch + runtime_patch;
+            }
           } else {
             throw new UnknownRuntimeVersionException(vendorVersion, runtimeVersion);
           }
         } else {
-          patch = versionMatcher.groupCount() == 4 ? versionMatcher.group(4) : null;
+          patch = version_patch;
         }
       } else {
         throw new UnknownJvmVersionException(vendorVersion);
       }
-      this.vmVersion = this.vendorVersion + (null == patch ? "" : "_" + patch);
+      this.vmVersion = this.mega + "." + this.major + "." + this.minor + (null == patch ? "" : "_" + patch);
     }
 
     /**
