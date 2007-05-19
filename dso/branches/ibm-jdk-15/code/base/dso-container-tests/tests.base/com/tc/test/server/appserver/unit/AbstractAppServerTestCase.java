@@ -559,6 +559,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     // add modules that needed for certain app server here
     if (NewAppServerFactory.JETTY.equals(config.appserverFactoryName())) {
       configBuilder.addModule("clustered-jetty-6.1", "1.0.0");
+    } else if (NewAppServerFactory.WEBSPHERE.equals(config.appserverFactoryName())) {
+      configBuilder.addModule("clustered-websphere-6.1", "1.0.0");
     }
 
     configBuilder.addInclude("com.tctest..*");
