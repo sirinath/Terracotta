@@ -24,6 +24,6 @@ public final class Was6xAppServerInstallation extends AbstractAppServerInstallat
   }
 
   public String serverType() {
-    return "jetty";
+    return "websphere";
   }
 }

@@ -8,7 +8,7 @@ import com.tc.test.server.appserver.StandardAppServerParameters;
 import java.util.Properties;
 
 /**
- * DSO specific arguments for Jetty6x
+ * DSO specific arguments for Websphere6x
  */
 public final class Was6xAppServerParameters extends StandardAppServerParameters {
 
