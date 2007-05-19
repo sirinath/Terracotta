@@ -119,13 +119,5 @@ public class SendStateMachine extends AbstractStateMachine {
   private void reset() {
     sent.set(-1);
     acked.set(-1);
-    // empty sendQueue
-    while(!sendQueue.isEmpty()) {
-      try {
-        sendQueue.take();
-      } catch (InterruptedException e) {
-        throw new AssertionError(e);
-      }
-    }
   }
 }
