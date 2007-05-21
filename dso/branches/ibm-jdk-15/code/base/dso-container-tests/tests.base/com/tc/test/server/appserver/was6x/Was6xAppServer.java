@@ -14,6 +14,7 @@ import com.tc.util.PortChooser;
 import com.tc.util.runtime.Os;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,15 +23,18 @@ import java.util.List;
 import java.util.Set;
 
 public class Was6xAppServer extends AbstractAppServer {
-  private static final String PORTS_DEF = "ports.def";
+  private static final String DSO_JVMARGS = "__DSO_JVMARGS";
 
-  private String[]            scripts   = new String[] { "deployApps.py", "terracotta.py", 
-                                                         "toggle-dso.py", "wait-for-shutdown.py" };
+  private static final String PORTS_DEF     = "ports.def";
 
-  private String              policy    = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
-                                          + "  permission java.security.AllPermission;" + IOUtils.LINE_SEPARATOR + "};"
-                                          + IOUtils.LINE_SEPARATOR;
+  private String[]            scripts       = new String[] { "deployApps.py", "terracotta.py", 
+                                                             "toggle-dso.py", "wait-for-shutdown.py" };
+
+  private String              policy        = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
+                                              + "  permission java.security.AllPermission;" + IOUtils.LINE_SEPARATOR
+                                              + "};" + IOUtils.LINE_SEPARATOR;
   private String              instanceName;
+  private String              dsoJvmArgs;
   private int                 webspherePort;
   private File                sandbox;
   private File                instanceDir;
@@ -41,10 +45,10 @@ public class Was6xAppServer extends AbstractAppServer {
   public Was6xAppServer(Was6xAppServerInstallation installation) {
     super(installation);
   }
-  
+
   public ServerResult start(ServerParameters parameters) throws Exception {
     init(parameters);
-    createPortFile();    
+    createPortFile();
     createProfile();
     copyPythonScripts();
     deployWarFile();
@@ -52,7 +56,7 @@ public class Was6xAppServer extends AbstractAppServer {
     startWebsphere();
     return new AppServerResult(webspherePort, this);
   }
-  
+
   public void stop() throws Exception {
     try {
       stopWebsphere();
@@ -73,14 +77,7 @@ public class Was6xAppServer extends AbstractAppServer {
       lines.set(i, line + portChooser.chooseRandomPort());
     }
 
-    FileOutputStream fos = null;
-    try {
-      fos = new FileOutputStream(portDefFile);
-      IOUtils.writeLines(lines, IOUtils.LINE_SEPARATOR, fos);
-    } finally {
-      IOUtils.closeQuietly(fos);
-    }
-
+    writeLines(lines, portDefFile, false);
   }
 
   private void copyPythonScripts() throws Exception {
@@ -89,10 +86,30 @@ public class Was6xAppServer extends AbstractAppServer {
     }
   }
 
+  private void enableDSO() throws Exception {
+    File terracotta_py = new File(dataDir, "terracotta.py");
+    FileInputStream fin = new FileInputStream(terracotta_py);
+    List lines = IOUtils.readLines(fin);
+    fin.close();
+
+    // replace __DSO_JVMARGS
+    for (int i = 0; i < lines.size(); i++) {
+      String line = (String) lines.get(i);
+      if (line.indexOf(DSO_JVMARGS) > 0) {
+        line = line.replaceFirst(DSO_JVMARGS, dsoJvmArgs);
+        lines.set(i, line);
+        break;
+      }
+    }
+
+    writeLines(lines, terracotta_py, false);
+  }
+
   private void deleteProfile() throws Exception {
     String[] args = new String[] { "-delete", "-profileName", instanceName };
     System.out.println("Deleting current profile before creating a new one: " + instanceName);
-    executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in deleting profile for " + instanceName);
+    executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in deleting profile for "
+                                                                               + instanceName);
   }
 
   private void createProfile() throws Exception {
@@ -100,7 +117,8 @@ public class Was6xAppServer extends AbstractAppServer {
     String[] args = new String[] { "-create", "-templatePath", defaultTemplate, "-profileName", instanceName,
         "-profilePath", instanceDir.getAbsolutePath(), "-portFile", portDefFile.getAbsolutePath(),
         "-enableAdminSecurity", "false", "-isDeveloperServer" };
-    executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in creating profile for " + instanceName);
+    executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in creating profile for "
+                                                                               + instanceName);
   }
 
   private void addTerracottaToServerPolicy() throws Exception {
@@ -122,13 +140,7 @@ public class Was6xAppServer extends AbstractAppServer {
     }
     lines.add(getPolicyFor(new File(TestConfigObject.getInstance().normalBootJar())));
 
-    FileOutputStream fos = null;
-    try {
-      fos = new FileOutputStream(new File(instanceDir, "properties/server.policy"), true);
-      IOUtils.writeLines(lines, IOUtils.LINE_SEPARATOR, fos);
-    } finally {
-      IOUtils.closeQuietly(fos);
-    }
+    writeLines(lines, new File(instanceDir, "properties/server.policy"), true);
   }
 
   private String getPolicyFor(File filename) {
@@ -150,10 +162,10 @@ public class Was6xAppServer extends AbstractAppServer {
       IOUtils.closeQuietly(fos);
     }
   }
-  
+
   private void deployWarFile() throws Exception {
-    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", instanceName,
-        "-javaoption", "-Dwebapp.dir=\"" + dataDir.getAbsolutePath() + "\"", "-f",
+    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", instanceName, "-javaoption",
+        "-Dwebapp.dir=\"" + dataDir.getAbsolutePath() + "\"", "-f",
         new File(dataDir, "deployApps.py").getAbsolutePath() };
     executeCommand(instanceDir, "wsadmin", args, dataDir, "Error in deploying warfile for " + instanceName);
   }
@@ -167,7 +179,7 @@ public class Was6xAppServer extends AbstractAppServer {
     String[] args = new String[] { "server1", "-profileName", instanceName };
     executeCommand(instanceDir, "stopServer", args, instanceDir, "Error in stopping " + instanceName);
   }
-  
+
   private void init(ServerParameters parameters) {
     AppServerParameters params = (AppServerParameters) parameters;
     this.sandbox = sandboxDirectory();
@@ -176,20 +188,41 @@ public class Was6xAppServer extends AbstractAppServer {
     this.dataDir = new File(sandbox, "data");
     this.portDefFile = new File(dataDir, PORTS_DEF);
     this.serverInstallDir = serverInstallDirectory();
+
+    String[] jvm_args = params.jvmArgs().replaceAll("'", "").split("\\s+");
+    StringBuffer sb = new StringBuffer();
+    for (int i = 0; i < jvm_args.length; i++) {
+      sb.append("\"" + jvm_args[i] + "\"");
+      if (i < jvm_args.length - 1) {
+        sb.append(", ");
+      }
+    }
+    dsoJvmArgs = sb.toString();
   }
-  
+
   private String getScriptPath(File root, String scriptName) {
     String fullScriptName = Os.isWindows() ? scriptName + ".bat" : scriptName + ".sh";
     return new File(root.getAbsolutePath(), "bin/" + fullScriptName).getAbsolutePath();
   }
 
-  private void executeCommand(File rootDir, String scriptName, String[] args, File workingDir, String errorMessage) throws Exception {
+  private void executeCommand(File rootDir, String scriptName, String[] args, File workingDir, String errorMessage)
+      throws Exception {
     String script = getScriptPath(rootDir, scriptName);
-    String[] cmd = new String[args.length+1];
+    String[] cmd = new String[args.length + 1];
     cmd[0] = script;
     System.arraycopy(args, 0, cmd, 1, args.length);
     Result result = Exec.execute(cmd, null, null, workingDir == null ? instanceDir : workingDir);
     System.out.println(result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr());
     if (result.getExitCode() != 0) { throw new Exception(errorMessage); }
+  }
+
+  private void writeLines(List lines, File filename, boolean append) throws Exception {
+    FileOutputStream fos = null;
+    try {
+      fos = new FileOutputStream(filename, append);
+      IOUtils.writeLines(lines, IOUtils.LINE_SEPARATOR, fos);
+    } finally {
+      IOUtils.closeQuietly(fos);
+    }
   }
 }

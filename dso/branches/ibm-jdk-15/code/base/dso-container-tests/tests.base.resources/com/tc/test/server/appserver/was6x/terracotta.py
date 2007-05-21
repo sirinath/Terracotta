@@ -2,6 +2,7 @@ import operator
 import os
 import os.path
 import string
+import java.lang.System
 
 class DSO:
 
@@ -9,20 +10,9 @@ class DSO:
 
     def __init__(self, adminTask, verbose=1):
         # Verify our Terracotta environment
-        self.dsoArgs = ["-Xshareclasses:none"]
+        # DSO_JVMARGS will be replaced by real jvmargs from the container test
+        self.dsoArgs = ["-Xshareclasses:none", __DSO_JVMARGS]
         self.verbose = verbose
-
-        # I know there is a special JVM property for the boot classpath, but I don't have time to investigate
-        # whether this is a prepend/postpend/whatever classpath and properly deal with multiple values, etc.
-        # I created CDV-261 to look into this later...
-        for envVarPair in [("TC_INSTALL_DIR", "-Dtc.install-root="), ("TC_CONFIG_PATH", "-Dtc.config="), ("DSO_BOOT_JAR", "-Xbootclasspath/p:")]:
-            try:
-                if not os.environ[envVarPair[0]]: raise "Environment variable " + envVarPair[0] + " is not defined, cannot continue"
-                else: self.dsoArgs.append(envVarPair[1] + os.environ[envVarPair[0]])
-            except:
-                print "Environment variable " + envVarPair[0] + " is not defined"
-                raise
-
         self.p_info("Terracotta settings: " + str(self.dsoArgs))
 
         # Keep track of AdminTask, as it is not global to us
