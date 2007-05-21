@@ -111,9 +111,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void close() {
     Assert.assertNotNull(sendLayer);
 
-    // TODO: There is definitely something missing here. We need to cancel/quiesce the delivery instance before closing
-    // the transport
-
+    // TODO: send out goodbye message
+    
     sendLayer.close();
   }
 
