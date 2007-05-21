@@ -17,28 +17,31 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 public class Was6xAppServer extends AbstractAppServer {
-  private static final String DSO_JVMARGS = "__DSO_JVMARGS";
+  private static final String TERRACOTTA_PY  = "terracotta.py";
+  private static final String DEPLOY_APPS_PY = "deployApps.py";
+  private static final String ENABLE_DSO_PY  = "enable-dso.py";
+  private static final String DSO_JVMARGS    = "__DSO_JVMARGS";
+  private static final String PORTS_DEF      = "ports.def";
 
-  private static final String PORTS_DEF     = "ports.def";
+  private String[]            scripts        = new String[] { DEPLOY_APPS_PY, TERRACOTTA_PY, ENABLE_DSO_PY };
 
-  private String[]            scripts       = new String[] { "deployApps.py", "terracotta.py", 
-                                                             "toggle-dso.py", "wait-for-shutdown.py" };
-
-  private String              policy        = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
-                                              + "  permission java.security.AllPermission;" + IOUtils.LINE_SEPARATOR
-                                              + "};" + IOUtils.LINE_SEPARATOR;
+  private String              policy         = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
+                                               + "  permission java.security.AllPermission;" + IOUtils.LINE_SEPARATOR
+                                               + "};" + IOUtils.LINE_SEPARATOR;
   private String              instanceName;
   private String              dsoJvmArgs;
   private int                 webspherePort;
   private File                sandbox;
   private File                instanceDir;
-  private File                dataDir;
+  private File                pyScriptsDir;
+  private File                webappDir;
   private File                portDefFile;
   private File                serverInstallDir;
 
@@ -49,18 +52,20 @@ public class Was6xAppServer extends AbstractAppServer {
   public ServerResult start(ServerParameters parameters) throws Exception {
     init(parameters);
     createPortFile();
-    createProfile();
     copyPythonScripts();
+    createProfile();
     deployWarFile();
-    enableDSO();
     addTerracottaToServerPolicy();
+    enableDSO();
     startWebsphere();
+    System.out.println("Websphere instance " + instanceName + " started on port " + webspherePort);
     return new AppServerResult(webspherePort, this);
   }
 
   public void stop() throws Exception {
     try {
       stopWebsphere();
+      System.out.println("Websphere instance " + instanceName + " stopped.");
     } finally {
       deleteProfile();
     }
@@ -83,12 +88,12 @@ public class Was6xAppServer extends AbstractAppServer {
 
   private void copyPythonScripts() throws Exception {
     for (int i = 0; i < scripts.length; i++) {
-      copyResourceTo(scripts[i], new File(dataDir, scripts[i]));
+      copyResourceTo(scripts[i], new File(pyScriptsDir, scripts[i]));
     }
   }
 
   private void enableDSO() throws Exception {
-    File terracotta_py = new File(dataDir, "terracotta.py");
+    File terracotta_py = new File(pyScriptsDir, TERRACOTTA_PY);
     FileInputStream fin = new FileInputStream(terracotta_py);
     List lines = IOUtils.readLines(fin);
     fin.close();
@@ -104,10 +109,9 @@ public class Was6xAppServer extends AbstractAppServer {
     }
 
     writeLines(lines, terracotta_py, false);
-    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", 
-                                   instanceName, "-javaoption", "-Denable.dso='true'", "-f",
-                                   new File(dataDir, "toggle-dso.py").getAbsolutePath() };
-    executeCommand(instanceDir, "wsadmin", args, dataDir, "Error in enabling DSO for " + instanceName);
+    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", instanceName, "-f",
+        new File(pyScriptsDir, ENABLE_DSO_PY).getAbsolutePath() };
+    executeCommand(instanceDir, "wsadmin", args, pyScriptsDir, "Error in enabling DSO for " + instanceName);
   }
 
   private void deleteProfile() throws Exception {
@@ -119,13 +123,13 @@ public class Was6xAppServer extends AbstractAppServer {
   private void createProfile() throws Exception {
     String defaultTemplate = new File(serverInstallDir.getAbsolutePath(), "profileTemplates/default").getAbsolutePath();
     String[] args = new String[] { "-create", "-templatePath", defaultTemplate, "-profileName", instanceName,
-        "-profilePath", instanceDir.getAbsolutePath(), "-portFile", portDefFile.getAbsolutePath(),
+        "-profilePath", instanceDir.getAbsolutePath(), "-portsFile", portDefFile.getAbsolutePath(),
         "-enableAdminSecurity", "false", "-isDeveloperServer" };
     long start = System.currentTimeMillis();
     System.out.println("Creating profile for instance " + instanceName + "...");
     executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in creating profile for "
                                                                                + instanceName);
-    System.out.println("Profile created in: " + ((System.currentTimeMillis() - start)/(1000*3600)) + " minutes.");
+    System.out.println("Profile created in: " + ((System.currentTimeMillis() - start) / (1000.0 * 60)) + " minutes.");
   }
 
   private void addTerracottaToServerPolicy() throws Exception {
@@ -171,10 +175,11 @@ public class Was6xAppServer extends AbstractAppServer {
   }
 
   private void deployWarFile() throws Exception {
-    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", instanceName, "-javaoption",
-        "-Dwebapp.dir=\"" + dataDir.getAbsolutePath() + "\"", "-f",
-        new File(dataDir, "deployApps.py").getAbsolutePath() };
-    executeCommand(instanceDir, "wsadmin", args, dataDir, "Error in deploying warfile for " + instanceName);
+    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", instanceName, "-f",
+        new File(pyScriptsDir, DEPLOY_APPS_PY).getAbsolutePath(), webappDir.getAbsolutePath().replace('\\', '/') };
+    System.out.println("Deploying war file in: " + webappDir);
+    executeCommand(instanceDir, "wsadmin", args, pyScriptsDir, "Error in deploying warfile for " + instanceName);
+    System.out.println("Done deploying war file in: " + webappDir);
   }
 
   private void startWebsphere() throws Exception {
@@ -192,11 +197,13 @@ public class Was6xAppServer extends AbstractAppServer {
     this.sandbox = sandboxDirectory();
     this.instanceName = params.instanceName();
     this.instanceDir = new File(sandbox, instanceName);
-    this.dataDir = new File(sandbox, "data");
-    this.portDefFile = new File(dataDir, PORTS_DEF);
+    this.webappDir = new File(sandbox, "data");
+    this.pyScriptsDir = new File(webappDir, instanceName);
+    pyScriptsDir.mkdirs();
+    this.portDefFile = new File(pyScriptsDir, PORTS_DEF);
     this.serverInstallDir = serverInstallDirectory();
 
-    String[] jvm_args = params.jvmArgs().replaceAll("'", "").split("\\s+");
+    String[] jvm_args = params.jvmArgs().replaceAll("'", "").replace('\\', '/').split("\\s+");
     StringBuffer sb = new StringBuffer();
     for (int i = 0; i < jvm_args.length; i++) {
       sb.append("\"" + jvm_args[i] + "\"");
@@ -218,6 +225,7 @@ public class Was6xAppServer extends AbstractAppServer {
     String[] cmd = new String[args.length + 1];
     cmd[0] = script;
     System.arraycopy(args, 0, cmd, 1, args.length);
+    System.out.println("Execute cmd: " + Arrays.asList(cmd));
     Result result = Exec.execute(cmd, null, null, workingDir == null ? instanceDir : workingDir);
     System.out.println(result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr());
     if (result.getExitCode() != 0) { throw new Exception(errorMessage); }
