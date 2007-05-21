@@ -52,6 +52,7 @@ public class Was6xAppServer extends AbstractAppServer {
     createProfile();
     copyPythonScripts();
     deployWarFile();
+    enableDSO();
     addTerracottaToServerPolicy();
     startWebsphere();
     return new AppServerResult(webspherePort, this);
@@ -103,11 +104,14 @@ public class Was6xAppServer extends AbstractAppServer {
     }
 
     writeLines(lines, terracotta_py, false);
+    String[] args = new String[] { "-lang", "jython", "-connType", "NONE", "-profileName", 
+                                   instanceName, "-javaoption", "-Denable.dso='true'", "-f",
+                                   new File(dataDir, "toggle-dso.py").getAbsolutePath() };
+    executeCommand(instanceDir, "wsadmin", args, dataDir, "Error in enabling DSO for " + instanceName);
   }
 
   private void deleteProfile() throws Exception {
     String[] args = new String[] { "-delete", "-profileName", instanceName };
-    System.out.println("Deleting current profile before creating a new one: " + instanceName);
     executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in deleting profile for "
                                                                                + instanceName);
   }
@@ -117,8 +121,11 @@ public class Was6xAppServer extends AbstractAppServer {
     String[] args = new String[] { "-create", "-templatePath", defaultTemplate, "-profileName", instanceName,
         "-profilePath", instanceDir.getAbsolutePath(), "-portFile", portDefFile.getAbsolutePath(),
         "-enableAdminSecurity", "false", "-isDeveloperServer" };
+    long start = System.currentTimeMillis();
+    System.out.println("Creating profile for instance " + instanceName + "...");
     executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Error in creating profile for "
                                                                                + instanceName);
+    System.out.println("Profile created in: " + ((System.currentTimeMillis() - start)/(1000*3600)) + " minutes.");
   }
 
   private void addTerracottaToServerPolicy() throws Exception {
