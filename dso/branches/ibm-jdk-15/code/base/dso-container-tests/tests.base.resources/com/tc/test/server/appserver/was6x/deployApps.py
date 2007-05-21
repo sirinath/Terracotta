@@ -1,8 +1,8 @@
 import java.lang.System
 import terracotta
 
-webappDir = java.lang.System.getProperty('webapp.dir')
-
+webappDir = sys.argv[0]
+print "Got webapp.dir: " + webappDir
 appUtil = terracotta.AppUtil(AdminApp, webappDir)
 appUtil.installAll()
 

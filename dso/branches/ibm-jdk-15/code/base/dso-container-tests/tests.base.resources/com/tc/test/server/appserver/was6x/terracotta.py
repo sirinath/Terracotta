@@ -65,9 +65,11 @@ class AppUtil:
         self.webappDir = os.path.abspath(webappDir)
 
     def installAll(self):
+        print "Scanning " + self.webappDir + " for war files..."
         warFiles = filter(lambda x: len(x) > 4 and string.rfind(x, ".war") == len(x) - 4, os.listdir(self.webappDir))
         for warFile in warFiles:
             if not self.installed(warFile):
+                print "Deploying war [" + warFile + "]..."
                 self.install(warFile)
             else:
                 print "WebApp[" + warFile + "] is already installed"
