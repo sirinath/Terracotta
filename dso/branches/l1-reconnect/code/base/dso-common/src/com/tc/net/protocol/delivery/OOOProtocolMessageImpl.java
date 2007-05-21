@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.delivery;
 
@@ -53,11 +54,16 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     return getOOOPHeader().isSend();
   }
 
+  public boolean isAck() {
+    return getOOOPHeader().isAck();
+  }
+
   public static class ProtocolMessageParserImpl implements OOOProtocolMessageParser {
     private final ProtocolMessageHeaderFactory headerFactory;
-    private final OOOProtocolMessageFactory       messageFactory;
+    private final OOOProtocolMessageFactory    messageFactory;
 
-    public ProtocolMessageParserImpl(ProtocolMessageHeaderFactory headerFactory, OOOProtocolMessageFactory messageFactory) {
+    public ProtocolMessageParserImpl(ProtocolMessageHeaderFactory headerFactory,
+                                     OOOProtocolMessageFactory messageFactory) {
       this.headerFactory = headerFactory;
       this.messageFactory = messageFactory;
     }
