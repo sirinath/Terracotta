@@ -21,8 +21,17 @@ public class StateMachineRunner implements EventContext {
   public StateMachineRunner(AbstractStateMachine stateMachine, Sink sink) {
     this.sink = sink;
     this.stateMachine = stateMachine;
+    stateMachine.setRunner(this);
   }
-
+  
+  public LinkedList getEventList() {
+    return(events);
+  }
+  
+  public int getEventsCount() {
+    return(events.size());
+  }
+  
   public synchronized void start() {
     stateMachine.start();
   }

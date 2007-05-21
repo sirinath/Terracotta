@@ -13,6 +13,7 @@ public abstract class AbstractStateMachine {
   private State   current;
   private boolean started = false;
   private boolean paused  = true;
+  private StateMachineRunner runner;
 
   public abstract void execute(OOOProtocolMessage msg);
 
@@ -33,6 +34,14 @@ public abstract class AbstractStateMachine {
     this.paused = true;
   }
 
+  public void setRunner(StateMachineRunner runner) {
+    this.runner = runner;
+  }
+  
+  public StateMachineRunner getRunner() {
+    return(runner);
+  }
+  
   protected void basicPause() {
     // Override me
   }

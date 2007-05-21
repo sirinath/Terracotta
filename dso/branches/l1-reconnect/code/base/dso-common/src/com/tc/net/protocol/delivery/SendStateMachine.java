@@ -5,30 +5,74 @@
 package com.tc.net.protocol.delivery;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+
+import java.util.LinkedList;
+import java.util.ListIterator;
 
 /**
  * 
  */
 public class SendStateMachine extends AbstractStateMachine {
-  private final State                      ACK_REQUEST_STATE  = new AckRequestState();
-  private final State                      ACK_WAIT_STATE     = new AckWaitState();
-  private final State                      MESSAGE_WAIT_STATE = new MessageWaitState();
-  private final SynchronizedLong           sent               = new SynchronizedLong(-1);
-  private final SynchronizedLong           acked              = new SynchronizedLong(-1);
+  private final State                   ACK_REQUEST_STATE  = new AckRequestState();
+  private final State                   ACK_WAIT_STATE     = new AckWaitState();
+  private final State                   HANDSHAKE_STATE  = new HandshakeState();
+  private final State                   MESSAGE_WAIT_STATE = new MessageWaitState();
+  private final SynchronizedLong        sent               = new SynchronizedLong(-1);
+  private final SynchronizedLong         acked              = new SynchronizedLong(-1);
   private final OOOProtocolMessageDelivery delivery;
   private final LinkedQueue                sendQueue;
+  private final LinkedList              outstandingMsgs = new LinkedList();
+  private final SynchronizedInt         outstandingCnt = new SynchronizedInt(0);
+  private int   sendWindow = 8;   // default by 8, can be changed by tc.properties
+  private int stinkQueueLen = 0;        // the queue length before resume
+  private int stinkEventsLen = 0;       // the events length before resume
+  
 
   public SendStateMachine(OOOProtocolMessageDelivery delivery, LinkedQueue sendQueue) {
     super();
+ 
+    // set sendWindow from tc.properties if exist. 0 to disable window send.
+    String val = TCPropertiesImpl.getProperties().getProperty("l2.nha.ooo.sendWindow", true);
+    if (val != null) sendWindow = Integer.valueOf(val).intValue();
+ 
     this.delivery = delivery;
     this.sendQueue = sendQueue;
   }
 
   protected void basicResume() {
+    // what's on the queue and events, they may be stink if reset
+    stinkEventsLen = 0;
+    StateMachineRunner runner = getRunner();
+    if(runner != null) stinkEventsLen = runner.getEventsCount();
+    
+    // a painful way to get sendQueue length, any better idea
+    stinkQueueLen = 0;
+    LinkedQueue tmpQueue = new LinkedQueue();
+    while(!sendQueue.isEmpty()) {
+      try {
+        TCNetworkMessage tmsg = (TCNetworkMessage) sendQueue.take();
+        tmpQueue.put(tmsg);
+        ++stinkQueueLen;
+      } catch (InterruptedException ex) {
+        throw new AssertionError(ex);
+      }
+    }
+    // restore it back
+    while (!tmpQueue.isEmpty()) {
+      try {
+        TCNetworkMessage tmsg = (TCNetworkMessage) tmpQueue.take();
+        sendQueue.put(tmsg);
+      } catch (InterruptedException ex) {
+        throw new AssertionError(ex);
+      }
+    }
+    // need to do hand shake after resume   
     switchToState(ACK_REQUEST_STATE);
   }
 
@@ -51,7 +95,9 @@ public class SendStateMachine extends AbstractStateMachine {
     public void execute(OOOProtocolMessage protocolMessage) {
       if (!sendQueue.isEmpty()) {
         Assert.eval(protocolMessage == null);
-        sendMessage(createProtocolMessage(sent.increment()));
+        if ((sendWindow == 0) || (outstandingCnt.get() < sendWindow)) {
+          sendMessage(createProtocolMessage(sent.increment()));
+        }
         switchToState(ACK_WAIT_STATE);
       }
     }
@@ -60,29 +106,88 @@ public class SendStateMachine extends AbstractStateMachine {
   private class AckRequestState extends AbstractState {
     public void enter() {
       if (sent.get() == -1) {
+        // This is at system startup, don't need to do anything.
         switchToState(MESSAGE_WAIT_STATE);
       } else {
+        // peer may crash or lose connection, do handshaking
         sendAckRequest();
+        switchToState(HANDSHAKE_STATE);
+      }
+    }
+  }
+  
+  private class HandshakeState extends AbstractState {
+    
+    public void execute(OOOProtocolMessage protocolMessage) {
+      // expecting an ack to do hand shake
+      if (protocolMessage == null) return;
+      if (protocolMessage.isSend()) return;    
+      long ackedSeq = protocolMessage.getAckSequence();
+      if (ackedSeq == -1) {
+        // new connection up, re-initialize
+        reset();
+        switchToState(MESSAGE_WAIT_STATE);
+        return;
+      }
+      if (ackedSeq <= acked.get()) {
+        // this shall not, old or dup ack, resend all outstandings
+        resendOutstandings();
         switchToState(ACK_WAIT_STATE);
+      } else {
+        while (ackedSeq > acked.get()) {
+          acked.increment();
+          removeMessage();
+        }
+        // resend outstanding which is not acked
+        if (outstandingCnt.get() > 0) {
+          // resend those not acked
+          resendOutstandings();
+          switchToState(ACK_WAIT_STATE);
+        } else {
+          // all acked, we're good here
+          switchToState(MESSAGE_WAIT_STATE);
+        }
       }
     }
   }
 
   private class AckWaitState extends AbstractState {
+    
+    public void enter() {
+      sendMoreIfAvailable();
+    }
+      
     public void execute(OOOProtocolMessage protocolMessage) {
       if (protocolMessage == null || protocolMessage.isSend()) return;
 
-      if (protocolMessage.getAckSequence() < sent.get()) {
-        sendMessage(createProtocolMessage(sent.get()));
+      long ackedSeq = protocolMessage.getAckSequence();
+      if (ackedSeq <= acked.get()) {
+        if (outstandingCnt.get() > 0) {
+          resendOutstandings();
+        }
       } else {
-        acked.set(protocolMessage.getAckSequence());
-        removeMessage();
-        switchToState(MESSAGE_WAIT_STATE);
+        while (ackedSeq > acked.get()) {
+          acked.increment();
+          removeMessage();
+        }
+        
+        // try pump more
+        sendMoreIfAvailable();
 
+        if (outstandingCnt.get() == 0) {
+          switchToState(MESSAGE_WAIT_STATE);
+        } 
+        
         // ???: is this check properly synchronized?
         Assert.eval(acked.get() <= sent.get());
       }
     }
+     
+    public void sendMoreIfAvailable() {
+      while ((outstandingCnt.get() < sendWindow) && !sendQueue.isEmpty()) {
+        sendMessage(createProtocolMessage(sent.increment()));
+      }      
+    }      
   }
 
   private void sendAckRequest() {
@@ -94,21 +199,59 @@ public class SendStateMachine extends AbstractStateMachine {
   }
 
   private OOOProtocolMessage createProtocolMessage(long count) {
-    TCNetworkMessage tcm = (TCNetworkMessage) sendQueue.peek();
-    Assert.eval(tcm != null);
-    return delivery.createProtocolMessage(count, tcm);
-  }
-
-  private void removeMessage() {
+    OOOProtocolMessage opm;
     try {
-      sendQueue.take();
-    } catch (InterruptedException e) {
-      throw new AssertionError(e);
+      opm = delivery.createProtocolMessage(count, (TCNetworkMessage) sendQueue.take());
+      Assert.eval(opm != null);
+      outstandingCnt.increment();
+      outstandingMsgs.add(opm);
+    } catch (InterruptedException ex) {
+      throw new AssertionError(ex);
+    }
+    return (opm);
+  }
+  
+  private void resendOutstandings() {
+    ListIterator it = outstandingMsgs.listIterator(0);
+    while(it.hasNext()) {
+      OOOProtocolMessage msg = (OOOProtocolMessage)it.next();
+      delivery.sendMessage(msg);
     }
   }
-
+  
+  private void removeMessage() {
+    outstandingMsgs.removeFirst();
+    outstandingCnt.decrement();
+   }
+    
   public void reset() {
     sent.set(-1);
     acked.set(-1);
+    
+    // purge out outstanding sends
+    outstandingCnt.set(0);
+    while(!outstandingMsgs.isEmpty()) {
+      outstandingMsgs.removeFirst();
+    }
+    
+    // remove stink sendQueue and events
+    if (stinkEventsLen > 0) {
+      StateMachineRunner runner = getRunner();
+      if (runner != null) {
+        LinkedList events = runner.getEventList();
+        while(stinkEventsLen > 0) {
+          events.removeFirst();
+          --stinkEventsLen;
+        }     
+      }  
+    }
+    while(stinkQueueLen > 0) {
+      try {
+        sendQueue.take();
+        --stinkQueueLen;
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
+      }
+    }
   }
 }

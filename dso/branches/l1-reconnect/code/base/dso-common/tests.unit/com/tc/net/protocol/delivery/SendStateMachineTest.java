@@ -28,41 +28,43 @@ public class SendStateMachineTest extends TestCase {
     //SEND
     MessageMonitor monitor = new NullMessageMonitor();
     sendQueue.put(new PingMessage(monitor));
-    ssm.execute(null);
+    ssm.execute(null);                              // msg 0
     assertTrue(delivery.created);
     assertTrue(delivery.msg.getSent() == 0);
     delivery.clear();
 
     //Call send an extra time with nothing on the send queue
-    ssm.execute(tpm);
+    ssm.execute(tpm);                               // drop
     assertTrue(delivery.created == false);
     tpm.isSend = false;
 
-    sendQueue.put(new PingMessage(monitor));
-    sendQueue.put(new PingMessage(monitor));
+    sendQueue.put(new PingMessage(monitor));        // msg 1
+    sendQueue.put(new PingMessage(monitor));        // msg 2
     tpm.ack = 0;
 
     //ACK
-    ssm.execute(tpm);
-    ssm.execute(tpm);
+    ssm.execute(tpm);                               // ack 0
+    ssm.execute(tpm);                               // ack 0, dup ack, caused resend all outstandings
     assertTrue(delivery.created);
-    assertTrue(delivery.msg.getSent() == 1);
+    assertTrue(delivery.msg.getSent() == 2);        // msg 2 is the last send
 
     //RESEND
     delivery.clear();
-    tpm.ack = 0;
-    ssm.execute(tpm);
-    assertTrue(delivery.created);
-    assertTrue(delivery.msg.getSent() == 1);
+    tpm.ack = 0;              
+    ssm.execute(tpm);                               // ack 0, dup ack, resend
+    // resend desn't go through message create
+    // assertTrue(delivery.created);
+    assertTrue(delivery.msg.getSent() == 2);
 
     tpm.ack = 1;
-    ssm.execute(tpm);
+    ssm.execute(tpm);                               // ack 1
 
     delivery.clear();
 
     //SEND
-    ssm.execute(tpm);
-    assertTrue(delivery.created);
+    ssm.execute(tpm);                               // ack 1
+    // resend desn't go through message create
+    // assertTrue(delivery.created);
     assertTrue(delivery.msg.getSent() == 2);
 
     ssm.pause();
