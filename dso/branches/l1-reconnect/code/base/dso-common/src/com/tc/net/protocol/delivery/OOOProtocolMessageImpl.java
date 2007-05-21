@@ -58,6 +58,10 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     return getOOOPHeader().isAck();
   }
 
+  public boolean isGoodbye() {
+    return getOOOPHeader().isGoodbye();
+  }
+
   public static class ProtocolMessageParserImpl implements OOOProtocolMessageParser {
     private final ProtocolMessageHeaderFactory headerFactory;
     private final OOOProtocolMessageFactory    messageFactory;
@@ -116,6 +120,10 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
 
     public OOOProtocolMessage createNewMessage(OOOProtocolMessageHeader header, TCByteBuffer[] data) {
       return new OOOProtocolMessageImpl(header, data);
+    }
+
+    public OOOProtocolMessage createNewGoodbyeMessage() {
+      return new OOOProtocolMessageImpl(headerFactory.createNewGoodbye());
     }
   }
 

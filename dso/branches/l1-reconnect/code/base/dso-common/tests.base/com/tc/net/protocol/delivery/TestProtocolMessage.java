@@ -20,6 +20,7 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public boolean          isAckRequest = false;
   public boolean          isSend       = false;
   public boolean          isAck        = false;
+  private boolean         isGoodbye    = false;
 
   public TestProtocolMessage(TCNetworkMessage msg, long sent, long ack) {
     this.msg = msg;
@@ -105,6 +106,10 @@ public class TestProtocolMessage implements OOOProtocolMessage {
 
   public void recycle() {
     throw new ImplementMe();
+  }
+
+  public boolean isGoodbye() {
+    return isGoodbye;
   }
 
 }

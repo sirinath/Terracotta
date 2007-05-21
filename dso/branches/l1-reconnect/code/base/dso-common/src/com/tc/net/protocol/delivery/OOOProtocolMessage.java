@@ -19,4 +19,6 @@ public interface OOOProtocolMessage extends TCNetworkMessage {
   public boolean isSend();
 
   public boolean isAck();
+
+  public boolean isGoodbye();
 }

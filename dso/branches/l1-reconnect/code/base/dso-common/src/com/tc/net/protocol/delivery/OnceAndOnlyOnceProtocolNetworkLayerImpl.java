@@ -25,6 +25,7 @@ import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.WireProtocolMessage;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -84,7 +85,15 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void receive(TCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
-    if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
+    if (msg.isGoodbye()) {
+
+      DebugUtil.trace("GOT GOODBYE MESSAGE!");
+
+      sendLayer.close();
+      receiveLayer.close();
+      delivery.pause();
+      return;
+    } else if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
       // we need to reset because we are talking to a new stack on the other side
       restoringConnection.set(false);
       delivery.pause();
@@ -112,7 +121,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     Assert.assertNotNull(sendLayer);
 
     // TODO: send out goodbye message
-    
+    sendLayer.send(messageFactory.createNewGoodbyeMessage());
+    DebugUtil.trace("SENT GOODBYE MESSAGE!");
+
     sendLayer.close();
   }
 
