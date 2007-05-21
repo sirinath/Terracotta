@@ -9,7 +9,6 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCInternalError;
 import com.tc.exception.TCRuntimeException;
-import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.core.TCConnection;
@@ -29,7 +28,6 @@ import java.util.List;
  * Client implementation of the transport network layer.
  */
 public class ClientMessageTransport extends MessageTransportBase {
-  private static final TCLogger             cmtLogger       = TCLogging.getLogger(ClientMessageTransport.class);
   // 2 minutes timeout
   private static final long                 SYN_ACK_TIMEOUT = 120000;
   private final ClientConnectionEstablisher connectionEstablisher;
@@ -49,7 +47,7 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, cmtLogger);
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false,  TCLogging.getLogger(ClientMessageTransport.class));
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }

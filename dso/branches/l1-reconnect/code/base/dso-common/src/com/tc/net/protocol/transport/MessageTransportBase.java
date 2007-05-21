@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.logging.ConnectionIDProvider;
 import com.tc.logging.TCLogger;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
@@ -26,7 +27,7 @@ import java.io.IOException;
 /**
  * Implementation of MessaageTransport
  */
-abstract class MessageTransportBase extends AbstractMessageTransport implements NetworkLayer, TCConnectionEventListener {
+abstract class MessageTransportBase extends AbstractMessageTransport implements NetworkLayer, TCConnectionEventListener, ConnectionIDProvider {
   private TCConnection                             connection;
 
   protected ConnectionID                           connectionId           = ConnectionID.NULL_ID;

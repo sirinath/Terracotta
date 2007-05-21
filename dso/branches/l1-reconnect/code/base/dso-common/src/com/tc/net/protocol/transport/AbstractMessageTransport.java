@@ -4,6 +4,8 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.logging.ConnectionIDProvider;
+import com.tc.logging.ConnectionIdLogger;
 import com.tc.logging.TCLogger;
 
 import java.util.ArrayList;
@@ -11,20 +13,24 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class AbstractMessageTransport implements MessageTransport {
+public abstract class AbstractMessageTransport implements MessageTransport, ConnectionIDProvider {
 
-  private static final int DISCONNECTED    = 1;
-  private static final int CONNECTED       = 2;
-  private static final int CONNECT_ATTEMPT = 3;
-  private static final int CLOSED          = 4;
+  private static final int           DISCONNECTED    = 1;
+  private static final int           CONNECTED       = 2;
+  private static final int           CONNECT_ATTEMPT = 3;
+  private static final int           CLOSED          = 4;
 
-  final TCLogger           logger;
-  private final List       listeners       = new LinkedList();
+  protected final ConnectionIdLogger logger;
+  private final List                 listeners       = new LinkedList();
 
   public AbstractMessageTransport(TCLogger logger) {
-    this.logger = logger;
+    this.logger = new ConnectionIdLogger(this, logger);
   }
 
+  public ConnectionIdLogger getLogger() {
+    return logger;
+  }
+  
   public final void addTransportListeners(List toAdd) {
     for (Iterator i = toAdd.iterator(); i.hasNext();) {
       MessageTransportListener l = (MessageTransportListener) i.next();
