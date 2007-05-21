@@ -4,8 +4,6 @@
  */
 package com.tc.net.protocol.delivery;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
-
 import com.tc.net.protocol.transport.ClientConnectionEstablisher;
 import com.tc.net.protocol.transport.ClientMessageTransport;
 import com.tc.net.protocol.transport.ConnectionWatcher;
@@ -16,7 +14,6 @@ public class OOOConnectionWatcher extends ConnectionWatcher implements RestoreCo
 
   private final OnceAndOnlyOnceProtocolNetworkLayer oooLayer;
   private final long                                timeoutMillis;
-  private final SynchronizedBoolean                 restoringConnection = new SynchronizedBoolean(false);
 
   public OOOConnectionWatcher(ClientMessageTransport cmt, ClientConnectionEstablisher cce,
                               OnceAndOnlyOnceProtocolNetworkLayer oooLayer, long timeoutMillis) {
@@ -26,22 +23,18 @@ public class OOOConnectionWatcher extends ConnectionWatcher implements RestoreCo
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
-    if (restoringConnection.get()) return;
-    restoringConnection.set(true);
-    oooLayer.pause();
+    oooLayer.getRestoringConnection().set(true);
+    oooLayer.notifyTransportDisconnected(transport);
     cce.asyncRestoreConnection(cmt, transport.getRemoteAddress(), this, timeoutMillis);
+
   }
 
   public void notifyTransportConnected(MessageTransport transport) {
-    if (restoringConnection.get()) {
-      restoringConnection.set(false);
-      oooLayer.resume();
-    } else {
-      super.notifyTransportConnected(transport);
-    }
+    oooLayer.notifyTransportConnected(transport);
   }
 
   public void restoreConnectionFailed(MessageTransport transport) {
+    oooLayer.getRestoringConnection().set(false);
     super.notifyTransportDisconnected(transport);
   }
 }

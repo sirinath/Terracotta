@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.delivery;
 
@@ -13,13 +14,13 @@ import com.tc.util.Assert;
  * 
  */
 public class SendStateMachine extends AbstractStateMachine {
-  private final State                   ACK_REQUEST_STATE  = new AckRequestState();
-  private final State                   ACK_WAIT_STATE     = new AckWaitState();
-  private final State                   MESSAGE_WAIT_STATE = new MessageWaitState();
-  private final SynchronizedLong        sent               = new SynchronizedLong(-1);
-  private final SynchronizedLong         acked              = new SynchronizedLong(-1);
+  private final State                      ACK_REQUEST_STATE  = new AckRequestState();
+  private final State                      ACK_WAIT_STATE     = new AckWaitState();
+  private final State                      MESSAGE_WAIT_STATE = new MessageWaitState();
+  private final SynchronizedLong           sent               = new SynchronizedLong(-1);
+  private final SynchronizedLong           acked              = new SynchronizedLong(-1);
   private final OOOProtocolMessageDelivery delivery;
-  private final LinkedQueue             sendQueue;
+  private final LinkedQueue                sendQueue;
 
   public SendStateMachine(OOOProtocolMessageDelivery delivery, LinkedQueue sendQueue) {
     super();
@@ -58,36 +59,26 @@ public class SendStateMachine extends AbstractStateMachine {
 
   private class AckRequestState extends AbstractState {
     public void enter() {
-      if(sent.get() == -1) {
+      if (sent.get() == -1) {
         switchToState(MESSAGE_WAIT_STATE);
       } else {
         sendAckRequest();
         switchToState(ACK_WAIT_STATE);
-      } 
+      }
     }
   }
 
   private class AckWaitState extends AbstractState {
     public void execute(OOOProtocolMessage protocolMessage) {
-      // double yuck
-      if (protocolMessage == null) return;
-      
-      //yuck
-      if (protocolMessage.isSend()) return;
-      
-      if (protocolMessage.getAckSequence() == -1) {
-        // new connection up, re-initialize
-        reset();
-        switchToState(MESSAGE_WAIT_STATE);
-        return;
-      }
+      if (protocolMessage == null || protocolMessage.isSend()) return;
+
       if (protocolMessage.getAckSequence() < sent.get()) {
         sendMessage(createProtocolMessage(sent.get()));
       } else {
         acked.set(protocolMessage.getAckSequence());
         removeMessage();
         switchToState(MESSAGE_WAIT_STATE);
-       
+
         // ???: is this check properly synchronized?
         Assert.eval(acked.get() <= sent.get());
       }
@@ -115,8 +106,8 @@ public class SendStateMachine extends AbstractStateMachine {
       throw new AssertionError(e);
     }
   }
-  
-  private void reset() {
+
+  public void reset() {
     sent.set(-1);
     acked.set(-1);
   }

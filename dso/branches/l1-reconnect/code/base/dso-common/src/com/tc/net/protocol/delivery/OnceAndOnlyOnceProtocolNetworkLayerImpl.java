@@ -5,6 +5,7 @@
 package com.tc.net.protocol.delivery;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
 import com.tc.async.api.Sink;
 import com.tc.bytes.TCByteBuffer;
@@ -34,14 +35,15 @@ import java.net.UnknownHostException;
  */
 public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTransport implements
     OnceAndOnlyOnceProtocolNetworkLayer, OOOProtocolMessageDelivery {
-  private static final TCLogger           logger       = TCLogging
-                                                           .getLogger(OnceAndOnlyOnceProtocolNetworkLayerImpl.class);
+  private static final TCLogger           logger              = TCLogging
+                                                                  .getLogger(OnceAndOnlyOnceProtocolNetworkLayerImpl.class);
   private final OOOProtocolMessageFactory messageFactory;
   private final OOOProtocolMessageParser  messageParser;
-  boolean                                 wasConnected = false;
+  boolean                                 wasConnected        = false;
   private MessageChannelInternal          receiveLayer;
   private MessageTransport                sendLayer;
   private GuaranteedDeliveryProtocol      delivery;
+  private final SynchronizedBoolean       restoringConnection = new SynchronizedBoolean(false);
 
   public OnceAndOnlyOnceProtocolNetworkLayerImpl(OOOProtocolMessageFactory messageFactory,
                                                  OOOProtocolMessageParser messageParser, Sink workSink) {
@@ -82,6 +84,16 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void receive(TCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
+    if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
+      // we need to reset because we are talking to a new stack on the other side
+      restoringConnection.set(false);
+      delivery.pause();
+      delivery.reset();
+      receiveLayer.notifyTransportDisconnected(this);
+      this.notifyTransportConnected(this);
+      // delivery.resume();
+      // receiveLayer.notifyTransportConnected(this);
+    }
     delivery.receive(msg);
   }
 
@@ -112,7 +124,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void notifyTransportConnected(MessageTransport transport) {
     logNotifyTransportConnected(transport);
     this.delivery.resume();
-    receiveLayer.notifyTransportConnected(this);
+    if (!restoringConnection.get()) receiveLayer.notifyTransportConnected(this);
   }
 
   private void logNotifyTransportConnected(MessageTransport transport) {
@@ -123,20 +135,19 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void notifyTransportDisconnected(MessageTransport transport) {
     this.delivery.pause();
-    receiveLayer.notifyTransportDisconnected(this);
+    if (!restoringConnection.get()) receiveLayer.notifyTransportDisconnected(this);
   }
 
   public void pause() {
     this.delivery.pause();
   }
-  
+
   public void resume() {
     this.delivery.resume();
   }
 
   public void notifyTransportConnectAttempt(MessageTransport transport) {
-    //
-    receiveLayer.notifyTransportConnectAttempt(this);
+    if (!restoringConnection.get()) receiveLayer.notifyTransportConnectAttempt(this);
   }
 
   public void notifyTransportClosed(MessageTransport transport) {
@@ -220,5 +231,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void sendToConnection(TCNetworkMessage message) {
     throw new AssertionError("Must not call!");
+  }
+
+  public SynchronizedBoolean getRestoringConnection() {
+    return this.restoringConnection;
   }
 }

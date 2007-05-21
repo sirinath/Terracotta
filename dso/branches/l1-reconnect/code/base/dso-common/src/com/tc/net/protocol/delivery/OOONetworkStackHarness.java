@@ -10,9 +10,9 @@ import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.ServerMessageChannelFactory;
 import com.tc.net.protocol.transport.ClientConnectionEstablisher;
 import com.tc.net.protocol.transport.ClientMessageTransport;
-import com.tc.net.protocol.transport.ConnectionWatcher;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportFactory;
+import com.tc.properties.TCPropertiesImpl;
 
 public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
 
@@ -46,9 +46,8 @@ public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
     if (transport instanceof ClientMessageTransport) {
       ClientMessageTransport cmt = (ClientMessageTransport) transport;
       ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
-      // final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
-      // OOOConnectionWatcher cw = new OOOConnectionWatcher(cmt, cce, oooLayer, timeout);
-      ConnectionWatcher cw = new ConnectionWatcher(cmt, oooLayer, cce);
+       final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
+      OOOConnectionWatcher cw = new OOOConnectionWatcher(cmt, cce, oooLayer, timeout);
       cmt.addTransportListener(cw);
     } else {
       transport.addTransportListener(oooLayer);

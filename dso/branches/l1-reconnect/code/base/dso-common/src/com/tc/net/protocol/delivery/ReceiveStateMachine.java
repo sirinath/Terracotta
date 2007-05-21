@@ -33,11 +33,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     public void execute(OOOProtocolMessage protocolMessage) {
       if (protocolMessage.isAckRequest()) {
         delivery.sendAck(received.get());
-        return;
-      } else if (!protocolMessage.isSend() && (protocolMessage.getAckSequence() == -1)) {
-        // got ack=-1 then re-initialize
-        reset();
-        return;
+        return; 
       }
 
       final long r = protocolMessage.getSent();
@@ -57,7 +53,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     this.delivery.receiveMessage(msg);
   }
   
-  private void reset() {
+  public void reset() {
     received.set(-1);
   }
 

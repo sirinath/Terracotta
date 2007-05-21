@@ -16,10 +16,10 @@ import com.tc.net.protocol.transport.MessageTransportListener;
  * come in to the ProtocolMessageDelivery instance.
  */
 class GuaranteedDeliveryProtocol implements DeliveryProtocol {
-  private final StateMachineRunner       send;
-  private final StateMachineRunner       receive;
-  private final LinkedQueue              sendQueue;
-  private MessageTransport transport;
+  private final StateMachineRunner send;
+  private final StateMachineRunner receive;
+  private final LinkedQueue        sendQueue;
+  private MessageTransport         transport;
   private MessageTransportListener upperLayer;
 
   public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink workSink, LinkedQueue sendQueue) {
@@ -71,5 +71,10 @@ class GuaranteedDeliveryProtocol implements DeliveryProtocol {
   public void resume() {
     send.resume();
     receive.resume();
+  }
+
+  public void reset() {
+    send.reset();
+    receive.reset();
   }
 }

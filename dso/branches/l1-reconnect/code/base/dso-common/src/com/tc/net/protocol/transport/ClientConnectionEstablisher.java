@@ -149,7 +149,6 @@ public class ClientConnectionEstablisher {
     boolean connected = false;
     for (int i = 0; true; i++) {
       try {
-        System.err.println("\n\n@@@@ restore connection is HERE -> i = " + i);
         TCConnection connection = connect(sa, cmt);
         cmt.reconnect(connection);
         connected = true;

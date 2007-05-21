@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.delivery;
 
@@ -27,7 +28,7 @@ public abstract class AbstractStateMachine {
   }
 
   public final synchronized void pause() {
-    Assert.eval("started: " + started + ", paused: " + paused, started && ! paused);
+    Assert.eval("started: " + started + ", paused: " + paused, started && !paused);
     basicPause();
     this.paused = true;
   }
@@ -41,7 +42,7 @@ public abstract class AbstractStateMachine {
   }
 
   public final synchronized void resume() {
-    Assert.eval("started: " + started + ", paused: " + paused, started && paused);    
+    Assert.eval("started: " + started + ", paused: " + paused, started && paused);
     this.paused = false;
     basicResume();
   }
@@ -61,4 +62,6 @@ public abstract class AbstractStateMachine {
   }
 
   protected abstract State initialState();
+
+  public abstract void reset();
 }

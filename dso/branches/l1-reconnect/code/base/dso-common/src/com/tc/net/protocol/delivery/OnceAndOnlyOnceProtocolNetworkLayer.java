@@ -4,6 +4,8 @@
  */
 package com.tc.net.protocol.delivery;
 
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
+
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportListener;
@@ -17,4 +19,6 @@ public interface OnceAndOnlyOnceProtocolNetworkLayer extends NetworkLayer, Messa
   void pause();
 
   void resume();
+
+  SynchronizedBoolean getRestoringConnection();
 }
