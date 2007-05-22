@@ -72,6 +72,7 @@ public class StateMachineRunner implements EventContext {
   }
 
   public void reset() {
+    events.clear();
     stateMachine.reset();
   }
 }

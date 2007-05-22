@@ -8,8 +8,6 @@ import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.async.api.Sink;
 import com.tc.net.protocol.TCNetworkMessage;
-import com.tc.net.protocol.transport.MessageTransport;
-import com.tc.net.protocol.transport.MessageTransportListener;
 
 /**
  * This implements an asynchronous Once and only once protocol. Sent messages go out on the sent queue received messages
@@ -19,21 +17,11 @@ class GuaranteedDeliveryProtocol implements DeliveryProtocol {
   private final StateMachineRunner send;
   private final StateMachineRunner receive;
   private final LinkedQueue        sendQueue;
-  private MessageTransport         transport;
-  private MessageTransportListener upperLayer;
 
   public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink workSink, LinkedQueue sendQueue) {
     this.send = new StateMachineRunner(new SendStateMachine(delivery, sendQueue), workSink);
     this.receive = new StateMachineRunner(new ReceiveStateMachine(delivery), workSink);
     this.sendQueue = sendQueue;
-  }
-
-  public void setTransport(MessageTransport t) {
-    this.transport = t;
-  }
-
-  public void setUpperLayer(MessageTransportListener upperLayer) {
-    this.upperLayer = upperLayer;
   }
 
   public void send(TCNetworkMessage message) {
@@ -48,13 +36,10 @@ class GuaranteedDeliveryProtocol implements DeliveryProtocol {
   public void receive(OOOProtocolMessage protocolMessage) {
     if (protocolMessage.isSend() || protocolMessage.isAckRequest()) {
       receive.addEvent(new OOOProtocolEvent(protocolMessage));
-    } else {
+    } else if (protocolMessage.isAck()) {
       send.addEvent(new OOOProtocolEvent(protocolMessage));
-      // pass ack=-1 to receiver for re-initialize
-      if (protocolMessage.getAckSequence() == -1) {
-        receive.addEvent(new OOOProtocolEvent(protocolMessage));
-        upperLayer.notifyTransportConnected(transport);
-      }
+    } else {
+      throw new AssertionError();
     }
   }
 

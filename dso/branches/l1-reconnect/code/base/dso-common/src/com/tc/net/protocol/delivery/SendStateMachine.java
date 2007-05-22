@@ -39,6 +39,8 @@ public class SendStateMachine extends AbstractStateMachine {
     // set sendWindow from tc.properties if exist. 0 to disable window send.
     String val = TCPropertiesImpl.getProperties().getProperty("l2.nha.ooo.sendWindow", true);
     if (val != null) sendWindow = Integer.valueOf(val).intValue();
+    
+    sendWindow = 0;
 
     this.delivery = delivery;
     this.sendQueue = sendQueue;
@@ -95,11 +97,10 @@ public class SendStateMachine extends AbstractStateMachine {
       if (protocolMessage == null) return;
       if (protocolMessage.isSend()) return;
       long ackedSeq = protocolMessage.getAckSequence();
+      
       if (ackedSeq == -1) {
-        // new connection up, re-initialize
-        reset();
-        switchToState(MESSAGE_WAIT_STATE);
-        return;
+        // this should be handled at a higher level - OOONetworkLayer
+        throw new AssertionError();
       }
       if (ackedSeq <= acked.get()) {
         // this shall not, old or dup ack, resend all outstandings
@@ -205,11 +206,6 @@ public class SendStateMachine extends AbstractStateMachine {
     outstandingCnt.set(0);
     outstandingMsgs.clear();
 
-    // remove stink sendQueue and events
-    StateMachineRunner runner = getRunner();
-    if (runner != null) {
-      runner.getEventList().clear();
-    }
     while (!sendQueue.isEmpty()) {
       dequeue(sendQueue);
     }

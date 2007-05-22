@@ -27,7 +27,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     // set MaxDelayedAcks from tc.properties if exist. 0 to disable ack delay.
     String val = TCPropertiesImpl.getProperties().getProperty("l2.nha.ooo.maxDelayedAcks", true);
     if (val != null) MaxDelayedAcks = Integer.valueOf(val).intValue();
-
+    MaxDelayedAcks = 0;
     this.delivery = delivery;
   }
 
@@ -51,7 +51,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
         // acked with -1 for a fresh system, otherwise tell peer what I have got.
         delivery.sendAck(received.get());
         return;
-      } else if (!protocolMessage.isSend() && (protocolMessage.getAckSequence() == -1)) {
+      } else if (protocolMessage.isAck() && (protocolMessage.getAckSequence() == -1)) {
         // got ack=-1 then re-initialize
         reset();
         return;

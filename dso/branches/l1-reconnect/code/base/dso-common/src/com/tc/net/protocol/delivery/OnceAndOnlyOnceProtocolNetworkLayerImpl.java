@@ -67,7 +67,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void setSendLayer(MessageTransport transport) {
     this.sendLayer = transport;
-    delivery.setTransport(sendLayer);
   }
 
   public void setReceiveLayer(NetworkLayer layer) {
@@ -76,7 +75,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
                                                                                              + layer.getClass()
                                                                                                  .getName()); }
     this.receiveLayer = (MessageChannelInternal) layer;
-    delivery.setUpperLayer(receiveLayer);
   }
 
   public void send(TCNetworkMessage message) {
@@ -100,10 +98,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       delivery.reset();
       receiveLayer.notifyTransportDisconnected(this);
       this.notifyTransportConnected(this);
-      // delivery.resume();
-      // receiveLayer.notifyTransportConnected(this);
+    } else {
+      delivery.receive(msg);
     }
-    delivery.receive(msg);
   }
 
   public boolean isConnected() {
