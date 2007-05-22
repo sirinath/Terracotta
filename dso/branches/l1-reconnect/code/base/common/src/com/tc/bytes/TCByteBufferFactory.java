@@ -21,7 +21,7 @@ public class TCByteBufferFactory {
   // 10485760 == 10MB
   private static final int                      WARN_THRESHOLD     = 10485760;
 
-  private static final boolean                  disablePooling     = true;
+  private static final boolean                  disablePooling     = false;
 
   private static final LinkedList               directFreePool     = new LinkedList();
 
