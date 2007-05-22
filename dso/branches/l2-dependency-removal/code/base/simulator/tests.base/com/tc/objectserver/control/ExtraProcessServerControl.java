@@ -6,12 +6,10 @@ package com.tc.objectserver.control;
 
 import org.apache.commons.lang.ArrayUtils;
 
-import com.tc.admin.TCStop;
 import com.tc.config.Directories;
 import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
 import com.tc.process.LinkedJavaProcess;
 import com.tc.process.StreamCopier;
-import com.tc.server.TCServerMain;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -123,7 +121,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
 
   protected String getMainClassName() {
-    return TCServerMain.class.getName();
+    return "com.tc.server.TCServerMain";
   }
 
   /**
@@ -166,15 +164,19 @@ public class ExtraProcessServerControl extends ServerControlBase {
     waitUntilStarted(timeout);
     System.err.println(this.name + " started.");
   }
-
-  protected LinkedJavaProcess createLinkedJavaProcess() {
-    LinkedJavaProcess rv = new LinkedJavaProcess(getMainClassName(), getMainClassArguments());
-    rv.setDirectory(this.runningDirectory);
+  
+  protected LinkedJavaProcess createLinkedJavaProcess(String mainClassName, String[] arguments) {
+    LinkedJavaProcess result = new LinkedJavaProcess(mainClassName, arguments);
+    result.setDirectory(this.runningDirectory);
     File processJavaHome = getJavaHome();
     if (processJavaHome != null) {
-      rv.setJavaHome(processJavaHome);
+      result.setJavaHome(processJavaHome);
     }
-    return rv;
+    return result;
+  }
+
+  protected LinkedJavaProcess createLinkedJavaProcess() {
+    return createLinkedJavaProcess(getMainClassName(), getMainClassArguments());
   }
 
   public void crash() throws Exception {
@@ -188,8 +190,9 @@ public class ExtraProcessServerControl extends ServerControlBase {
 
   public void attemptShutdown() throws Exception {
     System.out.println("Shutting down server " + this.name + "...");
-    TCStop stopper = new TCStop(getHost(), getAdminPort());
-    stopper.stop();
+    String[] args = getMainClassArguments();
+    LinkedJavaProcess stopper = createLinkedJavaProcess("com.tc.admin.TCStop", args);
+    stopper.start();
   }
 
   public void shutdown() throws Exception {
