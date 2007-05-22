@@ -31,7 +31,7 @@
     <mkdir dir="src/org/apache/catalina"/>
     <exec executable="svn">
       <arg value="co"/>
-      <arg value="http://svn.apache.org/repos/asf/tomcat/tc6.0.x/trunk/java/org/apache/catalina/tribes"/>
+      <arg value="http://svn.apache.org/repos/asf/tomcat/trunk/java/org/apache/catalina/tribes"/>
       <arg value="src/org/apache/catalina/tribes"/>
     </exec>
   </target>
