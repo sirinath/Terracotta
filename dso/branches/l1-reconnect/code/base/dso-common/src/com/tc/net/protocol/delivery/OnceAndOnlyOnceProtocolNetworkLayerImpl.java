@@ -92,15 +92,19 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       delivery.pause();
       return;
     } else if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
-      // we need to reset because we are talking to a new stack on the other side
-      restoringConnection.set(false);
-      delivery.pause();
-      delivery.reset();
-      receiveLayer.notifyTransportDisconnected(this);
-      this.notifyTransportConnected(this);
+      resetStack();
     } else {
       delivery.receive(msg);
     }
+  }
+
+  private void resetStack() {
+    // we need to reset because we are talking to a new stack on the other side
+    restoringConnection.set(false);
+    delivery.pause();
+    delivery.reset();
+    receiveLayer.notifyTransportDisconnected(this);
+    this.notifyTransportConnected(this);
   }
 
   public boolean isConnected() {
@@ -240,7 +244,12 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     throw new AssertionError("Must not call!");
   }
 
-  public SynchronizedBoolean getRestoringConnection() {
-    return this.restoringConnection;
+  public void startRestoringConnection() {
+    restoringConnection.set(true);
   }
+
+  public void connectionRestoreFailed() {
+    resetStack();
+  }
+
 }

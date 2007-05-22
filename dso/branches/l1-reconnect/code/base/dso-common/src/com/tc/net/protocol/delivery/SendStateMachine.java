@@ -40,8 +40,6 @@ public class SendStateMachine extends AbstractStateMachine {
     String val = TCPropertiesImpl.getProperties().getProperty("l2.nha.ooo.sendWindow", true);
     if (val != null) sendWindow = Integer.valueOf(val).intValue();
     
-    sendWindow = 0;
-
     this.delivery = delivery;
     this.sendQueue = sendQueue;
   }

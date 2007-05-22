@@ -23,7 +23,7 @@ public class OOOConnectionWatcher extends ConnectionWatcher implements RestoreCo
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
-    oooLayer.getRestoringConnection().set(true);
+    oooLayer.startRestoringConnection();
     oooLayer.notifyTransportDisconnected(transport);
     cce.asyncRestoreConnection(cmt, transport.getRemoteAddress(), this, timeoutMillis);
 
@@ -34,7 +34,7 @@ public class OOOConnectionWatcher extends ConnectionWatcher implements RestoreCo
   }
 
   public void restoreConnectionFailed(MessageTransport transport) {
-    oooLayer.getRestoringConnection().set(false);
+    oooLayer.connectionRestoreFailed();
     super.notifyTransportDisconnected(transport);
   }
 }

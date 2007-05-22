@@ -19,15 +19,14 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   private final SynchronizedLong           received           = new SynchronizedLong(-1);
   private final OOOProtocolMessageDelivery delivery;
   private int                              MaxDelayedAcks     = 4;                       // default by 4, can be set by
-                                                                                          // tc.properties, 0 to
-                                                                                          // disable.
+  // tc.properties, 0 to
+  // disable.
   private final SynchronizedInt            delayedAcks        = new SynchronizedInt(0);
 
   public ReceiveStateMachine(OOOProtocolMessageDelivery delivery) {
     // set MaxDelayedAcks from tc.properties if exist. 0 to disable ack delay.
     String val = TCPropertiesImpl.getProperties().getProperty("l2.nha.ooo.maxDelayedAcks", true);
     if (val != null) MaxDelayedAcks = Integer.valueOf(val).intValue();
-    MaxDelayedAcks = 0;
     this.delivery = delivery;
   }
 

@@ -4,8 +4,6 @@
  */
 package com.tc.net.protocol;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
-
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.NullTCLogger;
@@ -110,8 +108,13 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
 
   }
 
-  public SynchronizedBoolean getRestoringConnection() {
+  public void connectionRestoreFailed() {
     throw new ImplementMe();
+
   }
 
+  public void startRestoringConnection() {
+    throw new ImplementMe();
+
+  }
 }
