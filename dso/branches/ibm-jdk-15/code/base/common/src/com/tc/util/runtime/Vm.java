@@ -10,8 +10,10 @@ import java.util.regex.Pattern;
 
 public class Vm {
 
-  public static final Pattern JVM_VERSION_PATTERN = Pattern.compile("^(\\p{Digit})\\.(\\p{Digit})\\.(\\p{Digit})(?:_(.+))?$");
-  public static final Pattern IBM_PATCH_PATTERN = Pattern.compile("^[^-]+-\\d{8}\\s+\\((\\w+)\\)$");
+  public static final Pattern JVM_VERSION_PATTERN         = Pattern
+                                                              .compile("^(\\p{Digit})\\.(\\p{Digit})\\.(\\p{Digit})(?:_(.+))?$");
+  public static final Pattern IBM_SERVICE_RELEASE_PATTERN = Pattern
+                                                              .compile("^[^-]+-\\p{Digit}{8}\\p{Space}+\\(.*(SR\\p{Digit}).*\\)$");
 
   public static final Version VERSION;
   static {
@@ -91,10 +93,11 @@ public class Vm {
     private final boolean isJRockit;
 
     public Version(final Properties properties) throws UnknownJvmVersionException, UnknownRuntimeVersionException {
-      this(properties.getProperty("java.version", "<error: java.version not specified in properties>"),
-          properties.getProperty("java.runtime.version", "<error: java.runtime.version not specified in properties>"),
-          properties.getProperty("jrockit.version") != null || properties.getProperty("java.vm.name", "").toLowerCase().indexOf("jrockit") >= 0,
-          properties.getProperty("java.vendor", "").toLowerCase().startsWith("ibm "));
+      this(properties.getProperty("java.version", "<error: java.version not specified in properties>"), properties
+          .getProperty("java.runtime.version", "<error: java.runtime.version not specified in properties>"), properties
+          .getProperty("jrockit.version") != null
+          || properties.getProperty("java.vm.name", "").toLowerCase().indexOf("jrockit") >= 0, properties.getProperty(
+          "java.vendor", "").toLowerCase().startsWith("ibm "));
     }
 
     public Version(final String vendorVersion, final String runtimeVersion, final boolean isJRockit, final boolean isIBM)
@@ -108,18 +111,18 @@ public class Vm {
         minor = Integer.parseInt(versionMatcher.group(3));
         String version_patch = versionMatcher.groupCount() == 4 ? versionMatcher.group(4) : null;
         if (isIBM) {
-          final Matcher runtimeMatcher = IBM_PATCH_PATTERN.matcher(runtimeVersion);
-          if (runtimeMatcher.matches()) {
-            String runtime_patch = runtimeMatcher.groupCount() == 1 ? runtimeMatcher.group(1).toLowerCase() : null;
-            if (null == version_patch &&
-                null == runtime_patch) {
+          final Matcher serviceReleaseMatcher = IBM_SERVICE_RELEASE_PATTERN.matcher(runtimeVersion);
+          if (serviceReleaseMatcher.matches()) {
+            String serviceRelease = serviceReleaseMatcher.groupCount() == 1 ? serviceReleaseMatcher.group(1)
+                .toLowerCase() : null;
+            if (null == version_patch && null == serviceRelease) {
               patch = null;
             } else if (null == version_patch) {
-              patch = runtime_patch;
-            } else if (null == runtime_patch) {
+              patch = serviceRelease;
+            } else if (null == serviceRelease) {
               patch = version_patch;
             } else {
-              patch = version_patch + runtime_patch;
+              patch = version_patch + serviceRelease;
             }
           } else {
             throw new UnknownRuntimeVersionException(vendorVersion, runtimeVersion);
