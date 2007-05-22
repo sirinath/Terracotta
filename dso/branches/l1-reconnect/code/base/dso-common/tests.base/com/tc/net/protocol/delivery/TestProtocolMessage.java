@@ -112,4 +112,8 @@ public class TestProtocolMessage implements OOOProtocolMessage {
     return isGoodbye;
   }
 
+  public void reallyDoRecycleOnWrite() {
+    //
+  }
+
 }
