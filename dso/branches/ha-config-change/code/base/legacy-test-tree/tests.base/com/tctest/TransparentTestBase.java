@@ -102,7 +102,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       // configFactory().activateConfigurationChange();
       configFactory().addServerToL1Config(null, helper.getServerPort(), -1);
       configFactory().addServerToL2Config(null, helper.getServerPort(), helper.getAdminPort());
-
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers();
@@ -140,6 +139,14 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return getTestConfigObject().isL2StartupModeExternal();
   }
 
+  // only used by regular system tests (not crash or active-passive)
+  protected final void setUpControlledServer(TestTVSConfigurationSetupManagerFactory factory,
+                                             DSOClientConfigHelper helper, int serverPort, int adminPort,
+                                             String configFile) throws Exception {
+    controlledCrashMode = true;
+    setUpExternalProcess(factory, helper, serverPort, adminPort, configFile);
+  }
+
   protected void setUpExternalProcess(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
                                       int serverPort, int adminPort, String configFile) throws Exception {
     setJavaHome();
@@ -147,13 +154,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     setUp(factory, helper);
     configFactory().addServerToL1Config(null, serverPort, adminPort);
     configFactory().addServerToL2Config(null, serverPort, adminPort);
-  }
-
-  protected final void setUpControlledServer(TestTVSConfigurationSetupManagerFactory factory,
-                                             DSOClientConfigHelper helper, int serverPort, int adminPort,
-                                             String configFile) throws Exception {
-    controlledCrashMode = true;
-    setUpExternalProcess(factory, helper, serverPort, adminPort, configFile);
   }
 
   private final void setUp(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)

@@ -593,12 +593,15 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                                            "Reconnect timer",
                                                                                                            true),
                                                                                            reconnectTimeout, persistent);
+    // TODO: remove
+    // boolean networkedHA = l2Properties.getBoolean("ha.network.enabled");
 
-    boolean networkedHA = l2Properties.getBoolean("ha.network.enabled");
+    boolean networkedHA = configSetupManager.haConfig().isNetworked();
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, txnObjectManager, gidSequenceProvider);
+                                          objectManager, transactionManager, txnObjectManager, gidSequenceProvider,
+                                          configSetupManager.haConfig());
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
@@ -655,7 +658,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     if (dsoPort == 0) {
       return new Node(l2.host().getString(), dsoPort);
     } else {
-      return new Node(l2.host().getString(), dsoPort + 1);
+      // TODO: remove
+      // return new Node(l2.host().getString(), dsoPort + 1);
+
+      return new Node(l2.host().getString(), l2.l2GroupPort().getInt());
     }
   }
 
