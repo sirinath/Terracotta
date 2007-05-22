@@ -93,6 +93,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       return;
     } else if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
       resetStack();
+      receiveLayer.notifyTransportDisconnected(this);
+      this.notifyTransportConnected(this);
     } else {
       delivery.receive(msg);
     }
@@ -103,8 +105,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     restoringConnection.set(false);
     delivery.pause();
     delivery.reset();
-    receiveLayer.notifyTransportDisconnected(this);
-    this.notifyTransportConnected(this);
   }
 
   public boolean isConnected() {
@@ -250,6 +250,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void connectionRestoreFailed() {
     resetStack();
+    receiveLayer.notifyTransportDisconnected(this);
   }
 
 }
