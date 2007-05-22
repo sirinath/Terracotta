@@ -8,9 +8,6 @@ import com.tc.async.api.Sink;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.management.beans.object.ObjectManagementMonitor;
-import com.tc.management.beans.object.ObjectManagementMonitorMBean;
-import com.tc.management.beans.object.ObjectManagementMonitor.GCComptroller;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ObjectID;
 import com.tc.object.cache.CacheStats;
@@ -104,13 +101,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final Sink                           faultSink;
   private final Sink                           flushSink;
-  private final ObjectManagementMonitorMBean   objectManagementMonitor;
   private TransactionalObjectManager           txnObjectMgr             = new NullTransactionalObjectManager();
 
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
-                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink,
-                           Sink flushSink, ObjectManagementMonitorMBean objectManagementMonitor) {
+                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink, Sink flushSink) {
     this.faultSink = faultSink;
     this.flushSink = flushSink;
     Assert.assertNotNull(objectStore);
@@ -121,20 +116,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     this.evictionPolicy = cache;
     this.persistenceTransactionProvider = persistenceTransactionProvider;
     this.references = new HashMap(10000);
-    this.objectManagementMonitor = objectManagementMonitor;
-
-    final boolean doGC = config.doGC();
-    if (this.objectManagementMonitor instanceof ObjectManagementMonitor) {
-      ((ObjectManagementMonitor) this.objectManagementMonitor).registerGCController(new GCComptroller() {
-        public void startGC() {
-          gc();
-        }
-
-        public boolean gcEnabledInConfig() {
-          return doGC;
-        }
-      });
-    }
   }
 
   public void setTransactionalObjectManager(TransactionalObjectManagerImpl txnObjectManager) {
@@ -634,7 +615,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   public void notifyGCComplete(Set toDelete) {
     synchronized (this) {
-      collector.notifyGCComplete();
+      collector.notifyGCDeleteStarted();
       removeAllObjectsByID(toDelete);
       // Process pending, since we disabled process pending while GC pause was initiate.
       processPendingLookups();
@@ -656,6 +637,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         removeFromStore(split);
       }
     }
+    collector.notifyGCComplete();
   }
 
   private void removeFromStore(Set toDelete) {
@@ -714,9 +696,16 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return this.persistenceTransactionProvider.newTransaction();
   }
 
-  public void setGarbageCollector(GarbageCollector collector) {
+  public GarbageCollector getGarbageCollector() {
+    return this.collector;
+  }
+
+  public void setGarbageCollector(final GarbageCollector newCollector) {
     syncAssertNotInShutdown();
-    this.collector = collector;
+    if(this.collector != null) {
+      this.collector.stop();
+    }
+    this.collector = newCollector;
 
     if (!config.doGC() || config.gcThreadSleepTime() < 0) return;
 
@@ -741,7 +730,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
               stopLock.wait(gcSleepTime);
             }
             if (isStopRequested()) { return; }
-            gc();
+            newCollector.gc();
           } catch (InterruptedException ie) {
             throw new TCRuntimeException(ie);
           }
@@ -750,11 +739,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
     };
     st.setDaemon(true);
-    collector.setState(st);
-  }
-
-  public void gc() {
-    collector.gc();
+    newCollector.setState(st);
   }
 
   private Map processObjectsRequest(Collection objects) {

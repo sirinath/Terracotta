@@ -22,6 +22,7 @@ import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet2;
+import com.tc.util.State;
 import com.tc.util.concurrent.LifeCycleState;
 import com.tc.util.concurrent.NullLifeCycleState;
 import com.tc.util.concurrent.StoppableThread;
@@ -62,11 +63,15 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
                                                                }
                                                              };
   private final static LifeCycleState  NULL_LIFECYCLE_STATE  = new NullLifeCycleState();
-  private static final int             GC_SLEEP              = 1;
-  private static final int             GC_PAUSING            = 2;
-  private static final int             GC_PAUSED             = 3;
 
-  private int                          state                 = GC_SLEEP;
+  private static final State           GC_DISABLED           = new State("GC_DISABLED");
+  private static final State           GC_RUNNING            = new State("GC_RUNNING");
+  private static final State           GC_SLEEP              = new State("GC_SLEEP");
+  private static final State           GC_PAUSING            = new State("GC_PAUSING");
+  private static final State           GC_PAUSED             = new State("GC_PAUSED");
+  private static final State           GC_DELETE             = new State("GC_DELETE");
+
+  private State                        state                 = GC_SLEEP;
   private LifeCycleState               lifeCycleState;
   private int                          gcIteration           = 0;
   private volatile ChangeCollector     referenceCollector    = NULL_CHANGE_COLLECTOR;
@@ -106,6 +111,10 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   public void gc() {
+    if (!requestGCStart()) {
+      gcLogger.log_GCDisabled();
+      return;
+    }
     GCStatsImpl gcStats = new GCStatsImpl(gcIteration);
 
     gcLogger.log_GCStart(gcIteration);
@@ -153,7 +162,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcLogger.log_rescue(2, gcResults);
 
     gcStats.setCandidateGarbageCount(gcResults.size());
-    Set toDelete = rescue(new ObjectIDSet2(gcResults), rescueTimes);
+    Set toDelete = Collections.unmodifiableSet(rescue(new ObjectIDSet2(gcResults), rescueTimes));
 
     if (gcState.isStopRequested()) { return; }
     gcLogger.log_sweep(toDelete);
@@ -171,7 +180,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcLogger.log_GCComplete(startMillis, pauseStartMillis, rescueTimes, endMillis, gcIteration);
 
     gcLogger.push(gcStats);
-    fireGCCompleteEvent(gcStats);
+    fireGCCompleteEvent(gcStats, toDelete);
     gcIteration++;
   }
 
@@ -224,8 +233,38 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
   }
 
+  private synchronized boolean requestGCStart() {
+    if (state == GC_SLEEP) {
+      state = GC_RUNNING;
+      return true;
+    }
+    // Can't start GC
+    return false;
+  }
+
+  public synchronized void enableGC() {
+    if (GC_DISABLED == state) {
+      state = GC_SLEEP;
+    } else {
+      logger.warn("GC is already enabled : " + state);
+    }
+  }
+
+  public synchronized boolean disableGC() {
+    if (GC_SLEEP == state) {
+      state = GC_DISABLED;
+      return true;
+    }
+    // GC is already running, cant be disabled
+    return false;
+  }
+
+  public synchronized boolean isDisabled() {
+    return GC_DISABLED == state;
+  }
+
   public synchronized boolean isPausingOrPaused() {
-    return GC_SLEEP != state;
+    return GC_PAUSED == state || GC_PAUSING == state;
   }
 
   public synchronized boolean isPaused() {
@@ -242,25 +281,16 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
   }
 
+  public synchronized void notifyGCDeleteStarted() {
+    state = GC_DELETE;
+  }
+
   public synchronized void notifyGCComplete() {
     state = GC_SLEEP;
   }
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
-    return out.print(getClass().getName()).print("[state: ").print(stateToString()).print("]");
-  }
-
-  private String stateToString() {
-    switch (state) {
-      case GC_SLEEP:
-        return "GC_SLEEP";
-      case GC_PAUSING:
-        return "GC_PAUSING";
-      case GC_PAUSED:
-        return "GC_PAUSED";
-      default:
-        return "UNKNOWN";
-    }
+    return out.print(getClass().getName()).print("[").print(state).print("]");
   }
 
   private void logstart_collect(Collection rootIds, Set managedObjectIds) {
@@ -327,11 +357,11 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     this.gcState = st;
   }
 
-  private void fireGCCompleteEvent(GCStats gcStats) {
+  private void fireGCCompleteEvent(GCStats gcStats, Set deleted) {
     for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
       try {
         ObjectManagerEventListener listener = (ObjectManagerEventListener) iter.next();
-        listener.garbageCollectionComplete(gcStats);
+        listener.garbageCollectionComplete(gcStats, deleted);
       } catch (Exception e) {
         if (logger.isDebugEnabled()) {
           logger.debug(e);

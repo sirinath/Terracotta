@@ -36,7 +36,6 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
   private ObjectStringSerializer serializer;
   private Map                    rootsMap;
   private long                   sequenceID;
-  private boolean                hasMore;
 
   public ObjectSyncMessage() {
     // Make serialization happy
@@ -49,18 +48,17 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
 
   protected void basicReadExternal(int msgType, ObjectInput in) throws IOException {
     Assert.assertEquals(MANAGED_OBJECT_SYNC_TYPE, msgType);
-    readObjectIDS(in);
+    oids = readObjectIDS(in, new HashSet(500));
     dnaCount = in.readInt();
     readRootsMap(in);
     serializer = readObjectStringSerializer(in);
     this.dnas = readByteBuffers(in);
     this.sequenceID = in.readLong();
-    this.hasMore = in.readBoolean();
   }
 
   protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
     Assert.assertEquals(MANAGED_OBJECT_SYNC_TYPE, msgType);
-    writeObjectIDS(out);
+    writeObjectIDS(out, oids);
     out.writeInt(dnaCount);
     writeRootsMap(out);
     writeObjectStringSerializer(out, serializer);
@@ -68,7 +66,6 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     recycle(dnas);
     dnas = null;
     out.writeLong(this.sequenceID);
-    out.writeBoolean(hasMore);
   }
 
   private void writeRootsMap(ObjectOutput out) throws IOException {
@@ -98,31 +95,14 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     }
   }
 
-  private void writeObjectIDS(ObjectOutput out) throws IOException {
-    out.writeInt(oids.size());
-    for (Iterator i = oids.iterator(); i.hasNext();) {
-      ObjectID oid = (ObjectID) i.next();
-      out.writeLong(oid.toLong());
-    }
-  }
-
-  private void readObjectIDS(ObjectInput in) throws IOException {
-    int size = in.readInt();
-    oids = new HashSet(size);
-    for (int i = 0; i < size; i++) {
-      oids.add(new ObjectID(in.readLong()));
-    }
-  }
-
   public void initialize(Set dnaOids, int count, TCByteBuffer[] serializedDNAs,
-                         ObjectStringSerializer objectSerializer, Map roots, long sID, boolean more) {
+                         ObjectStringSerializer objectSerializer, Map roots, long sID) {
     this.oids = dnaOids;
     this.dnaCount = count;
     this.dnas = serializedDNAs;
     this.serializer = objectSerializer;
     this.rootsMap = roots;
     this.sequenceID = sID;
-    this.hasMore = more;
   }
 
   public int getDnaCount() {
@@ -141,10 +121,6 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     return rootsMap;
   }
   
-  public boolean isLastMessage() {
-    return !hasMore;
-  }
-
   /**
    * This method calls returns a list of DNAs that can be applied to ManagedObjects. This method could only be called
    * once. It throws an AssertionError if you ever call this twice

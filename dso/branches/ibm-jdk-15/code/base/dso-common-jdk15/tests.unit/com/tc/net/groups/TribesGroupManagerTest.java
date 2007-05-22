@@ -176,7 +176,7 @@ public class TribesGroupManagerTest extends TCTestCase {
   private void checkMessagesOrdering(final TribesGroupManager mgr1, final TribesGroupManager mgr2)
       throws GroupException {
 
-    final Integer upbound = new Integer(100);
+    final Integer upbound = new Integer(50);
     final MyListener myl1 = new MyListener();
     final MyListener myl2 = new MyListener();
     mgr1.registerForMessages(TestMessage.class, myl1);
@@ -245,6 +245,8 @@ public class TribesGroupManagerTest extends TCTestCase {
         try {
           mgr.sendAll(msg);
         } catch (Exception x) {
+          System.err.println("Got exception : " + getName() + " " + x.getMessage());
+          x.printStackTrace();
           throw new RuntimeException("sendAll GroupException:" + x);
         }
         ++index;
@@ -264,7 +266,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     }
 
     public void run() {
-      while (index < upbound) {
+      while (index <= upbound) {
         TestMessage msg = (TestMessage) l.take();
         System.err.println("*** " + getName() + " receives " + msg);
         assertEquals(new TestMessage(index.toString()), msg);

@@ -7,16 +7,13 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>dso-container-tests</artifactId>
+  <name>dso-container-tests</name>
   <dependencies>
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>dso-l1-session</artifactId>
-    </dependency><!--
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>dso-l2</artifactId>
     </dependency>
-    --><dependency>
+    <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>common</artifactId>
       <version>${tcVersion}</version>
@@ -32,7 +29,7 @@
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>tc-cargo-core-uberjar</artifactId>
+      <artifactId>tc_cargo-core-uberjar</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -44,4 +41,3 @@
     </dependency>
   </dependencies>
 </project>
-

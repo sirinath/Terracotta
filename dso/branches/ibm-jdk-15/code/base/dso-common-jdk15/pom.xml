@@ -9,6 +9,8 @@
     <version>2.3-SNAPSHOT</version>
   </parent>
   <artifactId>dso-common-jdk15</artifactId>
+  <name>dso-common-jdk15</name>
+
   <build>
     <plugins>
       <plugin>

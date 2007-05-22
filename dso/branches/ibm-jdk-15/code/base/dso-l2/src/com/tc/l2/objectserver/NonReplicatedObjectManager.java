@@ -4,6 +4,7 @@
  */
 package com.tc.l2.objectserver;
 
+import com.tc.l2.msg.GCResultMessage;
 import com.tc.net.groups.NodeID;
 
 public class NonReplicatedObjectManager implements ReplicatedObjectManager {
@@ -18,6 +19,14 @@ public class NonReplicatedObjectManager implements ReplicatedObjectManager {
 
   public void sync() {
     // Nop
+  }
+
+  public void clear(NodeID nodeID) {
+    // Nop
+  }
+
+  public void handleGCResult(GCResultMessage message) {
+    throw new UnsupportedOperationException();
   }
 
 }
