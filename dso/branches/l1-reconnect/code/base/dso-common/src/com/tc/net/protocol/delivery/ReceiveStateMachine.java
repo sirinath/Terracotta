@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.delivery;
 
@@ -13,12 +14,14 @@ import com.tc.util.Assert;
  * 
  */
 public class ReceiveStateMachine extends AbstractStateMachine {
-  private final State                   MESSAGE_WAIT_STATE = new MessageWaitState();
+  private final State                      MESSAGE_WAIT_STATE = new MessageWaitState();
 
-  private final SynchronizedLong        received           = new SynchronizedLong(-1);
+  private final SynchronizedLong           received           = new SynchronizedLong(-1);
   private final OOOProtocolMessageDelivery delivery;
-  private int MaxDelayedAcks = 4;     // default by 4, can be set  by tc.properties, 0 to disable.
-  private final SynchronizedInt delayedAcks = new SynchronizedInt(0);
+  private int                              MaxDelayedAcks     = 4;                       // default by 4, can be set by
+                                                                                          // tc.properties, 0 to
+                                                                                          // disable.
+  private final SynchronizedInt            delayedAcks        = new SynchronizedInt(0);
 
   public ReceiveStateMachine(OOOProtocolMessageDelivery delivery) {
     // set MaxDelayedAcks from tc.properties if exist. 0 to disable ack delay.
@@ -35,10 +38,10 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   protected State initialState() {
     return MESSAGE_WAIT_STATE;
   }
-  
+
   private int getRunnerEventLength() {
     StateMachineRunner runner = getRunner();
-    return((runner != null)? runner.getEventsCount() : 0);
+    return ((runner != null) ? runner.getEventsCount() : 0);
   }
 
   private class MessageWaitState extends AbstractState {
@@ -58,7 +61,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
       final long curRecv = received.get();
       Assert.eval(r >= curRecv);
       if (r <= curRecv) {
-        //do nothing we already got it
+        // do nothing we already got it
       } else {
         putMessage(protocolMessage);
         sendAck();
@@ -69,7 +72,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   private void putMessage(OOOProtocolMessage msg) {
     this.delivery.receiveMessage(msg);
   }
-  
+
   private void sendAck() {
     final long next = received.increment();
     if ((delayedAcks.get() < MaxDelayedAcks) && (getRunnerEventLength() > 0)) {
@@ -79,7 +82,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
       delayedAcks.set(0);
     }
   }
-  
+
   public void reset() {
     received.set(-1);
     delayedAcks.set(0);
