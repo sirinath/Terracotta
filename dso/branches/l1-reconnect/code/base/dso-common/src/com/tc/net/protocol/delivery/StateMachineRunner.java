@@ -23,15 +23,15 @@ public class StateMachineRunner implements EventContext {
     this.stateMachine = stateMachine;
     stateMachine.setRunner(this);
   }
-  
+
   public LinkedList getEventList() {
-    return(events);
+    return (events);
   }
-  
+
   public int getEventsCount() {
-    return(events.size());
+    return (events.size());
   }
-  
+
   public synchronized void start() {
     stateMachine.start();
   }
@@ -72,7 +72,9 @@ public class StateMachineRunner implements EventContext {
   }
 
   public void reset() {
-    events.clear();
-    stateMachine.reset();
+    synchronized (this) {
+      events.clear();
+      stateMachine.reset();
+    }
   }
 }
