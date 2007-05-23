@@ -10,7 +10,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l2-common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-weblogic"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/simulator"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/deploy"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-common-jdk15"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/management"/>
