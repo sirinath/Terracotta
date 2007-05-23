@@ -124,7 +124,7 @@ modules:
         - dso-memory-datastore
   - dso-l2:
       options:
-        jdk: J2SE-1.4
+        jdk: J2SE-1.5
       dependencies:
         - common
         - dso-common
@@ -135,7 +135,7 @@ modules:
         - dso-memory-datastore
   - deploy:
       options:
-        jdk: J2SE-1.4
+        jdk: J2SE-1.5
       dependencies:
         - linked-child-process
         - common
@@ -158,7 +158,7 @@ modules:
         - dso-l2-common
   - ui-configurator:
       options:
-        jdk: J2SE-1.4
+        jdk: J2SE-1.5
       dependencies:
         - common
         - dso-common
