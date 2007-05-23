@@ -4,9 +4,9 @@
  */
 package com.tc.object.tools;
 
+import com.tc.util.runtime.UnknownJvmVersionException;
+import com.tc.util.runtime.UnknownRuntimeVersionException;
 import com.tc.util.runtime.Vm;
-import com.tc.util.runtime.Vm.UnknownJvmVersionException;
-import com.tc.util.runtime.Vm.UnknownRuntimeVersionException;
 
 import java.util.Properties;
 

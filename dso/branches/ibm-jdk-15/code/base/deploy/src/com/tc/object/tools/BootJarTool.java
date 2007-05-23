@@ -124,6 +124,8 @@ import com.tc.util.SetIteratorWrapper;
 import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
 import com.tc.util.runtime.Os;
+import com.tc.util.runtime.UnknownJvmVersionException;
+import com.tc.util.runtime.UnknownRuntimeVersionException;
 import com.tc.util.runtime.Vm;
 import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
@@ -414,8 +416,8 @@ public class BootJarTool {
 
       loadTerracottaClass(Vm.class.getName());
       loadTerracottaClass(Vm.Version.class.getName());
-      loadTerracottaClass(Vm.UnknownJvmVersionException.class.getName());
-      loadTerracottaClass(Vm.UnknownRuntimeVersionException.class.getName());
+      loadTerracottaClass(UnknownJvmVersionException.class.getName());
+      loadTerracottaClass(UnknownRuntimeVersionException.class.getName());
       addManagementClasses();
 
       addRuntimeClasses();

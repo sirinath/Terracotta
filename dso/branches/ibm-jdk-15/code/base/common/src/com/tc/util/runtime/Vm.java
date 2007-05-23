@@ -70,18 +70,6 @@ public class Vm {
     return VERSION.isJRockit();
   }
 
-  public final static class UnknownJvmVersionException extends Exception {
-    private UnknownJvmVersionException(final String badVersion) {
-      super("Unable to parse JVM version '" + badVersion + "'");
-    }
-  }
-
-  public final static class UnknownRuntimeVersionException extends Exception {
-    private UnknownRuntimeVersionException(final String jvmVersion, final String badVersion) {
-      super("Unable to parse runtime version '" + badVersion + "' for JVM version '" + jvmVersion + "'");
-    }
-  }
-
   public final static class Version {
 
     private final String  vmVersion;
