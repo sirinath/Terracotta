@@ -561,6 +561,8 @@
             This can be any port you like, but note that ports 
             below 1024 typically require 'root' privileges to 
             use on Unix-style systems (Linux, Solaris).
+            
+            Default: 9530
           </xs:documentation>
         </xs:annotation>
       </xs:element>
