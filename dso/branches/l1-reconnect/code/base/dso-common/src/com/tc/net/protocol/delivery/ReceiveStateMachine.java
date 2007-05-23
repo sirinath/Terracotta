@@ -8,7 +8,6 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.Assert;
 
 /**
  * 
@@ -58,10 +57,15 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
       final long r = protocolMessage.getSent();
       final long curRecv = received.get();
-      Assert.eval(r >= curRecv);
       if (r <= curRecv) {
-        // do nothing we already got it
+        // we already got message
+        resendAck();
       } else {
+        if (r != (curRecv + 1)) {
+          // message missed, resend ack, receive to resend message.
+          resendAck();
+          return;
+        }
         putMessage(protocolMessage);
         sendAck();
       }
@@ -80,6 +84,11 @@ public class ReceiveStateMachine extends AbstractStateMachine {
       delivery.sendAck(next);
       delayedAcks.set(0);
     }
+  }
+  
+  private void resendAck() {
+    delivery.sendAck(received.get());
+    delayedAcks.set(0);
   }
 
   public void reset() {
