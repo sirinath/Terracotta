@@ -26,4 +26,7 @@ public interface TCServer {
   String getDescriptionOfCapabilities();
 
   L2Info[] infoForAllL2s();
+  
+  public int getDSOListenPort();
+  public void dump();
 }

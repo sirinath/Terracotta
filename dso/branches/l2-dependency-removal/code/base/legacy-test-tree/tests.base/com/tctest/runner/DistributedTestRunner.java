@@ -15,7 +15,7 @@ import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.server.TCServerImpl;
+import com.tc.server.TCServer;
 import com.tc.simulator.app.ApplicationBuilder;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.app.DSOApplicationBuilder;
@@ -32,6 +32,7 @@ import com.tcsimulator.ControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
 import com.tcsimulator.listener.QueuePrinter;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +55,7 @@ public class DistributedTestRunner implements ResultsListener {
   private final DSOClientConfigHelper                   configHelper;
   private final ContainerStateFactory                   containerStateFactory;
   private final TestGlobalIdGenerator                   globalIdGenerator;
-  private final TCServerImpl                            server;
+  private final TCServer                                server;
   private final List                                    errors  = new ArrayList();
   private final List                                    results = new ArrayList();
   private final DistributedTestRunnerConfig             config;
@@ -116,13 +117,26 @@ public class DistributedTestRunner implements ResultsListener {
 
     initializedClients();
 
-    L2TVSConfigurationSetupManager manager = configFactory.createL2TVSConfigurationSetupManager(null);
-
     if (this.startServer) {
-      server = new TCServerImpl(manager, new TCThreadGroup(new ThrowableHandler(TCLogging
-          .getLogger(DistributedTestRunner.class))));
+      server = instantiateTCServer();
     } else {
       server = null;
+    }
+  }
+
+  protected TCServer instantiateTCServer() {
+    try {
+      Class tcServerClass = Class.forName("com.tc.server.TCServerImpl");
+      Class[] constructorParameterTypes = {L2TVSConfigurationSetupManager.class, TCThreadGroup.class};
+      Constructor tcServerConstructor = tcServerClass.getConstructor(constructorParameterTypes); 
+
+      Object[] tcServerConstructorArgs = {
+              configFactory.createL2TVSConfigurationSetupManager(null),
+              new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(DistributedTestRunner.class)))
+      };
+      return (TCServer) tcServerConstructor.newInstance(tcServerConstructorArgs);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while instantiating TCServerImpl from DistributedTestRunner", e);
     }
   }
 

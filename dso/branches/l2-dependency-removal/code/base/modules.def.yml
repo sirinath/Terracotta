@@ -155,7 +155,7 @@ modules:
         - dso-l1
         - dso-common
         - dso-common-jdk15
-        - deploy
+        - dso-l2-common
   - ui-configurator:
       options:
         jdk: J2SE-1.4
@@ -201,7 +201,6 @@ modules:
         - dso-l2-common
         - dso-l1-weblogic
         - simulator
-        - deploy
         - management
         - thirdparty
   - dso-spring:
