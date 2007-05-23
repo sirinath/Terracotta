@@ -310,14 +310,14 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   static private ByteBuffer[] extractNioBuffers(TCByteBuffer[] src) {
     ByteBuffer[] rv = new ByteBuffer[src.length];
     for (int i = 0, n = src.length; i < n; i++) {
-      rv[i] = (ByteBuffer) src[i].getNioBuffer();
+      rv[i] = src[i].getNioBuffer();
     }
 
     return rv;
   }
 
   static private ByteBuffer extractNioBuffer(TCByteBuffer buffer) {
-    return (ByteBuffer) buffer.getNioBuffer();
+    return buffer.getNioBuffer();
   }
 
   private void putMessageImpl(TCNetworkMessage message) {

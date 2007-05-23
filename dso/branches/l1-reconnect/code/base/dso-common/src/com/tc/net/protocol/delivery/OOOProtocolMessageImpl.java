@@ -62,10 +62,6 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     return getOOOPHeader().isGoodbye();
   }
 
-  public void recycle() {
-    // we are disabling this because on ooo layer knows when it's safe to recycle the message
-  }
-
   public void doRecycleOnWrite() {
     // we are disabling this because on ooo layer knows when it's safe to recycle the message
   }

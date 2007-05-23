@@ -92,11 +92,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public boolean isNioBuffer() {
-    return true;
-  }
-
-  public Object getNioBuffer() {
+  public ByteBuffer getNioBuffer() {
     return buffer;
   }
 
@@ -279,9 +275,7 @@ public class TCByteBuffer implements Recyclable {
   }
 
   public TCByteBuffer put(TCByteBuffer src) {
-    if (!src.isNioBuffer()) { throw new IllegalArgumentException("src buffer is not backed by a java.nio.ByteBuffer"); }
-
-    buffer.put((ByteBuffer) src.getNioBuffer());
+    buffer.put(src.getNioBuffer());
     return this;
   }
 

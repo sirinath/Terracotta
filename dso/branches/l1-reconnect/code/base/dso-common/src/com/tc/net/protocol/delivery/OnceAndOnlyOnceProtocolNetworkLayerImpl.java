@@ -25,7 +25,6 @@ import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.WireProtocolMessage;
 import com.tc.util.Assert;
-import com.tc.util.DebugUtil;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -84,9 +83,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void receive(TCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
     if (msg.isGoodbye()) {
-
-      DebugUtil.trace("GOT GOODBYE MESSAGE!");
-
       sendLayer.close();
       receiveLayer.close();
       delivery.pause();
@@ -123,8 +119,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
     // TODO: send out goodbye message
     sendLayer.send(messageFactory.createNewGoodbyeMessage());
-    DebugUtil.trace("SENT GOODBYE MESSAGE!");
-
     sendLayer.close();
   }
 
