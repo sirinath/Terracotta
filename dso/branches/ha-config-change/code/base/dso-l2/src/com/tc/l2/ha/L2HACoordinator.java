@@ -135,22 +135,22 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     final Sink ackProcessingStage = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, Integer.MAX_VALUE).getSink();
-    final Sink stateMessageStage = stageManager
-        .createStage(ServerConfigurationContext.L2_STATE_MESSAGE_HANDLER_STAGE,
-                     new L2StateMessageHandler(), 1, Integer.MAX_VALUE).getSink();
-    final Sink gcResultStage = stageManager
-        .createStage(ServerConfigurationContext.GC_RESULT_PROCESSING_STAGE,
-                     new GCResultHandler(), 1, Integer.MAX_VALUE).getSink();
-    
+    final Sink stateMessageStage = stageManager.createStage(ServerConfigurationContext.L2_STATE_MESSAGE_HANDLER_STAGE,
+                                                            new L2StateMessageHandler(), 1, Integer.MAX_VALUE)
+        .getSink();
+    final Sink gcResultStage = stageManager.createStage(ServerConfigurationContext.GC_RESULT_PROCESSING_STAGE,
+                                                        new GCResultHandler(), 1, Integer.MAX_VALUE).getSink();
+
     this.rClusterStateMgr = new ReplicatedClusterStateManagerImpl(groupManager, stateManager, clusterState, server
         .getConnectionIdFactory(), stageManager.getStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE).getSink());
 
     OrderedSink orderedObjectsSyncSink = new OrderedSink(logger, objectsSyncSink);
     this.rTxnManager = new ReplicatedTransactionManagerImpl(groupManager, orderedObjectsSyncSink, transactionManager,
                                                             txnObjectManager);
-    
-    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager, rTxnManager,
-                                                          objectManager, objectsSyncRequestSink, sequenceGenerator);
+
+    this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
+                                                          rTxnManager, objectManager, objectsSyncRequestSink,
+                                                          sequenceGenerator);
 
     this.groupManager.routeMessages(ObjectSyncMessage.class, orderedObjectsSyncSink);
     this.groupManager.routeMessages(ObjectSyncCompleteMessage.class, orderedObjectsSyncSink);
