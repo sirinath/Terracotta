@@ -84,7 +84,7 @@ class AppUtil:
 
     def install(self, warFile):
         appName = self.appName(warFile)
-        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + appName + " -contextroot /" + appName + " -usedefaultbindings")
+        self.AdminApp.install(os.path.join(self.webappDir, warFile), "-appname " + appName + " -contextroot " + appName + " -usedefaultbindings")
         print "WebApp[" + appName + "] installed"
 
     def installed(self, appName):
