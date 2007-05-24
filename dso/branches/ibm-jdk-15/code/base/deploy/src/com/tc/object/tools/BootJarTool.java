@@ -49,6 +49,7 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
 import com.tc.object.bytecode.AccessibleObjectAdapter;
 import com.tc.object.bytecode.BufferedWriterAdapter;
+import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
 import com.tc.object.bytecode.ChangePackageClassAdapter;
@@ -127,7 +128,6 @@ import com.tc.util.runtime.Os;
 import com.tc.util.runtime.UnknownJvmVersionException;
 import com.tc.util.runtime.UnknownRuntimeVersionException;
 import com.tc.util.runtime.Vm;
-import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
@@ -356,8 +356,10 @@ public class BootJarTool {
       loadTerracottaClass(SetIteratorWrapper.class.getName());
       loadTerracottaClass(EnumerationWrapper.class.getName());
       loadTerracottaClass(NamedClassLoader.class.getName());
+      loadTerracottaClass(NamedLoaderAdapter.class.getName());
       loadTerracottaClass(TransparentAccess.class.getName());
       loadTerracottaClass(BytecodeProvider.class.getName());
+      loadTerracottaClass(ByteCodeUtil.class.getName());
 
       loadTerracottaClass(Manageable.class.getName());
       loadTerracottaClass(Clearable.class.getName());
@@ -377,7 +379,6 @@ public class BootJarTool {
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(JettyLoaderNaming.class.getName());
-      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
