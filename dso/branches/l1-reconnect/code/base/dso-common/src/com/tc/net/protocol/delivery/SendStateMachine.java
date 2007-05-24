@@ -132,26 +132,22 @@ public class SendStateMachine extends AbstractStateMachine {
       if (protocolMessage == null || protocolMessage.isSend()) return;
 
       long ackedSeq = protocolMessage.getAckSequence();
-      if (ackedSeq <= acked.get()) {
-        if (outstandingCnt.get() > 0) {
-          resendOutstandings();
-        }
-      } else {
-        while (ackedSeq > acked.get()) {
-          acked.increment();
-          removeMessage();
-        }
+      Assert.eval(ackedSeq > acked.get());
 
-        // try pump more
-        sendMoreIfAvailable();
-
-        if (outstandingCnt.get() == 0) {
-          switchToState(MESSAGE_WAIT_STATE);
-        }
-
-        // ???: is this check properly synchronized?
-        Assert.eval(acked.get() <= sent.get());
+      while (ackedSeq > acked.get()) {
+        acked.increment();
+        removeMessage();
       }
+
+      // try pump more
+      sendMoreIfAvailable();
+
+      if (outstandingCnt.get() == 0) {
+        switchToState(MESSAGE_WAIT_STATE);
+      }
+
+      // ???: is this check properly synchronized?
+      Assert.eval(acked.get() <= sent.get());
     }
 
     public void sendMoreIfAvailable() {
