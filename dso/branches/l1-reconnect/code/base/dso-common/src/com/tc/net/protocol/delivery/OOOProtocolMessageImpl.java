@@ -66,12 +66,12 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     // we are disabling this because on ooo layer knows when it's safe to recycle the message
   }
 
-  public void reallyRecycle() {
-    super.recycle();
-  }
-
   public void reallyDoRecycleOnWrite() {
-    reallyRecycle();
+    getOOOPHeader().recycle();
+    AbstractTCNetworkMessage messagePayLoad = (AbstractTCNetworkMessage) getMessagePayload();
+    if(messagePayLoad != null) {
+      messagePayLoad.doRecycleOnWrite();
+    }
   }
 
   public static class ProtocolMessageParserImpl implements OOOProtocolMessageParser {

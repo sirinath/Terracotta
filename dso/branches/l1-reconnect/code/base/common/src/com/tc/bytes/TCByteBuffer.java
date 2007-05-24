@@ -6,6 +6,7 @@ package com.tc.bytes;
 
 import com.tc.lang.Recyclable;
 import com.tc.util.Assert;
+import com.tc.util.State;
 
 import java.nio.ByteBuffer;
 
@@ -17,8 +18,13 @@ import java.nio.ByteBuffer;
 // This would make the TCByteBuffer interface consistent w.r.t. exceptions (whilst being blind to JDK13 vs JDK14)
 public class TCByteBuffer implements Recyclable {
 
+  private static final State INIT        = new State("INIT");
+  private static final State CHECKED_OUT = new State("CHECKED_OUT");
+  private static final State COMMITTED   = new State("COMMITTED");
+
   private final ByteBuffer   buffer;
   private final TCByteBuffer root;
+  private State              state       = INIT;
 
   TCByteBuffer(int capacity, boolean direct) {
     if (direct) {
@@ -477,6 +483,16 @@ public class TCByteBuffer implements Recyclable {
         "Unsigned byte value must in range 0-255 inclusive"); }
     put((byte) (value & 0xFF));
     return this;
+  }
+
+  public void commit() {
+    if (state == COMMITTED) { throw new AssertionError("Already commited"); }
+    state = COMMITTED;
+  }
+
+  public void checkedOut() {
+    if (state == CHECKED_OUT) { throw new AssertionError("Already checked out"); }
+    state = CHECKED_OUT;
   }
 
   /* This is the debug version. PLEASE DONT DELETE */

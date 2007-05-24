@@ -19,27 +19,27 @@ import java.util.LinkedList;
  */
 public class TCByteBufferFactory {
   // 10485760 == 10MB
-  private static final int                      WARN_THRESHOLD     = 10485760;
+  private static final int            WARN_THRESHOLD     = 10485760;
 
-  private static final boolean                  disablePooling     = false;
+  private static final boolean        disablePooling     = false;
 
-  private static final LinkedList               directFreePool     = new LinkedList();
+  private static final LinkedList     directFreePool     = new LinkedList();
 
-  private static final LinkedList               nonDirectFreePool  = new LinkedList();
+  private static final LinkedList     nonDirectFreePool  = new LinkedList();
 
   // 4096 bytes * 2048 * 4 = 32 MB total
-  private static final int                      DEFAULT_FIXED_SIZE = 4096;
-  private static final int                      MAX_POOL_SIZE      = 2048 * 4;
+  private static final int            DEFAULT_FIXED_SIZE = 4096;
+  private static final int            MAX_POOL_SIZE      = 2048 * 4;
 
   // XXX: make me configurable (one time only, fixed sized buffers need to stay the same size!)
-  private static final int                      fixedBufferSize    = DEFAULT_FIXED_SIZE;
+  private static final int            fixedBufferSize    = DEFAULT_FIXED_SIZE;
 
-  private static final TCByteBuffer[]           EMPTY_BB_ARRAY     = new TCByteBuffer[0];
+  private static final TCByteBuffer[] EMPTY_BB_ARRAY     = new TCByteBuffer[0];
 
-  private static final TCLogger                 logger             = TCLogging.getLogger(TCByteBufferFactory.class);
-  private static final TCLogger                 lossyLogger        = new LossyTCLogger(logger);
+  private static final TCLogger       logger             = TCLogging.getLogger(TCByteBufferFactory.class);
+  private static final TCLogger       lossyLogger        = new LossyTCLogger(logger);
 
-  private static final TCByteBuffer             ZERO_BYTE_BUFFER   = TCByteBuffer.wrap(new byte[0]);
+  private static final TCByteBuffer   ZERO_BYTE_BUFFER   = TCByteBuffer.wrap(new byte[0]);
 
   private static TCByteBuffer createNewInstance(boolean direct, int capacity, int index, int totalCount) {
     try {
@@ -145,15 +145,23 @@ public class TCByteBufferFactory {
 
   private static TCByteBuffer getFromPool(boolean direct) {
     if (disablePooling) return null;
+    TCByteBuffer buf = null;
     if (direct) {
       synchronized (directFreePool) {
-        return directFreePool.size() > 0 ? (TCByteBuffer) directFreePool.removeFirst() : null;
+        if (directFreePool.size() > 0) {
+          buf = (TCByteBuffer) directFreePool.removeFirst();
+          buf.checkedOut();
+        }
       }
     } else {
       synchronized (nonDirectFreePool) {
-        return nonDirectFreePool.size() > 0 ? (TCByteBuffer) nonDirectFreePool.removeFirst() : null;
+        if(nonDirectFreePool.size() > 0 ) {
+          buf = (TCByteBuffer) nonDirectFreePool.removeFirst();
+          buf.checkedOut();
+        }
       }
     }
+    return buf;
   }
 
   public static void returnBuffers(TCByteBuffer buffers[]) {
@@ -171,6 +179,7 @@ public class TCByteBufferFactory {
     if (buf.capacity() == fixedBufferSize) {
       if (buf.isDirect()) {
         synchronized (directFreePool) {
+          buf.commit();
           if (directFreePool.size() < MAX_POOL_SIZE) {
             // buf.clear();
             directFreePool.addLast(buf);
@@ -178,6 +187,7 @@ public class TCByteBufferFactory {
         }
       } else {
         synchronized (nonDirectFreePool) {
+          buf.commit();
           if (nonDirectFreePool.size() < MAX_POOL_SIZE) {
             // buf.clear();
             nonDirectFreePool.addLast(buf);
