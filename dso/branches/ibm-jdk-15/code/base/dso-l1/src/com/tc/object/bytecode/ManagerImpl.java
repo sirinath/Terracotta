@@ -44,13 +44,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * @author teck
- */
 public class ManagerImpl implements Manager {
   private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
 
-  private final LiteralValues                      literals      = new LiteralValues();
+  private static final LiteralValues               literals      = new LiteralValues();
 
   private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
@@ -642,7 +639,7 @@ public class ManagerImpl implements Manager {
 
   private static String generateLiteralLockName(Object obj) {
     Assert.assertNotNull(obj);
-    return ByteCodeUtil.generateLiteralLockName(obj);
+    return ByteCodeUtil.generateLiteralLockName(literals.valueFor(obj), obj);
   }
 
   public boolean isLogical(Object object) {
