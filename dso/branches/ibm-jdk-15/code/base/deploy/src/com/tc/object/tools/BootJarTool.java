@@ -1007,6 +1007,7 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.util.Assert");
     loadTerracottaClass("com.tc.util.StringUtil");
     loadTerracottaClass("com.tc.util.TCAssertionError");
+    loadTerracottaClass("com.tc.object.bytecode.ClassAdapterFactory");
 }
 
   private final void addTreeMap() {
