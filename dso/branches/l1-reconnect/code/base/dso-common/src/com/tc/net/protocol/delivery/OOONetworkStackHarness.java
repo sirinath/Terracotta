@@ -42,15 +42,16 @@ public class OOONetworkStackHarness extends AbstractNetworkStackHarness {
     oooLayer.setSendLayer(transport);
     transport.setReceiveLayer(oooLayer);
 
+    final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
     // XXX: this is super ugly, but...
     if (transport instanceof ClientMessageTransport) {
       ClientMessageTransport cmt = (ClientMessageTransport) transport;
       ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
-       final long timeout = TCPropertiesImpl.getProperties().getLong("l1.reconnect.timeout.millis");
       OOOConnectionWatcher cw = new OOOConnectionWatcher(cmt, cce, oooLayer, timeout);
       cmt.addTransportListener(cw);
     } else {
-      transport.addTransportListener(oooLayer);
+      OOOReconnectionTimeout ort = new OOOReconnectionTimeout(oooLayer, timeout);
+      transport.addTransportListener(ort);
     }
 
   }

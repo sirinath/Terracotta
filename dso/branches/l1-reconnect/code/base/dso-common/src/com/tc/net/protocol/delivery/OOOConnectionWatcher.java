@@ -26,7 +26,6 @@ public class OOOConnectionWatcher extends ConnectionWatcher implements RestoreCo
     oooLayer.startRestoringConnection();
     oooLayer.notifyTransportDisconnected(transport);
     cce.asyncRestoreConnection(cmt, transport.getRemoteAddress(), this, timeoutMillis);
-
   }
 
   public void notifyTransportConnected(MessageTransport transport) {
