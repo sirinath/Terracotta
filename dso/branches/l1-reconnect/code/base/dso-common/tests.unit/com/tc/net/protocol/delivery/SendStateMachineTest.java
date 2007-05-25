@@ -44,37 +44,28 @@ public class SendStateMachineTest extends TestCase {
 
     //ACK
     ssm.execute(tpm);                               // ack 0
-    ssm.execute(tpm);                               // ack 0, dup ack, caused resend all outstandings
     assertTrue(delivery.created);
     assertTrue(delivery.msg.getSent() == 2);        // msg 2 is the last send
-
-    //RESEND
-    delivery.clear();
-    tpm.ack = 0;              
-    ssm.execute(tpm);                               // ack 0, dup ack, resend
-    // resend desn't go through message create
-    // assertTrue(delivery.created);
-    assertTrue(delivery.msg.getSent() == 2);
-
-    tpm.ack = 1;
-    ssm.execute(tpm);                               // ack 1
-
-    delivery.clear();
-
-    //SEND
-    ssm.execute(tpm);                               // ack 1
-    // resend desn't go through message create
-    // assertTrue(delivery.created);
-    assertTrue(delivery.msg.getSent() == 2);
-
+    
     ssm.pause();
     assertTrue(ssm.isPaused());
-
+    
+    // HAND SHAKE for RESEND
     delivery.clear();
-    //test ack request
     ssm.resume();
     assertFalse(ssm.isPaused());
+    
+    tpm.ack = 0;
+    ssm.execute(tpm);                               // ack=0 to cause resend
+
+    assertTrue(delivery.msg.getSent() == 2);
+    // resend desn't go through message create
     assertTrue(!delivery.created);
     assertTrue(delivery.sentAckRequest);
+    
+    tpm.ack = 2;
+    ssm.execute(tpm);                               // ack 2
+    assertTrue(delivery.msg.getSent() == 2);       
+    
   }
 }
