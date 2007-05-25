@@ -260,8 +260,8 @@ public class BootJarTool {
       final Map internalSpecs = getTCSpecs();
 
       final Map userSpecs = massageSpecs(getUserDefinedSpecs(internalSpecs), false);
-      final BootJar bootJar = BootJar.getBootJarForReading(bootJarFile);
-      Set bootJarClassNames = bootJar.getAllPreInstrumentedClasses();
+      final BootJar bootJarLocal = BootJar.getBootJarForReading(bootJarFile);
+      Set bootJarClassNames = bootJarLocal.getAllPreInstrumentedClasses();
       for (Iterator i = userSpecs.keySet().iterator(); i.hasNext();) {
         String userClassName = (String) i.next();
         if (!bootJarClassNames.contains(userClassName)) {
@@ -281,12 +281,12 @@ public class BootJarTool {
    */
   private final void verifyJar(File bootJarFile) {
     try {
-      final BootJar bootJar = BootJar.getBootJarForReading(bootJarFile);
-      final Set bootJarClassNames = bootJar.getAllClasses();
+      final BootJar bootJarLocal = BootJar.getBootJarForReading(bootJarFile);
+      final Set bootJarClassNames = bootJarLocal.getAllClasses();
       Map offendingClasses = new HashMap();
       for (Iterator i = bootJarClassNames.iterator(); i.hasNext();) {
         final String className = (String)i.next();
-        final byte[] bytes     = bootJar.getBytesForClass(className);
+        final byte[] bytes     = bootJarLocal.getBytesForClass(className);
         ClassReader cr = new ClassReader(bytes);
         ClassVisitor cv = new BootJarClassDependencyVisitor(bootJarClassNames, offendingClasses);
         cr.accept(cv, 0);
@@ -976,7 +976,7 @@ public class BootJarTool {
 
     loadTerracottaClass("com.tc.jrexx.set.SAutomatonData");
     loadTerracottaClass("com.tc.jrexx.set.SAutomatonData$State");
-      loadTerracottaClass("com.tc.jrexx.set.SAutomatonData$State$Transition");
+    loadTerracottaClass("com.tc.jrexx.set.SAutomatonData$State$Transition");
     loadTerracottaClass("com.tc.jrexx.set.StateProSet");
     loadTerracottaClass("com.tc.jrexx.set.StateProSet$Iterator");
     loadTerracottaClass("com.tc.jrexx.set.StateProSet$Wrapper_State");
@@ -1755,7 +1755,7 @@ public class BootJarTool {
   private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots, String tcClassNameDots, String jClassNameDots, String srcInnerClassName, String targetInnerClassName, Map instrumentedContext) {
     String tcInnerClassNameSlashes = tcInnerClassNameDots.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
                                               ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
-    byte[] tcData = changeClassNameAndGetBytes(tcInnerClassNameSlashes, tcClassNameDots, jClassNameDots, srcInnerClassName, targetInnerClassName, instrumentedContext);
+    byte[] tcData = getSystemBytes(tcInnerClassNameDots);
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode();
     tcCR.accept(tcCN, ClassReader.SKIP_DEBUG);
@@ -1773,6 +1773,9 @@ public class BootJarTool {
                                                                               instrumentedContext));
     jCR.accept(cv, 0);
     jData = cw.toByteArray();
+    
+    jData = changeClassNameAndGetBytes(jData, tcInnerClassNameSlashes, tcClassNameDots, jClassNameDots, srcInnerClassName, targetInnerClassName, instrumentedContext);
+    
     jData = doDSOTransform(jInnerClassNameDots, jData);
     bootJar.loadClassIntoJar(jInnerClassNameDots, jData, true);
   }
@@ -1875,7 +1878,7 @@ public class BootJarTool {
       }
     }
   }
-
+  
   private void changeClassName(String fullClassNameDots, String classNameDotsToBeChanged, String classNameDotsReplaced,
                                Map instrumentedContext, boolean honorTransient) {
     byte[] data = changeClassNameAndGetBytes(fullClassNameDots, classNameDotsToBeChanged, classNameDotsReplaced,
@@ -1903,13 +1906,19 @@ public class BootJarTool {
   private final byte[] changeClassNameAndGetBytes(String fullClassNameDots, String classNameDotsToBeChanged,
                                                   String classNameDotsReplaced, String srcInnerClassName, String targetInnerClassName,
                                                   Map instrumentedContext) {
-    ClassReader cr = new ClassReader(getSystemBytes(fullClassNameDots));
+    return changeClassNameAndGetBytes(getSystemBytes(fullClassNameDots), fullClassNameDots, classNameDotsToBeChanged, classNameDotsReplaced, srcInnerClassName, targetInnerClassName, instrumentedContext);
+  }
+  
+  private final byte[] changeClassNameAndGetBytes(byte[] data, String fullClassNameDots, String classNameDotsToBeChanged,
+                                                  String classNameDotsReplaced, String srcInnerClassName, String targetInnerClassName,
+                                                  Map instrumentedContext) {
+    ClassReader cr = new ClassReader(data);
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
     ClassVisitor cv = new ChangeClassNameRootAdapter(cw, fullClassNameDots, classNameDotsToBeChanged,
                                                      classNameDotsReplaced, srcInnerClassName, targetInnerClassName, instrumentedContext, null);
     cr.accept(cv, 0);
 
-    byte[] data = cw.toByteArray();
+    data = cw.toByteArray();
 
     AsmClassInfo.getClassInfo(data, systemLoader);
 
@@ -1952,28 +1961,6 @@ public class BootJarTool {
     // have com.tc.util.concurrent.locks.ReentrantLock and the massageSpec will complain if
     // we do not remove this spec.
     config.removeSpec("com.tc.util.concurrent.locks.ReentrantLock");
-
-    bytes = getSystemBytes("com.tc.util.concurrent.locks.ReentrantLock$ConditionObject");
-    spec = config.getOrCreateSpec("com.tc.util.concurrent.locks.ReentrantLock$ConditionObject");
-    spec.disableWaitNotifyCodeSpec("signal()V");
-    spec.disableWaitNotifyCodeSpec("signalAll()V");
-    spec.setHonorTransient(true);
-    spec.markPreInstrumented();
-    bytes = changePackageAndGetBytes("com.tc.util.concurrent.locks.ReentrantLock$ConditionObject", bytes,
-                                     "ReentrantLock", "com.tc.util.concurrent.locks", "java.util.concurrent.locks");
-    bootJar.loadClassIntoJar("java.util.concurrent.locks.ReentrantLock$ConditionObject", bytes, spec
-        .isPreInstrumented());
-
-    config.removeSpec("com.tc.util.concurrent.locks.ReentrantLock$ConditionObject");
-
-    bytes = getSystemBytes("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition");
-    spec = config.getOrCreateSpec("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition");
-    spec.markPreInstrumented();
-    bytes = changePackageAndGetBytes("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition", bytes,
-                                     "ReentrantLock", "com.tc.util.concurrent.locks", "java.util.concurrent.locks");
-    bootJar.loadClassIntoJar("java.util.concurrent.locks.ReentrantLock$SyncCondition", bytes, spec.isPreInstrumented());
-
-    config.removeSpec("com.tc.util.concurrent.locks.ReentrantLock$SyncCondition");
 
   }
 
@@ -2160,10 +2147,7 @@ public class BootJarTool {
       if (makeItAnyway || !targetFile.exists() || (targetFile.exists() && !bjTool.isBootJarComplete(targetFile))) {
         bjTool.generateJar();
       }
-
-      if (targetFile.exists()) {
-        bjTool.verifyJar(targetFile);
-      }
+      bjTool.verifyJar(targetFile);
     } else if (mode.equals(SCAN_MODE)) {
       bjTool.scanJar(targetFile);
     } else {

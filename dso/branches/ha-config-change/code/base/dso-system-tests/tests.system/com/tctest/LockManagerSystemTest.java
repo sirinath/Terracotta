@@ -116,7 +116,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
         e.printStackTrace();
       }
     }
-
+    ThreadUtil.reallySleep(3000);
     if (server != null) {
       try {
         server.stop();
