@@ -5,6 +5,9 @@
 package com.tc.config.schema.test;
 
 public class HaConfigBuilder extends BaseConfigBuilder {
+  public static final String    HA_MODE_NETWORKED_ACTIVE_PASSIVE       = "networked-active-passive";
+  public static final String    HA_MODE_ACTIVE_PASSIVE                 = "active-passive";
+
   private static final String   MODE                                   = "mode";
   private static final String   NETWORKED_ACTIVE_PASSIVE_ELECTION_TIME = "election-time";
   private static final String[] NETWORKED_ACTIVE_PASSIVE               = concat(new Object[] { NETWORKED_ACTIVE_PASSIVE_ELECTION_TIME });
@@ -28,8 +31,13 @@ public class HaConfigBuilder extends BaseConfigBuilder {
 
     out += openElement("ha");
 
-    out += element(MODE) + openElement("networked-active-passive", NETWORKED_ACTIVE_PASSIVE)
-        + element(NETWORKED_ACTIVE_PASSIVE_ELECTION_TIME) + closeElement("networked-active-passive");
+    out += element(MODE);
+
+    String networkedActivePassiveString = openElement("networked-active-passive", NETWORKED_ACTIVE_PASSIVE);
+    if (!networkedActivePassiveString.equals("")) {
+      out += networkedActivePassiveString + element(NETWORKED_ACTIVE_PASSIVE_ELECTION_TIME)
+          + closeElement("networked-active-passive");
+    }
 
     out += closeElement("ha");
 

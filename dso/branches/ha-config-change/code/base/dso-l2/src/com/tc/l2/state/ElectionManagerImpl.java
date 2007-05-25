@@ -28,10 +28,6 @@ public class ElectionManagerImpl implements ElectionManager {
   private static final State    ELECTION_COMPLETE    = new State("Election-Complete");
   private static final State    ELECTION_IN_PROGRESS = new State("Election-In-Progress");
 
-  // TODO: remove
-  // private static final long ELECTION_TIME = TCPropertiesImpl.getProperties()
-  // .getLong("l2.ha.electionmanager.electionTimePeriod");
-
   private final GroupManager    groupManager;
   private final Map             votes                = new HashMap();
 

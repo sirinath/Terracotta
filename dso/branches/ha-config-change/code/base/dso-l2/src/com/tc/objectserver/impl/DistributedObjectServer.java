@@ -593,8 +593,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                                            "Reconnect timer",
                                                                                                            true),
                                                                                            reconnectTimeout, persistent);
-    // TODO: remove
-    // boolean networkedHA = l2Properties.getBoolean("ha.network.enabled");
 
     boolean networkedHA = configSetupManager.haConfig().isNetworked();
     if (networkedHA) {
@@ -658,9 +656,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     if (dsoPort == 0) {
       return new Node(l2.host().getString(), dsoPort);
     } else {
-      // TODO: remove
-      // return new Node(l2.host().getString(), dsoPort + 1);
-
       return new Node(l2.host().getString(), l2.l2GroupPort().getInt());
     }
   }

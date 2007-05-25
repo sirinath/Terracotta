@@ -7,6 +7,7 @@ package com.tc.test.activepassive;
 import org.apache.commons.io.FileUtils;
 
 import com.tc.config.schema.test.ApplicationConfigBuilder;
+import com.tc.config.schema.test.HaConfigBuilder;
 import com.tc.config.schema.test.L2ConfigBuilder;
 import com.tc.config.schema.test.L2SConfigBuilder;
 import com.tc.config.schema.test.SystemConfigBuilder;
@@ -94,8 +95,16 @@ public class ActivePassiveServerConfigCreator {
       l2.setPersistenceMode(serverPersistence);
       l2s[i] = l2;
     }
+    HaConfigBuilder ha = new HaConfigBuilder();
+    if (this.serverDiskless) {
+      ha.setMode(HaConfigBuilder.HA_MODE_NETWORKED_ACTIVE_PASSIVE);
+    } else {
+      ha.setMode(HaConfigBuilder.HA_MODE_ACTIVE_PASSIVE);
+    }
+
     L2SConfigBuilder l2sConfigbuilder = new L2SConfigBuilder();
     l2sConfigbuilder.setL2s(l2s);
+    l2sConfigbuilder.setHa(ha);
 
     ApplicationConfigBuilder app = ApplicationConfigBuilder.newMinimalInstance();
 

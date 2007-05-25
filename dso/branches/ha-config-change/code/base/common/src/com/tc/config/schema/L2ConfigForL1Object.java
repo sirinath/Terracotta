@@ -44,10 +44,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
     this.l2sContext.ensureRepositoryProvides(Servers.class);
     this.systemContext.ensureRepositoryProvides(System.class);
 
-    // TODO: need to figure out why getL2IntDefault("server/dso-port") doesn't work with config change (i.e., adding
-    // "ha" and "l2-gourp-port")
-     this.defaultL2Data = new L2Data(DEFAULT_HOST, getL2IntDefault("server/dso-port"));
-//    this.defaultL2Data = new L2Data(DEFAULT_HOST, 9510);
+    this.defaultL2Data = new L2Data(DEFAULT_HOST, getL2IntDefault("server/dso-port"));
 
     this.l2Data = new ObjectArrayXPathBasedConfigItem(this.l2sContext, ".", new L2Data[] { defaultL2Data }) {
       protected Object fetchDataFromXmlObject(XmlObject xmlObject) {

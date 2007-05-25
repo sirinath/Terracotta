@@ -53,8 +53,8 @@ public class L2SConfigBuilder extends BaseConfigBuilder {
 
   public static L2SConfigBuilder newMinimalInstance() {
     L2ConfigBuilder l2 = new L2ConfigBuilder();
-    l2.setName("localhost");
-    l2.setDSOPort(9510);
+//    l2.setName("localhost");
+//    l2.setDSOPort(9510);
 
     HaConfigBuilder ha = new HaConfigBuilder();
 

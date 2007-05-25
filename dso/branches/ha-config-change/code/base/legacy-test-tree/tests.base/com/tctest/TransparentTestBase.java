@@ -100,8 +100,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                                                 RestartTestEnvironment.PROD_MODE));
       // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
       // configFactory().activateConfigurationChange();
-      configFactory().addServerToL1Config(null, helper.getServerPort(), -1);
-      configFactory().addServerToL2Config(null, helper.getServerPort(), helper.getAdminPort());
+      int dsoPort = helper.getServerPort();
+      int adminPort = helper.getAdminPort();
+      configFactory().addServerToL1Config(null, dsoPort, -1);
+      configFactory().addServerToL2Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers();

@@ -95,12 +95,6 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     factory.addServerToL1Config(null, server.getListenPort(), -1);
 
-    // TODO: remove this and "fix" the config stuff
-    System.err.println("******  server.getListenPort=[" + server.getListenPort() + "]");
-
-    // makeClientUsePort(server.getListenPort());
-    // L1TVSConfigurationSetupManager manager = super.createL1ConfigManager();
-
     L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
     DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelper(manager);
 

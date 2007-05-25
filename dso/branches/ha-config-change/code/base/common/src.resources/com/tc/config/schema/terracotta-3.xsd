@@ -253,7 +253,6 @@
       <xs:element name="new-object-debug" type="xs:boolean" minOccurs="0" default="false" />
     </xs:all>
   </xs:complexType>
-
   <xs:complexType name="additional-boot-jar-classes">
     <xs:sequence>
       <xs:element name="include" type="qualified-class-name" maxOccurs="unbounded" />
@@ -740,7 +739,7 @@
   		</xs:documentation>
   	</xs:annotation>
   	<xs:sequence maxOccurs="1">
-  		<xs:sequence maxOccurs="unbounded" minOccurs="1">
+                <xs:sequence>
   			<xs:element name="server" type="server"
   				maxOccurs="unbounded" />
   		</xs:sequence>
