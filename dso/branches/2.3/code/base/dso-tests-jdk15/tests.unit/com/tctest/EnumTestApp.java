@@ -22,6 +22,7 @@ public class EnumTestApp extends AbstractTransparentApp {
   private final DataRoot      dataRoot = new DataRoot();
   private final CyclicBarrier barrier;
   private final Map           raceRoot = new HashMap();
+  private final Map<String, ClassWithEnum> shareMap          = new HashMap<String, ClassWithEnum>();
 
   private State               stateRoot;
 
@@ -33,6 +34,10 @@ public class EnumTestApp extends AbstractTransparentApp {
   public void run() {
     try {
       int index = barrier.await();
+      
+      shareSubEnumTest(index);
+      
+      barrier.await();
       
       rootEnumTest(index);
 
@@ -127,6 +132,23 @@ public class EnumTestApp extends AbstractTransparentApp {
     }
   }
   
+  private void shareSubEnumTest(int index) throws Exception {
+    if (index == 0) {
+      synchronized (shareMap) {
+        shareMap.put("classWithEnum", new ClassWithEnum());
+      }
+    }
+
+    barrier.await();
+
+    synchronized (shareMap) {
+      ClassWithEnum o = shareMap.get("classWithEnum");
+      Assert.assertEquals(EnumWithSubState.RUN, o.state);
+    }
+
+    barrier.await();
+  }
+  
   // Don't reference this enum in any other methods except testRace() please
   enum EnumForRace {
     V1, V2, V3;
@@ -218,11 +240,14 @@ public class EnumTestApp extends AbstractTransparentApp {
     spec.addRoot("dataRoot", "dataRoot");
     spec.addRoot("stateRoot", "stateRoot", false);
     spec.addRoot("raceRoot", "raceRoot");
+    spec.addRoot("shareMap", "shareMap");
 
     // explicitly including the enum class here exposes a bug,
     // generally an enum type doesn't need to be included to be shared
     config.addIncludePattern(EnumForRace.class.getName());
     config.addIncludePattern(Ref.class.getName());
+    config.addIncludePattern(ClassWithEnum.class.getName());
+    config.addIncludePattern(EnumWithSubState.class.getName() + "$*");
   }
 
   public enum State {
@@ -266,6 +291,39 @@ public class EnumTestApp extends AbstractTransparentApp {
     public synchronized void setStates(State[] states) {
       this.states = states;
     }
+  }
+  
+  public enum EnumWithSubState {
+    START {
+      void setStateNum(int stateNum) {
+        stateNum = 101;
+      }
+    },
+    RUN {
+      void setStateNum(int stateNum) {
+        stateNum = 102;
+      }
+    },
+    STOP {
+      void setStateNum(int stateNum) {
+        stateNum = 103;
+      }
+    };
 
+    private int stateNum;
+
+    int getStateNum() {
+      return this.stateNum;
+    }
+
+    abstract void setStateNum(int stateNum);
+  }
+
+  private static class ClassWithEnum {
+    private EnumWithSubState state;
+
+    public ClassWithEnum() {
+      state = EnumWithSubState.valueOf("RUN");
+    }
   }
 }
