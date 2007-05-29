@@ -10,7 +10,6 @@ import com.tc.net.protocol.transport.RestoreConnectionCallback;
 import com.tc.util.Assert;
 import com.tc.util.TCTimerImpl;
 
-import java.util.Date;
 import java.util.TimerTask;
 
 public class OOOReconnectionTimeout implements MessageTransportListener, RestoreConnectionCallback {
@@ -56,7 +55,6 @@ public class OOOReconnectionTimeout implements MessageTransportListener, Restore
   public synchronized void restoreConnectionFailed(MessageTransport transport) {
     if (timer != null) {
       oooLayer.connectionRestoreFailed();
-      oooLayer.notifyTransportDisconnected(transport);
       cancelTimer();
     }
   }
