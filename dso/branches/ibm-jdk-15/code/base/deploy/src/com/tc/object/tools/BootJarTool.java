@@ -1964,7 +1964,6 @@ public class BootJarTool {
 
   private void addInstrumentedJavaUtilConcurrentLocks() {
     if (!Vm.isJDK15Compliant()) { return; }
-
     addInstrumentedReentrantReadWriteLock();
     addInstrumentedJavaUtilConcurrentLocksReentrantLock();
   }
