@@ -11,7 +11,6 @@ import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
-//import com.tc.exception.ImplementMe;
 
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +20,8 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
   private Set bootJarClassNames;
   private Map offendingClasses;
   private String currentClassName = "";
+  private String currentMethodName = "";
+  private int currentLineNumber = 0;
 
   private static final String classSlashNameToDotName(final String name) {
     return name.replace('/', '.');
@@ -30,7 +31,7 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
     if (name.startsWith("com/tc/") || name.startsWith("com/tcclient/")) {
       boolean exists = bootJarClassNames.contains(BootJarClassDependencyVisitor.classSlashNameToDotName(name));
       if (!exists) {
-        this.offendingClasses.put(name, desc + "; from class " + this.currentClassName);
+        this.offendingClasses.put(classSlashNameToDotName(name), desc + " from " + this.currentClassName);
       }
       return exists;
     } else {
@@ -59,17 +60,22 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
   }
 
   public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+    if (visible) {
+      check(desc, "reference to class annotation");
+    }
     return null;
   }
 
   public void visitAttribute(Attribute attr) {
-    //throw new ImplementMe();
+    check(attr.type, "reference to a non-standard attribute of class '" + this.currentClassName + "'");
   }
 
   public void visitEnd() {
+    // nothing to do here
   }
 
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+    check(desc, "reference to a declared class field");
     return null;
   }
 
@@ -78,6 +84,12 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
   }
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+    this.currentMethodName = name;
+    if (exceptions != null) {
+      for (int i=0; i<exceptions.length; i++) {
+        check(exceptions[i], "reference to a declared exception");
+      }
+    }
     MethodVisitor mv = new BootJarClassDependencyMethodVisitor();
     return mv;
   }
@@ -86,13 +98,16 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
     check(owner, "reference to outer-class");
   }
 
-  public void visitSource(String source, String debug) {
+  public void visitSource(String source, String debug) {    
+    // nothing to do here
   }
     
   private class BootJarClassDependencyMethodVisitor implements MethodVisitor, Opcodes {
 
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-      //throw new ImplementMe();
+      if (visible) {
+        check(desc, "reference to method annotation for method");
+      }
       return null;
     }
 
@@ -101,90 +116,96 @@ public class BootJarClassDependencyVisitor implements ClassVisitor {
     }
 
     public void visitAttribute(Attribute attr) {
-      //throw new ImplementMe();
+      check(attr.type, "reference to a non-standard attrbute of method");
     }
 
     public void visitCode() {
+      // nothing to do here
     }
 
     public void visitEnd() {
-      //throw new ImplementMe();
+      // nothing to do here
     }
 
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-      // check referenced classes in field-(gets|puts)
       check(owner, "reference in field get or put");
     }
 
     public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
+      // nothing to do here
     }
 
     public void visitIincInsn(int var, int increment) {
+      // nothing to do here
     }
 
     public void visitInsn(int opcode) {
+      // nothing to do here
     }
 
     public void visitIntInsn(int opcode, int operand) {
+      // nothing to do here
     }
 
     public void visitJumpInsn(int opcode, Label label) {
+      // nothing to do here
     }
 
     public void visitLabel(Label label) {
+      // nothing to do here
     }
 
     public void visitLdcInsn(Object cst) {
-      //throw new ImplementMe();
+      // nothing to do here
     }
 
     public void visitLineNumber(int line, Label start) {
+      currentLineNumber = line;
     }
 
     public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
-      // check referenced classes for local variable declarations  
       check(desc, "reference in local variable declaration");
     }
 
     public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
+      // nothing to do here
     }
 
     public void visitMaxs(int maxStack, int maxLocals) {
+      // nothing to do here
     }
 
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      // check referenced classes in virtual, interface, constructor, or static, calls
       check(owner, "reference in either virtual, interface, constructor, or static invocation");
     }
 
     public void visitMultiANewArrayInsn(String desc, int dims) {
-      // check referenced classes in multi-array type declarations  
       check(desc, "reference in mutli-array type declaration");
     }
 
     public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
-      //throw new ImplementMe();
+      if (visible) {
+        check(desc, "reference to method annotation");
+      }
       return null;
     }
 
     public void visitTableSwitchInsn(int min, int max, Label dflt, Label[] labels) {
+      // nothing to do here
     }
 
     public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
-      // check referenced class in catch-blocks
       if (type != null) {
         check(type, "reference in try-catch block");
       }
     }
 
     public void visitTypeInsn(int opcode, String desc) {
-      // check referenced classes in type-casts, class instantiation,  
-      // instance type-check, or type-array declarations
       check(desc, "reference in type-cast, class instantiation, type-check, or type-array declaration");
     }
 
     public void visitVarInsn(int opcode, int var) {
-      //throw new ImplementMe();
+      // nothing to do here
     }
   }
 }
