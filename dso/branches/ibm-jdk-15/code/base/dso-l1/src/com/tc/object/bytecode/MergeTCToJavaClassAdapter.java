@@ -37,7 +37,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
                                    String tcFullClassDots, ClassNode tcClassNode, Map instrumentedContext) {
     super(cv);
     
-    List jInnerClasses = jClassNode.innerClasses;
+    List jInnerClasses = tcClassNode.innerClasses;
     for (Iterator i = jInnerClasses.iterator(); i.hasNext();) {
       InnerClassNode jInnerClass = (InnerClassNode) i.next();
       jInnerClassNames.add(jInnerClass.name);
