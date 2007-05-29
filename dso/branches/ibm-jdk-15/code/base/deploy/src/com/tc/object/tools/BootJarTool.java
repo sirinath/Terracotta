@@ -321,7 +321,6 @@ public class BootJarTool {
       addInstrumentedHashtable();
       addInstrumentedJavaUtilCollection();
       addJdk15SpecificPreInstrumentedClasses();
-      addLinkedHashMapWrapper();
 
       addInstrumentedWeakHashMap();
 
@@ -1467,11 +1466,6 @@ public class BootJarTool {
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
     bytes = doDSOTransform(spec.getClassName(), bytes);
     bootJar.loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
-  }
-
-  private final void addLinkedHashMapWrapper() {
-    TransparencyClassSpec spec = config.getOrCreateSpec("com.tcclient.util.LinkedHashMap");
-    spec.markPreInstrumented();
   }
 
   private final void addInstrumentedJavaUtilConcurrentHashMap() {
