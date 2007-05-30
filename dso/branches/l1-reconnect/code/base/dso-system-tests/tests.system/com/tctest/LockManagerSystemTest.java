@@ -68,6 +68,14 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
      * create multiple RMI Registries in a single VM. Remove this when we no longer support 1.4.
      */
     System.setProperty("org.terracotta.server.disableJmxConnector", "true");
+    /*
+     * disable OOO temporary because:
+     * It keeps starting and stopping different client/server within the same process 
+     * and cleaning up the environement etc. Since the shutdown methods are poorly supported 
+     * as of now Sometimes the clients are still trying to reconnect to non-exisitent servers 
+     * and with OOO it seems to happen more.
+     */
+    System.setProperty("com.tc.l1.reconnect.enabled", "false");
   }
 
   private class StartAction implements StartupAction {
