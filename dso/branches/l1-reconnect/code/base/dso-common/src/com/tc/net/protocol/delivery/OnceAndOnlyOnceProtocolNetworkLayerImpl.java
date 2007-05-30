@@ -44,6 +44,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   private MessageTransport                sendLayer;
   private GuaranteedDeliveryProtocol      delivery;
   private final SynchronizedBoolean       restoringConnection = new SynchronizedBoolean(false);
+  private boolean                         isClosed            = false;
 
   public OnceAndOnlyOnceProtocolNetworkLayerImpl(OOOProtocolMessageFactory messageFactory,
                                                  OOOProtocolMessageParser messageParser, Sink workSink) {
@@ -83,6 +84,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void receive(TCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
     if (msg.isGoodbye()) {
+      isClosed = true;
       sendLayer.close();
       receiveLayer.close();
       delivery.pause();
@@ -116,8 +118,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void close() {
     Assert.assertNotNull(sendLayer);
-
-    // TODO: send out goodbye message
     sendLayer.send(messageFactory.createNewGoodbyeMessage());
     sendLayer.close();
   }
@@ -245,6 +245,10 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void connectionRestoreFailed() {
     resetStack();
     receiveLayer.notifyTransportDisconnected(this);
+  }
+
+  public boolean isClosed() {
+    return isClosed;
   }
 
 }

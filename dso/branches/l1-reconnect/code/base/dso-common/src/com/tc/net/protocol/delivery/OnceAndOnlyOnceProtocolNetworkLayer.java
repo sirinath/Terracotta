@@ -21,4 +21,6 @@ public interface OnceAndOnlyOnceProtocolNetworkLayer extends NetworkLayer, Messa
   void startRestoringConnection();
 
   void connectionRestoreFailed();
+
+  boolean isClosed();
 }

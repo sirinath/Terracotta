@@ -33,6 +33,9 @@ public class OOOReconnectionTimeout implements MessageTransportListener, Restore
 
   public synchronized void notifyTransportDisconnected(MessageTransport transport) {
     Assert.assertNull(timer);
+    if (oooLayer.isClosed()) {
+      return;
+    }
     oooLayer.startRestoringConnection();
     oooLayer.notifyTransportDisconnected(transport);
     // start the timer...
