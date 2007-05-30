@@ -117,4 +117,8 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
     throw new ImplementMe();
 
   }
+
+  public boolean isClosed() {
+    throw new ImplementMe();
+  }
 }
