@@ -1,7 +1,7 @@
 import java.lang.Boolean
 import terracotta
 
-enableDso = java.lang.Boolean.getBoolean("enable.dso")
+enableDso = java.lang.Boolean.valueOf(sys.argv[0])
 dso = terracotta.DSO(AdminTask)
 
 if enableDso and not dso.isEnabled():

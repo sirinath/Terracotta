@@ -24,6 +24,7 @@ cd "${starting_dir}"
 
 TC_CONFIG_PATH="${WAS_SANDBOX}/tc-config.xml"
 . "${TC_INSTALL_DIR}"/bin/dso-env.sh -q "${TC_CONFIG_PATH}"
+export WAS_SANDBOX
 export TC_INSTALL_DIR
 export TC_CONFIG_PATH
 export DSO_BOOT_JAR

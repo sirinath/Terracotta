@@ -96,14 +96,14 @@ function _startWebSphere() {
             _error unable to modify server.policy settings to grant Terracotta code privileges
             return "${__retVal}"
         fi
-        _runWsAdmin -connType NONE -profileName "tc-${1}" -javaoption -Denable.dso="true" -f "${WAS_SANDBOX}/toggle-dso.py"
+        _runWsAdmin -connType NONE -profileName "tc-${1}" -f "${WAS_SANDBOX}/toggle-dso.py" "true"
         __retVal="$?"
         if test "${__retVal}" != "0"; then
             return "${__retVal}"
         fi
     else
         # Make sure DSO is not enabled in WebSphere
-        _runWsAdmin -connType NONE -profileName "tc-${1}" -javaoption -Denable.dso="false" -f "${WAS_SANDBOX}/toggle-dso.py"
+        _runWsAdmin -connType NONE -profileName "tc-${1}" -f "${WAS_SANDBOX}/toggle-dso.py" "false"
         __retVal="$?"
         if test "${__retVal}" != "0"; then
             return "${__retVal}"

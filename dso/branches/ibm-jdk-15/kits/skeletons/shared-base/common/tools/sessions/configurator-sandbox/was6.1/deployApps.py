@@ -1,7 +1,10 @@
 import java.lang.System
 import terracotta
+import os
 
-webappDir = java.lang.System.getProperty('webapp.dir')
+webappDir = os.environ["WAS_SANDBOX"] + '\\' + os.environ["PORT"] + '\\webapps'
+
+print "Got webapp.dir: " + webappDir
 
 appUtil = terracotta.AppUtil(AdminApp, webappDir)
 appUtil.installAll()

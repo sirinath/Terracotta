@@ -2,8 +2,6 @@
 import time.sleep
 import java.lang.System
 
-profile = java.lang.System.getProperty('profileName')
-
 ################################################################################
 ## Helper functions
 ################################################################################
