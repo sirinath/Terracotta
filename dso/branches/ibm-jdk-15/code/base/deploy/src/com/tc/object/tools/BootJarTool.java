@@ -986,6 +986,9 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.util.Assert");
     loadTerracottaClass("com.tc.util.StringUtil");
     loadTerracottaClass("com.tc.util.TCAssertionError");
+    
+    // this class needed for ibm-jdk-15 branch
+    loadTerracottaClass("com.tc.object.bytecode.ClassAdapterFactory");
   }
 
   private final void addTreeMap() {
