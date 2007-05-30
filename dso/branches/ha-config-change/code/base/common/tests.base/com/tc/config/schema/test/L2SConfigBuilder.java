@@ -4,51 +4,55 @@
  */
 package com.tc.config.schema.test;
 
+
 /**
  * Allows you to build valid config for the L2s. This class <strong>MUST NOT</strong> invoke the actual XML beans to do
  * its work; one of its purposes is, in fact, to test that those beans are set up correctly.
  */
 public class L2SConfigBuilder extends BaseConfigBuilder {
 
-  private L2ConfigBuilder[] l2ConfigBuilders;
-  private HaConfigBuilder haConfigBuilder;
-
+  private L2ConfigBuilder[] l2s;
+  private HaConfigBuilder ha;
+  
   public L2SConfigBuilder() {
-    super(1, new String[] { "servers" });
+    super(1, new String[] { "l2s", "ha" });
   }
 
   public void setL2s(L2ConfigBuilder[] l2s) {
-    l2ConfigBuilders = l2s;
-    setServersProperty();
+    this.l2s = l2s;
+    setProperty("l2s", l2s);
   }
   
   public void setHa(HaConfigBuilder ha) {
-    haConfigBuilder = ha;
-   setServersProperty();
-  }
-
-  private void setServersProperty() {
-    String val = "";
-    if (l2ConfigBuilders != null) {
-      val += selfTaggingArray(l2ConfigBuilders).toString();
-    }
-    if (haConfigBuilder != null) {
-      val += haConfigBuilder.toString();
-    }
-    setProperty("servers", val);
+    this.ha = ha;
+    setProperty("ha", ha);
   }
 
   public L2ConfigBuilder[] getL2s() {
-    return l2ConfigBuilders;
+    return l2s;
   }
   
   public HaConfigBuilder getHa() {
-    return haConfigBuilder;
+    return ha;
   }
-
+  
   public String toString() {
-    if (!isSet("servers")) return "";
-    else return getProperty("servers").toString();
+    String out = "";
+    if(isSet("l2s")) {
+      out += l2sToString();
+    }
+    if(isSet("ha")) {
+      out += ha.toString();
+    }
+    return out;
+  }
+  
+  private String l2sToString() {
+    String val = "";
+    for (int i = 0; i < l2s.length; i++) {
+      val += l2s[i].toString();
+    }
+    return val;
   }
 
   public static L2SConfigBuilder newMinimalInstance() {
