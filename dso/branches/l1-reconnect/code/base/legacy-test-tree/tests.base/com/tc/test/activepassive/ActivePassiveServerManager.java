@@ -53,6 +53,7 @@ public class ActivePassiveServerManager {
   private final ServerInfo[]                     servers;
   private final int[]                            dsoPorts;
   private final int[]                            jmxPorts;
+  private final int[]                            l2GroupPorts;
   private final String[]                         serverNames;
   private final TCServerInfoMBean[]              tcServerInfoMBeans;
   private final JMXConnector[]                   jmxConnectors;
@@ -98,14 +99,15 @@ public class ActivePassiveServerManager {
     servers = new ServerInfo[this.serverCount];
     dsoPorts = new int[this.serverCount];
     jmxPorts = new int[this.serverCount];
+    l2GroupPorts = new int[this.serverCount];
     serverNames = new String[this.serverCount];
     tcServerInfoMBeans = new TCServerInfoMBean[this.serverCount];
     jmxConnectors = new JMXConnector[this.serverCount];
     createServers();
 
-    serverConfigCreator = new ActivePassiveServerConfigCreator(this.serverCount, dsoPorts, jmxPorts, serverNames,
-                                                               serverPersistence, serverNetworkShare, this.configModel,
-                                                               configFile, this.tempDir);
+    serverConfigCreator = new ActivePassiveServerConfigCreator(this.serverCount, dsoPorts, jmxPorts, l2GroupPorts,
+                                                               serverNames, serverPersistence, serverNetworkShare,
+                                                               this.configModel, configFile, this.tempDir);
     serverConfigCreator.writeL2Config();
 
     errors = new ArrayList();
@@ -134,65 +136,75 @@ public class ActivePassiveServerManager {
     if (DEBUG) {
       dsoPorts[0] = 8510;
       jmxPorts[0] = 8520;
+      l2GroupPorts[0] = 8530;
       serverNames[0] = SERVER_NAME + 0;
-      servers[0] = new ServerInfo(HOST, serverNames[0], dsoPorts[0], jmxPorts[0], getServerControl(dsoPorts[0],
-                                                                                                   jmxPorts[0],
-                                                                                                   serverNames[0]));
+      servers[0] = new ServerInfo(HOST, serverNames[0], dsoPorts[0], jmxPorts[0], l2GroupPorts[0],
+                                  getServerControl(dsoPorts[0], jmxPorts[0], serverNames[0]));
       dsoPorts[1] = 7510;
       jmxPorts[1] = 7520;
+      l2GroupPorts[1] = 7530;
       serverNames[1] = SERVER_NAME + 1;
-      servers[1] = new ServerInfo(HOST, serverNames[1], dsoPorts[1], jmxPorts[1], getServerControl(dsoPorts[1],
-                                                                                                   jmxPorts[1],
-                                                                                                   serverNames[1]));
+      servers[1] = new ServerInfo(HOST, serverNames[1], dsoPorts[1], jmxPorts[1], l2GroupPorts[1],
+                                  getServerControl(dsoPorts[1], jmxPorts[1], serverNames[1]));
       if (dsoPorts.length > 2) {
         dsoPorts[2] = 6510;
         jmxPorts[2] = 6520;
+        l2GroupPorts[2] = 6530;
         serverNames[2] = SERVER_NAME + 2;
-        servers[2] = new ServerInfo(HOST, serverNames[2], dsoPorts[2], jmxPorts[2], getServerControl(dsoPorts[2],
-                                                                                                     jmxPorts[2],
-                                                                                                     serverNames[2]));
+        servers[2] = new ServerInfo(HOST, serverNames[2], dsoPorts[2], jmxPorts[2], l2GroupPorts[2],
+                                    getServerControl(dsoPorts[2], jmxPorts[2], serverNames[2]));
       }
 
       startIndex = 3;
     }
 
     for (int i = startIndex; i < dsoPorts.length; i++) {
-      dsoPorts[i] = getUnusedPort("dso");
-      jmxPorts[i] = getUnusedPort("jmx");
+      setPorts(i);
       serverNames[i] = SERVER_NAME + i;
-      servers[i] = new ServerInfo(HOST, serverNames[i], dsoPorts[i], jmxPorts[i], getServerControl(dsoPorts[i],
-                                                                                                   jmxPorts[i],
-                                                                                                   serverNames[i]));
+      servers[i] = new ServerInfo(HOST, serverNames[i], dsoPorts[i], jmxPorts[i], l2GroupPorts[i],
+                                  getServerControl(dsoPorts[i], jmxPorts[i], serverNames[i]));
     }
   }
 
-  private int getUnusedPort(String type) {
-    if (type == null || (!type.equalsIgnoreCase("dso") && !type.equalsIgnoreCase("jmx"))) { throw new AssertionError(
-                                                                                                                     "Unrecognizable type=["
-                                                                                                                         + type
-                                                                                                                         + "]"); }
-    int port = -1;
-    while (port < 0) {
+  private void setPorts(int index) {
+    while (true) {
       int newPort = portChooser.chooseRandomPort();
-      boolean used = false;
-      for (int i = 0; i < dsoPorts.length; i++) {
-        if (dsoPorts[i] == newPort) {
-          used = true;
-        }
-      }
-      if (used) {
-        continue;
-      }
-      for (int i = 0; i < jmxPorts.length; i++) {
-        if (jmxPorts[i] == newPort) {
-          used = true;
-        }
-      }
-      if (!used) {
-        port = newPort;
+      if (isUnusedPort(newPort)) {
+        jmxPorts[index] = newPort;
+        break;
       }
     }
-    return port;
+    while (true) {
+      int newPort = portChooser.chooseRandomPort();
+      if (newPort == PortChooser.MAX) {
+        continue;
+      }
+      if (isUnusedPort(newPort) && isUnusedPort(newPort + 1)) {
+        dsoPorts[index] = newPort;
+        l2GroupPorts[index] = newPort + 1;
+        break;
+      }
+    }
+  }
+
+  private boolean isUnusedPort(int port) {
+    boolean unused = true;
+    for (int i = 0; i < dsoPorts.length; i++) {
+      if (dsoPorts[i] == port) {
+        unused = false;
+      }
+    }
+    for (int i = 0; i < jmxPorts.length; i++) {
+      if (jmxPorts[i] == port) {
+        unused = false;
+      }
+    }
+    for (int i = 0; i < l2GroupPorts.length; i++) {
+      if (l2GroupPorts[i] == port) {
+        unused = false;
+      }
+    }
+    return unused;
   }
 
   private ServerControl getServerControl(int dsoPort, int jmxPort, String serverName) throws FileNotFoundException {
@@ -590,15 +602,17 @@ public class ActivePassiveServerManager {
     private final String        server_name;
     private final int           server_dsoPort;
     private final int           server_jmxPort;
+    private final int           server_l2GroupPort;
     private final ServerControl serverControl;
     private String              dataLocation;
     private String              logLocation;
 
-    ServerInfo(String host, String name, int dsoPort, int jmxPort, ServerControl serverControl) {
-      this.server_host = host;
-      this.server_name = name;
-      this.server_dsoPort = dsoPort;
-      this.server_jmxPort = jmxPort;
+    ServerInfo(String host, String name, int dsoPort, int jmxPort, int l2GroupPort, ServerControl serverControl) {
+      server_host = host;
+      server_name = name;
+      server_dsoPort = dsoPort;
+      server_jmxPort = jmxPort;
+      server_l2GroupPort = l2GroupPort;
       this.serverControl = serverControl;
     }
 
@@ -616,6 +630,10 @@ public class ActivePassiveServerManager {
 
     public int getJmxPort() {
       return server_jmxPort;
+    }
+
+    public int getL2GroupPort() {
+      return server_l2GroupPort;
     }
 
     public ServerControl getServerControl() {
