@@ -46,10 +46,9 @@ public class ElectionManagerImpl implements ElectionManager {
 
   public synchronized boolean handleStartElectionRequest(L2StateMessage msg) {
     Assert.assertEquals(L2StateMessage.START_ELECTION, msg.getType());
-    if (state == ELECTION_IN_PROGRESS) {
-      // Another node is also joining in the election process
-      // Cast its vote and notify my vote
-      Assert.assertNotNull(myVote);
+    if (state == ELECTION_IN_PROGRESS && (myVote.isANewCandidate() || !msg.getEnrollment().isANewCandidate())) {
+      // Another node is also joining in the election process, Cast its vote and notify my vote
+      // Note : WE dont want to do this for new candidates when we are not new.
       Enrollment vote = msg.getEnrollment();
       Enrollment old = (Enrollment) votes.put(vote.getNodeID(), vote);
       boolean sendResponse = msg.inResponseTo().isNull();
