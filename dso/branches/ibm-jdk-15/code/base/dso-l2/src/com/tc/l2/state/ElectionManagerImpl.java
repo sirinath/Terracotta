@@ -13,7 +13,6 @@ import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.State;
 
@@ -29,28 +28,27 @@ public class ElectionManagerImpl implements ElectionManager {
   private static final State    ELECTION_COMPLETE    = new State("Election-Complete");
   private static final State    ELECTION_IN_PROGRESS = new State("Election-In-Progress");
 
-  private static final long     ELECTION_TIME        = TCPropertiesImpl.getProperties()
-                                                         .getLong("l2.ha.electionmanager.electionTimePeriod");
-
   private final GroupManager    groupManager;
   private final Map             votes                = new HashMap();
-  
+
   private State                 state                = INIT;
 
   // XXX::NOTE:: These variables are not reset until next election
   private Enrollment            myVote               = null;
   private Enrollment            winner;
 
-  public ElectionManagerImpl(GroupManager groupManager) {
+  private final int             electionTime;
+
+  public ElectionManagerImpl(GroupManager groupManager, StateManagerConfig stateManagerConfig) {
     this.groupManager = groupManager;
+    electionTime = stateManagerConfig.getEletionTime();
   }
 
   public synchronized boolean handleStartElectionRequest(L2StateMessage msg) {
     Assert.assertEquals(L2StateMessage.START_ELECTION, msg.getType());
-    if (state == ELECTION_IN_PROGRESS) {
-      // Another node is also joining in the election process
-      // Cast its vote and notify my vote
-      Assert.assertNotNull(myVote);
+    if (state == ELECTION_IN_PROGRESS && (myVote.isANewCandidate() || !msg.getEnrollment().isANewCandidate())) {
+      // Another node is also joining in the election process, Cast its vote and notify my vote
+      // Note : WE dont want to do this for new candidates when we are not new.
       Enrollment vote = msg.getEnrollment();
       Enrollment old = (Enrollment) votes.put(vote.getNodeID(), vote);
       boolean sendResponse = msg.inResponseTo().isNull();
@@ -59,7 +57,8 @@ public class ElectionManagerImpl implements ElectionManager {
         sendResponse = true;
       }
       if (sendResponse) {
-        // This is either not a response to this node initiating election or a duplicate vote. Either case notify this nodes vote
+        // This is either not a response to this node initiating election or a duplicate vote. Either case notify this
+        // nodes vote
         GroupMessage response = createElectionStartedMessage(msg, myVote);
         logger.info("Casted vote from " + msg + " My Response : " + response);
         try {
@@ -236,7 +235,7 @@ public class ElectionManagerImpl implements ElectionManager {
 
   private synchronized void waitTillElectionComplete() {
     long start = System.currentTimeMillis();
-    long diff = ELECTION_TIME;
+    long diff = electionTime;
     while (state == ELECTION_IN_PROGRESS && diff > 0) {
       try {
         wait(diff);
