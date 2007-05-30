@@ -2,9 +2,11 @@ import java.lang.System
 import terracotta
 import os
 
-webappDir = os.environ["WAS_SANDBOX"] + '\\' + os.environ["PORT"] + '\\webapps'
+webappDir = java.lang.System.getProperty("webapp.dir")
 
-print "Got webapp.dir: " + webappDir
+if not webappDir:
+    # For some reason on Windows the wsadmin.bat "-javaoption" option does not work correctly
+    webappDir = os.path.join(os.environ["WAS_SANDBOX"], os.environ["PORT"], 'webapps')
 
 appUtil = terracotta.AppUtil(AdminApp, webappDir)
 appUtil.installAll()
