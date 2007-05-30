@@ -41,6 +41,7 @@ import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.server.NullTCServerInfo;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
@@ -75,7 +76,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
      * as of now Sometimes the clients are still trying to reconnect to non-exisitent servers 
      * and with OOO it seems to happen more.
      */
-    System.setProperty("com.tc.l1.reconnect.enabled", "false");
+    TCPropertiesImpl.setProperty("l1.reconnect.enabled", "false");
   }
 
   private class StartAction implements StartupAction {
