@@ -11,6 +11,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.TCAssertionError;
 
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -100,10 +101,9 @@ public class SendStateMachine extends AbstractStateMachine {
         // this should be handled at a higher level - OOONetworkLayer
         throw new AssertionError();
       }
-      if (ackedSeq <= acked.get()) {
-        // this shall not, old or dup ack, resend all outstandings
-        resendOutstandings();
-        switchToState(ACK_WAIT_STATE);
+      if (ackedSeq < acked.get()) {
+        // this shall not, old ack
+        throw new TCAssertionError("Wrong ack "+ackedSeq+" received! Expected >= "+acked.get());
       } else {
         while (ackedSeq > acked.get()) {
           acked.increment();
