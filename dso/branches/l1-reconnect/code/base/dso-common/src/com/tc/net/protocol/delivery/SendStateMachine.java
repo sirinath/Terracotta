@@ -132,7 +132,7 @@ public class SendStateMachine extends AbstractStateMachine {
       if (protocolMessage == null || protocolMessage.isSend()) return;
 
       long ackedSeq = protocolMessage.getAckSequence();
-      Assert.eval(ackedSeq > acked.get());
+      Assert.eval(ackedSeq >= acked.get());
 
       while (ackedSeq > acked.get()) {
         acked.increment();
