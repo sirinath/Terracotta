@@ -100,10 +100,10 @@ public class MemoryDataStoreClient implements MemoryDataMap {
   }
 
   public void put(byte[] key, byte[] value) {
-    ThreadID thID = getThreadID();
+    ThreadID thId = getThreadID();
     MemoryDataStoreRequestMessage request = (MemoryDataStoreRequestMessage) channel
         .createMessage(TCMessageType.MEMORY_DATA_STORE_REQUEST_MESSAGE);
-    request.initializePut(thID, this.storeName, key, value);
+    request.initializePut(thId, this.storeName, key, value);
     request.send();
     // MemoryDataStoreResponseMessage responseMessage =
     // waitForResponse(threadID, request);
@@ -111,15 +111,15 @@ public class MemoryDataStoreClient implements MemoryDataMap {
   }
 
   public byte[] get(byte[] key) {
-    ThreadID thID = getThreadID();
+    ThreadID thId = getThreadID();
     MemoryDataStoreRequestMessage request = (MemoryDataStoreRequestMessage) channel
         .createMessage(TCMessageType.MEMORY_DATA_STORE_REQUEST_MESSAGE);
-    request.initializeGet(thID, this.storeName, key, false);
+    request.initializeGet(thId, this.storeName, key, false);
 
-    Object waitObject = getWaitObject(thID, request);
+    Object waitObject = getWaitObject(thId, request);
 
     request.send();
-    MemoryDataStoreResponseMessage responseMessage = waitForResponse(thID, waitObject);
+    MemoryDataStoreResponseMessage responseMessage = waitForResponse(thId, waitObject);
     Assert.assertTrue(responseMessage.isRequestCompletedFlag());
     return responseMessage.getValue();
   }
@@ -165,9 +165,9 @@ public class MemoryDataStoreClient implements MemoryDataMap {
   void notifyResponse(ThreadID thId, MemoryDataStoreResponseMessage response) {
     Object waitObject = null;
     synchronized (this) {
-      waitObject = this.waitObjectMap.get(threadID);
-      Object pendingRequest = this.pendingRequests.remove(threadID);
-      this.pendingResponses.put(threadID, response);
+      waitObject = this.waitObjectMap.get(thId);
+      Object pendingRequest = this.pendingRequests.remove(thId);
+      this.pendingResponses.put(thId, response);
       Assert.assertNotNull(waitObject);
       Assert.assertNotNull(pendingRequest);
     }
@@ -194,8 +194,8 @@ public class MemoryDataStoreClient implements MemoryDataMap {
     }
   }
 
-  private boolean hasPendingRequest(ThreadID threadID1) {
-    return this.pendingRequests.get(threadID1) != null;
+  private boolean hasPendingRequest(ThreadID thId) {
+    return this.pendingRequests.get(thId) != null;
   }
 
   private synchronized Object getWaitObject(ThreadID thId, TCMessage message) {
