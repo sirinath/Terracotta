@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 import com.tc.async.api.Sink;
 import com.tc.l2.context.StateChangedEvent;
+import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.L2StateMessage;
 import com.tc.l2.msg.L2StateMessageFactory;
 import com.tc.logging.TCLogger;
@@ -37,14 +38,11 @@ public class StateManagerImpl implements StateManager {
   private volatile State             state              = START_STATE;
   private boolean                    electionInProgress = false;
 
-  private final StateManagerConfig   stateManagerConfig;
-
   public StateManagerImpl(TCLogger consoleLogger, GroupManager groupManager, Sink stateChangeSink,
                           StateManagerConfig stateManagerConfig) {
     this.consoleLogger = consoleLogger;
     this.groupManager = groupManager;
     this.stateChangeSink = stateChangeSink;
-    this.stateManagerConfig = stateManagerConfig;
     this.electionMgr = new ElectionManagerImpl(groupManager, stateManagerConfig);
   }
 
@@ -141,7 +139,11 @@ public class StateManagerImpl implements StateManager {
     }
   }
 
-  public synchronized boolean isActiveCoordinator() {
+  public synchronized NodeID getActiveNodeID() {
+    return activeNode;
+  }
+  
+  public boolean isActiveCoordinator() {
     return (state == ACTIVE_COORDINATOR);
   }
 
@@ -180,7 +182,8 @@ public class StateManagerImpl implements StateManager {
       }
     } catch (GroupException ge) {
       logger.error("Zapping Node : Caught Exception while handling Message : " + clusterMsg, ge);
-      groupManager.zapNode(clusterMsg.messageFrom());
+      groupManager.zapNode(clusterMsg.messageFrom(), L2HAZapNodeRequestProcessor.COMMUNICATION_ERROR,
+                           "Error handling Election Message " + L2HAZapNodeRequestProcessor.getErrorString(ge));
     }
   }
 
@@ -253,7 +256,7 @@ public class StateManagerImpl implements StateManager {
   }
 
   // notify new node
-  public synchronized void publishActiveState(NodeID nodeID) throws GroupException {
+  public void publishActiveState(NodeID nodeID) throws GroupException {
     Assert.assertTrue(isActiveCoordinator());
     GroupMessage msg = L2StateMessageFactory.createElectionWonMessage(EnrollmentFactory
         .createTrumpEnrollment(getLocalNodeID()));
