@@ -130,6 +130,7 @@ import com.tc.util.runtime.Os;
 import com.tc.util.runtime.UnknownJvmVersionException;
 import com.tc.util.runtime.UnknownRuntimeVersionException;
 import com.tc.util.runtime.Vm;
+import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
@@ -281,21 +282,25 @@ public class BootJarTool {
       final Set bootJarClassNames = bootJarLocal.getAllClasses();
       Map offendingClasses = new HashMap();
       for (Iterator i = bootJarClassNames.iterator(); i.hasNext();) {
-        final String className = (String)i.next();
-        final byte[] bytes     = bootJarLocal.getBytesForClass(className);
+        final String className = (String) i.next();
+        final byte[] bytes = bootJarLocal.getBytesForClass(className);
         ClassReader cr = new ClassReader(bytes);
         ClassVisitor cv = new BootJarClassDependencyVisitor(bootJarClassNames, offendingClasses);
         cr.accept(cv, 0);
       }
 
       String nl = System.getProperty("line.separator");
-      StringBuffer message = new StringBuffer(nl+nl+"The following Terracotta classes needs to be included in the boot jar:"+nl+nl);
+      StringBuffer message = new StringBuffer(
+                                              nl
+                                                  + nl
+                                                  + "The following Terracotta classes needs to be included in the boot jar:"
+                                                  + nl + nl);
       for (Iterator i = offendingClasses.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Map.Entry)i.next();
-        message.append("  - " + entry.getKey() + " [" + entry.getValue() + "]"+nl);
+        Map.Entry entry = (Map.Entry) i.next();
+        message.append("  - " + entry.getKey() + " [" + entry.getValue() + "]" + nl);
       }
-      
-      Assert.assertTrue(message/*.toString().replaceAll(nl+"$", "")*/, offendingClasses.isEmpty());
+
+      Assert.assertTrue(message/* .toString().replaceAll(nl+"$", "") */, offendingClasses.isEmpty());
     } catch (BootJarException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {
@@ -369,6 +374,7 @@ public class BootJarTool {
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(JettyLoaderNaming.class.getName());
+      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
@@ -987,7 +993,7 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.util.Assert");
     loadTerracottaClass("com.tc.util.StringUtil");
     loadTerracottaClass("com.tc.util.TCAssertionError");
-    
+
     // this class needed for ibm-jdk-15 branch
     loadTerracottaClass("com.tc.object.bytecode.ClassAdapterFactory");
   }
@@ -1733,23 +1739,25 @@ public class BootJarTool {
     String tcClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC";
     Map instrumentedContext = new HashMap();
     mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext);
-    
+
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
     spec.addTransient("sync");
     spec.markPreInstrumented();
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
     spec.addTransient("sync");
     spec.markPreInstrumented();
-    
+
     String jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock";
     String tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$ReadLock";
     instrumentedContext = new HashMap();
-    mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots, "ReadLock", "ReadLock", instrumentedContext);
-    
+    mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
+                                 "ReadLock", "ReadLock", instrumentedContext);
+
     jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock";
     tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$WriteLock";
     instrumentedContext = new HashMap();
-    mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots, "WriteLock", "WriteLock", instrumentedContext);
+    mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
+                                 "WriteLock", "WriteLock", instrumentedContext);
 
     String classNameDots = "com.tcclient.util.concurrent.locks.ConditionObject";
     byte[] bytes = getSystemBytes(classNameDots);
@@ -1770,10 +1778,12 @@ public class BootJarTool {
     bootJar.loadClassIntoJar(classNameDots, bytes, spec.isPreInstrumented());
     config.removeSpec(classNameDots);
   }
-  
-  private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots, String tcClassNameDots, String jClassNameDots, String srcInnerClassName, String targetInnerClassName, Map instrumentedContext) {
+
+  private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots,
+                                            String tcClassNameDots, String jClassNameDots, String srcInnerClassName,
+                                            String targetInnerClassName, Map instrumentedContext) {
     String tcInnerClassNameSlashes = tcInnerClassNameDots.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
-                                              ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
+                                                                  ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     byte[] tcData = getSystemBytes(tcInnerClassNameDots);
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode();
@@ -1792,9 +1802,10 @@ public class BootJarTool {
                                                                               instrumentedContext));
     jCR.accept(cv, 0);
     jData = cw.toByteArray();
-    
-    jData = changeClassNameAndGetBytes(jData, tcInnerClassNameSlashes, tcClassNameDots, jClassNameDots, srcInnerClassName, targetInnerClassName, instrumentedContext);
-    
+
+    jData = changeClassNameAndGetBytes(jData, tcInnerClassNameSlashes, tcClassNameDots, jClassNameDots,
+                                       srcInnerClassName, targetInnerClassName, instrumentedContext);
+
     jData = doDSOTransform(jInnerClassNameDots, jData);
     bootJar.loadClassIntoJar(jInnerClassNameDots, jData, true);
   }
@@ -1898,7 +1909,7 @@ public class BootJarTool {
       }
     }
   }
-  
+
   private void changeClassName(String fullClassNameDots, String classNameDotsToBeChanged, String classNameDotsReplaced,
                                Map instrumentedContext, boolean honorTransient) {
     byte[] data = changeClassNameAndGetBytes(fullClassNameDots, classNameDotsToBeChanged, classNameDotsReplaced,
@@ -1916,26 +1927,30 @@ public class BootJarTool {
 
     bootJar.loadClassIntoJar(replacedClassName, cw.toByteArray(), true);
   }
-  
+
   private final byte[] changeClassNameAndGetBytes(String fullClassNameDots, String classNameDotsToBeChanged,
                                                   String classNameDotsReplaced, Map instrumentedContext) {
-    return changeClassNameAndGetBytes(fullClassNameDots, classNameDotsToBeChanged,
-                                                           classNameDotsReplaced, null, null, instrumentedContext);
+    return changeClassNameAndGetBytes(fullClassNameDots, classNameDotsToBeChanged, classNameDotsReplaced, null, null,
+                                      instrumentedContext);
   }
 
   private final byte[] changeClassNameAndGetBytes(String fullClassNameDots, String classNameDotsToBeChanged,
-                                                  String classNameDotsReplaced, String srcInnerClassName, String targetInnerClassName,
-                                                  Map instrumentedContext) {
-    return changeClassNameAndGetBytes(getSystemBytes(fullClassNameDots), fullClassNameDots, classNameDotsToBeChanged, classNameDotsReplaced, srcInnerClassName, targetInnerClassName, instrumentedContext);
+                                                  String classNameDotsReplaced, String srcInnerClassName,
+                                                  String targetInnerClassName, Map instrumentedContext) {
+    return changeClassNameAndGetBytes(getSystemBytes(fullClassNameDots), fullClassNameDots, classNameDotsToBeChanged,
+                                      classNameDotsReplaced, srcInnerClassName, targetInnerClassName,
+                                      instrumentedContext);
   }
-  
-  private final byte[] changeClassNameAndGetBytes(byte[] data, String fullClassNameDots, String classNameDotsToBeChanged,
-                                                  String classNameDotsReplaced, String srcInnerClassName, String targetInnerClassName,
+
+  private final byte[] changeClassNameAndGetBytes(byte[] data, String fullClassNameDots,
+                                                  String classNameDotsToBeChanged, String classNameDotsReplaced,
+                                                  String srcInnerClassName, String targetInnerClassName,
                                                   Map instrumentedContext) {
     ClassReader cr = new ClassReader(data);
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
     ClassVisitor cv = new ChangeClassNameRootAdapter(cw, fullClassNameDots, classNameDotsToBeChanged,
-                                                     classNameDotsReplaced, srcInnerClassName, targetInnerClassName, instrumentedContext, null);
+                                                     classNameDotsReplaced, srcInnerClassName, targetInnerClassName,
+                                                     instrumentedContext, null);
     cr.accept(cv, 0);
 
     data = cw.toByteArray();

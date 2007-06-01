@@ -2,11 +2,12 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package org.terracotta.modules.websphere_6_1;
+package com.tc.websphere;
 
 import com.tc.logging.TCLogger;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
+import com.tc.object.bytecode.hook.impl.SessionsHelper;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
 
@@ -24,15 +25,25 @@ public class WebsphereLoaderNaming {
   public synchronized static void nameAndRegisterDependencyLoader(NamedClassLoader loader, Object earFile) {
     nameAndRegister(loader, EAR_DEPENDENCY + getEarName(earFile));
   }
-  
+
   public static void registerWebAppLoader(NamedClassLoader loader, Object earFile, Object moduleRef) {
     Object webModule = invokeMethod(moduleRef, "getModule");
     Object webModuleFile = invokeMethod(moduleRef, "getModuleFile");
     Object bindings = invokeMethod(webModuleFile, "getBindings");
     String vhost = (String) invokeMethod(bindings, "getVirtualHostName");
     String contextRoot = (String) invokeMethod(webModule, "getContextRoot");
-    
+
     nameAndRegister(loader, EAR + getEarName(earFile) + ":" + vhost + contextRoot);
+    if (ClassProcessorHelper.isDSOSessions(contextRoot)) {
+      getLogger().info("Enabling Terracotta Sessions for context root '" + contextRoot + "'");
+      try {
+        SessionsHelper.injectClasses((ClassLoader) loader);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    } else {
+      getLogger().info("Not enabling Terracotta Sessions for context root '" + contextRoot + "'");
+    }
   }
 
   private static void nameAndRegister(NamedClassLoader loader, String name) {
