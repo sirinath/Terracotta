@@ -40,7 +40,7 @@ IF NOT EXIST "%WAS_HOME%\java" (
 
 set JAVA_HOME=%WAS_HOME%\java
 
-set TC_CONFIG_PATH=%WAS_SANDBOX%\was6.1\tc-config.xml
+set TC_CONFIG_PATH=%WAS_SANDBOX%\tc-config.xml
 call "%TC_INSTALL_DIR%\bin\dso-env.bat" -q "%TC_CONFIG%"
 if %ERRORLEVEL% neq 0 goto end
 
