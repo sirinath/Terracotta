@@ -108,15 +108,17 @@
   </xs:simpleType>
   <xs:simpleType name="method-expression">
     <xs:restriction base="xs:token">
-      <xs:pattern value="(@[A-Za-z_0-9$\*\.]+ )*([A-Za-z_0-9$\*\.\+]+ )[@A-Za-z_0-9$\*\.\[\]\+]+(\([A-Za-z_0-9$,\*\. \[\]]*\))"/>
+      <xs:pattern value="(@[A-Za-z_0-9$\*\.]+ )*([A-Za-z_0-9$\*\.\[\] \+]+ )[A-Za-z_0-9$\*\.\+]+(\([A-Za-z_0-9$,\*\. \[\]]*\))"/>
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- 
   <xs:simpleType name="method-name-expression">
     <xs:restriction base="xs:token">
       <xs:pattern value="[A-Za-z_0-9$\. \[\]]+(\([A-Za-z_0-9$,\. \[\]]*\))" />
     </xs:restriction>
   </xs:simpleType>
+  -->
 
   <xs:simpleType name="web-application-name-expression">
     <xs:restriction base="xs:token">
@@ -146,6 +148,7 @@
       <xs:element name="method-expression" type="method-expression" />
       <xs:element name="lock-level" type="lock-level" minOccurs="0" />
     </xs:all>
+    <xs:attribute name="auto-synchronized" type="xs:boolean" default="false"/>
   </xs:complexType>
 
   <xs:complexType name="locks">
@@ -201,7 +204,7 @@
       <xs:element name="method-expression" maxOccurs="unbounded">
         <xs:complexType>
           <xs:simpleContent>
-            <xs:extension base="method-name-expression">
+            <xs:extension base="method-expression">
               <xs:attribute name="run-on-all-nodes" type="xs:boolean" use="optional" default="true"/>
             </xs:extension>
           </xs:simpleContent>
@@ -338,7 +341,7 @@
 
   <xs:complexType name="dso-application">
     <xs:all>
-      <xs:element name="instrumented-classes" type="instrumented-classes" />
+      <xs:element name="instrumented-classes" type="instrumented-classes" minOccurs="0" />
       <xs:element name="transient-fields" type="transient-fields" minOccurs="0" />
 
       <xs:element name="locks" type="locks" minOccurs="0" />
