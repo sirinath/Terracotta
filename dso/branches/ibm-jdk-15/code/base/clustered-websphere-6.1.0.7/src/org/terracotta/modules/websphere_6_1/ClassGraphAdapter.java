@@ -9,13 +9,10 @@ import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
-import com.tc.asm.tree.MethodNode;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterFactory;
 
 public class ClassGraphAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes {
-
-  private MethodNode processWarModuleNode;
 
   public ClassGraphAdapter(ClassVisitor cv) {
     super(cv);
@@ -31,42 +28,36 @@ public class ClassGraphAdapter extends ClassAdapter implements ClassAdapterFacto
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     if ("processWARModule".equals(name)) {
-      this.processWarModuleNode = new MethodNode(access, name, desc, signature, exceptions);
+      addProcessWARModuleWrapper(access, name, desc, signature, exceptions);
       return super.visitMethod(access, ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc, signature, exceptions);
     }
 
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-
     if ("createClassLoaders".equals(name)) {
-      mv = new CreateClassLoadersAdapter(mv);
+      return new CreateClassLoadersAdapter(mv);
     }
-
     return mv;
   }
 
   public void visitEnd() {
-    addProcessWARModuleWrapper();
     super.visitEnd();
   }
 
-  private void addProcessWARModuleWrapper() {
-    MethodVisitor mv = super.visitMethod(processWarModuleNode.access, processWarModuleNode.name,
-                                         processWarModuleNode.desc, processWarModuleNode.signature,
-                                         (String[]) processWarModuleNode.exceptions.toArray(new String[] {}));
+  private void addProcessWARModuleWrapper(int access, String name, String desc, String signature, String[] exceptions) {
+    MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     for (int i = 1; i <= 9; i++) {
       mv.visitVarInsn(ALOAD, i);
     }
-    mv.visitMethodInsn(INVOKESPECIAL, "com/ibm/ws/classloader/ClassGraph", ByteCodeUtil.METHOD_RENAME_PREFIX
-                                                                           + processWarModuleNode.name,
-                       processWarModuleNode.desc);
+    mv.visitMethodInsn(INVOKESPECIAL, "com/ibm/ws/classloader/ClassGraph", //
+                       ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc);
 
-    mv.visitVarInsn(ALOAD, 6);
+    mv.visitVarInsn(ALOAD, 6);  // modulenode
     mv.visitFieldInsn(GETFIELD, "com/ibm/ws/classloader/ClassGraph$ModuleNode", "classLoader",
                       "Lcom/ibm/ws/classloader/JarClassLoader;");
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitVarInsn(ALOAD, 4);
+    mv.visitVarInsn(ALOAD, 1);  // earfile
+    mv.visitVarInsn(ALOAD, 4);  // moduleref
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/websphere/WebsphereLoaderNaming", "registerWebAppLoader",
                        "(Lcom/tc/object/loaders/NamedClassLoader;Ljava/lang/Object;Ljava/lang/Object;)V");
 
