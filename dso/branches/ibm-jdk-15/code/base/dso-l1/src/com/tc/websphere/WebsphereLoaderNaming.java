@@ -7,7 +7,6 @@ package com.tc.websphere;
 import com.tc.logging.TCLogger;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
-import com.tc.object.bytecode.hook.impl.SessionsHelper;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
 
@@ -34,16 +33,6 @@ public class WebsphereLoaderNaming {
     String contextRoot = (String) invokeMethod(webModule, "getContextRoot");
 
     nameAndRegister(loader, EAR + getEarName(earFile) + ":" + vhost + contextRoot);
-    if (ClassProcessorHelper.isDSOSessions(contextRoot)) {
-      getLogger().info("Enabling Terracotta Sessions for context root '" + contextRoot + "'");
-      try {
-        SessionsHelper.injectClasses((ClassLoader) loader);
-      } catch (Exception e) {
-        throw new AssertionError(e);
-      }
-    } else {
-      getLogger().info("Not enabling Terracotta Sessions for context root '" + contextRoot + "'");
-    }
   }
 
   private static void nameAndRegister(NamedClassLoader loader, String name) {
