@@ -1372,7 +1372,12 @@ public class BootJarTool {
   }
 
   private final void addAbstractStringBuilder() {
-    String className = "java.lang.AbstractStringBuilder";
+    String className;
+    if (Vm.isIBM()) {
+      className = "java.lang.StringBuilder";
+    } else {
+      className = "java.lang.AbstractStringBuilder";
+    }
 
     byte[] classBytes = getSystemBytes(className);
 
@@ -1389,7 +1394,7 @@ public class BootJarTool {
 
     cr = new ClassReader(classBytes);
     cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    cv = new AbstractStringBuilderAdapter(cw);
+    cv = new AbstractStringBuilderAdapter(cw, className);
     cr.accept(cv, 0);
 
     cr = new ClassReader(cw.toByteArray());
