@@ -228,7 +228,9 @@ public class Was6xAppServer extends AbstractAppServer {
     System.out.println("Execute cmd: " + Arrays.asList(cmd));
     Result result = Exec.execute(cmd, null, null, workingDir == null ? instanceDir : workingDir);
     System.out.println(result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr());
-    if (result.getExitCode() != 0) { throw new Exception(errorMessage); }
+    if (result.getExitCode() != 0) { 
+      System.err.println(errorMessage); 
+    }
   }
 
   private void writeLines(List lines, File filename, boolean append) throws Exception {
