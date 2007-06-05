@@ -10,6 +10,7 @@ import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AbstractAppServer;
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.AppServerResult;
+import com.tc.test.server.util.AppServerUtil;
 import com.tc.util.PortChooser;
 import com.tc.util.runtime.Os;
 
@@ -24,17 +25,19 @@ import java.util.List;
 import java.util.Set;
 
 public class Was6xAppServer extends AbstractAppServer {
-  private static final String TERRACOTTA_PY  = "terracotta.py";
-  private static final String DEPLOY_APPS_PY = "deployApps.py";
-  private static final String ENABLE_DSO_PY  = "enable-dso.py";
-  private static final String DSO_JVMARGS    = "__DSO_JVMARGS";
-  private static final String PORTS_DEF      = "ports.def";
+  private static final String TERRACOTTA_PY      = "terracotta.py";
+  private static final String DEPLOY_APPS_PY     = "deployApps.py";
+  private static final String ENABLE_DSO_PY      = "enable-dso.py";
+  private static final String DSO_JVMARGS        = "__DSO_JVMARGS";
+  private static final String PORTS_DEF          = "ports.def";
+  private static final int    START_STOP_TIMEOUT = 4 * 60;                                                       // 4
+  // mins
 
-  private String[]            scripts        = new String[] { DEPLOY_APPS_PY, TERRACOTTA_PY, ENABLE_DSO_PY };
+  private String[]            scripts            = new String[] { DEPLOY_APPS_PY, TERRACOTTA_PY, ENABLE_DSO_PY };
 
-  private String              policy         = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
-                                               + "  permission java.security.AllPermission;" + IOUtils.LINE_SEPARATOR
-                                               + "};" + IOUtils.LINE_SEPARATOR;
+  private String              policy             = "grant codeBase \"file:FILENAME\" {" + IOUtils.LINE_SEPARATOR
+                                                   + "  permission java.security.AllPermission;"
+                                                   + IOUtils.LINE_SEPARATOR + "};" + IOUtils.LINE_SEPARATOR;
   private String              instanceName;
   private String              dsoJvmArgs;
   private int                 webspherePort;
@@ -44,6 +47,8 @@ public class Was6xAppServer extends AbstractAppServer {
   private File                webappDir;
   private File                portDefFile;
   private File                serverInstallDir;
+
+  private Thread              serverThread;
 
   public Was6xAppServer(Was6xAppServerInstallation installation) {
     super(installation);
@@ -58,7 +63,18 @@ public class Was6xAppServer extends AbstractAppServer {
     deployWarFile();
     addTerracottaToServerPolicy();
     enableDSO();
-    startWebsphere();
+    serverThread = new Thread() {
+      public void run() {
+        try {
+          startWebsphere();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+    };
+    serverThread.setDaemon(true);
+    serverThread.start();
+    AppServerUtil.waitForPort(webspherePort, START_STOP_TIMEOUT * 1000);
     System.out.println("Websphere instance " + instanceName + " started on port " + webspherePort);
     return new AppServerResult(webspherePort, this);
   }
@@ -134,14 +150,14 @@ public class Was6xAppServer extends AbstractAppServer {
   }
 
   private void deleteProfileIfExists() throws Exception {
-    String[] args = new String[] { "-listProfiles"};    
+    String[] args = new String[] { "-listProfiles" };
     String output = executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "");
     if (output.indexOf(instanceName) >= 0) {
-      args = new String[] { "-delete", "-profileName", instanceName};
+      args = new String[] { "-delete", "-profileName", instanceName };
       executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Trying to clean up existing profile");
     }
   }
-  
+
   private void addTerracottaToServerPolicy() throws Exception {
     String classpath = System.getProperty("java.class.path");
     Set set = new HashSet();
@@ -193,13 +209,17 @@ public class Was6xAppServer extends AbstractAppServer {
   }
 
   private void startWebsphere() throws Exception {
-    String[] args = new String[] { "server1", "-profileName", instanceName };
+    String[] args = new String[] { "server1", "-profileName", instanceName, "-trace", "-timeout",
+        String.valueOf(START_STOP_TIMEOUT) };
     executeCommand(instanceDir, "startServer", args, instanceDir, "Error in starting " + instanceName);
   }
 
   private void stopWebsphere() throws Exception {
     String[] args = new String[] { "server1", "-profileName", instanceName };
     executeCommand(instanceDir, "stopServer", args, instanceDir, "Error in stopping " + instanceName);
+    if (serverThread != null) {
+      serverThread.join(START_STOP_TIMEOUT);
+    }
   }
 
   private void init(ServerParameters parameters) {
@@ -239,8 +259,8 @@ public class Was6xAppServer extends AbstractAppServer {
     Result result = Exec.execute(cmd, null, null, workingDir == null ? instanceDir : workingDir);
     String output = result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr();
     System.out.println(output);
-    if (result.getExitCode() != 0) { 
-      System.err.println(errorMessage); 
+    if (result.getExitCode() != 0) {
+      System.err.println(errorMessage);
     }
     return output;
   }
