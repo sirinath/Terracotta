@@ -83,8 +83,14 @@ public class Was6xAppServer extends AbstractAppServer {
     try {
       stopWebsphere();
       System.out.println("Websphere instance " + instanceName + " stopped.");
+    } catch (Exception e) {
+      // ignored
     } finally {
-      deleteProfile();
+      try {
+        deleteProfile();
+      } catch (Exception e2) {
+        // ignored
+      }
     }
   }
 
