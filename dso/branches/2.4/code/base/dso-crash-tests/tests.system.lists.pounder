@@ -1,0 +1,5 @@
+#tests to be pounded
+JavaUtilArraysTest
+LogicalIteratorTest
+ObjectDataTest
+ReentrantReadWriteLockCrashTest
