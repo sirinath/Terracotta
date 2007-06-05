@@ -95,7 +95,7 @@ public class SessionsHelper {
       m = URLClassLoader.class.getDeclaredMethod("addURL", new Class[] { URL.class });
       m.setAccessible(true);
       for (int pos = 0; pos < classPaths.length; ++pos) {
-        m.invoke(loader, new Object[] { new URL("file", "", classPaths[0]) });
+        m.invoke(loader, new Object[] { new URL("file", "", classPaths[pos]) });
       }
       return true;
     } catch (SecurityException e) {
