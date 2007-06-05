@@ -375,7 +375,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + "." + ConfigProperties.REQUEST_BENCHES
                            + "=true");
 
-      params.appendJvmArgs("-verbose:gc");
+      //params.appendJvmArgs("-verbose:gc");
       if (!Vm.isIBM()) {
         params.appendJvmArgs("-Xloggc:" + new File(this.workingDir, "node-" + nodeNumber + ".gc.log"));
       }
