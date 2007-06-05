@@ -192,11 +192,11 @@ public class DistributedTestRunner implements ResultsListener {
       if (this.startServer) {
         this.server.start();
 
-        if (!getProxyConnectSubMode()) {
-          // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
-          this.configFactory.addServerToL1Config(null, getActiveServerPort(), -1);
-          this.configFactory.activateConfigurationChange();
-        }
+//        if (!getProxyConnectSubMode()) {
+//          // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
+//          this.configFactory.addServerToL1Config(null, getActiveServerPort(), -1);
+//          this.configFactory.activateConfigurationChange();
+//        }
       }
 
       for (int i = 0; i < containers.length; i++) {
