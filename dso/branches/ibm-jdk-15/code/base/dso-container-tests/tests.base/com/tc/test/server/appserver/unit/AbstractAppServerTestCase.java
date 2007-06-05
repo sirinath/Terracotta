@@ -35,7 +35,6 @@ import com.tc.test.server.util.VmStat;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
-import com.tc.util.runtime.Vm;
 import com.tc.util.runtime.ThreadDump;
 import com.terracotta.session.util.ConfigProperties;
 
@@ -369,25 +368,24 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       }
 
       params.appendJvmArgs("-DNODE=" + NODE + nodeNumber);
-
-      // params.appendJvmArgs("-Dtc.classloader.writeToDisk=true");
-
       params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + "." + ConfigProperties.REQUEST_BENCHES
                            + "=true");
 
-      //params.appendJvmArgs("-verbose:gc");
+      /*
+      params.appendJvmArgs("-Dtc.classloader.writeToDisk=true");
+      params.appendJvmArgs("-verbose:gc");
       if (!Vm.isIBM()) {
         params.appendJvmArgs("-Xloggc:" + new File(this.workingDir, "node-" + nodeNumber + ".gc.log"));
       }
       params.appendJvmArgs("-XX:+PrintGCDetails");
-
       if (false && nodeNumber == 0) {
         int debugPort = 8000 + nodeNumber;
         System.out.println("Waiting for debugger connection on port " + debugPort);
         params.appendJvmArgs("-Xdebug");
         params.appendJvmArgs("-Xrunjdwp:server=y,transport=dt_socket,address=" + debugPort + ",suspend=y");
       }
-
+      */
+      
       params.addWar(warFile());
       AppServerResult r = (AppServerResult) appServer.start(params);
 
