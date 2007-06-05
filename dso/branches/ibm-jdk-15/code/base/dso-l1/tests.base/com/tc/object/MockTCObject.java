@@ -53,9 +53,8 @@ public class MockTCObject implements TCObject {
   }
 
   public void booleanFieldChanged(String classname, String fieldname, boolean newValue, int index) {
-    if (Vm.isIBM() &&
-        "java.lang.reflect.AccessibleObject.override".equals(fieldname)) {
-      // do nothing since the IBM JDK support for AccessibleObject looks up the
+    if ("java.lang.reflect.AccessibleObject.override".equals(fieldname)) {
+      // do nothing since the support for AccessibleObject looks up the
       // TCObject instance in the currently active ClientObjectManager, which causes
       // and exception to be thrown during the tests since their accessible status is
       // always set to 'true' before execution
