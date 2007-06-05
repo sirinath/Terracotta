@@ -7,7 +7,6 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.util.runtime.Vm;
 
 import gnu.trove.TLinkable;
 
