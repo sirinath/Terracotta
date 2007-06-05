@@ -53,6 +53,7 @@ public class Was6xAppServer extends AbstractAppServer {
     init(parameters);
     createPortFile();
     copyPythonScripts();
+    deleteProfileIfExists();
     createProfile();
     deployWarFile();
     addTerracottaToServerPolicy();
@@ -132,6 +133,15 @@ public class Was6xAppServer extends AbstractAppServer {
     System.out.println("Profile created in: " + ((System.currentTimeMillis() - start) / (1000.0 * 60)) + " minutes.");
   }
 
+  private void deleteProfileIfExists() throws Exception {
+    String[] args = new String[] { "-listProfiles"};    
+    String output = executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "");
+    if (output.indexOf(instanceName) >= 0) {
+      args = new String[] { "-delete", "-profileName", instanceName};
+      executeCommand(serverInstallDir, "manageprofiles", args, serverInstallDir, "Trying to clean up existing profile");
+    }
+  }
+  
   private void addTerracottaToServerPolicy() throws Exception {
     String classpath = System.getProperty("java.class.path");
     Set set = new HashSet();
@@ -219,7 +229,7 @@ public class Was6xAppServer extends AbstractAppServer {
     return new File(root.getAbsolutePath(), "bin/" + fullScriptName).getAbsolutePath();
   }
 
-  private void executeCommand(File rootDir, String scriptName, String[] args, File workingDir, String errorMessage)
+  private String executeCommand(File rootDir, String scriptName, String[] args, File workingDir, String errorMessage)
       throws Exception {
     String script = getScriptPath(rootDir, scriptName);
     String[] cmd = new String[args.length + 1];
@@ -227,10 +237,12 @@ public class Was6xAppServer extends AbstractAppServer {
     System.arraycopy(args, 0, cmd, 1, args.length);
     System.out.println("Execute cmd: " + Arrays.asList(cmd));
     Result result = Exec.execute(cmd, null, null, workingDir == null ? instanceDir : workingDir);
-    System.out.println(result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr());
+    String output = result.getStdout() + IOUtils.LINE_SEPARATOR + result.getStderr();
+    System.out.println(output);
     if (result.getExitCode() != 0) { 
       System.err.println(errorMessage); 
     }
+    return output;
   }
 
   private void writeLines(List lines, File filename, boolean append) throws Exception {
