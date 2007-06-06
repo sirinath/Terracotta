@@ -28,7 +28,6 @@ import com.tc.simulator.container.ContainerStateFactory;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.test.activepassive.ActivePassiveServerManager;
-import com.tc.util.concurrent.ThreadUtil;
 import com.tcsimulator.ControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
 import com.tcsimulator.listener.QueuePrinter;
@@ -185,13 +184,6 @@ public class DistributedTestRunner implements ResultsListener {
       visitApplicationClassLoaderConfig();
       if (this.startServer) {
         this.server.start();
-
-        // TODO: remove
-        // if (!getProxyConnectSubMode()) {
-        // // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
-        // this.configFactory.addServerToL1Config(null, getActiveServerPort(), -1);
-        // this.configFactory.activateConfigurationChange();
-        // }
       }
 
       for (int i = 0; i < containers.length; i++) {
@@ -252,14 +244,6 @@ public class DistributedTestRunner implements ResultsListener {
       }
       throw (Exception) l.get(l.size() - 1);
     }
-  }
-
-  private int getActiveServerPort() {
-    while (!server.isActive()) {
-      System.err.println("Waiting for Server to become Active ...");
-      ThreadUtil.reallySleep(500);
-    }
-    return this.server.getDSOListenPort();
   }
 
   public boolean success() {

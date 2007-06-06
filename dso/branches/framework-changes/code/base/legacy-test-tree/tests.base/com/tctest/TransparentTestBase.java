@@ -106,8 +106,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
       configFactory().addServerToL1Config(null, dsoPort, adminPort);
-      // TODO: remove
-      // configFactory().addServerToL2Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers(portChooser);
@@ -117,9 +115,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
       configFactory().addServerToL1Config(null, dsoPort, -1);
-      // TODO: remove
-      // configFactory().addServerToL2Config(null, dsoPort, adminPort);
-      // this.configFactory.activateConfigurationChange();
     }
 
     if (canRunProxyConnect()) {
@@ -168,8 +163,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throw new AssertionError("Proxy-connect is yet not running with active-passive mode");
     } else {
       dsoPort = portChooser.chooseRandomPort();
-      // TODO: remove
-      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       jmxPort = portChooser.chooseRandomPort();
     }
 
@@ -179,10 +172,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     mgr.setProxyPort(dsoProxyPort);
     mgr.setupProxy();
     setupProxyConnectTest(mgr);
-
-    // TODO: remove
-    // configFactory().addServerToL1Config(null, dsoProxyPort, -1);
-    // configFactory().addServerToL2Config(null, dsoPort, jmxPort);
 
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(jmxPort);

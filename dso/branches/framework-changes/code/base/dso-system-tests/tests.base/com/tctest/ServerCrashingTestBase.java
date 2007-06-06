@@ -46,8 +46,6 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(port);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
     factory.addServerToL1Config(null, port, adminPort);
-    // TODO: remove
-    // factory.addServerToL2Config(null, port, adminPort);
     L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
     setUpControlledServer(factory, new StandardDSOClientConfigHelper(manager), port, adminPort, configFile
         .getAbsolutePath());
