@@ -6,6 +6,7 @@ package com.tctest;
 
 import org.apache.commons.io.CopyUtils;
 
+import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
@@ -100,22 +101,25 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), portChooser,
                                                                 RestartTestEnvironment.PROD_MODE));
-      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(helper.getServerPort());
-      // configFactory().activateConfigurationChange();
       int dsoPort = helper.getServerPort();
       int adminPort = helper.getAdminPort();
-      configFactory().addServerToL1Config(null, dsoPort, -1);
-      configFactory().addServerToL2Config(null, dsoPort, adminPort);
+      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+      ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
+      configFactory().addServerToL1Config(null, dsoPort, adminPort);
+      // TODO: remove
+      // configFactory().addServerToL2Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers(portChooser);
     } else {
       int dsoPort = portChooser.chooseRandomPort();
       int adminPort = portChooser.chooseRandomPort();
-//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+      ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
       configFactory().addServerToL1Config(null, dsoPort, -1);
-      configFactory().addServerToL2Config(null, dsoPort, adminPort);
-//       this.configFactory.activateConfigurationChange();
+      // TODO: remove
+      // configFactory().addServerToL2Config(null, dsoPort, adminPort);
+      // this.configFactory.activateConfigurationChange();
     }
 
     if (canRunProxyConnect()) {
@@ -164,7 +168,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throw new AssertionError("Proxy-connect is yet not running with active-passive mode");
     } else {
       dsoPort = portChooser.chooseRandomPort();
-//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+      // TODO: remove
+      // ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       jmxPort = portChooser.chooseRandomPort();
     }
 
@@ -175,8 +180,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     mgr.setupProxy();
     setupProxyConnectTest(mgr);
 
+    // TODO: remove
+    // configFactory().addServerToL1Config(null, dsoProxyPort, -1);
+    // configFactory().addServerToL2Config(null, dsoPort, jmxPort);
+
+    ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+    ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(jmxPort);
     configFactory().addServerToL1Config(null, dsoProxyPort, -1);
-    configFactory().addServerToL2Config(null, dsoPort, jmxPort);
 
     mgr.startProxyTest();
   }
@@ -206,8 +216,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     setJavaHome();
     serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true, javaHome);
     setUp(factory, helper);
+
+    ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(serverPort);
+    ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
     configFactory().addServerToL1Config(null, serverPort, adminPort);
-    configFactory().addServerToL2Config(null, serverPort, adminPort);
+    // configFactory().addServerToL2Config(null, serverPort, adminPort);
   }
 
   private final void setUp(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)

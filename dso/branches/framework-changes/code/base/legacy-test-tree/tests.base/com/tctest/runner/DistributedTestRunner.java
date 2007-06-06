@@ -42,7 +42,7 @@ import java.util.Map;
  * Takes an application configuration and some parameters and runs a single-vm, multi-node (multi-classloader) test.
  */
 public class DistributedTestRunner implements ResultsListener {
-  private static final boolean                          DEBUG   = false;
+  private static final boolean                          DEBUG               = false;
 
   private final boolean                                 startServer;
 
@@ -56,8 +56,8 @@ public class DistributedTestRunner implements ResultsListener {
   private final ContainerStateFactory                   containerStateFactory;
   private final TestGlobalIdGenerator                   globalIdGenerator;
   private final TCServerImpl                            server;
-  private final List                                    errors  = new ArrayList();
-  private final List                                    results = new ArrayList();
+  private final List                                    errors              = new ArrayList();
+  private final List                                    results             = new ArrayList();
   private final DistributedTestRunnerConfig             config;
   private final TestTVSConfigurationSetupManagerFactory configFactory;
   private boolean                                       startTimedOut;
@@ -119,13 +119,7 @@ public class DistributedTestRunner implements ResultsListener {
     initializedClients();
 
     L2TVSConfigurationSetupManager manager;
-    if (DEBUG) {
-      this.configFactory.addServerToL2Config("testing", 8510, 8520);
-      this.configFactory.activateConfigurationChange();
-      manager = this.configFactory.createL2TVSConfigurationSetupManager("testing");
-    } else {
-      manager = this.configFactory.createL2TVSConfigurationSetupManager(null);
-    }
+    manager = this.configFactory.createL2TVSConfigurationSetupManager(null);
 
     if (this.startServer) {
       server = new TCServerImpl(manager, new TCThreadGroup(new ThrowableHandler(TCLogging
@@ -167,16 +161,16 @@ public class DistributedTestRunner implements ResultsListener {
       System.err.println(s);
     }
   }
+
   /*
-   * too many parameters passed to constructor.
-   * use set/get instead.
+   * too many parameters passed to constructor. use set/get instead.
    */
   public void setProxyConnectSubMode(boolean onoff) {
     proxyConnectSubMode = onoff;
   }
-  
+
   public boolean getProxyConnectSubMode() {
-    return(proxyConnectSubMode);
+    return (proxyConnectSubMode);
   }
 
   public void run() {
@@ -192,11 +186,12 @@ public class DistributedTestRunner implements ResultsListener {
       if (this.startServer) {
         this.server.start();
 
-//        if (!getProxyConnectSubMode()) {
-//          // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
-//          this.configFactory.addServerToL1Config(null, getActiveServerPort(), -1);
-//          this.configFactory.activateConfigurationChange();
-//        }
+        // TODO: remove
+        // if (!getProxyConnectSubMode()) {
+        // // ((SettableConfigItem) this.configFactory.l2DSOConfig().listenPort()).setValue(getServerPort());
+        // this.configFactory.addServerToL1Config(null, getActiveServerPort(), -1);
+        // this.configFactory.activateConfigurationChange();
+        // }
       }
 
       for (int i = 0; i < containers.length; i++) {
