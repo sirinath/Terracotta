@@ -6,7 +6,6 @@ package com.tctest;
 
 import org.apache.commons.io.CopyUtils;
 
-import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
@@ -112,8 +111,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       setUpActivePassiveServers(portChooser);
     } else {
       int dsoPort = portChooser.chooseRandomPort();
-      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
-      this.configFactory.addServerToL1Config(null, dsoPort, -1);
+      int adminPort = portChooser.chooseRandomPort();
+//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+      configFactory().addServerToL1Config(null, dsoPort, -1);
+      configFactory().addServerToL2Config(null, dsoPort, adminPort);
 //       this.configFactory.activateConfigurationChange();
     }
 
@@ -163,7 +164,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throw new AssertionError("Proxy-connect is yet not running with active-passive mode");
     } else {
       dsoPort = portChooser.chooseRandomPort();
-      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
+//      ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       jmxPort = portChooser.chooseRandomPort();
     }
 
