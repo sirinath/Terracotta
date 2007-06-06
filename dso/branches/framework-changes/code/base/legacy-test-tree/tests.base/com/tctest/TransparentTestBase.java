@@ -114,7 +114,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       int dsoPort = portChooser.chooseRandomPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       this.configFactory.addServerToL1Config(null, dsoPort, -1);
-       this.configFactory.activateConfigurationChange();
+//       this.configFactory.activateConfigurationChange();
     }
 
     if (canRunProxyConnect()) {
