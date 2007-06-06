@@ -3,7 +3,7 @@
 # put your settings in there
 
 tc.build-control.version=trunk
-tc.build-control.branch=trunk
+tc.build-control.branch=2.4
 tc.build-control.jvmargs=-Xms64m,-Xmx128m,-Dtc.base-dir=code/base
 
 tc.tests.configuration.transparent-tests.mode=normal
