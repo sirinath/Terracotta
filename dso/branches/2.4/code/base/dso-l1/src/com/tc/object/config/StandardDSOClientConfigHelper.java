@@ -1016,9 +1016,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
       spec.setHonorJDKSubVersionSpecific(true);
 
-//      spec = getOrCreateSpec("java.util.concurrent.atomic.AtomicLong");
-//      spec.setHonorVolatile(true);
-
       spec = getOrCreateSpec("java.util.concurrent.TimeUnit");
 
       /*****************************************************************************************************************
