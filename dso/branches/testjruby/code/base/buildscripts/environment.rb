@@ -8,7 +8,7 @@
 # properties about the environment in which your Ruby code is running. This is things
 # like the hostname, the operating-system type, the username, and so on.
 
-include_class('java.lang.System') { |p, name| "Java" + name }
+#include_class('java.lang.System') { |p, name| "Java" + name }
 
 class Environment
   # Creates a new Environment object. platform is the correct Platform instance

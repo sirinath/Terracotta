@@ -73,7 +73,7 @@ end
 # This class exists because, in JRuby, it seems like Kernel.exit() is broken -- the parent process
 # just plain doesn't get back the exit code. Instead, we call java.lang.System.exit() instead.
 class ExitCodeHelper
-    include_class('java.lang.System') { |p, name| "Java" + name }
+    #include_class('java.lang.System') { |p, name| "Java" + name }
 
     def self.exit(code)
         JavaSystem.exit(code)

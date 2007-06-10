@@ -28,7 +28,7 @@ module BundledDemos
       end
 
       # check that every demo listed in the manifest was copied
-      include_class('java.lang.System') { 'JavaSystem' }
+      #include_class('java.lang.System') { 'JavaSystem' }
       demos = Dir.entries(destdir.to_s)
       manifest.split("#{wildcard}, ").each do |entry|
         fail "The demo `#{name}/#{entry}' was not copied. Please check to make sure that the sources for this demo exist.'" unless demos.include? entry
