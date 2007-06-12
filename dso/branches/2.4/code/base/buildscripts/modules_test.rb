@@ -474,7 +474,7 @@ class SubtreeTestRun
         Registry[:internal_config_source]['tc.tests.configuration.appserver.home'] = appserver_home
       end
     end
-
+    
     # The list of system properties that *must* be set directly on the spawned JVM, rather than
     # being able to be set by TestConfigObject calling System.setProperty() from its static
     # initializer block. These are system properties that the JVM itself reads, or that DSO
