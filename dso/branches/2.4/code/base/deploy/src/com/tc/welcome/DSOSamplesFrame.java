@@ -257,7 +257,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
   private void internalRunServer() {
     String[] cmdarray = { getJavaCmd().getAbsolutePath(), "-Dtc.config=tc-config.xml",
         "-Dtc.install-root=" + getInstallRoot().getAbsolutePath(), "-cp", getTCLib().getAbsolutePath(),
-        "com.tc.servers.TCServerMain" };
+        "com.tc.server.TCServerMain" };
 
     Process p = exec(cmdarray, null, getSamplesDir());
     StreamReader errDrainer = createStreamReader(p.getErrorStream());
