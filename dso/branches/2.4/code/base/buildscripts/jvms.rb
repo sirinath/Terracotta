@@ -254,12 +254,6 @@ class JVM
     # descrip to generate any error messages.
     def self.from_config(platform, config_source, descrip, min_version, max_version, *config_property_names)
         root = config_source.search(*config_property_names)
-#        config_property_names.each do |config_property_name|
-#            unless config_source[config_property_name].nil?
-#                root = config_source[config_property_name]
-#                break
-#            end
-#        end
 
         out = nil
         unless root.nil?
