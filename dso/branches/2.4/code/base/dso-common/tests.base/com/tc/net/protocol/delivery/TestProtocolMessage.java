@@ -21,6 +21,7 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public boolean          isSend       = false;
   public boolean          isAck        = false;
   private boolean         isGoodbye    = false;
+  public short            sessionId    = 0;
 
   public TestProtocolMessage(TCNetworkMessage msg, long sent, long ack) {
     this.msg = msg;
@@ -51,6 +52,15 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public boolean isAck() {
     return isAck;
   }
+  
+  public short getSessionId() {
+    return(sessionId);
+  }
+  
+  public void setSessionId(short id) {
+    sessionId = id;
+   }
+
 
   /*********************************************************************************************************************
    * TCNetworkMessage stuff

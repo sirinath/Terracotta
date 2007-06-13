@@ -27,10 +27,24 @@ public class TestProtocolMessageDelivery implements OOOProtocolMessageDelivery {
     this.receivedQueue = receivedQueue;
   }
   
+  public OOOProtocolMessage createAckRequestMessage() {
+    sentAckRequest = true;
+    return(new TestProtocolMessage());
+  }
+  
   public void sendAckRequest() {
     sentAckRequest = true;
   }
-
+  
+  public OOOProtocolMessage createAckMessage(long sequence) {
+    this.ackCount = sequence;
+    this.sentAck = true;
+    
+    TestProtocolMessage opm = new TestProtocolMessage(null, 0, sequence);
+    opm.isAck = true;
+    return(opm);
+  }
+  
   public void sendAck(long count) {
     this.ackCount = count;
     this.sentAck = true;
