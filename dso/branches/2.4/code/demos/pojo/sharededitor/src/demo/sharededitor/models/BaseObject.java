@@ -233,8 +233,10 @@ public abstract class BaseObject implements IFillStyleConsts {
 	}
 
 	public synchronized void selectAction(boolean flag) {
+		// nothing to do here
 	}
 
 	public synchronized void alternateSelectAction(boolean flag) {
+		// nothing to do here
 	}
 }
