@@ -129,10 +129,9 @@ public class DistributedTestRunner implements ResultsListener {
       Class tcServerClass = Class.forName("com.tc.server.TCServerImpl");
       Class[] constructorParameterTypes = {L2TVSConfigurationSetupManager.class, TCThreadGroup.class};
       Constructor tcServerConstructor = tcServerClass.getConstructor(constructorParameterTypes); 
-
       Object[] tcServerConstructorArgs = {
               configFactory.createL2TVSConfigurationSetupManager(null),
-              new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(DistributedTestRunner.class)))
+              new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(TCServer.class)))
       };
       return (TCServer) tcServerConstructor.newInstance(tcServerConstructorArgs);
     } catch (Exception e) {
