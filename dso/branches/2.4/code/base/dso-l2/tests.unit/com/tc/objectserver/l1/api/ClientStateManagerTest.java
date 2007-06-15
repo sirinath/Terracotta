@@ -25,7 +25,6 @@ import junit.framework.TestCase;
 public class ClientStateManagerTest extends TestCase {
 
   public void test() throws Exception {
-    Set clients = new HashSet();
     ClientStateManager stateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
 
     Set toGC = new HashSet();
@@ -42,12 +41,12 @@ public class ClientStateManagerTest extends TestCase {
     Set testSet = new HashSet();
     Set lookupObjectIDs = new HashSet();
 
-    clients.add(new ChannelID(50));
+    stateManager.startupClient(new ChannelID(50));
     assertTrue(stateManager.createPrunedChangesAndAddObjectIDTo(changes, new BackReferences(), new ChannelID(50),
                                                                 lookupObjectIDs).size() == 0);
     assertEquals(0, lookupObjectIDs.size());
 
-    clients.add(new ChannelID(0));
+    stateManager.startupClient(new ChannelID(0));
     stateManager.addReference(new ChannelID(0), new ObjectID(4));
     stateManager.addAllReferencedIdsTo(testSet);
     assertEquals(0, stateManager.createPrunedChangesAndAddObjectIDTo(changes, new BackReferences(), new ChannelID(50),
@@ -83,7 +82,6 @@ public class ClientStateManagerTest extends TestCase {
                                                                      lookupObjectIDs).size());
     assertEquals(2, lookupObjectIDs.size());
 
-    clients.remove(new ChannelID(50));
     stateManager.shutdownClient(new ChannelID(50));
 
   }
