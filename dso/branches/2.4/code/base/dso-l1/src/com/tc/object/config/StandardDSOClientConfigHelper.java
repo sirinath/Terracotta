@@ -739,9 +739,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     // END: weblogic stuff
 
     // BEGIN: tomcat stuff
-    // don't install tomcat-specific adaptors if this sys prop is defined
-    final boolean doTomcat = System.getProperty("com.tc.tomcat.disabled") == null;
-    if (doTomcat) addTomcatCustomAdapters();
+    addTomcatCustomAdapters();
     // END: tomcat stuff
 
     // Geronimo + WebsphereCE stuff
@@ -948,22 +946,22 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
-      
+
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$DsoLock");
       spec.setHonorTransient(true);
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLockTC");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLockTC");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
-      
+
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.addTransient("sync");
       spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.addTransient("sync");
       spec.setCallMethodOnLoad("init");
 
@@ -1317,7 +1315,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   public void addSynchronousWriteAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.SYNCHRONOUS_WRITE);
   }
-  
+
   public void addReadAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.READ);
   }
@@ -1327,11 +1325,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     lockDefinition.commit();
     addLock(methodPattern, lockDefinition);
   }
-  
+
   public void addReadAutoSynchronize(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_READ);
   }
-  
+
   public void addWriteAutoSynchronize(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE);
   }
@@ -1437,7 +1435,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     if (spec != null && spec.isCallConstructorSet()) { return spec.isCallConstructorOnLoad(); }
     return getInstrumentationDescriptorFor(classInfo).isCallConstructorOnLoad();
   }
-  
+
   public String getPreCreateMethodIfDefined(String className) {
     TransparencyClassSpec spec = getSpec(className);
     if (spec != null) {
@@ -1688,11 +1686,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                            + " pre-instrumented class(es) found missing.");
     }
   }
-  
+
   /**
-   * This method will:
-   * - check the contents of the boot-jar against tc-config.xml
-   * - check that all that all the necessary referenced classes are also present in the boot jar 
+   * This method will: - check the contents of the boot-jar against tc-config.xml - check that all that all the
+   * necessary referenced classes are also present in the boot jar
    */
   public void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException {
     logger.info("Verifying boot jar contents...");
