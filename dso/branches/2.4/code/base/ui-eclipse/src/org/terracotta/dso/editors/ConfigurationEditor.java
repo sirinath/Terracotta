@@ -508,7 +508,15 @@ public class ConfigurationEditor extends MultiPageEditorPart
       case IResourceChangeEvent.PRE_DELETE:
       case IResourceChangeEvent.PRE_CLOSE: {
         if (m_project.equals(event.getResource())) {
-          ConfigurationEditor.this.closeEditor();
+          if(Display.getCurrent() != null) {
+            ConfigurationEditor.this.closeEditor();
+            return;
+          }
+          syncExec(new Runnable() {
+            public void run() {
+              ConfigurationEditor.this.closeEditor();
+            }
+          });
         }
         break;
       }
