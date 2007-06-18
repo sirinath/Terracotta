@@ -141,8 +141,8 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
-        - dso-l2
         - dso-l2-common
+        - dso-l2
         - dso-l1
         - thirdparty
         - aspectwerkz
@@ -200,11 +200,11 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l2-common
-        # NOTE: The dependency on dso-l2 is to allow DistributedTestRunner to instantiate
+        # NOTE: The dependency on deploy is to allow DistributedTestRunner to instantiate
         # TCServerImpl via reflection.  However, classes in this module cannot refer directly
-        # to classes in the dso-l2 module because dso-l2 is compiled with JDK 1.5, while this
+        # to classes in the deploy module because deploy is compiled with JDK 1.5, while this
         # module is compiled with JDK 1.4.
-        - dso-l2
+        - deploy
         - dso-l1-weblogic
         - simulator
         - management
@@ -235,6 +235,8 @@ modules:
         - dso-common-jdk15
         - dso-l1
         - dso-l2-common
+        - dso-l2
+        - deploy
         - dso-l1-weblogic
         - simulator
         - thirdparty
@@ -270,8 +272,8 @@ modules:
         - thirdparty
         - dso-l1-jdk15
         - legacy-test-tree
-        - dso-l2
         - dso-l2-common
+        - dso-l2
         - management
   - dso-crash-tests:
       options:
@@ -284,8 +286,9 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
-        - dso-l2
         - dso-l2-common
+        - dso-l2
+        - deploy
         - dso-l1-weblogic
         - simulator
         - thirdparty
@@ -310,6 +313,9 @@ modules:
         - simulator
         - thirdparty
         - legacy-test-tree
+        - dso-l2-common
+        - dso-l2
+        - deploy
   - dso-spring-tests:
       options:
         jdk: J2SE-1.4
