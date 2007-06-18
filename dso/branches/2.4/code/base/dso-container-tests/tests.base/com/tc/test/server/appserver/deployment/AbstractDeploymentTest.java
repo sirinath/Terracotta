@@ -36,12 +36,16 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
     // nop
   }
 
+  protected boolean shouldKillAppServersEachRun() {
+    return true;
+  }
+  
   protected boolean isSessionTest() {
     return true;
   }
 
   public void runBare() throws Throwable {
-    getServerManager();
+
     if (shouldDisable()) { return; }
 
     watchDog = new WatchDog(getTimeout());
@@ -74,7 +78,9 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
   }
 
   protected void tearDown() throws Exception {
-    ServerManagerUtil.stop(serverManager);
+    if (shouldKillAppServersEachRun()) {
+      ServerManagerUtil.stopAllWebServers(serverManager);
+    }
     super.tearDown();
   }
 
