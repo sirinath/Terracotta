@@ -17,7 +17,8 @@ import java.util.Random;
 import java.util.Iterator;
 
 public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
-  int upbound = 1000;
+  int upbound = 2000;
+  long MaxRuntimeMillis = 2 * 60 * 1000 + 30000;
   
   private final CyclicBarrier     barrier; 
   private final LinkedBlockingQueue<EventNode> lbqueue1 = new LinkedBlockingQueue<EventNode>();
@@ -63,8 +64,9 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
 
   
   private void testBlockingQueue(int index) throws Exception {
-    EventNode node;
+    EventNode node=null;
     Random r = new Random();
+    long endTime = System.currentTimeMillis() + MaxRuntimeMillis;
 
     while(true) {
       
@@ -87,14 +89,16 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
         System.out.println("*** Doing pass id=" + node.getId() + " by thread= " + index);
         synchronized(controller) {
           controller.decGetter();
-        }
-       
-        // ended only when makes an overbound put to queue2
+        }     
+        // ended when total nodes exceed or use up time
         if(node.getId() >= upbound) {
           break;
         }
       }
-      Thread.sleep(r.nextInt(10));
+      // limited by time too
+      if (System.currentTimeMillis() >= endTime) break;
+
+      Thread.sleep(r.nextInt(20));
      }
     index = barrier.await();
     
@@ -169,7 +173,10 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
   }
   
   private EventNode doPass() throws Exception {
-    EventNode node = lbqueue1.take();
+    EventNode node;
+    synchronized(lbqueue1) {
+      node = lbqueue1.take();
+    }
     lbqueue2.put(node);
     return(node);
   }
