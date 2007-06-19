@@ -5,15 +5,11 @@ package demo.sharededitor.models;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
-import java.awt.TexturePaint;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -122,13 +118,7 @@ public abstract class BaseObject implements IFillStyleConsts {
 		if ((FILLSTYLE_TEXTURED == this.fillstyle)
 				&& (this instanceof ITexturable) && isTextured()
 				&& (bounds.width > 0) && (bounds.height > 0)) {
-			BufferedImage texture = new BufferedImage(bounds.width,
-					bounds.height, BufferedImage.TYPE_INT_RGB);
-			Graphics tg = texture.getGraphics();
-			tg.drawImage(getTexture(), 0, 0, bounds.width, bounds.height, null);
-			Paint paint = new TexturePaint(texture, bounds);
-			g.setPaint(paint);
-			g.fill(shape);
+		        g.drawImage(getTexture(), bounds.x, bounds.y, bounds.width, bounds.height, null);
 		}
 
 		g.setStroke(this.stroke);
