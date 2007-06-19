@@ -10,7 +10,7 @@ if [ "$commit" != "" ]; then
   echo "========================================================================"
   echo "Running: svn commit -m 'merge -c ${rev} https://svn.terracotta.org/repo/tc/dso/branches/${branch}'"
   echo "========================================================================"
-  exec svn commit -m \'merge -c ${rev} https://svn.terracotta.org/repo/tc/dso/branches/${branch}\'
+  exec svn commit -m "merge -c ${rev} https://svn.terracotta.org/repo/tc/dso/branches/${branch}"
 else
   echo "========================================================================"
   echo "Running: svn merge -c ${rev} https://svn.terracotta.org/repo/tc/dso/branches/${branch}"
