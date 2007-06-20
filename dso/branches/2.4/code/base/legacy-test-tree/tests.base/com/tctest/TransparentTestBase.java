@@ -16,6 +16,7 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
 import com.tc.test.ProcessInfo;
@@ -88,12 +89,29 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       javaHome = new File(javaHome_local);
     }
   }
+  
+  protected void setJvmArgsL1Reconnect(ArrayList jvmArgs) {
+    System.setProperty("com.tc.l1.reconnect.enabled", "true");
+    TCPropertiesImpl.setProperty("l1.reconnect.enabled", "true");
+    
+    jvmArgs.add("-Dcom.tc.l1.reconnect.enabled=true");
+  }
 
   protected void setUp() throws Exception {
     setUp(configFactory(), configHelper());
 
     // config should be set up before tc-config for external L2s are written out
     setupConfig(configFactory());
+    
+    if (canRunProxyConnect() && !enableL1Reconnect()) {
+      throw new AssertionError("proxy-connect needs l1reconnect enabled, please overwrite enableL1Reconnect()");
+    }
+    
+    ArrayList jvmArgs = new ArrayList();
+    // for some test cases to enable l1reconnect
+    if (enableL1Reconnect()) {
+      setJvmArgsL1Reconnect(jvmArgs);
+    }
 
     RestartTestHelper helper = null;
     PortChooser portChooser = new PortChooser();
@@ -105,7 +123,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), portChooser,
-                                                                RestartTestEnvironment.PROD_MODE, configFactory()));
+                                                                RestartTestEnvironment.PROD_MODE, configFactory()),
+                                                                jvmArgs);
       int dsoPort = helper.getServerPort();
       int adminPort = helper.getAdminPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
@@ -160,8 +179,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private final void setupProxyConnect(RestartTestHelper helper, PortChooser portChooser) throws Exception {
     int dsoPort = 0;
     int jmxPort = 0;
-
-    if (helper != null) {
+    
+     if (helper != null) {
       dsoPort = helper.getServerPort();
       jmxPort = helper.getAdminPort();
       // for crash+proxy, set crash interval to 60 sec
@@ -330,6 +349,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected boolean canRunProxyConnect() {
     return false;
   }
+  
+  protected boolean enableL1Reconnect() {
+    return false;
+  }
 
   public void test() throws Exception {
     if (canRun()) {
@@ -343,7 +366,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       // start proxy after server is up
       if(canRunProxyConnect()) {
         // not support active-passive yet
-        while(!serverControl.isRunning()) {
+        while((serverControl !=null) && !serverControl.isRunning()) {
           try {
             Thread.sleep(500);
           } catch (Exception e) {
