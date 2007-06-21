@@ -38,7 +38,6 @@ public final class Main extends JFrame {
 
 		pack();
 		
-		setResizable(false);
 		setVisible(true);
 	}
 

@@ -29,18 +29,23 @@ public abstract class BaseObject implements IFillStyleConsts {
 	private List listeners;
 
 	public void addListener(IListListener listListener) {
-		if (listeners == null) {
-			listeners = Collections.synchronizedList(new ArrayList());
-		}
-
-		if (!listeners.contains(listListener))
-			listeners.add(listListener);
+			if (listeners == null) {
+				listeners = Collections.synchronizedList(new ArrayList());
+			}
+	
+			if (!listeners.contains(listListener)) {
+				synchronized (listeners) {
+					listeners.add(listListener);
+				}
+			}
 	}
 
 	public void removeListener(IListListener listListener) {
-		if ((listeners != null) && (listeners.contains(listListener))) {
-			listeners.remove(listListener);
-		}
+			if ((listeners != null) && (listeners.contains(listListener))) {
+				synchronized (listeners) {
+					listeners.remove(listListener);
+				}
+			}
 	}
 
 	protected void notifyListeners(Object obj) {
@@ -108,17 +113,10 @@ public abstract class BaseObject implements IFillStyleConsts {
 
 	public void draw(Graphics2D g, boolean showAnchors) {
 		Shape shape = getShape();
-		Rectangle bounds = shape.getBounds();
 		g.setColor(this.background);
 
 		if (FILLSTYLE_SOLID == this.fillstyle) {
 			g.fill(shape);
-		}
-
-		if ((FILLSTYLE_TEXTURED == this.fillstyle)
-				&& (this instanceof ITexturable) && isTextured()
-				&& (bounds.width > 0) && (bounds.height > 0)) {
-			g.drawImage(getTexture(), bounds.x, bounds.y, bounds.width, bounds.height, null);
 		}
 
 		g.setStroke(this.stroke);
@@ -171,6 +169,7 @@ public abstract class BaseObject implements IFillStyleConsts {
 	}
 
 	private byte[] texture = null;
+
 	private transient Image textureImage = null;
 
 	protected void clearTexture() {
@@ -194,8 +193,8 @@ public abstract class BaseObject implements IFillStyleConsts {
 			Image scaledImage = image.getScaledInstance(width, height,
 					Image.SCALE_FAST);
 			oos.writeObject(new ImageIcon(scaledImage));
-			
-			texture 	 = bos.toByteArray();
+
+			texture = bos.toByteArray();
 			textureImage = null;
 		} catch (Exception ex) {
 			throw new InternalError("Unable to convert Image to byte[]");
@@ -204,12 +203,12 @@ public abstract class BaseObject implements IFillStyleConsts {
 
 	protected Image getTexture() {
 		try {
-			if (textureImage == null) {
+			if ((texture != null) && (textureImage == null)) {
 				ByteArrayInputStream bis = new ByteArrayInputStream(texture);
-				ObjectInputStream ois    = new ObjectInputStream(bis);
-				ImageIcon image          = (ImageIcon) ois.readObject();
-				textureImage             = image.getImage(); 
-			} 
+				ObjectInputStream ois = new ObjectInputStream(bis);
+				ImageIcon image = (ImageIcon) ois.readObject();
+				textureImage = image.getImage();
+			}
 			return textureImage;
 		} catch (Exception ex) {
 			throw new InternalError("Unable to convert byte[] to Image");

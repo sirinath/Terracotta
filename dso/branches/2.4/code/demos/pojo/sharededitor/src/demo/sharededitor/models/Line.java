@@ -14,46 +14,55 @@ final class Line extends BaseObject {
 		return shape;
 	}
 
-	private Shape[] anchors = null;
+	private transient Shape[] anchors = null;
 
-	private void makeAnchors() {
-		anchors = new Shape[] {
-				new Ellipse2D.Double(shape.x2 - 5, shape.y2 - 5, 10, 10),
-				new Ellipse2D.Double(shape.x1 - 5, shape.y1 - 5, 10, 10) };
-	}
-
-	protected Shape[] getAnchors() {
+	private Shape[] updateAnchors(boolean flag) {
 		if (anchors == null) {
-			makeAnchors();
+			anchors = new Shape[] {
+					new Ellipse2D.Double(shape.x2 - 5, shape.y2 - 5, 10, 10),
+					new Ellipse2D.Double(shape.x1 - 5, shape.y1 - 5, 10, 10) };
+		} else if (flag) {
+			((Ellipse2D.Double) anchors[0]).x = shape.x2 - 5;
+			((Ellipse2D.Double) anchors[0]).y = shape.y2 - 5;
+			((Ellipse2D.Double) anchors[1]).x = shape.x1 - 5;
+			((Ellipse2D.Double) anchors[1]).y = shape.y1 - 5;
 		}
 		return anchors;
 	}
 
-	public boolean isAt(int x, int y) {
-		return (shape.ptLineDist(x, y) <= 5) || super.isAt(x, y);
+	protected Shape[] getAnchors() {
+		return updateAnchors(false);
 	}
 
-	public synchronized void move(int dx, int dy) {
-		shape.x1 += dx;
-		shape.y1 += dy;
-		shape.x2 += dx;
-		shape.y2 += dy;
-		makeAnchors();
+	public boolean isAt(int x, int y) {
+		return (shape.ptSegDist(x, y) <= 5) || super.isAt(x, y);
+	}
+
+	public void move(int dx, int dy) {
+		synchronized (this) {
+			shape.x1 += dx;
+			shape.y1 += dy;
+			shape.x2 += dx;
+			shape.y2 += dy;
+			updateAnchors(true);
+		}
 		this.notifyListeners(this);
 	}
 
-	public synchronized void resize(int x, int y) {
-		switch (grabbedAnchor()) {
-		case 0:
-			shape.x2 = x;
-			shape.y2 = y;
-			break;
-		case 1:
-			shape.x1 = x;
-			shape.y1 = y;
-			break;
+	public void resize(int x, int y) {
+		synchronized (this) {
+			switch (grabbedAnchor()) {
+			case 0:
+				shape.x2 = x;
+				shape.y2 = y;
+				break;
+			case 1:
+				shape.x1 = x;
+				shape.y1 = y;
+				break;
+			}
+			updateAnchors(true);
 		}
-		makeAnchors();
 		this.notifyListeners(this);
 	}
 

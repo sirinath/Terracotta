@@ -27,9 +27,12 @@ public class Text extends BaseObject implements IFontable, ITexturable {
 		return shape;
 	}
 
-	private Shape[] anchors = new Shape[0];
+	private transient Shape[] anchors = null;
 
 	protected Shape[] getAnchors() {
+		if (anchors == null) {
+			anchors = new Shape[0];
+		}
 		return anchors;
 	}
 
@@ -50,7 +53,7 @@ public class Text extends BaseObject implements IFontable, ITexturable {
 	}
 
 	public synchronized void resize(int x, int y) {
-		// we purposely don't allow the resizing operation for Text objects 
+		// we purposely don't allow the resizing operation for Text objects
 	}
 
 	public synchronized void clearTexture() {

@@ -1,12 +1,20 @@
 /*
-@COPYRIGHT@
-*/
+ @COPYRIGHT@
+ */
 package demo.sharededitor.models;
 
-final class Image
-	extends Square
-{
-   // Nothing to implement here; This is just a signature/marker class for our demos - so the user will
-   // be able to easily identify the Image objects that are currently shared when browsing the shared 
-   // object graphs in the TC Admin console.
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+final class Image extends Square {
+
+	public void draw(Graphics2D g, boolean showAnchors) {
+		Rectangle bounds = getShape().getBounds();
+		java.awt.Image img = (java.awt.Image) getTexture();
+		if (img != null) {
+			g.drawImage(img, bounds.x, bounds.y, bounds.width, bounds.height,
+					null);
+		}
+		super.draw(g, showAnchors);
+	}
 }

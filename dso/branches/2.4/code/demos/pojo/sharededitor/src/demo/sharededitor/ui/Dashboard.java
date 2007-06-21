@@ -26,19 +26,20 @@ import javax.swing.JToolBar;
 
 public final class Dashboard extends JToolBar {
 	private static final long serialVersionUID = -7801767824425098852L;
-	//private static boolean transparentMode = false;
+
 	private Dispatcher dispatcher;
 
 	public Dashboard(Dispatcher dispatcher) {
-		final String IMAGE_PLACEHOLDER = "/images/placeholder.gif";
-		final String IMAGE_SELECTOR = "/images/selector.gif";
-		final String IMAGE_LINE = "/images/line.gif";
-		final String IMAGE_SQUARE = "/images/square.gif";
-		final String IMAGE_FILLEDSQUARE = "/images/filledsquare.gif";
-		final String IMAGE_CIRCLE = "/images/circle.gif";
-		final String IMAGE_FILLEDCIRCLE = "/images/filledcircle.gif";
-		final String IMAGE_TEXT = "/images/text.gif";
-		final String IMAGE_BEDROOM = "/images/bedroom.jpg";
+		final String IMAGES_DIRECTORY = "/images/";
+		final String IMAGE_PLACEHOLDER = IMAGES_DIRECTORY + "placeholder.gif";
+		final String IMAGE_SELECTOR = IMAGES_DIRECTORY + "selector.gif";
+		final String IMAGE_LINE = IMAGES_DIRECTORY + "line.gif";
+		final String IMAGE_SQUARE = IMAGES_DIRECTORY + "square.gif";
+		final String IMAGE_FILLEDSQUARE = IMAGES_DIRECTORY + "filledsquare.gif";
+		final String IMAGE_CIRCLE = IMAGES_DIRECTORY + "circle.gif";
+		final String IMAGE_FILLEDCIRCLE = IMAGES_DIRECTORY + "filledcircle.gif";
+		final String IMAGE_TEXT = IMAGES_DIRECTORY + "text.gif";
+		final String IMAGE_BEDROOM = IMAGES_DIRECTORY + "bedroom.jpg";
 
 		this.dispatcher = dispatcher;
 
@@ -232,7 +233,7 @@ public final class Dashboard extends JToolBar {
 
 	class SetTextureAction extends AbstractAction implements IFillStyleConsts {
 		private static final long serialVersionUID = 1L;
-		//private String name;
+
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser jc = new JFileChooser(FileSystemView
 					.getFileSystemView());

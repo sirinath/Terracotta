@@ -96,6 +96,18 @@
         <autolock>
           <method-expression>* *..*.*(..)</method-expression>
         </autolock>
+        <autolock>
+          <method-expression>* demo.sharededitor.models.ObjectManager.notifyListeners(..)</method-expression>
+          <lock-level>read</lock-level>
+        </autolock>
+        <autolock>
+          <method-expression>* demo.sharededitor.models.ObjectManager.isGrabbed(..)</method-expression>
+          <lock-level>read</lock-level>
+        </autolock>
+        <autolock>
+          <method-expression>* demo.sharededitor.models.ObjectManager.list(..)</method-expression>
+          <lock-level>read</lock-level>
+        </autolock>
       </locks>
       <!--We declare the field 'demo.sharededitor.controls.Dispatcher.objmgr' a root, making it 
            available for all instances of our app that runs via DSO-->

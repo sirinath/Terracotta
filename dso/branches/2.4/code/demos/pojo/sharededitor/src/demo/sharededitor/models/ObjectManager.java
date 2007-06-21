@@ -20,14 +20,14 @@ public class ObjectManager implements IListListener {
 	private transient BaseObject lastGrabbed;
 
 	public ObjectManager() {
-		objList = Collections.synchronizedList(new ArrayList());
+		objList = new ArrayList();
 		init_transients();
 		notifyListener(null);
 	}
 
 	public void init_transients() {
 		listener = null;
-		grabList = Collections.synchronizedList(new ArrayList());
+		grabList = new ArrayList();
 	}
 
 	public void setListener(IListListener listener) {
@@ -41,38 +41,43 @@ public class ObjectManager implements IListListener {
 		}
 	}
 
-	public synchronized void add(BaseObject obj) {
-		synchronized (objList) {
-			if (objList.contains(obj))
-				return;
+	public void add(BaseObject obj) {
+		if (objList.contains(obj))
+			return;
 
-			obj.addListener(this);
+		obj.addListener(this);
+		synchronized (objList) {
 			objList.add(obj);
-			obj.notifyListeners(obj);
-
-			notifyListener(obj);
 		}
+		obj.notifyListeners(obj);
+		notifyListener(obj);
 	}
+	
+	public void remove(BaseObject obj) {
+		if (!objList.contains(obj))
+			return;
 
-	public synchronized void remove(BaseObject obj) {
 		synchronized (objList) {
-			if (!objList.contains(obj))
-				return;
-
 			objList.remove(obj);
-			obj.notifyListeners(obj);
-			obj.removeListener(this);
-
-			notifyListener(obj);
 		}
+		obj.notifyListeners(obj);
+		obj.removeListener(this);
+		notifyListener(obj);
 	}
 
 	public BaseObject[] reversedList() {
-		synchronized (objList) {
-			List list = new ArrayList(objList);
-			Collections.reverse(list);
-			return (BaseObject[]) list.toArray(new BaseObject[0]);
-		}
+		List list = new ArrayList(objList);
+		Collections.reverse(list);
+		return (BaseObject[]) list.toArray(new BaseObject[0]);
+	}
+
+
+	public int objectCount() {
+		return objList.size();
+	}
+	
+	public BaseObject getObject(int index) {
+		return (BaseObject)objList.get(index);
 	}
 
 	public BaseObject[] list() {
@@ -169,10 +174,8 @@ public class ObjectManager implements IListListener {
 	}
 
 	public void deleteSelection() {
-		synchronized (grabList) {
-			Iterator i = grabList.iterator();
-			while (i.hasNext())
-				remove((BaseObject) i.next());
+		for (Iterator i = grabList.iterator(); i.hasNext();) {
+			remove((BaseObject) i.next());
 		}
 	}
 
