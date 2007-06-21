@@ -20,7 +20,7 @@ class Square extends BaseObject implements ITexturable {
 
 	private transient Shape[] anchors = null;
 
-	private Shape[] updateAnchors(boolean flag) {
+	private Shape[] updateAnchors() {
 		if (anchors == null) {
 			anchors = new Shape[] {
 					new Ellipse2D.Double(x1 - 5, y2 - 5, 10, 10),
@@ -42,7 +42,7 @@ class Square extends BaseObject implements ITexturable {
 	}
 
 	protected Shape[] getAnchors() {
-		return updateAnchors(false);
+		return updateAnchors();
 	}
 
 	public void move(int dx, int dy) {
@@ -52,7 +52,7 @@ class Square extends BaseObject implements ITexturable {
 			x2 += dx;
 			y2 += dy;
 			shape.setFrameFromDiagonal(x1, y1, x2, y2);
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}
@@ -78,7 +78,7 @@ class Square extends BaseObject implements ITexturable {
 				break;
 			}
 			shape.setFrameFromDiagonal(x1, y1, x2, y2);
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}
