@@ -71,15 +71,6 @@ public class ObjectManager implements IListListener {
 		return (BaseObject[]) list.toArray(new BaseObject[0]);
 	}
 
-
-	public int objectCount() {
-		return objList.size();
-	}
-	
-	public BaseObject getObject(int index) {
-		return (BaseObject)objList.get(index);
-	}
-
 	public BaseObject[] list() {
 		synchronized (objList) {
 			return (BaseObject[]) objList.toArray(new BaseObject[0]);

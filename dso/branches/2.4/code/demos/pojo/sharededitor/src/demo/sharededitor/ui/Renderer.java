@@ -37,8 +37,9 @@ public final class Renderer extends JComponent implements IListListener {
 			return;
 		}
 
-		for (int i = 0; i < objmgr.objectCount(); i++) {
-			BaseObject obj = objmgr.getObject(i);
+		BaseObject[] objects = objmgr.list();
+		for (int i = 0; i < objects.length; i++) {
+			BaseObject obj = objects[i];
 			obj.draw(g2, objmgr.isGrabbed(obj));
 		}
 
