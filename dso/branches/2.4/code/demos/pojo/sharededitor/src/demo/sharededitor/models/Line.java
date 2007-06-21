@@ -16,22 +16,23 @@ final class Line extends BaseObject {
 
 	private transient Shape[] anchors = null;
 
-	private Shape[] updateAnchors(boolean flag) {
+	private Shape[] updateAnchors() {
 		if (anchors == null) {
 			anchors = new Shape[] {
 					new Ellipse2D.Double(shape.x2 - 5, shape.y2 - 5, 10, 10),
 					new Ellipse2D.Double(shape.x1 - 5, shape.y1 - 5, 10, 10) };
-		} else if (flag) {
-			((Ellipse2D.Double) anchors[0]).x = shape.x2 - 5;
-			((Ellipse2D.Double) anchors[0]).y = shape.y2 - 5;
-			((Ellipse2D.Double) anchors[1]).x = shape.x1 - 5;
-			((Ellipse2D.Double) anchors[1]).y = shape.y1 - 5;
-		}
+			return anchors;
+		} 
+
+		((Ellipse2D.Double) anchors[0]).x = shape.x2 - 5;
+		((Ellipse2D.Double) anchors[0]).y = shape.y2 - 5;
+		((Ellipse2D.Double) anchors[1]).x = shape.x1 - 5;
+		((Ellipse2D.Double) anchors[1]).y = shape.y1 - 5;
 		return anchors;
 	}
 
 	protected Shape[] getAnchors() {
-		return updateAnchors(false);
+		return updateAnchors();
 	}
 
 	public boolean isAt(int x, int y) {
@@ -44,7 +45,7 @@ final class Line extends BaseObject {
 			shape.y1 += dy;
 			shape.x2 += dx;
 			shape.y2 += dy;
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}
@@ -61,7 +62,7 @@ final class Line extends BaseObject {
 				shape.y1 = y;
 				break;
 			}
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}

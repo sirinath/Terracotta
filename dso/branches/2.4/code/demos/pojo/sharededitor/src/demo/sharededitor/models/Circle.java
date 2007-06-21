@@ -18,28 +18,29 @@ final class Circle extends BaseObject implements ITexturable {
 
 	private transient Shape[] anchors = null;
 
-	private Shape[] updateAnchors(boolean flag) {
+	private Shape[] updateAnchors() {
 		if (anchors == null) {
 			anchors = new Shape[] {
 					new Ellipse2D.Double(x1 - 5, y2 - 5, 10, 10),
 					new Ellipse2D.Double(x2 - 5, y2 - 5, 10, 10),
 					new Ellipse2D.Double(x2 - 5, y1 - 5, 10, 10),
 					new Ellipse2D.Double(x1 - 5, y1 - 5, 10, 10) };
-		} else if (flag) {
-			((Ellipse2D.Double) anchors[0]).x = x1 - 5;
-			((Ellipse2D.Double) anchors[0]).y = y2 - 5;
-			((Ellipse2D.Double) anchors[1]).x = x2 - 5;
-			((Ellipse2D.Double) anchors[1]).y = y2 - 5;
-			((Ellipse2D.Double) anchors[2]).x = x2 - 5;
-			((Ellipse2D.Double) anchors[2]).y = y1 - 5;
-			((Ellipse2D.Double) anchors[3]).x = x1 - 5;
-			((Ellipse2D.Double) anchors[3]).y = y1 - 5;
-		}
+			return anchors;
+		} 
+
+		((Ellipse2D.Double) anchors[0]).x = x1 - 5;
+		((Ellipse2D.Double) anchors[0]).y = y2 - 5;
+		((Ellipse2D.Double) anchors[1]).x = x2 - 5;
+		((Ellipse2D.Double) anchors[1]).y = y2 - 5;
+		((Ellipse2D.Double) anchors[2]).x = x2 - 5;
+		((Ellipse2D.Double) anchors[2]).y = y1 - 5;
+		((Ellipse2D.Double) anchors[3]).x = x1 - 5;
+		((Ellipse2D.Double) anchors[3]).y = y1 - 5;
 		return anchors;
 	}
 
 	protected Shape[] getAnchors() {
-		return updateAnchors(false);
+		return updateAnchors();
 	}
 
 	public void move(int dx, int dy) {
@@ -49,7 +50,7 @@ final class Circle extends BaseObject implements ITexturable {
 			x2 += dx;
 			y2 += dy;
 			shape.setFrameFromDiagonal(x1, y1, x2, y2);
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}
@@ -75,7 +76,7 @@ final class Circle extends BaseObject implements ITexturable {
 				break;
 			}
 			shape.setFrameFromDiagonal(x1, y1, x2, y2);
-			updateAnchors(true);
+			updateAnchors();
 		}
 		this.notifyListeners(this);
 	}
