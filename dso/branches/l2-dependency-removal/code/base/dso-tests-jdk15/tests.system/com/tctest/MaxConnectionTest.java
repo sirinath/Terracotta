@@ -51,7 +51,7 @@ public class MaxConnectionTest extends BaseDSOTestCase {
     TestTVSConfigurationSetupManagerFactory factory = createDistributedConfigFactory();
     L2TVSConfigurationSetupManager l2Manager = factory.createL2TVSConfigurationSetupManager(null);
     server = new TCServerImpl(l2Manager, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(MaxConnectionTest.class))), connectionPolicy);
+        .getLogger(TCServerImpl.class))), connectionPolicy);
     server.start();
 
     makeClientUsePort(server.getDSOListenPort());
