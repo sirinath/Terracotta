@@ -2,7 +2,10 @@ package com.tctest.rife.tests;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
 import junit.framework.Test;
 
@@ -136,6 +139,37 @@ public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
 
 	private String getFormContinuationId(WebForm form) {
 		return form.getParameterValue(ReservedParameters.CONTID);
+	}
+	
+	/**
+	 * Do the same counting loop as in the testPause test, but create 2000
+   * continuations instead of just a couple.
+	 */
+	public void testLotsOfAccesses() throws Exception {
+		WebApplicationServer[] servers = new WebApplicationServer[] {server1, server2};
+		WebConversation conversation = new WebConversation();
+		WebResponse response;
+		String count;
+		WebForm form;
+		String cont;
+		List<String> previous_contids = new ArrayList<String>();
+		
+		Random rnd = new Random();
+		
+		int counter = 0;
+		
+		response = servers[rnd.nextInt(2)].ping("/continuations-test/infinitecountingloop", conversation);
+		while (counter < 2000) {
+			count = getCurrentCount(response);
+			assertEquals(String.valueOf(counter), count);		
+			form = getCountForm(response);
+			cont = getFormContinuationId(form);
+			assertFalse(previous_contids.contains(cont));
+			previous_contids.add(cont);
+			
+			counter++;
+			response = servers[rnd.nextInt(2)].ping("/continuations-test/infinitecountingloop?submission=count&" + ReservedParameters.CONTID + "=" + cont, conversation);
+		}
 	}
 
 	/**
