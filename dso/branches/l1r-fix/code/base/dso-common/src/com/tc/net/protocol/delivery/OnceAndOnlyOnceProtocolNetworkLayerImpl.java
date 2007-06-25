@@ -29,6 +29,7 @@ import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Random;
 
 /**
  * NetworkLayer implementation for once and only once message delivery protocol.
@@ -47,6 +48,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   private boolean                         isClosed            = false;
   private final boolean                   isClient;
   private final String                    debugId;
+  private short                           sessionId;
   private static final boolean            debug               = true;
 
   public OnceAndOnlyOnceProtocolNetworkLayerImpl(OOOProtocolMessageFactory messageFactory,
@@ -55,9 +57,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     this.messageFactory = messageFactory;
     this.messageParser = messageParser;
     this.isClient = isClient;
-    // Use BoundedLinkedQueue to prevent outgrow of queue and causing OOME, refer DEV-710
-    this.delivery = new GuaranteedDeliveryProtocol(this, workSink);
+    this.delivery = new GuaranteedDeliveryProtocol(this, workSink, isClient);
     this.delivery.start();
+    this.sessionId = (this.isClient) ? newRandomSessionId() : -1;
     this.debugId = (this.isClient) ? "CLIENT" : "SERVER";
   }
 
@@ -89,20 +91,40 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public void receive(TCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
-    if (msg.isGoodbye()) {
+    if (msg.isSend() || msg.isAck()) {
+      delivery.receive(msg);
+    } else if (msg.isHandshake()) {
+      Assert.inv(!isClient);
+      // send reply
+      delivery.receive(msg);
+    } else if (msg.isHandshakeReply()) {
+      Assert.inv(isClient);
+      finishHandshake(msg);
+    } else if (msg.isGoodbye()) {
       debugLog("Got GoodBye message - shutting down");
       isClosed = true;
       sendLayer.close();
       receiveLayer.close();
       delivery.pause();
       return;
-    } else if (restoringConnection.get() && msg.isAck() && msg.getAckSequence() == -1) {
-      debugLog("The other side restarted - resetting local stack");
-      resetStack();
+    }
+  }
+
+  private void finishHandshake(OOOProtocolMessage msg) {
+    if (msg.getSessionId() == -1) {
+      // the server is [re]started, it assumed our offered session id
+      // we need to clear our state and alert higher level so it can
+      // to its handshake
       receiveLayer.notifyTransportDisconnected(this);
-      this.notifyTransportConnected(this);
-    } else {
+      delivery.pause();
+      delivery.reset();
+      notifyTransportConnected(this);
+    } else if (msg.getSessionId() == getSessionId()) {
+      // this was some network failure, we might have to resend some messages
       delivery.receive(msg);
+    } else {
+      // and ack for a previous session?
+      Assert.inv(false);
     }
   }
 
@@ -134,7 +156,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     Assert.assertNotNull(sendLayer);
     // send goobye message with session-id on it
     OOOProtocolMessage opm = messageFactory.createNewGoodbyeMessage();
-    opm.setSessionId(delivery.getSenderSessionId());
+    opm.setSessionId(getSessionId());
     sendLayer.send(opm);
     sendLayer.close();
   }
@@ -147,7 +169,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     final boolean restoreConnectionMode = restoringConnection.get();
     debugLog("Transport Connected - resuming delivery, restoreConnection = " + restoreConnectionMode);
     this.delivery.resume();
-    if (!restoreConnectionMode) receiveLayer.notifyTransportConnected(this);
+    if (!restoreConnectionMode) {
+      receiveLayer.notifyTransportConnected(this);
+    }
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
@@ -185,10 +209,19 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
    * Protocol Message Delivery interface
    */
 
-  public OOOProtocolMessage createAckRequestMessage(short sessionId) {
-    OOOProtocolMessage rv = this.messageFactory.createNewAckRequestMessage();
-    rv.setSessionId(sessionId);
+  public OOOProtocolMessage createHandshakeMessage() {
+    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeMessage();
+    rv.setSessionId(getSessionId());
     return rv;
+  }
+  public OOOProtocolMessage createHandshakeReplyMessage(long sequence) {
+    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeReplyMessage(sequence);
+    rv.setSessionId(getSessionId());
+    return rv;
+  }
+
+  private short getSessionId() {
+    return sessionId;
   }
 
   public OOOProtocolMessage createAckMessage(long sequence) {
@@ -209,9 +242,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     this.receiveLayer.receive(msg.getPayload());
   }
 
-  public OOOProtocolMessage createProtocolMessage(long sequence, short sessionId, final TCNetworkMessage msg) {
+  public OOOProtocolMessage createProtocolMessage(long sequence, final TCNetworkMessage msg) {
     OOOProtocolMessage rv = messageFactory.createNewSendMessage(sequence, msg);
-    rv.setSessionId(sessionId);
+    rv.setSessionId(getSessionId());
 
     final Runnable callback = msg.getSentCallback();
     if (callback != null) {
@@ -272,4 +305,12 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public boolean isClosed() {
     return isClosed;
   }
+
+  private short newRandomSessionId() {
+    // generate a random session id
+    Random r = new Random();
+    r.setSeed(System.currentTimeMillis());
+    return ((short) r.nextInt(Short.MAX_VALUE));
+  }
+
 }

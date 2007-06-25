@@ -12,46 +12,46 @@ import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
-import com.tc.util.TCAssertionError;
 
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Random;
 
 /**
  * 
  */
 public class SendStateMachine extends AbstractStateMachine {
-  private static final int                 MAX_SEND_QUEUE_SIZE = 1000;
-  private final State                      ACK_REQUEST_STATE   = new AckRequestState();
-  private final State                      ACK_WAIT_STATE      = new AckWaitState();
-  private final State                      HANDSHAKE_STATE     = new HandshakeState();
-  private final State                      MESSAGE_WAIT_STATE  = new MessageWaitState();
-  private final SynchronizedLong           sent                = new SynchronizedLong(-1);
-  private final SynchronizedLong           acked               = new SynchronizedLong(-1);
+  private static final int                 MAX_SEND_QUEUE_SIZE  = 1000;
+  private final State                      HANDSHAKE_STATE      = new HandshakeState();
+  private final State                      ACK_WAIT_STATE       = new AckWaitState();
+  private final State                      HANDSHAKE_WAIT_STATE = new HandshakeWaitState();
+  private final State                      MESSAGE_WAIT_STATE   = new MessageWaitState();
+  private final SynchronizedLong           sent                 = new SynchronizedLong(-1);
+  private final SynchronizedLong           acked                = new SynchronizedLong(-1);
   private final OOOProtocolMessageDelivery delivery;
   private BoundedLinkedQueue               sendQueue;
-  private final LinkedList                 outstandingMsgs     = new LinkedList();
-  private final SynchronizedInt            outstandingCnt      = new SynchronizedInt(0);
+  private final LinkedList                 outstandingMsgs      = new LinkedList();
+  private final SynchronizedInt            outstandingCnt       = new SynchronizedInt(0);
   private final int                        sendWindow;
-  private String                           debugId             = "UNKNOWN";
-  private static final boolean             debug               = true;
+  private final boolean                    isClient;
+  private final String                     debugId;
+  private static final boolean             debug                = true;
 
   // changed by tc.properties
 
-  public SendStateMachine(OOOProtocolMessageDelivery delivery) {
+  public SendStateMachine(OOOProtocolMessageDelivery delivery, boolean isClient) {
     super();
 
     // set sendWindow from tc.properties if exist. 0 to disable window send.
     sendWindow = TCPropertiesImpl.getProperties().getInt("l2.nha.ooo.sendWindow", 32);
     this.delivery = delivery;
     this.sendQueue = new BoundedLinkedQueue(MAX_SEND_QUEUE_SIZE);
-
-    setSessionId(newRandomSessionId());
+    this.isClient = isClient;
+    this.debugId = (isClient) ? "CLIENT" : "SERVER";
   }
 
   protected void basicResume() {
-    switchToState(ACK_REQUEST_STATE);
+    if (isClient) switchToState(HANDSHAKE_STATE);
+    else switchToState(MESSAGE_WAIT_STATE);
   }
 
   protected State initialState() {
@@ -74,43 +74,40 @@ public class SendStateMachine extends AbstractStateMachine {
       if (!sendQueue.isEmpty()) {
         Assert.eval(protocolMessage == null);
         if ((sendWindow == 0) || (outstandingCnt.get() < sendWindow)) {
-          sendMessage(createProtocolMessage(sent.increment()));
+          delivery.sendMessage(createProtocolMessage(sent.increment()));
         }
         switchToState(ACK_WAIT_STATE);
       }
     }
   }
 
-  private class AckRequestState extends AbstractState {
+  private class HandshakeState extends AbstractState {
     public void enter() {
-      debugLog("Sending AckRequest");
-      sendAckRequest();
-      switchToState(HANDSHAKE_STATE);
+      debugLog("Sending Handshake");
+      sendHandshake();
+      switchToState(HANDSHAKE_WAIT_STATE);
     }
   }
 
-  private class HandshakeState extends AbstractState {
+  private class HandshakeWaitState extends AbstractState {
 
-    public void execute(OOOProtocolMessage protocolMessage) {
+    public void execute(OOOProtocolMessage msg) {
       // expecting an ack to do hand shake
-      if (protocolMessage == null) return;
-      if (protocolMessage.isSend()) return;
-      // accept only matched sessionId
-      if (!matchSessionId(protocolMessage)) {
-        debugLog("Unmatched session-id unmatched ack expect=" + getSessionId() + ", actual="
-                 + protocolMessage.getSessionId());
+      if (msg == null || !msg.isHandshakeReply()) {
+        debugLog("NOT HandshakeReply message - dropping!");
         return;
       }
-      long ackedSeq = protocolMessage.getAckSequence();
+
+      long ackedSeq = msg.getAckSequence();
 
       if (ackedSeq == -1) {
-        debugLog("The other side restarted [switching to MSG_WAIT_STATE]: localSessionId = " + getSessionId() + ", remoteSessionId=" + protocolMessage.getSessionId());
+        debugLog("The other side restarted [switching to MSG_WAIT_STATE]");
+        reset();
         switchToState(MESSAGE_WAIT_STATE);
         return;
       }
       if (ackedSeq < acked.get()) {
         // this shall not, old ack
-        throw new TCAssertionError("Wrong ack " + ackedSeq + " received! Expected >= " + acked.get());
       } else {
         while (ackedSeq > acked.get()) {
           acked.increment();
@@ -138,13 +135,6 @@ public class SendStateMachine extends AbstractStateMachine {
     public void execute(OOOProtocolMessage protocolMessage) {
       if (protocolMessage == null || protocolMessage.isSend()) return;
 
-      // accept only matched sessionId
-      if (!matchSessionId(protocolMessage)) {
-        // System.err.println("XXX sender received unmatched ack expect "+ getSessionId() + " but got
-        // "+protocolMessage.getSessionId() );
-        return;
-      }
-
       long ackedSeq = protocolMessage.getAckSequence();
       Assert.eval(ackedSeq >= acked.get());
 
@@ -166,22 +156,18 @@ public class SendStateMachine extends AbstractStateMachine {
 
     public void sendMoreIfAvailable() {
       while ((outstandingCnt.get() < sendWindow) && !sendQueue.isEmpty()) {
-        sendMessage(createProtocolMessage(sent.increment()));
+        delivery.sendMessage(createProtocolMessage(sent.increment()));
       }
     }
   }
 
-  private void sendAckRequest() {
-    OOOProtocolMessage opm = delivery.createAckRequestMessage(getSessionId());
-    sendMessage(opm);
-  }
-
-  private void sendMessage(OOOProtocolMessage protocolMessage) {
-    delivery.sendMessage(protocolMessage);
+  private void sendHandshake() {
+    OOOProtocolMessage opm = delivery.createHandshakeMessage();
+    delivery.sendMessage(opm);
   }
 
   private OOOProtocolMessage createProtocolMessage(long count) {
-    final OOOProtocolMessage opm = delivery.createProtocolMessage(count, getSessionId(), dequeue(sendQueue));
+    final OOOProtocolMessage opm = delivery.createProtocolMessage(count, dequeue(sendQueue));
     Assert.eval(opm != null);
     outstandingCnt.increment();
     outstandingMsgs.add(opm);
@@ -203,8 +189,6 @@ public class SendStateMachine extends AbstractStateMachine {
   }
 
   public void reset() {
-    // have a new sessionId to drop all old messages
-    setSessionId(newRandomSessionId());
 
     sent.set(-1);
     acked.set(-1);
@@ -230,19 +214,8 @@ public class SendStateMachine extends AbstractStateMachine {
     }
   }
 
-  private short newRandomSessionId() {
-    // generate a random session id
-    Random r = new Random();
-    r.setSeed(System.currentTimeMillis());
-    return ((short) r.nextInt(0x0000fff0));
-  }
-
   public void put(TCNetworkMessage message) throws InterruptedException {
     sendQueue.put(message);
-  }
-
-  public void setDebugId(String debugId) {
-    this.debugId = debugId;
   }
 
   private void debugLog(String msg) {

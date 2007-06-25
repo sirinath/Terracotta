@@ -13,28 +13,29 @@ import com.tc.net.protocol.TCProtocolException;
  */
 class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
 
-  private static final short TYPE_ACK_REQUEST = 1;
-  private static final short TYPE_ACK         = 2;
-  private static final short TYPE_SEND        = 3;
-  private static final short TYPE_GOODBYE     = 4;
+  private static final short TYPE_HANDSHAKE       = 1;
+  private static final short TYPE_HANDSHAKE_REPLY = 2;
+  private static final short TYPE_ACK             = 3;
+  private static final short TYPE_SEND            = 4;
+  private static final short TYPE_GOODBYE         = 5;
 
-  private static final short VERSION          = 1;
+  private static final short VERSION              = 1;
 
-  private static final int   MAGIC_NUM        = 0xBBBBBBBB;
-  private static final int   MAGIC_NUM_OFFSET = 0;
-  private static final int   MAGIC_NUM_LENGTH = 4;
+  private static final int   MAGIC_NUM            = 0xBBBBBBBB;
+  private static final int   MAGIC_NUM_OFFSET     = 0;
+  private static final int   MAGIC_NUM_LENGTH     = 4;
 
-  private static final int   VERSION_OFFSET   = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
-  private static final int   VERSION_LENGTH   = 1;
+  private static final int   VERSION_OFFSET       = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
+  private static final int   VERSION_LENGTH       = 1;
 
-  private static final int   TYPE_OFFSET      = VERSION_OFFSET + VERSION_LENGTH;
-  private static final int   TYPE_LENGTH      = 1;
+  private static final int   TYPE_OFFSET          = VERSION_OFFSET + VERSION_LENGTH;
+  private static final int   TYPE_LENGTH          = 1;
 
-  private static final int   SEQUENCE_OFFSET  = TYPE_OFFSET + TYPE_LENGTH;
-  private static final int   SEQUENCE_LENGTH  = 8;
-  
-  private static final int   SESSION_OFFSET  = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
-  private static final int   SESSION_LENGTH  = 2;
+  private static final int   SEQUENCE_OFFSET      = TYPE_OFFSET + TYPE_LENGTH;
+  private static final int   SEQUENCE_LENGTH      = 8;
+
+  private static final int   SESSION_OFFSET       = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+  private static final int   SESSION_LENGTH       = 2;
 
   static final int           HEADER_LENGTH;
 
@@ -84,7 +85,7 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     if (!isValidType(type)) { throw new TCProtocolException("Unknown message type: " + type); }
 
     final boolean ack = isAck();
-    final boolean ackReq = isAckRequest();
+    final boolean ackReq = isHandshake();
     final boolean send = isSend();
 
     if (ack && (ackReq || send)) { throw new TCProtocolException("Invalid type, ack= " + ack + ", ackRe=" + ackReq
@@ -106,7 +107,7 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     buf.append("type: ");
     if (isAck()) {
       buf.append("ACK ").append(getSequence());
-    } else if (isAckRequest()) {
+    } else if (isHandshake()) {
       buf.append("ACK REQ");
     } else if (isSend()) {
       buf.append("SEND " + getSequence());
@@ -132,23 +133,28 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
   }
 
   private boolean isValidType(short type) {
-    return type == TYPE_SEND || type == TYPE_ACK_REQUEST || type == TYPE_ACK || type == TYPE_GOODBYE;
+    return type == TYPE_SEND || type == TYPE_HANDSHAKE || type == TYPE_HANDSHAKE_REPLY || type == TYPE_ACK
+           || type == TYPE_GOODBYE;
   }
 
   long getSequence() {
     return data.getLong(SEQUENCE_OFFSET);
   }
-  
+
   short getSession() {
     return data.getShort(SESSION_OFFSET);
   }
-  
+
   void setSession(short id) {
     data.putShort(SESSION_OFFSET, id);
   }
 
-  boolean isAckRequest() {
-    return getType() == TYPE_ACK_REQUEST;
+  boolean isHandshake() {
+    return getType() == TYPE_HANDSHAKE;
+  }
+
+  boolean isHandshakeReply() {
+    return getType() == TYPE_HANDSHAKE_REPLY;
   }
 
   boolean isAck() {
@@ -168,8 +174,12 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     /**
      * Use to create new headers for sending ack request messages.
      */
-    OOOProtocolMessageHeader createNewAckRequest() {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_ACK_REQUEST, 0);
+    OOOProtocolMessageHeader createNewHandshake() {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE, 0);
+    }
+
+    OOOProtocolMessageHeader createNewHandshakeReply(long sequence) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE_REPLY, sequence);
     }
 
     /**

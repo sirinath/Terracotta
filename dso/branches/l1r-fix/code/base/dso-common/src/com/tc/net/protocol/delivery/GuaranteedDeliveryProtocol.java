@@ -6,6 +6,7 @@ package com.tc.net.protocol.delivery;
 
 import com.tc.async.api.Sink;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.util.Assert;
 
 /**
  * This implements an asynchronous Once and only once protocol. Sent messages go out on the sent queue received messages
@@ -17,8 +18,8 @@ class GuaranteedDeliveryProtocol {
   private final SendStateMachine    sender;
   private final ReceiveStateMachine receiver;
 
-  public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink workSink) {
-    this.sender = new SendStateMachine(delivery);
+  public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink workSink, boolean isClient) {
+    this.sender = new SendStateMachine(delivery, isClient);
     this.send = new StateMachineRunner(sender, workSink);
     this.receiver = new ReceiveStateMachine(delivery);
     this.receive = new StateMachineRunner(receiver, workSink);
@@ -34,12 +35,12 @@ class GuaranteedDeliveryProtocol {
   }
 
   public void receive(OOOProtocolMessage protocolMessage) {
-    if (protocolMessage.isSend() || protocolMessage.isAckRequest()) {
+    if (protocolMessage.isSend() || protocolMessage.isHandshake()) {
       receive.addEvent(new OOOProtocolEvent(protocolMessage));
     } else if (protocolMessage.isAck()) {
       send.addEvent(new OOOProtocolEvent(protocolMessage));
     } else {
-      throw new AssertionError();
+      Assert.inv(false);
     }
   }
 
@@ -63,16 +64,7 @@ class GuaranteedDeliveryProtocol {
     receive.reset();
   }
 
-  public short getSenderSessionId() {
-    return (send.getSessionId());
-  }
-
-  public short getReceiverSessionId() {
-    return (receive.getSessionId());
-  }
-
   public void setDebugId(String debugId) {
-    sender.setDebugId(debugId);
     receiver.setDebugId(debugId);
   }
 }

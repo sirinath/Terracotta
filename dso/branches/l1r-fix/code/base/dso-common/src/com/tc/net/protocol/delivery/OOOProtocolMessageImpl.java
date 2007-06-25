@@ -45,19 +45,23 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
   public long getSent() {
     return getOOOPHeader().getSequence();
   }
-  
+
   public short getSessionId() {
-    OOOProtocolMessageHeader header = (OOOProtocolMessageHeader)getHeader();
+    OOOProtocolMessageHeader header = (OOOProtocolMessageHeader) getHeader();
     return (header.getSession());
   }
-  
+
   public void setSessionId(short id) {
-    OOOProtocolMessageHeader header = (OOOProtocolMessageHeader)getHeader();
+    OOOProtocolMessageHeader header = (OOOProtocolMessageHeader) getHeader();
     header.setSession(id);
   }
-  
-  public boolean isAckRequest() {
-    return getOOOPHeader().isAckRequest();
+
+  public boolean isHandshake() {
+    return getOOOPHeader().isHandshake();
+  }
+
+  public boolean isHandshakeReply() {
+    return getOOOPHeader().isHandshakeReply();
   }
 
   public boolean isSend() {
@@ -79,7 +83,7 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
   public void reallyDoRecycleOnWrite() {
     getOOOPHeader().recycle();
     AbstractTCNetworkMessage messagePayLoad = (AbstractTCNetworkMessage) getMessagePayload();
-    if(messagePayLoad != null) {
+    if (messagePayLoad != null) {
       messagePayLoad.doRecycleOnWrite();
     }
   }
@@ -128,8 +132,8 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
       this.headerFactory = headerFactory;
     }
 
-    public OOOProtocolMessage createNewAckRequestMessage() {
-      return new OOOProtocolMessageImpl(headerFactory.createNewAckRequest());
+    public OOOProtocolMessage createNewHandshakeMessage() {
+      return new OOOProtocolMessageImpl(headerFactory.createNewHandshake());
     }
 
     public OOOProtocolMessage createNewAckMessage(long sequence) {
@@ -146,6 +150,10 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
 
     public OOOProtocolMessage createNewGoodbyeMessage() {
       return new OOOProtocolMessageImpl(headerFactory.createNewGoodbye());
+    }
+
+    public OOOProtocolMessage createNewHandshakeReplyMessage(long sequence) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewHandshakeReply(sequence));
     }
   }
 

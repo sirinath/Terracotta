@@ -18,7 +18,8 @@ import junit.framework.TestCase;
 public class SendStateMachineTest extends TestCase {
   public void tests() throws Exception {
     TestProtocolMessageDelivery delivery = new TestProtocolMessageDelivery(new LinkedQueue());
-    SendStateMachine ssm = new SendStateMachine(delivery);
+    final short sessionId = 134;
+    SendStateMachine ssm = new SendStateMachine(delivery, true);
     ssm.start();
     ssm.resume();
 
@@ -26,11 +27,11 @@ public class SendStateMachineTest extends TestCase {
     // compelete hand shake, receive ack=-1 from receiver
     TestProtocolMessage msg = new TestProtocolMessage(null, 0, -1);
     msg.isAck = true;
-    msg.setSessionId(ssm.getSessionId());
+    msg.setSessionId(sessionId);
     ssm.execute(msg);
 
     TestProtocolMessage tpm = new TestProtocolMessage(null, -1, -1);
-    tpm.setSessionId(ssm.getSessionId());
+    tpm.setSessionId(sessionId);
     tpm.isSend = true;
 
     // SEND

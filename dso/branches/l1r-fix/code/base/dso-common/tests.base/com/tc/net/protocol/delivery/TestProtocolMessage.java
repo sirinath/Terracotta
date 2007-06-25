@@ -17,11 +17,12 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public TCNetworkMessage msg;
   public long             sent;
   public long             ack;
-  public boolean          isAckRequest = false;
-  public boolean          isSend       = false;
-  public boolean          isAck        = false;
-  private boolean         isGoodbye    = false;
-  public short            sessionId    = 0;
+  public boolean          isHandshake      = false;
+  public boolean          isHandshakeReply = false;
+  public boolean          isSend           = false;
+  public boolean          isAck            = false;
+  private boolean         isGoodbye        = false;
+  public short            sessionId        = 0;
 
   public TestProtocolMessage(TCNetworkMessage msg, long sent, long ack) {
     this.msg = msg;
@@ -41,8 +42,12 @@ public class TestProtocolMessage implements OOOProtocolMessage {
     return sent;
   }
 
-  public boolean isAckRequest() {
-    return isAckRequest;
+  public boolean isHandshake() {
+    return isHandshake;
+  }
+
+  public boolean isHandshakeReply() {
+    return isHandshakeReply;
   }
 
   public boolean isSend() {
@@ -52,15 +57,14 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public boolean isAck() {
     return isAck;
   }
-  
+
   public short getSessionId() {
-    return(sessionId);
+    return (sessionId);
   }
-  
+
   public void setSessionId(short id) {
     sessionId = id;
-   }
-
+  }
 
   /*********************************************************************************************************************
    * TCNetworkMessage stuff
@@ -125,5 +129,4 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public void reallyDoRecycleOnWrite() {
     //
   }
-
 }

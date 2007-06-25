@@ -13,22 +13,8 @@ public abstract class AbstractStateMachine {
   private State              current;
   private boolean            started   = false;
   private boolean            paused    = true;
-  private StateMachineRunner runner;
-  private short              sessionId = (short) 0xffff;
-
+  
   public abstract void execute(OOOProtocolMessage msg);
-
-  public void setSessionId(short id) {
-    sessionId = id;
-  }
-
-  public short getSessionId() {
-    return (sessionId);
-  }
-
-  public boolean matchSessionId(OOOProtocolMessage opm) {
-    return (opm.getSessionId() == getSessionId());
-  }
 
   public final synchronized boolean isStarted() {
     return started;
@@ -45,14 +31,6 @@ public abstract class AbstractStateMachine {
     Assert.eval("started: " + started + ", paused: " + paused, started && !paused);
     basicPause();
     this.paused = true;
-  }
-
-  public void setRunner(StateMachineRunner runner) {
-    this.runner = runner;
-  }
-
-  public StateMachineRunner getRunner() {
-    return (runner);
   }
 
   protected void basicPause() {
