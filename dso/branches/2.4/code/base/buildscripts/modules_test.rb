@@ -871,7 +871,6 @@ END
     # succeeds); we write it out so that we can make sure we catch the case where the test never
     # completes.
     def create_did_not_run_file(class_name, target_file)
-      puts "DID NOT RUN FILE: #{target_file.to_s}"
         File.open(target_file.to_s, "w") do |file|
             file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             file << "<testsuite errors=\"0\" failures=\"1\" name=\"%s\" tests=\"0\" time=\"0.000\">\n" % class_name.xml_escape(true)

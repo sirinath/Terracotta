@@ -799,7 +799,7 @@ END
         if testrun_record.failed?
           puts "     Tests FAILED. See results above."
         elsif testrun_record.total_suites == 0
-          loud_message "Test not found."
+          loud_message "No tests ran."
         else
           puts "     Tests passed."
         end
