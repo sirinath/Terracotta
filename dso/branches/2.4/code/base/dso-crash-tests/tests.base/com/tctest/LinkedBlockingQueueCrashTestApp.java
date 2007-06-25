@@ -3,12 +3,15 @@
  */
 package com.tctest;
 
+import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.concurrent.CyclicBarrier;
@@ -33,10 +36,12 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
 
   public void run() {
     try {
+      DebugUtil.DEBUG = true;
       int index = barrier.await();
 
       testBlockingQueue(index);
       
+      DebugUtil.DEBUG = false;
     } catch (Throwable t) {
       notifyError(t);
     }
@@ -174,8 +179,14 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
   
   private EventNode doPass() throws Exception {
     EventNode node;
-    synchronized(lbqueue1) {
-      node = lbqueue1.take();
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " doPass -- queue size: " + lbqueue1.size());
+    }
+    node = lbqueue1.take();
+    if (DebugUtil.DEBUG) {
+      if (node instanceof Manageable) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " passing id: " + node.getId() + " objectID: " + ((Manageable)node).__tc_managed().getObjectID());
+      }
     }
     lbqueue2.put(node);
     return(node);
