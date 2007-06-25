@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+  All content copyright (c) 2003-2006 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved
+
+-->
+
+<!-- This is the default configuration file that gets used when you run the
+	 server directly from BitKeeper. You shouldn't edit it unless you want to 
+	 modify that (and only that) circumstance.
+-->
+
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  
+  <clients>
+    <modules>
+      <module name="clustered-wicket-1.3" version="1.0.0"/>
+    </modules>
+  </clients>
+
+	<application>
+		<dso>
+			<!--
+			  -  this config file is just intended to add the required classes
+			  -  to the bootjar for running the tests
+			  -->
+			  <additional-boot-jar-classes>
+			    <include>java.util.Locale</include>
+			    <include>java.awt.Font</include>
+			    <include>java.awt.font.TextAttribute</include>
+			    <include>java.awt.font.TransformAttribute</include>
+			    <include>java.awt.geom.AffineTransform</include>
+			
+			    <include>java.net.URL</include>
+			    <include>java.net.URLStreamHandler</include>
+			    <include>java.net.InetAddress</include>
+			    <include>java.net.Inet4Address</include>
+			    <include>sun.net.www.protocol.http.Handler</include>
+			
+			    <include>java.text.Format</include>
+			    <include>java.text.DateFormat</include>
+			    <include>java.text.SimpleDateFormat</include>
+			    <include>java.text.DateFormatSymbols</include>
+			    <include>java.text.NumberFormat</include>
+			    <include>java.text.DecimalFormat</include>
+			    <include>java.text.DecimalFormatSymbols</include>
+			    
+			    <include>java.util.Calendar</include>
+			    <include>java.util.GregorianCalendar</include>
+			    <include>sun.util.calendar.CalendarDate</include>
+			    <include>sun.util.calendar.Gregorian</include>
+			    <include>sun.util.calendar.Gregorian$Date</include>
+			    <include>sun.util.calendar.BaseCalendar</include>
+			    <include>sun.util.calendar.BaseCalendar$Date</include>
+			    <include>sun.util.calendar.AbstractCalendar</include>
+			    <include>sun.util.calendar.CalendarSystem</include>
+			    <include>sun.util.calendar.ZoneInfo</include>
+			
+			    <include>java.lang.AbstractStringBuilder</include>
+			    <include>java.lang.StringBuffer</include>
+			
+			    <include>java.util.Currency</include>
+			    
+			    <include>java.util.TimeZone</include>
+			    <include>java.util.SimpleTimeZone</include>
+			    <include>java.text.DigitList</include>
+			    <include>java.text.AttributedCharacterIterator$Attribute</include>
+			  </additional-boot-jar-classes>
+			<instrumented-classes/>
+		</dso>
+	</application>
+	
+</tc:tc-config>
