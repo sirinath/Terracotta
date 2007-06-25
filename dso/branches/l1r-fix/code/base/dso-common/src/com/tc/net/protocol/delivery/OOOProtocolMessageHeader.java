@@ -13,31 +13,31 @@ import com.tc.net.protocol.TCProtocolException;
  */
 class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
 
-  private static final short TYPE_HANDSHAKE       = 1;
-  private static final short TYPE_HANDSHAKE_REPLY = 2;
-  private static final short TYPE_ACK             = 3;
-  private static final short TYPE_SEND            = 4;
-  private static final short TYPE_GOODBYE         = 5;
+  public static final short TYPE_HANDSHAKE       = 1;
+  public static final short TYPE_HANDSHAKE_REPLY = 2;
+  public static final short TYPE_ACK             = 3;
+  public static final short TYPE_SEND            = 4;
+  public static final short TYPE_GOODBYE         = 5;
 
-  private static final short VERSION              = 1;
+  public static final short VERSION              = 1;
 
-  private static final int   MAGIC_NUM            = 0xBBBBBBBB;
-  private static final int   MAGIC_NUM_OFFSET     = 0;
-  private static final int   MAGIC_NUM_LENGTH     = 4;
+  private static final int  MAGIC_NUM            = 0xBBBBBBBB;
+  private static final int  MAGIC_NUM_OFFSET     = 0;
+  private static final int  MAGIC_NUM_LENGTH     = 4;
 
-  private static final int   VERSION_OFFSET       = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
-  private static final int   VERSION_LENGTH       = 1;
+  private static final int  VERSION_OFFSET       = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
+  private static final int  VERSION_LENGTH       = 1;
 
-  private static final int   TYPE_OFFSET          = VERSION_OFFSET + VERSION_LENGTH;
-  private static final int   TYPE_LENGTH          = 1;
+  private static final int  TYPE_OFFSET          = VERSION_OFFSET + VERSION_LENGTH;
+  private static final int  TYPE_LENGTH          = 1;
 
-  private static final int   SEQUENCE_OFFSET      = TYPE_OFFSET + TYPE_LENGTH;
-  private static final int   SEQUENCE_LENGTH      = 8;
+  private static final int  SEQUENCE_OFFSET      = TYPE_OFFSET + TYPE_LENGTH;
+  private static final int  SEQUENCE_LENGTH      = 8;
 
-  private static final int   SESSION_OFFSET       = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
-  private static final int   SESSION_LENGTH       = 2;
+  private static final int  SESSION_OFFSET       = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+  private static final int  SESSION_LENGTH       = 2;
 
-  static final int           HEADER_LENGTH;
+  static final int          HEADER_LENGTH;
 
   static {
     int tmp = MAGIC_NUM_LENGTH + VERSION_LENGTH + TYPE_LENGTH + SEQUENCE_LENGTH + SESSION_LENGTH;
@@ -45,7 +45,7 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     HEADER_LENGTH = (tmp + 3) / 4 * 4;
   }
 
-  private OOOProtocolMessageHeader(short version, short type, long sequence, short sessionId) {
+  OOOProtocolMessageHeader(short version, short type, long sequence, short sessionId) {
     super(HEADER_LENGTH, HEADER_LENGTH);
     putValues(version, type, sequence, sessionId);
     try {
@@ -55,7 +55,7 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     }
   }
 
-  private OOOProtocolMessageHeader(TCByteBuffer buffer) {
+  OOOProtocolMessageHeader(TCByteBuffer buffer) {
     super(buffer, HEADER_LENGTH, HEADER_LENGTH);
   }
 
@@ -166,43 +166,4 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     return getType() == TYPE_GOODBYE;
   }
 
-  static class ProtocolMessageHeaderFactory {
-
-    /**
-     * Use to create new headers for sending ack request messages.
-     * @param ack 
-     */
-    OOOProtocolMessageHeader createNewHandshake(short sessionId, long ack) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE, ack, sessionId);
-    }
-
-    OOOProtocolMessageHeader createNewHandshakeReply(short sessionId, long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE_REPLY, sequence, sessionId);
-    }
-
-    /**
-     * Use to create new headers for sending ack messages.
-     */
-    OOOProtocolMessageHeader createNewAck(short sessionId, long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_ACK, sequence, sessionId);
-    }
-
-    /**
-     * Use to create new headers for sending wrapped messages.
-     */
-    OOOProtocolMessageHeader createNewSend(short sessionId, long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_SEND, sequence, sessionId);
-    }
-
-    /**
-     * Use with buffers read off of the network.
-     */
-    OOOProtocolMessageHeader createNewHeader(TCByteBuffer buffer) {
-      return new OOOProtocolMessageHeader(buffer.duplicate().limit(OOOProtocolMessageHeader.HEADER_LENGTH));
-    }
-
-    public OOOProtocolMessageHeader createNewGoodbye(short sessionId) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_GOODBYE, 0, sessionId);
-    }
-  }
 }
