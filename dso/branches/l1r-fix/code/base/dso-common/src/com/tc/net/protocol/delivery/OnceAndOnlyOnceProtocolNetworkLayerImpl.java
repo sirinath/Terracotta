@@ -155,8 +155,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void close() {
     Assert.assertNotNull(sendLayer);
     // send goobye message with session-id on it
-    OOOProtocolMessage opm = messageFactory.createNewGoodbyeMessage();
-    opm.setSessionId(getSessionId());
+    OOOProtocolMessage opm = messageFactory.createNewGoodbyeMessage(getSessionId());
     sendLayer.send(opm);
     sendLayer.close();
   }
@@ -210,13 +209,15 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
    */
 
   public OOOProtocolMessage createHandshakeMessage() {
-    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeMessage();
-    rv.setSessionId(getSessionId());
+    // FIXME: need to use correct ack
+    long ack = -555;
+    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeMessage(getSessionId(), ack);
     return rv;
   }
-  public OOOProtocolMessage createHandshakeReplyMessage(long sequence) {
-    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeReplyMessage(sequence);
-    rv.setSessionId(getSessionId());
+
+  public OOOProtocolMessage createHandshakeReplyMessage(long ack) {
+    // FIXME: need to use correct ack
+    OOOProtocolMessage rv = this.messageFactory.createNewHandshakeReplyMessage(getSessionId(), ack);
     return rv;
   }
 
@@ -224,8 +225,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     return sessionId;
   }
 
-  public OOOProtocolMessage createAckMessage(long sequence) {
-    return (this.messageFactory.createNewAckMessage(sequence));
+  public OOOProtocolMessage createAckMessage(long ack) {
+    return (this.messageFactory.createNewAckMessage(getSessionId(), ack));
   }
 
   public void sendMessage(OOOProtocolMessage msg) {
@@ -243,9 +244,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   }
 
   public OOOProtocolMessage createProtocolMessage(long sequence, final TCNetworkMessage msg) {
-    OOOProtocolMessage rv = messageFactory.createNewSendMessage(sequence, msg);
-    rv.setSessionId(getSessionId());
-
+    OOOProtocolMessage rv = messageFactory.createNewSendMessage(getSessionId(), sequence, msg);
     final Runnable callback = msg.getSentCallback();
     if (callback != null) {
       rv.setSentCallback(new Runnable() {

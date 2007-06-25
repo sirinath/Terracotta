@@ -45,9 +45,9 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     HEADER_LENGTH = (tmp + 3) / 4 * 4;
   }
 
-  private OOOProtocolMessageHeader(short version, short type, long sequence) {
+  private OOOProtocolMessageHeader(short version, short type, long sequence, short sessionId) {
     super(HEADER_LENGTH, HEADER_LENGTH);
-    putValues(version, type, sequence);
+    putValues(version, type, sequence, sessionId);
     try {
       validate();
     } catch (TCProtocolException e) {
@@ -63,11 +63,12 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     return HEADER_LENGTH;
   }
 
-  private void putValues(short version, short type, long sequence) {
+  private void putValues(short version, short type, long sequence, short sessionId) {
     data.putInt(MAGIC_NUM_OFFSET, MAGIC_NUM);
     data.putUbyte(VERSION_OFFSET, version);
     data.putUbyte(TYPE_OFFSET, type);
     data.putLong(SEQUENCE_OFFSET, sequence);
+    data.putShort(SESSION_OFFSET, sessionId);
   }
 
   protected void setHeaderLength(short headerLength) {
@@ -145,10 +146,6 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     return data.getShort(SESSION_OFFSET);
   }
 
-  void setSession(short id) {
-    data.putShort(SESSION_OFFSET, id);
-  }
-
   boolean isHandshake() {
     return getType() == TYPE_HANDSHAKE;
   }
@@ -173,27 +170,28 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
 
     /**
      * Use to create new headers for sending ack request messages.
+     * @param ack 
      */
-    OOOProtocolMessageHeader createNewHandshake() {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE, 0);
+    OOOProtocolMessageHeader createNewHandshake(short sessionId, long ack) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE, ack, sessionId);
     }
 
-    OOOProtocolMessageHeader createNewHandshakeReply(long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE_REPLY, sequence);
+    OOOProtocolMessageHeader createNewHandshakeReply(short sessionId, long sequence) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_HANDSHAKE_REPLY, sequence, sessionId);
     }
 
     /**
      * Use to create new headers for sending ack messages.
      */
-    OOOProtocolMessageHeader createNewAck(long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_ACK, sequence);
+    OOOProtocolMessageHeader createNewAck(short sessionId, long sequence) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_ACK, sequence, sessionId);
     }
 
     /**
      * Use to create new headers for sending wrapped messages.
      */
-    OOOProtocolMessageHeader createNewSend(long sequence) {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_SEND, sequence);
+    OOOProtocolMessageHeader createNewSend(short sessionId, long sequence) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_SEND, sequence, sessionId);
     }
 
     /**
@@ -203,8 +201,8 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
       return new OOOProtocolMessageHeader(buffer.duplicate().limit(OOOProtocolMessageHeader.HEADER_LENGTH));
     }
 
-    public OOOProtocolMessageHeader createNewGoodbye() {
-      return new OOOProtocolMessageHeader(VERSION, TYPE_GOODBYE, 0);
+    public OOOProtocolMessageHeader createNewGoodbye(short sessionId) {
+      return new OOOProtocolMessageHeader(VERSION, TYPE_GOODBYE, 0, sessionId);
     }
   }
 }

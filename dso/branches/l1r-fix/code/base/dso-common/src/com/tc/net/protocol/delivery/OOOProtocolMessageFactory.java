@@ -8,15 +8,15 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.net.protocol.TCNetworkMessage;
 
 interface OOOProtocolMessageFactory {
-  public OOOProtocolMessage createNewHandshakeMessage();
+  public OOOProtocolMessage createNewHandshakeMessage(short sessionId, long ack);
 
-  public OOOProtocolMessage createNewHandshakeReplyMessage(long sequence);
+  public OOOProtocolMessage createNewHandshakeReplyMessage(short sessionId, long ack);
 
-  public OOOProtocolMessage createNewAckMessage(long sequence);
+  public OOOProtocolMessage createNewAckMessage(short sessionId, long ack);
 
-  public OOOProtocolMessage createNewSendMessage(long sequence, TCNetworkMessage payload);
+  public OOOProtocolMessage createNewSendMessage(short sessionId, long sequence, TCNetworkMessage payload);
 
   public OOOProtocolMessage createNewMessage(OOOProtocolMessageHeader header, TCByteBuffer[] data);
 
-  public OOOProtocolMessage createNewGoodbyeMessage();
+  public OOOProtocolMessage createNewGoodbyeMessage(short sessionId);
 }

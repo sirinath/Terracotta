@@ -51,11 +51,6 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     return (header.getSession());
   }
 
-  public void setSessionId(short id) {
-    OOOProtocolMessageHeader header = (OOOProtocolMessageHeader) getHeader();
-    header.setSession(id);
-  }
-
   public boolean isHandshake() {
     return getOOOPHeader().isHandshake();
   }
@@ -132,28 +127,28 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
       this.headerFactory = headerFactory;
     }
 
-    public OOOProtocolMessage createNewHandshakeMessage() {
-      return new OOOProtocolMessageImpl(headerFactory.createNewHandshake());
+    public OOOProtocolMessage createNewHandshakeMessage(short sessionId, long ack) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewHandshake(sessionId, ack));
     }
 
-    public OOOProtocolMessage createNewAckMessage(long sequence) {
-      return new OOOProtocolMessageImpl(headerFactory.createNewAck(sequence));
+    public OOOProtocolMessage createNewAckMessage(short sessionId, long sequence) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewAck(sessionId, sequence));
     }
 
-    public OOOProtocolMessage createNewSendMessage(long sequence, TCNetworkMessage payload) {
-      return new OOOProtocolMessageImpl(headerFactory.createNewSend(sequence), payload);
+    public OOOProtocolMessage createNewSendMessage(short sessionId, long sequence, TCNetworkMessage payload) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewSend(sessionId, sequence), payload);
     }
 
     public OOOProtocolMessage createNewMessage(OOOProtocolMessageHeader header, TCByteBuffer[] data) {
       return new OOOProtocolMessageImpl(header, data);
     }
 
-    public OOOProtocolMessage createNewGoodbyeMessage() {
-      return new OOOProtocolMessageImpl(headerFactory.createNewGoodbye());
+    public OOOProtocolMessage createNewGoodbyeMessage(short sessionId) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewGoodbye(sessionId));
     }
 
-    public OOOProtocolMessage createNewHandshakeReplyMessage(long sequence) {
-      return new OOOProtocolMessageImpl(headerFactory.createNewHandshakeReply(sequence));
+    public OOOProtocolMessage createNewHandshakeReplyMessage(short sessionId, long sequence) {
+      return new OOOProtocolMessageImpl(headerFactory.createNewHandshakeReply(sessionId, sequence));
     }
   }
 
