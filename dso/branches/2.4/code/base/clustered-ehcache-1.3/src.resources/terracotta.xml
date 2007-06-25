@@ -20,6 +20,7 @@
     <field-name>net.sf.ehcache.CacheManager.cacheManagerPeerListener</field-name>
     <field-name>net.sf.ehcache.CacheManager.cacheManagerPeerProvider</field-name>
     <field-name>net.sf.ehcache.CacheManager.shutdownHook</field-name>
+    <field-name>net.sf.ehcache.store.DiskStore.randomAccessFile</field-name>
   </transient-fields>
 
   <roots>
@@ -333,6 +334,5 @@
 
   <additional-boot-jar-classes>
     <include>java.util.Random</include>
- 	<include>java.io.RandomAccessFile</include>
    </additional-boot-jar-classes>
 </xml-fragment>
