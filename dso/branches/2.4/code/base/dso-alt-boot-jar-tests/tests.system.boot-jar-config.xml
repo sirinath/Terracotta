@@ -38,6 +38,12 @@
           <method-expression>* java.util.Hashtable*.*(..)</method-expression>
         </autolock>
         <autolock>
+          <method-expression>* java.util.Vector$*.*(..)</method-expression>
+        </autolock>
+        <autolock>
+          <method-expression>* java.util.Vector*.*(..)</method-expression>
+        </autolock>
+        <autolock>
           <method-expression>* java.util.Collections$SynchronizedSet*.*(..)</method-expression>
         </autolock>
         <autolock>
