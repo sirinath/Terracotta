@@ -9,9 +9,11 @@ import com.tc.net.protocol.transport.ConnectionID;
 
 public interface OOOProtocolMessageDelivery {
 
-  public OOOProtocolMessage createHandshakeMessage();
+  public OOOProtocolMessage createHandshakeMessage(long ack);
 
-  public OOOProtocolMessage createHandshakeReplyMessage(long sequence);
+  public OOOProtocolMessage createHandshakeReplyOkMessage(long ack);
+
+  public OOOProtocolMessage createHandshakeReplyFailMessage(long ack);
 
   public OOOProtocolMessage createAckMessage(long sequence);
 

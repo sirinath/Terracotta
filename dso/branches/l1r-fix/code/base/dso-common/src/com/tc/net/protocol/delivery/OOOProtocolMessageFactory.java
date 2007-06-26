@@ -36,9 +36,15 @@ public class OOOProtocolMessageFactory {
                                                                    OOOProtocolMessageHeader.TYPE_GOODBYE, 0, sessionId));
   }
 
-  public OOOProtocolMessage createNewHandshakeReplyMessage(short sessionId, long sequence) {
+  public OOOProtocolMessage createNewHandshakeReplyOkMessage(short sessionId, long sequence) {
     return new OOOProtocolMessageImpl(new OOOProtocolMessageHeader(OOOProtocolMessageHeader.VERSION,
-                                                                   OOOProtocolMessageHeader.TYPE_HANDSHAKE_REPLY,
+                                                                   OOOProtocolMessageHeader.TYPE_HANDSHAKE_REPLY_OK,
+                                                                   sequence, sessionId));
+  }
+
+  public OOOProtocolMessage createNewHandshakeReplyFailMessage(short sessionId, long sequence) {
+    return new OOOProtocolMessageImpl(new OOOProtocolMessageHeader(OOOProtocolMessageHeader.VERSION,
+                                                                   OOOProtocolMessageHeader.TYPE_HANDSHAKE_REPLY_FAIL,
                                                                    sequence, sessionId));
   }
 }

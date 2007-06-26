@@ -39,11 +39,13 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   private class MessageWaitState extends AbstractState {
 
+    public MessageWaitState() {
+      super("MESSAGE_WAIT_STATE");
+    }
+
     public void execute(OOOProtocolMessage msg) {
       if (msg.isSend()) {
         handleSendMessage(msg);
-      } else if (msg.isHandshake()) {
-        sendHandshakeReply(received.get());
       } else {
         // these message should be handled at higher level
         Assert.inv(msg.isAck() || msg.isGoodbye());
@@ -88,11 +90,6 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     delivery.sendMessage(opm);
   }
 
-  private void sendHandshakeReply(long l) {
-    OOOProtocolMessage msg = delivery.createHandshakeReplyMessage(l);
-    delivery.sendMessage(msg);
-  }
-
   public void reset() {
     received.set(-1);
   }
@@ -107,4 +104,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     this.debugId = debugId;
   }
 
+  public SynchronizedLong getReceived() {
+    return received;
+  }
 }

@@ -34,11 +34,11 @@ class GuaranteedDeliveryProtocol {
     }
   }
 
-  public void receive(OOOProtocolMessage protocolMessage) {
-    if (protocolMessage.isSend() || protocolMessage.isHandshake()) {
-      receive.addEvent(new OOOProtocolEvent(protocolMessage));
-    } else if (protocolMessage.isAck()) {
-      send.addEvent(new OOOProtocolEvent(protocolMessage));
+  public void receive(OOOProtocolMessage msg) {
+    if (msg.isSend()) {
+      receive.addEvent(new OOOProtocolEvent(msg));
+    } else if (msg.isAck() || msg.isHandshakeReplyOk()) {
+      send.addEvent(new OOOProtocolEvent(msg));
     } else {
       Assert.inv(false);
     }
@@ -62,6 +62,14 @@ class GuaranteedDeliveryProtocol {
   public void reset() {
     send.reset();
     receive.reset();
+  }
+
+  public ReceiveStateMachine getReceiver() {
+    return receiver;
+  }
+
+  public SendStateMachine getSender() {
+    return sender;
   }
 
   public void setDebugId(String debugId) {

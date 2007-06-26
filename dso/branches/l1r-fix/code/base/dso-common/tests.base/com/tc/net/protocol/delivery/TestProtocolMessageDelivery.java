@@ -29,7 +29,7 @@ public class TestProtocolMessageDelivery implements OOOProtocolMessageDelivery {
     this.receivedQueue = receivedQueue;
   }
 
-  public OOOProtocolMessage createHandshakeMessage() {
+  public OOOProtocolMessage createHandshakeMessage(long ack) {
     sentAckRequest = true;
     return (new TestProtocolMessage());
   }
@@ -89,7 +89,11 @@ public class TestProtocolMessageDelivery implements OOOProtocolMessageDelivery {
     return null;
   }
 
-  public OOOProtocolMessage createHandshakeReplyMessage(long sequence) {
+  public OOOProtocolMessage createHandshakeReplyOkMessage(long sequence) {
+    return null;
+  }
+
+  public OOOProtocolMessage createHandshakeReplyFailMessage(long sequence) {
     return null;
   }
 

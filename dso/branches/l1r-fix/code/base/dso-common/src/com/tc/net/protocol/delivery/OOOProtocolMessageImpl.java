@@ -52,8 +52,12 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
     return getOOOPHeader().isHandshake();
   }
 
-  public boolean isHandshakeReply() {
-    return getOOOPHeader().isHandshakeReply();
+  public boolean isHandshakeReplyOk() {
+    return getOOOPHeader().isHandshakeReplyOk();
+  }
+
+  public boolean isHandshakeReplyFail() {
+    return getOOOPHeader().isHandshakeReplyFail();
   }
 
   public boolean isSend() {

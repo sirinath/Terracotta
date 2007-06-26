@@ -17,7 +17,9 @@ public interface OOOProtocolMessage extends TCNetworkMessage {
 
   public boolean isHandshake();
 
-  public boolean isHandshakeReply();
+  public boolean isHandshakeReplyOk();
+
+  public boolean isHandshakeReplyFail();
 
   public boolean isSend();
 

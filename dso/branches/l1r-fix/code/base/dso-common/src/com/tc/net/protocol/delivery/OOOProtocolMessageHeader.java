@@ -13,31 +13,35 @@ import com.tc.net.protocol.TCProtocolException;
  */
 class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
 
-  public static final short TYPE_HANDSHAKE       = 1;
-  public static final short TYPE_HANDSHAKE_REPLY = 2;
-  public static final short TYPE_ACK             = 3;
-  public static final short TYPE_SEND            = 4;
-  public static final short TYPE_GOODBYE         = 5;
+  public static final short    TYPE_HANDSHAKE            = 1;
+  public static final short    TYPE_HANDSHAKE_REPLY_OK   = 2;
+  public static final short    TYPE_HANDSHAKE_REPLY_FAIL = 3;
+  public static final short    TYPE_ACK                  = 4;
+  public static final short    TYPE_SEND                 = 5;
+  public static final short    TYPE_GOODBYE              = 6;
 
-  public static final short VERSION              = 1;
+  public static final String[] typeNames                 = new String[] { "N/A", "TYPE_HANDSHAKE", "TYPE_HANDSHAKE_REPLY_OK",
+      "TYPE_HANDSHAKE_REPLY_FAIL", "TYPE_ACK", "TYPE_SEND", "TYPE_GOODBYE", };
 
-  private static final int  MAGIC_NUM            = 0xBBBBBBBB;
-  private static final int  MAGIC_NUM_OFFSET     = 0;
-  private static final int  MAGIC_NUM_LENGTH     = 4;
+  public static final short    VERSION                   = 1;
 
-  private static final int  VERSION_OFFSET       = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
-  private static final int  VERSION_LENGTH       = 1;
+  private static final int     MAGIC_NUM                 = 0xBBBBBBBB;
+  private static final int     MAGIC_NUM_OFFSET          = 0;
+  private static final int     MAGIC_NUM_LENGTH          = 4;
 
-  private static final int  TYPE_OFFSET          = VERSION_OFFSET + VERSION_LENGTH;
-  private static final int  TYPE_LENGTH          = 1;
+  private static final int     VERSION_OFFSET            = MAGIC_NUM_OFFSET + MAGIC_NUM_LENGTH;
+  private static final int     VERSION_LENGTH            = 1;
 
-  private static final int  SEQUENCE_OFFSET      = TYPE_OFFSET + TYPE_LENGTH;
-  private static final int  SEQUENCE_LENGTH      = 8;
+  private static final int     TYPE_OFFSET               = VERSION_OFFSET + VERSION_LENGTH;
+  private static final int     TYPE_LENGTH               = 1;
 
-  private static final int  SESSION_OFFSET       = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
-  private static final int  SESSION_LENGTH       = 2;
+  private static final int     SEQUENCE_OFFSET           = TYPE_OFFSET + TYPE_LENGTH;
+  private static final int     SEQUENCE_LENGTH           = 8;
 
-  static final int          HEADER_LENGTH;
+  private static final int     SESSION_OFFSET            = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+  private static final int     SESSION_LENGTH            = 2;
+
+  static final int             HEADER_LENGTH;
 
   static {
     int tmp = MAGIC_NUM_LENGTH + VERSION_LENGTH + TYPE_LENGTH + SEQUENCE_LENGTH + SESSION_LENGTH;
@@ -95,29 +99,9 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
 
   public String toString() {
     StringBuffer buf = new StringBuffer();
-
-    buf.append("valid: ");
-    try {
-      validate();
-      buf.append("true");
-    } catch (TCProtocolException e) {
-      buf.append("false (").append(e.getMessage()).append(")");
-    }
-    buf.append(", ");
-
-    buf.append("type: ");
-    if (isAck()) {
-      buf.append("ACK ").append(getSequence());
-    } else if (isHandshake()) {
-      buf.append("ACK REQ");
-    } else if (isSend()) {
-      buf.append("SEND " + getSequence());
-    } else {
-      buf.append("UNKNOWN");
-    }
-    buf.append(" SESSION " + getSession());
-    buf.append('\n');
-
+    buf.append("Type=" + typeNames[getType()]);
+    buf.append(" sessId=" + getSession());
+    buf.append(" seq=" + getSequence());
     return buf.toString();
   }
 
@@ -134,8 +118,8 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
   }
 
   private boolean isValidType(short type) {
-    return type == TYPE_SEND || type == TYPE_HANDSHAKE || type == TYPE_HANDSHAKE_REPLY || type == TYPE_ACK
-           || type == TYPE_GOODBYE;
+    return type == TYPE_SEND || type == TYPE_HANDSHAKE || type == TYPE_HANDSHAKE_REPLY_OK
+           || type == TYPE_HANDSHAKE_REPLY_FAIL || type == TYPE_ACK || type == TYPE_GOODBYE;
   }
 
   long getSequence() {
@@ -150,8 +134,12 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     return getType() == TYPE_HANDSHAKE;
   }
 
-  boolean isHandshakeReply() {
-    return getType() == TYPE_HANDSHAKE_REPLY;
+  boolean isHandshakeReplyOk() {
+    return getType() == TYPE_HANDSHAKE_REPLY_OK;
+  }
+
+  boolean isHandshakeReplyFail() {
+    return getType() == TYPE_HANDSHAKE_REPLY_FAIL;
   }
 
   boolean isAck() {

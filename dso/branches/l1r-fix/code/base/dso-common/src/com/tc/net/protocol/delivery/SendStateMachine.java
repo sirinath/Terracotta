@@ -21,7 +21,6 @@ import java.util.ListIterator;
  */
 public class SendStateMachine extends AbstractStateMachine {
   private static final int                 MAX_SEND_QUEUE_SIZE  = 1000;
-  private final State                      HANDSHAKE_STATE      = new HandshakeState();
   private final State                      ACK_WAIT_STATE       = new AckWaitState();
   private final State                      HANDSHAKE_WAIT_STATE = new HandshakeWaitState();
   private final State                      MESSAGE_WAIT_STATE   = new MessageWaitState();
@@ -46,11 +45,11 @@ public class SendStateMachine extends AbstractStateMachine {
     this.delivery = delivery;
     this.sendQueue = new BoundedLinkedQueue(MAX_SEND_QUEUE_SIZE);
     this.isClient = isClient;
-    this.debugId = (isClient) ? "CLIENT" : "SERVER";
+    this.debugId = (this.isClient) ? "CLIENT" : "SERVER";
   }
 
   protected void basicResume() {
-    if (isClient) switchToState(HANDSHAKE_STATE);
+    if (isClient) switchToState(HANDSHAKE_WAIT_STATE);
     else switchToState(MESSAGE_WAIT_STATE);
   }
 
@@ -64,7 +63,16 @@ public class SendStateMachine extends AbstractStateMachine {
     getCurrentState().execute(msg);
   }
 
+  protected void switchToState(State state) {
+    debugLog("switching to " + state);
+    super.switchToState(state);
+  }
+
   private class MessageWaitState extends AbstractState {
+
+    public MessageWaitState() {
+      super("MESSAGE_WAIT_STATE");
+    }
 
     public void enter() {
       execute(null);
@@ -81,28 +89,19 @@ public class SendStateMachine extends AbstractStateMachine {
     }
   }
 
-  private class HandshakeState extends AbstractState {
-    public void enter() {
-      debugLog("Sending Handshake");
-      sendHandshake();
-      switchToState(HANDSHAKE_WAIT_STATE);
-    }
-  }
-
   private class HandshakeWaitState extends AbstractState {
 
+    public HandshakeWaitState() {
+      super("HANDSHAKE_WAIT_STATE");
+    }
+
     public void execute(OOOProtocolMessage msg) {
-      // expecting an ack to do hand shake
-      if (msg == null || !msg.isHandshakeReply()) {
-        debugLog("NOT HandshakeReply message - dropping!");
-        return;
-      }
+      Assert.inv(msg.isHandshakeReplyOk());
 
       long ackedSeq = msg.getAckSequence();
 
       if (ackedSeq == -1) {
         debugLog("The other side restarted [switching to MSG_WAIT_STATE]");
-        reset();
         switchToState(MESSAGE_WAIT_STATE);
         return;
       }
@@ -127,6 +126,10 @@ public class SendStateMachine extends AbstractStateMachine {
   }
 
   private class AckWaitState extends AbstractState {
+
+    public AckWaitState() {
+      super("ACK_WAIT_STATE");
+    }
 
     public void enter() {
       sendMoreIfAvailable();
@@ -159,11 +162,6 @@ public class SendStateMachine extends AbstractStateMachine {
         delivery.sendMessage(createProtocolMessage(sent.increment()));
       }
     }
-  }
-
-  private void sendHandshake() {
-    OOOProtocolMessage opm = delivery.createHandshakeMessage();
-    delivery.sendMessage(opm);
   }
 
   private OOOProtocolMessage createProtocolMessage(long count) {

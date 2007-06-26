@@ -18,12 +18,12 @@ import com.tc.config.schema.test.TerracottaConfigBuilder;
 
 public class ServerCrashAndRestartL1ReconnectTest extends ServerCrashingTestBase {
 
-  private static final int NODE_COUNT = 5;
+  private static final int NODE_COUNT = 1;
 
   public ServerCrashAndRestartL1ReconnectTest() {
     super(NODE_COUNT);
   }
-  
+
   protected boolean enableL1Reconnect() {
     return true;
   }
@@ -51,7 +51,7 @@ public class ServerCrashAndRestartL1ReconnectTest extends ServerCrashingTestBase
         new InstrumentedClassConfigBuilderImpl(getApplicationClass()) };
 
     cb.getApplication().getDSO().setInstrumentedClasses(instrClasses);
-    
+
     // roots
     RootConfigBuilder[] roots = new RootConfigBuilder[] { new RootConfigBuilderImpl(getApplicationClass(), "barrier") };
     cb.getApplication().getDSO().setRoots(roots);

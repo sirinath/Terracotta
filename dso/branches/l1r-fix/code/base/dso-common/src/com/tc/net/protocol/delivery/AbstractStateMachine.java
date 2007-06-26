@@ -51,7 +51,7 @@ public abstract class AbstractStateMachine {
     return this.paused;
   }
 
-  protected final synchronized void switchToState(State state) {
+  protected synchronized void switchToState(State state) {
     Assert.eval(state != null && isStarted());
     this.current = state;
     state.enter();
