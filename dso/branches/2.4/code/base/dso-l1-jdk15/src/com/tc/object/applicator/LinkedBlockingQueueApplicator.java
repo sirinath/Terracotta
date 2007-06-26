@@ -187,7 +187,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           if (DebugUtil.DEBUG) {
-            System.err.println("Client " + ManagerUtil.getClientID() + " applying Put, queue size: " + queue.size());
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Put, queue size: " + queue.size() + ", putting " + params[0]);
           }
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
         } catch (InvocationTargetException e) {
@@ -197,12 +197,11 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         }
         break;
       case SerializationUtil.TAKE:
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client " + ManagerUtil.getClientID() + " applying Take, queue size: " + queue.size());
-        }
-
         try {
-          TC_TAKE_METHOD.invoke(queue, new Object[0]);
+          Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
+          if (DebugUtil.DEBUG) {
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Take, queue size: " + queue.size() + ", taking out: " + o);
+          }
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
