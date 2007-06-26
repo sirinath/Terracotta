@@ -111,19 +111,22 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         sendMessage(reply);
         delivery.resume();
         handshakeMode.set(false);
-        receiveLayer.notifyTransportConnected(this);
+        if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
+        else reconnectMode.set(false);
       } else if (msg.getSessionId() == getSessionId()) {
         debugLog("A same-session client is trying to connect - reply OK");
         OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived().get());
         sendMessage(reply);
         handshakeMode.set(false);
         delivery.resume();
-        receiveLayer.notifyTransportConnected(this);
+        if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
+        else reconnectMode.set(false);
       } else {
-        debugLog("A DIFF-session client is trying to connect - reply OK");
+        debugLog("A DIFF-session client is trying to connect - reply FAIL");
         OOOProtocolMessage reply = createHandshakeReplyFailMessage(delivery.getReceiver().getReceived().get());
         sendMessage(reply);
         handshakeMode.set(false);
+        reconnectMode.set(false);
         receiveLayer.notifyTransportDisconnected(this);
         resetStack();
         receiveLayer.notifyTransportConnected(this);
@@ -139,7 +142,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       sessionId = msg.getSessionId();
       delivery.resume();
       delivery.receive(msg);
-      receiveLayer.notifyTransportConnected(this);
+      if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
+      else reconnectMode.set(false);
     } else if (msg.isHandshakeReplyFail()) {
       Assert.inv(isClient);
       Assert.inv(handshakeMode.get());
@@ -147,7 +151,13 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       // 1. clear OOO state (drop messages, clear counters, etc)
       // 2. set the new session
       // 3. signal Higher Lever to re-synch
-
+      resetStack();
+      sessionId = msg.getSessionId();
+      delivery.resume();
+      handshakeMode.set(false);
+      reconnectMode.set(false);
+      receiveLayer.notifyTransportDisconnected(this);
+      receiveLayer.notifyTransportConnected(this);
     } else if (msg.isGoodbye()) {
       debugLog("Got GoodBye message - shutting down");
       isClosed = true;
@@ -332,7 +342,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   private void resetStack() {
     // we need to reset because we are talking to a new stack on the other side
     reconnectMode.set(false);
-    sessionId = newRandomSessionId();
     delivery.pause();
     delivery.reset();
   }

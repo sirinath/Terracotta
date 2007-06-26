@@ -4,6 +4,7 @@
  */
 package com.tc.net.protocol.delivery;
 
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.properties.TCPropertiesImpl;
@@ -17,14 +18,17 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   private final State                      MESSAGE_WAIT_STATE = new MessageWaitState();
 
   private final SynchronizedLong           received           = new SynchronizedLong(-1);
-  private final SynchronizedLong           acked              = new SynchronizedLong(0);
+  private final SynchronizedInt            delayedAcks        = new SynchronizedInt(0);
   private final int                        maxDelayedAcks;
   private final OOOProtocolMessageDelivery delivery;
+  private StateMachineRunner               runner;
 
   private String                           debugId            = "UNKNOWN";
+
   private static final boolean             debug              = true;
 
   public ReceiveStateMachine(OOOProtocolMessageDelivery delivery) {
+    // set MaxDelayedAcks from tc.properties if exist. 0 to disable ack delay.
     maxDelayedAcks = TCPropertiesImpl.getProperties().getInt("l2.nha.ooo.maxDelayedAcks", 16);
     this.delivery = delivery;
   }
@@ -35,6 +39,10 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   protected State initialState() {
     return MESSAGE_WAIT_STATE;
+  }
+
+  private int getRunnerEventLength() {
+    return ((runner != null) ? runner.getEventsCount() : 0);
   }
 
   private class MessageWaitState extends AbstractState {
@@ -76,17 +84,17 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   }
 
   private void ackIfNeeded(long next) {
-    Assert.inv(next >= acked.get());
-    final long delta = next - acked.get();
-    if (delta >= maxDelayedAcks) {
+    if ((delayedAcks.get() < maxDelayedAcks) && (getRunnerEventLength() > 0)) {
+      delayedAcks.increment();
+    } else {
       sendAck(next);
+      delayedAcks.set(0);
     }
   }
 
   private void sendAck(long seq) {
     OOOProtocolMessage opm = delivery.createAckMessage(seq);
     Assert.inv(opm.getSessionId() > -1);
-    acked.set(seq);
     delivery.sendMessage(opm);
   }
 
@@ -106,5 +114,9 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   public SynchronizedLong getReceived() {
     return received;
+  }
+
+  public void setRunner(StateMachineRunner receive) {
+    this.runner = receive;
   }
 }

@@ -23,6 +23,7 @@ class GuaranteedDeliveryProtocol {
     this.send = new StateMachineRunner(sender, workSink);
     this.receiver = new ReceiveStateMachine(delivery);
     this.receive = new StateMachineRunner(receiver, workSink);
+    receiver.setRunner(receive);
   }
 
   public void send(TCNetworkMessage message) {

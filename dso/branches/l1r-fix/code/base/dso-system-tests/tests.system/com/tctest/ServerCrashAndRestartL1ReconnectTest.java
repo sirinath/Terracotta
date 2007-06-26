@@ -18,7 +18,7 @@ import com.tc.config.schema.test.TerracottaConfigBuilder;
 
 public class ServerCrashAndRestartL1ReconnectTest extends ServerCrashingTestBase {
 
-  private static final int NODE_COUNT = 1;
+  private static final int NODE_COUNT = 5;
 
   public ServerCrashAndRestartL1ReconnectTest() {
     super(NODE_COUNT);
