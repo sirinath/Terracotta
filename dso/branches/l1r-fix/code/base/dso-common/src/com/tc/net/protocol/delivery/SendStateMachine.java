@@ -97,7 +97,10 @@ public class SendStateMachine extends AbstractStateMachine {
 
     public void execute(OOOProtocolMessage msg) {
       if (msg == null) return;
-      Assert.inv(msg.isHandshakeReplyOk() || msg.isHandshakeReplyFail());
+      // drop all msgs until handshake reply. 
+      // Happens when short network disruptions and both L1 & K2 still keep states.
+      if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail()) return;
+      
       if (msg.isHandshakeReplyFail()) {
         switchToState(MESSAGE_WAIT_STATE);
         return;
