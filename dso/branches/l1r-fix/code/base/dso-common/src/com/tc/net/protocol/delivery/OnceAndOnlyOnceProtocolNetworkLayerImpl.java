@@ -127,6 +127,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         sendMessage(reply);
         handshakeMode.set(false);
         reconnectMode.set(false);
+        delivery.resume();
         receiveLayer.notifyTransportConnected(this);
       }
     } else if (msg.isHandshakeReplyOk()) {
@@ -143,6 +144,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
       else reconnectMode.set(false);
     } else if (msg.isHandshakeReplyFail()) {
+      debugLog("Received handshake fail reply");
       Assert.inv(isClient);
       Assert.inv(handshakeMode.get());
       // we did not synch'ed the existing session.
@@ -163,6 +165,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       sendLayer.close();
       receiveLayer.close();
       delivery.pause();
+    } else {
+      Assert.inv(false);
     }
   }
 
