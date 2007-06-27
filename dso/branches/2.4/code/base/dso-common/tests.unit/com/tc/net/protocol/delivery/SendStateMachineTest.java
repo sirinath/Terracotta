@@ -65,16 +65,15 @@ public class SendStateMachineTest extends TestCase {
     assertFalse(ssm.isPaused());
 
     tpm.ack = 0;
-    ssm.execute(tpm); // ack=0 to cause resend
+    ssm.execute(tpm); // dup ack=0 
 
-    assertTrue(delivery.msg.getSent() == 2);
-    // resend desn't go through message create
-    assertTrue(!delivery.created);
-    assertTrue(delivery.sentAckRequest);
-
+    ssm.put(new PingMessage(monitor)); // msg 3
+    ssm.execute(null); 
+    assertTrue(delivery.msg.getSent() == 3);
+ 
     tpm.ack = 2;
     ssm.execute(tpm); // ack 2
-    assertTrue(delivery.msg.getSent() == 2);
+    assertTrue(delivery.msg.getSent() == 3);
 
   }
 }
