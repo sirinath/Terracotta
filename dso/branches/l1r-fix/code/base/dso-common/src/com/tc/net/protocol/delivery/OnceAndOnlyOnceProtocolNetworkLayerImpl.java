@@ -127,8 +127,6 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         sendMessage(reply);
         handshakeMode.set(false);
         reconnectMode.set(false);
-        receiveLayer.notifyTransportDisconnected(this);
-        resetStack();
         receiveLayer.notifyTransportConnected(this);
       }
     } else if (msg.isHandshakeReplyOk()) {
@@ -151,12 +149,13 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       // 1. clear OOO state (drop messages, clear counters, etc)
       // 2. set the new session
       // 3. signal Higher Lever to re-synch
+      receiveLayer.notifyTransportDisconnected(this);
       resetStack();
       sessionId = msg.getSessionId();
-      delivery.resume();
       handshakeMode.set(false);
       reconnectMode.set(false);
-      receiveLayer.notifyTransportDisconnected(this);
+      delivery.resume();
+      delivery.receive(msg);
       receiveLayer.notifyTransportConnected(this);
     } else if (msg.isGoodbye()) {
       debugLog("Got GoodBye message - shutting down");

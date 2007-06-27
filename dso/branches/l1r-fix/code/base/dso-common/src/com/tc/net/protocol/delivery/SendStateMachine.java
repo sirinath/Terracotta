@@ -96,7 +96,12 @@ public class SendStateMachine extends AbstractStateMachine {
     }
 
     public void execute(OOOProtocolMessage msg) {
-      Assert.inv(msg.isHandshakeReplyOk());
+      if (msg == null) return;
+      Assert.inv(msg.isHandshakeReplyOk() || msg.isHandshakeReplyFail());
+      if (msg.isHandshakeReplyFail()) {
+        switchToState(MESSAGE_WAIT_STATE);
+        return;
+      }
 
       long ackedSeq = msg.getAckSequence();
 

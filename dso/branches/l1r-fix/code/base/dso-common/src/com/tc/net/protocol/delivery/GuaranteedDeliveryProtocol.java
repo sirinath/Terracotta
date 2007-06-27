@@ -38,7 +38,7 @@ class GuaranteedDeliveryProtocol {
   public void receive(OOOProtocolMessage msg) {
     if (msg.isSend()) {
       receive.addEvent(new OOOProtocolEvent(msg));
-    } else if (msg.isAck() || msg.isHandshakeReplyOk()) {
+    } else if (msg.isAck() || msg.isHandshakeReplyOk() || msg.isHandshakeReplyFail()) {
       send.addEvent(new OOOProtocolEvent(msg));
     } else {
       Assert.inv(false);
