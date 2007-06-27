@@ -14,6 +14,7 @@ import com.tc.object.TCObject;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
@@ -23,6 +24,7 @@ import com.tc.object.dna.impl.DNAEncoding;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.object.tx.optimistic.TCObjectClone;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tc.util.FieldUtils;
 
 import java.io.IOException;
@@ -184,6 +186,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     switch (method) {
       case SerializationUtil.PUT:
         try {
+          if (DebugUtil.DEBUG) {
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Put, queue size: " + queue.size() + ", putting " + params[0]);
+          }
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
@@ -193,7 +198,10 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
-          TC_TAKE_METHOD.invoke(queue, new Object[0]);
+          Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
+          if (DebugUtil.DEBUG) {
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Take, queue size: " + queue.size() + ", taking out: " + o);
+          }
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
