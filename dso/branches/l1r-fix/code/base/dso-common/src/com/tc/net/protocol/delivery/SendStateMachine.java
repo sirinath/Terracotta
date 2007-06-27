@@ -99,7 +99,10 @@ public class SendStateMachine extends AbstractStateMachine {
       if (msg == null) return;
       // drop all msgs until handshake reply. 
       // Happens when short network disruptions and both L1 & K2 still keep states.
-      if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail()) return;
+      if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail())  {
+        System.err.println("XXX due to handshake drops "+msg);
+        return;
+      }
       
       if (msg.isHandshakeReplyFail()) {
         switchToState(MESSAGE_WAIT_STATE);
