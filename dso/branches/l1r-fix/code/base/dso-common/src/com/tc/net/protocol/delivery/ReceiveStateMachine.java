@@ -25,7 +25,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   private String                           debugId            = "UNKNOWN";
 
-  private static final boolean             debug              = false;
+  private static final boolean             debug              = true;
 
   public ReceiveStateMachine(OOOProtocolMessageDelivery delivery) {
     // set MaxDelayedAcks from tc.properties if exist. 0 to disable ack delay.

@@ -50,7 +50,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   private final boolean                   isClient;
   private final String                    debugId;
   private short                           sessionId     = -1;
-  private static final boolean            debug         = false;
+  private static final boolean            debug         = true;
 
   public OnceAndOnlyOnceProtocolNetworkLayerImpl(OOOProtocolMessageFactory messageFactory,
                                                  OOOProtocolMessageParser messageParser, Sink workSink, boolean isClient) {
