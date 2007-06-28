@@ -66,10 +66,15 @@ public class ReceiveStateMachine extends AbstractStateMachine {
       final long curRecv = received.get();
       if (r <= curRecv) {
         // we already got message
+        debugLog("Received dup msg "+r);
         sendAck(curRecv);
+        delayedAcks.set(0);
+        return;
       } else if (r > (curRecv + 1)) {
         // message missed, resend ack, receive to resend message.
+        debugLog("Received out of order msg "+r);
         sendAck(curRecv);
+        delayedAcks.set(0);
         return;
       } else {
         Assert.inv(r == (curRecv + 1));
