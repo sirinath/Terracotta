@@ -80,7 +80,6 @@ public class SendStateMachine extends AbstractStateMachine {
 
     public void execute(OOOProtocolMessage protocolMessage) {
       if (!sendQueue.isEmpty()) {
-        Assert.eval(protocolMessage == null);
         if ((sendWindow == 0) || (outstandingCnt.get() < sendWindow)) {
           delivery.sendMessage(createProtocolMessage(sent.increment()));
         }
@@ -118,6 +117,7 @@ public class SendStateMachine extends AbstractStateMachine {
       }
       if (ackedSeq < acked.get()) {
         // this shall not, old ack
+        Assert.failure("Received bad ack: "+ackedSeq+ " expected >= "+acked.get());
       } else {
         while (ackedSeq > acked.get()) {
           acked.increment();
