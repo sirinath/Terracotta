@@ -187,6 +187,7 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
       if (node instanceof Manageable) {
         System.err.println("Client " + ManagerUtil.getClientID() + " passing id: " + node.getId() + " objectID: " + ((Manageable)node).__tc_managed().getObjectID());
       }
+      System.err.println("Client " + ManagerUtil.getClientID() + " passing from queue: " + ((Manageable)lbqueue1).__tc_managed().getObjectID() + " to queue: " + ((Manageable)lbqueue2).__tc_managed().getObjectID());
     }
     lbqueue2.put(node);
     return(node);
