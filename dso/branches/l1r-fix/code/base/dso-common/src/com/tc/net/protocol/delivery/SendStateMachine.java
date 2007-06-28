@@ -33,7 +33,7 @@ public class SendStateMachine extends AbstractStateMachine {
   private final int                        sendWindow;
   private final boolean                    isClient;
   private final String                     debugId;
-  private static final boolean             debug                = true;
+  private static final boolean             debug                = false;
 
   // changed by tc.properties
 
