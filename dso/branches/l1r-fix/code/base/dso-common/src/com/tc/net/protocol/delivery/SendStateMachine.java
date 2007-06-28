@@ -53,7 +53,16 @@ public class SendStateMachine extends AbstractStateMachine {
 
   protected void basicResume() {
     if (isClient) switchToState(HANDSHAKE_WAIT_STATE);
-    else switchToState(MESSAGE_WAIT_STATE);
+    else {
+      if (outstandingCnt.get() > 0) {
+        // resend those not acked
+        resendOutstandings();
+        switchToState(ACK_WAIT_STATE);
+      } else {
+        // all acked, we're good here
+        switchToState(MESSAGE_WAIT_STATE);
+      }
+    }
   }
 
   protected State initialState() {
@@ -100,7 +109,7 @@ public class SendStateMachine extends AbstractStateMachine {
     public void execute(OOOProtocolMessage msg) {
       if (msg == null) return;
       // drop all msgs until handshake reply. 
-      // Happens when short network disruptions and both L1 & K2 still keep states.
+      // Happens when short network disruptions and both L1 & L2 still keep states.
       if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail())  {
         logger.warn("Due to handshake drops stale message:"+msg);
         return;
@@ -198,6 +207,7 @@ public class SendStateMachine extends AbstractStateMachine {
     OOOProtocolMessage msg = (OOOProtocolMessage) outstandingMsgs.removeFirst();
     msg.reallyDoRecycleOnWrite();
     outstandingCnt.decrement();
+    Assert.eval(outstandingCnt.get() >= 0);
   }
 
   public void reset() {

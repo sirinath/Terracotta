@@ -114,6 +114,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   public void reset() {
     received.set(-1);
+    delayedAcks.set(0);
   }
 
   private void debugLog(String msg) {

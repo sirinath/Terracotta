@@ -203,7 +203,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     handshakeMode.set(true);
     if (isClient) {
       OOOProtocolMessage handshake = createHandshakeMessage(delivery.getReceiver().getReceived().get());
-      debugLog("Seding Handshake message...");
+      debugLog("Sending Handshake message...");
       sendMessage(handshake);
     } else {
       //
