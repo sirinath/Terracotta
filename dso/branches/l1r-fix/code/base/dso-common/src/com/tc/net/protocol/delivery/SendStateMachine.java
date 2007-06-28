@@ -8,6 +8,8 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
@@ -34,6 +36,7 @@ public class SendStateMachine extends AbstractStateMachine {
   private final boolean                    isClient;
   private final String                     debugId;
   private static final boolean             debug                = false;
+  private static final TCLogger            logger               = TCLogging.getLogger(SendStateMachine.class);
 
   // changed by tc.properties
 
@@ -99,7 +102,7 @@ public class SendStateMachine extends AbstractStateMachine {
       // drop all msgs until handshake reply. 
       // Happens when short network disruptions and both L1 & K2 still keep states.
       if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail())  {
-        System.err.println("XXX due to handshake drops "+msg);
+        logger.warn("Due to handshake drops stale message:"+msg);
         return;
       }
       
