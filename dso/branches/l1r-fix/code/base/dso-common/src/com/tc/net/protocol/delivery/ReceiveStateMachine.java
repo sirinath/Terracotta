@@ -92,8 +92,17 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     if ((delayedAcks.get() < maxDelayedAcks) && (getRunnerEventLength() > 0)) {
       delayedAcks.increment();
     } else {
-      sendAck(next);
-      delayedAcks.set(0);
+      try {
+        /*
+         * saw IllegalStateException by AbstractTCNetworkMessage.checkSealed
+         * when message sent to non-established transport by MessageTransportBase.send.
+         * Handle exception here to prevent exit.
+         */
+        sendAck(next);
+        delayedAcks.set(0);
+      } catch (Exception x) {
+        debugLog("Failed to send ack:"+next+" due to "+x);
+      }
     }
   }
 
