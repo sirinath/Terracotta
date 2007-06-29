@@ -52,17 +52,7 @@ public class SendStateMachine extends AbstractStateMachine {
   }
 
   protected void basicResume() {
-    if (isClient) switchToState(HANDSHAKE_WAIT_STATE);
-    else {
-      if (outstandingCnt.get() > 0) {
-        // resend those not acked
-        resendOutstandings();
-        switchToState(ACK_WAIT_STATE);
-      } else {
-        // all acked, we're good here
-        switchToState(MESSAGE_WAIT_STATE);
-      }
-    }
+    switchToState(HANDSHAKE_WAIT_STATE);
   }
 
   protected State initialState() {

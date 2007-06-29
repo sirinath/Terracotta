@@ -110,6 +110,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived().get());
         sendMessage(reply);
         delivery.resume();
+        delivery.receive(createHandshakeReplyOkMessage(-1));
         handshakeMode.set(false);
         if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
         else reconnectMode.set(false);
@@ -119,6 +120,8 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         sendMessage(reply);
         handshakeMode.set(false);
         delivery.resume();
+        // tell local sender the ackseq of client
+        delivery.receive(createHandshakeReplyOkMessage(msg.getAckSequence()));
         if (!reconnectMode.get()) receiveLayer.notifyTransportConnected(this);
         else reconnectMode.set(false);
       } else {
@@ -127,7 +130,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         sendMessage(reply);
         handshakeMode.set(false);
         reconnectMode.set(false);
+        resetStack();
         delivery.resume();
+        delivery.receive(reply);
         receiveLayer.notifyTransportConnected(this);
       }
     } else if (msg.isHandshakeReplyOk()) {
