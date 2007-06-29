@@ -270,10 +270,15 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     return (this.messageFactory.createNewAckMessage(getSessionId(), ack));
   }
 
-  public void sendMessage(OOOProtocolMessage msg) {
+  public boolean sendMessage(OOOProtocolMessage msg) {
     // this method doesn't do anything at the moment, but it is a good spot to plug in things you might want to do
     // every message flowing down from the layer (like logging for example)
-    this.sendLayer.send(msg);
+    if (this.sendLayer.isConnected()) {
+      this.sendLayer.send(msg);
+      return (true);
+    } else {
+      return (false);
+    }
   }
 
   public void receiveMessage(OOOProtocolMessage msg) {
