@@ -183,6 +183,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
   }
 
   private void apply(LinkedBlockingQueue queue, int method, Object[] params) {
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " applying to queue " + ((Manageable)queue).__tc_managed().getObjectID() + ", method: " + method);
+    }
     switch (method) {
       case SerializationUtil.PUT:
         try {
