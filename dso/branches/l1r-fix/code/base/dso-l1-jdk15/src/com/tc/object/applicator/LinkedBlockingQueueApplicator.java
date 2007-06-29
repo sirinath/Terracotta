@@ -183,11 +183,14 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
   }
 
   private void apply(LinkedBlockingQueue queue, int method, Object[] params) {
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " applying to queue " + ((Manageable)queue).__tc_managed().getObjectID() + ", method: " + method);
+    }
     switch (method) {
       case SerializationUtil.PUT:
         try {
           if (DebugUtil.DEBUG) {
-            System.err.println("Client " + ManagerUtil.getClientID() + " applying Put, queue size: " + queue.size() + ", putting " + params[0]);
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Put to queue " + ((Manageable)queue).__tc_managed().getObjectID() + ", queue size: " + queue.size() + ", putting " + params[0]);
           }
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
         } catch (InvocationTargetException e) {
@@ -200,7 +203,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         try {
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
           if (DebugUtil.DEBUG) {
-            System.err.println("Client " + ManagerUtil.getClientID() + " applying Take, queue size: " + queue.size() + ", taking out: " + o);
+            System.err.println("Client " + ManagerUtil.getClientID() + " applying Take to queue " + ((Manageable)queue).__tc_managed().getObjectID() + ", queue size: " + queue.size() + ", taking out: " + o);
           }
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);

@@ -12,6 +12,7 @@ import com.tc.object.dna.api.PhysicalAction;
 import com.tc.objectserver.mgmt.LogicalManagedObjectFacade;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -74,9 +75,15 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.PUT:
         addChangeToCollector(objectID, params[0], includeIDs);
         references.add(params[0]);
+        if (DebugUtil.DEBUG) {
+          System.err.println("LinkedBlockingQueue Server applying PUT -- " + params[0]);
+        }
         break;
       case SerializationUtil.TAKE:
-        references.remove(0);
+        Object o = references.remove(0);
+        if (DebugUtil.DEBUG) {
+          System.err.println("LinkedBlockingQueue Server applying remove -- o: " + o);
+        }
         break;
       case SerializationUtil.CLEAR:
         references.clear();

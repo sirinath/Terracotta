@@ -88,10 +88,10 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
             
       if(doPut) {  
         node = doPut();
-        System.out.println("*** Doing put id=" + node.getId() + " by thread= " + index);
+        System.err.println("*** Doing put id=" + node.getId() + " by thread= " + index + ", client: " + ManagerUtil.getClientID());
       } else { 
         node = doPass();
-        System.out.println("*** Doing pass id=" + node.getId() + " by thread= " + index);
+        System.err.println("*** Doing pass id=" + node.getId() + " by thread= " + index + ", client: " + ManagerUtil.getClientID());
         synchronized(controller) {
           controller.decGetter();
         }     
@@ -109,7 +109,7 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
     
     // verify
     if(index == 0) {
-      System.out.println("*** Start verification");
+      System.err.println("*** Start verification");
       // verify size
       Assert.assertTrue("Wrong event count", eventIndex.getId() == lbqueue1.size() + lbqueue2.size());
       
@@ -152,12 +152,12 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
           Assert.assertTrue("Event " + id + " not found", found);         
         }
         ++id;
-        if(id % 10 == 0) System.out.println("*** Verify id=" + id);
+        if(id % 10 == 0) System.err.println("*** Verify id=" + id);
       } // while
         
       Assert.assertTrue("Duplicate events found", 0 == (lbqueue1.size() + lbqueue2.size()));
         
-      System.out.println("*** Verification Successful");
+      System.err.println("*** Verification Successful");
     }
       
     index = barrier.await();  
@@ -187,6 +187,7 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
       if (node instanceof Manageable) {
         System.err.println("Client " + ManagerUtil.getClientID() + " passing id: " + node.getId() + " objectID: " + ((Manageable)node).__tc_managed().getObjectID());
       }
+      System.err.println("Client " + ManagerUtil.getClientID() + " passing from queue: " + ((Manageable)lbqueue1).__tc_managed().getObjectID() + " to queue: " + ((Manageable)lbqueue2).__tc_managed().getObjectID());
     }
     lbqueue2.put(node);
     return(node);
