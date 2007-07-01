@@ -1,11 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.spring.integrationtests.load;
 
 import com.tc.test.server.appserver.deployment.Deployment;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
+import com.tc.util.runtime.Os;
 import com.tctest.spring.bean.ISingleton;
 import com.tctest.spring.integrationtests.SpringDeploymentTest;
 
@@ -39,7 +41,9 @@ public class SingletonLoadTest extends SpringDeploymentTest {
   }
 
   public void testEightNodeSingletonLoad() throws Exception {
-    runNodes(8);
+    if (!Os.isSolaris()) {
+      runNodes(8);
+    }
   }
 
   /*
@@ -58,9 +62,9 @@ public class SingletonLoadTest extends SpringDeploymentTest {
         servers.add(server);
         singletons.add(server.getProxy(ISingleton.class, REMOTE_SERVICE_NAME));
       }
-  
+
       // ((WebApplicationServer) servers.get(0)).ping(URL);
-  
+
       long startTime = System.currentTimeMillis();
       // round-robin
       for (int i = 0; i < NUM_ITERATION; i++) {
@@ -68,14 +72,14 @@ public class SingletonLoadTest extends SpringDeploymentTest {
       }
       long endTime = System.currentTimeMillis();
       long totalTime = (endTime - startTime);
-  
+
       // check clustering
       for (Iterator iter = servers.iterator(); iter.hasNext();) {
         WebApplicationServer cur = (WebApplicationServer) iter.next();
         ISingleton isp = (ISingleton) cur.getProxy(ISingleton.class, REMOTE_SERVICE_NAME);
         Assert.assertEquals(NUM_ITERATION, isp.getCounter());
       }
-  
+
       printData(nodeCount, totalTime);
 
     } finally {
@@ -109,7 +113,6 @@ public class SingletonLoadTest extends SpringDeploymentTest {
     builder.addDirectoryOrJARContainingClass(ISingleton.class);
     builder.addDirectoryContainingResource(CONFIG_FILE_FOR_TEST);
   }
-
 
   private void printData(int nodeCount, long totalTime) {
     System.out.println("**%% TERRACOTTA TEST STATISTICS %%**: nodes=" + nodeCount + " iteration=" + NUM_ITERATION
