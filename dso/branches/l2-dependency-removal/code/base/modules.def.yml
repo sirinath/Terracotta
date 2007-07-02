@@ -411,6 +411,7 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -424,6 +425,7 @@ modules:
         - aspectwerkz
         - dso-common
         - dso-l1
+        - deploy
         - thirdparty
   - clustered-lucene-2.0.0:
       options:
@@ -437,6 +439,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -450,6 +453,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - legacy-test-tree
         - linked-child-process
         - management
@@ -469,6 +473,7 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -487,6 +492,7 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -504,6 +510,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - dso-l1-weblogic
         - simulator
         - thirdparty
@@ -522,6 +529,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -539,6 +547,7 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -555,6 +564,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - deploy
         - simulator
         - thirdparty
         - legacy-test-tree
