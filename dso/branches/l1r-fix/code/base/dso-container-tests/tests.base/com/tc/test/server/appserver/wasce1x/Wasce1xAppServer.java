@@ -4,6 +4,7 @@
 package com.tc.test.server.appserver.wasce1x;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.cargo.container.geronimo.internal.GeronimoUtils;
 import org.codehaus.cargo.util.log.Logger;
 
@@ -63,6 +64,7 @@ public final class Wasce1xAppServer extends AbstractAppServer {
   private static final String RMI_PREFIX           = "rmi://0.0.0.0:";
   private static final String JMX_RMI              = ".*<gbean name=\"JMXService\">.*";
   private static final String JMX_RMI_PREFIX       = "service:jmx:rmi://0.0.0.0:";
+  private static final String NAME_TEXT            = ".*name=Geronimo.*";
 
   private static final String BASE_DIR_PROP        = "org.apache.geronimo.base.dir";
   private static final String TMP_DIR_PROP         = "java.io.tmpdir";
@@ -77,6 +79,7 @@ public final class Wasce1xAppServer extends AbstractAppServer {
   private int                 rmiPort;
   private ConsoleLogger       consoleLogger;
   private static final String LOG_CAT              = "WASCE 1.0 STARTUP";
+  private String instanceName;
 
   public Wasce1xAppServer(Wasce1xAppServerInstallation installation) {
     super(installation);
@@ -90,6 +93,7 @@ public final class Wasce1xAppServer extends AbstractAppServer {
     TestConfigObject config = TestConfigObject.getInstance();
     AppServerParameters params = (AppServerParameters) rawParams;
     int port = AppServerUtil.getPort();
+    instanceName = params.instanceName();
     final File instance = createInstance(params);
     File home = getHome();
     installPath = home.getCanonicalPath();
@@ -236,6 +240,9 @@ public final class Wasce1xAppServer extends AbstractAppServer {
       if (Pattern.matches(RMI_PORT_ATTRIB, line)) {
         rmiPort = AppServerUtil.getPort();
         useRMIPort = true;
+      }
+      if (Pattern.matches(NAME_TEXT, line)) {
+        line = "name=Geronimo" + IOUtils.LINE_SEPARATOR + "jvmRoute=" + instanceName;
       }
       if (Pattern.matches(WEB_PORT_ATTRIB, line)) useServerPort = true;
       if (Pattern.matches(RMI_PORT_URL, line)) {

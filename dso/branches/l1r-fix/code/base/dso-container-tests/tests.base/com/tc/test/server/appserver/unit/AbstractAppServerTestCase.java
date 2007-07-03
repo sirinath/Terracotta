@@ -10,6 +10,8 @@ import org.apache.tools.ant.taskdefs.Zip;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.Lock;
 import com.tc.object.config.schema.Root;
 import com.tc.properties.TCPropertiesImpl;
@@ -87,7 +89,7 @@ import javax.servlet.http.HttpSessionListener;
  * the appserver)
  * </ul>
  * <p>
- *
+ * 
  * <pre>
  *                            outer class:
  *                            ...
@@ -104,7 +106,7 @@ import javax.servlet.http.HttpSessionListener;
  *                            out.println(&quot;false&quot;);
  *                            ...
  * </pre>
- *
+ * 
  * <p>
  * <h3>Debugging Information:</h3>
  * There are a number of locations and files to consider when debugging appserver unit tests. Below is a list followed
@@ -139,10 +141,12 @@ import javax.servlet.http.HttpSessionListener;
  * <p>
  * As a final note: the <tt>UttpUtil</tt> class should be used (and added to as needed) to page servlets and validate
  * assertions.
- *
+ * 
  * @author eellis
  */
 public abstract class AbstractAppServerTestCase extends TCTestCase {
+
+  private static final TCLogger           logger             = TCLogging.getLogger(AbstractAppServerTestCase.class);
 
   private static final SynchronizedInt    nodeCounter        = new SynchronizedInt(-1);
   private static final String             NODE               = "node-";
@@ -201,6 +205,9 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   }
 
   protected void beforeTimeout() throws Throwable {
+    logger
+        .warn("beforeTimeout() called: a timeout has occurred.  Calling threadDumpGroup() and archiving sandbox logs",
+              new Exception("Stack trace of timeout timer"));
     threadDumpGroup();
 
     // make an archive of the workingDir since it will not be renamed when test times out
@@ -213,11 +220,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         String src = installation.sandboxDirectory().getAbsolutePath();
         String dest = new File(tempDir, "archive-logs-" + System.currentTimeMillis() + ".zip").getAbsolutePath();
 
-        String msg = "\n";
-        msg += "*****************************\n";
-        msg += "* Archiving logs in [" + src + "] to " + dest + "\n";
-        msg += "*****************************\n";
-        System.out.println(msg);
+        StringBuffer msg = new StringBuffer("\n");
+        msg.append("*****************************\n");
+        msg.append("* Archiving logs in [").append(src).append("] to ").append(dest).append("\n");
+        msg.append("*****************************\n");
+        logger.info(msg.toString());
 
         Zip zip = new Zip();
         zip.setProject(new Project());
@@ -289,7 +296,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   *
+   * 
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -327,14 +334,10 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         }
       }
 
-      // if (nodeNumber == 0) {
-      //   params.appendJvmArgs("-Xdebug");
-      //   params.appendJvmArgs("-Xrunjdwp:server=y,transport=dt_socket,address=8000,suspend=y");
-      // }
+      addAppServerSpecificJvmArg(NewAppServerFactory.TOMCAT, params, "-Dcatalina.jvmroute=" + NODE + nodeNumber);
 
       params.appendJvmArgs("-DNODE=" + NODE + nodeNumber);
-      params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ConfigProperties.REQUEST_BENCHES
-                           + "=true");
+      params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ConfigProperties.REQUEST_BENCHES + "=true");
 
       params.addWar(warFile());
       AppServerResult r = (AppServerResult) appServer.start(params);
@@ -345,6 +348,12 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     } catch (Exception e) {
       threadDumpGroup();
       throw e;
+    }
+  }
+
+  private void addAppServerSpecificJvmArg(String appserverName, StandardAppServerParameters params, String arg) {
+    if (appserverName.equals(config.appserverFactoryName())) {
+      params.appendJvmArgs(arg);
     }
   }
 
@@ -375,11 +384,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   *
+   * 
    * @throws Exception
    */
   protected void tearDown() throws Exception {
-    System.out.println("in tearDown...");
+    logger.info("tearDown() called, stopping servers and archiving sandbox");
     for (Iterator iter = appservers.iterator(); iter.hasNext();) {
       Server server = (Server) iter.next();
       server.stop();
