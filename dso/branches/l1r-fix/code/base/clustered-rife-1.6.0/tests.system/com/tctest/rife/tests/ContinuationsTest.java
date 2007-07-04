@@ -3,10 +3,10 @@ package com.tctest.rife.tests;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
-import java.util.Date;
 
 import junit.framework.Test;
 
@@ -19,11 +19,11 @@ import com.meterware.httpunit.WebResponse;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
+import com.tc.util.runtime.Vm;
 import com.tctest.rife.elements.AllTypes;
 import com.uwyn.rife.engine.ReservedParameters;
 import com.uwyn.rife.servlet.RifeFilter;
 import com.uwyn.rife.tools.StringUtils;
-import com.tc.util.runtime.Vm;
 
 public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
 	public static Test suite() {
@@ -37,7 +37,7 @@ public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
   }
   
   public boolean shouldDisable() {
-  	return Vm.isIBM();
+  	return super.shouldDisable() || Vm.isIBM();
   }
   
 	/**

@@ -13,15 +13,15 @@ import org.eclipse.jdt.internal.core.JarPackageFragmentRoot;
 import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.ui.JavaWorkbenchAdapter;
 import org.eclipse.jdt.internal.ui.packageview.PackageExplorerContentProvider;
-import org.eclipse.jdt.internal.ui.packageview.PackageExplorerLabelProvider;
-import org.eclipse.jdt.internal.ui.packageview.WorkingSetAwareJavaElementSorter;
 import org.eclipse.jdt.internal.ui.viewsupport.AppearanceAwareLabelProvider;
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
+import org.eclipse.jdt.internal.ui.viewsupport.JavaUILabelProvider;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -60,7 +60,7 @@ public class PackageNavigator extends MessageDialog {
   protected void configureShell(Shell shell) {
     super.configureShell(shell);
     shell.setSize(400, 300);
-    if(m_parentShell != null) {
+    if (m_parentShell != null) {
       SWTUtil.placeDialogInCenter(m_parentShell, shell);
     }
   }
@@ -87,22 +87,19 @@ public class PackageNavigator extends MessageDialog {
   }
 
   protected Control createCustomArea(Composite parent) {
-    initLayout(m_layout = new Layout(parent, m_behavior.style()));
-    return parent;
-  }
-
-  private void initLayout(final Layout layout) {
-    JavaHierarchyContentProvider contentProvider;
-    layout.m_viewer.setContentProvider(contentProvider = new JavaHierarchyContentProvider());
-    layout.m_viewer.setLabelProvider(new PackageExplorerLabelProvider(AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
+    m_layout = new Layout(parent, m_behavior.style());
+    m_layout.m_viewer.setContentProvider(new JavaHierarchyContentProvider());
+    m_layout.m_viewer.setLabelProvider(new JavaUILabelProvider(AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
         | JavaElementLabels.P_COMPRESSED | JavaElementLabels.ALL_CATEGORY,
-        AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS | JavaElementImageProvider.SMALL_ICONS, contentProvider));
-    layout.m_viewer.setSorter(new WorkingSetAwareJavaElementSorter());
+        AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS | JavaElementImageProvider.SMALL_ICONS));
+    m_layout.m_viewer.setSorter(new ViewerSorter());
     IJavaProject jproj = JavaCore.create(m_project);
     IJavaElement root = jproj.getJavaModel();
-    layout.m_viewer.setInput(root);
-    layout.m_viewer.addSelectionChangedListener(m_behavior.getSelectionChangedListener(this));
-    layout.m_viewer.addFilter(m_behavior.getFilter(jproj));
+    m_layout.m_viewer.setInput(root);
+    m_layout.m_viewer.addSelectionChangedListener(m_behavior.getSelectionChangedListener(this));
+    m_layout.m_viewer.addFilter(m_behavior.getFilter(jproj));
+
+    return parent;
   }
 
   protected void buttonPressed(int buttonId) {
@@ -171,11 +168,11 @@ public class PackageNavigator extends MessageDialog {
 
   // --------------------------------------------------------------------------------
 
-  private static class Layout {
+  private class Layout {
     final TreeViewer m_viewer;
 
     private Layout(Composite parent, int style) {
-      this.m_viewer = new TreeViewer(parent, style|SWT.BORDER);
+      this.m_viewer = new TreeViewer(parent, style | SWT.BORDER);
       m_viewer.getTree().setLayoutData(new GridData(GridData.FILL_BOTH));
     }
   }
