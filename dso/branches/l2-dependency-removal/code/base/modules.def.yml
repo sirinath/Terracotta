@@ -219,6 +219,8 @@ modules:
         - dso-common-jdk15
         - management
         - dso-l1
+        - dso-l2-common
+        - deploy
         - legacy-test-tree
         - simulator
         - thirdparty
@@ -330,6 +332,8 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - dso-l2-common
+        - deploy
         - dso-l1-weblogic
         - dso-spring
         - simulator
@@ -348,6 +352,8 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1
+        - dso-l2-common
+        - deploy
         - legacy-test-tree
         - simulator
         - linked-child-process
@@ -369,6 +375,8 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1
+        - dso-l2-common
+        - deploy
         - dso-l1-weblogic
         - dso-spring
         - simulator
