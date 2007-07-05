@@ -76,8 +76,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private File                              warFile;
   private DsoServer                         dsoServer;
   private TerracottaServerConfigGenerator   configGen;
-  private Class                             filterClass;
   private StandardTerracottaAppServerConfig configBuilder;
+
+  private List                              filterList         = new ArrayList();
+  private List                              listenerList       = new ArrayList();
+  private List                              servletList        = new ArrayList();
 
   private boolean                           isSynchronousWrite = false;
 
@@ -91,7 +94,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         && (NewAppServerFactory.GLASSFISH.equals(appserver) || NewAppServerFactory.JETTY.equals(appserver))) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }
-    
+
     initTestEnvironment();
   }
 
@@ -173,8 +176,16 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     }
   }
 
-  protected void addSessionFilter(Class filterClazz) {
-    this.filterClass = filterClazz;
+  protected void registerSessionFilter(Class filterClazz) {
+    filterList.add(filterClazz);
+  }
+
+  protected void registerListener(Class listener) {
+    listenerList.add(listener);
+  }
+
+  protected void registerServlet(Class servlet) {
+    servletList.add(servlet);
   }
 
   /**
@@ -329,10 +340,24 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     if (warFile != null) return warFile;
     War war = appServerFactory.createWar(testName());
     addServletsWebAppClasses(war);
-    if (filterClass != null) {
-      TCServletFilter filterInstance = (TCServletFilter) filterClass.newInstance();
-      war.addFilter(filterClass, filterInstance.getPattern(), filterInstance.getInitParams());
+
+    // add registered session filters
+    for (Iterator it = filterList.iterator(); it.hasNext();) {
+      Class filter = (Class) it.next();
+      TCServletFilter filterInstance = (TCServletFilter) filter.newInstance();
+      war.addFilter(filter, filterInstance.getPattern(), filterInstance.getInitParams());
     }
+
+    // add registered attribute listeners
+    for (Iterator it = listenerList.iterator(); it.hasNext();) {
+      war.addListener((Class) it.next());
+    }
+
+    // add registered servlets
+    for (Iterator it = servletList.iterator(); it.hasNext();) {
+      war.addServlet((Class) it.next());
+    }
+
     File resourceDir = installation.dataDirectory();
     warFile = new File(resourceDir + File.separator + war.writeWarFileToDirectory(resourceDir));
     return warFile;
