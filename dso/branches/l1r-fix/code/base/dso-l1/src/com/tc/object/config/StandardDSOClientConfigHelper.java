@@ -1570,6 +1570,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private void addSpec(TransparencyClassSpec spec) {
     synchronized (classSpecs) {
       Assert.eval(!classSpecs.containsKey(spec.getClassName()));
+      Assert.assertNotNull(spec);
       classSpecs.put(spec.getClassName(), spec);
     }
   }
@@ -1669,6 +1670,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     TransparencyClassSpec[] allSpecs = getAllSpecs();
     for (int i = 0; i < allSpecs.length; i++) {
       TransparencyClassSpec classSpec = allSpecs[i];
+      Assert.assertNotNull(classSpec);
       String message = "";
       if (classSpec.isPreInstrumented()) {
         message = "* " + classSpec.getClassName() + "... ";
