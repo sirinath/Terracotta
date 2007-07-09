@@ -233,6 +233,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         notifyTransportDisconnected(null);
       }
     }
+    reconnectMode.set(false);
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
