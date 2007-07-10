@@ -7,7 +7,7 @@ rem  All rights reserved.
 rem
 
 rem
-rem samples\spring\webflow
+rem samples\rife\continuations
 rem
 rem Environment variables required by dso-env helper script:
 rem  JAVA_HOME: root of Java Development Kit installation
@@ -36,5 +36,5 @@ set OPTS=%OPTS% -Dcom.sun.management.jmxremote.ssl=false
 set OPTS=%OPTS% -Dtc.node-name=Node1
 set JAVA_OPTS=%OPTS% %JAVA_OPTS%
 set CATALINA_BASE=tomcat1
-start "terracotta for spring: webflow sample: 8081" "%CATALINA_HOME%\bin\catalina.bat" run
+start "terracotta for rife: continuations sample: 8081" "%CATALINA_HOME%\bin\catalina.bat" run
 endlocal

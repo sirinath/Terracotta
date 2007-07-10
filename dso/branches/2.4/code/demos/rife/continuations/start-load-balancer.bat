@@ -7,7 +7,7 @@ rem  All rights reserved.
 rem
 
 rem
-rem samples\spring\webflow
+rem samples\rife\continuations
 rem
 rem Environment variables required by dso-env helper script:
 rem  JAVA_HOME: root of Java Development Kit installation
