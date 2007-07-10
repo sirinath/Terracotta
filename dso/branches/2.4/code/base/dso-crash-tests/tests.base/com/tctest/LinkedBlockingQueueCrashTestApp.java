@@ -21,7 +21,7 @@ import java.util.Iterator;
 
 public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
   int upbound = 2000;
-  long MaxRuntimeMillis = 2 * 60 * 1000 + 30000;
+  long MaxRuntimeMillis = 5 * 60 * 1000 + 30000;
   
   private final CyclicBarrier     barrier; 
   private final LinkedBlockingQueue<EventNode> lbqueue1 = new LinkedBlockingQueue<EventNode>();
@@ -92,19 +92,17 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
       } else { 
         node = doPass();
         System.err.println("*** Doing pass id=" + node.getId() + " by thread= " + index + ", client: " + ManagerUtil.getClientID());
-        synchronized(controller) {
-          controller.decGetter();
-        }     
-        // ended when total nodes exceed or use up time
-        if(node.getId() >= upbound) {
-          break;
-        }
+        controller.decGetter();
       }
+      // ended when total nodes exceed
+      if(node.getId() >= upbound) controller.ending();
       // limited by time too
-      if (System.currentTimeMillis() >= endTime) break;
+      if (System.currentTimeMillis() >= endTime) controller.ending();
+      
+      if (controller.canQuit()) break;
 
       Thread.sleep(r.nextInt(20));
-     }
+    }
     index = barrier.await();
     
     // verify
@@ -235,34 +233,46 @@ public class LinkedBlockingQueueCrashTestApp extends AbstractTransparentApp {
   
   public static class GetController  {
     private int participants, getters;
+    private boolean ending = false;
     
     public GetController(int participant) {
       this.participants = participant;
       getters = 0;
     }
     
-    public void incGetter() throws Exception{
+    public synchronized void incGetter() throws Exception{
       ++getters;
       // System.out.println("*** incGetter " + getters);
       Assert.assertTrue("Stuck in every node is a getter", getters < participants);        
     }
     
-    public void decGetter() throws Exception {
+    public synchronized void decGetter() throws Exception {
       --getters;
       // System.out.println("*** decGetter " + getters);
       Assert.assertTrue("Negative number of getter", getters >= 0);
     }
     
-    public int nGetters() {
+    public synchronized int nGetters() {
       return(getters);
     }
     
-    public boolean canDoGet() {
-      return(getters < (participants - 1));
+    public synchronized boolean canDoGet() {
+      // no more getter if ending the test
+      if (ending) return(false);
+      else return(getters < (participants - 1));
     }
     
-    public void clean() {
+    public synchronized void clean() {
       getters = 0;
+    }
+    
+    public synchronized void ending() {
+      ending = true;
+    }
+    
+    public synchronized boolean canQuit() {
+      if (ending && (getters == 0)) return true;
+      else return false;
     }
   }
 
