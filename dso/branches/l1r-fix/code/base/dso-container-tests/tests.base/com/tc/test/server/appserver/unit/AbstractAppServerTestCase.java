@@ -34,10 +34,10 @@ import com.tc.test.server.util.AppServerUtil;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
+import com.tc.util.runtime.Vm;
 import com.terracotta.session.util.ConfigProperties;
 
 import java.io.File;
-import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -49,23 +49,27 @@ import java.util.Properties;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpSessionActivationListener;
 import javax.servlet.http.HttpSessionAttributeListener;
+import javax.servlet.http.HttpSessionBindingListener;
 import javax.servlet.http.HttpSessionListener;
 
 public abstract class AbstractAppServerTestCase extends TCTestCase {
 
-  private static final TCLogger             logger             = TCLogging.getLogger(AbstractAppServerTestCase.class);
+  private static final TCLogger             logger                     = TCLogging
+                                                                           .getLogger(AbstractAppServerTestCase.class);
 
-  private static final SynchronizedInt      nodeCounter        = new SynchronizedInt(-1);
-  private static final String               NODE               = "node-";
-  private static final String               DOMAIN             = "localhost";
+  private static final SynchronizedInt      nodeCounter                = new SynchronizedInt(-1);
+  private static final String               NODE                       = "node-";
+  private static final String               DOMAIN                     = "localhost";
 
-  protected final List                      appservers         = new ArrayList();
-  private final Object                      workingDirLock     = new Object();
-  private final List                        dsoServerJvmArgs   = new ArrayList();
-  private final List                        roots              = new ArrayList();
-  private final List                        locks              = new ArrayList();
-  private final List                        includes           = new ArrayList();
-  private final TestConfigObject            config             = TestConfigObject.getInstance();
+  private static final boolean              GC_LOGGGING                = false;
+
+  protected final List                      appservers                 = new ArrayList();
+  private final Object                      workingDirLock             = new Object();
+  private final List                        dsoServerJvmArgs           = new ArrayList();
+  private final List                        roots                      = new ArrayList();
+  private final List                        locks                      = new ArrayList();
+  private final List                        instrumentationExpressions = new ArrayList();
+  private final TestConfigObject            config                     = TestConfigObject.getInstance();
 
   private File                              serverInstallDir;
   private File                              sandbox;
@@ -78,11 +82,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private TerracottaServerConfigGenerator   configGen;
   private StandardTerracottaAppServerConfig configBuilder;
 
-  private List                              filterList         = new ArrayList();
-  private List                              listenerList       = new ArrayList();
-  private List                              servletList        = new ArrayList();
+  private List                              filterList                 = new ArrayList();
+  private List                              listenerList               = new ArrayList();
+  private List                              servletList                = new ArrayList();
 
-  private boolean                           isSynchronousWrite = false;
+  private boolean                           isSynchronousWrite         = false;
 
   public AbstractAppServerTestCase() {
     // keep the regular thread dump behavior for windows and macs
@@ -118,7 +122,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   * 
+   *
    * @throws Exception
    */
   protected void tearDown() throws Exception {
@@ -176,18 +180,6 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     }
   }
 
-  protected void registerSessionFilter(Class filterClazz) {
-    filterList.add(filterClazz);
-  }
-
-  protected void registerListener(Class listener) {
-    listenerList.add(listener);
-  }
-
-  protected void registerServlet(Class servlet) {
-    servletList.add(servlet);
-  }
-
   /**
    * Starts a DSO server using a generated tc-config.xml
    */
@@ -240,7 +232,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   }
 
   protected final void addInclude(String expression) {
-    includes.add(expression);
+    instrumentationExpressions.add(InstrumentationExpression.makeInclude(expression));
+  }
+
+  protected final void addExclude(String expression) {
+    instrumentationExpressions.add(InstrumentationExpression.makeExclude(expression));
   }
 
   protected final void addConfigModule(String name, String version) {
@@ -250,7 +246,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   * 
+   *
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -288,7 +284,21 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
         }
       }
 
-      addAppServerSpecificJvmArg(NewAppServerFactory.TOMCAT, params, "-Dcatalina.jvmroute=" + NODE + nodeNumber);
+      if (!Vm.isIBM()) {
+        // InstrumentEverythingInContainerTest under glassfish needs this
+        params.appendJvmArgs("-XX:MaxPermSize=128m");
+      }
+
+      if (GC_LOGGGING && !Vm.isIBM()) {
+        params.appendJvmArgs("-verbose:gc");
+        params.appendJvmArgs("-XX:+PrintGCDetails");
+        params.appendJvmArgs("-Xloggc:"
+                             + new File(this.installation.sandboxDirectory(), NODE + nodeNumber + "-gc.log")
+                                 .getAbsolutePath());
+      }
+
+      addAppServerSpecificJvmArg(NewAppServerFactory.TOMCAT, params, "-Djvmroute=" + NODE + nodeNumber);
+      addAppServerSpecificJvmArg(NewAppServerFactory.JBOSS, params, "-Djvmroute=" + NODE + nodeNumber);
 
       params.appendJvmArgs("-DNODE=" + NODE + nodeNumber);
       params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ConfigProperties.REQUEST_BENCHES + "=true");
@@ -339,13 +349,11 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private synchronized File warFile() throws Exception {
     if (warFile != null) return warFile;
     War war = appServerFactory.createWar(testName());
-    addServletsWebAppClasses(war);
 
     // add registered session filters
     for (Iterator it = filterList.iterator(); it.hasNext();) {
-      Class filter = (Class) it.next();
-      TCServletFilter filterInstance = (TCServletFilter) filter.newInstance();
-      war.addFilter(filter, filterInstance.getPattern(), filterInstance.getInitParams());
+      TCServletFilterHolder filter = (TCServletFilterHolder) it.next();
+      war.addFilter(filter.getFilterClass(), filter.getPattern(), filter.getInitParams());
     }
 
     // add registered attribute listeners
@@ -363,45 +371,39 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     return warFile;
   }
 
-  private void addServletsWebAppClasses(War war) throws InstantiationException, IllegalAccessException {
-    Class[] classes = getClass().getClasses();
-    for (int i = 0; i < classes.length; i++) {
-      Class clazz = classes[i];
-      if (!isSafeClass(clazz)) {
-        continue;
-      }
-      if (isServlet(clazz)) {
-        war.addServlet(clazz);
-      }
-      if (isListener(clazz)) {
-        war.addListener(clazz);
-      }
-      if (isFilter(clazz)) {
-        TCServletFilter filterInstance = (TCServletFilter) clazz.newInstance();
-        war.addFilter(clazz, filterInstance.getPattern(), filterInstance.getInitParams());
-      }
-      // it's just a class, add it
-      war.addClass(clazz);
-    }
+  protected final void registerFilter(TCServletFilterHolder filter) {
+    assertNonInnerClass(filter.getFilterClass());
+    Assert.assertTrue("Class " + filter.getFilterClass() + " is not a filter", filter.isFilter());
+    filterList.add(filter);
   }
 
-  private static boolean isSafeClass(Class clazz) {
-    int mod = clazz.getModifiers();
-    return Modifier.isStatic(mod) && Modifier.isPublic(mod) && !Modifier.isInterface(mod) && !Modifier.isAbstract(mod);
+  protected final void registerListener(Class listener) {
+    assertNonInnerClass(listener);
+    Assert.assertTrue("Class " + listener + " is not any kind of javax.servlet listener", isListener(listener));
+    listenerList.add(listener);
+  }
+
+  protected final void registerServlet(Class servlet) {
+    assertNonInnerClass(servlet);
+    Assert.assertTrue("Class " + servlet + " is not a servlet", isServlet(servlet));
+    servletList.add(servlet);
   }
 
   private static boolean isServlet(Class clazz) {
     return clazz.getSuperclass().equals(HttpServlet.class) && clazz.getName().toLowerCase().endsWith("servlet");
   }
 
-  private static boolean isFilter(Class clazz) {
-    return TCServletFilter.class.isAssignableFrom(clazz);
+  private static void assertNonInnerClass(Class clazz) {
+    // Using inner classes for servlets, listeners, filters, etc is problematic under WAS 6.1
+
+    if (clazz.getName().indexOf('$') >= 0) { throw new AssertionError("Inner class not allowed: " + clazz.getName()); }
   }
 
   private static boolean isListener(Class clazz) {
     return HttpSessionActivationListener.class.isAssignableFrom(clazz)
            || HttpSessionAttributeListener.class.isAssignableFrom(clazz)
-           || HttpSessionListener.class.isAssignableFrom(clazz);
+           || HttpSessionListener.class.isAssignableFrom(clazz)
+           || HttpSessionBindingListener.class.isAssignableFrom(clazz);
   }
 
   private String testName() {
@@ -429,8 +431,15 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     configBuilder.addInclude("com.tctest..*");
     configBuilder.addInclude("com.tctest..*$*");
 
-    for (Iterator iter = includes.iterator(); iter.hasNext();) {
-      configBuilder.addInclude((String) iter.next());
+    for (Iterator iter = instrumentationExpressions.iterator(); iter.hasNext();) {
+      InstrumentationExpression ie = (InstrumentationExpression) iter.next();
+      if (ie.isExclude()) {
+        configBuilder.addExclude(ie.getExpression());
+      } else if (ie.isInclude()) {
+        configBuilder.addInclude(ie.getExpression());
+      } else {
+        throw new AssertionError();
+      }
     }
 
     for (Iterator iter = roots.iterator(); iter.hasNext();) {
@@ -452,6 +461,38 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   protected boolean isSessionTest() {
     return true;
+  }
+
+  private static class InstrumentationExpression {
+    private static final int INCLUDE = 1;
+    private static final int EXCLUDE = 2;
+    private final String     expression;
+    private final int        type;
+
+    static InstrumentationExpression makeInclude(String exp) {
+      return new InstrumentationExpression(INCLUDE, exp);
+    }
+
+    static InstrumentationExpression makeExclude(String exp) {
+      return new InstrumentationExpression(EXCLUDE, exp);
+    }
+
+    private InstrumentationExpression(int type, String expression) {
+      this.type = type;
+      this.expression = expression;
+    }
+
+    String getExpression() {
+      return expression;
+    }
+
+    boolean isExclude() {
+      return type == EXCLUDE;
+    }
+
+    boolean isInclude() {
+      return type == INCLUDE;
+    }
   }
 
 }

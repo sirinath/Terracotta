@@ -12,6 +12,6 @@ set TC_INSTALL_DIR=..\..\..
 set CATALINA_HOME=%TC_INSTALL_DIR%\vendors\tomcat5.5
 if not exist "%JAVA_HOME%" set JAVA_HOME=%TC_INSTALL_DIR%\jre
 set CATALINA_BASE=tomcat3
-echo "stopping terracotta for spring: webflow sample: 8083" 
+echo "stopping terracotta for rife: continuations sample: 8083" 
 "%CATALINA_HOME%\bin\catalina.bat" stop
 endlocal

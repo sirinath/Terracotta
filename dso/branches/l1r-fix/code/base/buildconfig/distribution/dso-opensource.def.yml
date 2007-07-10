@@ -62,7 +62,7 @@ bundled_components:
         compiler_versions:
           - 1.4
           - 1.5
-      module_bootjars:
+      module_packages:
         - tc-session:
             install_directory: lib/session
             modules:
@@ -71,12 +71,7 @@ bundled_components:
               - dso-l1-tomcat
               - dso-l1-tomcat50
               - dso-l1-tomcat55
-      # WARNING:
-      # This section also controls what goes into the 'tc.jar' file
-      # if you modify this section, please make sure it is duplicated
-      # across all kit configuration files, so that the 'tc.jar' file
-      # will contain the same bits across kit types; this allows us
-      # to stack different kit types over one another.
+      # NOTE: this section also controls what goes into the 'tc.jar' file
       modules:
         - aspectwerkz:
             exclude-runtime-libraries: true
@@ -98,7 +93,17 @@ bundled_modules:
       install_directory: modules
       manifest:
         - clustered-apache-struts-1.1
+        - clustered-cglib-2.1.3
         - clustered-commons-collections-3.1
+        - clustered-ehcache-1.2.4
+        - clustered-ehcache-1.3
+        - clustered-hibernate-3.1.2
+        - clustered-iBatis-2.2.0
+        - clustered-jetty-6.1
+        - clustered-lucene-2.0.0
+        - clustered-rife-1.6.0
+        - clustered-websphere-6.1.0.7
+        - clustered-wicket-1.3        
 packaging:
   - tar:
       assert: '@build_environment.os_type !~ /^\s*windows\s*$/i'

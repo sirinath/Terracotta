@@ -12,7 +12,7 @@ import com.tctest.TestState;
 
 public class ServerCrasher implements Runnable {
   private final ServerControl server;
-  private final Thread        myThread = new Thread(this, "ServerCrasher");
+  private final Thread        myThread         = new Thread(this, "ServerCrasher");
   private final long          crashInterval;
   private final TestState     testState;
   private boolean             proxyConnectMode = false;
@@ -28,7 +28,7 @@ public class ServerCrasher implements Runnable {
     testState.setTestState(TestState.RUNNING);
     myThread.start();
   }
-  
+
   public void setProxyConnectMode(boolean onoff) {
     proxyConnectMode = onoff;
   }
@@ -55,7 +55,7 @@ public class ServerCrasher implements Runnable {
             if (proxyConnectMode) {
               ProxyConnectManagerImpl.getManager().stopProxyTest();
               ProxyConnectManagerImpl.getManager().proxyDown();
-	    }
+            }
             server.crash();
 
             if (server.isRunning()) throw new AssertionError("Server is still running even after shutdown or crash.");
