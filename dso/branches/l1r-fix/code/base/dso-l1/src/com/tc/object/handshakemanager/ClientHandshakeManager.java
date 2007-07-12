@@ -140,6 +140,7 @@ public class ClientHandshakeManager implements ChannelEventListener {
       sessionManager.newSession();
       pauseSink.add(PauseContext.PAUSE);
     } else if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
+      sessionManager.newSession();
       pauseSink.add(PauseContext.UNPAUSE);
     } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
       cluster.thisNodeDisconnected();

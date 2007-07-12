@@ -97,6 +97,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   public synchronized void runGC() {
     waitUntilRunning();
     logger.info("Running Lock GC...");
+    sessionManager.setBatchSessionID();
     ArrayList toGC = new ArrayList(locksByID.size());
     for (Iterator iter = locksByID.values().iterator(); iter.hasNext();) {
       ClientLock lock = (ClientLock) iter.next();
@@ -111,6 +112,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
         recall(lockID, ThreadID.VM_ID, LockLevel.WRITE);
       }
     }
+    sessionManager.clrBatchSessionID();
   }
 
   private GlobalLockInfo getLockInfo(LockID lockID, ThreadID threadID) {

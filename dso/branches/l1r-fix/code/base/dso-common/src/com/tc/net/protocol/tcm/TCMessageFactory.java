@@ -4,6 +4,7 @@
 package com.tc.net.protocol.tcm;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.object.session.SessionID;
 
 public interface TCMessageFactory {
 
@@ -12,5 +13,7 @@ public interface TCMessageFactory {
   public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, TCByteBuffer[] data);
 
   public void addClassMapping(TCMessageType type, Class msgClass);
+  
+  public boolean isCurrentSession(SessionID sid);
 
 }

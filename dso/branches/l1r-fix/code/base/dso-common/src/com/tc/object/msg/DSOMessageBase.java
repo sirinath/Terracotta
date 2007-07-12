@@ -6,6 +6,7 @@ package com.tc.object.msg;
 import com.tc.async.api.EventContext;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
+import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -20,9 +21,9 @@ public class DSOMessageBase extends TCMessageImpl implements EventContext {
 
   private final SessionID localSessionID;
 
-  public DSOMessageBase(MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel, TCMessageType type) {
+  public DSOMessageBase(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel, TCMessageType type) {
     super(monitor, out, channel, type);
-    this.localSessionID = SessionID.NULL_ID;
+    this.localSessionID = sessionID;
   }
 
   public DSOMessageBase(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header,
@@ -33,6 +34,18 @@ public class DSOMessageBase extends TCMessageImpl implements EventContext {
 
   public SessionID getLocalSessionID() {
     return localSessionID;
+  }
+  
+  /*
+   * Here to drop mismatch seesion-id messages
+   */
+  public void send() {
+    MessageChannel channel = getChannel();
+    if (channel instanceof ClientMessageChannel) {
+      if (!((ClientMessageChannel)channel).isCurrentSession(localSessionID))
+        return;
+    } 
+    super.send();
   }
 
 }

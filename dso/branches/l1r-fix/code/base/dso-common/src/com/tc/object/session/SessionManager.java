@@ -11,4 +11,8 @@ public interface SessionManager {
    * Tells the session manager to start a new session.
    */
   public void newSession();
+  
+  public void setBatchSessionID();
+  
+  public void clrBatchSessionID();
 }
