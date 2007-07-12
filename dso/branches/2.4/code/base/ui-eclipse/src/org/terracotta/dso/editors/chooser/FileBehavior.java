@@ -4,8 +4,8 @@
  */
 package org.terracotta.dso.editors.chooser;
 
-import org.eclipse.core.internal.resources.Folder;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -31,7 +31,8 @@ public final class FileBehavior implements NavigatorBehavior {
     return new ViewerFilter() {
       public boolean select(Viewer viewer, Object parentElement, Object element) {
         if (element instanceof IJavaProject && element.equals(javaProject)) return true;
-        if (element instanceof Folder || element instanceof IFile) return true;
+        if (element instanceof IFolder) return true;
+        if (element instanceof IFile && "xml".equals(((IFile)element).getFileExtension())) return true;
         return false;
       }
     };
@@ -45,10 +46,10 @@ public final class FileBehavior implements NavigatorBehavior {
         if (!selection.isEmpty()) {
           Object element = selection.getFirstElement();
           if (element != null) {
-            if (element instanceof IJavaProject || element instanceof Folder) {
-              nav.enableSelection(false, this);
-              event.getSelectionProvider().setSelection(null);
-              nav.enableSelection(true, this);
+            if (element instanceof IJavaProject || element instanceof IFolder) {
+//              nav.enableSelection(false, this);
+//              event.getSelectionProvider().setSelection(null);
+//              nav.enableSelection(true, this);
               nav.okButtonEnabled(false);
             } else if (element instanceof IFile) {
               IFile file = (IFile) element;
