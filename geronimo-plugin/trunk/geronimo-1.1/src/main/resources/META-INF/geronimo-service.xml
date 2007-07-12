@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://geronimo.apache.org/xml/ns/deployment-1.1">
+
+    <environment>
+      <moduleId>
+        <groupId>org.terracotta</groupId>
+        <artifactId>geronimo-terracotta</artifactId>
+        <version>0.0.1</version>
+        <type>car</type>
+      </moduleId>
+
+      <dependencies>
+        <dependency>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </dependency>
+      </dependencies>
+    </environment>
+
+    <gbean name="Terracotta" class="org.terracotta.geronimo1_1.gbean.Terracotta" />
+
+</module>
