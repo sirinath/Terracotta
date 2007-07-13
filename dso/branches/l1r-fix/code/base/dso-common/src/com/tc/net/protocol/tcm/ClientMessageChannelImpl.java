@@ -8,7 +8,6 @@ import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.transport.MessageTransport;
-import com.tc.object.session.SessionID;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -43,10 +42,6 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
       this.cidProvider.setChannelID(this.channelID);
       return id;
     }
-  }
-  
-  public boolean isCurrentSession(SessionID sid) {
-    return(msgFactory.isCurrentSession(sid));
   }
 
   public void addClassMapping(TCMessageType type, Class msgClass) {

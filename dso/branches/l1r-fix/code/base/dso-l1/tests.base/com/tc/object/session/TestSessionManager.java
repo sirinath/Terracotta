@@ -3,8 +3,6 @@
  */
 package com.tc.object.session;
 
-import com.tc.exception.ImplementMe;
-
 
 public class TestSessionManager implements SessionManager, SessionProvider {
 
@@ -22,13 +20,5 @@ public class TestSessionManager implements SessionManager, SessionProvider {
   public boolean isCurrentSession(SessionID theSessionID) {
     return isCurrentSession;
   }
-  
-  public void setBatchSessionID() {
-    throw new ImplementMe();
-  }
-  
-  public void clrBatchSessionID() {
-    throw new ImplementMe();
-  }
-  
+
 }

@@ -4,7 +4,6 @@
 package com.tc.net.protocol.tcm;
 
 import com.tc.async.api.Sink;
-import com.tc.object.session.SessionID;
 
 public interface ClientMessageChannel extends MessageChannel {
 
@@ -21,7 +20,5 @@ public interface ClientMessageChannel extends MessageChannel {
   public int getConnectAttemptCount();
 
   public ChannelIDProvider getChannelIDProvider();
-  
-  public boolean isCurrentSession(SessionID sid);
   
 }

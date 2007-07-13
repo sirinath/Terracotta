@@ -32,9 +32,9 @@ public class ClientHandshakeAckMessageImpl extends DSOMessageBase implements Cli
   private boolean           persistentServer;
   private String            thisNodeId;
 
-  public ClientHandshakeAckMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel,
+  public ClientHandshakeAckMessageImpl(MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel,
                                        TCMessageType type) {
-    super(sessionID, monitor, out, channel, type);
+    super(monitor, out, channel, type);
   }
 
   public ClientHandshakeAckMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
