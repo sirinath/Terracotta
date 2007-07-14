@@ -23,7 +23,6 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.object.tx.WaitInvocation;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.impl.TestObjectRequestManager;
 import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.l1.api.TestClientStateManager.AddReferenceContext;
 import com.tc.objectserver.lockmanager.api.TestLockManager;
@@ -51,7 +50,6 @@ import java.util.Set;
 public class ServerClientHandshakeManagerTest extends TCTestCase {
 
   private ServerClientHandshakeManager hm;
-  private TestObjectRequestManager     objectRequestManager;
   private TestClientStateManager       clientStateManager;
   private TestLockManager              lockManager;
   private TestSink                     lockResponseSink;
@@ -64,7 +62,6 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
 
   public void setUp() {
     existingUnconnectedClients = new HashSet();
-    objectRequestManager = new TestObjectRequestManager();
     clientStateManager = new TestClientStateManager();
     lockManager = new TestLockManager();
     lockResponseSink = new TestSink();
@@ -77,8 +74,8 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
 
   private void initHandshakeManager() {
     this.hm = new ServerClientHandshakeManager(TCLogging.getLogger(ServerClientHandshakeManager.class), channelManager,
-                                               objectRequestManager, new TestServerTransactionManager(),
-                                               sequenceValidator, clientStateManager, lockManager, lockResponseSink,
+                                               new TestServerTransactionManager(), sequenceValidator,
+                                               clientStateManager, lockManager, lockResponseSink,
                                                new ObjectIDSequenceProvider(objectIDSequenceStart), timer,
                                                reconnectTimeout, false);
     this.hm.setStarting(convertToConnectionIds(existingUnconnectedClients));
@@ -329,9 +326,6 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     // make sure the lock manager got started
     assertEquals(1, lockManager.startCalls.size());
 
-    // make sure the object manager got started
-    assertNotNull(objectRequestManager.startCalls.poll(1));
-
     // make sure the state change happens properly
     assertTrue(hm.isStarted());
   }
@@ -350,6 +344,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     public final List closeAllChannelIDs = new ArrayList();
     public final Map  handshakeMessages  = new HashMap();
     public final Set  channelIDs         = new HashSet();
+    private String    serverVersion      = "N/A";
 
     public void closeAll(Collection theChannelIDs) {
       closeAllChannelIDs.addAll(theChannelIDs);
@@ -408,14 +403,13 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
 
     public void makeChannelActive(ChannelID channelID, long startIDs, long endIDs, boolean persistent) {
       ClientHandshakeAckMessage ackMsg = newClientHandshakeAckMessage(channelID);
-      ackMsg.initialize(startIDs, endIDs, persistent, getActiveChannels());
+      ackMsg.initialize(startIDs, endIDs, persistent, getActiveChannels(), serverVersion);
       ackMsg.send();
     }
 
     public void makeChannelActiveNoAck(MessageChannel channel) {
       //
     }
-
   }
 
   private static class TestClientHandshakeAckMessage implements ClientHandshakeAckMessage {
@@ -425,6 +419,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     public long                         end;
     private boolean                     persistent;
     private final TestMessageChannel    channel;
+    private String                      serverVersion;
 
     private TestClientHandshakeAckMessage(ChannelID channelID) {
       this.channelID = channelID;
@@ -448,10 +443,11 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       return persistent;
     }
 
-    public void initialize(long startOid, long endOid, boolean isPersistent, MessageChannel[] channels) {
+    public void initialize(long startOid, long endOid, boolean isPersistent, MessageChannel[] channels, String sv) {
       this.start = startOid;
       this.end = endOid;
       this.persistent = isPersistent;
+      this.serverVersion = sv;
     }
 
     public MessageChannel getChannel() {
@@ -464,6 +460,10 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
 
     public String getThisNodeId() {
       throw new ImplementMe();
+    }
+
+    public String getServerVersion() {
+      return serverVersion;
     }
 
   }

@@ -50,8 +50,8 @@ class ScriptResults
     # Produces a human-readable string describing the results of the build.
     def to_s
         if failed?
-            out = "Build failed:\n"
-            @failed_reasons.each { |reason| out += reason + "\n" }
+            out = "Build failed:\n"            
+            @failed_reasons.each { |reason| out += reason + "\n\n" }            
         else
             out = "Build passed."
         end

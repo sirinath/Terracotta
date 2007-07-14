@@ -160,6 +160,7 @@ import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterManager;
 import com.tc.stats.counter.sampled.SampledCounterManagerImpl;
 import com.tc.util.Assert;
+import com.tc.util.ProductInfo;
 import com.tc.util.SequenceValidator;
 import com.tc.util.StartupLock;
 import com.tc.util.TCTimeoutException;
@@ -453,7 +454,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
-    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager());
+    ProductInfo pInfo = ProductInfo.getInstance();
+    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager(), pInfo.buildVersion());
     channelManager.addEventListener(cteh);
     channelManager.addEventListener(connectionIdFactory);
 
@@ -471,13 +473,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                  transactionStorePTP,
                                                                                  gidSequenceProvider,
                                                                                  globalTransactionIDSequence);
-    transactionManager = new ServerTransactionManagerImpl(gtxm, transactionStore, lockManager, clientStateManager,
-                                                          objectManager, taa, globalTxnCounter, channelStats,
-                                                          new ServerTransactionManagerConfig(l2Properties
-                                                              .getPropertiesFor("transactionmanager")));
-
-    MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
-    ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
 
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
                              maxStageSize);
@@ -500,8 +495,16 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
                                                           txnStageCoordinator);
     objectManager.setTransactionalObjectManager(txnObjectManager);
+    transactionManager = new ServerTransactionManagerImpl(gtxm, transactionStore, lockManager, clientStateManager,
+                                                          objectManager, txnObjectManager, taa, globalTxnCounter,
+                                                          channelStats, new ServerTransactionManagerConfig(l2Properties
+                                                              .getPropertiesFor("transactionmanager")));
+
+    MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
+    ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
+
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
-                                               new ProcessTransactionHandler(transactionBatchManager, txnObjectManager,
+                                               new ProcessTransactionHandler(transactionBatchManager,
                                                                              sequenceValidator, recycler), 1,
                                                maxStageSize);
 
@@ -594,7 +597,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                            TCLogging
                                                                                                .getLogger(ServerClientHandshakeManager.class),
                                                                                            channelManager,
-                                                                                           objectRequestManager,
                                                                                            transactionManager,
                                                                                            sequenceValidator,
                                                                                            clientStateManager,
@@ -613,8 +615,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, txnObjectManager, gtxm, channelManager,
-                                          configSetupManager.haConfig());
+                                          objectManager, transactionManager, gtxm, channelManager, configSetupManager
+                                              .haConfig());
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);

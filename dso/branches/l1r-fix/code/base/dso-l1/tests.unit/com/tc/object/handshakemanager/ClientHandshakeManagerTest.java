@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ClientHandshakeManagerTest extends TCTestCase {
+  private static final String                clientVersion = "x.y.z";
   private TestClientObjectManager            objectManager;
   private TestClientLockManager              lockManager;
   private TestChannelIDProvider              cip;
@@ -70,12 +71,12 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     mgr = new ClientHandshakeManager(TCLogging.getLogger(ClientHandshakeManager.class), cip, chmf, objectManager,
                                      remoteObjectManager, lockManager, rtxManager, gtxManager, new ArrayList(),
                                      new NullSink(), new NullSessionManager(), new NullPauseListener(),
-                                     new BatchSequence(new TestSequenceProvider(), 100), new Cluster());
+                                     new BatchSequence(new TestSequenceProvider(), 100), new Cluster(), clientVersion);
     assertNotNull(gtxManager.pauseCalls.poll(0));
     assertNull(gtxManager.pauseCalls.poll(0));
     newMessage();
   }
-
+  
   private void newMessage() {
     chmf.message = new TestClientHandshakeMessage();
   }
@@ -161,7 +162,16 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     assertTrue(lockManager.unpauseContexts.isEmpty());
     assertTrue(gtxManager.resendOutstandingCalls.isEmpty());
 
-    mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {});
+    // make sure RuntimeException is thrown iff client/server versions don't match
+    try {
+      mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion + "a.b.c");
+      fail();
+    } catch (RuntimeException e) {
+      // it's all good
+    }
+
+    // now ack for real
+    mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion);
 
     // make sure the remote object manager was told to requestOutstanding()
     remoteObjectManager.requestOutstandingContexts.take();

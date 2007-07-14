@@ -126,7 +126,7 @@ class TerracottaBuilder
         actual_targets = [ @default_target ] if actual_targets.empty?
 
         write_failure_file_if_necessary_at_beginning
-
+        
         begin
             do_run(actual_targets)
         rescue => e
@@ -135,13 +135,9 @@ class TerracottaBuilder
             message = "Received exception from the build system: #{e} [#{e.class}]\n" +
                       e.backtrace.join("\n     ")
             @script_results.failed(message)
-            should_archive = true
         end
 
         end_time = Time.now
-        # Print out the duration and the results at the end.
-        puts ""
-        puts "[%8.2f seconds] %s" % [ (end_time - @start_time), @script_results.to_s ]
 
         # This is so that, even if the series of scripts leading from, say, CruiseControl to this
         # code doesn't correctly carry back the exit code (as it inexplicably seems not to on
@@ -149,12 +145,16 @@ class TerracottaBuilder
         write_failure_file_if_necessary_at_end
 
         # Support for making build archives.
-        # archive only if "force-archive=true", or when the run fails
-        if ((@config_source['monkey-name'] && (should_archive || @script_results.failed?)) || 
+        # archive only if "force-archive=true", or when the run fails        
+        if ((@config_source['monkey-name'] && @script_results.failed?) || 
              @config_source["force-archive"] =~ /true/)
-            archive_build_if_necessary
-        end
-
+          archive_build_if_necessary          
+        end        
+        
+        # Print out the duration and the results at the end.
+        puts ""
+        puts "[%8.2f seconds] %s" % [ (end_time - @start_time), @script_results.to_s ]
+        
         ExitCodeHelper.exit(@script_results.result_code)
     end
 
@@ -289,7 +289,7 @@ class TerracottaBuilder
     def do_run_arguments
         unless @remaining_arguments.empty?
             target = next_argument.to_sym
-
+            puts "Running target: #{target}"
             if respond_to?(target, false)
                 already_run = @targets_run.include?(target)
                 @targets_run << target unless already_run
