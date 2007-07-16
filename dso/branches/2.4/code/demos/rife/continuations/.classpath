@@ -2,6 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/rife-1.6-jdk15.jar"/>
+	<classpathentry kind="lib" path="lib/rife-1.6.1-jdk15.jar"/>
 	<classpathentry kind="output" path="target"/>
 </classpath>
