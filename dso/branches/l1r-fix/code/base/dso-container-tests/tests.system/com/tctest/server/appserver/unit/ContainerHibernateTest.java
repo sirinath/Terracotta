@@ -8,37 +8,39 @@ import org.apache.derby.drda.NetworkServerControl;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
+import com.tc.test.TestConfigObject;
+import com.tc.test.server.appserver.NewAppServerFactory;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.util.runtime.Vm;
 import com.tctest.webapp.servlets.ContainerHibernateTestServlet;
 
 import java.io.PrintWriter;
-import java.util.Date;
 
 import junit.framework.Test;
 
 public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   private static final String CONFIG_FILE_FOR_TEST = "/tc-config-files/hibernate-tc-config.xml";
 
-  public ContainerHibernateTest() {
-    if (Vm.isJDK14()) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
-    }
-  }
-  
-  public boolean shouldDisable() {
-    return super.shouldDisable() || Vm.isJDK14();
-  }
-  
   public static Test suite() {
     return new ContainerHibernateTestSetup();
   }
 
+  public ContainerHibernateTest() {
+    // MNK-287
+    if (shouldDisable()) {
+      disableAllUntil("2007-12-1");
+    }
+  }
+
+  public boolean shouldDisable() {
+    return super.shouldDisable()
+           || NewAppServerFactory.WASCE.equals(TestConfigObject.getInstance().appserverFactoryName());
+  }
+
   public void testHibernate() throws Exception {
     WebConversation conversation = new WebConversation();
-    
+
     WebResponse response1 = request(server1, "server=server0", conversation);
     assertEquals("OK", response1.getText().trim());
 

@@ -27,6 +27,15 @@ import java.util.Properties;
  * This class is a singleton. This is <em>ONLY</em> because this is used all over the place, in JUnit tests.
  */
 public class TestConfigObject {
+  public static final String      NATIVE_LIB_LINUX_32               = "Linux";
+
+  public static final String      NATIVE_LIB_LINUX_64               = "Linux64";
+
+  public static final String      UNIX_NATIVE_LIB_NAME              = "libGetPid.so";
+
+  public static final String      WINDOWS_NATIVE_LIB_NAME           = "GetPid.dll";
+
+  public static final String      OSX_NATIVE_LIB_NAME               = "libGetPid.jnilib";
 
   public static final String      TC_BASE_DIR                       = "tc.base-dir";
 
@@ -104,8 +113,8 @@ public class TestConfigObject {
   private static final String     ACTIVE_PASSIVE_SERVER_DISKLESS    = ACTIVE_PASSIVE_PREFIX + "server.diskless";
 
   private static final String     L2_STARTUP_PREFIX                 = DYNAMIC_PROPERTIES_PREFIX + "l2.startup.";
-  public  static final String     L2_STARTUP_MODE                   = L2_STARTUP_PREFIX + "mode";
-  public  static final String     L2_STARTUP_JAVA_HOME              = L2_STARTUP_PREFIX + "jvm";
+  public static final String      L2_STARTUP_MODE                   = L2_STARTUP_PREFIX + "mode";
+  public static final String      L2_STARTUP_JAVA_HOME              = L2_STARTUP_PREFIX + "jvm";
 
   private static TestConfigObject INSTANCE;
 
@@ -333,6 +342,17 @@ public class TestConfigObject {
     } else return osname;
   }
 
+  public String nativeLibName() {
+    String osname = osName();
+    if (osname.startsWith("Windows")) {
+      return WINDOWS_NATIVE_LIB_NAME;
+    } else if (osname.startsWith("Darwin")) {
+      return OSX_NATIVE_LIB_NAME;
+    } else {
+      return UNIX_NATIVE_LIB_NAME;
+    }
+  }
+
   public String dataDirectoryRoot() {
     String out = this.properties.getProperty(DATA_DIRECTORY_ROOT);
     Assert.assertNotBlank(out);
@@ -345,7 +365,7 @@ public class TestConfigObject {
     return out;
   }
 
-  public String appserverURLBase() {    
+  public String appserverURLBase() {
     return this.properties.getProperty(APP_SERVER_REPOSITORY_URL_BASE);
   }
 
@@ -376,7 +396,17 @@ public class TestConfigObject {
   }
 
   public String executableSearchPath() {
-    return this.properties.getProperty(EXECUTABLE_SEARCH_PATH);
+    String nativeLibDirPath = this.properties.getProperty(EXECUTABLE_SEARCH_PATH);
+    if (nativeLibDirPath.endsWith(NATIVE_LIB_LINUX_32) || nativeLibDirPath.endsWith(NATIVE_LIB_LINUX_64)) {
+      int lastSeparator = nativeLibDirPath.lastIndexOf(File.separator);
+      String vmType = System.getProperty("sun.arch.data.model");
+      if (vmType.equals("32")) {
+        nativeLibDirPath = nativeLibDirPath.substring(0, lastSeparator) + File.separator + NATIVE_LIB_LINUX_32;
+      } else if (vmType.equals("64")) {
+        nativeLibDirPath = nativeLibDirPath.substring(0, lastSeparator) + File.separator + NATIVE_LIB_LINUX_64;
+      }
+    }
+    return nativeLibDirPath;
   }
 
   public File cacheDir() {
@@ -391,7 +421,7 @@ public class TestConfigObject {
     return new File(root, ".tc");
   }
 
-  public File appserverServerInstallDir() {        
+  public File appserverServerInstallDir() {
     File installDir = new File(cacheDir(), "appservers");
     if (!installDir.exists()) installDir.mkdirs();
     return installDir;
