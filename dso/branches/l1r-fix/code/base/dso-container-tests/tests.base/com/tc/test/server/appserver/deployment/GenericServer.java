@@ -245,7 +245,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
 
     wc.setExceptionsThrownOnErrorStatus(false);
     WebResponse response = wc.getResponse(fullURL);
-    Assert.assertEquals("Server error:/n" + response.getText(), 200, response.getResponseCode());
+    Assert.assertEquals("Server error:\n" + response.getText(), 200, response.getResponseCode());
     logger.debug("Got page: " + fullURL);
     return response;
   }
