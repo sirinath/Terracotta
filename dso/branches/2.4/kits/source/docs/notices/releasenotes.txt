@@ -14,11 +14,6 @@ Diskless Active/Passive
           o Synchronously Share State with a Passive without need for disk infrastructure
           o Can add/remove passives without interruption of Active
 
-L1 Reconnect
-
-    * CDV-97
-          o Allow the L1 to reconnect to the L2 within a configurable time window so as to be more resilient to network glitches
-
 Subtype Instrumentation
 
     * CDV-184
