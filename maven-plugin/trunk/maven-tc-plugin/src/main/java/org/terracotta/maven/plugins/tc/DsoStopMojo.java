@@ -55,8 +55,7 @@ public class DsoStopMojo extends AbstractAntMojo {
   private String jvm;
 
   /**
-   * @parameter expression="${config}"
-   * @optional
+   * @parameter expression="${config}" default-value="tc-config.xml"
    */
   private String config;
   
@@ -83,9 +82,8 @@ public class DsoStopMojo extends AbstractAntMojo {
     Java javaTask = new Java();
     javaTask.setProject(antProject);
 
-
+    javaTask.setFork(true);
     if (jvm != null && jvm.length() > 0) {
-      javaTask.setFork(true);
       javaTask.setJvm(jvm);
     }
 
@@ -93,14 +91,15 @@ public class DsoStopMojo extends AbstractAntMojo {
 
     javaTask.setClassname(TCStop.class.getName());
 
-    StringBuffer args = new StringBuffer();
-    if (config != null && config.length() > 0) {
-      args.append(" -f ").append(config);
-    }
+    javaTask.createArg().setLine("-f");
+    javaTask.createArg().setFile(new File(config));
+    getLog().debug("tc-config file  = " + config);
+
     if (name != null && name.length() > 0) {
-      args.append(" -n ").append(name);
+      javaTask.createArg().setLine("-n");
+      javaTask.createArg().setValue(name);
+      getLog().debug("server name = " + name);
     }
-    javaTask.setArgs(args.toString());
 
     Target target = new Target();
     target.setName("DSO Stop tool");

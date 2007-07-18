@@ -15,6 +15,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.taskdefs.Java;
+import org.apache.tools.ant.types.Environment;
 import org.apache.tools.ant.types.Path;
 import org.codehaus.plexus.component.configurator.expression.DefaultExpressionEvaluator;
 
@@ -64,16 +65,20 @@ public class BootjarMojo extends AbstractAntMojo {
   private boolean overwrite;
 
   /**
-   * @parameter expression="${bootjar}"
-   * @optional
+   * @parameter expression="${bootjar}" default-value="target/boot.jar"
    */
   private String bootJar;
 
   /**
-   * @parameter expression="${config}"
-   * @optional
+   * @parameter expression="${config}" default-value="tc-config.xml"
    */
   private String config;
+
+  /**
+   * @parameter expression="${modules}"
+   * @optional
+   */
+  private String modules;
 
   /**
    * @see org.apache.maven.plugin.Mojo#execute()
@@ -98,29 +103,39 @@ public class BootjarMojo extends AbstractAntMojo {
 
     if (jvm != null && jvm.length() > 0) {
       javaTask.setJvm(jvm);
-      javaTask.setJvmargs("-Dtc.classpath=" + sb.toString());
-    } else {
-      System.setProperty("tc.classpath", sb.toString());
+    }
+
+    javaTask.addSysproperty(variable("tc.classpath", sb.toString()));
+
+    if (modules != null && modules.trim().length() > 0) {
+      String location = modules.trim();
+      File modulesDir = new File(location);
+      if (modulesDir.isDirectory() && modulesDir.exists()) {
+        location = modulesDir.toURI().toString();
+      }
+      javaTask.addSysproperty(variable("tc.tests.configuration.modules.url", location));
+      getLog().debug("tc.tests.configuration.modules.url = " + location);
     }
 
     javaTask.setClasspath(new Path(antProject, sb.toString()));
 
     javaTask.setClassname(BootJarTool.class.getName());
 
-    StringBuffer args = new StringBuffer();
     if (verbose) {
-      args.append(" -v");
+      javaTask.createArg().setLine("-v");
     }
+
     if (overwrite) {
-      args.append(" -w");
+      javaTask.createArg().setLine("-w");
     }
-    if (bootJar != null && bootJar.length() > 0) {
-      args.append(" -o ").append(bootJar);
-    }
-    if (config != null && config.length() > 0) {
-      args.append(" -f ").append(config);
-    }
-    javaTask.setArgs(args.toString());
+
+    javaTask.createArg().setLine("-o");
+    javaTask.createArg().setFile(new File(bootJar));
+    getLog().debug("bootjar file  = " + bootJar);
+
+    javaTask.createArg().setLine("-f");
+    javaTask.createArg().setFile(new File(config));
+    getLog().debug("tc-config file  = " + config);
 
     Target target = new Target();
     target.setName("BootJar tool");
@@ -130,6 +145,13 @@ public class BootjarMojo extends AbstractAntMojo {
     antProject.init();
 
     executeTasks(target, project);
+  }
+
+  private Environment.Variable variable(String key, String value) {
+    Environment.Variable variable = new Environment.Variable();
+    variable.setKey(key);
+    variable.setValue(value);
+    return variable;
   }
 
 }
