@@ -43,6 +43,13 @@ modules:
       dependencies:
         - common
         - dso-common
+  - dso-l1-api:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - thirdparty
+        - aspectwerkz
+        - dso-common
   - dso-l1:
       options:
         jdk: J2SE-1.4
@@ -53,6 +60,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
   - dso-l1-jdk15:
       options:
         jdk: J2SE-1.5
@@ -62,6 +70,7 @@ modules:
         - aspectwerkz
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
   - dso-l1-session:
       options:
@@ -69,6 +78,7 @@ modules:
       dependencies:
         - common
         - dso-common
+        - dso-l1-api
         - dso-l1
         - management
   - dso-weblogic-stubs:
@@ -82,6 +92,7 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l1-session
         - aspectwerkz
@@ -90,6 +101,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - dso-common
   - dso-l1-tomcat50:
@@ -97,6 +109,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - dso-l1-session
   - dso-l1-tomcat55:
@@ -104,6 +117,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - dso-l1-session
   - dso-memory-datastore:
@@ -131,6 +145,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l2
+        - dso-l1-api
         - dso-l1
         - thirdparty
         - aspectwerkz
@@ -140,6 +155,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-common
@@ -153,6 +169,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l2
+        - dso-l1-api
         - dso-l1
         - deploy
         - aspectwerkz
@@ -161,6 +178,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-common
@@ -174,6 +192,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l2
+        - dso-l1-api
         - dso-l1
         - deploy
         - aspectwerkz
@@ -189,6 +208,7 @@ modules:
         - common
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-l1-weblogic
@@ -206,6 +226,7 @@ modules:
         - dso-common-jdk15
         - management
         - deploy
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - legacy-test-tree
@@ -222,6 +243,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-l1-weblogic
@@ -240,6 +262,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -256,6 +279,7 @@ modules:
         - management
         - dso-common-jdk15
         - linked-child-process
+        - dso-l1-api
         - dso-l1
         - simulator
         - deploy
@@ -274,6 +298,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-l1-weblogic
@@ -295,6 +320,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l1-session
         - dso-l2
@@ -313,6 +339,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-l1-weblogic
@@ -333,6 +360,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - legacy-test-tree
@@ -356,6 +384,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - dso-l1-weblogic
@@ -375,6 +404,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l1-jdk15
         - dso-l2
@@ -388,6 +418,7 @@ modules:
         module: true
       dependencies:
         - common
+        - dso-l1-api
         - dso-l1
         - thirdparty
   - clustered-apache-struts-1.1:
@@ -402,6 +433,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -417,6 +449,7 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - dso-common
+        - dso-l1-api
         - dso-l1
         - thirdparty
   - clustered-lucene-2.0.0:
@@ -430,6 +463,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -446,6 +480,7 @@ modules:
         - deploy
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - legacy-test-tree
@@ -466,6 +501,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -486,6 +522,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -505,6 +542,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l1-weblogic
         - dso-l2
@@ -525,6 +563,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -543,6 +582,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -562,6 +602,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -581,6 +622,7 @@ modules:
         - dso-common
         - management
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator
@@ -599,6 +641,7 @@ modules:
         - management
         - dso-common
         - dso-common-jdk15
+        - dso-l1-api
         - dso-l1
         - dso-l2
         - simulator

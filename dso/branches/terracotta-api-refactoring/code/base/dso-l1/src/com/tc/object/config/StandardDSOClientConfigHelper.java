@@ -97,7 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
+public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, IStandardDSOClientConfigHelper {
 
   private static final String                    CGLIB_PATTERN                      = "$$EnhancerByCGLIB$$";
 
@@ -953,22 +953,22 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
-      
+
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$DsoLock");
       spec.setHonorTransient(true);
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLockTC");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLockTC");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
-      
+
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.addTransient("sync");
       spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      //spec.setHonorTransient(true);
+      // spec.setHonorTransient(true);
       spec.addTransient("sync");
       spec.setCallMethodOnLoad("init");
 
@@ -1311,7 +1311,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   public void addSynchronousWriteAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.SYNCHRONOUS_WRITE);
   }
-  
+
   public void addReadAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.READ);
   }
@@ -1321,11 +1321,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     lockDefinition.commit();
     addLock(methodPattern, lockDefinition);
   }
-  
+
   public void addReadAutoSynchronize(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_READ);
   }
-  
+
   public void addWriteAutoSynchronize(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE);
   }
@@ -1431,7 +1431,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     if (spec != null && spec.isCallConstructorSet()) { return spec.isCallConstructorOnLoad(); }
     return getInstrumentationDescriptorFor(classInfo).isCallConstructorOnLoad();
   }
-  
+
   public String getPreCreateMethodIfDefined(String className) {
     TransparencyClassSpec spec = getSpec(className);
     if (spec != null) {
@@ -1684,11 +1684,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                            + " pre-instrumented class(es) found missing.");
     }
   }
-  
+
   /**
-   * This method will:
-   * - check the contents of the boot-jar against tc-config.xml
-   * - check that all that all the necessary referenced classes are also present in the boot jar 
+   * This method will: - check the contents of the boot-jar against tc-config.xml - check that all that all the
+   * necessary referenced classes are also present in the boot jar
    */
   public void verifyBootJarContents() throws UnverifiedBootJarException {
     logger.debug("Verifying boot jar contents...");
