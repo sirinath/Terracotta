@@ -390,7 +390,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
 
   private void doAutoconfig(boolean interrogateBootJar) {
     TransparencyClassSpec spec = null;
-    LockDefinition ld = null;
+    ILockDefinition ld = null;
 
     // Table model stuff
     addIncludePattern("javax.swing.event.TableModelEvent", true);
@@ -1109,7 +1109,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
     helperLogger.logIsLockMethodBegin(memberInfo.getModifiers(), memberInfo.getDeclaringType().getName(), //
                                       memberInfo.getName(), memberInfo.getSignature());
 
-    LockDefinition lockDefinitions[] = lockDefinitionsFor(memberInfo);
+    ILockDefinition lockDefinitions[] = lockDefinitionsFor(memberInfo);
 
     for (int j = 0; j < lockDefinitions.length; j++) {
       if (lockDefinitions[j].isAutolock()) {
@@ -1248,7 +1248,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
         for (int i = 0; i < locks.length; i++) {
           Lock lock = locks[i];
           if (matches(lock, methodInfo)) {
-            LockDefinition ld = lock.getLockDefinition();
+            ILockDefinition ld = lock.getLockDefinition();
             if (ld.isAutolock() && ld.getLockLevel() != ConfigLockLevel.READ) {
               addReadAutolock("* " + className + "." + methodInfo.getName() + "(..)");
             }
@@ -1259,12 +1259,12 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
     }
   }
 
-  public synchronized LockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
+  public synchronized ILockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
     boolean isAutoLocksExcluded = matchesAutoLockExcludes(memberInfo);
     List lockDefs = new ArrayList();
     for (int i = locks.length - 1; i >= 0; i--) {
       if (matches(this.locks[i], memberInfo)) {
-        LockDefinition definition = this.locks[i].getLockDefinition();
+        ILockDefinition definition = this.locks[i].getLockDefinition();
         if (!(definition.isAutolock() && isAutoLocksExcluded)) {
           lockDefs.add(definition);
           if (definition.isAutolock()) {
@@ -1317,7 +1317,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
   }
 
   public synchronized void addAutolock(String methodPattern, ConfigLockLevel type) {
-    LockDefinition lockDefinition = new LockDefinition(LockDefinition.TC_AUTOLOCK_NAME, type);
+    LockDefinition lockDefinition = new LockDefinition(ILockDefinition.TC_AUTOLOCK_NAME, type);
     lockDefinition.commit();
     addLock(methodPattern, lockDefinition);
   }
@@ -1330,7 +1330,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper, ISt
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE);
   }
 
-  public synchronized void addLock(String methodPattern, LockDefinition lockDefinition) {
+  public synchronized void addLock(String methodPattern, ILockDefinition lockDefinition) {
     Lock[] result = new Lock[locks.length + 1];
     System.arraycopy(locks, 0, result, 0, locks.length);
     result[locks.length] = new Lock(methodPattern, lockDefinition);

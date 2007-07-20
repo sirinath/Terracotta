@@ -69,7 +69,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   TransparencyClassSpec getOrCreateSpec(String className, String applicator);
 
-  LockDefinition[] lockDefinitionsFor(MemberInfo memberInfo);
+  ILockDefinition[] lockDefinitionsFor(MemberInfo memberInfo);
 
   boolean isRoot(FieldInfo fi);
 
@@ -101,7 +101,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void addSynchronousWriteAutolock(String methodPattern);
 
-  void addLock(String methodPattern, LockDefinition lockDefinition);
+  void addLock(String methodPattern, ILockDefinition lockDefinition);
 
   void addReadAutolock(String methodPattern);
 

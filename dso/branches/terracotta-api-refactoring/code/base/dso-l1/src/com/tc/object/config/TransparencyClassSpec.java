@@ -123,12 +123,12 @@ public class TransparencyClassSpec implements ITransparencyClassSpec {
     return preInstrumented;
   }
 
-  public synchronized LockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
+  public synchronized ILockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
     return configuration.lockDefinitionsFor(memberInfo);
   }
 
-  public synchronized LockDefinition autolockDefinitionFor(MethodInfo methodInfo) {
-    LockDefinition[] lds = lockDefinitionsFor(methodInfo);
+  public synchronized ILockDefinition autoLockDefinitionFor(MethodInfo methodInfo) {
+    ILockDefinition[] lds = lockDefinitionsFor(methodInfo);
     for (int i = 0; i < lds.length; i++) {
       if (lds[i].isAutolock()) { return lds[i]; }
     }
@@ -137,9 +137,9 @@ public class TransparencyClassSpec implements ITransparencyClassSpec {
   }
 
   /**
-   * returns null if no LockDefinitions exists that makes the method autolocked.
+   * returns null if no ILockDefinitions exists that makes the method autolocked.
    */
-  public LockDefinition getAutolockDefinition(LockDefinition lds[]) {
+  public ILockDefinition getAutoLockDefinition(ILockDefinition lds[]) {
     if (lds == null) return null;
     for (int i = 0; i < lds.length; i++) {
       if (lds[i].isAutolock()) { return lds[i]; }
@@ -147,7 +147,7 @@ public class TransparencyClassSpec implements ITransparencyClassSpec {
     return null;
   }
 
-  public LockDefinition getNonAutoLockDefinition(LockDefinition lds[]) {
+  public ILockDefinition getNonAutoLockDefinition(ILockDefinition lds[]) {
     if (lds == null) return null;
     for (int i = 0; i < lds.length; i++) {
       if (!lds[i].isAutolock()) { return lds[i]; }
@@ -238,9 +238,9 @@ public class TransparencyClassSpec implements ITransparencyClassSpec {
   }
 
   /**
-   * returns null if no LockDefinitions exists that makes the method locked.
+   * returns null if no ILockDefinitions exists that makes the method locked.
    */
-  public LockDefinition getLockMethodLockDefinition(int access, LockDefinition lds[]) {
+  public ILockDefinition getLockMethodILockDefinition(int access, ILockDefinition lds[]) {
     if (lds == null) return null;
     for (int i = 0; i < lds.length; i++) {
       if ((lds[i].isAutolock() && Modifier.isSynchronized(access) && !Modifier.isStatic(access))

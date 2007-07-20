@@ -6,9 +6,7 @@ package com.tc.object.config;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-public class LockDefinition {
-
-  public static final String TC_AUTOLOCK_NAME = "tc:autolock";
+public class LockDefinition implements ILockDefinition {
 
   private String             lockName         = TC_AUTOLOCK_NAME;
   private ConfigLockLevel    lockLevel;

@@ -171,8 +171,6 @@ public interface IStandardDSOClientConfigHelper {
   public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                             ClassLoader caller, final boolean forcePortable);
   
-  public TransparencyClassSpec getOrCreateSpec(String className);
-  
   public TransparencyClassSpec getOrCreateSpec(final String className, final String applicator);
 
   public boolean isLogical(String className);
