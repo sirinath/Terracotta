@@ -9,6 +9,7 @@ import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Map;
 
@@ -61,9 +62,11 @@ public interface ClientObjectManager {
 
   public Collection getAllObjectIDsAndClear(Collection c);
 
-  public WeakObjectReference createNewPeer(TCClass clazz, DNA dna);
+  //public WeakObjectReference createNewPeer(TCClass clazz, DNA dna);
+  public WeakReference createNewPeer(TCClass clazz, DNA dna);
 
-  public WeakObjectReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
+  //public WeakObjectReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
+  public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
 
   public TCClass getOrCreateClass(Class clazz);
 

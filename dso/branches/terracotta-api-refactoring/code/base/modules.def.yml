@@ -37,12 +37,6 @@ modules:
       dependencies:
         - common
         - dso-common
-  - management:
-      options:
-        jdk: J2SE-1.4
-      dependencies:
-        - common
-        - dso-common
   - dso-l1-api:
       options:
         jdk: J2SE-1.4
@@ -51,6 +45,13 @@ modules:
         - common
         - dso-common
         - thirdparty
+  - management:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - dso-common
+        - dso-l1-api
   - dso-l1:
       options:
         jdk: J2SE-1.4
