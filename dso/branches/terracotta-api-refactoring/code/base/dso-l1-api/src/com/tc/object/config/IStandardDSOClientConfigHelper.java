@@ -4,5 +4,9 @@
 package com.tc.object.config;
 
 public interface IStandardDSOClientConfigHelper {
-  //
+
+  ITransparencyClassSpec getOrCreateSpec(String className);
+
+  ITransparencyClassSpec getOrCreateSpec(String className, String applicator);
+  
 }

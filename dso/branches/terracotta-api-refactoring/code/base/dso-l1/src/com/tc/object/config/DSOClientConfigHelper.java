@@ -65,8 +65,10 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void setModuleSpecs(ModuleSpec[] pluginSpecs);
 
+  // HACK: is also in IStandardDSOClientConfigHelper
   ITransparencyClassSpec getOrCreateSpec(String className);
 
+  // HACK: is also in IStandardDSOClientConfigHelper
   ITransparencyClassSpec getOrCreateSpec(String className, String applicator);
 
   ILockDefinition[] lockDefinitionsFor(MemberInfo memberInfo);
