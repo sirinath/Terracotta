@@ -47,9 +47,10 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
-        - thirdparty
         - aspectwerkz
+        - common
         - dso-common
+        - thirdparty
   - dso-l1:
       options:
         jdk: J2SE-1.4
@@ -434,7 +435,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1-api
-        - dso-l1
         - dso-l2
         - simulator
         - deploy
@@ -450,7 +450,6 @@ modules:
         - aspectwerkz
         - dso-common
         - dso-l1-api
-        - dso-l1
         - thirdparty
   - clustered-lucene-2.0.0:
       options:
@@ -623,7 +622,6 @@ modules:
         - management
         - dso-common-jdk15
         - dso-l1-api
-        - dso-l1
         - dso-l2
         - simulator
         - deploy
@@ -687,15 +685,18 @@ module-groups:
     - management
     - dso-memory-datastore
   framework:
-    - clustered-lucene-2.0.0
-    - clustered-cglib-2.1.3
     - clustered-apache-struts-1.1
+    - clustered-jetty-6.1
+    - clustered-lucene-2.0.0
+    - clustered-commons-collections-3.1
+    - clustered-cglib-2.1.3
+    - clustered-iBatis-2.2.0
+    - clustered-rife-1.6.0
     - clustered-ehcache-1.3
     - clustered-ehcache-1.2.4
-    - clustered-commons-collections-3.1
-    - clustered-jetty-6.1
-    - clustered-iBatis-2.2.0    
-    - clustered-hibernate-3.1.2  
+    - clustered-hibernate-3.1.2
+    - clustered-websphere-6.1.0.7
+    - clustered-wicket-1.3
     - modules-common-1.0
   gui:
     - ui-configurator

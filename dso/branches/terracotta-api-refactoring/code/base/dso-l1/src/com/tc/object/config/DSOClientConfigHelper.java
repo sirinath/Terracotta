@@ -133,6 +133,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   boolean isUseNonDefaultConstructor(Class clazz);
 
+  // HACK: is also in IStandardDSOClientConfigHelper
   void addIncludePattern(String expression);
 
   NewCommonL1Config getNewCommonL1Config();
@@ -184,6 +185,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   boolean removeCustomAdapter(String name);
 
+  // HACK: is also in IStandardDSOClientConfigHelper
   /**
    * If an adapter with the same name was already present, this new one
    * will not be added, and the operation will simply return as a no-op.

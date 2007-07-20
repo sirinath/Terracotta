@@ -6,7 +6,6 @@ import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.IStandardDSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
-import com.tc.object.config.StandardDSOClientConfigHelper;
 
 public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule
 		implements IConstants {
@@ -14,7 +13,7 @@ public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule
 	protected void addInstrumentation(final BundleContext context,
 			final IStandardDSOClientConfigHelper configHelper) {
 		ClassAdapterFactory factory = new EhcacheLruMemoryStoreAdapter();
-		ITransparencyClassSpec spec = ((StandardDSOClientConfigHelper)configHelper)
+		ITransparencyClassSpec spec = ((IStandardDSOClientConfigHelper)configHelper)
 				.getOrCreateSpec(LRUMEMORYSTORE_CLASS_NAME_DOTS);
 		spec.setCallConstructorOnLoad(true);
 		spec.setCustomClassAdapter(factory);
