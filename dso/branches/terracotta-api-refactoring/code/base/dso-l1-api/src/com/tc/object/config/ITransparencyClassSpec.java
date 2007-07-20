@@ -192,4 +192,6 @@ public interface ITransparencyClassSpec {
 
   public String getChangeApplicatorClassName();
 
+  public ITransparencyClassSpec getClassSpec(String superName);
+
 }

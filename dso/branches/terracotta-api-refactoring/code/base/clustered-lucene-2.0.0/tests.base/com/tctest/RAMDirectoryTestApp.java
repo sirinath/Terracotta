@@ -9,20 +9,20 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Hit;
 import org.apache.lucene.search.Hits;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.store.RAMDirectory;
 
-import com.tc.util.Assert;
 import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 /**
@@ -64,7 +64,7 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
 		config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
 
 	    final String testClass = RAMDirectoryTestApp.class.getName();
-		final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+		final ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 		spec.addRoot("barrier", "barrier");
 		spec.addRoot("clusteredDirectory", "clusteredDirectory");
 	}

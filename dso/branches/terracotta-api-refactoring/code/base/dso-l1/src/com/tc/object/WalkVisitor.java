@@ -9,7 +9,7 @@ import com.tc.object.appevent.NonPortableEventContext;
 import com.tc.object.appevent.NonPortableFieldSetContext;
 import com.tc.object.appevent.NonPortableObjectState;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.object.walker.MemberValue;
 import com.tc.object.walker.ObjectGraphWalker;
 import com.tc.object.walker.Visitor;
@@ -292,7 +292,7 @@ public class WalkVisitor implements Visitor, WalkTest {
 
   private boolean isPreInstrumented(Class type) {
     if (type != null) {
-      TransparencyClassSpec spec = config.getSpec(type.getName());
+      ITransparencyClassSpec spec = config.getSpec(type.getName());
       return spec != null && spec.isPreInstrumented();
     }
     return false;

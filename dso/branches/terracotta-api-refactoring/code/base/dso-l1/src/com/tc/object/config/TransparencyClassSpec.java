@@ -84,7 +84,7 @@ public class TransparencyClassSpec implements ITransparencyClassSpec {
     this.changeApplicatorSpec = null;
   }
 
-  public TransparencyClassSpec getClassSpec(String clazzName) {
+  public ITransparencyClassSpec getClassSpec(String clazzName) {
     String name = clazzName.replace('/', '.');
     return configuration.getSpec(name);
   }

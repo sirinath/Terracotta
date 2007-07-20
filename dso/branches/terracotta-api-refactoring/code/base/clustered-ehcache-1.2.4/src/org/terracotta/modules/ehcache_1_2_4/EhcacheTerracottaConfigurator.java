@@ -6,6 +6,7 @@ import org.osgi.framework.ServiceReference;
 import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
 import com.tc.object.bytecode.ClassAdapterFactory;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 
@@ -34,7 +35,7 @@ public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule 
 	private void addEhcacheInstrumentation(
 			final StandardDSOClientConfigHelper configHelper) {
 	    ClassAdapterFactory factory = new EhcacheLruMemoryStoreAdapter();
-	    TransparencyClassSpec spec = configHelper.getOrCreateSpec(LRUMEMORYSTORE_CLASS_NAME_DOTS);
+	    ITransparencyClassSpec spec = configHelper.getOrCreateSpec(LRUMEMORYSTORE_CLASS_NAME_DOTS);
 	    spec.setCallConstructorOnLoad(true);
 	    spec.setCustomClassAdapter(factory);
 	}

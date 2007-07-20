@@ -42,7 +42,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void verifyBootJarContents() throws IncompleteBootJarException, UnverifiedBootJarException;
 
-  TransparencyClassSpec[] getAllSpecs();
+  ITransparencyClassSpec[] getAllSpecs();
 
   Iterator getAllUserDefinedBootSpecs();
 
@@ -65,9 +65,9 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   void setModuleSpecs(ModuleSpec[] pluginSpecs);
 
-  TransparencyClassSpec getOrCreateSpec(String className);
+  ITransparencyClassSpec getOrCreateSpec(String className);
 
-  TransparencyClassSpec getOrCreateSpec(String className, String applicator);
+  ITransparencyClassSpec getOrCreateSpec(String className, String applicator);
 
   ILockDefinition[] lockDefinitionsFor(MemberInfo memberInfo);
 
@@ -85,7 +85,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   DistributedMethodSpec getDmiSpec(MemberInfo memberInfo);
 
-  TransparencyClassSpec getSpec(String className);
+  ITransparencyClassSpec getSpec(String className);
 
   boolean isDSOSessions(String name);
 
@@ -168,7 +168,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   String getLogicalExtendingClassName(String className);
 
-  void addUserDefinedBootSpec(String className, TransparencyClassSpec spec);
+  void addUserDefinedBootSpec(String className, ITransparencyClassSpec spec);
 
   void addApplicationName(String name);
 

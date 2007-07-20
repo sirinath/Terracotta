@@ -12,9 +12,9 @@ import org.terracotta.modules.iBatis_2_2_0.object.config.IBatisModuleSpec;
 
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.ConfigLockLevel;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.object.config.ModuleSpec;
 import com.tc.object.config.StandardDSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
 
 import java.sql.SQLException;
 import java.util.Dictionary;
@@ -26,7 +26,7 @@ public final class IBatisTerracottaConfigurator extends TerracottaConfiguratorMo
     
     ClassAdapterFactory factory = new IBatisClassAdapter();
     
-    TransparencyClassSpec spec = configHelper.getOrCreateSpec("com.ibatis.sqlmap.engine.mapping.result.loader.EnhancedLazyResultLoader$EnhancedLazyResultLoaderImpl");
+    ITransparencyClassSpec spec = configHelper.getOrCreateSpec("com.ibatis.sqlmap.engine.mapping.result.loader.EnhancedLazyResultLoader$EnhancedLazyResultLoaderImpl");
     configHelper.addAutolock("* com.ibatis.sqlmap.engine.mapping.result.loader.EnhancedLazyResultLoader$EnhancedLazyResultLoaderImpl.loadObject(..)", ConfigLockLevel.WRITE);
     
     spec = configHelper.getOrCreateSpec(SQLException.class.getName());

@@ -14,9 +14,9 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.exception.TCInternalError;
-import com.tc.object.config.ITransparencyCodeSpec;
 import com.tc.object.config.ILockDefinition;
-import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.config.ITransparencyCodeSpec;
 
 import java.util.AbstractMap;
 
@@ -100,7 +100,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     return false;
   }
 
-  private TransparencyClassSpec getTransparencyClassSpec() {
+  private ITransparencyClassSpec getTransparencyClassSpec() {
     return spec.getTransparencyClassSpec();
   }
 
