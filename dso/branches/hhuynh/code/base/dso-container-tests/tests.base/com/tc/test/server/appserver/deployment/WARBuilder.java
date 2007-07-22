@@ -5,8 +5,6 @@
 package com.tc.test.server.appserver.deployment;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
 import org.apache.tools.ant.taskdefs.War;
 import org.apache.tools.ant.taskdefs.Zip.Duplicate;
 import org.apache.tools.ant.types.ZipFileSet;
@@ -84,14 +82,9 @@ public class WARBuilder implements DeploymentBuilder {
     this.testConfig = config;
 
     addDirectoryOrJARContainingClass(WARBuilder.class); // test framework
-    addDirectoryOrJARContainingClass(LogFactory.class); // commons-logging
-    addDirectoryOrJARContainingClass(Logger.class); // log4j
+    // addDirectoryOrJARContainingClass(LogFactory.class); // commons-logging
+    // addDirectoryOrJARContainingClass(Logger.class); // log4j
 
-    // XXX this should NOT be in such general purpose class!
-    // XXX this should add ALL jars from the variant directory!
-    // addDirectoryOrJARContainingClassOfSelectedVersion(BeanFactory.class, new
-    // String[]{TestConfigObject.SPRING_VARIANT}); // springframework
-    // addDirectoryOrJARContainingClass(BeanFactory.class); // springframework
   }
 
   public DeploymentBuilder addClassesDirectory(FileSystemPath path) {
@@ -548,6 +541,7 @@ public class WARBuilder implements DeploymentBuilder {
 
   public DeploymentBuilder addServlet(String name, String mapping, Class servletClass, Map params, boolean loadOnStartup) {
     servlets.add(new ServletDefinition(name, mapping, servletClass, params, loadOnStartup));
+    addDirectoryOrJARContainingClass(servletClass);
     return this;
   }
 

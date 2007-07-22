@@ -7,6 +7,8 @@ package com.tc.test.server.appserver.deployment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.tc.test.server.util.TcConfigBuilder;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -30,21 +32,29 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
     private Log                    logger = LogFactory.getLog(getClass());
 
     private final Class            testClass;
-    private final String           tcConfigFile;
     private final String           context;
+    private final TcConfigBuilder  tcConfigBuilder;
 
     private boolean                start  = true;
 
     protected WebApplicationServer server1;
     protected WebApplicationServer server2;
 
+    protected TwoServerTestSetup(Class testClass, String context) {
+      this(testClass, new TcConfigBuilder(), context);
+    }
+    
     protected TwoServerTestSetup(Class testClass, String tcConfigFile, String context) {
-      super(testClass);
-      this.testClass = testClass;
-      this.tcConfigFile = tcConfigFile;
-      this.context = context;
+      this(testClass, new TcConfigBuilder(tcConfigFile), context);
     }
 
+    protected TwoServerTestSetup(Class testClass, TcConfigBuilder configBuilder, String context) {
+      super(testClass);
+      this.testClass = testClass;
+      this.context = context;
+      this.tcConfigBuilder = configBuilder;
+    }
+    
     protected void setStart(boolean start) {
       this.start = start;
     }
@@ -60,6 +70,7 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
         long l2 = System.currentTimeMillis();
         logger.info("### WAR build " + (l2 - l1) / 1000f + " at " + deployment.getFileSystemPath());
 
+        configureTcConfig(tcConfigBuilder);
         server1 = createServer(deployment);
         server2 = createServer(deployment);
 
@@ -79,7 +90,7 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
     }
 
     private WebApplicationServer createServer(Deployment deployment) throws Exception {
-      WebApplicationServer server = getServerManager().makeWebApplicationServer(tcConfigFile);
+      WebApplicationServer server = getServerManager().makeWebApplicationServer(tcConfigBuilder);
       server.addWarDeployment(deployment, context);
       if (start) {
         server.start();
@@ -90,13 +101,19 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
     private Deployment makeWAR() throws Exception {
       DeploymentBuilder builder = makeDeploymentBuilder(this.context + ".war");
       builder.addDirectoryOrJARContainingClass(testClass);
-      builder.addDirectoryContainingResource(tcConfigFile);
       configureWar(builder);
       return builder.makeDeployment();
     }
 
+    public TcConfigBuilder getTcConfigBuilder() {
+      return tcConfigBuilder;
+    }
+
     protected abstract void configureWar(DeploymentBuilder builder);
 
+    protected void configureTcConfig(TcConfigBuilder clientConfig) {
+      // override this method to modify tc-config.xml
+    }
   }
 
 }

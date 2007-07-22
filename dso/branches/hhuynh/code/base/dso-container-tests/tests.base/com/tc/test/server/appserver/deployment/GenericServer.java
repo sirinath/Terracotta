@@ -5,6 +5,7 @@
 package com.tc.test.server.appserver.deployment;
 
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.cargo.container.deployable.WAR;
 import org.codehaus.cargo.container.property.RemotePropertySet;
 import org.codehaus.cargo.container.tomcat.Tomcat5xRemoteContainer;
@@ -27,13 +28,14 @@ import com.tc.test.TestConfigObject;
 import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AppServer;
 import com.tc.test.server.appserver.AppServerInstallation;
-import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.StandardAppServerParameters;
-import com.tc.test.server.tcconfig.StandardTerracottaAppServerConfig;
-import com.tc.test.server.tcconfig.TerracottaServerConfigGenerator;
 import com.tc.test.server.util.AppServerUtil;
+import com.tc.test.server.util.TcConfigBuilder;
+import com.tc.util.runtime.Os;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -46,34 +48,24 @@ import junit.framework.Assert;
 public class GenericServer extends AbstractStoppable implements WebApplicationServer {
 
   private int                         jmxRemotePort;
-
   private int                         rmiRegistryPort;
-
   int                                 contextId       = 1;
-
-  private NewAppServerFactory         factory;
-
+  private AppServerFactory         factory;
   private AppServer                   server;
-
   private StandardAppServerParameters parameters;
-
   private ServerResult                result;
-
   private final AppServerInstallation installation;
-
   private final Map                   proxyBuilderMap = new HashMap();
-
   static final boolean                MONKEY_MODE     = true;
-
   private ProxyBuilder                proxyBuilder    = null;
 
-  public GenericServer(TestConfigObject config, NewAppServerFactory factory, AppServerInstallation installation,
+  public GenericServer(TestConfigObject config, AppServerFactory factory, AppServerInstallation installation,
                        FileSystemPath tcConfigPath, int serverId, File tempDir) throws Exception {
-    this(config, factory, installation, new SpringTerracottaAppServerConfig(tcConfigPath.getFile()), serverId, tempDir);
+    this(config, factory, installation, new TcConfigBuilder(tcConfigPath.getFile()), serverId, tempDir);
   }
 
-  public GenericServer(TestConfigObject config, NewAppServerFactory factory, AppServerInstallation installation,
-                       StandardTerracottaAppServerConfig terracottaConfig, int serverId, File tempDir) throws Exception {
+  public GenericServer(TestConfigObject config, AppServerFactory factory, AppServerInstallation installation,
+                       TcConfigBuilder tcConfigbuilder, int serverId, File tempDir) throws Exception {
     this.factory = factory;
     this.installation = installation;
     this.rmiRegistryPort = AppServerUtil.getPort();
@@ -81,32 +73,22 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
 
     parameters = (StandardAppServerParameters) factory.createParameters("server_" + serverId);
 
-    TerracottaServerConfigGenerator configGenerator = new TerracottaServerConfigGenerator(tempDir, terracottaConfig);
     File bootJarFile = new File(config.normalBootJar());
+    File tcConfigFile = new File(tempDir, "tc-config.xml");
+    tcConfigbuilder.saveToFile(tcConfigFile);
 
-    /*
-     * String[] commandLine = new String[] { "-f", configGenerator.configPath()};
-     * StandardTVSConfigurationSetupManagerFactory configManagerFactory = // new
-     * StandardTVSConfigurationSetupManagerFactory(commandLine, false, new FatalIllegalConfigurationChangeHandler());
-     * 
-     * boolean quiet = false; TCLogger tclogger = quiet ? new NullTCLogger() : CustomerLogging.getConsoleLogger();
-     * L1TVSConfigurationSetupManager configManager =
-     * configManagerFactory.createL1TVSConfigurationSetupManager(tclogger);
-     * 
-     * ClassLoader systemLoader = ClassLoader.getSystemClassLoader(); StandardDSOClientConfigHelper configHelper = new
-     * StandardDSOClientConfigHelper(configManager, false);
-     * 
-     * 
-     * new BootJarTool(configHelper, bootJarFile, systemLoader, quiet).generateJar();
-     */
+    // enable DSO
+    parameters.appendSysProp("tc.config", tcConfigFile.getAbsolutePath());
+    parameters.appendJvmArgs("-Xbootclasspath/p:" + bootJarFile.getAbsolutePath());
+    parameters.appendSysProp("tc.classpath", "file://" + writeTerracottaClassPathFile());
+    parameters.appendSysProp("tc.session.classpath", config.sessionClasspath());
 
-    parameters.enableDSO(configGenerator, bootJarFile);
     parameters.appendSysProp("com.sun.management.jmxremote");
     parameters.appendSysProp("com.sun.management.jmxremote.authenticate", false);
     parameters.appendSysProp("com.sun.management.jmxremote.ssl", false);
 
     // needed for websphere jmx bug
-    if (NewAppServerFactory.WEBSPHERE.equals(config.appserverFactoryName())) {
+    if (AppServerFactory.WEBSPHERE == AppServerFactory.getCurrentAppServerId()) {
       parameters.appendSysProp("javax.management.builder.initial", "");
     }
 
@@ -286,6 +268,29 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   }
 
   // end tomcat specific code
+
+  private String writeTerracottaClassPathFile() {
+    FileOutputStream fos = null;
+
+    try {
+      File tempFile = File.createTempFile("tc-classpath", parameters.instanceName());
+      tempFile.deleteOnExit();
+      fos = new FileOutputStream(tempFile);
+      fos.write(System.getProperty("java.class.path").getBytes());
+
+      String rv = tempFile.getAbsolutePath();
+      if (Os.isWindows()) {
+        rv = "/" + rv;
+      }
+
+      return rv;
+    } catch (IOException ioe) {
+      throw new AssertionError(ioe);
+    } finally {
+      IOUtils.closeQuietly(fos);
+    }
+
+  }
 
   public Server restart() throws Exception {
     stop();

@@ -6,8 +6,7 @@ package com.tctest.server.appserver.unit;
 
 import org.apache.commons.httpclient.HttpClient;
 
-import com.tc.test.TestConfigObject;
-import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.unit.AbstractAppServerTestCase;
 import com.tc.test.server.util.HttpUtil;
 import com.tctest.webapp.servlets.ServerHopCookieRewriteTestServlet;
@@ -26,11 +25,11 @@ public final class ServerHopCookieRewriteTest extends AbstractAppServerTestCase 
 
     HttpClient client = HttpUtil.createHttpClient();
 
-    String factoryName = TestConfigObject.getInstance().appserverFactoryName();
+    int appId = AppServerFactory.getCurrentAppServerId();
 
     final String[] args;
 
-    if (NewAppServerFactory.WEBSPHERE.equals(factoryName)) {
+    if (AppServerFactory.WEBSPHERE == appId) {
       args = new String[] {};
     } else {
       args = new String[] { "-Dcom.tc.session.delimiter=" + ServerHopCookieRewriteTestServlet.DLM };

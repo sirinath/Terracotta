@@ -8,8 +8,7 @@ import org.apache.derby.drda.NetworkServerControl;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
-import com.tc.test.TestConfigObject;
-import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
@@ -35,9 +34,10 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public boolean shouldDisable() {
+    int appId = AppServerFactory.getCurrentAppServerId();
     return super.shouldDisable()
-           || NewAppServerFactory.WASCE.equals(TestConfigObject.getInstance().appserverFactoryName())
-           || NewAppServerFactory.WEBSPHERE.equals(TestConfigObject.getInstance().appserverFactoryName());
+           || AppServerFactory.WASCE == appId
+           || AppServerFactory.WEBSPHERE == appId;
   }
 
   public void testHibernate() throws Exception {

@@ -9,7 +9,7 @@ import org.apache.commons.io.FileUtils;
 import com.tc.process.HeartBeatService;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.appserver.AppServerInstallation;
-import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.text.Banner;
 import com.tc.util.PortChooser;
 import com.tc.util.concurrent.ThreadUtil;
@@ -108,7 +108,7 @@ public class AppServerUtil {
     return sandbox;
   }
 
-  public static AppServerInstallation createAppServerInstallation(NewAppServerFactory appServerFactory,
+  public static AppServerInstallation createAppServerInstallation(AppServerFactory appServerFactory,
                                                                   File installDir, File sandbox) throws Exception {
     AppServerInstallation installation = null;
     String appserverHome = config.appserverHome();
