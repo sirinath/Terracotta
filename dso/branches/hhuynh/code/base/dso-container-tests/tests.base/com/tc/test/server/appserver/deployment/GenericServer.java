@@ -27,8 +27,8 @@ import com.meterware.httpunit.WebResponse;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AppServer;
-import com.tc.test.server.appserver.AppServerInstallation;
 import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.server.appserver.AppServerInstallation;
 import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.util.AppServerUtil;
 import com.tc.test.server.util.TcConfigBuilder;
@@ -87,9 +87,16 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     parameters.appendSysProp("com.sun.management.jmxremote.authenticate", false);
     parameters.appendSysProp("com.sun.management.jmxremote.ssl", false);
 
-    // needed for websphere jmx bug
-    if (AppServerFactory.WEBSPHERE == AppServerFactory.getCurrentAppServerId()) {
-      parameters.appendSysProp("javax.management.builder.initial", "");
+    // app server specific system props    
+    int appId = AppServerFactory.getCurrentAppServerId();
+    switch (appId) {
+      case AppServerFactory.TOMCAT:
+      case AppServerFactory.JBOSS:
+        parameters.appendJvmArgs("-Djvmroute=" + "server_" + serverId);
+        break;
+      case AppServerFactory.WEBSPHERE:
+        parameters.appendSysProp("javax.management.builder.initial", "");
+        break;
     }
 
     parameters.appendSysProp("com.sun.management.jmxremote.port", this.jmxRemotePort);

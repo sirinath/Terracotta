@@ -7,6 +7,7 @@ package com.tc.test.server.appserver.deployment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.util.TcConfigBuilder;
 
 import junit.framework.Test;
@@ -84,6 +85,7 @@ public abstract class AbstractOneServerDeploymentTest extends AbstractDeployment
     private WebApplicationServer createServer(Deployment deployment) throws Exception {
       WebApplicationServer server = getServerManager().makeWebApplicationServer(tcConfigBuilder);
       server.addWarDeployment(deployment, context);
+      configureServerParamers(server.getServerParameters());
       if (start) {
         server.start();
       }
@@ -101,6 +103,10 @@ public abstract class AbstractOneServerDeploymentTest extends AbstractDeployment
 
     protected void configureTcConfig(TcConfigBuilder clientConfig) {
       // override this method to modify tc-config.xml
+    }
+    
+    protected void configureServerParamers(StandardAppServerParameters params) {
+      // override this method to modify jvm args for app server
     }
   }
 

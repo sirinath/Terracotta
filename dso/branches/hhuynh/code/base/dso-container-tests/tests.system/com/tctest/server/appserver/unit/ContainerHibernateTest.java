@@ -4,7 +4,9 @@
  */
 package com.tctest.server.appserver.unit;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.derby.drda.NetworkServerControl;
+import org.apache.log4j.Logger;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
@@ -69,6 +71,8 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(org.apache.commons.collections.Buffer.class); // commons-collections*.jar
       builder.addDirectoryOrJARContainingClass(org.apache.derby.jdbc.ClientDriver.class); // derby*.jar
       builder.addDirectoryOrJARContainingClass(antlr.Tool.class); // antlr*.jar
+      builder.addDirectoryOrJARContainingClass(Logger.class); // log4j
+      builder.addDirectoryOrJARContainingClass(LogFactory.class); // common-loggings
 
       builder.addResource("/com/tctest/server/appserver/unit", "hibernate.cfg.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Event.hbm.xml", "WEB-INF/classes");
