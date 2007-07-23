@@ -50,7 +50,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   private int                         jmxRemotePort;
   private int                         rmiRegistryPort;
   int                                 contextId       = 1;
-  private AppServerFactory         factory;
+  private AppServerFactory            factory;
   private AppServer                   server;
   private StandardAppServerParameters parameters;
   private ServerResult                result;
@@ -217,10 +217,16 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     server.stop();
   }
 
+  /**
+   * url: /<CONTEXT>/<MAPPING>?params=etc
+   */
   public WebResponse ping(String url) throws MalformedURLException, IOException, SAXException {
     return ping(url, new WebConversation());
   }
 
+  /**
+   * url: /<CONTEXT>/<MAPPING>?params=etc
+   */
   public WebResponse ping(String url, WebConversation wc) throws MalformedURLException, IOException, SAXException {
     String fullURL = "http://localhost:" + result.serverPort() + url;
     logger.debug("Getting page: " + fullURL);

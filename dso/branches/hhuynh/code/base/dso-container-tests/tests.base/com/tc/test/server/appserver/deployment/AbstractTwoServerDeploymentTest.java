@@ -105,10 +105,6 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
       return builder.makeDeployment();
     }
 
-    public TcConfigBuilder getTcConfigBuilder() {
-      return tcConfigBuilder;
-    }
-
     protected abstract void configureWar(DeploymentBuilder builder);
 
     protected void configureTcConfig(TcConfigBuilder clientConfig) {

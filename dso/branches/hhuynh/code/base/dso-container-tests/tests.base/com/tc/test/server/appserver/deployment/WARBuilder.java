@@ -281,16 +281,9 @@ public class WARBuilder implements DeploymentBuilder {
 
       pw.println("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
 
-      // if (testConfig.appserverFactoryName().indexOf("weblogic8")>=0) {
       pw
           .println("<!DOCTYPE web-app PUBLIC \"-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN\" \"http://java.sun.com/dtd/web-app_2_3.dtd\">");
       pw.println("<web-app>\n");
-      // } else {
-      // pw.println("<web-app xmlns=\"http://java.sun.com/xml/ns/j2ee\"\n" +
-      // " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-      // " xsi:schemaLocation=\"http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd\"\n" +
-      // " version=\"2.4\">");
-      // }
 
       if (!beanDefinitionFiles.isEmpty()) {
         writeContextParam(pw, ContextLoader.CONFIG_LOCATION_PARAM, generateContextConfigLocationValue());

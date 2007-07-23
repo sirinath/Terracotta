@@ -48,7 +48,7 @@ public class SimpleSessionTest  extends AbstractTwoServerDeploymentTest {
     }
     
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplication("test");
+      // nothing to do
     }
     
   }
