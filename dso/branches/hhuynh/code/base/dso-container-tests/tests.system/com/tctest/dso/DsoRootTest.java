@@ -36,7 +36,7 @@ public class DsoRootTest extends AbstractTwoServerDeploymentTest {
   public void testRoot() throws Exception {
     int nodeCount = 2;
     WebConversation conversation = new WebConversation();
-    WebApplicationServer[] servers = new WebApplicationServer[] { server1, server2 };
+    WebApplicationServer[] servers = new WebApplicationServer[] { server0, server1 };
 
     Random random = new Random();
     for (int i = 0, currentRequestCount = 0; i < TOTAL_REQUEST_COUNT && currentRequestCount < TOTAL_REQUEST_COUNT; i++) {

@@ -26,10 +26,10 @@ public class NewSessionAfterInvalidateTest extends AbstractTwoServerDeploymentTe
   public final void testSessions() throws Exception {
     WebConversation conversation = new WebConversation();
 
-    WebResponse response1 = request(server1, "step=1", conversation);
+    WebResponse response1 = request(server0, "step=1", conversation);
     assertEquals("OK", response1.getText().trim());
 
-    WebResponse response2 = request(server2, "step=2", conversation);
+    WebResponse response2 = request(server1, "step=2", conversation);
     assertEquals("OK", response2.getText().trim());
   }
 

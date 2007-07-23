@@ -45,10 +45,10 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   public void testHibernate() throws Exception {
     WebConversation conversation = new WebConversation();
 
-    WebResponse response1 = request(server1, "server=server0", conversation);
+    WebResponse response1 = request(server0, "server=server0", conversation);
     assertEquals("OK", response1.getText().trim());
 
-    WebResponse response2 = request(server2, "server=server1", conversation);
+    WebResponse response2 = request(server1, "server=server1", conversation);
     assertEquals("OK", response2.getText().trim());
   }
 

@@ -30,13 +30,13 @@ public class SessionIDIntegrityTest extends AbstractTwoServerDeploymentTest {
   public final void testSessionId() throws Exception {
     WebConversation wc = new WebConversation();
 
-    assertEquals("OK", request(server1, "cmd=insert", wc));
+    assertEquals("OK", request(server0, "cmd=insert", wc));
 
     String server0_session_id = wc.getCookieValue("JSESSIONID");
     System.out.println("Server0 session id: " + server0_session_id);
     assertSessionIdIntegrity(server0_session_id, "server_0");
 
-    assertEquals("OK", request(server2, "cmd=query", wc));
+    assertEquals("OK", request(server1, "cmd=query", wc));
 
     String server1_session_id = wc.getCookieValue("JSESSIONID");
     System.out.println("Server1 session id: " + server1_session_id);

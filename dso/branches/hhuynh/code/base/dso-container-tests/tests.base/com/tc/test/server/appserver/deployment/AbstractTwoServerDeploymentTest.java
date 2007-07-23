@@ -14,15 +14,15 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 public abstract class AbstractTwoServerDeploymentTest extends AbstractDeploymentTest {
+  public WebApplicationServer server0;
   public WebApplicationServer server1;
-  public WebApplicationServer server2;
+
+  public void setServer0(WebApplicationServer server0) {
+    this.server0 = server0;
+  }
 
   public void setServer1(WebApplicationServer server1) {
     this.server1 = server1;
-  }
-
-  public void setServer2(WebApplicationServer server2) {
-    this.server2 = server2;
   }
 
   protected boolean shouldKillAppServersEachRun() {
@@ -38,8 +38,8 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
 
     private boolean                start  = true;
 
+    protected WebApplicationServer server0;
     protected WebApplicationServer server1;
-    protected WebApplicationServer server2;
 
     protected TwoServerTestSetup(Class testClass, String context) {
       this(testClass, new TcConfigBuilder(), context);
@@ -72,16 +72,16 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
         logger.info("### WAR build " + (l2 - l1) / 1000f + " at " + deployment.getFileSystemPath());
 
         configureTcConfig(tcConfigBuilder);
+        server0 = createServer(deployment);
         server1 = createServer(deployment);
-        server2 = createServer(deployment);
 
         TestSuite suite = (TestSuite) getTest();
         for (int i = 0; i < suite.testCount(); i++) {
           Test t = suite.testAt(i);
           if (t instanceof AbstractTwoServerDeploymentTest) {
             AbstractTwoServerDeploymentTest test = (AbstractTwoServerDeploymentTest) t;
+            test.setServer0(server0);
             test.setServer1(server1);
-            test.setServer2(server2);
           }
         }
       } catch (Exception e) {

@@ -13,11 +13,10 @@ import com.tctest.webapp.servlets.SessionObjectIdentityTestServlet;
 
 import junit.framework.Test;
 
-
 public class SessionObjectIdentityTest extends AbstractOneServerDeploymentTest {
-  private static final String CONTEXT                 = "SessionObjectIdentityTest";
-  private static final String SERVLET                 = "SessionObjectIdentityTestServlet";
-  
+  private static final String CONTEXT = "SessionObjectIdentityTest";
+  private static final String SERVLET = "SessionObjectIdentityTestServlet";
+
   public static Test suite() {
     return new SessionObjectIdentityTestSetup();
   }

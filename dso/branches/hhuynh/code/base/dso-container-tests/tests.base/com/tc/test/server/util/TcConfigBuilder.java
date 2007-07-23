@@ -45,7 +45,7 @@ public class TcConfigBuilder {
       throw new RuntimeException(e);
     }
   }
-  
+
   private TcConfigBuilder(TcConfigDocument tcd) {
     tcConfigDocument = tcd;
     tcConfig = tcConfigDocument.getTcConfig();
@@ -110,12 +110,14 @@ public class TcConfigBuilder {
   public void addInstrumentedClass(String pattern) {
     addInstrumentedClass(pattern, false);
   }
-  
+
   public void addInstrumentedClass(String pattern, boolean honorTransient) {
     ensureInstrumentedClasses();
     Include include = tcConfig.getApplication().getDso().getInstrumentedClasses().insertNewInclude(0);
     include.setClassExpression(pattern);
-    include.setHonorTransient(honorTransient);
+    if (honorTransient) {
+      include.setHonorTransient(honorTransient);
+    }
   }
 
   public void addBootJarClass(String classname) {
@@ -242,7 +244,7 @@ public class TcConfigBuilder {
       tcConfig.getApplication().getDso().addNewWebApplications();
     }
   }
-  
+
   public TcConfigBuilder copy() {
     try {
       TcConfigBuilder aCopy = new TcConfigBuilder(new Loader().parse(this.toString()));
