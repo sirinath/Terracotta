@@ -1,6 +1,7 @@
 package com.tc.test.server.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 
 import com.terracottatech.config.Autolock;
@@ -238,10 +239,14 @@ public class TcConfigBuilder {
   }
   
   public TcConfigBuilder copy() {
-    TcConfigBuilder aCopy = new TcConfigBuilder();
-    aCopy.tcConfigDocument = (TcConfigDocument)tcConfigDocument.copy();
-    aCopy.tcConfig = aCopy.tcConfigDocument.getTcConfig();
-    return aCopy;
+    try {
+      TcConfigBuilder aCopy = new TcConfigBuilder();
+      aCopy.tcConfigDocument = TcConfigDocument.Factory.parse(this.toString());
+      aCopy.tcConfig = aCopy.tcConfigDocument.getTcConfig();
+      return aCopy;
+    } catch (XmlException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static void main(String[] args) {
@@ -256,7 +261,9 @@ public class TcConfigBuilder {
     tc.addRoot("com.tc.Test.field", "myField");
     tc.addWebApplication("events", false);
     tc.addBootJarClass("java.lang.Local");
-    System.out.println(tc.toString());
+    TcConfigBuilder aCopy = tc.copy();
+    aCopy.addModule("hung", "huynh");
+    System.out.println(aCopy.toString());
   }
 
 }
