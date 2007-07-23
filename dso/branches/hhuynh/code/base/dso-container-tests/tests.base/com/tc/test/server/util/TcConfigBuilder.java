@@ -1,9 +1,9 @@
 package com.tc.test.server.util;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 
+import com.tc.config.Loader;
 import com.terracottatech.config.Autolock;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.LockLevel;
@@ -30,7 +30,7 @@ public class TcConfigBuilder {
 
   public TcConfigBuilder(String resourcePath) {
     try {
-      tcConfigDocument = TcConfigDocument.Factory.parse(getClass().getResourceAsStream(resourcePath));
+      tcConfigDocument = new Loader().parse(getClass().getResourceAsStream(resourcePath));
       tcConfig = tcConfigDocument.getTcConfig();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -241,10 +241,10 @@ public class TcConfigBuilder {
   public TcConfigBuilder copy() {
     try {
       TcConfigBuilder aCopy = new TcConfigBuilder();
-      aCopy.tcConfigDocument = TcConfigDocument.Factory.parse(this.toString());
+      aCopy.tcConfigDocument = new Loader().parse(this.toString());
       aCopy.tcConfig = aCopy.tcConfigDocument.getTcConfig();
       return aCopy;
-    } catch (XmlException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
