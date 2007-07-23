@@ -39,11 +39,16 @@ public class TcConfigBuilder {
 
   public TcConfigBuilder(File file) {
     try {
-      tcConfigDocument = TcConfigDocument.Factory.parse(file);
+      tcConfigDocument = new Loader().parse(file);
       tcConfig = tcConfigDocument.getTcConfig();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+  
+  private TcConfigBuilder(TcConfigDocument tcd) {
+    tcConfigDocument = tcd;
+    tcConfig = tcConfigDocument.getTcConfig();
   }
 
   public void setDsoPort(int portNo) {
@@ -240,9 +245,7 @@ public class TcConfigBuilder {
   
   public TcConfigBuilder copy() {
     try {
-      TcConfigBuilder aCopy = new TcConfigBuilder();
-      aCopy.tcConfigDocument = new Loader().parse(this.toString());
-      aCopy.tcConfig = aCopy.tcConfigDocument.getTcConfig();
+      TcConfigBuilder aCopy = new TcConfigBuilder(new Loader().parse(this.toString()));
       return aCopy;
     } catch (Exception e) {
       throw new RuntimeException(e);
