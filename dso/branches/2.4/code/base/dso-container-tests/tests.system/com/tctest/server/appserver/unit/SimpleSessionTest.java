@@ -9,27 +9,26 @@ import com.meterware.httpunit.WebResponse;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.util.TcConfigBuilder;
-import com.tctest.webapp.servlets.NewSessionAfterInvalidateTestServlet;
+import com.tctest.webapp.servlets.ShutdownNormallyServlet;
 
 import junit.framework.Test;
 
-public class NewSessionAfterInvalidateTest extends AbstractTwoServerDeploymentTest {
-
-  private static final String CONTEXT = "NewSession";
-  private static final String MAPPING = "new";
+public class SimpleSessionTest extends AbstractTwoServerDeploymentTest {
+  public static final String  CONFIG_FILE_FOR_TEST = "/tc-config-files/simplesession-tc-config.xml";
+  private static final String CONTEXT              = "simple";
+  private static final String MAPPING              = "doit";
 
   public static Test suite() {
-    return new NewSessionTestSetup();
+    return new SimpleSessionTestSetup();
   }
 
-  public final void testSessions() throws Exception {
+  public void testSession() throws Exception {
     WebConversation conversation = new WebConversation();
 
-    WebResponse response1 = request(server0, "step=1", conversation);
+    WebResponse response1 = request(server0, "cmd=insert", conversation);
     assertEquals("OK", response1.getText().trim());
 
-    WebResponse response2 = request(server1, "step=2", conversation);
+    WebResponse response2 = request(server1, "cmd=query", conversation);
     assertEquals("OK", response2.getText().trim());
   }
 
@@ -37,20 +36,17 @@ public class NewSessionAfterInvalidateTest extends AbstractTwoServerDeploymentTe
     return server.ping("/" + CONTEXT + "/" + MAPPING + "?" + params, con);
   }
 
-  private static class NewSessionTestSetup extends TwoServerTestSetup {
+  /** ****** test setup ********* */
+  private static class SimpleSessionTestSetup extends TwoServerTestSetup {
 
-    public NewSessionTestSetup() {
-      super(NewSessionAfterInvalidateTest.class, CONTEXT);
+    public SimpleSessionTestSetup() {
+      super(SimpleSessionTest.class, CONFIG_FILE_FOR_TEST, CONTEXT);
     }
 
     protected void configureWar(DeploymentBuilder builder) {
-      builder.addServlet("NewSessionAfterInvalidateTestServlet", "/" + MAPPING + "/*",
-                         NewSessionAfterInvalidateTestServlet.class, null, false);
-    }
-
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplication(CONTEXT);
+      builder.addServlet("ShutdownNormallyServlet", "/" + MAPPING + "/*", ShutdownNormallyServlet.class, null, false);
     }
 
   }
+
 }
