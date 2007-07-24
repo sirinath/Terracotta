@@ -130,6 +130,13 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   public StandardAppServerParameters getServerParameters() {
     return parameters;
   }
+  
+  public int getPort() {
+    if (result == null) {
+      throw new IllegalStateException("Server has not started.");
+    }
+    return result.serverPort();
+  }
 
   private class RMIProxyBuilder implements ProxyBuilder {
     public Object createProxy(Class serviceType, String url, Map initialContext) throws Exception {
