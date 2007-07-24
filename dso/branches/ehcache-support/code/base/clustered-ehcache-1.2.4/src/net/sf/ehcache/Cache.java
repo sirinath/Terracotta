@@ -6,7 +6,6 @@ import java.net.UnknownHostException;
 import java.rmi.server.UID;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +25,7 @@ import com.tc.config.lock.LockLevel;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
-public class TCMemoryCache implements Ehcache {
+public class Cache implements Ehcache {
 	/**
 	 * A reserved word for cache names. It denotes a default configuration which
 	 * is applied to caches created without configuration.
@@ -136,6 +135,15 @@ public class TCMemoryCache implements Ehcache {
 	private CacheManager cacheManager;
 
 	private BootstrapCacheLoader bootstrapCacheLoader;
+	
+	public static Cache convert(Ehcache cache) {
+		Cache tcCache = new Cache(cache.getName(), cache.getMaxElementsInMemory(),
+				cache.getMemoryStoreEvictionPolicy(), false, null, false,
+				cache.getTimeToLiveSeconds(), cache.getTimeToIdleSeconds(),
+				false, cache.getDiskExpiryThreadIntervalSeconds(), cache.getCacheEventNotificationService(),
+				cache.getBootstrapCacheLoader(), cache.getMaxElementsOnDisk());
+		return tcCache;
+	}
 
 	/**
 	 * 1.0 Constructor. <p/> The
@@ -167,7 +175,7 @@ public class TCMemoryCache implements Ehcache {
 	 *            last accessed or modified date
 	 * @since 1.0
 	 */
-	public TCMemoryCache(String name, int maxElementsInMemory,
+	public Cache(String name, int maxElementsInMemory,
 			boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
 			long timeToIdleSeconds) {
 		// overflowToDisk and diskPersistent are always false
@@ -208,7 +216,7 @@ public class TCMemoryCache implements Ehcache {
 	 *            of 120 seconds plus is recommended
 	 * @since 1.1
 	 */
-	public TCMemoryCache(String name, int maxElementsInMemory,
+	public Cache(String name, int maxElementsInMemory,
 			boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
 			long timeToIdleSeconds, boolean diskPersistent,
 			long diskExpiryThreadIntervalSeconds) {
@@ -262,7 +270,7 @@ public class TCMemoryCache implements Ehcache {
 	 *            one with no registered listeners will be created.
 	 * @since 1.2
 	 */
-	public TCMemoryCache(String name, int maxElementsInMemory,
+	public Cache(String name, int maxElementsInMemory,
 			MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
 			boolean overflowToDisk, String diskStorePath, boolean eternal,
 			long timeToLiveSeconds, long timeToIdleSeconds,
@@ -319,7 +327,7 @@ public class TCMemoryCache implements Ehcache {
 	 *            is first initialised. Null if none is required.
 	 * @since 1.2.1
 	 */
-	public TCMemoryCache(String name, int maxElementsInMemory,
+	public Cache(String name, int maxElementsInMemory,
 			MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
 			boolean overflowToDisk, String diskStorePath, boolean eternal,
 			long timeToLiveSeconds, long timeToIdleSeconds,
@@ -377,7 +385,7 @@ public class TCMemoryCache implements Ehcache {
 	 *            is first initialised. Null if none is required.
 	 * @since 1.2.4
 	 */
-	public TCMemoryCache(String name, int maxElementsInMemory,
+	public Cache(String name, int maxElementsInMemory,
 			MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
 			boolean overflowToDisk, String diskStorePath, boolean eternal,
 			long timeToLiveSeconds, long timeToIdleSeconds,
@@ -1280,7 +1288,7 @@ public class TCMemoryCache implements Ehcache {
 	 * @since 1.2
 	 */
 	public final MemoryStoreEvictionPolicy getMemoryStoreEvictionPolicy() {
-		return memoryStoreEvictionPolicy;
+		return MemoryStoreEvictionPolicy.DSO;
 	}
 
 	/**
@@ -1353,7 +1361,7 @@ public class TCMemoryCache implements Ehcache {
 			throw new CloneNotSupportedException(
 					"Cannot clone an initialized cache.");
 		}
-		TCMemoryCache copy = (TCMemoryCache) super.clone();
+		Cache copy = (Cache) super.clone();
 		RegisteredEventListeners registeredEventListenersFromCopy = copy
 				.getCacheEventNotificationService();
 		if (registeredEventListenersFromCopy == null

@@ -41,6 +41,9 @@
     <root>
       <field-name>net.sf.ehcache.store.MemoryStoreEvictionPolicy.FIFO</field-name>
     </root>
+    <root>
+      <field-name>net.sf.ehcache.store.MemoryStoreEvictionPolicy.DSO</field-name>
+    </root>
   </roots>
 
   <locks>

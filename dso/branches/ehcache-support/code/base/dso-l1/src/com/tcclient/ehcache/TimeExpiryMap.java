@@ -83,9 +83,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   }
 
   public Object remove(Object key) {
-    Object o = store.get(key);
-    timeExpiryDataStore.remove(key);
-    return o;
+    return timeExpiryDataStore.remove(key);
   }
 
   public int size() {

@@ -81,10 +81,14 @@ public class CacheDataStore {
     return rv != null && rv.isValid();
   }
 
-  public void remove(final Object key) {
+  public Object remove(final Object key) {
     Assert.pre(key != null);
+    CacheData cd = (CacheData)store.get(key);
+    if (cd == null) return null;
+    
     store.remove(key);
     dtmStore.remove(key);
+    return cd.getValue();
   }
 
   public void expire(Object key, CacheData sd) {

@@ -694,6 +694,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     markAllSpecsPreInstrumented();
 
     addJDK15InstrumentedSpec();
+    
+    addIncludePattern("com.tcclient.cache.*", false, false, false);
+    addIncludePattern("com.tcclient.ehcache.*", false, false, false);
 
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");
