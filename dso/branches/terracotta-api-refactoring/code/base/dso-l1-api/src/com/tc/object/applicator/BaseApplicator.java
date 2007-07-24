@@ -9,7 +9,7 @@ import com.tc.object.ClientObjectManager;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
-import com.tc.object.dna.impl.DNAEncoding;
+import com.tc.object.dna.api.IDNAEncoding;
 import com.tc.util.Assert;
 
 import java.util.Map;
@@ -19,9 +19,9 @@ public abstract class BaseApplicator implements ChangeApplicator {
   private static final TCLogger      logger   = TCLogging.getLogger(BaseApplicator.class);
   private static final LiteralValues literals = new LiteralValues();
 
-  protected final DNAEncoding        encoding;
+  protected final IDNAEncoding        encoding;
 
-  protected BaseApplicator(DNAEncoding encoding) {
+  protected BaseApplicator(IDNAEncoding encoding) {
     this.encoding = encoding;
   }
 

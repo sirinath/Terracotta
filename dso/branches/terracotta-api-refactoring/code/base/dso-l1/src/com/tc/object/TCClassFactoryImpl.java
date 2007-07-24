@@ -16,6 +16,7 @@ import com.tc.object.applicator.PhysicalApplicator;
 import com.tc.object.applicator.ProxyApplicator;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.dna.api.IDNAEncoding;
 import com.tc.object.dna.impl.DNAEncoding;
 import com.tc.object.field.TCFieldFactory;
 import com.tc.object.loaders.ClassProvider;
@@ -36,7 +37,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
   private final TCFieldFactory        fieldFactory;
   private final DSOClientConfigHelper config;
   private final ClassProvider         classProvider;
-  private final DNAEncoding           encoding;
+  private final IDNAEncoding           encoding;
 
   public TCClassFactoryImpl(TCFieldFactory fieldFactory, DSOClientConfigHelper config, ClassProvider classProvider) {
     this.fieldFactory = fieldFactory;
