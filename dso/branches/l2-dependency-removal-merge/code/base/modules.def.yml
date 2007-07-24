@@ -167,6 +167,7 @@ modules:
         - dso-l2-common
         - dso-l1
         - deploy
+        - dso-l2
         - aspectwerkz
   - examples:
       options:
@@ -186,6 +187,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - aspectwerkz
   - installer:
       options:
@@ -206,6 +208,7 @@ modules:
         # to classes in the deploy module because deploy is compiled with JDK 1.5, while this
         # module is compiled with JDK 1.4.
         - deploy
+        - dso-l2
         - dso-l1-weblogic
         - simulator
         - management
@@ -222,6 +225,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - legacy-test-tree
         - simulator
         - thirdparty
@@ -335,6 +339,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - dso-l1-weblogic
         - dso-spring
         - simulator
@@ -355,6 +360,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - legacy-test-tree
         - simulator
         - linked-child-process
@@ -378,6 +384,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - dso-l1-weblogic
         - dso-spring
         - simulator
@@ -422,6 +429,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -437,6 +445,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - thirdparty
   - clustered-lucene-2.0.0:
       options:
@@ -452,6 +461,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -467,6 +477,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - legacy-test-tree
         - linked-child-process
         - management
@@ -488,6 +499,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -508,6 +520,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -527,6 +540,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - dso-l1-weblogic
         - simulator
         - thirdparty
@@ -547,6 +561,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -584,6 +599,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
@@ -621,6 +637,7 @@ modules:
         - dso-l1
         - dso-l2-common
         - deploy
+        - dso-l2
         - simulator
         - thirdparty
         - legacy-test-tree
