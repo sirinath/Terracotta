@@ -8,6 +8,8 @@ interface IConstants {
 	static final String LRUMEMORYSTORE_CLASS_NAME_SLASH = "net/sf/ehcache/store/LruMemoryStore";
 
 	static final String LRUMEMORYSTORE_CLASS_NAME_DOTS = "net.sf.ehcache.store.LruMemoryStore";
+	
+	static final String MEMORYSTORE_CLASS_NAME_DOTS = "net.sf.ehcache.store.MemoryStore";
 
 	static final String SPOOLINGLINKEDHASHMAP_CLASS_NAME_SLASH = LRUMEMORYSTORE_CLASS_NAME_SLASH
 			+ "$SpoolingLinkedHashMap";

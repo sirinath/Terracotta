@@ -37,5 +37,9 @@ public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule 
 	    TransparencyClassSpec spec = configHelper.getOrCreateSpec(LRUMEMORYSTORE_CLASS_NAME_DOTS);
 	    spec.setCallConstructorOnLoad(true);
 	    spec.setCustomClassAdapter(factory);
+	    
+	    factory = new EhcacheMemoryStoreAdapter();
+	    spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
+	    spec.setCustomClassAdapter(factory);
 	}
 }
