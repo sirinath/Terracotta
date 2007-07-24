@@ -1,11 +1,13 @@
 package net.sf.ehcache;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.server.UID;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -16,16 +18,12 @@ import net.sf.ehcache.event.RegisteredEventListeners;
 import net.sf.ehcache.store.DiskStore;
 import net.sf.ehcache.store.MemoryStore;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
-import net.sf.ehcache.store.TimeExpiryMemoryStore;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.tc.config.lock.LockLevel;
-import com.tc.object.bytecode.ManagerUtil;
-import com.tc.util.Assert;
-
 public class Cache implements Ehcache {
+
 	/**
 	 * A reserved word for cache names. It denotes a default configuration which
 	 * is applied to caches created without configuration.
@@ -55,7 +53,7 @@ public class Cache implements Ehcache {
 
 	private static final Log LOG = LogFactory.getLog(Cache.class.getName());
 
-	private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY = MemoryStoreEvictionPolicy.DSO;
+	private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY = MemoryStoreEvictionPolicy.LRU;
 
 	private static InetAddress localhost;
 
@@ -73,13 +71,24 @@ public class Cache implements Ehcache {
 
 	private String name;
 
+	private DiskStore diskStore;
+
+	private String diskStorePath;
+
 	private Status status;
 
 	private final int maxElementsInMemory;
 
+	private final int maxElementsOnDisk;
+
 	private MemoryStoreEvictionPolicy memoryStoreEvictionPolicy;
 
 	private int statisticsAccuracy = Statistics.STATISTICS_ACCURACY_BEST_EFFORT;
+
+	/**
+	 * Whether cache elements in this cache overflowToDisk.
+	 */
+	private final boolean overflowToDisk;
 
 	/**
 	 * The interval in seconds between runs of the disk expiry thread. 2 minutes
@@ -88,6 +97,17 @@ public class Cache implements Ehcache {
 	 * often we check for expiry.
 	 */
 	private final long diskExpiryThreadIntervalSeconds;
+
+	/**
+	 * For caches that overflow to disk, does the disk cache persist between
+	 * CacheManager instances.
+	 */
+	private final boolean diskPersistent;
+
+	/**
+	 * Whether elements are eternal, which is the same as non-expiring.
+	 */
+	private final boolean eternal;
 
 	/**
 	 * The maximum time between creation time and when an element expires. Is
@@ -112,6 +132,11 @@ public class Cache implements Ehcache {
 	private int memoryStoreHitCount;
 
 	/**
+	 * Auxiliary hit counts broken down by auxiliary.
+	 */
+	private int diskStoreHitCount;
+
+	/**
 	 * Count of misses where element was not found.
 	 */
 	private int missCountNotFound;
@@ -125,7 +150,7 @@ public class Cache implements Ehcache {
 	 * The {@link MemoryStore} of this {@link Cache}. All caches have a memory
 	 * store.
 	 */
-	private TimeExpiryMemoryStore memoryStore;
+	private MemoryStore memoryStore;
 
 	private RegisteredEventListeners registeredEventListeners;
 
@@ -135,15 +160,6 @@ public class Cache implements Ehcache {
 	private CacheManager cacheManager;
 
 	private BootstrapCacheLoader bootstrapCacheLoader;
-	
-	public static Cache convert(Ehcache cache) {
-		Cache tcCache = new Cache(cache.getName(), cache.getMaxElementsInMemory(),
-				cache.getMemoryStoreEvictionPolicy(), false, null, false,
-				cache.getTimeToLiveSeconds(), cache.getTimeToIdleSeconds(),
-				false, cache.getDiskExpiryThreadIntervalSeconds(), cache.getCacheEventNotificationService(),
-				cache.getBootstrapCacheLoader(), cache.getMaxElementsOnDisk());
-		return tcCache;
-	}
 
 	/**
 	 * 1.0 Constructor. <p/> The
@@ -178,11 +194,10 @@ public class Cache implements Ehcache {
 	public Cache(String name, int maxElementsInMemory,
 			boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
 			long timeToIdleSeconds) {
-		// overflowToDisk and diskPersistent are always false
-		// eternal is always false
 		this(name, maxElementsInMemory, DEFAULT_MEMORY_STORE_EVICTION_POLICY,
-				false, null, false, timeToLiveSeconds, timeToIdleSeconds,
-				false, DEFAULT_EXPIRY_THREAD_INTERVAL_SECONDS, null, null);
+				overflowToDisk, null, eternal, timeToLiveSeconds,
+				timeToIdleSeconds, false,
+				DEFAULT_EXPIRY_THREAD_INTERVAL_SECONDS, null, null);
 	}
 
 	/**
@@ -220,11 +235,10 @@ public class Cache implements Ehcache {
 			boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
 			long timeToIdleSeconds, boolean diskPersistent,
 			long diskExpiryThreadIntervalSeconds) {
-		// overflowToDisk and diskPersistent are always false
-		// eternal is always false
 		this(name, maxElementsInMemory, DEFAULT_MEMORY_STORE_EVICTION_POLICY,
-				false, null, false, timeToLiveSeconds, timeToIdleSeconds,
-				false, diskExpiryThreadIntervalSeconds, null, null);
+				overflowToDisk, null, eternal, timeToLiveSeconds,
+				timeToIdleSeconds, diskPersistent,
+				diskExpiryThreadIntervalSeconds, null, null);
 		LOG
 				.warn("An API change between ehcache-1.1 and ehcache-1.2 results in the persistence path being set to java.io.tmp"
 						+ " when the ehcache-1.1 constructor is used. Please change to the 1.2 constructor");
@@ -276,12 +290,10 @@ public class Cache implements Ehcache {
 			long timeToLiveSeconds, long timeToIdleSeconds,
 			boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
 			RegisteredEventListeners registeredEventListeners) {
-		// overflowToDisk and diskPersistent are always false
-		// eternal is always false
-		this(name, maxElementsInMemory, memoryStoreEvictionPolicy, false,
-				diskStorePath, false, timeToLiveSeconds, timeToIdleSeconds,
-				false, diskExpiryThreadIntervalSeconds,
-				registeredEventListeners, null);
+		this(name, maxElementsInMemory, memoryStoreEvictionPolicy,
+				overflowToDisk, diskStorePath, eternal, timeToLiveSeconds,
+				timeToIdleSeconds, diskPersistent,
+				diskExpiryThreadIntervalSeconds, registeredEventListeners, null);
 	}
 
 	/**
@@ -334,12 +346,12 @@ public class Cache implements Ehcache {
 			boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
 			RegisteredEventListeners registeredEventListeners,
 			BootstrapCacheLoader bootstrapCacheLoader) {
-		// overflowToDisk and diskPersistent are always false
-		// eternal is always false
-		this(name, maxElementsInMemory, memoryStoreEvictionPolicy, false,
-				diskStorePath, false, timeToLiveSeconds, timeToIdleSeconds,
-				false, diskExpiryThreadIntervalSeconds,
-				registeredEventListeners, bootstrapCacheLoader, 0);
+
+		this(name, maxElementsInMemory, memoryStoreEvictionPolicy,
+				overflowToDisk, diskStorePath, eternal, timeToLiveSeconds,
+				timeToIdleSeconds, diskPersistent,
+				diskExpiryThreadIntervalSeconds, registeredEventListeners,
+				bootstrapCacheLoader, 0);
 	}
 
 	/**
@@ -392,14 +404,24 @@ public class Cache implements Ehcache {
 			boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
 			RegisteredEventListeners registeredEventListeners,
 			BootstrapCacheLoader bootstrapCacheLoader, int maxElementsOnDisk) {
-		// overflowToDisk and diskPersistent are always false
+
 		changeStatus(Status.STATUS_UNINITIALISED);
 
 		setName(name);
 		this.maxElementsInMemory = maxElementsInMemory;
 		this.memoryStoreEvictionPolicy = memoryStoreEvictionPolicy;
+		this.overflowToDisk = overflowToDisk;
+		this.eternal = eternal;
 		this.timeToLiveSeconds = timeToLiveSeconds;
 		this.timeToIdleSeconds = timeToIdleSeconds;
+		this.diskPersistent = diskPersistent;
+		this.maxElementsOnDisk = maxElementsOnDisk;
+
+		if (diskStorePath == null) {
+			this.diskStorePath = System.getProperty("java.io.tmpdir");
+		} else {
+			this.diskStorePath = diskStorePath;
+		}
 
 		if (registeredEventListeners == null) {
 			this.registeredEventListeners = new RegisteredEventListeners(this);
@@ -420,6 +442,7 @@ public class Cache implements Ehcache {
 		}
 
 		this.bootstrapCacheLoader = bootstrapCacheLoader;
+
 	}
 
 	/**
@@ -447,10 +470,11 @@ public class Cache implements Ehcache {
 				}
 			}
 
-			MemoryStore ms = MemoryStore.create(this, null);
-			Assert.post(ms instanceof TimeExpiryMemoryStore);
+			if (overflowToDisk) {
+				diskStore = new DiskStore(this, diskStorePath);
+			}
 
-			memoryStore = (TimeExpiryMemoryStore) ms;
+			memoryStore = MemoryStore.create(this, diskStore);
 			changeStatus(Status.STATUS_ALIVE);
 		}
 
@@ -550,29 +574,24 @@ public class Cache implements Ehcache {
 			throw new IllegalArgumentException("Element cannot be null");
 		}
 
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.WRITE);
-		try {
-			element.resetAccessStatistics();
-			boolean elementExists;
-			Object key = element.getObjectKey();
-			elementExists = isElementInMemory(key) || isElementOnDisk(key);
-			if (elementExists) {
-				element.updateUpdateStatistics();
-			}
-			applyDefaultsToElementWithoutLifespanSet(element);
+		element.resetAccessStatistics();
+		boolean elementExists;
+		Object key = element.getObjectKey();
+		elementExists = isElementInMemory(key) || isElementOnDisk(key);
+		if (elementExists) {
+			element.updateUpdateStatistics();
+		}
+		applyDefaultsToElementWithoutLifespanSet(element);
 
-			synchronized (this) {
-				memoryStore.put(element);
-			}
-			if (elementExists) {
-				registeredEventListeners.notifyElementUpdated(element,
-						doNotNotifyCacheReplicators);
-			} else {
-				registeredEventListeners.notifyElementPut(element,
-						doNotNotifyCacheReplicators);
-			}
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+		synchronized (this) {
+			memoryStore.put(element);
+		}
+		if (elementExists) {
+			registeredEventListeners.notifyElementUpdated(element,
+					doNotNotifyCacheReplicators);
+		} else {
+			registeredEventListeners.notifyElementPut(element,
+					doNotNotifyCacheReplicators);
 		}
 
 	}
@@ -582,7 +601,7 @@ public class Cache implements Ehcache {
 			// Setting with Cache defaults
 			element.setTimeToLive((int) timeToLiveSeconds);
 			element.setTimeToIdle((int) timeToIdleSeconds);
-			element.setEternal(false);
+			element.setEternal(eternal);
 		}
 	}
 
@@ -612,15 +631,10 @@ public class Cache implements Ehcache {
 			throw new IllegalArgumentException("Element cannot be null");
 		}
 
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.WRITE);
-		try {
-			applyDefaultsToElementWithoutLifespanSet(element);
+		applyDefaultsToElementWithoutLifespanSet(element);
 
-			synchronized (this) {
-				memoryStore.put(element);
-			}
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+		synchronized (this) {
+			memoryStore.put(element);
 		}
 	}
 
@@ -659,7 +673,22 @@ public class Cache implements Ehcache {
 	public final Element get(Object key) throws IllegalStateException,
 			CacheException {
 		checkStatus();
-		Element element = searchInMemoryStore(key, true);
+		Element element;
+
+		synchronized (this) {
+			element = searchInMemoryStore(key, true);
+			if (element == null && overflowToDisk) {
+				element = searchInDiskStore(key, true);
+			}
+			if (element == null) {
+				missCountNotFound++;
+				if (LOG.isTraceEnabled()) {
+					LOG.trace(name + " cache - Miss");
+				}
+			} else {
+				hitCount++;
+			}
+		}
 		return element;
 	}
 
@@ -695,7 +724,16 @@ public class Cache implements Ehcache {
 	 */
 	public final Element getQuiet(Object key) throws IllegalStateException,
 			CacheException {
-		return get(key);
+		checkStatus();
+		Element element;
+
+		synchronized (this) {
+			element = searchInMemoryStore(key, false);
+			if (element == null && overflowToDisk) {
+				element = searchInDiskStore(key, false);
+			}
+		}
+		return element;
 	}
 
 	/**
@@ -724,6 +762,19 @@ public class Cache implements Ehcache {
 		List allKeyList = new ArrayList();
 		List keyList = Arrays.asList(memoryStore.getKeyArray());
 		allKeyList.addAll(keyList);
+		if (overflowToDisk) {
+			Set allKeys = new HashSet();
+			// within the store keys will be unique
+			allKeys.addAll(keyList);
+			Object[] diskKeys = diskStore.getKeyArray();
+			for (int i = 0; i < diskKeys.length; i++) {
+				Object diskKey = diskKeys[i];
+				if (allKeys.add(diskKey)) {
+					// Unique, so add it to the list
+					allKeyList.add(diskKey);
+				}
+			}
+		}
 		return allKeyList;
 	}
 
@@ -782,20 +833,61 @@ public class Cache implements Ehcache {
 		ArrayList allKeys = new ArrayList();
 		List memoryKeySet = Arrays.asList(memoryStore.getKeyArray());
 		allKeys.addAll(memoryKeySet);
+		if (overflowToDisk) {
+			List diskKeySet = Arrays.asList(diskStore.getKeyArray());
+			allKeys.addAll(diskKeySet);
+		}
 		return allKeys;
 	}
 
 	private Element searchInMemoryStore(Object key, boolean updateStatistics) {
 		Element element;
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.READ);
-		try {
-			if (updateStatistics) {
-				element = memoryStore.get(key);
+		if (updateStatistics) {
+			element = memoryStore.get(key);
+		} else {
+			element = memoryStore.getQuiet(key);
+		}
+		if (element != null) {
+			if (isExpired(element)) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug(name + " Memory cache hit, but element expired");
+				}
+				missCountExpired++;
+				remove(key, true, true, false);
+				element = null;
 			} else {
-				element = memoryStore.getQuiet(key);
+				memoryStoreHitCount++;
 			}
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+		}
+		return element;
+	}
+
+	private Element searchInDiskStore(Object key, boolean updateStatistics) {
+		if (!(key instanceof Serializable)) {
+			return null;
+		}
+		Serializable serializableKey = (Serializable) key;
+		Element element;
+		if (updateStatistics) {
+			element = diskStore.get(serializableKey);
+		} else {
+			element = diskStore.getQuiet(serializableKey);
+		}
+		if (element != null) {
+			if (isExpired(element)) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug(name
+							+ " cache - Disk Store hit, but element expired");
+				}
+				missCountExpired++;
+				remove(key, true, true, false);
+				element = null;
+			} else {
+				diskStoreHitCount++;
+				// Put the item back into memory to preserve policies in the
+				// memory store and to save updated statistics
+				memoryStore.put(element);
+			}
 		}
 		return element;
 	}
@@ -945,11 +1037,20 @@ public class Cache implements Ehcache {
 		checkStatus();
 		boolean removed = false;
 		Element elementFromMemoryStore;
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.WRITE);
-		try {
+		Element elementFromDiskStore;
+		synchronized (this) {
 			elementFromMemoryStore = memoryStore.remove(key);
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+
+			// could have been removed from both places, if there are two copies
+			// in the cache
+			elementFromDiskStore = null;
+			if (overflowToDisk) {
+				if ((key instanceof Serializable)) {
+					Serializable serializableKey = (Serializable) key;
+					elementFromDiskStore = diskStore.remove(serializableKey);
+				}
+
+			}
 		}
 
 		boolean removeNotified = false;
@@ -966,6 +1067,17 @@ public class Cache implements Ehcache {
 							.notifyElementRemoved(elementFromMemoryStore,
 									doNotNotifyCacheReplicators);
 				}
+			}
+			removed = true;
+		}
+		if (elementFromDiskStore != null) {
+			if (expiry) {
+				registeredEventListeners.notifyElementExpiry(
+						elementFromDiskStore, doNotNotifyCacheReplicators);
+			} else {
+				removeNotified = true;
+				registeredEventListeners.notifyElementRemoved(
+						elementFromDiskStore, doNotNotifyCacheReplicators);
 			}
 			removed = true;
 		}
@@ -1000,11 +1112,11 @@ public class Cache implements Ehcache {
 	public void removeAll(boolean doNotNotifyCacheReplicators)
 			throws IllegalStateException, CacheException {
 		checkStatus();
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.WRITE);
-		try {
+		synchronized (this) {
 			memoryStore.removeAll();
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+			if (overflowToDisk) {
+				diskStore.removeAll();
+			}
 		}
 		registeredEventListeners.notifyRemoveAll(doNotNotifyCacheReplicators);
 	}
@@ -1020,6 +1132,10 @@ public class Cache implements Ehcache {
 		checkStatus();
 		memoryStore.dispose();
 		memoryStore = null;
+		if (overflowToDisk) {
+			diskStore.dispose();
+			diskStore = null;
+		}
 
 		registeredEventListeners.dispose();
 
@@ -1036,7 +1152,15 @@ public class Cache implements Ehcache {
 	public final synchronized void flush() throws IllegalStateException,
 			CacheException {
 		checkStatus();
-		memoryStore.flush();
+		try {
+			memoryStore.flush();
+			if (overflowToDisk) {
+				diskStore.flush();
+			}
+		} catch (IOException e) {
+			throw new CacheException("Unable to flush cache: " + name
+					+ ". Initial cause was " + e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -1107,7 +1231,11 @@ public class Cache implements Ehcache {
 	 */
 	public final int getDiskStoreSize() throws IllegalStateException {
 		checkStatus();
-		return 0;
+		if (overflowToDisk) {
+			return diskStore.getSize();
+		} else {
+			return 0;
+		}
 	}
 
 	/**
@@ -1138,7 +1266,7 @@ public class Cache implements Ehcache {
 	 * @deprecated Use {@link net.sf.ehcache.Statistics}
 	 */
 	public final int getHitCount() {
-		return memoryStore.getHitCount();
+		return (int) hitCount;
 	}
 
 	/**
@@ -1153,7 +1281,7 @@ public class Cache implements Ehcache {
 	 * @deprecated Use {@link net.sf.ehcache.Statistics}
 	 */
 	public final int getMemoryStoreHitCount() {
-		return memoryStore.getHitCount();
+		return (int) memoryStoreHitCount;
 	}
 
 	/**
@@ -1167,7 +1295,7 @@ public class Cache implements Ehcache {
 	 * @deprecated Use {@link net.sf.ehcache.Statistics}
 	 */
 	public final int getDiskStoreHitCount() {
-		return 0;
+		return (int) diskStoreHitCount;
 	}
 
 	/**
@@ -1198,7 +1326,7 @@ public class Cache implements Ehcache {
 	 * @deprecated Use {@link net.sf.ehcache.Statistics}
 	 */
 	public final int getMissCountExpired() {
-		return memoryStore.getMissCountExpired();
+		return (int) missCountExpired;
 	}
 
 	/**
@@ -1251,14 +1379,14 @@ public class Cache implements Ehcache {
 	 * Are elements eternal.
 	 */
 	public final boolean isEternal() {
-		return false;
+		return eternal;
 	}
 
 	/**
 	 * Does the overflow go to disk.
 	 */
 	public final boolean isOverflowToDisk() {
-		return false;
+		return overflowToDisk;
 	}
 
 	/**
@@ -1272,7 +1400,7 @@ public class Cache implements Ehcache {
 	 * Gets the maximum number of elements to hold on Disk
 	 */
 	public int getMaxElementsOnDisk() {
-		return 0;
+		return maxElementsOnDisk;
 	}
 
 	/**
@@ -1288,7 +1416,7 @@ public class Cache implements Ehcache {
 	 * @since 1.2
 	 */
 	public final MemoryStoreEvictionPolicy getMemoryStoreEvictionPolicy() {
-		return MemoryStoreEvictionPolicy.DSO;
+		return memoryStoreEvictionPolicy;
 	}
 
 	/**
@@ -1298,20 +1426,21 @@ public class Cache implements Ehcache {
 		StringBuffer dump = new StringBuffer();
 
 		dump.append("[ ").append(" name = ").append(name).append(" status = ")
-				.append(status).append(" eternal = ").append(false).append(
-						" overflowToDisk = ").append(false).append(
+				.append(status).append(" eternal = ").append(eternal).append(
+						" overflowToDisk = ").append(overflowToDisk).append(
 						" maxElementsInMemory = ").append(maxElementsInMemory)
-				.append(" maxElementsOnDisk = ").append(0)
+				.append(" maxElementsOnDisk = ").append(maxElementsOnDisk)
 				.append(" memoryStoreEvictionPolicy = ").append(
 						memoryStoreEvictionPolicy).append(
 						" timeToLiveSeconds = ").append(timeToLiveSeconds)
 				.append(" timeToIdleSeconds = ").append(timeToIdleSeconds)
-				.append(" diskPersistent = ").append(false).append(
+				.append(" diskPersistent = ").append(diskPersistent).append(
 						" diskExpiryThreadIntervalSeconds = ").append(
 						diskExpiryThreadIntervalSeconds).append(
 						registeredEventListeners).append(" hitCount = ")
 				.append(hitCount).append(" memoryStoreHitCount = ").append(
-						memoryStoreHitCount).append(" missCountNotFound = ")
+						memoryStoreHitCount).append(" diskStoreHitCount = ")
+				.append(diskStoreHitCount).append(" missCountNotFound = ")
 				.append(missCountNotFound).append(" missCountExpired = ")
 				.append(missCountExpired).append(" ]");
 
@@ -1338,11 +1467,8 @@ public class Cache implements Ehcache {
 	public final boolean isExpired(Element element)
 			throws IllegalStateException, NullPointerException {
 		checkStatus();
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.READ);
-		try {
-			return memoryStore.isExpired(element.getObjectKey());
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
+		synchronized (element) {
+			return element.isExpired();
 		}
 	}
 
@@ -1357,7 +1483,7 @@ public class Cache implements Ehcache {
 	 * @throws CloneNotSupportedException
 	 */
 	public final Object clone() throws CloneNotSupportedException {
-		if (memoryStore != null) {
+		if (!(memoryStore == null && diskStore == null)) {
 			throw new CloneNotSupportedException(
 					"Cannot clone an initialized cache.");
 		}
@@ -1393,6 +1519,18 @@ public class Cache implements Ehcache {
 	}
 
 	/**
+	 * Gets the internal DiskStore.
+	 * 
+	 * @return the DiskStore referenced by this cache
+	 * @throws IllegalStateException
+	 *             if the cache is not {@link Status#STATUS_ALIVE}
+	 */
+	final DiskStore getDiskStore() throws IllegalStateException {
+		checkStatus();
+		return diskStore;
+	}
+
+	/**
 	 * Gets the internal MemoryStore.
 	 * 
 	 * @return the MemoryStore referenced by this cache
@@ -1409,7 +1547,7 @@ public class Cache implements Ehcache {
 	 *         between restarts
 	 */
 	public final boolean isDiskPersistent() {
-		return false;
+		return diskPersistent;
 	}
 
 	/**
@@ -1449,12 +1587,7 @@ public class Cache implements Ehcache {
 	 * @since 1.2
 	 */
 	public final boolean isElementInMemory(Object key) {
-		ManagerUtil.monitorEnter(memoryStore, LockLevel.READ);
-		try {
-			return memoryStore.containsKey(key);
-		} finally {
-			ManagerUtil.monitorExit(memoryStore);
-		}
+		return memoryStore.containsKey(key);
 	}
 
 	/**
@@ -1464,7 +1597,7 @@ public class Cache implements Ehcache {
 	 * @return true if an element matching the key is found in the diskStore
 	 */
 	public final boolean isElementOnDisk(Serializable key) {
-		return false;
+		return isElementOnDisk((Object) key);
 	}
 
 	/**
@@ -1475,7 +1608,15 @@ public class Cache implements Ehcache {
 	 * @since 1.2
 	 */
 	public final boolean isElementOnDisk(Object key) {
-		return false;
+		if (!(key instanceof Serializable)) {
+			return false;
+		}
+		Serializable serializableKey = (Serializable) key;
+		if (!overflowToDisk) {
+			return false;
+		} else {
+			return diskStore != null && diskStore.containsKey(serializableKey);
+		}
 	}
 
 	/**
@@ -1510,6 +1651,7 @@ public class Cache implements Ehcache {
 		checkStatus();
 		hitCount = 0;
 		memoryStoreHitCount = 0;
+		diskStoreHitCount = 0;
 		missCountExpired = 0;
 		missCountNotFound = 0;
 	}
@@ -1543,7 +1685,18 @@ public class Cache implements Ehcache {
 	 * expiry, and if expired, evicted.
 	 */
 	public void evictExpiredElements() {
-		memoryStore.evictExpiredElements();
+		Object[] keys = memoryStore.getKeyArray();
+		synchronized (this) {
+			for (int i = 0; i < keys.length; i++) {
+				Object key = keys[i];
+				searchInMemoryStore(key, false);
+			}
+		}
+		// This is called regularly by the expiry thread, but call it here
+		// synchronously
+		if (overflowToDisk) {
+			diskStore.expireElements();
+		}
 	}
 
 	/**
@@ -1598,8 +1751,9 @@ public class Cache implements Ehcache {
 		} else if (statisticsAccuracy == Statistics.STATISTICS_ACCURACY_NONE) {
 			size = getKeysNoDuplicateCheck().size();
 		}
-		return new Statistics(this, statisticsAccuracy, hitCount, 0,
-				memoryStoreHitCount, missCountExpired + missCountNotFound, size);
+		return new Statistics(this, statisticsAccuracy, hitCount,
+				diskStoreHitCount, memoryStoreHitCount, missCountExpired
+						+ missCountNotFound, size);
 	}
 
 	/**
@@ -1648,7 +1802,12 @@ public class Cache implements Ehcache {
 	 *             if this method is called after the cache is initialized
 	 */
 	public void setDiskStorePath(String diskStorePath) throws CacheException {
-		// do nothing
+		if (!status.equals(Status.STATUS_UNINITIALISED)) {
+			throw new CacheException(
+					"A DiskStore path can only be set before the cache is initialized. "
+							+ name);
+		}
+		this.diskStorePath = diskStorePath;
 	}
 
 	/**
