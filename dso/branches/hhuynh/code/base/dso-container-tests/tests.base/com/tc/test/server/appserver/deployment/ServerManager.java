@@ -73,6 +73,11 @@ public class ServerManager {
 
     AppServerUtil.shutdownAndArchive(sandbox, new File(tempDir, "sandbox"));
   }
+  
+  void timeout() {
+    logger.info("Test has timed out. Force shutdown and archive...");
+    AppServerUtil.forceShutdownAndArchive(sandbox, new File(tempDir, "sandbox"));
+  }
 
   protected boolean cleanTempDir() {
     return true;
