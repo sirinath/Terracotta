@@ -134,6 +134,12 @@ public class CacheDataStore {
   public int getMissCountNotFound() {
     return missCountNotFound;
   }
+  
+  public void clearStatistics() {
+    this.hitCount = 0;
+    this.missCountExpired = 0;
+    this.missCountNotFound = 0;
+  }
 
   private String[] getAllKeys() {
     String[] rv;

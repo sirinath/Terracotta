@@ -50,21 +50,25 @@ public class TimeExpiryMemoryStore extends MemoryStore {
 		((SpoolingTimeExpiryMap) map).evictExpiredElements();
 	}
 
-	public final int getHitCount() {
+	public final synchronized int getHitCount() {
 		return ((SpoolingTimeExpiryMap) map).getHitCount();
 	}
 
-	public final int getMissCountExpired() {
+	public final synchronized int getMissCountExpired() {
 		return ((SpoolingTimeExpiryMap) map).getMissCountExpired();
 	}
 
-	public final int getMissCountNotFound() {
+	public final synchronized int getMissCountNotFound() {
 		return ((SpoolingTimeExpiryMap) map).getMissCountNotFound();
 	}
 	
-	public final boolean isExpired(final Object key) {
+	public final synchronized boolean isExpired(final Object key) {
 		return ((SpoolingTimeExpiryMap) map).isExpired(key);
 	}
+  
+  public final synchronized void clearStatistics() {
+    ((SpoolingTimeExpiryMap) map).clearStatistics();
+  }
 
 	public final class SpoolingTimeExpiryMap extends TimeExpiryMap {
 

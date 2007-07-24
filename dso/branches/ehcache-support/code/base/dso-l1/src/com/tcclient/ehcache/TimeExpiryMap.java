@@ -109,6 +109,10 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   public boolean isExpired(final Object key) {
     return timeExpiryDataStore.isExpired(key);
   }
+  
+  public void clearStatistics() {
+    timeExpiryDataStore.clearStatistics();
+  }
 
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     throw new ImplementMe();
