@@ -29,10 +29,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   private final Map store;
   private final Map dtmStore;
   
-  public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds) {
+  public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, String cacheName) {
     this.store = new HashMap();
     this.dtmStore = new HashMap();
-    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, store, dtmStore, "CacheInvalidator - Ehcache", this);
+    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, store, dtmStore, "CacheInvalidator - "+cacheName, this);
+    timeExpiryDataStore.initialize();
   }
   
   public Object put(Object key, Object value) {

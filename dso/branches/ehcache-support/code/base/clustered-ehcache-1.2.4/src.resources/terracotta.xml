@@ -23,6 +23,9 @@
     <field-name>net.sf.ehcache.CacheManager.cacheManagerPeerListener</field-name>
     <field-name>net.sf.ehcache.CacheManager.cacheManagerPeerProvider</field-name>
     <field-name>net.sf.ehcache.CacheManager.shutdownHook</field-name>
+    <field-name>net.sf.ehcache.Element.nextToLastAccessTime</field-name>
+    <field-name>net.sf.ehcache.Element.lastAccessTime</field-name>
+    <field-name>net.sf.ehcache.Element.hitCount</field-name>
   </transient-fields>
 
   <roots>
@@ -47,10 +50,12 @@
   </roots>
 
   <locks>
+  <!--
     <autolock>
       <method-expression>* net.sf.ehcache.*..*.*(..)</method-expression>
       <lock-level>write</lock-level>
     </autolock>
+    -->
     <named-lock>
       <lock-name>__ehcache_lock__CacheManager.init</lock-name>
       <method-expression>* net.sf.ehcache.CacheManager.init(..)</method-expression>

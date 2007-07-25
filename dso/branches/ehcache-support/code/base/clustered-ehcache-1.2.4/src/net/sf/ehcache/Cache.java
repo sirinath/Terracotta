@@ -25,6 +25,12 @@ import com.tc.config.lock.LockLevel;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
+
+/**
+ * Since DiskStore is not supported, most synchronized are removed since the memory store methods are being
+ * synchronized.
+ *
+ */
 public class Cache implements Ehcache {
   /**
    * A reserved word for cache names. It denotes a default configuration which is applied to caches created without

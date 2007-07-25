@@ -12,14 +12,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class CacheDataStore {
-  private final Map    store;                // <Data>
-  private final Map    dtmStore;             // <Timestamp>
-  private final String cacheName;
-  private long         maxIdleTimeoutSeconds;
-  private Expirable    callback;
-  private int hitCount;
-  private int missCountExpired;
-  private int missCountNotFound;
+  private final Map     store;                  // <Data>
+  private final Map     dtmStore;               // <Timestamp>
+  private final String  cacheName;
+  private final long    maxIdleTimeoutSeconds;
+  private final long    invalidatorSleepSeconds;
+  private Expirable     callback;
+  private transient int hitCount;
+  private transient int missCountExpired;
+  private transient int missCountNotFound;
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
                         String cacheName, Expirable callback) {
@@ -27,13 +28,17 @@ public class CacheDataStore {
     this.dtmStore = dtmStore;
     this.cacheName = cacheName;
     this.maxIdleTimeoutSeconds = maxIdleTimeoutSeconds;
+    this.invalidatorSleepSeconds = invalidatorSleepSeconds;
     this.callback = callback;
 
+    this.hitCount = 0;
+  }
+
+  public void initialize() {
     Thread invalidator = new Thread(new CacheEntryInvalidator(invalidatorSleepSeconds), cacheName);
     invalidator.setDaemon(true);
     invalidator.start();
     Assert.post(invalidator.isAlive());
-    this.hitCount = 0;
   }
 
   public Object put(final Object key, final Object value) {
@@ -42,9 +47,15 @@ public class CacheDataStore {
     CacheData cd = (CacheData) store.get(key);
     Object rv = (cd == null) ? null : cd.getValue();
     cd = new CacheData(value, maxIdleTimeoutSeconds);
-    cd.start();
-    store.put(key, cd);
-    dtmStore.put(key, cd.getTimestamp());
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      cd.accessed();
+      cd.start();
+      store.put(key, cd);
+      dtmStore.put(key, cd.getTimestamp());
+    } finally {
+      ManagerUtil.monitorExit(store);
+    }
     return rv;
   }
 
@@ -61,13 +72,13 @@ public class CacheDataStore {
                            + rv.getIdleMillis());
         return null;
       } else {
-        ManagerUtil.monitorEnter(rv, LockLevel.WRITE);
+        ManagerUtil.monitorEnter(store, LockLevel.WRITE);
         try {
           hitCount++;
           rv.accessed();
           updateTimestampIfNeeded(rv);
         } finally {
-          ManagerUtil.monitorExit(rv);
+          ManagerUtil.monitorExit(store);
         }
       }
       return rv.getValue();
@@ -75,28 +86,31 @@ public class CacheDataStore {
     missCountNotFound++;
     return null;
   }
-  
+
   public boolean isExpired(final Object key) {
-    CacheData rv = (CacheData)store.get(key);
+    CacheData rv = (CacheData) store.get(key);
     return rv != null && rv.isValid();
   }
 
   public Object remove(final Object key) {
     Assert.pre(key != null);
-    CacheData cd = (CacheData)store.get(key);
+    CacheData cd = (CacheData) store.get(key);
     if (cd == null) return null;
-    
-    store.remove(key);
-    dtmStore.remove(key);
+
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      store.remove(key);
+      dtmStore.remove(key);
+    } finally {
+      ManagerUtil.monitorExit(store);
+    }
     return cd.getValue();
   }
 
   public void expire(Object key, CacheData sd) {
-    CacheData rv = null;
-    rv = (CacheData) store.get(key);
-    rv.invalidate();
+    sd.invalidate();
     remove(key);
-    callback.expire(key, rv.getValue());
+    callback.expire(key, sd.getValue());
   }
 
   public void clear() {
@@ -130,11 +144,11 @@ public class CacheDataStore {
   public int getMissCountExpired() {
     return missCountExpired;
   }
-  
+
   public int getMissCountNotFound() {
     return missCountNotFound;
   }
-  
+
   public void clearStatistics() {
     this.hitCount = 0;
     this.missCountExpired = 0;
@@ -187,6 +201,7 @@ public class CacheDataStore {
         }
       } catch (Throwable t) {
         errors++;
+        t.printStackTrace(System.err);
         // logger.error("Unhandled exception inspecting session " + key + " for invalidation", t);
       }
     }
@@ -198,12 +213,17 @@ public class CacheDataStore {
     boolean rv = false;
 
     final CacheData sd = findCacheDataUnlocked(key);
-    if (sd == null) return rv;
-    if (!sd.isValid()) {
-      expire(key, sd);
-      rv = true;
-    } else {
-      updateTimestampIfNeeded(sd);
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      if (sd == null) return rv;
+      if (!sd.isValid()) {
+        expire(key, sd);
+        rv = true;
+      } else {
+        updateTimestampIfNeeded(sd);
+      }
+    } finally {
+      ManagerUtil.monitorExit(store);
     }
     return rv;
   }
