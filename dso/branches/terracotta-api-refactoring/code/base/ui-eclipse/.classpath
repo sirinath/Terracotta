@@ -47,5 +47,6 @@
 	<classpathentry kind="lib" path="/dependencies/lib/org.eclipse.ui.workbench-3.2.0.I20060605-1400.jar"/>
 	<classpathentry kind="lib" path="/dependencies/lib/org.eclipse.ui-3.2.0.I20060605-1400.jar"/>
 	<classpathentry kind="lib" path="/dependencies/lib/runtime_registry_compatibility-x.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
 	<classpathentry kind="output" path="build.eclipse/ECLIPSE.IS.MESSEDUP"/>
 </classpath>

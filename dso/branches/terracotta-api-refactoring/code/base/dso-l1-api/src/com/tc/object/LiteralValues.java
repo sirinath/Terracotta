@@ -3,10 +3,6 @@
  */
 package com.tc.object;
 
-import com.tc.object.dna.impl.ClassInstance;
-import com.tc.object.dna.impl.ClassLoaderInstance;
-import com.tc.object.dna.impl.EnumInstance;
-import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 
@@ -68,7 +64,10 @@ public class LiteralValues {
     addMapping(tmp, Byte.class.getName(), BYTE);
     addMapping(tmp, byte.class.getName(), BYTE);
     addMapping(tmp, String.class.getName(), STRING);
-    addMapping(tmp, UTF8ByteDataHolder.class.getName(), STRING_BYTES);
+    
+    addMapping(tmp, "com.tc.object.dna.impl.UTF8ByteDataHolder", STRING_BYTES);
+    //addMapping(tmp, UTF8ByteDataHolder.class.getName(), STRING_BYTES);
+    
     addMapping(tmp, Short.class.getName(), SHORT);
     addMapping(tmp, short.class.getName(), SHORT);
     addMapping(tmp, Boolean.class.getName(), BOOLEAN);
@@ -78,13 +77,21 @@ public class LiteralValues {
     addMapping(tmp, BigDecimal.class.getName(), BIG_DECIMAL);
 
     addMapping(tmp, java.lang.Class.class.getName(), JAVA_LANG_CLASS);
-    addMapping(tmp, ClassInstance.class.getName(), JAVA_LANG_CLASS_HOLDER);
+    
+    addMapping(tmp, "com.tc.object.dna.impl.ClassInstance", JAVA_LANG_CLASS_HOLDER);
+    //addMapping(tmp, ClassInstance.class.getName(), JAVA_LANG_CLASS_HOLDER);
+    
+    
     addMapping(tmp, ObjectID.class.getName(), OBJECT_ID);
     addMapping(tmp, StackTraceElement.class.getName(), STACK_TRACE_ELEMENT);
 
-    addMapping(tmp, ClassLoaderInstance.class.getName(), JAVA_LANG_CLASSLOADER_HOLDER);
+    addMapping(tmp, "com.tc.object.dna.impl.ClassLoaderInstance", JAVA_LANG_CLASSLOADER_HOLDER);
+    //addMapping(tmp, ClassLoaderInstance.class.getName(), JAVA_LANG_CLASSLOADER_HOLDER);
+    
     addMapping(tmp, ENUM_CLASS_DOTS, ENUM);
-    addMapping(tmp, EnumInstance.class.getName(), ENUM_HOLDER);
+    
+    addMapping(tmp, "com.tc.object.dna.impl.EnumInstance", ENUM_HOLDER);
+    //addMapping(tmp, EnumInstance.class.getName(), ENUM_HOLDER);
     
     addMapping(tmp, Currency.class.getName(), CURRENCY);
 

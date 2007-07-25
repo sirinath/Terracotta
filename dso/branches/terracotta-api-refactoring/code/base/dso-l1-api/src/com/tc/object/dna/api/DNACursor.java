@@ -3,7 +3,6 @@
  */
 package com.tc.object.dna.api;
 
-
 import java.io.IOException;
 
 /**
@@ -20,7 +19,7 @@ public interface DNACursor {
   public boolean next() throws IOException;
 
   public boolean next(IDNAEncoding encoding) throws IOException, ClassNotFoundException;
-  
+
   public void reset() throws UnsupportedOperationException;
 
   public LogicalAction getLogicalAction();

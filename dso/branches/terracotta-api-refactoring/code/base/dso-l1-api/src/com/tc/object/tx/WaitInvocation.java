@@ -3,7 +3,7 @@
  */
 package com.tc.object.tx;
 
-import com.tc.object.msg.LockRequestMessage;
+import com.tc.object.msg.LockRequestMessageConsts;
 
 /**
  * Encapsulates an invocation of Object.wait(...)
@@ -14,14 +14,14 @@ public final class WaitInvocation {
 
   private long            millis;
   private int             nanos;
-  private long            mark = LockRequestMessage.UNITIALIZED_WAIT_TIME;
+  private long            mark = LockRequestMessageConsts.UNITIALIZED_WAIT_TIME;
 
   public WaitInvocation() {
-    this(NO_ARGS, LockRequestMessage.UNITIALIZED_WAIT_TIME, LockRequestMessage.UNITIALIZED_WAIT_TIME);
+    this(NO_ARGS, LockRequestMessageConsts.UNITIALIZED_WAIT_TIME, LockRequestMessageConsts.UNITIALIZED_WAIT_TIME);
   }
 
   public WaitInvocation(long millis) {
-    this(LONG, millis, LockRequestMessage.UNITIALIZED_WAIT_TIME);
+    this(LONG, millis, LockRequestMessageConsts.UNITIALIZED_WAIT_TIME);
   }
 
   public WaitInvocation(long millis, int nanos) {
@@ -46,11 +46,11 @@ public final class WaitInvocation {
   public boolean hasTimeout() {
     return getSignature() != NO_ARGS;
   }
-  
+
   public boolean needsToWait() {
     return millis > 0 || nanos > 0;
   }
-  
+
   public long getMillis() {
     return millis;
   }
@@ -68,7 +68,7 @@ public final class WaitInvocation {
   }
 
   public void adjust() {
-    if (mark <= LockRequestMessage.UNITIALIZED_WAIT_TIME || signature == NO_ARGS) return;
+    if (mark <= LockRequestMessageConsts.UNITIALIZED_WAIT_TIME || signature == NO_ARGS) return;
     long now = System.currentTimeMillis();
     millis -= (now - mark);
 

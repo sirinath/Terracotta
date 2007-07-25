@@ -14,7 +14,6 @@ import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
-import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -221,6 +220,7 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
 	 * 
 	 * @param name
 	 */
+	@SuppressWarnings("unchecked")
 	private void removeCache(final String name) {
 		Ehcache cache = cacheManager.getEhcache(name);
 		for (Iterator i = cache.getKeys().iterator(); i.hasNext();) {
