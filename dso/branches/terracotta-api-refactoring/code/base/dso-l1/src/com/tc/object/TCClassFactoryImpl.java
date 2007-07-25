@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public class TCClassFactoryImpl implements TCClassFactory {
   private static final LiteralValues  literalValues             = new LiteralValues();
-  private static Class[]              APPLICATOR_CSTR_SIGNATURE = new Class[] { DNAEncoding.class };
+  private static Class[]              APPLICATOR_CSTR_SIGNATURE = new Class[] { IDNAEncoding.class };
 
   private final Map                   classes                   = new HashMap();
   private final TCFieldFactory        fieldFactory;
@@ -110,7 +110,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
       } else if ("java.util.concurrent.atomic.AtomicInteger".equals(name)) {
         try {
           Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
-          Constructor constructor = klass.getDeclaredConstructor(new Class[] {DNAEncoding.class});
+          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
           return (ChangeApplicator)constructor.newInstance(new Object[] {encoding});
         } catch (Exception e) {
           throw new AssertionError(e);
@@ -118,7 +118,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
       } else if ("java.util.concurrent.atomic.AtomicLong".equals(name)) {
         try {
           Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
-          Constructor constructor = klass.getDeclaredConstructor(new Class[] {DNAEncoding.class});
+          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
           return (ChangeApplicator)constructor.newInstance(new Object[] {encoding});
         } catch (Exception e) {
           throw new AssertionError(e);
