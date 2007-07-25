@@ -702,6 +702,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     spec = getOrCreateSpec("com.tcclient.cache.CacheDataStore");
     spec.setHonorTransient(true);
     spec.setCallMethodOnLoad("initialize");
+    spec = getOrCreateSpec("com.tcclient.cache.CacheData");
+    spec.setHonorTransient(true);
+    spec.setCallMethodOnLoad("initialize");
 
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");

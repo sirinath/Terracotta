@@ -62,29 +62,33 @@ public class CacheDataStore {
   public Object get(final Object key) {
     Assert.pre(key != null);
 
-    CacheData rv = null;
-    rv = (CacheData) store.get(key);
-    if (rv != null) {
-      if (!rv.isValid()) {
+    CacheData cd = null;
+    cd = (CacheData) store.get(key);
+    if (cd != null) {
+      if (!cd.isValid()) {
         missCountExpired++;
-        remove(key);
-        System.err.println("rv is not valid -- key: " + key + ", value: " + rv.getValue() + " rv.getIdleMillis(): "
-                           + rv.getIdleMillis());
+        invalidate(cd);
+        System.err.println("rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
+                           + cd.getIdleMillis());
         return null;
       } else {
-        ManagerUtil.monitorEnter(store, LockLevel.WRITE);
-        try {
-          hitCount++;
-          rv.accessed();
-          updateTimestampIfNeeded(rv);
-        } finally {
-          ManagerUtil.monitorExit(store);
-        }
+        hitCount++;
+        cd.accessed();
+        updateTimestampIfNeeded(cd);
       }
-      return rv.getValue();
+      return cd.getValue();
     }
     missCountNotFound++;
     return null;
+  }
+  
+  private void invalidate(CacheData cd) {
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      cd.invalidate();
+    } finally {
+      ManagerUtil.monitorExit(store);
+    }
   }
 
   public boolean isExpired(final Object key) {
@@ -108,7 +112,6 @@ public class CacheDataStore {
   }
 
   public void expire(Object key, CacheData sd) {
-    sd.invalidate();
     remove(key);
     callback.expire(key, sd.getValue());
   }
@@ -119,12 +122,17 @@ public class CacheDataStore {
   }
 
   void updateTimestampIfNeeded(CacheData rv) {
-    Assert.pre(rv != null);
-    final long now = System.currentTimeMillis();
-    final Timestamp t = rv.getTimestamp();
-    final long diff = t.getMillis() - now;
-    if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
-      t.setMillis(now + rv.getMaxInactiveMillis());
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      Assert.pre(rv != null);
+      final long now = System.currentTimeMillis();
+      final Timestamp t = rv.getTimestamp();
+      final long diff = t.getMillis() - now;
+      if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
+        t.setMillis(now + rv.getMaxInactiveMillis());
+      }
+    } finally {
+      ManagerUtil.monitorExit(store);
     }
   }
 
@@ -213,8 +221,8 @@ public class CacheDataStore {
     boolean rv = false;
 
     final CacheData sd = findCacheDataUnlocked(key);
-    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
-    try {
+//    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+//    try {
       if (sd == null) return rv;
       if (!sd.isValid()) {
         expire(key, sd);
@@ -222,9 +230,9 @@ public class CacheDataStore {
       } else {
         updateTimestampIfNeeded(sd);
       }
-    } finally {
-      ManagerUtil.monitorExit(store);
-    }
+//    } finally {
+//      ManagerUtil.monitorExit(store);
+//    }
     return rv;
   }
 

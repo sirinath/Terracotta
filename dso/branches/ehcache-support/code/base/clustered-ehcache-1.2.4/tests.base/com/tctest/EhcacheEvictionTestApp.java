@@ -19,7 +19,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private static final int    NUM_OF_CACHE_ITEMS      = 1000;
   private static final int    TIME_TO_LIVE_IN_SECONDS = 200;
 
-  static final int            EXPECTED_THREAD_COUNT   = 10;
+  static final int            EXPECTED_THREAD_COUNT   = 5;
 
   private final CyclicBarrier barrier;
 
