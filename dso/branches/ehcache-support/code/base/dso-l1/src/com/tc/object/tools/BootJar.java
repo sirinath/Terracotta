@@ -7,6 +7,7 @@ package com.tc.object.tools;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.NotInBootJar;
+import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 
@@ -131,10 +132,6 @@ public class BootJar {
   private static boolean existingFileIsAccessible(File file) {
     return file.exists() || file.isFile() || file.canRead();
   }
-
-  public static String classNameToFileName(String className) {
-    return className.replace('.', '/') + ".class";
-  }
   
   public static String fileNameToClassName(String filename) {
     if (!filename.endsWith(".class")) throw new AssertionError("Invalid class file name: " + filename);
@@ -161,7 +158,7 @@ public class BootJar {
       throw new AssertionError("Invalid class for boot jar: " + className);
     }
 
-    String cn = classNameToFileName(className);
+    String cn = ByteCodeUtil.classNameToFileName(className);
     JarEntry jarEntry = new JarEntry(cn);
     basicLoadClassIntoJar(jarEntry, data, isPreinstrumented, isForeign);
   }
@@ -194,7 +191,7 @@ public class BootJar {
   private static final int QUERY_FOREIGN         = 3;
   
   public synchronized byte[] getBytesForClass(final String name) throws IOException {
-    JarEntry entry      = jarFileInput.getJarEntry(BootJar.classNameToFileName(name));
+    JarEntry entry      = jarFileInput.getJarEntry(ByteCodeUtil.classNameToFileName(name));
     final int bufsize   = 4098;
     final byte[] buffer = new byte[bufsize];
     final BufferedInputStream is = new BufferedInputStream(jarFileInput.getInputStream(entry));

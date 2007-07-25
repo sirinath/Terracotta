@@ -152,7 +152,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
     
     public synchronized void setMap(MockTimeExpiryMap map) {
-      this.map = map;;
+      this.map = map;
     }
   }
   
@@ -160,7 +160,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     private int numOfExpired = 0;
     
     public MockTimeExpiryMap(int invalidatorSleepSeconds, int maxIdleTimeoutSeconds) {
-      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds);
+      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds, "MockCache");
     }
     
     protected final void processExpired(Object key, Object value) {

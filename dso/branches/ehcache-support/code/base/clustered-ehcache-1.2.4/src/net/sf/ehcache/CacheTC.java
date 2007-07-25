@@ -1,15 +1,5 @@
 package net.sf.ehcache;
 
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.rmi.server.UID;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import net.sf.ehcache.bootstrap.BootstrapCacheLoader;
 import net.sf.ehcache.event.CacheEventListener;
 import net.sf.ehcache.event.RegisteredEventListeners;
@@ -25,13 +15,23 @@ import com.tc.config.lock.LockLevel;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.rmi.server.UID;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * Since DiskStore is not supported, most synchronized are removed since the memory store methods are being
  * synchronized.
  *
  */
-public class Cache implements Ehcache {
+public class CacheTC implements Ehcache {
   /**
    * A reserved word for cache names. It denotes a default configuration which is applied to caches created without
    * configuration.
@@ -57,14 +57,17 @@ public class Cache implements Ehcache {
    */
   public static final long                       DEFAULT_EXPIRY_THREAD_INTERVAL_SECONDS = 120;
 
-  private static final Log                       LOG                                    = LogFactory.getLog(Cache.class
-                                                                                            .getName());
+  private static final Log                       LOG                                    = LogFactory.getLog(CacheTC.class.getName());
 
-  private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY   = MemoryStoreEvictionPolicy.DSO;
+  private static final MemoryStoreEvictionPolicy DSO_MEMORY_STORE_EVICTION_POLICY;
+  private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY;
 
   private static InetAddress                     localhost;
 
   static {
+    DSO_MEMORY_STORE_EVICTION_POLICY = MemoryStoreEvictionPolicy.fromString("DSO");
+    DEFAULT_MEMORY_STORE_EVICTION_POLICY = DSO_MEMORY_STORE_EVICTION_POLICY;
+
     try {
       localhost = InetAddress.getLocalHost();
     } catch (UnknownHostException e) {
@@ -102,7 +105,7 @@ public class Cache implements Ehcache {
   private final long                             timeToIdleSeconds;
 
   /**
-   * The {@link MemoryStore} of this {@link Cache}. All caches have a memory store.
+   * The {@link MemoryStore} of this {@link CacheTC}. All caches have a memory store.
    */
   private TimeExpiryMemoryStore                  memoryStore;
 
@@ -118,8 +121,8 @@ public class Cache implements Ehcache {
 
   private BootstrapCacheLoader                   bootstrapCacheLoader;
 
-  public static Cache convert(Ehcache cache) {
-    Cache tcCache = new Cache(cache.getName(), cache.getMaxElementsInMemory(), cache.getMemoryStoreEvictionPolicy(),
+  public static CacheTC convert(Ehcache cache) {
+    CacheTC tcCache = new CacheTC(cache.getName(), cache.getMaxElementsInMemory(), cache.getMemoryStoreEvictionPolicy(),
                               false, null, false, cache.getTimeToLiveSeconds(), cache.getTimeToIdleSeconds(), false,
                               cache.getDiskExpiryThreadIntervalSeconds(), cache.getCacheEventNotificationService(),
                               cache.getBootstrapCacheLoader(), cache.getMaxElementsOnDisk());
@@ -128,7 +131,7 @@ public class Cache implements Ehcache {
 
   /**
    * 1.0 Constructor. <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link Cache} object into {@link CacheManager#addCache} to
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
    * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them. <p/> This constructor
    * creates disk stores, if specified, that do not persist between restarts. <p/> The default expiry thread interval of
    * 120 seconds is used. This is the interval between runs of the expiry thread, where it checks the disk store for
@@ -142,7 +145,7 @@ public class Cache implements Ehcache {
    * @param timeToIdleSeconds the default amount of time to live for an element from its last accessed or modified date
    * @since 1.0
    */
-  public Cache(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
+  public CacheTC(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
                long timeToIdleSeconds) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
@@ -152,7 +155,7 @@ public class Cache implements Ehcache {
 
   /**
    * 1.1 Constructor. <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link Cache} object into {@link CacheManager#addCache} to
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
    * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
@@ -166,7 +169,7 @@ public class Cache implements Ehcache {
    *        plus is recommended
    * @since 1.1
    */
-  public Cache(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
+  public CacheTC(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
                long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
@@ -179,7 +182,7 @@ public class Cache implements Ehcache {
 
   /**
    * 1.2 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link Cache} object into {@link CacheManager#addCache} to
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
    * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
@@ -197,19 +200,19 @@ public class Cache implements Ehcache {
    *        listeners will be created.
    * @since 1.2
    */
-  public Cache(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
+  public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
                boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
                long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
                RegisteredEventListeners registeredEventListeners) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
-    this(name, maxElementsInMemory, MemoryStoreEvictionPolicy.DSO, false, diskStorePath, false, timeToLiveSeconds,
+    this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
          timeToIdleSeconds, false, diskExpiryThreadIntervalSeconds, registeredEventListeners, null);
   }
 
   /**
    * 1.2.1 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link Cache} object into {@link CacheManager#addCache} to
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
    * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
@@ -229,19 +232,19 @@ public class Cache implements Ehcache {
    *        Null if none is required.
    * @since 1.2.1
    */
-  public Cache(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
+  public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
                boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
                long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
                RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
-    this(name, maxElementsInMemory, MemoryStoreEvictionPolicy.DSO, false, diskStorePath, false, timeToLiveSeconds,
+    this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
          timeToIdleSeconds, false, diskExpiryThreadIntervalSeconds, registeredEventListeners, bootstrapCacheLoader, 0);
   }
 
   /**
    * 1.2.4 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link Cache} object into {@link CacheManager#addCache} to
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
    * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
@@ -261,17 +264,18 @@ public class Cache implements Ehcache {
    *        Null if none is required.
    * @since 1.2.4
    */
-  public Cache(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
+  public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
                boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
                long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
                RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader,
                int maxElementsOnDisk) {
+    System.out.println(">>>>>> CacheTC");
     // overflowToDisk and diskPersistent are always false
     changeStatus(Status.STATUS_UNINITIALISED);
 
     setName(name);
     this.maxElementsInMemory = maxElementsInMemory;
-    this.memoryStoreEvictionPolicy = MemoryStoreEvictionPolicy.DSO;
+    this.memoryStoreEvictionPolicy = DSO_MEMORY_STORE_EVICTION_POLICY;
     this.timeToLiveSeconds = timeToLiveSeconds;
     this.timeToIdleSeconds = timeToIdleSeconds;
 
@@ -1010,11 +1014,11 @@ public class Cache implements Ehcache {
    * @since 1.2
    */
   public final MemoryStoreEvictionPolicy getMemoryStoreEvictionPolicy() {
-    return MemoryStoreEvictionPolicy.DSO;
+    return DSO_MEMORY_STORE_EVICTION_POLICY;
   }
 
   /**
-   * Returns a {@link String} representation of {@link Cache}.
+   * Returns a {@link String} representation of {@link CacheTC}.
    */
   public final String toString() {
     StringBuffer dump = new StringBuffer();
@@ -1059,12 +1063,12 @@ public class Cache implements Ehcache {
    * set and no {@link net.sf.ehcache.store.LruMemoryStore} or {@link net.sf.ehcache.store.DiskStore} has been created.
    * <p/> A new, empty, RegisteredEventListeners is created on clone. <p/>
    * 
-   * @return an object of type {@link Cache}
+   * @return an object of type {@link CacheTC}
    * @throws CloneNotSupportedException
    */
   public final Object clone() throws CloneNotSupportedException {
     if (memoryStore != null) { throw new CloneNotSupportedException("Cannot clone an initialized cache."); }
-    Cache copy = (Cache) super.clone();
+    CacheTC copy = (CacheTC) super.clone();
     RegisteredEventListeners registeredEventListenersFromCopy = copy.getCacheEventNotificationService();
     if (registeredEventListenersFromCopy == null
         || registeredEventListenersFromCopy.getCacheEventListeners().size() == 0) {

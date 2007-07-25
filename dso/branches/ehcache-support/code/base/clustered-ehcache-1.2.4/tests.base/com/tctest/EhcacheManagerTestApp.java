@@ -190,7 +190,7 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
     synchronized (cache) {
       Field f = Cache.class.getDeclaredField("memoryStoreEvictionPolicy");
       f.setAccessible(true);
-      f.set(cache, MemoryStoreEvictionPolicy.DSO);
+      f.set(cache, MemoryStoreEvictionPolicy.fromString("DSO"));
     }
   }
 

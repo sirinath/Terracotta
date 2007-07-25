@@ -32,7 +32,10 @@ import com.tc.aspectwerkz.transform.inlining.weaver.MethodCallVisitor;
 import com.tc.aspectwerkz.transform.inlining.weaver.MethodExecutionVisitor;
 import com.tc.aspectwerkz.transform.inlining.weaver.StaticInitializationVisitor;
 import com.tc.exception.TCLogicalSubclassNotPortableException;
+import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.RenameClassesAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
+import com.tc.object.config.ClassReplacementMapping;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
@@ -149,6 +152,22 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
       if (m_instrumentationLogger.classInclusion()) {
         m_instrumentationLogger.classIncluded(className);
+      }
+      
+      // handle replacement classes
+      if (isDsoAdaptable) {
+        ClassReplacementMapping mapping = m_configHelper.getClassReplacementMapping();
+        String replacementClassName = mapping.getReplacementClassName(className);
+        if (replacementClassName != null) {
+          byte[] replacementBytes = ByteCodeUtil.getBytesForClass(replacementClassName, loader);
+          
+          ClassReader cr = new ClassReader(replacementBytes);
+          ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+          ClassVisitor cv = new RenameClassesAdapter(cw, mapping);
+          cr.accept(cv, ClassReader.SKIP_FRAMES);
+
+          context.setCurrentBytecode(cw.toByteArray());
+        }
       }
 
       // ------------------------------------------------

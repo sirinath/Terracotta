@@ -55,6 +55,8 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller, boolean disableSuperClassTypeChecking);
+  
+  public ClassReplacementMapping getClassReplacementMapping();
 
   boolean isCallConstructorOnLoad(ClassInfo classInfo);
 

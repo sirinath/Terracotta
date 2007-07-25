@@ -11,35 +11,29 @@ import com.tc.object.config.TransparencyClassSpec;
 
 public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule implements IConstants {
 
-	public void start(final BundleContext context) throws Exception {
-		final ServiceReference configHelperRef = context
-				.getServiceReference(StandardDSOClientConfigHelper.class
-						.getName());
-		if (configHelperRef != null) {
-			final StandardDSOClientConfigHelper configHelper = (StandardDSOClientConfigHelper) context
-					.getService(configHelperRef);
-			addEhcacheInstrumentation(configHelper);
-			context.ungetService(configHelperRef);
-		} else {
-			throw new BundleException("Expected the "
-					+ StandardDSOClientConfigHelper.class.getName()
-					+ " service to be registered, was unable to find it");
-		}
-	}
+  public void start(final BundleContext context) throws Exception {
+    final ServiceReference configHelperRef = context.getServiceReference(StandardDSOClientConfigHelper.class.getName());
+    if (configHelperRef != null) {
+      final StandardDSOClientConfigHelper configHelper = (StandardDSOClientConfigHelper) context
+          .getService(configHelperRef);
+      addEhcacheInstrumentation(configHelper);
+      context.ungetService(configHelperRef);
+    } else {
+      throw new BundleException("Expected the " + StandardDSOClientConfigHelper.class.getName()
+                                + " service to be registered, was unable to find it");
+    }
+  }
 
-	public void stop(final BundleContext context) throws Exception {
-		// Ignore this, we don't need to stop anything
-	}
+  public void stop(final BundleContext context) throws Exception {
+    // Ignore this, we don't need to stop anything
+  }
 
-	private void addEhcacheInstrumentation(
-			final StandardDSOClientConfigHelper configHelper) {
-	    ClassAdapterFactory factory = new EhcacheLruMemoryStoreAdapter();
-	    TransparencyClassSpec spec = configHelper.getOrCreateSpec(LRUMEMORYSTORE_CLASS_NAME_DOTS);
-	    spec.setCallConstructorOnLoad(true);
-	    spec.setCustomClassAdapter(factory);
-	    
-	    factory = new EhcacheMemoryStoreAdapter();
-	    spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
-	    spec.setCustomClassAdapter(factory);
-	}
+  private void addEhcacheInstrumentation(final StandardDSOClientConfigHelper configHelper) {
+    ClassAdapterFactory factory = new EhcacheMemoryStoreAdapter();
+    TransparencyClassSpec spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
+    spec.setCustomClassAdapter(factory);
+
+    configHelper.addClassReplacement(CACHE_CLASS_NAME_DOTS, CACHETC_CLASS_NAME_DOTS);
+    configHelper.addClassReplacement(MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS, MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
+  }
 }

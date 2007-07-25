@@ -144,6 +144,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private final Map                              customAdapters                     = new ConcurrentHashMap();
 
+  private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMapping();
+
   private final Map                              aspectModules                      = Collections
                                                                                         .synchronizedMap(new HashMap());
 
@@ -1091,6 +1093,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
+  public void addClassReplacement(String originalClassName, String replacementClassName) {
+    synchronized (classReplacements) {
+      String prev = this.classReplacements.addMapping(originalClassName, replacementClassName);
+      Assert.assertNull(prev);
+    }
+  }
+
   private void markAllSpecsPreInstrumented() {
     for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
       TransparencyClassSpec s = (TransparencyClassSpec) i.next();
@@ -1371,6 +1380,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     // If a root is defined then we automagically instrument
     if (classContainsAnyRoots(classInfo)) { return cacheIsAdaptable(fullClassName, true); }
+    // class replacements trump config.
+    if (classReplacements.hasReplacement(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // custom adapters trump config.
     if (customAdapters.containsKey(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // existing class specs trump config
@@ -1538,6 +1549,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
       return new SafeSerialVersionUIDAdder(cv);
     }
+  }
+  
+  public ClassReplacementMapping getClassReplacementMapping() {
+    return classReplacements;
   }
 
   private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator, boolean rememberSpec) {

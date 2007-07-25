@@ -18,27 +18,27 @@ import org.apache.commons.logging.LogFactory;
  * @version $Id$
  * @since 1.2
  */
-public final class MemoryStoreEvictionPolicy {
+public final class MemoryStoreEvictionPolicyTC {
 
     /**
      * LRU - least recently used.
      */
-    public static final MemoryStoreEvictionPolicy LRU = new MemoryStoreEvictionPolicy("LRU");
+    public static final MemoryStoreEvictionPolicyTC LRU = new MemoryStoreEvictionPolicyTC("LRU");
 
     /**
      * LFU - least frequently used.
      */
 
-    public static final MemoryStoreEvictionPolicy LFU = new MemoryStoreEvictionPolicy("LFU");
+    public static final MemoryStoreEvictionPolicyTC LFU = new MemoryStoreEvictionPolicyTC("LFU");
 
     /**
      * FIFO - first in first out, the oldest element by creation time.
      */
-    public static final MemoryStoreEvictionPolicy FIFO = new MemoryStoreEvictionPolicy("FIFO");
+    public static final MemoryStoreEvictionPolicyTC FIFO = new MemoryStoreEvictionPolicyTC("FIFO");
     
-    public static final MemoryStoreEvictionPolicy DSO = new MemoryStoreEvictionPolicy("DSO");
+    public static final MemoryStoreEvictionPolicyTC DSO = new MemoryStoreEvictionPolicyTC("DSO");
 
-    private static final Log LOG = LogFactory.getLog(MemoryStoreEvictionPolicy.class.getName());
+    private static final Log LOG = LogFactory.getLog(MemoryStoreEvictionPolicyTC.class.getName());
 
     // for debug only
     private final String myName;
@@ -47,7 +47,8 @@ public final class MemoryStoreEvictionPolicy {
      * This class should not be subclassed or have instances created.
      * @param policy
      */
-    private MemoryStoreEvictionPolicy(String policy) {
+    private MemoryStoreEvictionPolicyTC(String policy) {
+      System.out.println(">>>>> MemoryStoreEvictionPolicyTC");
         myName = policy;
     }
 
@@ -64,7 +65,7 @@ public final class MemoryStoreEvictionPolicy {
      * @param policy either LRU, LFU or FIFO
      * @return one of the static instances
      */
-    public static MemoryStoreEvictionPolicy fromString(String policy) {
+    public static MemoryStoreEvictionPolicyTC fromString(String policy) {
         if (policy != null) {
             if (policy.equalsIgnoreCase("LRU")) {
                 return LRU;

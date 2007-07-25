@@ -7,7 +7,6 @@ import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.asm.util.CheckClassAdapter;
-import com.tc.object.tools.BootJar;
 import com.tc.test.TCTestCase;
 import com.tc.util.runtime.Vm;
 
@@ -25,7 +24,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapterTest exten
   }
   
   public void testClasAdapter() throws IOException {
-    String res = BootJar.classNameToFileName("java.util.concurrent.LinkedBlockingQueue$Itr");
+    String res = ByteCodeUtil.classNameToFileName("java.util.concurrent.LinkedBlockingQueue$Itr");
     ClassReader cr = new ClassReader(getClass().getClassLoader().getResourceAsStream(res));
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
     ClassVisitor cv = new JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter(new CheckClassAdapter(cw));
