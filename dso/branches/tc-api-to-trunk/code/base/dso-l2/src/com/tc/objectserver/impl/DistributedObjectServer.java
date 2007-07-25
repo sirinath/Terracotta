@@ -609,8 +609,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                            new TCTimerImpl(
                                                                                                            "Reconnect timer",
                                                                                                            true),
-                                                                                           reconnectTimeout,
-                                                                                           persistent, consoleLogger);
+                                                                                           reconnectTimeout, persistent);
 
     boolean networkedHA = configSetupManager.haConfig().isNetworkedActivePassive();
     if (networkedHA) {
@@ -701,7 +700,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     return true;
   }
 
-  public void startBeanShell(int port) {
+  private void startBeanShell(int port) {
     try {
       Interpreter i = new Interpreter();
       i.set("dsoServer", this);

@@ -16,7 +16,7 @@
   </system>
 
   <clients>
-    <logs>terracotta/client-logs</logs>
+    <logs>%d/client-logs-%h</logs>
     <dso>
       <debugging>
         <runtime-logging>

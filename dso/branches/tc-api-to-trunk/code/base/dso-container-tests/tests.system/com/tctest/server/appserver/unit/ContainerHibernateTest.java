@@ -8,7 +8,8 @@ import org.apache.derby.drda.NetworkServerControl;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
-import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.TestConfigObject;
+import com.tc.test.server.appserver.NewAppServerFactory;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
@@ -34,19 +35,18 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public boolean shouldDisable() {
-    int appId = AppServerFactory.getCurrentAppServerId();
     return super.shouldDisable()
-           || AppServerFactory.WASCE == appId
-           || AppServerFactory.WEBSPHERE == appId;
+           || NewAppServerFactory.WASCE.equals(TestConfigObject.getInstance().appserverFactoryName())
+           || NewAppServerFactory.WEBSPHERE.equals(TestConfigObject.getInstance().appserverFactoryName());
   }
 
   public void testHibernate() throws Exception {
     WebConversation conversation = new WebConversation();
 
-    WebResponse response1 = request(server0, "server=server0", conversation);
+    WebResponse response1 = request(server1, "server=server0", conversation);
     assertEquals("OK", response1.getText().trim());
 
-    WebResponse response2 = request(server1, "server=server1", conversation);
+    WebResponse response2 = request(server2, "server=server1", conversation);
     assertEquals("OK", response2.getText().trim());
   }
 
@@ -69,9 +69,6 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(org.apache.commons.collections.Buffer.class); // commons-collections*.jar
       builder.addDirectoryOrJARContainingClass(org.apache.derby.jdbc.ClientDriver.class); // derby*.jar
       builder.addDirectoryOrJARContainingClass(antlr.Tool.class); // antlr*.jar
-      // WarBuilder includes these jars by default
-      //builder.addDirectoryOrJARContainingClass(Logger.class); // log4j
-      //builder.addDirectoryOrJARContainingClass(LogFactory.class); // common-loggings
 
       builder.addResource("/com/tctest/server/appserver/unit", "hibernate.cfg.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Event.hbm.xml", "WEB-INF/classes");

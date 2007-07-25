@@ -89,6 +89,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   }
 
   public void send(TCNetworkMessage message) {
+    Assert.inv(channelConnected.get());
     delivery.send(message);
   }
 
@@ -153,7 +154,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       // 1. might have to resend some messages
       // 2. no need to signal to Higher Level
       handshakeMode.set(false);
-      sessionId = msg.getSessionId();
+      sessionId = msg.getSessionId();     
+      // tell upper layer, connection restored.
+      receiveLayer.notifyTransportRestored(this);
       delivery.resume();
       delivery.receive(msg);
       if (!channelConnected.get()) {
@@ -241,6 +244,10 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     if (!restoreConnectionMode) {
       if (channelConnected.get()) receiveLayer.notifyTransportDisconnected(this);
       channelConnected.set(false);
+    }
+    if(isClient && restoreConnectionMode) {
+      // tell upper layer connection disrupted but trying to retore.
+      receiveLayer.notifyTransportDisrupted(this);
     }
   }
 

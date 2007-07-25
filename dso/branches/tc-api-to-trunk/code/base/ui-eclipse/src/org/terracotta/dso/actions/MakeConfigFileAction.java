@@ -4,6 +4,7 @@
 package org.terracotta.dso.actions;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
@@ -24,7 +25,13 @@ public class MakeConfigFileAction extends Action
   }
 
   public void run(IAction action) {
-    TcPlugin.getDefault().setup(m_file);
+    TcPlugin plugin = TcPlugin.getDefault(); 
+    String filePath = m_file.getProjectRelativePath().toString();
+    IProject project = m_file.getProject();
+
+    plugin.clearConfigurationSessionProperties(project);
+    plugin.setConfigurationFilePath(project, filePath);
+    plugin.reloadConfiguration(project);
   }
 
   public void selectionChanged(IAction action, ISelection selection) {

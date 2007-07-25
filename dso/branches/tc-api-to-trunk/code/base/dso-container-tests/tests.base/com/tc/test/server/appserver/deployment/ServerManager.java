@@ -7,11 +7,10 @@ package com.tc.test.server.appserver.deployment;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.test.TestConfigObject;
-import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.AppServerInstallation;
+import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.tcconfig.StandardTerracottaAppServerConfig;
 import com.tc.test.server.util.AppServerUtil;
-import com.tc.test.server.util.TcConfigBuilder;
-import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,26 +30,22 @@ public class ServerManager {
   private DSOServer              dsoServer;
 
   private final TestConfigObject config;
-  private AppServerFactory       factory;
+  private NewAppServerFactory    factory;
   private AppServerInstallation  installation;
   private File                   sandbox;
   private File                   tempDir;
   private File                   installDir;
   private File                   warDir;
-  private TcConfigBuilder        serverTcConfig = new TcConfigBuilder();
 
   public ServerManager(final Class testClass) throws Exception {
     PropertiesHackForRunningInEclipse.initializePropertiesWhenRunningInEclipse();
     config = TestConfigObject.getInstance();
-    factory = AppServerFactory.createFactoryFromProperties(config);
+    factory = NewAppServerFactory.createFactoryFromProperties(config);
     installDir = config.appserverServerInstallDir();
-    tempDir = TempDirectoryUtil.getTempDirectory(testClass);
+    tempDir = TempDirectoryUtil.getTempDirectory(testClass);    
     sandbox = AppServerUtil.createSandbox(tempDir);
     warDir = new File(sandbox, "war");
     installation = AppServerUtil.createAppServerInstallation(factory, installDir, sandbox);
-    PortChooser pc = new PortChooser();
-    serverTcConfig.setDsoPort(pc.chooseRandomPort());
-    serverTcConfig.setJmxPort(pc.chooseRandomPort());
   }
 
   public void addServerToStop(Stoppable stoppable) {
@@ -73,14 +68,9 @@ public class ServerManager {
 
     AppServerUtil.shutdownAndArchive(sandbox, new File(tempDir, "sandbox"));
   }
-  
-  void timeout() {
-    logger.info("Test has timed out. Force shutdown and archive...");
-    AppServerUtil.forceShutdownAndArchive(sandbox, new File(tempDir, "sandbox"));
-  }
 
   protected boolean cleanTempDir() {
-    return false;
+    return true;
   }
 
   void start(boolean withPersistentStore) throws Exception {
@@ -88,7 +78,7 @@ public class ServerManager {
   }
 
   private void startDSO(boolean withPersistentStore) throws Exception {
-    dsoServer = new DSOServer(withPersistentStore, tempDir, serverTcConfig);
+    dsoServer = new DSOServer(withPersistentStore, tempDir);
     logger.debug("Starting DSO server with sandbox: " + sandbox.getAbsolutePath());
     dsoServer.start();
     addServerToStop(dsoServer);
@@ -100,21 +90,16 @@ public class ServerManager {
     startDSO(withPersistentStore);
   }
 
-  /**
-   * tcConfigPath: resource path
-   */
   public WebApplicationServer makeWebApplicationServer(String tcConfigPath) throws Exception {
-    return makeWebApplicationServer(new TcConfigBuilder(tcConfigPath));
+    return makeWebApplicationServer(getTcConfigFile(tcConfigPath));
   }
 
-  public WebApplicationServer makeWebApplicationServer(TcConfigBuilder tcConfigBuilder) throws Exception {
-    int i = ServerManager.appServerIndex++;
-
-    WebApplicationServer appServer = new GenericServer(config, factory, installation,
-                                                       prepareClientTcConfig(tcConfigBuilder), i, tempDir);
-    addServerToStop(appServer);
-    return appServer;
-  }
+  // public AbstractDBServer makeDBServer(String dbType, String dbName, int serverPort) {
+  // // XXX this should use server factory
+  // AbstractDBServer svr = new HSqlDBServer(dbName, serverPort);
+  // this.addServerToStop(svr);
+  // return svr;
+  // }
 
   public FileSystemPath getTcConfigFile(String tcConfigPath) {
     URL url = getClass().getResource(tcConfigPath);
@@ -124,24 +109,20 @@ public class ServerManager {
     return pathToTcConfigFile;
   }
 
-  private TcConfigBuilder prepareClientTcConfig(TcConfigBuilder clientConfig) {
-    TcConfigBuilder aCopy = clientConfig.copy();
-    aCopy.setDsoPort(getServerTcConfig().getDsoPort());
-    aCopy.setJmxPort(getServerTcConfig().getJmxPort());
+  public WebApplicationServer makeWebApplicationServer(FileSystemPath tcConfigPath) throws Exception {
+    int i = ServerManager.appServerIndex++;
 
-    int appId = AppServerFactory.getCurrentAppServerId();
-    switch (appId) {
-      case AppServerFactory.JETTY:
-        aCopy.addModule("clustered-jetty-6.1", "1.0.0");
-        break;
-      case AppServerFactory.WEBSPHERE:
-        aCopy.addModule("clustered-websphere-6.1.0.7", "1.0.0");
-        break;
-      default:
-        // nothing for now
-    }
+    WebApplicationServer appServer = new GenericServer(config, factory, installation, tcConfigPath, i, tempDir);
+    addServerToStop(appServer);
+    return appServer;
+  }
 
-    return aCopy;
+  public WebApplicationServer makeWebApplicationServer(StandardTerracottaAppServerConfig tcConfig) throws Exception {
+    int i = ServerManager.appServerIndex++;
+
+    WebApplicationServer tomcatServer = new GenericServer(config, factory, installation, tcConfig, i, tempDir);
+    addServerToStop(tomcatServer);
+    return tomcatServer;
   }
 
   void setServersToStop(List serversToStop) {
@@ -158,6 +139,10 @@ public class ServerManager {
 
   public DeploymentBuilder makeDeploymentBuilder() throws IOException {
     return new WARBuilder(warDir, config);
+  }
+
+  public StandardTerracottaAppServerConfig getConfig() {
+    return factory.createTcConfig(installation.dataDirectory());
   }
 
   public void stopAllWebServers() {
@@ -181,9 +166,5 @@ public class ServerManager {
 
   public File getTempDir() {
     return tempDir;
-  }
-
-  public TcConfigBuilder getServerTcConfig() {
-    return serverTcConfig;
   }
 }

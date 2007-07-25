@@ -21,7 +21,7 @@ import com.tc.test.server.Server;
 import com.tc.test.server.appserver.AppServer;
 import com.tc.test.server.appserver.AppServerInstallation;
 import com.tc.test.server.appserver.AppServerResult;
-import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.server.appserver.NewAppServerFactory;
 import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.appserver.war.AbstractDescriptorXml;
 import com.tc.test.server.appserver.war.War;
@@ -78,7 +78,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   private File                              sandbox;
   private File                              tempDir;
   private File                              bootJar;
-  private AppServerFactory                  appServerFactory;
+  private NewAppServerFactory               appServerFactory;
   private AppServerInstallation             installation;
   private File                              warFile;
   private DsoServer                         dsoServer;
@@ -95,11 +95,10 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     // keep the regular thread dump behavior for windows and macs
     setDumpThreadsOnTimeout(Os.isWindows() || Os.isMac());
 
-    boolean glassFishOrJetty = AppServerFactory.currentAppServerBelongsTo(new int[] { AppServerFactory.GLASSFISH,
-        AppServerFactory.JETTY });
-
+    String appserver = config.appserverFactoryName();
     // XXX: Only non-session container tests work in glassfish and jetty at the moment
-    if (isSessionTest() && glassFishOrJetty) {
+    if (isSessionTest()
+        && (NewAppServerFactory.GLASSFISH.equals(appserver) || NewAppServerFactory.JETTY.equals(appserver))) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }
 
@@ -111,7 +110,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
       tempDir = getTempDirectory();
       serverInstallDir = config.appserverServerInstallDir();
       bootJar = new File(config.normalBootJar());
-      appServerFactory = AppServerFactory.createFactoryFromProperties(config);
+      appServerFactory = NewAppServerFactory.createFactoryFromProperties(config);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -126,7 +125,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
   /**
    * If overridden <tt>super.tearDown()</tt> must be called to ensure that servers are all shutdown properly
-   * 
+   *
    * @throws Exception
    */
   protected void tearDown() throws Exception {
@@ -250,7 +249,7 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
   /**
    * Starts an instance of the assigned default application server listed in testconfig.properties. Servlets and the WAR
    * are dynamically generated using the convention listed in the header of this document.
-   * 
+   *
    * @param dsoEnabled - enable or disable dso for this instance
    * @return AppServerResult - series of return values including the server port assigned to this instance
    */
@@ -310,13 +309,8 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
 
       // params.appendJvmArgs("-Dtc.classloader.writeToDisk=true");
 
-      int appId = AppServerFactory.getCurrentAppServerId();
-      switch (appId) {
-        case AppServerFactory.TOMCAT:
-        case AppServerFactory.JBOSS:
-          params.appendJvmArgs("-Djvmroute=" + NODE + nodeNumber);
-          break;
-      }
+      addAppServerSpecificJvmArg(NewAppServerFactory.TOMCAT, params, "-Djvmroute=" + NODE + nodeNumber);
+      addAppServerSpecificJvmArg(NewAppServerFactory.JBOSS, params, "-Djvmroute=" + NODE + nodeNumber);
 
       params.appendJvmArgs("-DNODE=" + NODE + nodeNumber);
       params.appendJvmArgs("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + ConfigProperties.REQUEST_BENCHES + "=true");
@@ -330,6 +324,12 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     } catch (Exception e) {
       threadDumpGroup();
       throw e;
+    }
+  }
+
+  private void addAppServerSpecificJvmArg(String appserverName, StandardAppServerParameters params, String arg) {
+    if (appserverName.equals(config.appserverFactoryName())) {
+      params.appendJvmArgs(arg);
     }
   }
 
@@ -435,14 +435,10 @@ public abstract class AbstractAppServerTestCase extends TCTestCase {
     }
 
     // add modules that needed for certain app server here
-    int appId = AppServerFactory.getCurrentAppServerId();
-    switch (appId) {
-      case AppServerFactory.JETTY:
-        addConfigModule("clustered-jetty-6.1", "1.0.0");
-        break;
-      case AppServerFactory.WEBSPHERE:
-        addConfigModule("clustered-websphere-6.1.0.7", "1.0.0");
-        break;
+    if (NewAppServerFactory.JETTY.equals(config.appserverFactoryName())) {
+      addConfigModule("clustered-jetty-6.1", "1.0.0");
+    } else if (NewAppServerFactory.WEBSPHERE.equals(config.appserverFactoryName())) {
+      addConfigModule("clustered-websphere-6.1.0.7", "1.0.0");
     }
 
     configBuilder.addInclude("com.tctest..*");

@@ -23,9 +23,11 @@ import com.tc.util.ZipBuilder;
 
 public final class LuceneSampleDataIndex {
 
-  private static final String HTML_DATA = "sample-html-data-1.0.zip";
-  private static final String DATA_DIR  = "bible";
-
+  public static final String  FIELD_PATH    = "path";
+  public static final String  FIELD_SUMMARY = "summary";
+  public static final String  FIELD_TITLE   = "title";
+  private static final String HTML_DATA     = "sample-html-data-1.0.zip";
+  private static final String DATA_DIR      = "bible";
   private final String        indexPath;
   private final RAMDirectory  directory;
 
@@ -40,21 +42,30 @@ public final class LuceneSampleDataIndex {
     }
     directory = new RAMDirectory(indexPath);
   }
+  
+  // This breaks encapsulation and is for tesing purposes only
+  public RAMDirectory publishDirectory() {
+    return directory;
+  }
 
   public Hits query(String queryString) throws IOException, ParseException {
-    Searcher searcher = new IndexSearcher(directory);
-    Analyzer analyzer = new StandardAnalyzer();
-    QueryParser parser = new QueryParser("contents", analyzer);
-    Query query = parser.parse(queryString);
-    return searcher.search(query);
+    synchronized (directory) {
+      Searcher searcher = new IndexSearcher(directory);
+      Analyzer analyzer = new StandardAnalyzer();
+      QueryParser parser = new QueryParser("contents", analyzer);
+      Query query = parser.parse(queryString);
+      return searcher.search(query);
+    }
   }
 
   public void put(String field, String value) throws Exception {
     Document doc = new Document();
     doc.add(new Field(field, value, Field.Store.YES, Field.Index.TOKENIZED));
-    final IndexWriter writer = new IndexWriter(directory, new StandardAnalyzer(), (directory.list().length == 0));
-    writer.addDocument(doc);
-    writer.optimize();
-    writer.close();
+    synchronized (directory) {
+      final IndexWriter writer = new IndexWriter(directory, new StandardAnalyzer(), (directory.list().length == 0));
+      writer.addDocument(doc);
+      writer.close();
+      writer.optimize();
+    }
   }
 }

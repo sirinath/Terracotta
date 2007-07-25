@@ -9,9 +9,10 @@ import org.apache.commons.logging.LogFactory;
 
 import com.tc.test.TCTestCase;
 import com.tc.test.TestConfigObject;
-import com.tc.test.server.appserver.AppServerFactory;
-import com.tc.test.server.util.TcConfigBuilder;
+import com.tc.test.server.appserver.NewAppServerFactory;
+import com.tc.test.server.tcconfig.StandardTerracottaAppServerConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,21 +33,21 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
   private static final int TIMEOUT_DEFAULT     = 30 * 60;
 
   public AbstractDeploymentTest() {
-    boolean glassFishOrJetty = AppServerFactory.currentAppServerBelongsTo(new int[] { AppServerFactory.GLASSFISH,
-        AppServerFactory.JETTY });
-    if (isSessionTest() && glassFishOrJetty) {
+    String appserver = TestConfigObject.getInstance().appserverFactoryName();
+    if (isSessionTest()
+        && (NewAppServerFactory.GLASSFISH.equals(appserver) || NewAppServerFactory.JETTY.equals(appserver))) {
       disableAllUntil(new Date(Long.MAX_VALUE));
-    }    
+    }
   }
 
   protected void beforeTimeout() throws Throwable {
-    getServerManager().timeout();
+    getServerManager().stop();
   }
-
+  
   protected boolean shouldKillAppServersEachRun() {
     return true;
   }
-
+  
   protected boolean isSessionTest() {
     return true;
   }
@@ -75,7 +76,7 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
     return serverManager;
   }
 
-  protected int getTimeout() {
+  protected int getTimeout() throws IOException {
     String timeout = TestConfigObject.getInstance().springTestsTimeout();
     if (timeout == null) {
       return TIMEOUT_DEFAULT;
@@ -91,15 +92,16 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
     super.tearDown();
   }
 
-  /**
-   * tcConfig: resource path to tc-config.xml
-   */
   protected WebApplicationServer makeWebApplicationServer(String tcConfig) throws Exception {
     return getServerManager().makeWebApplicationServer(tcConfig);
   }
-  
-  protected WebApplicationServer makeWebApplicationServer(TcConfigBuilder configBuilder) throws Exception {
-    return getServerManager().makeWebApplicationServer(configBuilder);
+
+  protected WebApplicationServer makeWebApplicationServer(FileSystemPath tcConfigPath) throws Exception {
+    return getServerManager().makeWebApplicationServer(tcConfigPath);
+  }
+
+  protected WebApplicationServer makeWebApplicationServer(StandardTerracottaAppServerConfig tcConfig) throws Exception {
+    return getServerManager().makeWebApplicationServer(tcConfig);
   }
 
   protected void restartDSO() throws Exception {
@@ -136,15 +138,15 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
     }
   }
 
+  protected StandardTerracottaAppServerConfig getConfigBuilder() {
+    return getServerManager().getConfig();
+  }
+
   protected void stopAllWebServers() {
     ServerManagerUtil.stopAllWebServers(getServerManager());
   }
 
   public boolean isWithPersistentStore() {
-    return false;
-  }
-  
-  protected final boolean cleanTempDir() {
     return false;
   }
 
@@ -166,9 +168,17 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
   }
 
   public boolean shouldDisable() {
-    return isAllDisabled() || shouldDisableForJavaVersion() || shouldDisableForVariants();
+    return shouldDisableForJavaVersion() || shouldDisableForVariants() || shouldDisableForCertainAppServers();
   }
-  
+
+  private boolean shouldDisableForCertainAppServers() {
+    String appserver = TestConfigObject.getInstance().appserverFactoryName();
+    // XXX: Only non-session container tests work in glassfish and jetty at the moment
+    if (isSessionTest()
+        && (NewAppServerFactory.GLASSFISH.equals(appserver) || NewAppServerFactory.JETTY.equals(appserver))) { return true; }
+    return false;
+  }
+
   private boolean shouldDisableForVariants() {
     for (Iterator iter = disabledVariants.entrySet().iterator(); iter.hasNext();) {
       Map.Entry entry = (Map.Entry) iter.next();

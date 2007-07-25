@@ -127,7 +127,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     throw new UnsupportedOperationException();
   }
 
-  public void send(final TCNetworkMessage message) {
+  public final void send(final TCNetworkMessage message) {
     if (logger.isDebugEnabled()) {
       final Runnable logMsg = new Runnable() {
         public void run() {
@@ -178,6 +178,22 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, AbstractMessageChannel.this));
   }
 
+  public void notifyTransportDisrupted(MessageTransport transport) {
+    fireTransportDisruptedEvent();
+  }
+
+  protected void fireTransportDisruptedEvent() {
+    fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISRUPTED_EVENT, AbstractMessageChannel.this));
+  }
+  
+  public void notifyTransportRestored(MessageTransport transport) {
+    fireTransportDisruptedEvent();
+  }
+
+  protected void fireTransportRestoredEvent() {
+    fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_RESTORED_EVENT, AbstractMessageChannel.this));
+  }
+  
   public void notifyTransportConnected(MessageTransport transport) {
     this.remoteAddr.set(transport.getRemoteAddress());
     this.localAddr.set(transport.getLocalAddress());

@@ -21,6 +21,7 @@ public class NodeID implements Externalizable {
 
   private String              name;
   private byte[]              uid;
+  private byte[]              instanceID;
 
   private transient int       hash;
 
@@ -30,8 +31,13 @@ public class NodeID implements Externalizable {
   }
 
   public NodeID(String name, byte[] uid) {
+    this(name, uid, uid);
+  }
+
+  public NodeID(String name, byte[] uid, byte[] instanceID) {
     this.name = name;
     this.uid = uid;
+    this.instanceID = instanceID;
   }
 
   public int hashCode() {
@@ -57,6 +63,10 @@ public class NodeID implements Externalizable {
     return uid;
   }
   
+  public byte[] getInstanceID() {
+    return instanceID;
+  }
+
   public String getName() {
     Assert.assertTrue(this.name != UNINITIALIZED);
     return name;
@@ -90,7 +100,7 @@ public class NodeID implements Externalizable {
   }
 
   /**
-   * HACK::FIXME::TODO This method is a quick hack to bridge NodeIDs to ChannelIDs. This mapping is only valid for the
+   * HACK::FIXME::TODO This method is a quick hack to brick NodeIDs to ChannelIDs. This mapping is only valid for the
    * current VM. The ChannelIDs are given out in the range -100 to Integer.MIN_VALUE to not clash with the regular
    * client channelID. This definitely needs some cleanup
    */

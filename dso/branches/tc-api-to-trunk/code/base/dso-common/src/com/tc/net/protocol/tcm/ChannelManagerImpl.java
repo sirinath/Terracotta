@@ -108,13 +108,8 @@ class ChannelManagerImpl implements ChannelManager, ChannelEventListener, Server
   }
 
   private void removeChannel(MessageChannel channel) {
-    boolean notfound;
     synchronized (this) {
-      notfound = (channels.remove(channel.getChannelID()) == null);
-    }
-    if (notfound) {
-      logger.warn("Remove non-exist channel:"+channel.getChannelID());
-      return;
+      channels.remove(channel.getChannelID());
     }
     fireChannelRemovedEvent(channel);
   }

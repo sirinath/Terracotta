@@ -4,53 +4,37 @@
  */
 package com.tctest.server.appserver.unit;
 
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
-import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
-import com.tc.test.server.appserver.deployment.DeploymentBuilder;
-import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.util.TcConfigBuilder;
+import org.apache.commons.httpclient.HttpClient;
+
+import com.tc.test.server.appserver.unit.AbstractAppServerTestCase;
+import com.tc.test.server.util.HttpUtil;
 import com.tctest.webapp.servlets.NewSessionAfterInvalidateTestServlet;
 
-import junit.framework.Test;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-public class NewSessionAfterInvalidateTest extends AbstractTwoServerDeploymentTest {
+public class NewSessionAfterInvalidateTest extends AbstractAppServerTestCase {
 
-  private static final String CONTEXT = "NewSession";
-  private static final String MAPPING = "new";
-
-  public static Test suite() {
-    return new NewSessionTestSetup();
+  public NewSessionAfterInvalidateTest() {
+    registerServlet(NewSessionAfterInvalidateTestServlet.class);
   }
 
   public final void testSessions() throws Exception {
-    WebConversation conversation = new WebConversation();
+    startDsoServer();
 
-    WebResponse response1 = request(server0, "step=1", conversation);
-    assertEquals("OK", response1.getText().trim());
+    HttpClient client = HttpUtil.createHttpClient();
 
-    WebResponse response2 = request(server1, "step=2", conversation);
-    assertEquals("OK", response2.getText().trim());
+    int port = startAppServer(true).serverPort();
+
+    // no existing session
+    assertEquals("OK", HttpUtil.getResponseBody(makeURL(port, 1), client));
+
+    // existing session
+    assertEquals("OK", HttpUtil.getResponseBody(makeURL(port, 2), client));
   }
 
-  private WebResponse request(WebApplicationServer server, String params, WebConversation con) throws Exception {
-    return server.ping("/" + CONTEXT + "/" + MAPPING + "?" + params, con);
+  private URL makeURL(int port, int step) throws MalformedURLException {
+    return createUrl(port, NewSessionAfterInvalidateTestServlet.class, "step=" + step);
   }
 
-  private static class NewSessionTestSetup extends TwoServerTestSetup {
-
-    public NewSessionTestSetup() {
-      super(NewSessionAfterInvalidateTest.class, CONTEXT);
-    }
-
-    protected void configureWar(DeploymentBuilder builder) {
-      builder.addServlet("NewSessionAfterInvalidateTestServlet", "/" + MAPPING + "/*",
-                         NewSessionAfterInvalidateTestServlet.class, null, false);
-    }
-
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplication(CONTEXT);
-    }
-
-  }
 }

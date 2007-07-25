@@ -5,6 +5,4 @@ package com.tc.object.session;
 
 public interface SessionProvider {
   public SessionID getSessionID();
-  
-  public SessionID nextSessionID();
 }

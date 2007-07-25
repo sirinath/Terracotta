@@ -124,8 +124,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     final ConnectionAddressProvider provider = addressProvider;
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(new TCMessageFactoryImpl(sessionProvider, monitor),
-                                                               new TCMessageRouterImpl(), 
-                                                               sessionProvider);
+                                                               new TCMessageRouterImpl());
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
 

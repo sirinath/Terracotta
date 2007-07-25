@@ -4,58 +4,39 @@
  */
 package com.tctest.server.appserver.unit;
 
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
-import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
-import com.tc.test.server.appserver.deployment.Deployment;
-import com.tc.test.server.appserver.deployment.DeploymentBuilder;
-import com.tc.test.server.appserver.deployment.ServerTestSetup;
-import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.util.TcConfigBuilder;
-import com.tc.util.runtime.Vm;
+import org.apache.commons.httpclient.HttpClient;
+
+import com.tc.test.server.appserver.unit.AbstractAppServerTestCase;
+import com.tc.test.server.util.HttpUtil;
 import com.tctest.webapp.servlets.OkServlet;
 
-import junit.framework.Test;
+import java.net.URL;
 
-public class InstrumentEverythingInContainerTest extends AbstractDeploymentTest {
-  private static final String CONTEXT = "OkServlet";
-  private Deployment          deployment;
 
-  public static Test suite() {
-    return new ServerTestSetup(InstrumentEverythingInContainerTest.class);
+public class InstrumentEverythingInContainerTest extends AbstractAppServerTestCase {
+
+  public InstrumentEverythingInContainerTest() {
+    registerServlet(OkServlet.class);
   }
 
   protected boolean isSessionTest() {
     return false;
   }
 
-  public void setUp() throws Exception {
-    super.setUp();
-    if (deployment == null) deployment = makeDeployment();
-  }
+  public void test() throws Exception {
+    addInclude("*..*");
 
-  public void testInstrumentEverything() throws Exception {
-    TcConfigBuilder tcConfigBuilder = new TcConfigBuilder();
-    tcConfigBuilder.addInstrumentedClass("*..*");
     // These bytes are obfuscated and get verify errors when instrumented by DSO
-    tcConfigBuilder.addExclude("com.sun.crypto.provider..*");    
+    addExclude("com.sun.crypto.provider..*");
 
-    WebApplicationServer server = makeWebApplicationServer(tcConfigBuilder);
-    server.addWarDeployment(deployment, CONTEXT);
-    if (!Vm.isIBM()) {
-      // InstrumentEverythingInContainerTest under glassfish needs this
-      server.getServerParameters().appendJvmArgs("-XX:MaxPermSize=128m");
-    }
-    server.start();
+    startDsoServer();
 
-    WebConversation conversation = new WebConversation();
-    WebResponse response = server.ping("/OkServlet/ok", conversation);
-    assertEquals("OK", response.getText().trim());
-  }
+    HttpClient client = HttpUtil.createHttpClient();
 
-  private Deployment makeDeployment() throws Exception {
-    DeploymentBuilder builder = makeDeploymentBuilder(CONTEXT + ".war");
-    builder.addServlet("OkServlet", "/ok/*", OkServlet.class, null, false);
-    return builder.makeDeployment();
+    int port = startAppServer(true).serverPort();
+
+    URL url = createUrl(port, OkServlet.class);
+
+    assertEquals("OK", HttpUtil.getResponseBody(url, client));
   }
 }

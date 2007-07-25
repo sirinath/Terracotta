@@ -25,8 +25,6 @@ public interface TCServerInfoMBean extends TerracottaMBean {
 
   void shutdown();
 
-  void startBeanShell(int port);
-
   String getVersion();
 
   String getBuildID();

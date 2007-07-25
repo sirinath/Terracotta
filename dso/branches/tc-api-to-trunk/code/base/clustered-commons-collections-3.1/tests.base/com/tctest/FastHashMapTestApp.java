@@ -8,6 +8,7 @@ import org.apache.commons.collections.FastHashMap;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
@@ -30,7 +31,7 @@ public final class FastHashMapTestApp extends
 		final String testClass = FastHashMapTestApp.class.getName();
 		config.addIncludePattern(testClass + "$*");
 		
-		final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+		final ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 		spec.addRoot("barrier", "barrier");
 		spec.addRoot("clusteredFastHashMap", "clusteredFastHashMap");
 	}

@@ -7,13 +7,12 @@ bundled_components:
       module_packages:
         - terracotta-api-version-PREALPHA:
             modules:
-              - aspectwerkz
               - common
-              - dso-common
-              - dso-l1
+              - dso-l1-api
               - modules-common-1.0
-              - management
               - thirdparty
+              # aspectwerkz
+              # dso-common
 packaging:
   - mvn
 postscripts:

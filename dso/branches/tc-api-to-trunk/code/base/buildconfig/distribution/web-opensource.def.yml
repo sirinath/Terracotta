@@ -20,13 +20,12 @@ bundled_components:
         - terracotta-api-version-PREALPHA:
             install_directory: lib
             modules:
-              - aspectwerkz
-              - common
-              - dso-common
-              - dso-l1
+              - dso-l1-api
               - modules-common-1.0
-              - management
               - thirdparty
+              # aspectwerkz
+              # common
+              # dso-common
       modules:
         - aspectwerkz:
             exclude-runtime-libraries: true

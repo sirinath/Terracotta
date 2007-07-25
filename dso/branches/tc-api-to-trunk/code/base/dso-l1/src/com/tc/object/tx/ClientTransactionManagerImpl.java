@@ -327,12 +327,12 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return ttc.popCurrentTransaction(lockID);
   }
 
-  private TransactionContext peekContext(LockID lockID) {
+  private ITransactionContext peekContext(LockID lockID) {
     ThreadTransactionContext ttc = getThreadTransactionContext();
     return ttc.peekContext(lockID);
   }
 
-  private TransactionContext peekContext() {
+  private ITransactionContext peekContext() {
     ThreadTransactionContext ttc = getThreadTransactionContext();
     return ttc.peekContext();
   }
@@ -366,7 +366,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       disableTransactionLogging();
 
       // If the current transactionContext is READ_ONLY, there is no need to commit.
-      TransactionContext tc = peekContext(lockID);
+      ITransactionContext tc = peekContext(lockID);
       if (tc.getType().equals(TxnType.READ_ONLY)) {
         txMonitor.committedReadTransaction();
         return false;

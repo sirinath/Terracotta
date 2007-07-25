@@ -25,18 +25,12 @@ public final class SimpleLuceneDistributedIndexApp extends AbstractTransparentAp
 
   public void run() {
     try {
-      final boolean writerNode = barrier.await() == 0;
+      boolean writerNode = false;
+      if (barrier.await() == 0) writerNode = true;
       LuceneSampleDataIndex index = null;
-
-      if (writerNode) {
-        index = new LuceneSampleDataIndex(getTempDirectory(true));
-      }
-
+      if (writerNode) index = new LuceneSampleDataIndex(getTempDirectory(true));
       barrier.await();
-
-      if (!writerNode) {
-        index = new LuceneSampleDataIndex(getTempDirectory(false));
-      }
+      if (!writerNode) index = new LuceneSampleDataIndex(getTempDirectory(false));
       barrier.await();
 
       int count = index.query("buddha").length();
@@ -67,13 +61,15 @@ public final class SimpleLuceneDistributedIndexApp extends AbstractTransparentAp
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    config.addNewModule("clustered-lucene-2.0.0", "1.0.0");
-
+    config.addIncludePattern(CyclicBarrier.class.getName());
+    config.addIncludePattern("org.apache.lucene.store..*");
     config.addIncludePattern(LuceneSampleDataIndex.class.getName());
-    config.addIncludePattern(SimpleLuceneDistributedIndexApp.class.getName());
-
+    String className = SimpleLuceneDistributedIndexApp.class.getName();
+    config.addIncludePattern(className);
+    config.addWriteAutolock("* " + CyclicBarrier.class.getName() + "*.*(..)");
+    config.addWriteAutolock("* " + LuceneSampleDataIndex.class.getName() + "*.*(..)");
     config.addRoot("directory", LuceneSampleDataIndex.class.getName() + ".directory");
-    config.addRoot("barrier", SimpleLuceneDistributedIndexApp.class.getName() + ".barrier");
+    config.addRoot("barrier", className + ".barrier");
   }
 
   private File getTempDirectory(boolean clean) throws IOException {

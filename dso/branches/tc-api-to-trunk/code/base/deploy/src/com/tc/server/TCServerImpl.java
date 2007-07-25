@@ -358,10 +358,4 @@ public class TCServerImpl extends SEDA implements TCServer {
 
   }
 
-  public void startBeanShell(int port) {
-    if (dsoServer != null) {
-      dsoServer.startBeanShell(port);
-    }
-  }
-
 }
