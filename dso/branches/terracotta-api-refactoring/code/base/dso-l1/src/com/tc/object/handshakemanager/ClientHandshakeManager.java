@@ -141,17 +141,12 @@ public class ClientHandshakeManager implements ChannelEventListener {
 
   public void notifyChannelEvent(ChannelEvent event) {
     if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
-      cluster.thisNodeDisconnected();
-      sessionManager.newSession();
+      cluster.thisNodeDisconnected();      
       pauseSink.add(PauseContext.PAUSE);
     } else if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
       pauseSink.add(PauseContext.UNPAUSE);
     } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
       cluster.thisNodeDisconnected();
-    } else if (event.getType() == ChannelEventType.TRANSPORT_DISRUPTED_EVENT) {
-      pauseSink.add(PauseContext.PAUSE);
-    } else if (event.getType() == ChannelEventType.TRANSPORT_RESTORED_EVENT) {
-      pauseSink.add(PauseContext.UNPAUSE);
     }
   }
 
@@ -164,6 +159,8 @@ public class ClientHandshakeManager implements ChannelEventListener {
     pauseStages();
     pauseManagers();
     changeState(PAUSED);
+    // all the activities paused then can switch to new session
+    sessionManager.newSession();
   }
 
   public void unpause() {
