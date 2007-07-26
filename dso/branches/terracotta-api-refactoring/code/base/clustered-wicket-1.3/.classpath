@@ -13,7 +13,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-jdk15"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-container-tests"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
 	<classpathentry kind="lib" path="/dependencies/lib/wicket-1.3.0-20070425-1802.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>

@@ -7,7 +7,6 @@
 	<classpathentry kind="src" output="build.eclipse/tests.base.classes" path="tests.base.resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.4"/>
 	<classpathentry kind="lib" path="/dependencies/lib/ehcache-1.2.4.jar"/>
-	<classpathentry kind="src" path="/thirdparty"/>
 	<classpathentry kind="src" path="/modules-common-1.0"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
 	<classpathentry kind="lib" path="/dependencies/lib/osgi_R4_core-1.0.jar"/>
