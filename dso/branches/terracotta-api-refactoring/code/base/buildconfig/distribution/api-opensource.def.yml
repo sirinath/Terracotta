@@ -10,9 +10,7 @@ bundled_components:
               - common
               - dso-l1-api
               - modules-common-1.0
-              - thirdparty
-              # aspectwerkz
-              # dso-common
+              - thirdparty-api
 packaging:
   - mvn
 postscripts:
