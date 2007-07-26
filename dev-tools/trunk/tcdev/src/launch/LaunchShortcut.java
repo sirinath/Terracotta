@@ -30,17 +30,20 @@ import org.eclipse.core.runtime.Preferences;
 import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.internal.junit.launcher.JUnitLaunchDescription;
-import org.eclipse.jdt.internal.junit.launcher.JUnitLaunchShortcut;
 import org.eclipse.jdt.internal.junit.ui.JUnitPlugin;
+import org.eclipse.jdt.junit.launcher.JUnitLaunchShortcut;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstall2;
 import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.ui.IEditorPart;
 
 import refreshall.Activator;
 import refreshall.Activator.ConsoleStream;
@@ -67,18 +70,34 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   private Properties          argTypes;
   private File                prepProps;
 
-  protected void searchAndLaunch(Object[] search, String mode) {
-    if (search != null && search.length > 0 && search[0] instanceof IJavaElement) {
+  public void launch(IEditorPart editor, String mode) {
+    IJavaElement element= JavaUI.getEditorInputJavaElement(editor.getEditorInput());
+	if(element != null) {
       try {
-        checkPrep((IJavaElement) search[0]);
+        checkPrep(element);
       } catch (Exception e) {
         e.printStackTrace();
         return;
       }
-    }
-    super.searchAndLaunch(search, mode);
+	}
+	super.launch(editor, mode);
   }
-
+	
+  public void launch(ISelection selection, String mode) {
+	if(selection instanceof StructuredSelection) {
+	  Object[] elems = ((IStructuredSelection) selection).toArray();
+	  if(elems.length > 0 && elems[0] instanceof IJavaElement) {
+        try {
+	      checkPrep((IJavaElement)elems[0]);
+	    } catch (Exception e) {
+	      e.printStackTrace();
+	      return;
+	    }
+	  }
+	}
+	super.launch(selection, mode);
+  }
+	
   public void checkPrep(final IJavaElement element) throws Exception {
     String relativePath = element.getPath().toString();
     String absolutePath = element.getResource().getLocation().toString();
@@ -105,17 +124,14 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
     }
   }
 
-  public ILaunchConfiguration findOrCreateLaunchConfiguration(String mode, JUnitLaunchShortcut registry,
-                                                              JUnitLaunchDescription description)
-      throws LaunchCancelledByUserException {
+  protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(IJavaElement element) throws CoreException {
     if (argTypes == null) {
       RuntimeException re = new RuntimeException("vmArgs null, this should never happen. JUnit impl must have changed.");
       throw re;
     }
 
     try {
-      ILaunchConfigurationWorkingCopy wc = super.findOrCreateLaunchConfiguration(mode, registry, description)
-          .getWorkingCopy();
+      ILaunchConfigurationWorkingCopy wc = super.createLaunchConfiguration(element);
 
       setInstalledJRE(argTypes.getProperty(JVM_VERSION), wc);
 
@@ -139,7 +155,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
         info("Not setting VM args");
       }
 
-      return wc.doSave();
+      return wc;
 
     } catch (CoreException ce) {
       JUnitPlugin.log(ce);
@@ -202,7 +218,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
   }
 
   private void setInstalledJRE(String jreVersion, ILaunchConfigurationWorkingCopy wc)
-      throws LaunchCancelledByUserException {
+      throws CoreException {
     IVMInstall2 currInstall = (IVMInstall2) JavaRuntime.getDefaultVMInstall();
     if (jreVersion.startsWith(currInstall.getJavaVersion())) return;
 
@@ -221,8 +237,10 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
       }
     }
     if (!jreAvailable) {
-      info("Java Version: " + jreVersion + " not available as an installed JRE in Eclipse.");
-      throw new LaunchCancelledByUserException();
+      String msg = "Java Version: " + jreVersion + " not available as an installed JRE in Eclipse.";
+      info(msg);
+      Status status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, msg, null);
+      throw new CoreException(status);
     } else {
       info("Using JRE Version: " + jreVersion);
     }

@@ -2,11 +2,11 @@
 <feature
       id="org.terracotta.tcdev"
       label="Terracotta development"
-      version="1.4.0"
+      version="1.5.0"
       provider-name="Terracotta, Inc.">
 
    <description url="http://intranet.terracotta.lan/xwiki/bin/view/Main/TCDev+Plugin">
-      Test run integration with tcbuild
+      Test run integration with tcbuild (Eclipse 3.3).
    </description>
 
    <copyright>
@@ -29,16 +29,19 @@
       <import plugin="org.eclipse.jdt.launching"/>
       <import plugin="org.eclipse.debug.core"/>
       <import plugin="org.eclipse.jdt.junit"/>
-      <import plugin="org.eclipse.debug.ui"/>
       <import plugin="org.eclipse.ui.console"/>
       <import plugin="org.eclipse.jdt.junit.runtime"/>
+      <import plugin="org.eclipse.debug.ui"/>
+      <import plugin="org.junit"/>
+      <import plugin="org.eclipse.pde.junit.runtime"/>
+      <import plugin="org.eclipse.jdt.ui"/>
    </requires>
 
    <plugin
          id="org.terracotta.tcdev"
          download-size="0"
          install-size="0"
-         version="1.4.0"
+         version="1.5.0"
          unpack="false"/>
 
 </feature>

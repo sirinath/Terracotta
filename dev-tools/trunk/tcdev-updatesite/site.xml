@@ -6,5 +6,8 @@
    <feature url="features/org.terracotta.tcdev_1.4.0.jar" id="org.terracotta.tcdev" version="1.4.0">
       <category name="Terracotta"/>
    </feature>
+   <feature url="features/org.terracotta.tcdev_1.5.0.jar" id="org.terracotta.tcdev" version="1.5.0">
+      <category name="Terracotta"/>
+   </feature>
    <category-def name="Terracotta" label="Terracotta"/>
 </site>
