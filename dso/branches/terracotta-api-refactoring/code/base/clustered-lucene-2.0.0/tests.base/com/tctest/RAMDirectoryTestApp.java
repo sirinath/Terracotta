@@ -12,7 +12,6 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.RAMDirectory;
 
-import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
@@ -53,13 +52,6 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
-<<<<<<< .working
-	    final String testClass = RAMDirectoryTestApp.class.getName();
-		final ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
-		spec.addRoot("barrier", "barrier");
-		spec.addRoot("clusteredDirectory", "clusteredDirectory");
-	}
-=======
   /**
    * Inject Lucene 2.0.0 configuration, and instrument this test class
    *
@@ -68,10 +60,9 @@ public class RAMDirectoryTestApp extends AbstractErrorCatchingTransparentApp {
    */
   public static void visitL1DSOConfig(final ConfigVisitor visitor, final DSOClientConfigHelper config) {
     config.addNewModule("clustered-lucene-2.0.0", "1.0.0");
->>>>>>> .merge-right.r4646
 
     final String testClass = RAMDirectoryTestApp.class.getName();
-    final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    final ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("clusteredDirectory", "clusteredDirectory");
   }
