@@ -15,15 +15,20 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
   private static final int    NUM_OF_CACHE_ITEMS      = 1000;
-  private static final int    TIME_TO_LIVE_IN_SECONDS = 200;
+  private static final int    TIME_TO_LIVE_IN_SECONDS = 400;
 
-  static final int            EXPECTED_THREAD_COUNT   = 5;
+  static final int            EXPECTED_THREAD_COUNT   = 4;
 
   private final CyclicBarrier barrier;
 
   private final CacheManager  cacheManager;
+
+  private final Map           mapRoot                 = new HashMap();
 
   /**
    * Test that Ehcache's CacheManger and Cache objects can be clustered.
@@ -51,6 +56,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     final String testClass = EhcacheEvictionTestApp.class.getName();
     final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
+    spec.addRoot("mapRoot", "mapRoot");
     new CyclicBarrierSpec().visit(visitor, config);
   }
 
@@ -63,8 +69,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     barrier.barrier();
 
-    //runSimplePutTimeoutGet(index);
-    
+    // runSimplePutTimeoutGet(index);
+
     runSimplePutSimpleGet(index);
 
     if (index == 1) {
@@ -75,19 +81,21 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     verifyCacheManagerShutdown();
     barrier.barrier();
   }
-  
+
   private void runSimplePutSimpleGet(int index) throws Throwable {
     if (index == 1) {
       doPut();
+      barrier.barrier();
+    } else {
+      barrier.barrier();
+
+      long startGetTime = System.currentTimeMillis();
+      doGet();
+      long endGetTime = System.currentTimeMillis();
+
+      System.err.println("Time to get " + NUM_OF_CACHE_ITEMS + " items: " + (endGetTime - startGetTime) + " ms.");
+
     }
-
-    barrier.barrier();
-
-    long startGetTime = System.currentTimeMillis();
-    doGet();
-    long endGetTime = System.currentTimeMillis();
-    
-    System.err.println("Time to get " + NUM_OF_CACHE_ITEMS + " items: " + (endGetTime - startGetTime) + " ms.");
 
     barrier.barrier();
   }
@@ -112,7 +120,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
       cache.put(new Element("key" + i, "value" + i));
     }
   }
-  
+
   private void doGet() throws Throwable {
     Cache cache = cacheManager.getCache("CACHE");
     for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
@@ -156,4 +164,5 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private void verifyCacheManagerShutdown() {
     Assert.assertEquals(Status.STATUS_SHUTDOWN, cacheManager.getStatus());
   }
+  
 }

@@ -64,12 +64,13 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
       IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException {
     Constructor ctor = type.getConstructor();
     if (ctor == null) throw new AssertionError("type:" + type.getName());
-    return getNewPeerObject(ctor, EMPTY_OBJECT_ARRAY, null, null);
+    return getNewPeerObject(ctor, EMPTY_OBJECT_ARRAY, type, null);
   }
 
   private Object getNewPeerObject(Constructor ctor, Object[] args, TCClass type, Object parent)
       throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-    final Object rv;
+    //final Object rv;
+    Object rv;
 
     // XXX: hack to workaround issue with commons logging dependence on context loader
     final Thread thread = Thread.currentThread();
@@ -77,14 +78,14 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
     final boolean adjustTCL = TCThreadGroup.currentThreadInTCThreadGroup();
 
     if (adjustTCL) {
-      ClassLoader newTcl = ctor.getDeclaringClass().getClassLoader();
+      ClassLoader newTcl = type.getPeerClass().getClassLoader();
       if (newTcl == null) {
         // XXX: workaround jboss bug: http://jira.jboss.com/jira/browse/JBAS-4437
         newTcl = ClassLoader.getSystemClassLoader();
       }
       thread.setContextClassLoader(newTcl);
     }
-
+    
     try {
       rv = ctor.newInstance(args);
       if (parent != null) {

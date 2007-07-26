@@ -46,6 +46,7 @@ public class CacheDataStore {
     Assert.pre(value != null);
     CacheData cd = (CacheData) store.get(key);
     Object rv = (cd == null) ? null : cd.getValue();
+
     cd = new CacheData(value, maxIdleTimeoutSeconds);
     ManagerUtil.monitorEnter(store, LockLevel.WRITE);
     try {
@@ -81,13 +82,15 @@ public class CacheDataStore {
     missCountNotFound++;
     return null;
   }
-  
+
   private void invalidate(CacheData cd) {
-    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
-    try {
-      cd.invalidate();
-    } finally {
-      ManagerUtil.monitorExit(store);
+    if (!cd.isInvalidated()) {
+      ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+      try {
+        cd.invalidate();
+      } finally {
+        ManagerUtil.monitorExit(store);
+      }
     }
   }
 
@@ -122,17 +125,17 @@ public class CacheDataStore {
   }
 
   void updateTimestampIfNeeded(CacheData rv) {
-    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
-    try {
-      Assert.pre(rv != null);
-      final long now = System.currentTimeMillis();
-      final Timestamp t = rv.getTimestamp();
-      final long diff = t.getMillis() - now;
-      if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
+    Assert.pre(rv != null);
+    final long now = System.currentTimeMillis();
+    final Timestamp t = rv.getTimestamp();
+    final long diff = t.getMillis() - now;
+    if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
+      ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+      try {
         t.setMillis(now + rv.getMaxInactiveMillis());
+      } finally {
+        ManagerUtil.monitorExit(store);
       }
-    } finally {
-      ManagerUtil.monitorExit(store);
     }
   }
 
@@ -221,18 +224,13 @@ public class CacheDataStore {
     boolean rv = false;
 
     final CacheData sd = findCacheDataUnlocked(key);
-//    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
-//    try {
-      if (sd == null) return rv;
-      if (!sd.isValid()) {
-        expire(key, sd);
-        rv = true;
-      } else {
-        updateTimestampIfNeeded(sd);
-      }
-//    } finally {
-//      ManagerUtil.monitorExit(store);
-//    }
+    if (sd == null) return rv;
+    if (!sd.isValid()) {
+      expire(key, sd);
+      rv = true;
+    } else {
+      updateTimestampIfNeeded(sd);
+    }
     return rv;
   }
 

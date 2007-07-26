@@ -5,23 +5,19 @@
 package com.tcclient.cache;
 
 public class CacheData {
-  private Object            value;
-  private final long        maxIdleMillis;
-  private final Timestamp   timestamp;
-  
-  private transient long    createTime;
-  private transient long    lastAccessedTimeInMillis;
-  private transient long    startMillis;
-  private transient boolean invalidated = false;
+  private Object          value;
+  private final long      maxIdleMillis;
+  private final Timestamp timestamp;               // timestamp contains the time when the CacheData will be expired
+
+  private long  createTime;
+  private transient long  lastAccessedTimeInMillis;
+  private transient long  startMillis;
+  private boolean         invalidated = false;
 
   public CacheData(Object value, long maxIdleSeconds) {
     this.value = value;
     this.maxIdleMillis = maxIdleSeconds * 1000;
     this.timestamp = new Timestamp(this.createTime + maxIdleMillis);
-    initialize();
-  }
-
-  public void initialize() {
     this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
     this.lastAccessedTimeInMillis = 0;
@@ -65,6 +61,10 @@ public class CacheData {
 
   synchronized void invalidate() {
     this.invalidated = true;
+  }
+  
+  synchronized boolean isInvalidated() {
+    return this.invalidated;
   }
 
 }

@@ -34,6 +34,16 @@ public class EhcacheTerracottaConfigurator extends TerracottaConfiguratorModule 
     spec.setCustomClassAdapter(factory);
 
     configHelper.addClassReplacement(CACHE_CLASS_NAME_DOTS, CACHETC_CLASS_NAME_DOTS);
-    configHelper.addClassReplacement(MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS, MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
+    configHelper.addClassReplacement(MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS,
+                                     MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
+
+    configHelper.addIncludePattern("com.tcclient.cache.*", false, false, false);
+    configHelper.addIncludePattern("com.tcclient.ehcache.*", false, false, false);
+    spec = configHelper.getOrCreateSpec("com.tcclient.cache.CacheDataStore");
+    spec.setHonorTransient(true);
+    spec.setCallMethodOnLoad("initialize");
+    spec = configHelper.getOrCreateSpec("com.tcclient.cache.CacheData");
+    spec.setHonorTransient(true);
+
   }
 }
