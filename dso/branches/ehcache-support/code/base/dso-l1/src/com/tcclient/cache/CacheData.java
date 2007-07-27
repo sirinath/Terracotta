@@ -4,15 +4,17 @@
  */
 package com.tcclient.cache;
 
-public class CacheData {
-  private Object          value;
-  private long      maxIdleMillis;
-  private Timestamp timestamp;               // timestamp contains the time when the CacheData will be expired
+import java.io.Serializable;
 
-  private transient long  createTime;
-  private transient long  lastAccessedTimeInMillis;
-  private transient long  startMillis;
-  private boolean         invalidated = false;
+public class CacheData implements Serializable {
+  private Object         value;
+  private long           maxIdleMillis;
+  private Timestamp      timestamp;               // timestamp contains the time when the CacheData will be expired
+
+  private transient long createTime;
+  private transient long lastAccessedTimeInMillis;
+  private transient long startMillis;
+  private boolean        invalidated = false;
 
   public CacheData(Object value, long maxIdleSeconds) {
     this.value = value;
@@ -22,7 +24,7 @@ public class CacheData {
     this.startMillis = System.currentTimeMillis();
     this.lastAccessedTimeInMillis = 0;
   }
-  
+
   public CacheData() {
     this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
@@ -68,7 +70,7 @@ public class CacheData {
   synchronized void invalidate() {
     this.invalidated = true;
   }
-  
+
   synchronized boolean isInvalidated() {
     return this.invalidated;
   }

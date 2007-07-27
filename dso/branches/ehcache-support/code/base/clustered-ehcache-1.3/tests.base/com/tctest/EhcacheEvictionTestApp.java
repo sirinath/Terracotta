@@ -17,7 +17,7 @@ import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
-	private static final int NUM_OF_CACHE_ITEMS = 5000;
+	private static final int NUM_OF_CACHE_ITEMS = 1000;
 
 	private static final int TIME_TO_LIVE_IN_SECONDS = 500;
 
@@ -71,7 +71,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
 		// runSimplePutTimeoutGet(index);
 
-		runSimplePutSimpleGet(index);
+		// runSimplePutSimpleGet(index);
+		runSimplePut(index);
 
 		if (index == 1) {
 			shutdownCacheManager();
@@ -81,6 +82,24 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 		verifyCacheManagerShutdown();
 		barrier.barrier();
 	}
+	
+	private void runSimplePut(int index) throws Throwable {
+	    Cache cache = cacheManager.getCache("CACHE");
+	    int startKey = index*NUM_OF_CACHE_ITEMS;
+	    int endKey = startKey + NUM_OF_CACHE_ITEMS;
+
+	    long st = System.currentTimeMillis();
+	    
+	    for (int i=startKey; i<endKey; i++) {
+	      cache.put(new Element("key" + i, "value" + i));
+	    }
+	    
+	    long en = System.currentTimeMillis();
+	    System.err.println("Time to put " + NUM_OF_CACHE_ITEMS + " objects into the cache: " + (en - st) + " ms.");
+	    
+	    barrier.barrier();
+	    
+	  }
 
 	private void runSimplePutSimpleGet(int index) throws Throwable {
 		if (index == 1) {

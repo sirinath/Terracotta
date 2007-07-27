@@ -8,10 +8,11 @@ import com.tc.config.lock.LockLevel;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public class CacheDataStore {
+public class CacheDataStore implements Serializable {
   private final Map     store;                  // <Data>
   private final Map     dtmStore;               // <Timestamp>
   private final String  cacheName;
@@ -69,8 +70,8 @@ public class CacheDataStore {
       if (!cd.isValid()) {
         missCountExpired++;
         invalidate(cd);
-        System.err.println("rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
-                           + cd.getIdleMillis());
+//        System.err.println("rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
+//                           + cd.getIdleMillis());
         return null;
       } else {
         hitCount++;

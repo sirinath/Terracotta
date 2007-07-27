@@ -6,6 +6,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -18,7 +19,7 @@ import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import java.lang.reflect.Field;
 
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
-  private static final int    NUM_OF_CACHE_ITEMS      = 5000;
+  private static final int    NUM_OF_CACHE_ITEMS      = 1000;
   private static final int    TIME_TO_LIVE_IN_SECONDS = 400;
 
   static final int            EXPECTED_THREAD_COUNT   = 4;
@@ -76,9 +77,11 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     barrier.barrier();
 
-    // runSimplePutTimeoutGet(index);
+    runSimplePutTimeoutGet(index);
 
     runSimplePutSimpleGet(index);
+
+    runSimplePut(index);
 
     if (index == 0) {
       shutdownCacheManager();
@@ -107,16 +110,30 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     barrier.barrier();
   }
 
-  private void runSimplePutTimeoutGet(int index) throws Throwable {
-    if (index == 1) {
-      doPut();
+  private void runSimplePut(int index) throws Throwable {
+    Cache cache = cacheManager.getCache("CACHE");
+    int startKey = index * NUM_OF_CACHE_ITEMS;
+    int endKey = startKey + NUM_OF_CACHE_ITEMS;
+
+    long st = System.currentTimeMillis();
+
+    for (int i = startKey; i < endKey; i++) {
+      cache.put(new Element("key" + i, "value" + i));
     }
+
+    long en = System.currentTimeMillis();
+    System.err.println("Time to put " + NUM_OF_CACHE_ITEMS + " objects into the cache: " + (en - st) + " ms.");
 
     barrier.barrier();
 
-    Thread.sleep(TIME_TO_LIVE_IN_SECONDS * 1000 + 1);
+  }
 
-    doGetNull();
+  private void runSimplePutTimeoutGet(int index) throws Throwable {
+    if (index == 1) {
+      doPut();
+      Thread.sleep(TIME_TO_LIVE_IN_SECONDS * 1000 + 1);
+      doGetNull(index);
+    }
 
     barrier.barrier();
   }
@@ -136,7 +153,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     }
   }
 
-  private void doGetNull() throws Throwable {
+  private void doGetNull(int index) throws Throwable {
     Cache cache = cacheManager.getCache("CACHE");
     for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
       Object o = cache.get("key" + i);
