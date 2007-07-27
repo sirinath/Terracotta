@@ -24,6 +24,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - linked-child-process
+        - thirdparty-api
         - thirdparty
   - aspectwerkz:
       options:
@@ -230,6 +231,7 @@ modules:
         - simulator
         - deploy
         - management
+        - thirdparty-api
         - thirdparty
   - dso-spring:
       options:
@@ -284,6 +286,7 @@ modules:
         - dso-l2
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - legacy-test-tree
   - dso-tests-jdk15:
@@ -300,6 +303,7 @@ modules:
         - dso-l1
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - dso-l1-jdk15
         - legacy-test-tree
@@ -345,6 +349,7 @@ modules:
         - management
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - legacy-test-tree
   - dso-spring-tests:
@@ -364,6 +369,7 @@ modules:
         - dso-spring
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
@@ -374,6 +380,7 @@ modules:
       dependencies:
         - common
         - aspectwerkz
+        - thirdparty-api
         - thirdparty
         - dso-common
         - management
@@ -389,6 +396,7 @@ modules:
         - dso-spring-tests
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
@@ -409,6 +417,7 @@ modules:
         - dso-spring
         - simulator
         - deploy
+        - thirdparty-api
         - thirdparty
         - dso-system-tests
         - legacy-test-tree
@@ -429,6 +438,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
   - modules-common-1.0:
       options:
@@ -454,6 +464,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
   - clustered-jetty-6.1:
@@ -466,6 +477,7 @@ modules:
         - dso-common
         - dso-l1-api
         - thirdparty-api
+        - thirdparty
   - clustered-lucene-2.0.0:
       options:
         jdk: J2SE-1.5
@@ -483,6 +495,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - modules-common-1.0
   - clustered-commons-collections-3.1:
@@ -503,6 +516,7 @@ modules:
         - management
         - simulator
         - thirdparty-api
+        - thirdparty
   - clustered-cglib-2.1.3:
       options:
         jdk: J2SE-1.4
@@ -521,6 +535,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
   - clustered-iBatis-2.2.0:
@@ -542,6 +557,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
   - clustered-rife-1.6.0:
@@ -563,6 +579,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-container-tests
   - clustered-ehcache-1.3:
@@ -583,6 +600,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
   - clustered-ehcache-1.2.4:
       options:
@@ -602,6 +620,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
   - clustered-hibernate-3.1.2:
       options:
@@ -622,6 +641,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
   - clustered-websphere-6.1.0.7:
@@ -641,6 +661,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
   - clustered-wicket-1.3:
@@ -660,6 +681,7 @@ modules:
         - simulator
         - deploy
         - thirdparty-api
+        - thirdparty
         - legacy-test-tree
         - dso-container-tests
         - modules-common-1.0
