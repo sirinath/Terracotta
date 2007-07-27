@@ -123,6 +123,10 @@ public class CacheDataStore {
     store.clear();
     dtmStore.clear();
   }
+  
+  public Map getStore() {
+    return store;
+  }
 
   void updateTimestampIfNeeded(CacheData rv) {
     Assert.pre(rv != null);

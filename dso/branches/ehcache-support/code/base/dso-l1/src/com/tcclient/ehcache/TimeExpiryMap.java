@@ -26,13 +26,9 @@ import java.util.Set;
  */
 public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable {
   protected final CacheDataStore timeExpiryDataStore;
-  private final Map store;
-  private final Map dtmStore;
   
   public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, String cacheName) {
-    this.store = new HashMap();
-    this.dtmStore = new HashMap();
-    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, store, dtmStore, "CacheInvalidator - "+cacheName, this);
+    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, new HashMap(), new HashMap(), "CacheInvalidator - "+cacheName, this);
     timeExpiryDataStore.initialize();
   }
   
@@ -53,15 +49,15 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   }
 
   public boolean containsKey(Object key) {
-    return store.containsKey(key);
+    return timeExpiryDataStore.getStore().containsKey(key);
   }
 
   public boolean containsValue(Object value) {
-    return store.containsValue(value);
+    return timeExpiryDataStore.getStore().containsValue(value);
   }
 
   public Set entrySet() {
-    return store.entrySet();
+    return timeExpiryDataStore.getStore().entrySet();
   }
 
   public Object get(Object key) {
@@ -69,11 +65,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   }
 
   public boolean isEmpty() {
-    return store.isEmpty();
+    return timeExpiryDataStore.getStore().isEmpty();
   }
 
   public Set keySet() {
-    return store.keySet();
+    return timeExpiryDataStore.getStore().keySet();
   }
 
   public void putAll(Map map) {
@@ -88,11 +84,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Externalizable 
   }
 
   public int size() {
-    return store.size();
+    return timeExpiryDataStore.getStore().size();
   }
 
   public Collection values() {
-    return store.values();
+    return timeExpiryDataStore.getStore().values();
   }
   
   public int getHitCount() {

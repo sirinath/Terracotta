@@ -17,9 +17,9 @@ import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
-	private static final int NUM_OF_CACHE_ITEMS = 1000;
+	private static final int NUM_OF_CACHE_ITEMS = 5000;
 
-	private static final int TIME_TO_LIVE_IN_SECONDS = 200;
+	private static final int TIME_TO_LIVE_IN_SECONDS = 500;
 
 	static final int EXPECTED_THREAD_COUNT = 4;
 
@@ -117,7 +117,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 	private void doPut() throws Throwable {
 		Cache cache = cacheManager.getCache("CACHE");
 		for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
-			cache.put(new Element("key" + i, new DataWrapper("value" + i)));
+			cache.put(new Element("key" + i, "value" + i));
 		}
 	}
 
@@ -125,7 +125,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 		Cache cache = cacheManager.getCache("CACHE");
 		for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
 			Object o = cache.get("key" + i);
-			//Assert.assertEquals(new Element("key" + i, "value" + i), o);
+			Assert.assertEquals(new Element("key" + i, "value" + i), o);
 		}
 	}
 

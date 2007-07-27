@@ -15,11 +15,10 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
 
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
-  private static final int    NUM_OF_CACHE_ITEMS      = 1000;
+  private static final int    NUM_OF_CACHE_ITEMS      = 5000;
   private static final int    TIME_TO_LIVE_IN_SECONDS = 400;
 
   static final int            EXPECTED_THREAD_COUNT   = 4;
@@ -27,8 +26,6 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private final CyclicBarrier barrier;
 
   private final CacheManager  cacheManager;
-
-  private final Map           mapRoot                 = new HashMap();
 
   /**
    * Test that Ehcache's CacheManger and Cache objects can be clustered.
@@ -41,6 +38,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
     cacheManager = CacheManager.getInstance();
+    setShutDownHookToNull(cacheManager);
   }
 
   /**
@@ -56,7 +54,6 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     final String testClass = EhcacheEvictionTestApp.class.getName();
     final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
-    spec.addRoot("mapRoot", "mapRoot");
     new CyclicBarrierSpec().visit(visitor, config);
   }
 
@@ -73,13 +70,17 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     runSimplePutSimpleGet(index);
 
-    if (index == 1) {
-      shutdownCacheManager();
-    }
+    // if (index == 0) {
+    //shutdownCacheManager();
+    // }
 
     barrier.barrier();
-    verifyCacheManagerShutdown();
+    // if (index == 1) {
+    //verifyCacheManagerShutdown();
+    // }
     barrier.barrier();
+
+    System.err.println("**********************ALL DONE");
   }
 
   private void runSimplePutSimpleGet(int index) throws Throwable {
@@ -154,7 +155,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   /**
    * Shuts down the clustered cache manager.
    */
-  private void shutdownCacheManager() {
+  private void shutdownCacheManager() throws Throwable {
     cacheManager.shutdown();
   }
 
@@ -164,5 +165,20 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private void verifyCacheManagerShutdown() {
     Assert.assertEquals(Status.STATUS_SHUTDOWN, cacheManager.getStatus());
   }
-  
+
+  private void setShutDownHookToNull(CacheManager cacheManager) {
+    try {
+      Field f = CacheManager.class.getDeclaredField("shutdownHook");
+      f.setAccessible(true);
+      Thread t = (Thread) f.get(cacheManager);
+      System.err.println("***********Shutdown hook: " + t);
+      if (t != null) {
+        Runtime.getRuntime().removeShutdownHook(t);
+        f.set(cacheManager, null);
+      }
+    } catch (Exception e) {
+      //
+    }
+  }
+
 }
