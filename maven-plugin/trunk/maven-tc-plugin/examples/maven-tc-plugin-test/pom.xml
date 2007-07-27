@@ -2,10 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Test for Maven Plugin for Terracotta</name>
+  <name>Sample for the Maven Plugin for Terracotta</name>
   <groupId>org.terracotta.maven.plugins</groupId>
-  <artifactId>tc-maven-plugin-test</artifactId>
+  <artifactId>tc-maven-plugin-sample</artifactId>
   <version>0.0.1</version>
+  <description>See more details at http://www.terracotta.org/confluence/display/wiki/Terracotta+Maven+Plugin</description>
 
   <build>
     <plugins>
