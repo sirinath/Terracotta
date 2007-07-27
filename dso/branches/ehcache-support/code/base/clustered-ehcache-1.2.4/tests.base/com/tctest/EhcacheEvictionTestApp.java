@@ -25,7 +25,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
   private final CyclicBarrier barrier;
 
-  private final CacheManager  cacheManager;
+  private CacheManager        cacheManager;
 
   /**
    * Test that Ehcache's CacheManger and Cache objects can be clustered.
@@ -37,8 +37,6 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   public EhcacheEvictionTestApp(final String appId, final ApplicationConfig cfg, final ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
-    cacheManager = CacheManager.getInstance();
-    setShutDownHookToNull(cacheManager);
   }
 
   /**
@@ -54,11 +52,23 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     final String testClass = EhcacheEvictionTestApp.class.getName();
     final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
+    spec.addRoot("cacheManager", "cacheManager");
     new CyclicBarrierSpec().visit(visitor, config);
   }
 
   protected void runTest() throws Throwable {
     int index = barrier.barrier();
+    if (index == 0) {
+      // Even though the singleton field of CacheManager is a root, we need to
+      // set cacheManager field to be a root and remove the shutdown hook of cache manager
+      // before assigning to root. This hack is to bypass the shutdown hook problem of 1.2.4
+      // in system test.
+      CacheManager cm = CacheManager.getInstance();
+      setShutDownHookToNull(cm);
+      cacheManager = cm;
+    }
+
+    barrier.barrier();
 
     if (index == 0) {
       addCache("CACHE");
@@ -70,17 +80,13 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     runSimplePutSimpleGet(index);
 
-    // if (index == 0) {
-    //shutdownCacheManager();
-    // }
+    if (index == 0) {
+      shutdownCacheManager();
+    }
 
     barrier.barrier();
-    // if (index == 1) {
-    //verifyCacheManagerShutdown();
-    // }
+    verifyCacheManagerShutdown();
     barrier.barrier();
-
-    System.err.println("**********************ALL DONE");
   }
 
   private void runSimplePutSimpleGet(int index) throws Throwable {
@@ -171,7 +177,6 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
       Field f = CacheManager.class.getDeclaredField("shutdownHook");
       f.setAccessible(true);
       Thread t = (Thread) f.get(cacheManager);
-      System.err.println("***********Shutdown hook: " + t);
       if (t != null) {
         Runtime.getRuntime().removeShutdownHook(t);
         f.set(cacheManager, null);
