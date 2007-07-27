@@ -1,0 +1,69 @@
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config">
+
+  <servers>
+    <server name="localhost" host="localhost">
+      <dso-port>9510</dso-port>
+      <jmx-port>9520</jmx-port>
+      <data>target/terracotta/data</data>
+      <logs>target/terracotta/logs</logs>
+    </server>
+  </servers>
+
+  <clients>
+    <logs>target/terracotta/%(tc.nodeName)</logs>
+    <modules>
+      <!--
+      <module name="clustered-ehcache-1.3" version="1.0.0"/>
+      <repository>file:/C:/dev/terr/tc-trunk/code/base/build/dist/terracotta-trunk/modules/</repository>
+      -->
+    </modules>
+  </clients>
+
+  <application>
+    <dso>
+
+      <roots>
+        <root>
+          <field-name>org.terracotta.maven.plugins.tc.test.SampleProcess.barrier</field-name>
+        </root>
+        <root>
+          <field-name>org.terracotta.maven.plugins.tc.test.SampleProcess.processes</field-name>
+        </root>
+
+        <root>
+          <field-name>org.terracotta.maven.plugins.tc.test.SampleTest.barrier</field-name>
+        </root>
+        <root>
+          <field-name>org.terracotta.maven.plugins.tc.test.SampleTest.values</field-name>
+        </root>
+      </roots>
+
+      <locks>
+        <autolock>
+          <method-expression>* org.terracotta.maven.plugins.tc.test..*.*(..)</method-expression>
+          <lock-level>write</lock-level>
+        </autolock>
+        <autolock>
+          <method-expression>* org.terracotta.maven.plugins.tc.test..*.get*()</method-expression>
+          <lock-level>read</lock-level>
+        </autolock>
+        <autolock>
+          <method-expression>* EDU.oswego.cs.dl.util.concurrent.CyclicBarrier.*(..)</method-expression>
+          <lock-level>write</lock-level>
+        </autolock>
+      </locks>
+
+      <instrumented-classes>
+        <include>
+          <class-expression>org.terracotta.maven.plugins.tc.test..*</class-expression>
+          <honor-transient>true</honor-transient>
+        </include>
+        <include>
+          <class-expression>EDU.oswego.cs.dl.util.concurrent.CyclicBarrier</class-expression>
+        </include>
+      </instrumented-classes>
+
+    </dso>
+  </application>
+
+</tc:tc-config>

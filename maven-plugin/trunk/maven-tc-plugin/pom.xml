@@ -5,9 +5,9 @@
   <artifactId>tc-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <version>0.0.1</version>
+  
   <!--  -->
   <repositories>
-    
     <repository>
       <releases />
       <snapshots>
@@ -16,7 +16,6 @@
       <id>terracotta-repository</id>
       <url>http://download.terracotta.org/maven2/</url>
     </repository>
-    
     <repository>
       <releases />
       <snapshots>
@@ -25,37 +24,21 @@
       <id>codehaus-repository</id>
       <url>http://repository.codehaus.org/</url>
     </repository>
-    
     <repository>
       <id>java.net</id>
       <url>http://download.java.net/maven/1</url>
       <layout>legacy</layout>
     </repository>
-
-<!-- 
     <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>terracotta-internal-repository</id>
-      <url>http://kong/maven2/</url>
-    </repository>
- -->
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
+      <releases />
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
       <id>tomcat-repository</id>
       <url>http://tomcat.apache.org/dev/dist/m2-repository/</url>
     </repository>
-    
   </repositories>
+
   <!--  -->
   <pluginRepositories>
     <pluginRepository>
@@ -89,7 +72,7 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.0.4</version>
-    </dependency>      
+    </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
@@ -117,12 +100,18 @@
       <version>2.0.7</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-booter</artifactId>
+      <version>2.3</version>
+    </dependency>
+    <!-- 
+    <dependency>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-antrun-plugin</artifactId>
-      <!-- <version>1.1</version> -->
       <version>1.2-SNAPSHOT</version>
     </dependency>
-
+    -->
+    
     <!-- Terracotta -->
     <dependency>
       <groupId>org.terracotta</groupId>
@@ -130,7 +119,7 @@
       <version>2.4</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId> 
+      <groupId>org.terracotta</groupId>
       <artifactId>tcconfig</artifactId>
       <version>2.4</version>
     </dependency>
@@ -170,7 +159,7 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>1.1</version>
-    </dependency>      
+    </dependency>
     <dependency>
       <groupId>trove</groupId>
       <artifactId>trove</artifactId>
@@ -226,7 +215,6 @@
       <artifactId>jmxremote_optional</artifactId>
       <version>1.0.1_04</version>
     </dependency>
-
   </dependencies>
 </project>
 
