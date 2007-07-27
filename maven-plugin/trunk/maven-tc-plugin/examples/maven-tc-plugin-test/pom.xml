@@ -15,6 +15,7 @@
         <configuration>
           <!-- <overwrite>true</overwrite> -->
           <!-- <spawn>true</spawn> -->
+          <!-- <startServer>true</startServer> -->
           <!-- used by tc:run need to be moved into execution -->
           <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
           <arguments>2</arguments>
