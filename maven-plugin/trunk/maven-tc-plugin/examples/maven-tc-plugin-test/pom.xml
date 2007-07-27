@@ -9,39 +9,42 @@
 
   <build>
     <plugins>
-
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
         <configuration>
-          <overwrite>true</overwrite>
-          <spawn>true</spawn>
+          <!-- <overwrite>true</overwrite> -->
+          <!-- <spawn>true</spawn> -->
+          <!-- used by tc:run need to be moved into execution -->
           <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
           <arguments>2</arguments>
           <numberOfNodes>2</numberOfNodes>
         </configuration>
 
-          <!-- need to move this into the executions -->
-          <!-- 
-          <processes>
-            <process nodeName="sampleProcess" className="org.terracotta.maven.plugins.tc.test.SampleProcess" count="2"/>
-          </processes>
-          -->
-        <!-- 
         <executions>
-          <execution>
-            <id>dso-run</id>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <processes>
-                <process nodeName="sampleProcess" className="org.terracotta.maven.plugins.tc.test.SampleProcess" count="2"/>
-              </processes>
-            </configuration>
-          </execution>
+           <id>tc-package</id>
+           <execution>
+              <phase>package</phase>
+              <goals>
+                 <goal>bootjar</goal>
+              </goals>
+           </execution>
+           <!--
+           <execution>
+              <id>dso-run</id>
+              <phase>run</phase>
+              <inherited>true</inherited>
+              <goals>
+                 <goal>dso-run</goal>
+              </goals>
+              <configuration>
+                <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
+                <arguments>2</arguments>
+                <numberOfNodes>2</numberOfNodes>
+              </configuration>
+           </execution>
+           -->
         </executions>
-        -->        
       </plugin>
 
       <!-- needed in order to readdress tests to dso -->
@@ -52,8 +55,8 @@
           <skip>true</skip>
         </configuration>
       </plugin>
+
     </plugins>
-    
   </build>
 
   <dependencies>
