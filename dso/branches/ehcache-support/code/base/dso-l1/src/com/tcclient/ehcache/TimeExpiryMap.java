@@ -110,6 +110,10 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   public boolean isExpired(final Object key) {
     return timeExpiryDataStore.isExpired(key);
   }
+  
+  public final void stopTimeMonitoring() {
+    timeExpiryDataStore.stopInvalidatorThread();
+  }
 
   public void clearStatistics() {
     timeExpiryDataStore.clearStatistics();

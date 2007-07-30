@@ -22,6 +22,7 @@ public class CacheDataStore implements Serializable {
   private transient int hitCount;
   private transient int missCountExpired;
   private transient int missCountNotFound;
+  private transient Thread invalidatorThread;
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
                         String cacheName, Expirable callback) {
@@ -36,10 +37,14 @@ public class CacheDataStore implements Serializable {
   }
 
   public void initialize() {
-    Thread invalidator = new Thread(new CacheEntryInvalidator(invalidatorSleepSeconds), cacheName);
-    invalidator.setDaemon(true);
-    invalidator.start();
-    Assert.post(invalidator.isAlive());
+    invalidatorThread = new Thread(new CacheEntryInvalidator(invalidatorSleepSeconds), cacheName);
+    invalidatorThread.setDaemon(true);
+    invalidatorThread.start();
+    Assert.post(invalidatorThread.isAlive());
+  }
+  
+  public void stopInvalidatorThread() {
+    invalidatorThread.interrupt();
   }
 
   public Object put(final Object key, final Object value) {

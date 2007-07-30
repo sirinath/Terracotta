@@ -772,6 +772,7 @@ public class CacheTC implements Ehcache {
     try {
       synchronized (this) {
         checkStatus();
+        memoryStore.stopTimeMonitoring();
         memoryStore.dispose();
         registeredEventListeners.dispose();
 

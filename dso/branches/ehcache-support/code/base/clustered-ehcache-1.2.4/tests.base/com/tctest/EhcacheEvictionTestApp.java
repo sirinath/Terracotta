@@ -19,7 +19,7 @@ import java.lang.reflect.Field;
 
 public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp {
   private static final int    NUM_OF_CACHE_ITEMS      = 1000;
-  private static final int    TIME_TO_LIVE_IN_SECONDS = 400;
+  private static final int    TIME_TO_LIVE_IN_SECONDS = 100;
 
   static final int            EXPECTED_THREAD_COUNT   = 4;
 
@@ -71,16 +71,28 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     barrier.barrier();
 
     if (index == 0) {
-      addCache("CACHE");
+      addCache("CACHE", TIME_TO_LIVE_IN_SECONDS);
     }
 
     barrier.barrier();
 
     runSimplePutTimeoutGet(index);
+    
+    System.err.println("Finish 1");
+    
+    if (index == 0) {
+      addCache("CACHE", TIME_TO_LIVE_IN_SECONDS*4);
+    }
+
+    barrier.barrier();
 
     runSimplePutSimpleGet(index);
+    
+    System.err.println("Finish 2");
 
     runSimplePut(index);
+    
+    System.err.println("Finish 3");
 
     if (index == 0) {
       shutdownCacheManager();
@@ -130,7 +142,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private void runSimplePutTimeoutGet(int index) throws Throwable {
     if (index == 1) {
       doPut();
-      Thread.sleep(TIME_TO_LIVE_IN_SECONDS * 1000 + 1);
+      Thread.sleep((long)(TIME_TO_LIVE_IN_SECONDS * 1.5 * 1000));
       doGetNull(index);
     }
 
@@ -156,7 +168,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     Cache cache = cacheManager.getCache("CACHE");
     for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
       Object o = cache.get("key" + i);
-      Assert.assertNull(o);
+      Assert.assertNull("Object supposed to be Null, but is: " + o, o);
     }
   }
 
@@ -166,8 +178,9 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
    * @param name The name of the cache to add
    * @throws Throwable
    */
-  private Cache addCache(final String name) throws Throwable {
-    Cache cache = new Cache(name, 2, false, false, TIME_TO_LIVE_IN_SECONDS, 1);
+  private Cache addCache(final String name, long timeToLiveSeconds) throws Throwable {
+    cacheManager.removeCache(name);
+    Cache cache = new Cache(name, 2, false, false, timeToLiveSeconds, 1);
     cacheManager.addCache(cache);
 
     cache = cacheManager.getCache(name);

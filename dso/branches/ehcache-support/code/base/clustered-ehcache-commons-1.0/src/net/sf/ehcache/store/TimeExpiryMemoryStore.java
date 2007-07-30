@@ -23,7 +23,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       LOG.error(cache.getName() + "Cache: Cannot start TimeExpiryMemoryStore. Initial cause was " + e.getMessage(), e);
     }
   }
-
+  
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
@@ -36,6 +36,10 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       // Give up
       throw new CacheException(cache.getName() + "Cache: Cannot find com.tcclient.ehcache.TimeExpiryMap.");
     }
+  }
+  
+  public final void stopTimeMonitoring() {
+    ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
   }
 
   public final void evictExpiredElements() {
@@ -68,13 +72,16 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       super(timeToIdleSec, timeToLiveSec, cacheName);
     }
 
-    protected final void processExpired(Object key, Object value) {
+    protected final synchronized void processExpired(Object key, Object value) {
+      // If cache is null, the cache has been disposed and the invalidator thread will be stopping soon.
+      
+      if (cache == null) { return; }
       // Already removed from the map at this point
       Element element = (Element) value;
-      LOG.info(cache.getName() + " ProcessExpired -- key: " + element.getKey() + ", value: " + element.getValue());
-
       // When max size is 0
       if (element == null) { return; }
+      
+      LOG.info("Cache " + cache.getName() + " ProcessExpired -- key: " + element.getKey() + ", value: " + element.getValue());
 
       // check for expiry before going to the trouble of spooling
       if (element.isExpired()) {
