@@ -128,6 +128,10 @@ public class CacheDataStore implements Serializable {
   public Map getStore() {
     return store;
   }
+  
+  public long getMaxIdleTimeoutSeconds() {
+    return maxIdleTimeoutSeconds;
+  }
 
   void updateTimestampIfNeeded(CacheData rv) {
     Assert.pre(rv != null);

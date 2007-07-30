@@ -63,7 +63,7 @@ public class CacheData implements Serializable {
     return maxIdleMillis;
   }
 
-  synchronized Object getValue() {
+  public synchronized Object getValue() {
     return value;
   }
 
@@ -73,6 +73,16 @@ public class CacheData implements Serializable {
 
   synchronized boolean isInvalidated() {
     return this.invalidated;
+  }
+  
+  public int hashCode() {
+    return this.value.hashCode();
+  }
+  
+  public boolean equals(Object obj) {
+    if (! (obj instanceof CacheData)) { return false; }
+    CacheData cd = (CacheData)obj;
+    return this.value.equals(cd.value) && (this.maxIdleMillis == cd.maxIdleMillis);
   }
 
 }

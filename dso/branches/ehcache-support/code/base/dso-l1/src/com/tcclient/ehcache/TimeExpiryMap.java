@@ -4,10 +4,14 @@
  */
 package com.tcclient.ehcache;
 
+import com.tc.util.Assert;
+import com.tcclient.cache.CacheData;
 import com.tcclient.cache.CacheDataStore;
 import com.tcclient.cache.Expirable;
 
 import java.io.Serializable;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,10 +53,14 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public boolean containsValue(Object value) {
-    return timeExpiryDataStore.getStore().containsValue(value);
+    return timeExpiryDataStore.getStore().containsValue(new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds()));
   }
 
   public Set entrySet() {
+    return new EntrySetWrapper(timeExpiryDataStore.getStore().entrySet());
+  }
+  
+  Set nativeEntrySet() {
     return timeExpiryDataStore.getStore().entrySet();
   }
 
@@ -84,7 +92,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public Collection values() {
-    return timeExpiryDataStore.getStore().values();
+    return new ValuesCollectionWrapper(timeExpiryDataStore.getStore().values());
   }
 
   public int getHitCount() {
@@ -106,4 +114,157 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   public void clearStatistics() {
     timeExpiryDataStore.clearStatistics();
   }
+
+  private class EntrySetWrapper extends AbstractSet {
+
+    private final Set entries;
+
+    public EntrySetWrapper(Set entries) {
+      this.entries = entries;
+    }
+
+    public void clear() {
+      TimeExpiryMap.this.clear();
+    }
+
+    public boolean contains(Object o) {
+      return entries.contains(o);
+    }
+
+    public Iterator iterator() {
+      return new EntriesIterator(entries.iterator());
+    }
+
+    public boolean remove(Object o) {
+      return entries.remove(o);
+    }
+
+    public int size() {
+      return entries.size();
+    }
+  }
+  
+  private class ValuesCollectionWrapper extends AbstractCollection {
+
+    private final Collection values;
+
+    public ValuesCollectionWrapper(Collection values) {
+      this.values = values;
+    }
+
+    public void clear() {
+      TimeExpiryMap.this.clear();
+    }
+
+    public boolean contains(Object o) {
+      if (! (o instanceof CacheData)) {
+        o = new CacheData(o, timeExpiryDataStore.getMaxIdleTimeoutSeconds());
+      }
+      return values.contains(o);
+    }
+
+    public Iterator iterator() {
+      return new ValuesIterator(nativeEntrySet().iterator());
+    }
+
+    public int size() {
+      return values.size();
+    }
+  }
+  
+  private class ValuesIterator extends EntriesIterator {
+
+    public ValuesIterator(Iterator iterator) {
+      super(iterator);
+    }
+
+    public Object next() {
+      Map.Entry e = (Map.Entry) super.next();
+      return e.getValue();
+    }
+  }
+  
+  private static class ValueWrapper {
+
+    private final Object value;
+
+    public ValueWrapper(Object value) {
+      this.value = value;
+    }
+
+    public int hashCode() {
+      return value.hashCode();
+    }
+
+    public boolean equals(Object o) {
+      Assert.pre(value instanceof CacheData);
+      return ((CacheData)value).getValue().equals(o);
+    }
+  }
+
+  private class EntryWrapper implements Map.Entry {
+
+    private final Map.Entry entry;
+
+    public EntryWrapper(Map.Entry entry) {
+      this.entry = entry;
+    }
+
+    public Object getKey() {
+      return entry.getKey();
+    }
+
+    public Object getValue() {
+      Object rv = entry.getValue();
+      Assert.pre(rv instanceof CacheData);
+      return ((CacheData) rv).getValue();
+    }
+
+    public Object setValue(Object value) {
+      if (!(value instanceof CacheData)) {
+        value = new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds());
+      }
+      CacheData cd = (CacheData) entry.setValue(value);
+      return cd.getValue();
+    }
+
+    public boolean equals(Object o) {
+      if (! (o instanceof Map.Entry)) { return false; }
+      
+      Map.Entry e = (Map.Entry)o;
+      return getKey().equals(e.getKey()) && getValue().equals(e.getValue());
+    }
+
+    public int hashCode() {
+      return entry.hashCode();
+    }
+  }
+
+  private class EntriesIterator implements Iterator {
+
+    private final Iterator iterator;
+    private Map.Entry      currentEntry;
+
+    public EntriesIterator(Iterator iterator) {
+      this.iterator = iterator;
+    }
+
+    public boolean hasNext() {
+      return iterator.hasNext();
+    }
+
+    public Object next() {
+      currentEntry = nextEntry();
+      return new EntryWrapper(currentEntry);
+    }
+
+    protected Map.Entry nextEntry() {
+      return (Map.Entry) iterator.next();
+    }
+
+    public void remove() {
+      iterator.remove();
+    }
+  }
+
 }
