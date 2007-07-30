@@ -10,6 +10,7 @@ import com.tc.logging.TCLogging;
 import com.tc.management.beans.tx.ClientTxMonitorMBean;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.ClientObjectManager;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
@@ -58,7 +59,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   private final RemoteTransactionManager remoteTxManager;
   private final ClientObjectManager      objectManager;
   private final ThreadLockManager        lockManager;
-  private final LiteralValues            literalValues = new LiteralValues();
+  private final ILiteralValues            literalValues = new LiteralValues();
 
   private final WaitListener             waitListener  = new WaitListener() {
                                                          public void handleWaitEvent() {

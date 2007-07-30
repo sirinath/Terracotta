@@ -20,6 +20,7 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
@@ -52,7 +53,7 @@ import java.util.Map;
 public class ManagerImpl implements Manager {
   private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
 
-  private static final LiteralValues               literals      = new LiteralValues();
+  private static final ILiteralValues               literals      = new LiteralValues();
 
   private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;

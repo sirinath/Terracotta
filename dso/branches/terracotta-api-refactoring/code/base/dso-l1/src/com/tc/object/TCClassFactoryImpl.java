@@ -30,7 +30,7 @@ import java.util.Map;
  * @author steve
  */
 public class TCClassFactoryImpl implements TCClassFactory {
-  private static final LiteralValues  literalValues             = new LiteralValues();
+  private static final ILiteralValues  literalValues             = new LiteralValues();
   private static Class[]              APPLICATOR_CSTR_SIGNATURE = new Class[] { IDNAEncoding.class };
 
   private final Map                   classes                   = new HashMap();

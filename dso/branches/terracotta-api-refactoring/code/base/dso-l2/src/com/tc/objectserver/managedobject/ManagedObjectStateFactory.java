@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.managedobject;
 
@@ -7,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.io.serializer.api.StringIndex;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNACursor;
@@ -25,12 +27,12 @@ import java.util.Map;
  */
 public class ManagedObjectStateFactory {
 
-  private static final LiteralValues                literalValues       = new LiteralValues();
+  private static final ILiteralValues               literalValues       = (ILiteralValues) new LiteralValues();
   private static final Map                          classNameToStateMap = new ConcurrentHashMap();
   private final ManagedObjectChangeListenerProvider listenerProvider;
   private final StringIndex                         stringIndex;
   private final PhysicalManagedObjectStateFactory   physicalMOFactory;
-  
+
   /**
    * I know singletons are BAD, but this way we save about 16 bytes for every shared object we store in the server and
    * that is huge ! So I can compromise here.
@@ -41,7 +43,6 @@ public class ManagedObjectStateFactory {
   private static boolean                            disableAssertions   = false;
 
   private final PersistentCollectionFactory         persistentCollectionFactory;
-
 
   static {
     classNameToStateMap.put(java.util.IdentityHashMap.class.getName(), new Byte(ManagedObjectState.MAP_TYPE));

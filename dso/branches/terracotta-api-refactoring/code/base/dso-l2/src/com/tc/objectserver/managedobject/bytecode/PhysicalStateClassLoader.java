@@ -9,7 +9,7 @@ import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.exception.TCRuntimeException;
-import com.tc.object.LiteralValues;
+import com.tc.object.ILiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.util.AdaptedClassDumper;
 
@@ -48,52 +48,52 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
   private static final Map    OBJECT_INPUT_METHODS  = Collections.synchronizedMap(new HashMap());
 
   static {
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.INTEGER, "writeInt", "(I)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.LONG, "writeLong", "(J)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.CHARACTER, "writeChar", "(I)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.BYTE, "writeByte", "(I)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.SHORT, "writeShort", "(I)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.FLOAT, "writeFloat", "(F)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.DOUBLE, "writeDouble", "(D)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.BOOLEAN, "writeBoolean", "(Z)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.INTEGER, "writeInt", "(I)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.LONG, "writeLong", "(J)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.CHARACTER, "writeChar", "(I)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.BYTE, "writeByte", "(I)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.SHORT, "writeShort", "(I)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.FLOAT, "writeFloat", "(F)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.DOUBLE, "writeDouble", "(D)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.BOOLEAN, "writeBoolean", "(Z)V");
     // rest are written as Objects - Since we use TCObjectOutputStream, we optimize it there.
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.OBJECT, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.OBJECT_ID, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.ARRAY, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.JAVA_LANG_CLASS, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.JAVA_LANG_CLASS_HOLDER, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.STACK_TRACE_ELEMENT, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.STRING, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.STRING_BYTES, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.BIG_INTEGER, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.BIG_DECIMAL, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.OBJECT, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.OBJECT_ID, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.ARRAY, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.JAVA_LANG_CLASS, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.JAVA_LANG_CLASS_HOLDER, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.STACK_TRACE_ELEMENT, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.STRING, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.STRING_BYTES, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.BIG_INTEGER, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.BIG_DECIMAL, "writeObject", "(Ljava/lang/Object;)V");
     
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.JAVA_LANG_CLASSLOADER, "writeObject", "(Ljava/lang/Object;)V");
-    addMapping(OBJECT_OUTPUT_METHODS, LiteralValues.JAVA_LANG_CLASSLOADER_HOLDER, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.JAVA_LANG_CLASSLOADER, "writeObject", "(Ljava/lang/Object;)V");
+    addMapping(OBJECT_OUTPUT_METHODS, ILiteralValues.JAVA_LANG_CLASSLOADER_HOLDER, "writeObject", "(Ljava/lang/Object;)V");
 
 
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.INTEGER, "readInt", "()I");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.LONG, "readLong", "()J");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.CHARACTER, "readChar", "()C");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.BYTE, "readByte", "()B");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.SHORT, "readShort", "()S");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.FLOAT, "readFloat", "()F");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.DOUBLE, "readDouble", "()D");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.BOOLEAN, "readBoolean", "()Z");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.INTEGER, "readInt", "()I");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.LONG, "readLong", "()J");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.CHARACTER, "readChar", "()C");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.BYTE, "readByte", "()B");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.SHORT, "readShort", "()S");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.FLOAT, "readFloat", "()F");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.DOUBLE, "readDouble", "()D");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.BOOLEAN, "readBoolean", "()Z");
     // rest are read as Objects - Since we use TCObjectInputStream, we optimize it there.
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.OBJECT, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.OBJECT_ID, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.ARRAY, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.JAVA_LANG_CLASS, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.JAVA_LANG_CLASS_HOLDER, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.STACK_TRACE_ELEMENT, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.STRING, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.STRING_BYTES, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.BIG_INTEGER, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.BIG_DECIMAL, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.OBJECT, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.OBJECT_ID, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.ARRAY, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.JAVA_LANG_CLASS, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.JAVA_LANG_CLASS_HOLDER, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.STACK_TRACE_ELEMENT, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.STRING, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.STRING_BYTES, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.BIG_INTEGER, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.BIG_DECIMAL, "readObject", "()Ljava/lang/Object;");
     
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.JAVA_LANG_CLASSLOADER, "readObject", "()Ljava/lang/Object;");
-    addMapping(OBJECT_INPUT_METHODS, LiteralValues.JAVA_LANG_CLASSLOADER_HOLDER, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.JAVA_LANG_CLASSLOADER, "readObject", "()Ljava/lang/Object;");
+    addMapping(OBJECT_INPUT_METHODS, ILiteralValues.JAVA_LANG_CLASSLOADER_HOLDER, "readObject", "()Ljava/lang/Object;");
 
     
   }
@@ -491,7 +491,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     List referenceFields = new ArrayList(fields.size());
     for (Iterator i = fields.iterator(); i.hasNext();) {
       FieldType f = (FieldType) i.next();
-      if (f.getType() == LiteralValues.OBJECT_ID) {
+      if (f.getType() == ILiteralValues.OBJECT_ID) {
         referenceFields.add(f);
       }
     }
@@ -578,23 +578,23 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
 
   private String getFieldTypeDesc(int type) {
     switch (type) {
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         return "I";
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         return "J";
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         return "C";
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         return "F";
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         return "D";
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         return "B";
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         return "S";
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         return "Z";
-      case LiteralValues.OBJECT_ID:
+      case ILiteralValues.OBJECT_ID:
         return "Ljava/lang/Object;"; // ObjectIDs are NOT stored as longs anymore :(
       default:
         return "Ljava/lang/Object;"; // Everything else is stored as Object reference
@@ -604,21 +604,21 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
   // TODO:: Clean up to use MethodDetail class
   private String getMethodNameForPrimitives(int type) {
     switch (type) {
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         return "intValue";
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         return "longValue";
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         return "charValue";
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         return "floatValue";
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         return "doubleValue";
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         return "byteValue";
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         return "shortValue";
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         return "booleanValue";
       // ObjectIDs are NOT stored as longs anymore :(
       // case LiteralValues.OBJECT_ID:
@@ -630,23 +630,23 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
 
   private String getClassNameFor(int type) {
     switch (type) {
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         return "java/lang/Integer";
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         return "java/lang/Long";
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         return "java/lang/Character";
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         return "java/lang/Float";
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         return "java/lang/Double";
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         return "java/lang/Byte";
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         return "java/lang/Short";
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         return "java/lang/Boolean";
-      case LiteralValues.OBJECT_ID:
+      case ILiteralValues.OBJECT_ID:
         return "java/lang/Object"; // ObjectIDs are NOT stored as longs anymore :(
       default:
         return "java/lang/Object"; // Everything else is stored as Object reference

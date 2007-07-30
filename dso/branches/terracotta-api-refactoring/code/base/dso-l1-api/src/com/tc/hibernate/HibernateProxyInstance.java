@@ -4,5 +4,5 @@
 package com.tc.hibernate;
 
 public interface HibernateProxyInstance {
-  // This is a marker interface to indicate an instance is a IBatis AccessPlan.
+  // This is a marker interface to indicate an instance is a Hibernate AccessPlan.
 }
