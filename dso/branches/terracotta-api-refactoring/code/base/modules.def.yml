@@ -39,7 +39,6 @@ modules:
       dependencies:
         - aspectwerkz
         - common
-        - dso-common
         - thirdparty-api
   - dso-common:
       options:

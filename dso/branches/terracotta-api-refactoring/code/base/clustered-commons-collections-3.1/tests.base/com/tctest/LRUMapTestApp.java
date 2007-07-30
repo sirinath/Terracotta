@@ -1,14 +1,13 @@
 package com.tctest;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-
 import org.apache.commons.collections.LRUMap;
+
+import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
+import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
-import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -43,7 +42,7 @@ public final class LRUMapTestApp extends
 	}
 
 	protected void runTest() throws Throwable {
-		if (barrier.await() == 0) {
+		if (barrier.barrier() == 0) {
 			addDataToMap(2);
 			letOtherNodeProceed();
 			waitForPermissionToProceed();
@@ -62,19 +61,19 @@ public final class LRUMapTestApp extends
 			clusteredLRUMap.clear();
 			letOtherNodeProceed();
 		}
-		barrier.await();
+		barrier.barrier();
 	}
 
 	// This is lame but it makes runTest() slightly more readable
 	private void letOtherNodeProceed() throws InterruptedException,
 			BrokenBarrierException {
-		barrier.await();
+		barrier.barrier();
 	}
 
 	// This is lame but it makes runTest() slightly more readable
 	private void waitForPermissionToProceed() throws InterruptedException,
 			BrokenBarrierException {
-		barrier.await();
+		barrier.barrier();
 	}
 
 	private void addDataToMap(final int count) {
