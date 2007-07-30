@@ -57,7 +57,7 @@ public class CacheTC implements Ehcache {
    */
   public static final long                       DEFAULT_EXPIRY_THREAD_INTERVAL_SECONDS = 120;
 
-  private static final Log                       LOG                                    = LogFactory.getLog(CacheTC.class.getName());
+  private static final Log                       LOG                                    = LogFactory.getLog(Cache.class.getName());
 
   private static final MemoryStoreEvictionPolicy DSO_MEMORY_STORE_EVICTION_POLICY;
   private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY;
