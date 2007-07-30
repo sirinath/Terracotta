@@ -85,6 +85,7 @@ import com.terracottatech.config.SpringApplication;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1087,9 +1088,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
-  public void addClassReplacement(String originalClassName, String replacementClassName) {
+  public void addClassReplacement(final String originalClassName, final String replacementClassName, final URL replacementResource) {
     synchronized (classReplacements) {
-      String prev = this.classReplacements.addMapping(originalClassName, replacementClassName);
+      String prev = this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource);
       Assert.assertNull(prev);
     }
   }

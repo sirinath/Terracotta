@@ -3,17 +3,21 @@
  */
 package com.tc.object.config;
 
+import com.tc.object.bytecode.ByteCodeUtil;
+
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class ClassReplacementMapping {
   private Map classNamesMapping = new HashMap();
+  private Map classnameResourceMapping = new HashMap();
   
   private Map classNamesSlashesReverseMapping = new HashMap();
   private Map asmTypesReverseMapping = new HashMap();
   
-  public synchronized String addMapping(String originalClassName, String replacementClassName) {
+  public synchronized String addMapping(final String originalClassName, final String replacementClassName, final URL replacementResource) {
     if (null == originalClassName ||
         0 == originalClassName.length() ||
         null == replacementClassName ||
@@ -26,6 +30,9 @@ public class ClassReplacementMapping {
     }
    
     String previous = (String)classNamesMapping.put(originalClassName, replacementClassName);
+    if (replacementResource != null) {
+      classnameResourceMapping.put(replacementClassName, replacementResource);
+    }
     
     String originalClassNameSlashes = originalClassName.replace('.', '/');
     String replacementClassNameSlashes = replacementClassName.replace('.', '/');
@@ -33,6 +40,19 @@ public class ClassReplacementMapping {
     asmTypesReverseMapping.put(ensureAsmType(replacementClassNameSlashes), ensureAsmType(originalClassNameSlashes));
     
     return previous;
+  }
+  
+  public URL getReplacementResource(final String replacementClassName, final ClassLoader defaultClassLoader) {
+    if (null == replacementClassName) {
+      return null;
+    }
+    URL resource = (URL)classnameResourceMapping.get(replacementClassName);
+    if (null == resource) {
+      resource = defaultClassLoader.getResource(ByteCodeUtil.classNameToFileName(replacementClassName));
+    }
+    System.out.println(">>>>>> getReplacementResource : "+replacementClassName+", "+resource);
+    
+    return resource;
   }
   
   public boolean hasReplacement(String originalClassName) {

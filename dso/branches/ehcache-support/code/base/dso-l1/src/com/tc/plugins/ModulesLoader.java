@@ -151,12 +151,16 @@ public class ModulesLoader {
       osgiRuntime.startBundle(name, version, callback);
     }
   }
+  
+  public static String getBundleClassLoaderName(final ClassLoader loader) {
+    return Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, loader.toString());
+  }
 
   private static void registerClassLoader(final ClassProvider classProvider, final Bundle bundle)
       throws BundleException {
     NamedClassLoader ncl = getClassLoader(bundle);
 
-    String loaderName = Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, ncl.toString());
+    String loaderName = getBundleClassLoaderName((ClassLoader)ncl);
     ncl.__tc_setClassLoaderName(loaderName);
     classProvider.registerNamedLoader(ncl);
   }

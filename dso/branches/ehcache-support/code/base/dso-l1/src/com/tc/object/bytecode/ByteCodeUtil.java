@@ -408,6 +408,14 @@ public class ByteCodeUtil implements Opcodes {
     String resource = classNameToFileName(className);
     InputStream is = loader.getResourceAsStream(resource);
     if (is == null) { throw new ClassNotFoundException("No resource found for class: " + className); }
+    try {
+      return getBytesForInputstream(is);
+    } catch (IOException e) {
+      throw new ClassNotFoundException("Error reading bytes for " + resource, e);
+    }
+  }
+
+  public static final byte[] getBytesForInputstream(InputStream is) throws IOException {
     final int size = 4096;
     byte[] buffer = new byte[size];
     ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
@@ -417,8 +425,6 @@ public class ByteCodeUtil implements Opcodes {
       while ((read = is.read(buffer, 0, size)) > 0) {
         baos.write(buffer, 0, read);
       }
-    } catch (IOException ioe) {
-      throw new ClassNotFoundException("Error reading bytes for " + resource, ioe);
     } finally {
       if (is != null) {
         try {

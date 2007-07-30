@@ -55,10 +55,6 @@ public class RenameClassesAdapter extends ClassAdapter implements Opcodes {
       mv.visitMethodInsn(opcode, mapping.getOriginalClassNameSlashes(owner), name, mapping.ensureOriginalAsmTypes(desc));
     }
     
-    public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-      mv.visitFrame(type, nLocal, local, nStack, stack);
-    }
-    
     public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
       mv.visitLocalVariable(name, mapping.getOriginalAsmType(desc), mapping.ensureOriginalAsmTypes(signature), start, end, index);
     }

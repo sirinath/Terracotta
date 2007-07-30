@@ -37,7 +37,7 @@ public final class MemoryStoreEvictionPolicyTC {
 
   public static final MemoryStoreEvictionPolicyTC DSO  = new MemoryStoreEvictionPolicyTC("DSO");
 
-  private static final Log                        LOG  = LogFactory.getLog(MemoryStoreEvictionPolicyTC.class.getName());
+  private static final Log                        LOG  = LogFactory.getLog(MemoryStoreEvictionPolicy.class.getName());
 
   // for debug only
   private final String                            myName;

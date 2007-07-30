@@ -81,10 +81,11 @@ public class DSOContextImpl implements DSOContext {
 
     this.configHelper = configHelper;
     this.manager = manager;
-    weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper
-        .instrumentationLoggingOptions()));
 
+    weavingStrategy = new DefaultWeavingStrategy(configHelper, new InstrumentationLoggerImpl(configHelper.instrumentationLoggingOptions()));
+    
     ModulesLoader.initModules(configHelper, classProvider, false);
+
     validateBootJar();
   }
 

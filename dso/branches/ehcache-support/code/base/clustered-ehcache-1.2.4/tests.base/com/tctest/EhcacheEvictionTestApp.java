@@ -6,7 +6,6 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
