@@ -231,6 +231,17 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
   
   protected LinkedJavaProcess createLinkedJavaProcess(String mainClassName, String[] arguments) {
+    // XXX: temporary debugging aid to ensure that given main class is visible in the classpath
+    try {
+      Class.forName(mainClassName);
+    }
+    catch (UnsupportedClassVersionError e) {
+      // ignore
+    }
+    catch (ClassNotFoundException e) {
+      throw new RuntimeException("Attempt to execute main method of class " + mainClassName +
+                                 " but this class could not be found");
+    }
     LinkedJavaProcess result = new LinkedJavaProcess(mainClassName, arguments);
     result.setDirectory(this.runningDirectory);
     File processJavaHome = getJavaHome();
