@@ -8,22 +8,19 @@ import org.apache.commons.collections.FastHashMap;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
-import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import gnu.trove.THashMap;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +35,13 @@ import java.util.concurrent.CyclicBarrier;
  * 
  * @author hhuynh
  */
-public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp {
-  private List<MapWrapper> root       = new ArrayList<MapWrapper>();
-  private CyclicBarrier    barrier;
-  private Class[]          mapClasses = new Class[] { HashMap.class, TreeMap.class, Hashtable.class,
-      LinkedHashMap.class, THashMap.class, ConcurrentHashMap.class, FastHashMap.class };
+public class MapLocalStateTestApp extends GenericLocalStateTestApp {
+  private List<Wrapper> root       = new ArrayList<Wrapper>();
+  private CyclicBarrier barrier;
+  private Class[]       mapClasses = new Class[] { TreeMap.class, THashMap.class, LinkedHashMap.class, Hashtable.class,
+      HashMap.class, ConcurrentHashMap.class, FastHashMap.class };
 
-  public LocalObjectStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
+  public MapLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(cfg.getGlobalParticipantCount());
   }
@@ -55,8 +52,8 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
     }
     await();
 
-    for (LOCK_MODE lockMode : new LOCK_MODE[] { LOCK_MODE.NONE, LOCK_MODE.READ }) {
-      for (MapWrapper mw : root) {
+    for (LockMode lockMode : new LockMode[] { LockMode.NONE, LockMode.READ }) {
+      for (Wrapper mw : root) {
         testMutate(mw, lockMode, new PutMutator());
         testMutate(mw, lockMode, new PutAllMutator());
         testMutate(mw, lockMode, new RemoveMutator());
@@ -64,7 +61,45 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
         testMutate(mw, lockMode, new KeySetClearMutator());
         testMutate(mw, lockMode, new RemoveValueMutator());
         testMutate(mw, lockMode, new EntrySetClearMutator());
+        testMutate(mw, lockMode, new AddEntryMutator());
+        testMutate(mw, lockMode, new EntrySetIteratorRemoveMutator());
+        testMutate(mw, lockMode, new KeySetIteratorRemoveMutator());
+        testMutate(mw, lockMode, new ValuesIteratorRemoveMutator());
+        testMutate(mw, lockMode, new KeySetRemoveMutator());
       }
+    }
+
+    // Failing, disabled for now
+    // for (Wrapper w : root) {
+    // testWriteLockWithNonPortable(w, new NonPortableAddMutator());
+    // }
+  }
+
+  private void testWriteLockWithNonPortable(Wrapper w, Mutator mutator) throws Exception {
+    int currentSize = w.size();
+    LockMode curr_lockMode = w.getHandler().getLockMode();
+    boolean gotExpectedException = false;
+
+    if (await() == 0) {
+      w.getHandler().setLockMode(LockMode.WRITE);
+      try {
+        mutator.doMutate(w.getProxy());
+      } catch (Exception e) {
+        e.printStackTrace();
+        gotExpectedException = true;
+      }
+    }
+
+    await();
+    w.getHandler().setLockMode(curr_lockMode);
+
+    if (gotExpectedException) {
+      int newSize = w.size();
+      System.out.println("Map type: " + w.getObject().getClass().getName());
+      System.out.println("Current size: " + currentSize);
+      System.out.println("New size: " + newSize);
+      Assert.assertFalse(((Map) w.getObject()).containsKey("socket"));
+      Assert.assertTrue("Collection type: " + w.getObject().getClass() + ", lock: WRITE", newSize >= currentSize + 6);
     }
   }
 
@@ -76,36 +111,14 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
 
     synchronized (root) {
       for (Class k : mapClasses) {
-        MapWrapper mw = new MapWrapper(k);
-        mw.getMap().putAll(data);
+        CollectionWrapper mw = new CollectionWrapper(k, Map.class);
+        ((Map) mw.getObject()).putAll(data);
         root.add(mw);
       }
     }
   }
 
-  private void testMutate(MapWrapper m, LOCK_MODE lockMode, Mutator mutator) throws Throwable {
-    int currentSize = m.getMap().size();
-    LOCK_MODE curr_lockMode = m.getHandler().getLockMode();
-    boolean gotExpectedException = false;
-
-    if (await() == 0) {
-      m.getHandler().setLockMode(lockMode);
-      try {
-        mutator.doMutate(m.getMapProxy());
-      } catch (Exception e) {
-        gotExpectedException = true;
-      }
-    }
-
-    await();
-    m.getHandler().setLockMode(curr_lockMode);
-
-    if (gotExpectedException) {
-      Assert.assertEquals("Map type: " + m.getMap().getClass() + ", lock: " + lockMode, currentSize, m.getMap().size());
-    }
-  }
-
-  private int await() {
+  protected int await() {
     try {
       return barrier.await();
     } catch (Exception e) {
@@ -116,10 +129,11 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     config.addNewModule("clustered-commons-collections-3.1", "1.0.0");
 
-    String testClass = LocalObjectStateTestApp.class.getName();
-    ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    String testClass = MapLocalStateTestApp.class.getName();
+    TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 
     config.addIncludePattern(testClass + "$*");
+    config.addIncludePattern(GenericLocalStateTestApp.class.getName() + "$*");
 
     String methodExpression = "* " + testClass + "*.createMaps()";
     config.addWriteAutolock(methodExpression);
@@ -133,82 +147,6 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
     config.addReadAutolock("* " + Handler.class.getName() + "*.invokeWithReadLock(..)");
     config.addWriteAutolock("* " + Handler.class.getName() + "*.invokeWithWriteLock(..)");
     config.addWriteAutolock("* " + Handler.class.getName() + "*.setLockMode(..)");
-  }
-
-  private static enum LOCK_MODE {
-    NONE, READ, WRITE
-  };
-
-  private static class Handler implements InvocationHandler {
-    private final Object o;
-    private LOCK_MODE    lockMode = LOCK_MODE.NONE;
-
-    public Handler(Object o) {
-      this.o = o;
-    }
-
-    public LOCK_MODE getLockMode() {
-      return lockMode;
-    }
-
-    public void setLockMode(LOCK_MODE mode) {
-      synchronized (this) {
-        lockMode = mode;
-      }
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      switch (lockMode) {
-        case NONE:
-          return method.invoke(o, args);
-        case READ:
-          return invokeWithReadLock(method, args);
-        case WRITE:
-          return invokeWithWriteLock(method, args);
-        default:
-          throw new RuntimeException("Should not happen");
-      }
-    }
-
-    private Object invokeWithReadLock(Method method, Object[] args) throws Throwable {
-      synchronized (o) {
-        return method.invoke(o, args);
-      }
-    }
-
-    private Object invokeWithWriteLock(Method method, Object[] args) throws Throwable {
-      synchronized (o) {
-        return method.invoke(o, args);
-      }
-    }
-  }
-
-  private static class MapWrapper {
-    private Map     map;
-    private Map     proxy;
-    private Handler handler;
-
-    public MapWrapper(Class mapType) throws Exception {
-      map = (Map) mapType.newInstance();
-      handler = new Handler(map);
-      proxy = (Map) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { Map.class }, handler);
-    }
-
-    public Map getMap() {
-      return map;
-    }
-
-    public Map getMapProxy() {
-      return proxy;
-    }
-
-    public Handler getHandler() {
-      return handler;
-    }
-  }
-
-  private static interface Mutator {
-    public void doMutate(Object o);
   }
 
   private static class PutMutator implements Mutator {
@@ -257,11 +195,55 @@ public class LocalObjectStateTestApp extends AbstractErrorCatchingTransparentApp
     }
   }
 
+  private static class AddEntryMutator implements Mutator {
+    public void doMutate(Object o) {
+      Map map = (Map) o;
+      Set entries = map.entrySet();
+      for (Iterator it = entries.iterator(); it.hasNext();) {
+        Map.Entry entry = (Map.Entry) it.next();
+        entry.setValue("hung");
+      }
+    }
+  }
+
+  private static class EntrySetIteratorRemoveMutator implements Mutator {
+    public void doMutate(Object o) {
+      Map map = (Map) o;
+      Set entries = map.entrySet();
+      for (Iterator it = entries.iterator(); it.hasNext();) {
+        it.next();
+        it.remove();
+      }
+    }
+  }
+
   private static class KeySetClearMutator implements Mutator {
     public void doMutate(Object o) {
       Map map = (Map) o;
       Set keys = map.keySet();
       keys.clear();
+    }
+  }
+
+  private static class KeySetIteratorRemoveMutator implements Mutator {
+    public void doMutate(Object o) {
+      Map map = (Map) o;
+      Set keys = map.keySet();
+      for (Iterator it = keys.iterator(); it.hasNext();) {
+        it.next();
+        it.remove();
+      }
+    }
+  }
+
+  private static class ValuesIteratorRemoveMutator implements Mutator {
+    public void doMutate(Object o) {
+      Map map = (Map) o;
+      Collection values = map.values();
+      for (Iterator it = values.iterator(); it.hasNext();) {
+        it.next();
+        it.remove();
+      }
     }
   }
 
