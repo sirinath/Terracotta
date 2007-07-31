@@ -19,6 +19,9 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - thirdparty-api
+  - common-api:
+      options:
+        jdk: J2SE-1.4
   - common:
       options:
         jdk: J2SE-1.4
@@ -26,10 +29,12 @@ modules:
         - linked-child-process
         - thirdparty-api
         - thirdparty
+        - common-api
   - aspectwerkz:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - thirdparty-api
         - thirdparty
@@ -38,24 +43,27 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - aspectwerkz
-        - common
+        - common-api
         - thirdparty-api
   - dso-common:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-l1-api
   - dso-common-jdk15:
       options:
         jdk: J2SE-1.5
       dependencies:
+        - common-api
         - common
         - dso-common
   - management:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-common
         - dso-l1-api
@@ -63,6 +71,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - thirdparty-api
         - thirdparty
@@ -75,6 +84,7 @@ modules:
       options:
         jdk: J2SE-1.5
       dependencies:
+        - common-api
         - common
         - thirdparty-api
         - thirdparty
@@ -87,6 +97,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-common
         - dso-l1-api
@@ -135,6 +146,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-l1-api
         - dso-common
@@ -142,6 +154,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-l1-api
         - dso-common
@@ -155,6 +168,7 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - dso-common-jdk15
@@ -169,6 +183,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-l1-api
         - dso-l1
@@ -192,6 +207,7 @@ modules:
       options:
         jdk: J2SE-1.4
       dependencies:
+        - common-api
         - common
         - dso-l1-api
         - dso-l1
@@ -220,6 +236,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - dso-common-jdk15
@@ -256,6 +273,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -276,6 +294,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -293,6 +312,7 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
+        - common-api
         - common
         - dso-common
         - management
@@ -314,6 +334,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -337,6 +358,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -425,6 +447,7 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
+        - common-api
         - common
         - linked-child-process
         - management
@@ -454,6 +477,7 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -484,6 +508,7 @@ modules:
       dependencies:
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - management
         - dso-common
@@ -503,6 +528,7 @@ modules:
         module: true
       dependencies:
         - aspectwerkz
+        - common-api
         - common
         - deploy
         - dso-common
@@ -524,6 +550,7 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -546,6 +573,7 @@ modules:
         - clustered-cglib-2.1.3
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
@@ -589,6 +617,7 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - management
         - dso-common
@@ -609,6 +638,7 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - management
         - dso-common
@@ -630,6 +660,7 @@ modules:
         - clustered-cglib-2.1.3
         - aspectwerkz
         - linked-child-process
+        - common-api
         - common
         - dso-common
         - management
