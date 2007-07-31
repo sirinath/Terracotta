@@ -51,9 +51,11 @@ public class DsoStartMojo extends AbstractDsoMojo {
 
     cmd.createArgument().setValue(TCServerMain.class.getName());
 
-    cmd.createArgument().setValue("-f");
-    cmd.createArgument().setFile(config);
-    getLog().debug("tc-config file  = " + config.getAbsolutePath());
+    if(config.exists()) {
+      cmd.createArgument().setValue("-f");
+      cmd.createArgument().setFile(config);
+      getLog().debug("tc-config file  = " + config.getAbsolutePath());
+    }
 
     if (name != null && name.length() > 0) {
       cmd.createArgument().setValue("-n");

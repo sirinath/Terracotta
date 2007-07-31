@@ -80,30 +80,24 @@ public abstract class CommandLineUtils {
   public static int executeCommandLine(Commandline cl, InputStream systemIn, StreamConsumer systemOut,
       StreamConsumer systemErr, boolean spawn) throws CommandLineException {
     Process p = cl.execute();
+
+    StreamFeeder inputFeeder = null;
+    if (systemIn != null) {
+      inputFeeder = new StreamFeeder(systemIn, p.getOutputStream());
+      inputFeeder.start();
+    }
+
+    StreamPumper outputPumper = new StreamPumper(p.getInputStream(), systemOut);
+    outputPumper.start();
+
+    StreamPumper errorPumper = new StreamPumper(p.getErrorStream(), systemErr);
+    errorPumper.start();
+
     if (spawn) {
       return 0;
     }
 
     processes.put(new Long(cl.getPid()), p);
-
-    StreamFeeder inputFeeder = null;
-
-    if (systemIn != null) {
-      inputFeeder = new StreamFeeder(systemIn, p.getOutputStream());
-    }
-
-    StreamPumper outputPumper = new StreamPumper(p.getInputStream(), systemOut);
-
-    StreamPumper errorPumper = new StreamPumper(p.getErrorStream(), systemErr);
-
-    if (inputFeeder != null) {
-      inputFeeder.start();
-    }
-
-    outputPumper.start();
-
-    errorPumper.start();
-
     try {
       int returnValue = p.waitFor();
 
@@ -130,6 +124,7 @@ public abstract class CommandLineUtils {
       processes.remove(new Long(cl.getPid()));
 
       return returnValue;
+      
     } catch (InterruptedException ex) {
       killProcess(cl.getPid());
       throw new CommandLineException("Error while executing external command, process killed.", ex);
@@ -139,7 +134,6 @@ public abstract class CommandLineUtils {
       }
 
       outputPumper.close();
-
       errorPumper.close();
     }
   }
