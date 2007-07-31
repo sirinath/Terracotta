@@ -24,8 +24,7 @@ public class SampleProcess {
   }
 
   public static void main(String[] args) throws Exception {
-    int nodeCount = Integer.parseInt(args[0]);
-    barrier = new CyclicBarrier(nodeCount);
+    barrier = new CyclicBarrier(SampleUtils.getTotalNodes());
     
     SampleProcess process = new SampleProcess(System.getProperty("tc.nodeName"));
     process.process();

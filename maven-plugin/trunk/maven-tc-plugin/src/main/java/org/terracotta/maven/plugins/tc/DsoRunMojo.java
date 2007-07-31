@@ -103,6 +103,7 @@ public class DsoRunMojo extends AbstractDsoMojo {
     cmd.createArgument().setValue("-Xbootclasspath/p:" + bootJar.getAbsolutePath());
 
     cmd.createArgument().setValue("-Dtc.nodeName=" + nodeName);
+    cmd.createArgument().setValue("-Dtc.numberOfNodes=" + numberOfNodes);
 
     // system properties      
     for (Iterator it = process.getProperties().entrySet().iterator(); it.hasNext();) {
