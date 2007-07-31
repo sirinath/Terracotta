@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol.delivery;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.protocol.AbstractTCNetworkHeader;
 import com.tc.net.protocol.TCProtocolException;
 
@@ -59,7 +59,7 @@ class OOOProtocolMessageHeader extends AbstractTCNetworkHeader {
     }
   }
 
-  OOOProtocolMessageHeader(TCByteBuffer buffer) {
+  OOOProtocolMessageHeader(ITCByteBuffer buffer) {
     super(buffer, HEADER_LENGTH, HEADER_LENGTH);
   }
 

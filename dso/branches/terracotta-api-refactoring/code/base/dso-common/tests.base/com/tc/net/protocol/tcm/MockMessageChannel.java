@@ -5,7 +5,7 @@ package com.tc.net.protocol.tcm;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
@@ -101,7 +101,7 @@ public class MockMessageChannel implements MessageChannelInternal {
     this.lastSentMessage = message;
   }
 
-  public void receive(TCByteBuffer[] msgData) {
+  public void receive(ITCByteBuffer[] msgData) {
     throw new ImplementMe();
   }
 

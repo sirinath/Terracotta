@@ -4,7 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -35,7 +35,7 @@ public class RequestManagedObjectResponseMessage extends DSOMessageBase implemen
   private ObjectStringSerializer serializer;
   private int                    total;
   private long                   batchID;
-  private TCByteBuffer[]         dnaData;
+  private ITCByteBuffer[]         dnaData;
   private int                    dnaCount;
 
   public RequestManagedObjectResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel,
@@ -44,7 +44,7 @@ public class RequestManagedObjectResponseMessage extends DSOMessageBase implemen
   }
 
   public RequestManagedObjectResponseMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header,
-                                             TCByteBuffer[] data) {
+                                             ITCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
@@ -52,7 +52,7 @@ public class RequestManagedObjectResponseMessage extends DSOMessageBase implemen
     return Collections.unmodifiableCollection(objects);
   }
 
-  public void initialize(TCByteBuffer[] dnas, int count, ObjectStringSerializer aSerializer, long bid, int tot) {
+  public void initialize(ITCByteBuffer[] dnas, int count, ObjectStringSerializer aSerializer, long bid, int tot) {
     this.dnaCount = count;
     this.dnaData = dnas;
     this.serializer = aSerializer;

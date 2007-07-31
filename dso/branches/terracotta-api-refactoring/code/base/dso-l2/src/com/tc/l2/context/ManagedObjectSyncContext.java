@@ -5,7 +5,7 @@
 package com.tc.l2.context;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.groups.NodeID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
@@ -27,7 +27,7 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   private final Map                  rootsMap;
 
   private ObjectManagerLookupResults result;
-  private TCByteBuffer[]             dnas;
+  private ITCByteBuffer[]             dnas;
   private int                        dnaCount;
   private ObjectStringSerializer     serializer;
   private long                       sequenceID;
@@ -66,7 +66,7 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
     return result.getObjects();
   }
 
-  public void setDehydratedBytes(TCByteBuffer[] buffers, int count, ObjectStringSerializer os) {
+  public void setDehydratedBytes(ITCByteBuffer[] buffers, int count, ObjectStringSerializer os) {
     this.dnas = buffers;
     this.dnaCount = count;
     this.serializer = os;
@@ -81,7 +81,7 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
     return serializer;
   }
 
-  public TCByteBuffer[] getSerializedDNAs() {
+  public ITCByteBuffer[] getSerializedDNAs() {
     Assert.assertNotNull(dnas);
     return dnas;
   }

@@ -54,11 +54,11 @@ public class ConnectionIdLogger implements TCLogger {
     logger.warn(msg(message), t);
   }
 
-  public void log(LogLevel level, Object message) {
+  public void log(ILogLevel level, Object message) {
     logger.log(level, msg(message));
   }
 
-  public void log(LogLevel level, Object message, Throwable t) {
+  public void log(ILogLevel level, Object message, Throwable t) {
     logger.log(level, msg(message), t);
   }
 
@@ -70,11 +70,11 @@ public class ConnectionIdLogger implements TCLogger {
     return logger.isInfoEnabled();
   }
 
-  public void setLevel(LogLevel level) {
+  public void setLevel(ILogLevel level) {
     logger.setLevel(level);
   }
 
-  public LogLevel getLevel() {
+  public ILogLevel getLevel() {
     return logger.getLevel();
   }
 

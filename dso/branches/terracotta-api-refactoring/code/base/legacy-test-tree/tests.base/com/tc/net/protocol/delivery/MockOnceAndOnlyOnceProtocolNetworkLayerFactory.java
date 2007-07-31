@@ -5,8 +5,6 @@
 package com.tc.net.protocol.delivery;
 
 import com.tc.async.api.Sink;
-import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayer;
-import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactory;
 
 public class MockOnceAndOnlyOnceProtocolNetworkLayerFactory implements OnceAndOnlyOnceProtocolNetworkLayerFactory {
 

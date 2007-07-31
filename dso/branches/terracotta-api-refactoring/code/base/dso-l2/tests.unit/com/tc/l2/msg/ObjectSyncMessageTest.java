@@ -6,7 +6,7 @@ package com.tc.l2.msg;
 
 import com.tc.async.api.Sink;
 import com.tc.async.impl.MockSink;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.net.groups.NodeID;
@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 
 public class ObjectSyncMessageTest extends TestCase {
   private ManagedObjectSyncContext managedObjectSyncContext;
-  private TCByteBuffer[]           tcByteBufferArray;
+  private ITCByteBuffer[]           tcByteBufferArray;
   private ObjectStringSerializer   objectStringSerializer;
   private final int                dnaCount = 56;
 
@@ -39,10 +39,10 @@ public class ObjectSyncMessageTest extends TestCase {
     rootsMap.put("root3", new ObjectID(3));
     Sink sink = new MockSink();
     objectStringSerializer = new ObjectStringSerializer();
-    TCByteBuffer tcbb = TCByteBufferFactory.getInstance(false, 3452);
-    tcByteBufferArray = new TCByteBuffer[] { tcbb };
+    ITCByteBuffer tcbb = TCByteBufferFactory.getInstance(false, 3452);
+    tcByteBufferArray = new ITCByteBuffer[] { tcbb };
     managedObjectSyncContext = new ManagedObjectSyncContext(nodeID, rootsMap, true, sink);
-    managedObjectSyncContext.setDehydratedBytes(new TCByteBuffer[] { tcbb }, dnaCount, objectStringSerializer);
+    managedObjectSyncContext.setDehydratedBytes(new ITCByteBuffer[] { tcbb }, dnaCount, objectStringSerializer);
     managedObjectSyncContext.setSequenceID(11);
   }
 
@@ -69,7 +69,7 @@ public class ObjectSyncMessageTest extends TestCase {
     }
     assertTrue(oids1.isEmpty());
 
-    TCByteBuffer[] dnas1 = osm1.getUnprocessedDNAs();
+    ITCByteBuffer[] dnas1 = osm1.getUnprocessedDNAs();
     assertEquals(tcByteBufferArray.length, dnas1.length);
     for (int i = 0; i < tcByteBufferArray.length; i++) {
       assertEquals(tcByteBufferArray[i].getBoolean(), dnas1[i].getBoolean());

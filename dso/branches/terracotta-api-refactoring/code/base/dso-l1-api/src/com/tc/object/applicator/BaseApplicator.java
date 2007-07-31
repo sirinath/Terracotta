@@ -1,38 +1,30 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.applicator;
 
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ILiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.IDNAEncoding;
 import com.tc.util.Assert;
+import com.tc.util.UtilityClassHelper;
 
 import java.util.Map;
 
 public abstract class BaseApplicator implements ChangeApplicator {
 
-  private static final TCLogger       logger   = TCLogging.getLogger(BaseApplicator.class);
-  private static final ILiteralValues literals = createLiteralValuesInstance();
+  private static final TCLogger       logger   = (TCLogger) UtilityClassHelper
+                                                   .invokeStaticMethod("com.tc.logging.TCLogging", "getLogger",
+                                                                       new Class[] { Class.class },
+                                                                       new Object[] { BaseApplicator.class });
+  private static final ILiteralValues literals = (ILiteralValues) UtilityClassHelper
+                                                   .createInstance("com.tc.object.LiteralValues");
 
   protected final IDNAEncoding        encoding;
-
-  private static final ILiteralValues createLiteralValuesInstance() {
-    try {
-      Class klazz = Class.forName("com.tc.object.LiteralValues");
-      return (ILiteralValues)klazz.newInstance();
-    } catch (ClassNotFoundException e) {
-      throw new Error(e);
-    } catch (InstantiationException e) {
-      throw new Error(e);
-    } catch (IllegalAccessException e) {
-      throw new Error(e);
-    }
-  }
 
   protected BaseApplicator(IDNAEncoding encoding) {
     this.encoding = encoding;
@@ -68,7 +60,8 @@ public abstract class BaseApplicator implements ChangeApplicator {
     return objectManager.createParentCopyInstanceIfNecessary(visited, cloned, v);
   }
 
-  protected Object createCopyIfNecessary(ClientObjectManager objectManager, Map visited, Map cloned, Object originalValue) {
+  protected Object createCopyIfNecessary(ClientObjectManager objectManager, Map visited, Map cloned,
+                                         Object originalValue) {
     Object copyKey;
     if (originalValue == null || isLiteralInstance(originalValue)) {
       copyKey = originalValue;
@@ -77,7 +70,8 @@ public abstract class BaseApplicator implements ChangeApplicator {
       copyKey = visited.get(originalValue);
     } else {
       Assert.eval(!isLiteralInstance(originalValue));
-      copyKey = objectManager.createNewCopyInstance(originalValue, createParentIfNecessary(visited, objectManager, cloned, originalValue));
+      copyKey = objectManager.createNewCopyInstance(originalValue, createParentIfNecessary(visited, objectManager,
+                                                                                           cloned, originalValue));
 
       visited.put(originalValue, copyKey);
       cloned.put(originalValue, copyKey);

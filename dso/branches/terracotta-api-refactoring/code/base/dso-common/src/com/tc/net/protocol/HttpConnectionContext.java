@@ -4,21 +4,21 @@
 package com.tc.net.protocol;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 
 import java.net.Socket;
 
 public class HttpConnectionContext implements EventContext {
 
-  private final TCByteBuffer buffer;
+  private final ITCByteBuffer buffer;
   private final Socket       socket;
 
-  public HttpConnectionContext(Socket socket, TCByteBuffer buffer) {
+  public HttpConnectionContext(Socket socket, ITCByteBuffer buffer) {
     this.socket = socket;
     this.buffer = buffer;
   }
 
-  public TCByteBuffer getBuffer() {
+  public ITCByteBuffer getBuffer() {
     return buffer;
   }
 

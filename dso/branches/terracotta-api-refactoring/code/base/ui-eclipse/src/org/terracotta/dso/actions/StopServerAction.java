@@ -13,9 +13,7 @@ import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
-
 import org.terracotta.dso.ServerTracker;
-import org.terracotta.dso.actions.ActionUtil;
 
 /**
  * Shutdown the currently running server.

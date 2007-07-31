@@ -22,9 +22,18 @@
 */
 package com.tc.jrexx.set;
 
-import com.tc.jrexx.automaton.*;
-import java.util.*;
-import java.io.*;
+import com.tc.jrexx.automaton.Automaton;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * This class represents a (non-)deterministic final automaton (NFA/DFA).

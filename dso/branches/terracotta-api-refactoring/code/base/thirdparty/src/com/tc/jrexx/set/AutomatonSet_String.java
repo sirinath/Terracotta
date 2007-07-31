@@ -22,9 +22,14 @@
 */
 package com.tc.jrexx.set;
 
-import com.tc.jrexx.automaton.*;
+import com.tc.jrexx.automaton.Automaton;
+import com.tc.jrexx.automaton.IProperties;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class AutomatonSet_String extends Automaton {
   protected static final ISet_char FULLSET = new com.tc.jrexx.set.CharSet();

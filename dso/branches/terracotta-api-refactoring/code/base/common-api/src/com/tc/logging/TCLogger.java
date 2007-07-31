@@ -29,17 +29,17 @@ public interface TCLogger {
 
   void warn(Object message, Throwable t);
 
-  void log(LogLevel level, Object message);
+  void log(ILogLevel level, Object message);
 
-  void log(LogLevel level, Object message, Throwable t);
+  void log(ILogLevel level, Object message, Throwable t);
 
   boolean isDebugEnabled();
 
   boolean isInfoEnabled();
 
-  void setLevel(LogLevel level);
+  void setLevel(ILogLevel level);
 
-  LogLevel getLevel();
+  ILogLevel getLevel();
 
   String getName();
 }

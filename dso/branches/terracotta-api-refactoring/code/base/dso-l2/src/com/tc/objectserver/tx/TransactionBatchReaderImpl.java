@@ -4,7 +4,7 @@
  */
 package com.tc.objectserver.tx;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ObjectID;
@@ -41,7 +41,7 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
   private final GlobalTransactionIDGenerator gtxm;
   private final ServerTransactionFactory     txnFactory;
 
-  public TransactionBatchReaderImpl(GlobalTransactionIDGenerator gtxm, TCByteBuffer[] data, ChannelID source,
+  public TransactionBatchReaderImpl(GlobalTransactionIDGenerator gtxm, ITCByteBuffer[] data, ChannelID source,
                                     Collection acknowledgedTransactionIDs, ObjectStringSerializer serializer,
                                     ServerTransactionFactory txnFactory) throws IOException {
     this.gtxm = gtxm;

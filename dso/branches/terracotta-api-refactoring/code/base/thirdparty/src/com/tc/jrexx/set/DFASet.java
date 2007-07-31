@@ -22,8 +22,10 @@ InputStream* ralf.meyer@karneim.com
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.util.HashMap;
 
 /**
  * DFASet is an immutable Set of strings based on a minimized deterministic automaton (DFA).

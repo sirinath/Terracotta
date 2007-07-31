@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.core.TCConnection;
 
 /**
@@ -12,8 +12,8 @@ import com.tc.net.core.TCConnection;
  * @author teck
  */
 public interface TCProtocolAdaptor {
-  public void addReadData(TCConnection source, TCByteBuffer data[], int length) throws TCProtocolException;
+  public void addReadData(TCConnection source, ITCByteBuffer data[], int length) throws TCProtocolException;
 
-  public TCByteBuffer[] getReadBuffers();  
+  public ITCByteBuffer[] getReadBuffers();  
 }
 

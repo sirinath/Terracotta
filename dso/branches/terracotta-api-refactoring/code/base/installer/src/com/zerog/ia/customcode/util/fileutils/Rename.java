@@ -3,9 +3,13 @@
  */
 package com.zerog.ia.customcode.util.fileutils;
 
-import java.io.*;
+import com.zerog.ia.api.pub.CustomCodeAction;
+import com.zerog.ia.api.pub.InstallException;
+import com.zerog.ia.api.pub.InstallerProxy;
+import com.zerog.ia.api.pub.UninstallerProxy;
 
-import com.zerog.ia.api.pub.*;
+import java.io.File;
+import java.io.IOException;
 
 /**
  *	Rename renames a file or directory.

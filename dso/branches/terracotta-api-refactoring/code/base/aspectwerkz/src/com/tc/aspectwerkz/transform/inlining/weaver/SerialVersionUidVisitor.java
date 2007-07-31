@@ -3,21 +3,26 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.*;
-
-import com.tc.aspectwerkz.transform.InstrumentationContext;
-import com.tc.aspectwerkz.transform.inlining.AsmHelper;
+import com.tc.asm.ClassAdapter;
+import com.tc.asm.ClassReader;
+import com.tc.asm.ClassVisitor;
+import com.tc.asm.ClassWriter;
+import com.tc.asm.FieldVisitor;
+import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.ClassInfoHelper;
+import com.tc.aspectwerkz.transform.InstrumentationContext;
+import com.tc.aspectwerkz.transform.inlining.AsmHelper;
 
-import java.io.IOException;
-import java.io.DataOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.Collection;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.security.NoSuchAlgorithmException;
-import java.security.MessageDigest;
+import java.util.Collection;
 
 /**
  * See http://java.sun.com/j2se/1.5.0/docs/guide/serialization/spec/class.html#60

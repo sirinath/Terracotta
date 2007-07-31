@@ -4,7 +4,6 @@
  */
 package com.tc.bytes;
 
-import com.tc.lang.Recyclable;
 import com.tc.util.Assert;
 import com.tc.util.State;
 
@@ -16,7 +15,7 @@ import java.nio.ByteBuffer;
 
 // XXX: Should we wrap the native java.nio overflow, underflow and readOnly exceptions with the TC versions?
 // This would make the TCByteBuffer interface consistent w.r.t. exceptions (whilst being blind to JDK13 vs JDK14)
-public class TCByteBuffer implements Recyclable {
+public class TCByteBuffer implements ITCByteBuffer {
 
   private static final State INIT        = new State("INIT");
   private static final State CHECKED_OUT = new State("CHECKED_OUT");
@@ -53,7 +52,7 @@ public class TCByteBuffer implements Recyclable {
     return buffer;
   }
 
-  public TCByteBuffer clear() {
+  public ITCByteBuffer clear() {
     buffer.clear();
     return this;
   }
@@ -66,7 +65,7 @@ public class TCByteBuffer implements Recyclable {
     return buffer.position();
   }
 
-  public TCByteBuffer flip() {
+  public ITCByteBuffer flip() {
     buffer.flip();
     return this;
   }
@@ -79,12 +78,12 @@ public class TCByteBuffer implements Recyclable {
     return buffer.limit();
   }
 
-  public TCByteBuffer limit(int newLimit) {
+  public ITCByteBuffer limit(int newLimit) {
     buffer.limit(newLimit);
     return this;
   }
 
-  public TCByteBuffer position(int newPosition) {
+  public ITCByteBuffer position(int newPosition) {
     buffer.position(newPosition);
     return this;
   }
@@ -93,7 +92,7 @@ public class TCByteBuffer implements Recyclable {
     return buffer.remaining();
   }
 
-  public com.tc.bytes.TCByteBuffer rewind() {
+  public ITCByteBuffer rewind() {
     buffer.rewind();
     return this;
   }
@@ -171,12 +170,12 @@ public class TCByteBuffer implements Recyclable {
     return buffer.getShort(index);
   }
 
-  public TCByteBuffer get(byte[] dst) {
+  public ITCByteBuffer get(byte[] dst) {
     buffer.get(dst);
     return this;
   }
 
-  public TCByteBuffer get(byte[] dst, int offset, int length) {
+  public ITCByteBuffer get(byte[] dst, int offset, int length) {
     buffer.get(dst, offset, length);
     return this;
   }
@@ -185,107 +184,107 @@ public class TCByteBuffer implements Recyclable {
     return buffer.get(index);
   }
 
-  public TCByteBuffer put(byte b) {
+  public ITCByteBuffer put(byte b) {
     buffer.put(b);
     return this;
   }
 
-  public TCByteBuffer put(byte[] src) {
+  public ITCByteBuffer put(byte[] src) {
     buffer.put(src);
     return this;
   }
 
-  public TCByteBuffer put(byte[] src, int offset, int length) {
+  public ITCByteBuffer put(byte[] src, int offset, int length) {
     buffer.put(src, offset, length);
     return this;
   }
 
-  public TCByteBuffer put(int index, byte b) {
+  public ITCByteBuffer put(int index, byte b) {
     buffer.put(index, b);
     return this;
   }
 
-  public TCByteBuffer putBoolean(boolean b) {
+  public ITCByteBuffer putBoolean(boolean b) {
     // XXX: Why isn't there a putBoolean in ByteBuffer?
     buffer.put((b) ? (byte) 1 : (byte) 0);
     return this;
   }
 
-  public TCByteBuffer putBoolean(int index, boolean b) {
+  public ITCByteBuffer putBoolean(int index, boolean b) {
     buffer.put(index, (b) ? (byte) 1 : (byte) 0);
     return this;
   }
 
-  public TCByteBuffer putChar(char c) {
+  public ITCByteBuffer putChar(char c) {
     buffer.putChar(c);
     return this;
   }
 
-  public TCByteBuffer putChar(int index, char c) {
+  public ITCByteBuffer putChar(int index, char c) {
     buffer.putChar(index, c);
     return this;
   }
 
-  public TCByteBuffer putDouble(double d) {
+  public ITCByteBuffer putDouble(double d) {
     buffer.putDouble(d);
     return this;
   }
 
-  public TCByteBuffer putDouble(int index, double d) {
+  public ITCByteBuffer putDouble(int index, double d) {
     buffer.putDouble(index, d);
     return this;
   }
 
-  public TCByteBuffer putFloat(float f) {
+  public ITCByteBuffer putFloat(float f) {
     buffer.putFloat(f);
     return this;
   }
 
-  public TCByteBuffer putFloat(int index, float f) {
+  public ITCByteBuffer putFloat(int index, float f) {
     buffer.putFloat(index, f);
     return this;
   }
 
-  public TCByteBuffer putInt(int i) {
+  public ITCByteBuffer putInt(int i) {
     buffer.putInt(i);
     return this;
   }
 
-  public TCByteBuffer putInt(int index, int i) {
+  public ITCByteBuffer putInt(int index, int i) {
     buffer.putInt(index, i);
     return this;
   }
 
-  public TCByteBuffer putLong(long l) {
+  public ITCByteBuffer putLong(long l) {
     buffer.putLong(l);
     return this;
   }
 
-  public TCByteBuffer putLong(int index, long l) {
+  public ITCByteBuffer putLong(int index, long l) {
     buffer.putLong(index, l);
     return this;
   }
 
-  public TCByteBuffer putShort(short s) {
+  public ITCByteBuffer putShort(short s) {
     buffer.putShort(s);
     return this;
   }
 
-  public TCByteBuffer putShort(int index, short s) {
+  public ITCByteBuffer putShort(int index, short s) {
     buffer.putShort(index, s);
     return this;
   }
 
-  public TCByteBuffer duplicate() {
+  public ITCByteBuffer duplicate() {
     return new TCByteBuffer(buffer.duplicate(), root);
   }
 
-  public TCByteBuffer put(TCByteBuffer src) {
+  public ITCByteBuffer put(ITCByteBuffer src) {
     buffer.put(src.getNioBuffer());
     return this;
   }
 
-  public TCByteBuffer slice() {
+  public ITCByteBuffer slice() {
     return new TCByteBuffer(buffer.slice(), root);
   }
 
@@ -293,7 +292,7 @@ public class TCByteBuffer implements Recyclable {
     return buffer.arrayOffset();
   }
 
-  public TCByteBuffer asReadOnlyBuffer() {
+  public ITCByteBuffer asReadOnlyBuffer() {
     return new TCByteBuffer(buffer.asReadOnlyBuffer(), root);
   }
 
@@ -317,16 +316,16 @@ public class TCByteBuffer implements Recyclable {
     }
   }
 
-  private TCByteBuffer reInit() {
+  private ITCByteBuffer reInit() {
     clear();
     return this;
   }
 
-  public final TCByteBuffer get(int index, byte[] dst) {
+  public final ITCByteBuffer get(int index, byte[] dst) {
     return get(index, dst, 0, dst.length);
   }
 
-  public final TCByteBuffer get(int index, byte[] dst, int offset, int length) {
+  public final ITCByteBuffer get(int index, byte[] dst, int offset, int length) {
     final int origPosition = position();
 
     try {
@@ -339,11 +338,11 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer put(int index, byte[] src) {
+  public final ITCByteBuffer put(int index, byte[] src) {
     return put(index, src, 0, src.length);
   }
 
-  public final TCByteBuffer put(int index, byte[] src, int offset, int length) {
+  public final ITCByteBuffer put(int index, byte[] src, int offset, int length) {
     final int origPosition = position();
 
     try {
@@ -356,7 +355,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer putUint(long i) {
+  public final ITCByteBuffer putUint(long i) {
     if ((i > 0xFFFFFFFFL) || (i < 0L)) {
       // make code formatter sane
       throw new IllegalArgumentException("Unsigned integer value must be positive and <= (2^32)-1");
@@ -370,7 +369,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer putUint(int index, long i) {
+  public final ITCByteBuffer putUint(int index, long i) {
     final int origPosition = position();
 
     try {
@@ -383,7 +382,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer putUshort(int s) {
+  public final ITCByteBuffer putUshort(int s) {
     if ((s > 0x0000FFFF) || (s < 0)) { throw new IllegalArgumentException(
         "Unsigned integer value must be positive and <= (2^16)-1"); }
 
@@ -393,7 +392,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer putUshort(int index, int s) {
+  public final ITCByteBuffer putUshort(int index, int s) {
     final int origPosition = position();
 
     try {
@@ -465,7 +464,7 @@ public class TCByteBuffer implements Recyclable {
     }
   }
 
-  public final TCByteBuffer putUbyte(int index, short value) {
+  public final ITCByteBuffer putUbyte(int index, short value) {
     final int origPosition = position();
 
     try {
@@ -478,7 +477,7 @@ public class TCByteBuffer implements Recyclable {
     return this;
   }
 
-  public final TCByteBuffer putUbyte(short value) {
+  public final ITCByteBuffer putUbyte(short value) {
     if ((value < 0) || (value > 0xFF)) { throw new IllegalArgumentException(
         "Unsigned byte value must in range 0-255 inclusive"); }
     put((byte) (value & 0xFF));

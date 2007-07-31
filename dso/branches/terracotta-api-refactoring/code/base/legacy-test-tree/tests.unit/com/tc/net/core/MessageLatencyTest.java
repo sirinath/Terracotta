@@ -3,7 +3,7 @@
  */
 package com.tc.net.core;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.GenericNetworkMessage;
@@ -51,7 +51,7 @@ public class MessageLatencyTest extends TestCase {
     conn.connect(new TCSocketAddress(server.getServerAddr().getPort()), 3000);
 
     for (int i = 0; i < NUM_MSGS; i++) {
-      TCByteBuffer data = TCByteBufferFactory.getInstance(false, 8);
+      ITCByteBuffer data = TCByteBufferFactory.getInstance(false, 8);
 
       final long sent = System.currentTimeMillis();
       data.putLong(sent);
@@ -115,7 +115,7 @@ public class MessageLatencyTest extends TestCase {
 
       recvTimes[ctr++] = diff;
 
-      TCByteBuffer data = TCByteBufferFactory.getInstance(false, 8);
+      ITCByteBuffer data = TCByteBufferFactory.getInstance(false, 8);
 
       final long sent = System.currentTimeMillis();
       data.putLong(sent);

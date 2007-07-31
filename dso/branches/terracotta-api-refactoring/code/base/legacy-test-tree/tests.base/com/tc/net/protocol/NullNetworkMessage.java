@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 
 /**
  * @author teck
@@ -22,12 +22,12 @@ public class NullNetworkMessage implements TCNetworkMessage {
     return null;
   }
 
-  public TCByteBuffer[] getPayload() {
+  public ITCByteBuffer[] getPayload() {
     return getEntireMessageData();
   }
 
-  public TCByteBuffer[] getEntireMessageData() {
-    return new TCByteBuffer[] {};
+  public ITCByteBuffer[] getEntireMessageData() {
+    return new ITCByteBuffer[] {};
   }
 
   public boolean isSealed() {

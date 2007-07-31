@@ -7,7 +7,7 @@ package com.tc.net.protocol.delivery;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -92,7 +92,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     delivery.send(message);
   }
 
-  public void receive(TCByteBuffer[] msgData) {
+  public void receive(ITCByteBuffer[] msgData) {
     OOOProtocolMessage msg = createProtocolMessage(msgData);
     debugLog("receive -> " + msg.getHeader().toString());
     if (msg.isSend() || msg.isAck()) {
@@ -331,7 +331,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     return rv;
   }
 
-  private OOOProtocolMessage createProtocolMessage(TCByteBuffer[] msgData) {
+  private OOOProtocolMessage createProtocolMessage(ITCByteBuffer[] msgData) {
     try {
       return messageParser.parseMessage(msgData);
     } catch (TCProtocolException e) {

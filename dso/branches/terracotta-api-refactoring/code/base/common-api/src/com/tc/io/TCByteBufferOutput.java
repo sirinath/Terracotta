@@ -3,13 +3,13 @@
  */
 package com.tc.io;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.lang.Recyclable;
 
 public interface TCByteBufferOutput extends TCDataOutput, Recyclable {
 
-  public TCByteBuffer[] toArray();
+  public ITCByteBuffer[] toArray();
 
-  public void write(TCByteBuffer[] data);
+  public void write(ITCByteBuffer[] data);
 
 }

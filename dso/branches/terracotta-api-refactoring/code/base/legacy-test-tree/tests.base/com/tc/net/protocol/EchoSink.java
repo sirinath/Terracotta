@@ -5,7 +5,7 @@ package com.tc.net.protocol;
 
 import org.apache.commons.io.CopyUtils;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.core.TCConnection;
@@ -70,7 +70,7 @@ public class EchoSink implements GenericNetworkMessageSink, TCConnectionEventLis
     }
 
     // copy the message and send it right back to the client
-    TCByteBuffer[] recvData = msg.getPayload();
+    ITCByteBuffer[] recvData = msg.getPayload();
     TCByteBufferOutputStream out = new TCByteBufferOutputStream();
     TCByteBufferInputStream in = new TCByteBufferInputStream(recvData);
 
@@ -89,7 +89,7 @@ public class EchoSink implements GenericNetworkMessageSink, TCConnectionEventLis
     source.putMessage(send);
   }
 
-  static void compareData(TCByteBuffer[] in, TCByteBuffer[] out) {
+  static void compareData(ITCByteBuffer[] in, ITCByteBuffer[] out) {
     TCByteBufferInputStream ins = new TCByteBufferInputStream(in);
     TCByteBufferInputStream outs = new TCByteBufferInputStream(out);
 

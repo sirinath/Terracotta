@@ -3,6 +3,7 @@
  */
 package com.tc.io;
 
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.util.Assert;
@@ -35,7 +36,7 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
   // The "buffers" list is accesed by index in the Mark class, thus it should not be a linked list
   private List                   buffers                    = new ArrayList();
   private Map                    localBuffers               = new IdentityHashMap();
-  private TCByteBuffer           current;
+  private ITCByteBuffer           current;
   private boolean                closed;
   private int                    written;
   private int                    blockSize;
@@ -94,16 +95,16 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
     write(b, 0, b.length);
   }
 
-  public void write(TCByteBuffer data) {
+  public void write(ITCByteBuffer data) {
     if (data == null) { throw new NullPointerException(); }
-    write(new TCByteBuffer[] { data });
+    write(new ITCByteBuffer[] { data });
   }
 
   /**
    * Add arbitrary buffers into the stream. All of the data (from position 0 to limit()) in each buffer passed will be
    * used in the stream. If that is not what you want, setup your buffers differently before calling this write()
    */
-  public void write(TCByteBuffer[] data) {
+  public void write(ITCByteBuffer[] data) {
     checkClosed();
     if (data == null) { throw new NullPointerException(); }
     if (data.length == 0) { return; }
@@ -127,7 +128,7 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
     }
 
     if (!reuseCurrent) {
-      current = (TCByteBuffer) buffers.remove(buffers.size() - 1);
+      current = (ITCByteBuffer) buffers.remove(buffers.size() - 1);
       current.position(current.limit());
     }
   }
@@ -171,9 +172,9 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
   /**
    * Obtain the contents of this stream as an array of TCByteBuffer
    */
-  public TCByteBuffer[] toArray() {
+  public ITCByteBuffer[] toArray() {
     close();
-    TCByteBuffer[] rv = new TCByteBuffer[buffers.size()];
+    ITCByteBuffer[] rv = new ITCByteBuffer[buffers.size()];
     return (TCByteBuffer[]) buffers.toArray(rv);
   }
 
@@ -234,7 +235,7 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
       }
 
       if (index > startIndex) {
-        TCByteBuffer consolidated = TCByteBufferFactory.getInstance(direct, size);
+        ITCByteBuffer consolidated = TCByteBufferFactory.getInstance(direct, size);
         localBuffers.put(consolidated, consolidated);
         final int end = index;
         for (int i = startIndex; i <= end; i++) {
@@ -400,7 +401,7 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
       if (getBytesWritten() - absolutePosition < data.length) { throw new IllegalArgumentException(
                                                                                                    "Cannot write past the existing tail of stream via the mark"); }
 
-      TCByteBuffer buf = getBuffer(bufferIndex);
+      ITCByteBuffer buf = getBuffer(bufferIndex);
 
       int bufIndex = bufferIndex;
       int bufPos = bufferPosition;
@@ -422,9 +423,9 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
       }
     }
 
-    private TCByteBuffer getBuffer(int index) {
+    private ITCByteBuffer getBuffer(int index) {
       if (index <= buffers.size() - 1) {
-        return (TCByteBuffer) buffers.get(index);
+        return (ITCByteBuffer) buffers.get(index);
       } else if (index == buffers.size()) {
         return current;
       } else {

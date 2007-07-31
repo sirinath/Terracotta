@@ -5,7 +5,6 @@ package com.tctest.performance.throughput;
 
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
-import com.tctest.performance.throughput.SingleOswegoQueueThroughputTestApp;
 
 public class SingleOswegoQueueThroughput extends TransparentTestBase {
 

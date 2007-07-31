@@ -3,9 +3,9 @@
  */
 package com.tc.object.lockmanager.api;
 
-import java.io.Serializable;
-
 import com.tc.util.Assert;
+
+import java.io.Serializable;
 
 /**
  * Identifier for a given lock

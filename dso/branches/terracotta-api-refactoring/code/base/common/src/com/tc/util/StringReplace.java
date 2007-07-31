@@ -3,8 +3,9 @@
  */
 package com.tc.util;
 
-import java.io.*;
-import com.tc.util.StringUtil;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * A small app that does a simple substring search and replace. It takes its input from the stdin and sends the result to stdout.

@@ -5,7 +5,7 @@ package com.tc.net.core;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.GenericNetworkMessage;
@@ -163,14 +163,14 @@ public class VerifierClient implements Runnable {
     // must use a multiple of 8 for the data in this message. Data is <id><counter><id><counter>....where id and
     // counter are both 4 byte ints
     int extra = 8 + (8 * random.nextInt(13));
-    TCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, 4096 * dataSize + extra);
+    ITCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, 4096 * dataSize + extra);
 
     if (this.dataSize == 0) {
       Assert.assertEquals(1, data.length);
     }
 
     for (int d = 0; d < data.length; d++) {
-      TCByteBuffer buf = data[d];
+      ITCByteBuffer buf = data[d];
       Assert.eval((buf.limit() % 8) == 0);
 
       while (buf.hasRemaining()) {

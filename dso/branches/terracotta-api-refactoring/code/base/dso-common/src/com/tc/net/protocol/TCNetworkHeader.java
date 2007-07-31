@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.lang.Recyclable;
 
 /**
@@ -14,7 +14,7 @@ import com.tc.lang.Recyclable;
 public interface TCNetworkHeader extends Recyclable {
   int getHeaderByteLength();
 
-  TCByteBuffer getDataBuffer();
+  ITCByteBuffer getDataBuffer();
 
   void validate() throws TCProtocolException;
 

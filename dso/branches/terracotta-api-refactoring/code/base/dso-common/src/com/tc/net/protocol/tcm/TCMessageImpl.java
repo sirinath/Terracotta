@@ -3,7 +3,8 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
@@ -51,7 +52,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
    * @param header
    * @param data
    */
-  protected TCMessageImpl(MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, TCByteBuffer[] data) {
+  protected TCMessageImpl(MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, ITCByteBuffer[] data) {
     super(header, data);
     this.monitor = monitor;
     this.type = TCMessageType.getInstance(header.getMessageType());
@@ -73,7 +74,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   }
 
   // use me to read directly from the message data (as opposed to using the name-value mechanism)
-  protected TCByteBufferInputStream getInputStream() {
+  protected TCByteBufferInput getInputStream() {
     return this.bbis;
   }
 
@@ -94,7 +95,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
       try {
         dehydrateValues();
 
-        final TCByteBuffer[] nvData = out.toArray();
+        final ITCByteBuffer[] nvData = out.toArray();
 
         Assert.eval(nvData.length > 0);
         nvData[0].putInt(0, nvCount);
@@ -269,7 +270,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
     object.serializeTo(out);
   }
 
-  protected void putNVPair(byte name, TCByteBuffer[] data) {
+  protected void putNVPair(byte name, ITCByteBuffer[] data) {
     nvCount++;
     out.write(name);
     out.write(data);

@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.core.TCConnection;
 
 /**
@@ -15,11 +15,11 @@ public class GenericNetworkMessage extends AbstractTCNetworkMessage {
   private final TCConnection source;
   private boolean            sent = false;
 
-  public GenericNetworkMessage(TCConnection source, TCByteBuffer data) {
-    this(source, new TCByteBuffer[] { data });
+  public GenericNetworkMessage(TCConnection source, ITCByteBuffer data) {
+    this(source, new ITCByteBuffer[] { data });
   }
 
-  public GenericNetworkMessage(TCConnection source, TCByteBuffer data[]) {
+  public GenericNetworkMessage(TCConnection source, ITCByteBuffer data[]) {
     super(new GenericNetworkHeader(), data);
 
     GenericNetworkHeader hdr = (GenericNetworkHeader) getHeader();
@@ -33,7 +33,7 @@ public class GenericNetworkMessage extends AbstractTCNetworkMessage {
     this.source = source;
   }
 
-  GenericNetworkMessage(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload) {
+  GenericNetworkMessage(TCConnection source, TCNetworkHeader header, ITCByteBuffer[] payload) {
     super(header, payload);
     this.source = source;
   }

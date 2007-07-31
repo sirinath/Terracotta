@@ -18,9 +18,9 @@ public class TCStreamLogger extends Thread {
 
   protected final BufferedReader in;
   protected final TCLogger       out;
-  protected final LogLevel       level;
+  protected final ILogLevel       level;
 
-  public TCStreamLogger(InputStream stream, TCLogger logger, LogLevel level) {
+  public TCStreamLogger(InputStream stream, TCLogger logger, ILogLevel level) {
     Assert.assertNotNull(stream);
 
     this.in = new BufferedReader(new InputStreamReader(stream));

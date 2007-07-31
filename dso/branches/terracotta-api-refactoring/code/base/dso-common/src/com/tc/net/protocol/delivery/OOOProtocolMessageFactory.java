@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol.delivery;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.protocol.TCNetworkMessage;
 
 public class OOOProtocolMessageFactory {
@@ -27,7 +27,7 @@ public class OOOProtocolMessageFactory {
                                                                    sessionId), payload);
   }
 
-  public OOOProtocolMessage createNewMessage(OOOProtocolMessageHeader header, TCByteBuffer[] data) {
+  public OOOProtocolMessage createNewMessage(OOOProtocolMessageHeader header, ITCByteBuffer[] data) {
     return new OOOProtocolMessageImpl(header, data);
   }
 

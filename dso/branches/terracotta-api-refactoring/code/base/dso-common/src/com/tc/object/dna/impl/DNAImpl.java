@@ -4,8 +4,8 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.bytes.TCByteBuffer;
-import com.tc.io.TCByteBufferInputStream;
+import com.tc.bytes.ITCByteBuffer;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
@@ -21,13 +21,13 @@ import com.tc.util.Assert;
 import java.io.IOException;
 
 public class DNAImpl implements DNA, DNACursor, TCSerializable {
-  private static final IDNAEncoding     DNA_STORAGE_ENCODING = new DNAEncoding(IDNAEncoding.STORAGE);
+  private static final IDNAEncoding    DNA_STORAGE_ENCODING = new DNAEncoding(IDNAEncoding.STORAGE);
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
 
-  protected TCByteBufferInputStream    input;
-  protected TCByteBuffer[]             dataOut;
+  protected TCByteBufferInput          input;
+  protected ITCByteBuffer[]            dataOut;
 
   private int                          actionCount          = 0;
   private int                          origActionCount;
@@ -208,7 +208,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     serialOutput.write(dataOut);
   }
 
-  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
+  public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.wasDeserialized = true;
 
     serialInput.mark();

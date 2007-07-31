@@ -5,7 +5,7 @@
 package com.tc.l2.msg;
 
 import com.tc.async.api.OrderedEventContext;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -31,7 +31,7 @@ public class RelayedCommitTransactionMessage extends AbstractGroupMessage implem
 
   public static final int        RELAYED_COMMIT_TXN_MSG_TYPE = 0;
 
-  private TCByteBuffer[]         batchData;
+  private ITCByteBuffer[]         batchData;
   private ObjectStringSerializer serializer;
   private Map                    sid2gid;
   private ChannelID              channelID;
@@ -43,7 +43,7 @@ public class RelayedCommitTransactionMessage extends AbstractGroupMessage implem
     super(-1);
   }
 
-  public RelayedCommitTransactionMessage(ChannelID channelID, TCByteBuffer[] batchData,
+  public RelayedCommitTransactionMessage(ChannelID channelID, ITCByteBuffer[] batchData,
                                          ObjectStringSerializer serializer, Map sid2gid,
                                          Collection ackedTransactionIDs, long seqID) {
     super(RELAYED_COMMIT_TXN_MSG_TYPE);
@@ -59,7 +59,7 @@ public class RelayedCommitTransactionMessage extends AbstractGroupMessage implem
     return channelID;
   }
 
-  public TCByteBuffer[] getBatchData() {
+  public ITCByteBuffer[] getBatchData() {
     return batchData;
   }
 

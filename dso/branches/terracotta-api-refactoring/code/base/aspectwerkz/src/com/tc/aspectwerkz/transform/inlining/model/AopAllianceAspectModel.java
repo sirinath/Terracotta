@@ -3,21 +3,19 @@
  */
 package com.tc.aspectwerkz.transform.inlining.model;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.ClassWriter;
 import com.tc.asm.ClassVisitor;
+import com.tc.asm.ClassWriter;
+import com.tc.asm.MethodVisitor;
 import com.tc.asm.Type;
-
 import com.tc.aspectwerkz.definition.AspectDefinition;
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.transform.JoinPointCompiler;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.AdviceMethodInfo;
 import com.tc.aspectwerkz.transform.inlining.AspectInfo;
 import com.tc.aspectwerkz.transform.inlining.compiler.CompilationInfo;
 import com.tc.aspectwerkz.transform.inlining.compiler.CompilerInput;
-import com.tc.aspectwerkz.transform.inlining.model.AspectWerkzAspectModel;
 import com.tc.aspectwerkz.transform.inlining.spi.AspectModel;
-import com.tc.aspectwerkz.reflect.ClassInfo;
 
 /**
  * TODO support ConstructorInvocation (1h work) (plus tests)

@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.NullTCLogger;
 import com.tc.net.TCSocketAddress;
@@ -40,7 +40,7 @@ public class MockOnceAndOnlyOnceProtocolNetworkLayer extends AbstractMessageTran
     throw new ImplementMe();
   }
 
-  public void receive(TCByteBuffer[] msgData) {
+  public void receive(ITCByteBuffer[] msgData) {
     throw new ImplementMe();
   }
 

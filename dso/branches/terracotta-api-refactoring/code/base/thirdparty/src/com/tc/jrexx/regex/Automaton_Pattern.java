@@ -22,10 +22,14 @@
 */
 package com.tc.jrexx.regex;
 
-import com.tc.jrexx.set.*;
-import com.tc.jrexx.automaton.*;
-import java.text.*;
-import java.util.*;
+import com.tc.jrexx.automaton.Automaton;
+import com.tc.jrexx.automaton.IProperties;
+import com.tc.jrexx.set.AutomatonSet_String;
+import com.tc.jrexx.set.CharSet;
+import com.tc.jrexx.set.ISet_char;
+
+import java.text.ParsePosition;
+import java.util.Map;
 
 
 public class Automaton_Pattern extends com.tc.jrexx.set.AutomatonSet_String {

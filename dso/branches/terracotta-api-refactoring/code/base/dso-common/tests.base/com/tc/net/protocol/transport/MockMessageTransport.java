@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
@@ -49,7 +49,7 @@ public class MockMessageTransport implements MessageTransport {
     throw new ImplementMe();
   }
 
-  public void receive(TCByteBuffer[] msgData) {
+  public void receive(ITCByteBuffer[] msgData) {
     throw new ImplementMe();
   }
 

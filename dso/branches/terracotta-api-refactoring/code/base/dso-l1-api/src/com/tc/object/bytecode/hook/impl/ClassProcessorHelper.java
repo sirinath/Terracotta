@@ -5,10 +5,8 @@
 package com.tc.object.bytecode.hook.impl;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
-import com.tc.net.NIOWorkarounds;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
@@ -16,6 +14,7 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.text.Banner;
+import com.tc.util.UtilityClassHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -93,7 +92,7 @@ public class ClassProcessorHelper {
       java.security.Security.getProviders();
 
       // Workaround bug in NIO on solaris 10
-      NIOWorkarounds.solaris10Workaround();
+      UtilityClassHelper.invokeStaticMethod("com.tc.net.NIOWorkarounds", "solaris10Workaround", null, null);
 
       tcClassPath = buildTerracottaClassPath();
 
@@ -450,7 +449,7 @@ public class ClassProcessorHelper {
    * XXX::NOTE:: Donot optimize to return same input byte array if the class is instrumented (I cant imagine why we
    * would). ClassLoader checks the returned byte array to see if the class is instrumented or not to maintain the
    * offset.
-   *
+   * 
    * @see ClassLoaderPreProcessorImpl
    */
   public static byte[] defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len, ProtectionDomain pd) {

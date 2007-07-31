@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.util.TCTimeoutException;
 
@@ -21,7 +21,7 @@ public interface NetworkLayer {
   
   public void send(TCNetworkMessage message);
   
-  public void receive(TCByteBuffer[] msgData);
+  public void receive(ITCByteBuffer[] msgData);
   
   public boolean isConnected();
 

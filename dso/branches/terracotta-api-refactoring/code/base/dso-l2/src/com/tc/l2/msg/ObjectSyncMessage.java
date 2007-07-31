@@ -5,7 +5,7 @@
 package com.tc.l2.msg;
 
 import com.tc.async.api.OrderedEventContext;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.object.ObjectID;
@@ -32,7 +32,7 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
 
   private Set                    oids;
   private int                    dnaCount;
-  private TCByteBuffer[]         dnas;
+  private ITCByteBuffer[]         dnas;
   private ObjectStringSerializer serializer;
   private Map                    rootsMap;
   private long                   sequenceID;
@@ -89,13 +89,13 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     }
   }
 
-  private void recycle(TCByteBuffer[] buffers) {
+  private void recycle(ITCByteBuffer[] buffers) {
     for (int i = 0; i < buffers.length; i++) {
       buffers[i].recycle();
     }
   }
 
-  public void initialize(Set dnaOids, int count, TCByteBuffer[] serializedDNAs,
+  public void initialize(Set dnaOids, int count, ITCByteBuffer[] serializedDNAs,
                          ObjectStringSerializer objectSerializer, Map roots, long sID) {
     this.oids = dnaOids;
     this.dnaCount = count;
@@ -142,8 +142,8 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
   /*
    * For testing only
    */
-  public TCByteBuffer[] getUnprocessedDNAs() {
-    TCByteBuffer[] tcbb = new TCByteBuffer[dnas.length];
+  public ITCByteBuffer[] getUnprocessedDNAs() {
+    ITCByteBuffer[] tcbb = new ITCByteBuffer[dnas.length];
     for (int i = 0; i < dnas.length; i++) {
       tcbb[i] = dnas[i];
     }

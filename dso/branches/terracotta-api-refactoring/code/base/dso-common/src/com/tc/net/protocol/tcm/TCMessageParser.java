@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
@@ -19,7 +19,7 @@ class TCMessageParser {
     this.factory = factory;
   }
 
-  TCMessage parseMessage(MessageChannel source, TCByteBuffer[] data) {
+  TCMessage parseMessage(MessageChannel source, ITCByteBuffer[] data) {
     TCMessageHeader hdr = new TCMessageHeaderImpl(data[0].duplicate().limit(TCMessageHeader.HEADER_LENGTH));
     final int headerLength = hdr.getHeaderByteLength();
 
@@ -30,15 +30,15 @@ class TCMessageParser {
       throw new RuntimeException("Invalid header length: " + headerLength);
     }
 
-    final TCByteBuffer msgData[];
+    final ITCByteBuffer msgData[];
 
     if (data[0].limit() > headerLength) {
-      msgData = new TCByteBuffer[data.length];
+      msgData = new ITCByteBuffer[data.length];
       System.arraycopy(data, 0, msgData, 0, msgData.length);
       msgData[0] = msgData[0].position(headerLength).slice();
     } else {
       Assert.eval(data.length > 1);
-      msgData = new TCByteBuffer[data.length - 1];
+      msgData = new ITCByteBuffer[data.length - 1];
       System.arraycopy(data, 1, msgData, 0, msgData.length);
     }
 
@@ -52,7 +52,7 @@ class TCMessageParser {
     return factory.createMessage(source, type, hdr, msgData);
   }
 
-  private String toString(TCByteBuffer[] data) {
+  private String toString(ITCByteBuffer[] data) {
     if(data == null || data.length == 0) { return "null or size 0"; }
     StringBuffer sb = new StringBuffer();
     for (int i = 0; i < data.length; i++) {

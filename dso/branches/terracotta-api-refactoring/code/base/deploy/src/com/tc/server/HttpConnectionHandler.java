@@ -5,7 +5,7 @@ package com.tc.server;
 
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.HttpConnectionContext;
@@ -27,7 +27,7 @@ public class HttpConnectionHandler extends AbstractEventHandler {
     HttpConnectionContext connContext = (HttpConnectionContext) context;
 
     Socket s = connContext.getSocket();
-    TCByteBuffer buffer = connContext.getBuffer();
+    ITCByteBuffer buffer = connContext.getBuffer();
     byte[] data = new byte[buffer.limit()];
     buffer.get(data);
     try {

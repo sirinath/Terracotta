@@ -9,7 +9,7 @@ import org.apache.commons.lang.ClassUtils;
 
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.LogLevel;
+import com.tc.logging.ILogLevel;
 import com.tc.logging.TCAppender;
 import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.Manageable;
@@ -245,7 +245,7 @@ public class NonPortableInstancesTest extends TransparentTestBase {
 
     private final List events = new ArrayList();
 
-    public void append(LogLevel level, Object message, Throwable throwable) {
+    public void append(ILogLevel level, Object message, Throwable throwable) {
       events.add(new Event(level, message, throwable));
     }
 
@@ -264,17 +264,17 @@ public class NonPortableInstancesTest extends TransparentTestBase {
   }
 
   static class Event {
-    private final LogLevel  level;
+    private final ILogLevel  level;
     private final Object    message;
     private final Throwable throwable;
 
-    Event(LogLevel level, Object message, Throwable throwable) {
+    Event(ILogLevel level, Object message, Throwable throwable) {
       this.level = level;
       this.message = message;
       this.throwable = throwable;
     }
 
-    public LogLevel getLevel() {
+    public ILogLevel getLevel() {
       return level;
     }
 

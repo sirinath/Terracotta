@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol.delivery;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.protocol.AbstractTCNetworkMessage;
 import com.tc.net.protocol.TCNetworkMessage;
 
@@ -20,7 +20,7 @@ class OOOProtocolMessageImpl extends AbstractTCNetworkMessage implements OOOProt
   /**
    * Create a message with the given payload from the network. Useful for propogating messages up the network stack.
    */
-  OOOProtocolMessageImpl(OOOProtocolMessageHeader header, TCByteBuffer[] payload) {
+  OOOProtocolMessageImpl(OOOProtocolMessageHeader header, ITCByteBuffer[] payload) {
     super(header, payload);
   }
 

@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.AbstractTCNetworkMessage;
 import com.tc.net.protocol.TCNetworkHeader;
@@ -39,7 +39,7 @@ public class WireProtocolMessageImpl extends AbstractTCNetworkMessage implements
     return rv;
   }
 
-  protected WireProtocolMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] data) {
+  protected WireProtocolMessageImpl(TCConnection source, TCNetworkHeader header, ITCByteBuffer[] data) {
     super(header, data);
     recordLength();
     this.sourceConnection = source;

@@ -3,7 +3,7 @@
  */
 package com.tctest.longrunning;
 
-import com.tc.logging.LogLevel;
+import com.tc.logging.ILogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOApplicationConfig;
@@ -94,11 +94,11 @@ public class LongrunningGCTestApp implements Application {
                                                    println(" WARN ", message, t);
                                                  }
 
-                                                 public void log(LogLevel level, Object message) {
+                                                 public void log(ILogLevel level, Object message) {
                                                    println(level.toString(), message);
                                                  }
 
-                                                 public void log(LogLevel level, Object message, Throwable t) {
+                                                 public void log(ILogLevel level, Object message, Throwable t) {
                                                    println(level.toString(), message, t);
                                                  }
 
@@ -110,11 +110,11 @@ public class LongrunningGCTestApp implements Application {
                                                    return true;
                                                  }
 
-                                                 public void setLevel(LogLevel level) {
+                                                 public void setLevel(ILogLevel level) {
                                                    return;
                                                  }
 
-                                                 public LogLevel getLevel() {
+                                                 public ILogLevel getLevel() {
                                                    return null;
                                                  }
 

@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.NetworkLayer;
@@ -63,7 +63,7 @@ public class TestMessageChannel implements MessageChannel {
     sendQueue.put(msg);
   }
 
-  public void receive(TCByteBuffer[] msgData) {
+  public void receive(ITCByteBuffer[] msgData) {
     return;
   }
 

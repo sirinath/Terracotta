@@ -4,10 +4,41 @@
 package com.tc.aspectwerkz.expression;
 
 
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.tc.aspectwerkz.expression.ast.ASTAnd;
+import com.tc.aspectwerkz.expression.ast.ASTArgParameter;
+import com.tc.aspectwerkz.expression.ast.ASTArgs;
+import com.tc.aspectwerkz.expression.ast.ASTAttribute;
+import com.tc.aspectwerkz.expression.ast.ASTCall;
+import com.tc.aspectwerkz.expression.ast.ASTCflow;
+import com.tc.aspectwerkz.expression.ast.ASTCflowBelow;
+import com.tc.aspectwerkz.expression.ast.ASTClassPattern;
+import com.tc.aspectwerkz.expression.ast.ASTConstructorPattern;
+import com.tc.aspectwerkz.expression.ast.ASTExecution;
+import com.tc.aspectwerkz.expression.ast.ASTExpression;
+import com.tc.aspectwerkz.expression.ast.ASTFieldPattern;
+import com.tc.aspectwerkz.expression.ast.ASTGet;
+import com.tc.aspectwerkz.expression.ast.ASTHandler;
+import com.tc.aspectwerkz.expression.ast.ASTHasField;
+import com.tc.aspectwerkz.expression.ast.ASTHasMethod;
+import com.tc.aspectwerkz.expression.ast.ASTIf;
+import com.tc.aspectwerkz.expression.ast.ASTMethodPattern;
+import com.tc.aspectwerkz.expression.ast.ASTModifier;
+import com.tc.aspectwerkz.expression.ast.ASTNot;
+import com.tc.aspectwerkz.expression.ast.ASTOr;
+import com.tc.aspectwerkz.expression.ast.ASTParameter;
+import com.tc.aspectwerkz.expression.ast.ASTPointcutReference;
+import com.tc.aspectwerkz.expression.ast.ASTRoot;
+import com.tc.aspectwerkz.expression.ast.ASTSet;
+import com.tc.aspectwerkz.expression.ast.ASTStaticInitialization;
+import com.tc.aspectwerkz.expression.ast.ASTTarget;
+import com.tc.aspectwerkz.expression.ast.ASTThis;
+import com.tc.aspectwerkz.expression.ast.ASTWithin;
+import com.tc.aspectwerkz.expression.ast.ASTWithinCode;
+import com.tc.aspectwerkz.expression.ast.ExpressionParserVisitor;
+import com.tc.aspectwerkz.expression.ast.Node;
+import com.tc.aspectwerkz.expression.ast.SimpleNode;
+import com.tc.aspectwerkz.expression.regexp.Pattern;
+import com.tc.aspectwerkz.expression.regexp.TypePattern;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.ClassInfoHelper;
 import com.tc.aspectwerkz.reflect.ConstructorInfo;
@@ -16,13 +47,12 @@ import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.aspectwerkz.reflect.ReflectionInfo;
 import com.tc.aspectwerkz.reflect.StaticInitializationInfo;
-import com.tc.backport175.bytecode.AnnotationElement;
-import com.tc.aspectwerkz.expression.ExpressionInfo;
-
-import com.tc.aspectwerkz.expression.ast.*;
-import com.tc.aspectwerkz.expression.regexp.Pattern;
-import com.tc.aspectwerkz.expression.regexp.TypePattern;
 import com.tc.aspectwerkz.util.Util;
+import com.tc.backport175.bytecode.AnnotationElement;
+
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The expression visitor.

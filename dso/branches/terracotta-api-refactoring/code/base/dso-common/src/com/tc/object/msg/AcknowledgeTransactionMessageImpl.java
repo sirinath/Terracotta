@@ -3,7 +3,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -31,7 +31,7 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
   }
 
   public AcknowledgeTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                           TCMessageHeader header, TCByteBuffer[] data) {
+                                           TCMessageHeader header, ITCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

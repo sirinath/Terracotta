@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.TCConnection;
@@ -24,7 +24,7 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
   private final LinkedList        collectedMessages = new LinkedList();
   private int                     dataBytesNeeded;
   private AbstractTCNetworkHeader header;
-  private TCByteBuffer[]          dataBuffers;
+  private ITCByteBuffer[]          dataBuffers;
   private int                     bufferIndex       = -1;
   private int                     mode;
 
@@ -33,12 +33,12 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
     init();
   }
 
-  public void addReadData(TCConnection source, TCByteBuffer[] data, int length) throws TCProtocolException {
+  public void addReadData(TCConnection source, ITCByteBuffer[] data, int length) throws TCProtocolException {
     processIncomingData(source, data, length);
   }
 
-  public final TCByteBuffer[] getReadBuffers() {
-    if (mode == MODE_HEADER) { return new TCByteBuffer[] { header.getDataBuffer() }; }
+  public final ITCByteBuffer[] getReadBuffers() {
+    if (mode == MODE_HEADER) { return new ITCByteBuffer[] { header.getDataBuffer() }; }
 
     Assert.eval(mode == MODE_DATA);
 
@@ -49,7 +49,7 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
     }
 
     // only return the subset of buffers that can actually receive more bytes
-    final TCByteBuffer[] rv = new TCByteBuffer[dataBuffers.length - bufferIndex];
+    final ITCByteBuffer[] rv = new ITCByteBuffer[dataBuffers.length - bufferIndex];
     System.arraycopy(dataBuffers, bufferIndex, rv, 0, rv.length);
 
     // Make sure we're not passing back a set of arrays with no space left in them
@@ -68,7 +68,7 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
   abstract protected AbstractTCNetworkHeader getNewProtocolHeader();
 
   // subclasses override this method to return specific message types
-  abstract protected TCNetworkMessage createMessage(TCConnection source, TCNetworkHeader hdr, TCByteBuffer[] data)
+  abstract protected TCNetworkMessage createMessage(TCConnection source, TCNetworkHeader hdr, ITCByteBuffer[] data)
       throws TCProtocolException;
 
   abstract protected int computeDataLength(TCNetworkHeader hdr);
@@ -85,7 +85,7 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
     header = getNewProtocolHeader();
   }
 
-  protected final boolean processIncomingData(TCConnection source, TCByteBuffer[] data, final int length)
+  protected final boolean processIncomingData(TCConnection source, ITCByteBuffer[] data, final int length)
       throws TCProtocolException {
     if (mode == MODE_HEADER) { return processHeaderData(source, data); }
 
@@ -99,18 +99,18 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
     return logger;
   }
 
-  private TCByteBuffer[] createDataBuffers(int length) {
+  private ITCByteBuffer[] createDataBuffers(int length) {
     Assert.eval(mode == MODE_DATA);
     return TCByteBufferFactory.getFixedSizedInstancesForLength(false, length);
   }
 
-  private boolean processHeaderData(TCConnection source, final TCByteBuffer[] data) throws TCProtocolException {
+  private boolean processHeaderData(TCConnection source, final ITCByteBuffer[] data) throws TCProtocolException {
     Assert.eval(data.length == 1);
     Assert.eval(data[0] == this.header.getDataBuffer());
 
     if (!this.header.isHeaderLengthAvail()) { return false; }
 
-    final TCByteBuffer buf = data[0];
+    final ITCByteBuffer buf = data[0];
     final int headerLength = this.header.getHeaderByteLength();
     final int bufferLength = buf.limit();
 
@@ -159,9 +159,9 @@ public abstract class AbstractTCProtocolAdaptor implements TCProtocolAdaptor {
     }
   }
 
-  private boolean processPayloadData(TCConnection source, final TCByteBuffer[] data) throws TCProtocolException {
+  private boolean processPayloadData(TCConnection source, final ITCByteBuffer[] data) throws TCProtocolException {
     for (int i = 0; i < data.length; i++) {
-      final TCByteBuffer buffer = data[i];
+      final ITCByteBuffer buffer = data[i];
 
       if (!buffer.hasRemaining()) {
         buffer.flip();

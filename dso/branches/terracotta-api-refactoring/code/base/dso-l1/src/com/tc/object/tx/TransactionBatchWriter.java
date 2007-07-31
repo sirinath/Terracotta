@@ -3,7 +3,7 @@
  */
 package com.tc.object.tx;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.lang.Recyclable;
 import com.tc.object.ObjectID;
@@ -142,13 +142,13 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   // Called from CommitTransactionMessageImpl
-  public synchronized TCByteBuffer[] getData() {
+  public synchronized ITCByteBuffer[] getData() {
     outstandingWriteCount++;
     TCByteBufferOutputStream out = newOutputStream();
     writeHeader(out);
     for (Iterator i = transactionData.values().iterator(); i.hasNext();) {
       TransactionDescriptor td = ((TransactionDescriptor) i.next());
-      TCByteBuffer[] data = td.getData();
+      ITCByteBuffer[] data = td.getData();
       out.write(data);
     }
     batchDataOutputStreams.add(out);
@@ -237,11 +237,11 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private static final class TransactionDescriptor implements Recyclable {
 
     final SequenceID         sequenceID;
-    final TCByteBuffer[]     data;
+    final ITCByteBuffer[]     data;
     // Maintaining hard references so that it doesnt get GCed on us
     private final Collection references;
 
-    TransactionDescriptor(SequenceID sequenceID, TCByteBuffer[] data, Collection references) {
+    TransactionDescriptor(SequenceID sequenceID, ITCByteBuffer[] data, Collection references) {
       this.sequenceID = sequenceID;
       this.data = data;
       this.references = references;
@@ -255,7 +255,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.sequenceID;
     }
 
-    TCByteBuffer[] getData() {
+    ITCByteBuffer[] getData() {
       return data;
     }
 

@@ -5,7 +5,7 @@ package com.tc.object.lockmanager.api;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 
@@ -55,7 +55,7 @@ public class Notify implements TCSerializable {
     out.writeBoolean(this.all);
   }
 
-  public Object deserializeFrom(TCByteBufferInputStream in) throws IOException {
+  public Object deserializeFrom(TCByteBufferInput in) throws IOException {
     initialize(new LockID(in.readString()), new ThreadID(in.readLong()), in.readBoolean());
     return this;
   }

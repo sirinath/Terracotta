@@ -3,12 +3,12 @@
  */
 package com.tc.management.beans.tx;
 
+import com.tc.management.TerracottaMBean;
+
 import java.util.Map;
 
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
-
-import com.tc.management.TerracottaMBean;
 
 public interface ClientTxMonitorMBean extends TerracottaMBean {
 

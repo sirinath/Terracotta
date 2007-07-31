@@ -7,7 +7,7 @@ package com.tc.net.protocol.transport;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.logging.ConnectionIDProvider;
 import com.tc.logging.TCLogger;
 import com.tc.net.MaxConnectionsExceededException;
@@ -93,7 +93,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     message.getWireProtocolHeader().recycle();
   }
 
-  public final void receive(TCByteBuffer[] msgData) {
+  public final void receive(ITCByteBuffer[] msgData) {
     throw new UnsupportedOperationException();
   }
 

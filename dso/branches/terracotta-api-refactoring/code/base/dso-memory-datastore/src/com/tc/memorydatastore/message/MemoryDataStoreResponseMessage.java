@@ -3,7 +3,7 @@
  */
 package com.tc.memorydatastore.message;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -41,7 +41,7 @@ public class MemoryDataStoreResponseMessage extends DSOMessageBase {
   }
 
   public MemoryDataStoreResponseMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-      TCMessageHeader header, TCByteBuffer[] data) {
+      TCMessageHeader header, ITCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

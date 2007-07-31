@@ -6,7 +6,7 @@ package com.tc.object.lockmanager.api;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -81,7 +81,7 @@ public class LockContext implements TCSerializable {
     output.writeInt(lockLevel);
   }
 
-  public Object deserializeFrom(TCByteBufferInputStream input) throws IOException {
+  public Object deserializeFrom(TCByteBufferInput input) throws IOException {
     lockID = new LockID(input.readString());
     channelID = new ChannelID(input.readLong());
     threadID = new ThreadID(input.readLong());

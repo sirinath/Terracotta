@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 
 /**
@@ -19,7 +19,7 @@ public class NullNetworkHeader implements TCNetworkHeader {
     return 0;
   }
 
-  public TCByteBuffer getDataBuffer() {
+  public ITCByteBuffer getDataBuffer() {
     return TCByteBufferFactory.getInstance(false, 0);
   }
 

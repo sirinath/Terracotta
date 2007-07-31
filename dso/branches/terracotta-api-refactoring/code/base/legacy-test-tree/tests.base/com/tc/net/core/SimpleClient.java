@@ -5,7 +5,7 @@ package com.tc.net.core;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.GenericNetworkMessage;
@@ -42,7 +42,7 @@ public class SimpleClient {
     conn.connect(addr, 3000);
 
     for (int i = 0; (numMsgs < 0) || (i < numMsgs); i++) {
-      TCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, dataSize);
+      ITCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, dataSize);
       final GenericNetworkMessage msg = new GenericNetworkMessage(conn, data);
       msg.setSentCallback(new Runnable() {
         public void run() {

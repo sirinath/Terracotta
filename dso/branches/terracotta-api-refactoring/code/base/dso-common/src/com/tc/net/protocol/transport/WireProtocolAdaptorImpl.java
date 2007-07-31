@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.TCConnection;
@@ -28,7 +28,7 @@ public class WireProtocolAdaptorImpl extends AbstractTCProtocolAdaptor implement
     this.sink = sink;
   }
 
-  public void addReadData(TCConnection source, TCByteBuffer[] data, int length) throws TCProtocolException {
+  public void addReadData(TCConnection source, ITCByteBuffer[] data, int length) throws TCProtocolException {
     final boolean msgDone = this.processIncomingData(source, data, length);
 
     if (msgDone) {
@@ -63,7 +63,7 @@ public class WireProtocolAdaptorImpl extends AbstractTCProtocolAdaptor implement
     return wph.getTotalPacketLength() - wph.getHeaderByteLength();
   }
 
-  protected TCNetworkMessage createMessage(TCConnection source, TCNetworkHeader hdr, TCByteBuffer[] data)
+  protected TCNetworkMessage createMessage(TCConnection source, TCNetworkHeader hdr, ITCByteBuffer[] data)
       throws TCProtocolException {
     if (data == null) { throw new TCProtocolException("Wire protocol messages must have a payload"); }
     WireProtocolHeader wph = (WireProtocolHeader) hdr;

@@ -3,6 +3,7 @@
  */
 package com.tc.aspectwerkz.definition;
 
+import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;

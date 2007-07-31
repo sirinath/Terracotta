@@ -5,10 +5,14 @@ package com.tc.aspectwerkz.transform.inlining.compiler;
 
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
-
 import com.tc.aspectwerkz.aspect.AdviceInfo;
 import com.tc.aspectwerkz.aspect.container.AspectFactoryManager;
 import com.tc.aspectwerkz.cflow.CflowCompiler;
+import com.tc.aspectwerkz.expression.ExpressionContext;
+import com.tc.aspectwerkz.expression.ExpressionInfo;
+import com.tc.aspectwerkz.expression.ExpressionNamespace;
+import com.tc.aspectwerkz.expression.ExpressionVisitor;
+import com.tc.aspectwerkz.expression.Undeterministic;
 import com.tc.aspectwerkz.expression.ast.ASTAnd;
 import com.tc.aspectwerkz.expression.ast.ASTArgs;
 import com.tc.aspectwerkz.expression.ast.ASTCall;
@@ -28,14 +32,8 @@ import com.tc.aspectwerkz.expression.ast.ASTTarget;
 import com.tc.aspectwerkz.expression.ast.ASTThis;
 import com.tc.aspectwerkz.expression.ast.ASTWithin;
 import com.tc.aspectwerkz.expression.ast.ASTWithinCode;
-import com.tc.aspectwerkz.expression.ExpressionVisitor;
-import com.tc.aspectwerkz.expression.ExpressionInfo;
-import com.tc.aspectwerkz.expression.Undeterministic;
-import com.tc.aspectwerkz.expression.ExpressionNamespace;
-import com.tc.aspectwerkz.expression.ExpressionContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
-import com.tc.aspectwerkz.transform.inlining.compiler.AbstractJoinPointCompiler;
 
 /**
  * Visit an expression and push on the bytecode stack the boolean expression that corresponds to the residual

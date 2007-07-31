@@ -3,7 +3,7 @@
  */
 package com.tc.object.lockmanager.impl;
 
-import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCDataOutput;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.lockmanager.api.LockID;
@@ -69,7 +69,7 @@ public class GlobalLockStateInfo {
     serialOutput.writeInt(lockLevel);
   }
 
-  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
+  public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.timestamp = serialInput.readLong();
     this.lockID = new LockID(serialInput.readString());
     this.channelID = new ChannelID(serialInput.readLong());

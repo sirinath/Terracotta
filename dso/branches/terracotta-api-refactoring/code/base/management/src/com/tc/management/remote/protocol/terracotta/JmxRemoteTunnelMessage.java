@@ -11,9 +11,9 @@ import java.io.ObjectOutputStream;
 
 import javax.management.remote.message.Message;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.exception.TCRuntimeException;
-import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -42,7 +42,7 @@ public final class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSe
   }
 
   public JmxRemoteTunnelMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                TCMessageHeader header, TCByteBuffer[] data) {
+                                TCMessageHeader header, ITCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
     flag = DATA_FLAG;
   }
@@ -81,7 +81,7 @@ public final class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSe
     }
   }
 
-  public synchronized Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
+  public synchronized Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     try {
       flag = serialInput.readByte();
       final int length = serialInput.readInt();

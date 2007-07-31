@@ -5,11 +5,8 @@ package com.tc.aspectwerkz.transform.inlining.compiler;
 
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Type;
-
-
 import com.tc.aspectwerkz.transform.TransformationUtil;
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
-import com.tc.aspectwerkz.transform.inlining.compiler.AbstractJoinPointCompiler;
 
 import java.lang.reflect.Modifier;
 

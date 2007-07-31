@@ -3,7 +3,7 @@
  */
 package com.tc.net.core;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.net.protocol.GenericNetworkMessage;
 import com.tc.net.protocol.GenericNetworkMessageSink;
 import com.tc.net.protocol.TCNetworkHeader;
@@ -38,9 +38,9 @@ public class Verifier implements GenericNetworkMessageSink {
   }
 
   private void verifyMessage(GenericNetworkMessage msg) {
-    TCByteBuffer data[] = msg.getPayload();
+    ITCByteBuffer data[] = msg.getPayload();
     for (int i = 0; i < data.length; i++) {
-      TCByteBuffer buf = data[i].duplicate();
+      ITCByteBuffer buf = data[i].duplicate();
 
       while (buf.hasRemaining()) {
         final int num = buf.getInt();
@@ -59,7 +59,7 @@ public class Verifier implements GenericNetworkMessageSink {
     }
   }
 
-  private void dataError(String error, TCByteBuffer buf, int position, int numBuf, int numBufs) {
+  private void dataError(String error, ITCByteBuffer buf, int position, int numBuf, int numBufs) {
     error += "\n";
     error += "Message " + sequence + ", Buffer " + (numBuf + 1) + " of " + numBufs + " at position 0x"
              + Integer.toHexString(position).toUpperCase();
@@ -69,7 +69,7 @@ public class Verifier implements GenericNetworkMessageSink {
 
   private void headerError(String errorMsg, GenericNetworkMessage msg) {
     TCNetworkHeader hdr = msg.getHeader();
-    TCByteBuffer hdrData = hdr.getDataBuffer();
+    ITCByteBuffer hdrData = hdr.getDataBuffer();
     throw new RuntimeException(errorMsg + "\n"
                                + HexDump.dump(hdrData.array(), hdrData.arrayOffset(), hdr.getHeaderByteLength()));
   }

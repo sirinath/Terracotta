@@ -5,7 +5,6 @@
 package com.tc.test.server.appserver;
 
 import com.tc.config.Directories;
-import com.tc.exception.ImplementMe;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.appserver.glassfishv1.GlassfishV1AppServerFactory;
@@ -88,8 +87,9 @@ public abstract class AppServerFactory {
         if ("6".equals(majorVersion)) return new Was6xAppServerFactory(new ProtectedKey(), config);
     }
 
-    throw new ImplementMe("App server named '" + factoryName + "' with major version " + majorVersion
-                          + " is not yet supported.");
+    Assert.failure("App server named '" + factoryName + "' with major version " + majorVersion
+                   + " is not yet supported.");
+    return null;
   }
 
   private final synchronized void copyLicenseIfAvailable() {
@@ -136,15 +136,15 @@ public abstract class AppServerFactory {
       throw new RuntimeException("App server [" + appserverName + "] is not yet defined!");
     }
   }
-  
+
   public static int getCurrentAppServerId() {
     return getAppServerId(TestConfigObject.getInstance().appserverFactoryName());
   }
-  
+
   public static boolean currentAppServerBelongsTo(int[] set) {
     int appId = getCurrentAppServerId();
-    for (int i = 0; i < set.length; i++ ) {
-      if (set[i] == appId ) return true;
+    for (int i = 0; i < set.length; i++) {
+      if (set[i] == appId) return true;
     }
     return false;
   }

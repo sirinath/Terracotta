@@ -3,7 +3,7 @@
  */
 package com.tc.util;
 
-import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 
 import java.io.IOException;
@@ -29,14 +29,14 @@ public final class Dumper {
   /**
    * Calls <code>dump(buffer, 10, 16, 2, 8, new OutputStreamWriter(outs))</code>.
    */
-  public static final void hexDump(TCByteBuffer buffer, OutputStream outs) throws IOException {
+  public static final void hexDump(ITCByteBuffer buffer, OutputStream outs) throws IOException {
     dump(new ByteishWrapper(null, buffer), 10, 16, 2, 8, new OutputStreamWriter(outs));
   }
 
   /**
    * Calls <code>dump(buffer, 10, 16, 2, 8, new OutputStreamWriter(outs))</code>.
    */
-  public static final void hexDump(TCByteBuffer buffer, Writer writer) throws IOException {
+  public static final void hexDump(ITCByteBuffer buffer, Writer writer) throws IOException {
     dump(new ByteishWrapper(null, buffer), 10, 16, 2, 8, writer);
   }
 
@@ -57,14 +57,14 @@ public final class Dumper {
   /**
    * Calls <code>dump(buffer, 10, 8, 2, 8, new OutputStreamWriter(outs))</code>.
    */
-  public static final void octalDump(TCByteBuffer buffer, OutputStream outs) throws IOException {
+  public static final void octalDump(ITCByteBuffer buffer, OutputStream outs) throws IOException {
     dump(new ByteishWrapper(null, buffer), 10, 8, 2, 8, new OutputStreamWriter(outs));
   }
 
   /**
    * Calls <code>dump(buffer, 10, 8, 2, 8, new OutputStreamWriter(outs))</code>.
    */
-  public static final void octalDump(TCByteBuffer buffer, Writer writer) throws IOException {
+  public static final void octalDump(ITCByteBuffer buffer, Writer writer) throws IOException {
     dump(new ByteishWrapper(null, buffer), 10, 8, 2, 8, writer);
   }
 
@@ -86,7 +86,7 @@ public final class Dumper {
    * Calls
    * <code>dump(buffer, offsetRadix, dataRadix, bytesPerColumn, columnsPerLine, new OutputStreamWriter(outs))</code>.
    */
-  public static final void dump(TCByteBuffer buffer, int offsetRadix, int dataRadix, int bytesPerColumn,
+  public static final void dump(ITCByteBuffer buffer, int offsetRadix, int dataRadix, int bytesPerColumn,
                                 int columnsPerLine, OutputStream outs) throws IOException {
     dump(new ByteishWrapper(null, buffer), offsetRadix, dataRadix, bytesPerColumn, columnsPerLine,
          new OutputStreamWriter(outs));
@@ -95,7 +95,7 @@ public final class Dumper {
   /**
    * Calls <code>dump(buffer, offsetRadix, dataRadix, bytesPerColumn, columnsPerLine, writer)</code>.
    */
-  public static final void dump(TCByteBuffer buffer, int offsetRadix, int dataRadix, int bytesPerColumn,
+  public static final void dump(ITCByteBuffer buffer, int offsetRadix, int dataRadix, int bytesPerColumn,
                                 int columnsPerLine, Writer writer) throws IOException {
     dump(new ByteishWrapper(null, buffer), offsetRadix, dataRadix, bytesPerColumn, columnsPerLine, writer);
   }

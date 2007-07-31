@@ -3,6 +3,8 @@
  */
 package com.tc.config.schema.utils;
 
+import org.apache.xmlbeans.XmlObject;
+
 /**
  * Thrown when two {@link XmlObject}s are not equal in
  * {@link com.tc.config.schema.utils.StandardXmlObjectComparator#checkEquals(XmlObject, XmlObject)}.
