@@ -42,12 +42,17 @@ public class ClassReplacementMapping {
     return previous;
   }
   
+  public URL getReplacementResource(final String replacementClassName) {
+    return getReplacementResource(replacementClassName, null);
+  }
+  
   public URL getReplacementResource(final String replacementClassName, final ClassLoader defaultClassLoader) {
     if (null == replacementClassName) {
       return null;
     }
     URL resource = (URL)classnameResourceMapping.get(replacementClassName);
-    if (null == resource) {
+    if (null == resource && 
+        defaultClassLoader != null) {
       resource = defaultClassLoader.getResource(ByteCodeUtil.classNameToFileName(replacementClassName));
     }
     System.out.println(">>>>>> getReplacementResource : "+replacementClassName+", "+resource);

@@ -44,6 +44,35 @@ public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfigurator
       bundleUrl = bundleJarUrl+ByteCodeUtil.classNameToFileName(MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
       configHelper.addClassReplacement(MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS,
                                        MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS, new URL(bundleUrl));
+      
+      String classname = "net.sf.ehcache.store.TimeExpiryMemoryStore";
+      bundleUrl = bundleJarUrl+ByteCodeUtil.classNameToFileName(classname);
+      configHelper.addClassReplacement(classname, classname, new URL(bundleUrl));
+      
+      classname = "net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap";
+      bundleUrl = bundleJarUrl+ByteCodeUtil.classNameToFileName(classname);
+      configHelper.addClassReplacement(classname, classname, new URL(bundleUrl));
+      
+      classname = "com.tcclient.ehcache.TimeExpiryMap";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.CacheData";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.CacheDataStore";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.CacheDataStore$CacheEntryInvalidator";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.Expirable";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.Lock";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
+      
+      classname = "com.tcclient.cache.Timestamp";
+      configHelper.addClassReplacement(classname, classname, TerracottaConfiguratorModule.class.getClassLoader().getResource(ByteCodeUtil.classNameToFileName(classname)));
     } catch (MalformedURLException e) {
       throw new RuntimeException("Unexpected error while constructing the URL '"+bundleUrl+"' during the instrumentation configuration of the bunde '"+context.getBundle().getSymbolicName()+"'.", e);
     }

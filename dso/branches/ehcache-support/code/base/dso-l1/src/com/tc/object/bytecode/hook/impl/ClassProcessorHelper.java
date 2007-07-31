@@ -123,6 +123,14 @@ public class ClassProcessorHelper {
   }
 
   public static URL getTCResource(String name, ClassLoader cl) {
+    DSOContext context = getContext(cl);
+    if (context != null) {
+      URL url = context.getClassResource(name);
+      if (url != null) {
+        return url;
+      }
+    }
+    
     if (!isAWRuntimeDependency(name.replace('/', '.'))) { return null; }
 
     try {
@@ -134,11 +142,26 @@ public class ClassProcessorHelper {
   }
 
   public static byte[] getTCClass(String name, ClassLoader cl) throws ClassNotFoundException {
+    DSOContext context = getContext(cl);
+    if (context != null) {
+      URL url = context.getClassResource(name);
+      if (url != null) {
+       System.out.println("getTCClass : context - "+context+", "+url);
+       return getResourceBytes(url);
+      }
+    }
+
     if (!isAWRuntimeDependency(name)) { return null; }
 
     URL url = tcLoader.findResource(name.replace('.', '/') + ".class"); // getResource() would cause an endless loop
-    if (url == null) return null;
+    if (null == url) {
+      return null;
+    }
 
+    return getResourceBytes(url);
+  }
+
+  private static byte[] getResourceBytes(URL url) throws ClassNotFoundException {
     InputStream is = null;
     try {
       is = url.openStream();

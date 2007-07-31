@@ -163,7 +163,8 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         String replacementClassName = mapping.getReplacementClassName(className);
         
         // check if there's a replacement class
-        if (replacementClassName != null) {
+        if (replacementClassName != null &&
+            !replacementClassName.equals(className)) {
           // obtain the resource of the replacement class either from a module bundle, or from the
           // active classloader
           URL replacementResource = mapping.getReplacementResource(replacementClassName, loader);

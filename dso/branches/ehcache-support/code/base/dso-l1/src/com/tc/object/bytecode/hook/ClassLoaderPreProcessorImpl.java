@@ -202,7 +202,7 @@ public class ClassLoaderPreProcessorImpl {
 
     private void instrument() {
       Label l = new Label();
-
+      
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "getTCResource",
@@ -262,7 +262,6 @@ public class ClassLoaderPreProcessorImpl {
 
     private void instrument() {
       Label l = new Label();
-
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "getTCClass",
