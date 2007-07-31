@@ -581,6 +581,7 @@ modules:
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
+        - clustered-ehcache-commons-1.0
   - clustered-websphere-6.1.0.7:
       options:
         jdk: J2SE-1.5
