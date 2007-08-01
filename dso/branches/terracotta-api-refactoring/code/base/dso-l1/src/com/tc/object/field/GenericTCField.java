@@ -4,7 +4,6 @@
  */
 package com.tc.object.field;
 
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.TCClass;
 import com.tc.util.Assert;
@@ -17,7 +16,7 @@ import java.lang.reflect.Modifier;
  */
 public class GenericTCField implements TCField {
 
-  private static final ILiteralValues literalValues = new LiteralValues();
+  private static final LiteralValues literalValues = new LiteralValues();
 
   private final TCClass              tcClass;
   private final boolean              isPortable;

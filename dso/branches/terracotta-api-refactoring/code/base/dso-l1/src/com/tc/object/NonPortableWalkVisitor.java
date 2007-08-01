@@ -21,7 +21,7 @@ public class NonPortableWalkVisitor implements Visitor, ValueFormatter, WalkTest
   public static final String          MARKER       = "!!";
   private static final String         NON_PORTABLE = MARKER + " ";
   private static final String         PORTABLE     = spaces(NON_PORTABLE.length());
-  private static final ILiteralValues  literals     = new LiteralValues();
+  private static final LiteralValues  literals     = new LiteralValues();
 
   private final PrintVisitor          delegate;
   private final ClientObjectManager   objMgr;
@@ -73,13 +73,13 @@ public class NonPortableWalkVisitor implements Visitor, ValueFormatter, WalkTest
 
     int type = literals.valueFor(value);
     switch (type) {
-      case ILiteralValues.OBJECT: {
+      case LiteralValues.OBJECT: {
         return "(" + value.getClass().getName() + ")";
       }
-      case ILiteralValues.JAVA_LANG_CLASSLOADER: {
+      case LiteralValues.JAVA_LANG_CLASSLOADER: {
         return "Classloader (" + value.getClass().getName() + ")";
       }
-      case ILiteralValues.STRING: {
+      case LiteralValues.STRING: {
         return "\"" + value + "\"";
       }
       default: {

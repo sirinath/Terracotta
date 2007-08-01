@@ -4,25 +4,23 @@
  */
 package com.tc.object.applicator;
 
-import com.tc.logging.TCLogger;
+//import com.tc.logging.TCLogger;
 import com.tc.object.ClientObjectManager;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.IDNAEncoding;
 import com.tc.util.Assert;
-import com.tc.util.UtilityClassHelper;
 
 import java.util.Map;
 
 public abstract class BaseApplicator implements ChangeApplicator {
 
-  private static final TCLogger       logger   = (TCLogger) UtilityClassHelper
-                                                   .invokeStaticMethod("com.tc.logging.TCLogging", "getLogger",
-                                                                       new Class[] { Class.class },
-                                                                       new Object[] { BaseApplicator.class });
-  private static final ILiteralValues literals = new LiteralValues();
+  //private static final TCLogger       logger   = (TCLogger) UtilityClassHelper
+  //                                                 .invokeStaticMethod("com.tc.logging.TCLogging", "getLogger",
+  //                                                                     new Class[] { Class.class },
+  //                                                                     new Object[] { BaseApplicator.class });
+  private static final LiteralValues literals = new LiteralValues();
 
   protected final IDNAEncoding        encoding;
 
@@ -40,8 +38,8 @@ public abstract class BaseApplicator implements ChangeApplicator {
       if (tcObject == null) {
         // When we dehydrate complex objects, traverser bails out on the first non portable
         // object. We dont want to dehydrate things that are not added in the ClientObjectManager.
-        logger
-            .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
+        //logger
+        //    .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
         return null;
       }
       return tcObject.getObjectID();

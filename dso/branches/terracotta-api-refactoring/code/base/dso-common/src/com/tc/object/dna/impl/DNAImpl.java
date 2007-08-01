@@ -6,6 +6,7 @@ package com.tc.object.dna.impl;
 
 import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;

@@ -206,7 +206,9 @@ public class ModulesLoader {
       // else, check if the config-bundle prefers a specific terracotta configuration
       if (configPath == null) {
         configPath = (String) bundle.getHeaders().get(TC_CONFIG_HEADER);
-        logger.info("Using specific config for module " + bundle.getSymbolicName() + ": " + configPath);
+        if (configPath != null) {
+          logger.info("Using specific config for module " + bundle.getSymbolicName() + ": " + configPath);
+        }
       }
 
       // else, just use the default terracotta configuration 

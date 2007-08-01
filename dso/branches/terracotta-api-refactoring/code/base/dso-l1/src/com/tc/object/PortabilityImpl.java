@@ -38,7 +38,7 @@ public class PortabilityImpl implements Portability {
     nonInstrumentedClass.add("java.util.concurrent.locks.AbstractQueuedSynchronizer$Node");
   }
 
-  private final ILiteralValues         literalValues        = new LiteralValues();
+  private final LiteralValues         literalValues        = new LiteralValues();
   private final Map                   portableCache        = new ConcurrentHashMap();
   private final Map                   physicalCache        = new ConcurrentHashMap();
   private final DSOClientConfigHelper config;

@@ -6,7 +6,6 @@ package com.tc.object.dna.impl;
 
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCByteBufferOutputStream.Mark;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNAWriter;
@@ -16,7 +15,7 @@ import com.tc.util.Conversion;
 public class DNAWriterImpl implements DNAWriter {
 
   private static final long              NULL_ID       = ObjectID.NULL_ID.toLong();
-  private static final ILiteralValues     literalValues = new LiteralValues();
+  private static final LiteralValues     literalValues = new LiteralValues();
 
   private final TCByteBufferOutputStream output;
   private final Mark                     headerMark;

@@ -4,7 +4,6 @@
 package com.tc.object.tx.optimistic;
 
 import com.tc.object.ClientObjectManager;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.TCObject;
 import com.tc.object.change.TCChangeBuffer;
@@ -24,7 +23,7 @@ public class OptimisticTransactionManagerImpl implements OptimisticTransactionMa
   private ThreadLocal              transaction   = new ThreadLocal();
   private ClientObjectManager      objectManager;
   private ClientTransactionManager clientTxManager;
-  private ILiteralValues            literalValues = new LiteralValues();
+  private LiteralValues            literalValues = new LiteralValues();
 
   public OptimisticTransactionManagerImpl(ClientObjectManager objectManager, ClientTransactionManager clientTxManager) {
     this.objectManager = objectManager;

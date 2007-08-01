@@ -8,7 +8,6 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.io.serializer.api.StringIndex;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNACursor;
@@ -27,7 +26,7 @@ import java.util.Map;
  */
 public class ManagedObjectStateFactory {
 
-  private static final ILiteralValues               literalValues       = (ILiteralValues) new LiteralValues();
+  private static final LiteralValues               literalValues       = (LiteralValues) new LiteralValues();
   private static final Map                          classNameToStateMap = new ConcurrentHashMap();
   private final ManagedObjectChangeListenerProvider listenerProvider;
   private final StringIndex                         stringIndex;
