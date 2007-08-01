@@ -9,7 +9,9 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.util.Assert;
 
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -20,7 +22,12 @@ import java.util.Vector;
 import java.util.concurrent.CyclicBarrier;
 
 /**
- * Test to make sure local object state is preserved when TC throws UnlockedSharedObjectException and ReadOnlyException -
+ * Test to make sure local object state is preserved when TC throws:
+ * 
+ * UnlockedSharedObjectException ReadOnlyException TCNonPortableObjectError
+ * 
+ * List version
+ * 
  * INT-186
  * 
  * @author hhuynh
@@ -41,7 +48,7 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
     }
     await();
 
-    for (LockMode lockMode : new LockMode[] { LockMode.NONE, LockMode.READ }) {
+    for (LockMode lockMode : LockMode.values()) {
       for (Wrapper w : root) {
         testMutate(w, lockMode, new AddMutator());
         testMutate(w, lockMode, new AddAllMutator());
@@ -52,6 +59,30 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
         testMutate(w, lockMode, new IteratorRemoveMutator());
         testMutate(w, lockMode, new IteratorAddMutator());
         testMutate(w, lockMode, new ListIteratorRemoveMutator());
+        // failing - DEV-844
+        // testMutate(w, lockMode, new AddAllNonPortableMutator());
+      }
+    }
+  }
+
+  protected void validate(int oldSize, Wrapper wrapper, LockMode lockMode, Mutator mutator) throws Throwable {
+    int newSize = wrapper.size();
+    switch (lockMode) {
+      case NONE:
+      case READ:
+        Assert.assertEquals("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode, oldSize, newSize);
+        break;
+      case WRITE:
+        // nothing yet
+      default:
+        throw new RuntimeException("Shouldn't happen");
+    }
+
+    if (mutator instanceof AddAllNonPortableMutator) {
+      for (Iterator it = ((List) wrapper.getObject()).iterator(); it.hasNext();) {
+        Object o = it.next();
+        Assert.assertFalse("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode + ", " + o.getClass(),
+                           o instanceof Socket);
       }
     }
   }
@@ -88,11 +119,9 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
     config.addIncludePattern(testClass + "$*");
     config.addIncludePattern(GenericLocalStateTestApp.class.getName() + "$*");
 
-    String methodExpression = "* " + testClass + "*.createLists()";
-    config.addWriteAutolock(methodExpression);
-
-    methodExpression = "* " + testClass + "*.runTest()";
-    config.addReadAutolock(methodExpression);
+    config.addWriteAutolock("* " + testClass + "*.createLists()");
+    config.addWriteAutolock("* " + testClass + "*.validate()");
+    config.addReadAutolock("* " + testClass + "*.runTest()");
 
     spec.addRoot("root", "root");
     spec.addRoot("barrier", "barrier");
@@ -141,17 +170,17 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
       l.removeAll(a);
     }
   }
-  
+
   private static class RetainAllMutator implements Mutator {
     public void doMutate(Object o) {
       List l = (List) o;
       List a = new ArrayList();
       a.add("v1");
-      a.add("v2");      
+      a.add("v2");
       l.retainAll(a);
     }
   }
-  
+
   private static class IteratorRemoveMutator implements Mutator {
     public void doMutate(Object o) {
       List l = (List) o;
@@ -161,7 +190,7 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
       }
     }
   }
-  
+
   private static class ListIteratorRemoveMutator implements Mutator {
     public void doMutate(Object o) {
       List l = (List) o;
@@ -180,4 +209,15 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
     }
   }
 
+  private static class AddAllNonPortableMutator implements Mutator {
+    public void doMutate(Object o) {
+      List l = (List) o;
+      List anotherList = new ArrayList();
+      anotherList.add("v4");
+      anotherList.add("v5");
+      anotherList.add(new Socket());
+      anotherList.add("v6");
+      l.addAll(anotherList);
+    }
+  }
 }
