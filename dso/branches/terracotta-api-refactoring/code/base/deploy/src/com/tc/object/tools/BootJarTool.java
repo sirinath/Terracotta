@@ -132,6 +132,7 @@ import com.tc.util.ReflectiveProxy;
 import com.tc.util.SetIteratorWrapper;
 import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
+import com.tc.util.UtilityClassHelper;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.UnknownJvmVersionException;
 import com.tc.util.runtime.UnknownRuntimeVersionException;
@@ -479,6 +480,8 @@ public class BootJarTool {
 
       loadTerracottaClass(ReflectiveProxy.class.getName());
       loadTerracottaClass(ReflectiveProxy.Handler.class.getName());
+      
+      loadTerracottaClass(UtilityClassHelper.class.getName());
 
       addManagementClasses();
 
