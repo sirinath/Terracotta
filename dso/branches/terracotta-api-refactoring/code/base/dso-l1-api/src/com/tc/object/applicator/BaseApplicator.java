@@ -7,6 +7,7 @@ package com.tc.object.applicator;
 import com.tc.logging.TCLogger;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ILiteralValues;
+import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.IDNAEncoding;
@@ -21,8 +22,7 @@ public abstract class BaseApplicator implements ChangeApplicator {
                                                    .invokeStaticMethod("com.tc.logging.TCLogging", "getLogger",
                                                                        new Class[] { Class.class },
                                                                        new Object[] { BaseApplicator.class });
-  private static final ILiteralValues literals = (ILiteralValues) UtilityClassHelper
-                                                   .createInstance("com.tc.object.LiteralValues");
+  private static final ILiteralValues literals = new LiteralValues();
 
   protected final IDNAEncoding        encoding;
 
