@@ -47,14 +47,6 @@ public class DNAEncoding implements IDNAEncoding {
   private static final int           SHORT_WARN                           = WARN_THRESHOLD / 2;
   private static final int           REF_WARN                             = WARN_THRESHOLD / 4;
 
-  static final byte                  LOGICAL_ACTION_TYPE                  = 1;
-  static final byte                  PHYSICAL_ACTION_TYPE                 = 2;
-  static final byte                  ARRAY_ELEMENT_ACTION_TYPE            = 3;
-  static final byte                  ENTIRE_ARRAY_ACTION_TYPE             = 4;
-  static final byte                  LITERAL_VALUE_ACTION_TYPE            = 5;
-  static final byte                  PHYSICAL_ACTION_TYPE_REF_OBJECT      = 6;
-  static final byte                  SUB_ARRAY_ACTION_TYPE                = 7;
-
   private static final LiteralValues literalValues                        = new LiteralValues();
   private static final TCLogger      logger                               = TCLogging.getLogger(DNAEncoding.class);
 

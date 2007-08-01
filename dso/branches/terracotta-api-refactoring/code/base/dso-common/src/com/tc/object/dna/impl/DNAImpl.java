@@ -6,7 +6,6 @@ package com.tc.object.dna.impl;
 
 import com.tc.bytes.ITCByteBuffer;
 import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
@@ -82,7 +81,9 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       parseNext(encoding);
       actionCount--;
     } else {
-      if (input.available() > 0) { throw new IOException(input.available() + " bytes remaining (expect 0)"); }
+      if (input.available() > 0) { 
+        throw new IOException(input.available() + " bytes remaining (expect 0)"); 
+      }
     }
     return hasNext;
   }
@@ -91,25 +92,25 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     byte recordType = input.readByte();
 
     switch (recordType) {
-      case DNAEncoding.PHYSICAL_ACTION_TYPE:
+      case IDNAEncoding.PHYSICAL_ACTION_TYPE:
         parsePhysical(encoding, false);
         return;
-      case DNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT:
+      case IDNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT:
         parsePhysical(encoding, true);
         return;
-      case DNAEncoding.LOGICAL_ACTION_TYPE:
+      case IDNAEncoding.LOGICAL_ACTION_TYPE:
         parseLogical(encoding);
         return;
-      case DNAEncoding.ARRAY_ELEMENT_ACTION_TYPE:
+      case IDNAEncoding.ARRAY_ELEMENT_ACTION_TYPE:
         parseArrayElement(encoding);
         return;
-      case DNAEncoding.ENTIRE_ARRAY_ACTION_TYPE:
+      case IDNAEncoding.ENTIRE_ARRAY_ACTION_TYPE:
         parseEntireArray(encoding);
         return;
-      case DNAEncoding.LITERAL_VALUE_ACTION_TYPE:
+      case IDNAEncoding.LITERAL_VALUE_ACTION_TYPE:
         parseLiteralValue(encoding);
         return;
-      case DNAEncoding.SUB_ARRAY_ACTION_TYPE:
+      case IDNAEncoding.SUB_ARRAY_ACTION_TYPE:
         parseSubArray(encoding);
         return;
       default:
