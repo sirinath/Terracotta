@@ -175,7 +175,7 @@ public class TCByteBufferOutputStream extends OutputStream implements TCByteBuff
   public ITCByteBuffer[] toArray() {
     close();
     ITCByteBuffer[] rv = new ITCByteBuffer[buffers.size()];
-    return (TCByteBuffer[]) buffers.toArray(rv);
+    return (ITCByteBuffer[]) buffers.toArray(rv);
   }
 
   public String toString() {

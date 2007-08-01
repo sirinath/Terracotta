@@ -4,10 +4,6 @@
  */
 package com.tc.object;
 
-import com.tc.object.dna.impl.ClassInstance;
-import com.tc.object.dna.impl.ClassLoaderInstance;
-import com.tc.object.dna.impl.EnumInstance;
-import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 
@@ -19,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Responsuible for handling literals
+ * Responsible for handling literals
  */
 public class LiteralValues implements ILiteralValues {
   private final Map values;
@@ -43,7 +39,7 @@ public class LiteralValues implements ILiteralValues {
     addMapping(tmp, byte.class.getName(), BYTE);
     addMapping(tmp, String.class.getName(), STRING);
 
-    addMapping(tmp, UTF8ByteDataHolder.class.getName(), STRING_BYTES);
+    addMapping(tmp, UTF8BYTEDATAHOLDER_CLASS_DOTS, STRING_BYTES);
 
     addMapping(tmp, Short.class.getName(), SHORT);
     addMapping(tmp, short.class.getName(), SHORT);
@@ -55,16 +51,16 @@ public class LiteralValues implements ILiteralValues {
 
     addMapping(tmp, java.lang.Class.class.getName(), JAVA_LANG_CLASS);
 
-    addMapping(tmp, ClassInstance.class.getName(), JAVA_LANG_CLASS_HOLDER);
-
+    addMapping(tmp, CLASSINSTANCE_CLASS_DOTS, JAVA_LANG_CLASSLOADER_HOLDER);
+    
     addMapping(tmp, ObjectID.class.getName(), OBJECT_ID);
     addMapping(tmp, StackTraceElement.class.getName(), STACK_TRACE_ELEMENT);
 
-    addMapping(tmp, ClassLoaderInstance.class.getName(), JAVA_LANG_CLASSLOADER_HOLDER);
-
+    addMapping(tmp, CLASSLOADERINSTANCE_CLASS_DOTS, JAVA_LANG_CLASSLOADER_HOLDER);
+    
     addMapping(tmp, ENUM_CLASS_DOTS, ENUM);
 
-    addMapping(tmp, EnumInstance.class.getName(), ENUM_HOLDER);
+    addMapping(tmp, ENUMINSTANCE_CLASS_DOTS, ENUM_HOLDER);
 
     addMapping(tmp, Currency.class.getName(), CURRENCY);
 
