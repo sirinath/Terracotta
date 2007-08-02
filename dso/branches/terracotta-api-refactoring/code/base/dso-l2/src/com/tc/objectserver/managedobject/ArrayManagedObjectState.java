@@ -66,7 +66,9 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
       } else if (a.isSubArray()) {
         int startPos = a.getArrayIndex();
         Object value = a.getObject();
-        System.arraycopy(value, 0, arrayData, startPos, Array.getLength(value));
+        int length = Array.getLength(value);
+        informListener(objectID, listener, startPos, length, value, includeIDs);
+        System.arraycopy(value, 0, arrayData, startPos, length);
       } else {
         throw Assert.failure("unknown action type");
       }
@@ -113,6 +115,25 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
     }
   }
 
+  /*
+   * This method should be called before the new value is applied
+   */
+  private void informListener(ObjectID objectID, ManagedObjectChangeListener listener, int startPos, int length,
+                              Object value, BackReferences includeIDs) {
+    if (!isPrimitive) {
+      Object[] oldArray = (Object[]) arrayData;
+      Object[] newArray = (Object[]) value;
+      for (int i = 0; i < length; i++) {
+        Object oldVal = oldArray[startPos + i];
+        Object newVal = newArray[i];
+        ObjectID oldValue = oldVal instanceof ObjectID ? (ObjectID) oldVal : ObjectID.NULL_ID;
+        ObjectID newValue = newVal instanceof ObjectID ? (ObjectID) newVal : ObjectID.NULL_ID;
+        listener.changed(objectID, oldValue, newValue);
+        includeIDs.addBackReference(newValue, objectID);
+      }
+    }
+  }
+
   private void informListener(ObjectID objectID, ManagedObjectChangeListener listener, int index, Object value,
                               BackReferences includeIDs) {
     if (!isPrimitive) {
@@ -128,6 +149,15 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
   protected void addAllObjectReferencesTo(Set refs) {
     if (!isPrimitive) {
       addAllObjectReferencesFromIteratorTo(Arrays.asList((Object[]) arrayData).iterator(), refs);
+    }
+  }
+
+  /*
+   * This method is overridden to give Arrays ability to be partial in L1
+   */
+  public void addObjectReferencesTo(ManagedObjectTraverser traverser) {
+    if (!isPrimitive) {
+      traverser.addReachableObjectIDs(getObjectReferences());
     }
   }
 
