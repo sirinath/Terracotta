@@ -8,6 +8,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.tc.admin.common.XObjectTableModel;
+import com.tc.Rule;
 import com.terracottatech.config.ClassExpression;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.InstrumentedClasses;

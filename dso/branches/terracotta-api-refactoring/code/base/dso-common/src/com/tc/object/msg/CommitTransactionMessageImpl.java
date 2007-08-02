@@ -4,7 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.lang.Recyclable;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -34,7 +34,7 @@ public class CommitTransactionMessageImpl extends DSOMessageBase implements Even
 
   private Recyclable             batch;                                      // This is used to recycle buffers on
   // the write side
-  private ITCByteBuffer[]         batchData;
+  private TCByteBuffer[]         batchData;
   private final Set              acknowledgedTransactionIDs  = new HashSet();
 
   public CommitTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out, MessageChannel channel,
@@ -43,7 +43,7 @@ public class CommitTransactionMessageImpl extends DSOMessageBase implements Even
   }
 
   public CommitTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header,
-                                      ITCByteBuffer[] data) {
+                                      TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
@@ -87,13 +87,13 @@ public class CommitTransactionMessageImpl extends DSOMessageBase implements Even
   }
 
   // This is here for a test
-  synchronized void setBatchData(ITCByteBuffer[] batchData, ObjectStringSerializer serializer) {
+  synchronized void setBatchData(TCByteBuffer[] batchData, ObjectStringSerializer serializer) {
     if (this.batchData != null) throw new AssertionError("Attempt to set TransactionBatch more than once.");
     this.batchData = batchData;
     this.serializer = serializer;
   }
 
-  public synchronized ITCByteBuffer[] getBatchData() {
+  public synchronized TCByteBuffer[] getBatchData() {
     return batchData;
   }
 

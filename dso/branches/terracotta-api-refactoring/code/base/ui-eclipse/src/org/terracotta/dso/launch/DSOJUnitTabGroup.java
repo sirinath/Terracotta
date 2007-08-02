@@ -14,12 +14,12 @@ import org.eclipse.jdt.debug.ui.launchConfigurations.JavaArgumentsTab;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaClasspathTab;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaJRETab;
 import org.eclipse.jdt.internal.junit.launcher.AssertionVMArg;
-import org.eclipse.jdt.junit.launcher.JUnitLaunchConfigurationTab;
+import org.eclipse.jdt.internal.junit.launcher.JUnitMainTab;
 
 public class DSOJUnitTabGroup extends AbstractLaunchConfigurationTabGroup {
   public void createTabs(ILaunchConfigurationDialog dialog, String mode) {    
     ILaunchConfigurationTab[] tabs= new ILaunchConfigurationTab[] {
-      new JUnitLaunchConfigurationTab(),
+      new JUnitMainTab(),
       new JavaArgumentsTab(),
       new JavaClasspathTab(),
       new JavaJRETab(),

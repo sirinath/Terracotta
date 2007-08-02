@@ -8,7 +8,7 @@ import junit.framework.TestCase;
 public class TCByteBufferTest extends TestCase {
 
   public void testUint() {
-    ITCByteBuffer buf = TCByteBufferFactory.getInstance(false, 4);
+    TCByteBuffer buf = TCByteBufferFactory.getInstance(false, 4);
 
     buf.putUint(0, 0);
     assertEquals(0, buf.getUint(0));

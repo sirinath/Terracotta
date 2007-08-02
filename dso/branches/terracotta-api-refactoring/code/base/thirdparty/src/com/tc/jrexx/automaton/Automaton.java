@@ -22,13 +22,10 @@
 */
 package com.tc.jrexx.automaton;
 
-import com.tc.jrexx.set.ISet_char;
-
+import java.util.*;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Set;
+
+import com.tc.jrexx.set.ISet_char;
 
 public abstract class Automaton implements Cloneable {
 

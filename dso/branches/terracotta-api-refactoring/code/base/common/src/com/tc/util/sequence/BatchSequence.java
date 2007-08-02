@@ -4,6 +4,7 @@
 package com.tc.util.sequence;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.util.sequence.BatchSequenceProvider;
 
 /**
  * This Sequence deals with batches. It keeps a next batch around to avoid

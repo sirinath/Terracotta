@@ -4,6 +4,7 @@
 package com.terracotta.session.util;
 
 import com.tc.exception.ImplementMe;
+import com.terracotta.session.util.ContextMgr;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionContext;

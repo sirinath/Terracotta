@@ -9,6 +9,7 @@ import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.IDNAEncoding;
@@ -47,7 +48,15 @@ public class DNAEncoding implements IDNAEncoding {
   private static final int           SHORT_WARN                           = WARN_THRESHOLD / 2;
   private static final int           REF_WARN                             = WARN_THRESHOLD / 4;
 
-  private static final LiteralValues literalValues                        = new LiteralValues();
+  static final byte                  LOGICAL_ACTION_TYPE                  = 1;
+  static final byte                  PHYSICAL_ACTION_TYPE                 = 2;
+  static final byte                  ARRAY_ELEMENT_ACTION_TYPE            = 3;
+  static final byte                  ENTIRE_ARRAY_ACTION_TYPE             = 4;
+  static final byte                  LITERAL_VALUE_ACTION_TYPE            = 5;
+  static final byte                  PHYSICAL_ACTION_TYPE_REF_OBJECT      = 6;
+  static final byte                  SUB_ARRAY_ACTION_TYPE                = 7;
+
+  private static final ILiteralValues literalValues                        = new LiteralValues();
   private static final TCLogger      logger                               = TCLogging.getLogger(DNAEncoding.class);
 
   private static final byte          TYPE_ID_REFERENCE                    = 1;
@@ -146,11 +155,11 @@ public class DNAEncoding implements IDNAEncoding {
     final int type = literalValues.valueFor(value);
 
     switch (type) {
-      case LiteralValues.CURRENCY:
+      case ILiteralValues.CURRENCY:
         output.writeByte(TYPE_ID_CURRENCY);
         writeString(((Currency) value).getCurrencyCode(), output);
         break;
-      case LiteralValues.ENUM:
+      case ILiteralValues.ENUM:
         output.writeByte(TYPE_ID_ENUM);
         Class enumClass = getEnumDeclaringClass(value);
         writeString(enumClass.getName(), output);
@@ -159,85 +168,85 @@ public class DNAEncoding implements IDNAEncoding {
         Object name = getEnumName(value);
         writeString((String) name, output);
         break;
-      case LiteralValues.ENUM_HOLDER:
+      case ILiteralValues.ENUM_HOLDER:
         output.writeByte(TYPE_ID_ENUM_HOLDER);
         writeEnumInstance((EnumInstance) value, output);
         break;
-      case LiteralValues.JAVA_LANG_CLASSLOADER:
+      case ILiteralValues.JAVA_LANG_CLASSLOADER:
         encodeClassLoader(value, output);
         break;
-      case LiteralValues.JAVA_LANG_CLASSLOADER_HOLDER:
+      case ILiteralValues.JAVA_LANG_CLASSLOADER_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER);
         writeClassLoaderInstance((ClassLoaderInstance) value, output);
         break;
-      case LiteralValues.JAVA_LANG_CLASS:
+      case ILiteralValues.JAVA_LANG_CLASS:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS);
         Class c = (Class) value;
         writeString(c.getName(), output);
         writeString(classProvider.getLoaderDescriptionFor(c), output);
         break;
-      case LiteralValues.JAVA_LANG_CLASS_HOLDER:
+      case ILiteralValues.JAVA_LANG_CLASS_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS_HOLDER);
         writeClassInstance((ClassInstance) value, output);
         break;
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         output.writeByte(TYPE_ID_BOOLEAN);
         output.writeBoolean(((Boolean) value).booleanValue());
         break;
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         output.writeByte(TYPE_ID_BYTE);
         output.writeByte(((Byte) value).byteValue());
         break;
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         output.writeByte(TYPE_ID_CHAR);
         output.writeChar(((Character) value).charValue());
         break;
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         output.writeByte(TYPE_ID_DOUBLE);
         output.writeDouble(((Double) value).doubleValue());
         break;
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         output.writeByte(TYPE_ID_FLOAT);
         output.writeFloat(((Float) value).floatValue());
         break;
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         output.writeByte(TYPE_ID_INT);
         output.writeInt(((Integer) value).intValue());
         break;
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         output.writeByte(TYPE_ID_LONG);
         output.writeLong(((Long) value).longValue());
         break;
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         output.writeByte(TYPE_ID_SHORT);
         output.writeShort(((Short) value).shortValue());
         break;
-      case LiteralValues.STRING:
+      case ILiteralValues.STRING:
         output.writeByte(TYPE_ID_STRING);
         writeString((String) value, output);
         break;
-      case LiteralValues.STRING_BYTES:
+      case ILiteralValues.STRING_BYTES:
         output.writeByte(TYPE_ID_STRING_BYTES);
         writeByteArray(((UTF8ByteDataHolder) value).getBytes(), output);
         break;
-      case LiteralValues.OBJECT_ID:
+      case ILiteralValues.OBJECT_ID:
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
         break;
-      case LiteralValues.STACK_TRACE_ELEMENT:
+      case ILiteralValues.STACK_TRACE_ELEMENT:
         output.writeByte(TYPE_ID_STACK_TRACE_ELEMENT);
         StackTraceElement ste = (StackTraceElement) value;
         writeStackTraceElement(ste, output);
         break;
-      case LiteralValues.BIG_INTEGER:
+      case ILiteralValues.BIG_INTEGER:
         output.writeByte(TYPE_ID_BIG_INTEGER);
         writeByteArray(((BigInteger) value).toByteArray(), output);
         break;
-      case LiteralValues.BIG_DECIMAL:
+      case ILiteralValues.BIG_DECIMAL:
         output.writeByte(TYPE_ID_BIG_DECIMAL);
         writeByteArray(((BigDecimal) value).toString().getBytes(), output);
         break;
-      case LiteralValues.ARRAY:
+      case ILiteralValues.ARRAY:
         encodeArray(value, output);
         break;
       default:

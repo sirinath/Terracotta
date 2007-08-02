@@ -3,39 +3,7 @@
  */
 package com.tc.aspectwerkz.expression;
 
-import com.tc.aspectwerkz.expression.ast.ASTAnd;
-import com.tc.aspectwerkz.expression.ast.ASTArgParameter;
-import com.tc.aspectwerkz.expression.ast.ASTArgs;
-import com.tc.aspectwerkz.expression.ast.ASTAttribute;
-import com.tc.aspectwerkz.expression.ast.ASTCall;
-import com.tc.aspectwerkz.expression.ast.ASTCflow;
-import com.tc.aspectwerkz.expression.ast.ASTCflowBelow;
-import com.tc.aspectwerkz.expression.ast.ASTClassPattern;
-import com.tc.aspectwerkz.expression.ast.ASTConstructorPattern;
-import com.tc.aspectwerkz.expression.ast.ASTExecution;
-import com.tc.aspectwerkz.expression.ast.ASTExpression;
-import com.tc.aspectwerkz.expression.ast.ASTFieldPattern;
-import com.tc.aspectwerkz.expression.ast.ASTGet;
-import com.tc.aspectwerkz.expression.ast.ASTHandler;
-import com.tc.aspectwerkz.expression.ast.ASTHasField;
-import com.tc.aspectwerkz.expression.ast.ASTHasMethod;
-import com.tc.aspectwerkz.expression.ast.ASTIf;
-import com.tc.aspectwerkz.expression.ast.ASTMethodPattern;
-import com.tc.aspectwerkz.expression.ast.ASTModifier;
-import com.tc.aspectwerkz.expression.ast.ASTNot;
-import com.tc.aspectwerkz.expression.ast.ASTOr;
-import com.tc.aspectwerkz.expression.ast.ASTParameter;
-import com.tc.aspectwerkz.expression.ast.ASTPointcutReference;
-import com.tc.aspectwerkz.expression.ast.ASTRoot;
-import com.tc.aspectwerkz.expression.ast.ASTSet;
-import com.tc.aspectwerkz.expression.ast.ASTStaticInitialization;
-import com.tc.aspectwerkz.expression.ast.ASTTarget;
-import com.tc.aspectwerkz.expression.ast.ASTThis;
-import com.tc.aspectwerkz.expression.ast.ASTWithin;
-import com.tc.aspectwerkz.expression.ast.ASTWithinCode;
-import com.tc.aspectwerkz.expression.ast.ExpressionParserVisitor;
-import com.tc.aspectwerkz.expression.ast.Node;
-import com.tc.aspectwerkz.expression.ast.SimpleNode;
+import com.tc.aspectwerkz.expression.ast.*;
 
 /**
  * TODO: do we need that, there is a dump() method in jjtree API

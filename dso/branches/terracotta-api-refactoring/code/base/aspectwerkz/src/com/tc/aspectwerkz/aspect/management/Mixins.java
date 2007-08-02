@@ -13,12 +13,9 @@ import com.tc.aspectwerkz.definition.SystemDefinitionContainer;
 import com.tc.aspectwerkz.exception.DefinitionException;
 import com.tc.aspectwerkz.util.ContextClassLoader;
 
+import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * Manages the mixins, registry for the mixin factories (one factory per mixin type).

@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.TCNetworkHeader;
@@ -30,11 +30,11 @@ public class TestWireProtocolMessage implements WireProtocolMessage {
     throw new ImplementMe();
   }
 
-  public ITCByteBuffer[] getPayload() {
+  public TCByteBuffer[] getPayload() {
     throw new ImplementMe();
   }
 
-  public ITCByteBuffer[] getEntireMessageData() {
+  public TCByteBuffer[] getEntireMessageData() {
     throw new ImplementMe();
   }
 

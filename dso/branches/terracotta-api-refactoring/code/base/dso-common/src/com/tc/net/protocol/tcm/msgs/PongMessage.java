@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.tcm.msgs;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -21,7 +21,7 @@ public class PongMessage extends DSOMessageBase {
     super(sessionID, monitor, new TCByteBufferOutputStream(4, 4096, false), channel, type);
   }
 
-  public PongMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, ITCByteBuffer[] data) {
+  public PongMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

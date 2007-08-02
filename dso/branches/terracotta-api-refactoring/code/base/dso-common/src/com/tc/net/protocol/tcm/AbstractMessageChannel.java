@@ -8,7 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
@@ -160,7 +160,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     this.sendLayer.send(message);
   }
 
-  public final void receive(ITCByteBuffer[] msgData) {
+  public final void receive(TCByteBuffer[] msgData) {
     this.router.putMessage(parser.parseMessage(this, msgData));
   }
 

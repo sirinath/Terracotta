@@ -5,6 +5,9 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
+
+import com.tc.net.protocol.transport.TransportHandshakeMessage;
+
 import junit.framework.Assert;
 
 class ServerHandshakeMessageResponder extends HandshakeMessageResponderBase {

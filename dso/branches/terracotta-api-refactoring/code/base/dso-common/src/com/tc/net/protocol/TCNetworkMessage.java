@@ -4,7 +4,7 @@
 package com.tc.net.protocol;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.lang.Recyclable;
 
 /**
@@ -16,9 +16,9 @@ public interface TCNetworkMessage extends EventContext, Recyclable {
 
   public TCNetworkMessage getMessagePayload();
 
-  public ITCByteBuffer[] getPayload();
+  public TCByteBuffer[] getPayload();
 
-  public ITCByteBuffer[] getEntireMessageData();
+  public TCByteBuffer[] getEntireMessageData();
 
   public boolean isSealed();
 

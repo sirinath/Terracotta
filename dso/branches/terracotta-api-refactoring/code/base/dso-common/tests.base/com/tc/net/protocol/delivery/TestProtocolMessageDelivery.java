@@ -7,6 +7,8 @@ package com.tc.net.protocol.delivery;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.delivery.OOOProtocolMessage;
+import com.tc.net.protocol.delivery.OOOProtocolMessageDelivery;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.util.Assert;
 

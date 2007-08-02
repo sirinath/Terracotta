@@ -97,13 +97,13 @@ public class LossyTCLogger implements TCLogger {
     }
   }
 
-  public void log(ILogLevel level, Object message) {
+  public void log(LogLevel level, Object message) {
     if (decider.canLog()) {
       logger.log(level, message);
     }
   }
 
-  public void log(ILogLevel level, Object message, Throwable t) {
+  public void log(LogLevel level, Object message, Throwable t) {
     if (decider.canLog()) {
       logger.log(level, message, t);
     }
@@ -117,11 +117,11 @@ public class LossyTCLogger implements TCLogger {
     return logger.isInfoEnabled();
   }
 
-  public void setLevel(ILogLevel level) {
+  public void setLevel(LogLevel level) {
     logger.setLevel(level);
   }
 
-  public ILogLevel getLevel() {
+  public LogLevel getLevel() {
     return logger.getLevel();
   }
 

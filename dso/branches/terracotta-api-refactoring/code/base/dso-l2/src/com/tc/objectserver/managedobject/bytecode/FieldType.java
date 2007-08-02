@@ -3,11 +3,12 @@
  */
 package com.tc.objectserver.managedobject.bytecode;
 
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 
 public class FieldType {
 
-  public static final LiteralValues literalValues = (LiteralValues) new LiteralValues();
+  public static final ILiteralValues literalValues = (ILiteralValues) new LiteralValues();
 
   private final String localFieldName;
   private final String fullName;
@@ -24,7 +25,7 @@ public class FieldType {
   public static FieldType create(String fullyQualifiedName, Object value, boolean isReference, int id) {
     String localName = getLocalFieldName(fullyQualifiedName , id);
     if(value == null) {
-      return new FieldType(localName, fullyQualifiedName, LiteralValues.OBJECT, isReference);
+      return new FieldType(localName, fullyQualifiedName, ILiteralValues.OBJECT, isReference);
     }
     return new FieldType(localName, fullyQualifiedName, literalValues.valueFor(value), isReference);
   }
@@ -51,7 +52,7 @@ public class FieldType {
   }
 
   public int getType() {
-    if(isReference) return LiteralValues.OBJECT_ID;
+    if(isReference) return ILiteralValues.OBJECT_ID;
     return type;
   }
 

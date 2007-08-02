@@ -6,6 +6,7 @@ package com.tc.objectserver.managedobject;
 
 import org.apache.commons.lang.ArrayUtils;
 
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class ArrayManagedObjectState extends LogicalManagedObjectState implements PrettyPrintable {
-  private static final LiteralValues LITERAL_VALUES = (LiteralValues) new LiteralValues();
+  private static final ILiteralValues LITERAL_VALUES = (ILiteralValues) new LiteralValues();
 
   private Object                      arrayData;
   private int                         size           = DNA.NULL_ARRAY_SIZE;
@@ -65,9 +66,7 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
       } else if (a.isSubArray()) {
         int startPos = a.getArrayIndex();
         Object value = a.getObject();
-        int length = Array.getLength(value);
-        informListener(objectID, listener, startPos, length, value, includeIDs);
-        System.arraycopy(value, 0, arrayData, startPos, length);
+        System.arraycopy(value, 0, arrayData, startPos, Array.getLength(value));
       } else {
         throw Assert.failure("unknown action type");
       }
@@ -84,52 +83,33 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
 
   private static void setArrayElement(Object array, int index, Object value, int type) {
     switch (type) {
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         ((boolean[]) array)[index] = ((Boolean) value).booleanValue();
         break;
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         ((byte[]) array)[index] = ((Byte) value).byteValue();
         break;
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         ((char[]) array)[index] = ((Character) value).charValue();
         break;
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         ((double[]) array)[index] = ((Double) value).doubleValue();
         break;
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         ((float[]) array)[index] = ((Float) value).floatValue();
         break;
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         ((int[]) array)[index] = ((Integer) value).intValue();
         break;
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         ((long[]) array)[index] = ((Long) value).longValue();
         break;
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         ((short[]) array)[index] = ((Short) value).shortValue();
         break;
       default:
         ((Object[]) array)[index] = value;
         break;
-    }
-  }
-
-  /*
-   * This method should be called before the new value is applied
-   */
-  private void informListener(ObjectID objectID, ManagedObjectChangeListener listener, int startPos, int length,
-                              Object value, BackReferences includeIDs) {
-    if (!isPrimitive) {
-      Object[] oldArray = (Object[]) arrayData;
-      Object[] newArray = (Object[]) value;
-      for (int i = 0; i < length; i++) {
-        Object oldVal = oldArray[startPos + i];
-        Object newVal = newArray[i];
-        ObjectID oldValue = oldVal instanceof ObjectID ? (ObjectID) oldVal : ObjectID.NULL_ID;
-        ObjectID newValue = newVal instanceof ObjectID ? (ObjectID) newVal : ObjectID.NULL_ID;
-        listener.changed(objectID, oldValue, newValue);
-        includeIDs.addBackReference(newValue, objectID);
-      }
     }
   }
 
@@ -148,15 +128,6 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
   protected void addAllObjectReferencesTo(Set refs) {
     if (!isPrimitive) {
       addAllObjectReferencesFromIteratorTo(Arrays.asList((Object[]) arrayData).iterator(), refs);
-    }
-  }
-
-  /*
-   * This method is overridden to give Arrays ability to be partial in L1
-   */
-  public void addObjectReferencesTo(ManagedObjectTraverser traverser) {
-    if (!isPrimitive) {
-      traverser.addReachableObjectIDs(getObjectReferences());
     }
   }
 
@@ -216,21 +187,21 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
 
   private static boolean equals(Object a1, Object a2, int type) {
     switch (type) {
-      case LiteralValues.BOOLEAN:
+      case ILiteralValues.BOOLEAN:
         return Arrays.equals((boolean[]) a1, (boolean[]) a2);
-      case LiteralValues.BYTE:
+      case ILiteralValues.BYTE:
         return Arrays.equals((byte[]) a1, (byte[]) a2);
-      case LiteralValues.CHARACTER:
+      case ILiteralValues.CHARACTER:
         return Arrays.equals((char[]) a1, (char[]) a2);
-      case LiteralValues.DOUBLE:
+      case ILiteralValues.DOUBLE:
         return Arrays.equals((double[]) a1, (double[]) a2);
-      case LiteralValues.FLOAT:
+      case ILiteralValues.FLOAT:
         return Arrays.equals((float[]) a1, (float[]) a2);
-      case LiteralValues.INTEGER:
+      case ILiteralValues.INTEGER:
         return Arrays.equals((int[]) a1, (int[]) a2);
-      case LiteralValues.LONG:
+      case ILiteralValues.LONG:
         return Arrays.equals((long[]) a1, (long[]) a2);
-      case LiteralValues.SHORT:
+      case ILiteralValues.SHORT:
         return Arrays.equals((short[]) a1, (short[]) a2);
       default:
         return Arrays.equals((Object[]) a1, (Object[]) a2);

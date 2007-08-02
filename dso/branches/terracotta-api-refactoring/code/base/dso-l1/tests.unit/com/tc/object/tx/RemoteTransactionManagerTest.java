@@ -10,7 +10,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
@@ -504,7 +504,7 @@ public class RemoteTransactionManagerTest extends TestCase {
       }
     }
 
-    public ITCByteBuffer[] getData() {
+    public TCByteBuffer[] getData() {
       return null;
     }
 

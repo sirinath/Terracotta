@@ -6,6 +6,8 @@ package org.terracotta.dso;
 import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.ui.IActionFilter;
 
+import org.terracotta.dso.JavaElementActionFilter;
+
 class JavaElementAdapter implements IAdapterFactory {
   private IActionFilter m_actionFilter = new JavaElementActionFilter();
 

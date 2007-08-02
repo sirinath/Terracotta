@@ -3,7 +3,7 @@
  */
 package com.tc.util;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCRuntimeException;
 
 import java.nio.ByteBuffer;
@@ -15,13 +15,13 @@ import java.nio.ByteBuffer;
 class ByteishWrapper implements ByteishBuffer {
 
   private ByteBuffer   nioBuf;
-  private ITCByteBuffer tcBuf;
+  private TCByteBuffer tcBuf;
 
   private ByteishWrapper() {
     throw new TCRuntimeException("Private constructor should not be called");
   }
 
-  ByteishWrapper(ByteBuffer nioBuf, ITCByteBuffer tcBuf) {
+  ByteishWrapper(ByteBuffer nioBuf, TCByteBuffer tcBuf) {
     if (nioBuf != null) {
       this.nioBuf = nioBuf;
     } else if (tcBuf != null) {

@@ -4,8 +4,8 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.bytes.ITCByteBuffer;
-import com.tc.io.TCByteBufferInput;
+import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
@@ -21,13 +21,13 @@ import com.tc.util.Assert;
 import java.io.IOException;
 
 public class DNAImpl implements DNA, DNACursor, TCSerializable {
-  private static final IDNAEncoding    DNA_STORAGE_ENCODING = new DNAEncoding(IDNAEncoding.STORAGE);
+  private static final IDNAEncoding     DNA_STORAGE_ENCODING = new DNAEncoding(IDNAEncoding.STORAGE);
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
 
-  protected TCByteBufferInput          input;
-  protected ITCByteBuffer[]            dataOut;
+  protected TCByteBufferInputStream    input;
+  protected TCByteBuffer[]             dataOut;
 
   private int                          actionCount          = 0;
   private int                          origActionCount;
@@ -81,9 +81,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       parseNext(encoding);
       actionCount--;
     } else {
-      if (input.available() > 0) { 
-        throw new IOException(input.available() + " bytes remaining (expect 0)"); 
-      }
+      if (input.available() > 0) { throw new IOException(input.available() + " bytes remaining (expect 0)"); }
     }
     return hasNext;
   }
@@ -92,25 +90,25 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     byte recordType = input.readByte();
 
     switch (recordType) {
-      case IDNAEncoding.PHYSICAL_ACTION_TYPE:
+      case DNAEncoding.PHYSICAL_ACTION_TYPE:
         parsePhysical(encoding, false);
         return;
-      case IDNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT:
+      case DNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT:
         parsePhysical(encoding, true);
         return;
-      case IDNAEncoding.LOGICAL_ACTION_TYPE:
+      case DNAEncoding.LOGICAL_ACTION_TYPE:
         parseLogical(encoding);
         return;
-      case IDNAEncoding.ARRAY_ELEMENT_ACTION_TYPE:
+      case DNAEncoding.ARRAY_ELEMENT_ACTION_TYPE:
         parseArrayElement(encoding);
         return;
-      case IDNAEncoding.ENTIRE_ARRAY_ACTION_TYPE:
+      case DNAEncoding.ENTIRE_ARRAY_ACTION_TYPE:
         parseEntireArray(encoding);
         return;
-      case IDNAEncoding.LITERAL_VALUE_ACTION_TYPE:
+      case DNAEncoding.LITERAL_VALUE_ACTION_TYPE:
         parseLiteralValue(encoding);
         return;
-      case IDNAEncoding.SUB_ARRAY_ACTION_TYPE:
+      case DNAEncoding.SUB_ARRAY_ACTION_TYPE:
         parseSubArray(encoding);
         return;
       default:
@@ -210,7 +208,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     serialOutput.write(dataOut);
   }
 
-  public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
+  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
     this.wasDeserialized = true;
 
     serialInput.mark();

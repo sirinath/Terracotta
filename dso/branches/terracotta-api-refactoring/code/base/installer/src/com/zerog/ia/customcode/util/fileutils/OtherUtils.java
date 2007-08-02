@@ -3,9 +3,7 @@
  */
 package com.zerog.ia.customcode.util.fileutils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 public class OtherUtils
 {

@@ -74,7 +74,7 @@ bundled_components:
         - terracotta-api-version-PREALPHA:
             install_directory: lib
             modules:
-              - common-api
+              - common
               - dso-l1-api
               - modules-common-1.0
               - thirdparty-api

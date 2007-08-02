@@ -5,6 +5,7 @@ package com.tctest.performance.timedtask;
 
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
+import com.tctest.performance.timedtask.TimedObjectCreationTestApp;
 
 public class TimedObjectCreation extends TransparentTestBase {
 

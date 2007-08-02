@@ -103,6 +103,15 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
     return this;
   }
   
+  boolean processPendingOnRelease;
+  public boolean getProcessPendingOnRelease() {
+    return processPendingOnRelease;
+  }
+
+  public void setProcessPendingOnRelease(boolean b) {
+    this.processPendingOnRelease = b;
+  }
+
   boolean removeOnRelease;
   public void setRemoveOnRelease(boolean removeOnRelease) {
     this.removeOnRelease = removeOnRelease;

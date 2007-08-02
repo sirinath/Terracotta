@@ -22,18 +22,10 @@
 */
 package com.tc.jrexx.regex;
 
-import com.tc.jrexx.set.AutomatonSet_String;
-import com.tc.jrexx.set.FSAData;
-import com.tc.jrexx.set.SAutomaton;
+import com.tc.jrexx.set.*;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.StreamCorruptedException;
-import java.util.HashMap;
+import java.util.*;
+import java.io.*;
 
 public class PAutomaton extends SAutomaton {
   private static final HashMap AUTOMATON_MAP = new HashMap();

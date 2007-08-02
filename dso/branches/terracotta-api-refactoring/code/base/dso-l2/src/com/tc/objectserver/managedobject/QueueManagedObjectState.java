@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.objectserver.managedobject;
 
@@ -55,20 +54,16 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
         applyMethod(objectID, includeIDs, method, params);
       } else if (action instanceof PhysicalAction) {
         PhysicalAction physicalAction = (PhysicalAction) action;
-        updateReference(objectID, physicalAction.getFieldName(), physicalAction.getObject(), includeIDs);
+        updateReference(physicalAction.getFieldName(), physicalAction.getObject());
       }
     }
   }
 
-  private void updateReference(ObjectID objectID, String fieldName, Object value, BackReferences includeIDs) {
+  private void updateReference(String fieldName, Object value) {
     if (TAKE_LOCK_FIELD_NAME.equals(fieldName)) {
       takeLockField = (ObjectID) value;
-      getListener().changed(objectID, null, takeLockField);
-      includeIDs.addBackReference(takeLockField, objectID);
     } else if (PUT_LOCK_FIELD_NAME.equals(fieldName)) {
       putLockField = (ObjectID) value;
-      getListener().changed(objectID, null, putLockField);
-      includeIDs.addBackReference(putLockField, objectID);
     } else if (CAPACITY_FIELD_NAME.equals(fieldName)) {
       capacityField = value;
     }
@@ -81,7 +76,7 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
         references.add(params[0]);
         break;
       case SerializationUtil.TAKE:
-        references.remove(0);
+        Object o = references.remove(0);
         break;
       case SerializationUtil.CLEAR:
         references.clear();
@@ -112,6 +107,7 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
   public void addObjectReferencesTo(ManagedObjectTraverser traverser) {
     traverser.addReachableObjectIDs(getObjectReferences());
   }
+
 
   protected void addAllObjectReferencesTo(Set refs) {
     addAllObjectReferencesFromIteratorTo(references.iterator(), refs);
@@ -222,6 +218,8 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
     readField(in, mo);
     readField(in, mo);
     readField(in, mo);
+
+
     int size = in.readInt();
     LinkedList list = new LinkedList();
     for (int i = 0; i < size; i++) {

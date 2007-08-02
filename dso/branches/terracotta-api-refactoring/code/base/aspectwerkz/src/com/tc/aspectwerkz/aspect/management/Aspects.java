@@ -11,9 +11,8 @@ import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.definition.SystemDefinitionContainer;
 import com.tc.aspectwerkz.util.ContextClassLoader;
 
+import java.util.*;
 import java.lang.reflect.Method;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * Manages the aspects.

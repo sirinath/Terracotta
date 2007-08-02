@@ -8,7 +8,7 @@ import org.apache.commons.collections.FastHashMap;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -30,12 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 
 /**
- * Test to make sure local object state is preserved when TC throws:
- * 
- * UnlockedSharedObjectException ReadOnlyException TCNonPortableObjectError
- * 
- * Map version
- * 
+ * Test to make sure local object state is preserved when TC throws UnlockedSharedObjectException and ReadOnlyException -
  * INT-186
  * 
  * @author hhuynh
@@ -57,7 +52,7 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
     }
     await();
 
-    for (LockMode lockMode : LockMode.values()) {
+    for (LockMode lockMode : new LockMode[] { LockMode.NONE, LockMode.READ }) {
       for (Wrapper mw : root) {
         testMutate(mw, lockMode, new PutMutator());
         testMutate(mw, lockMode, new PutAllMutator());
@@ -66,17 +61,46 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
         testMutate(mw, lockMode, new KeySetClearMutator());
         testMutate(mw, lockMode, new RemoveValueMutator());
         testMutate(mw, lockMode, new EntrySetClearMutator());
+        testMutate(mw, lockMode, new AddEntryMutator());
         testMutate(mw, lockMode, new EntrySetIteratorRemoveMutator());
         testMutate(mw, lockMode, new KeySetIteratorRemoveMutator());
         testMutate(mw, lockMode, new ValuesIteratorRemoveMutator());
         testMutate(mw, lockMode, new KeySetRemoveMutator());
-        testMutate(mw, lockMode, new AddEntryMutator());
-        testMutate(mw, lockMode, new AddNonPortableEntryMutator());
-        // Failing, disabled for now
-        // testMutate(w, LockMode.WRITE, new NonPortableAddMutator());
       }
     }
 
+    // Failing, disabled for now
+    // for (Wrapper w : root) {
+    // testWriteLockWithNonPortable(w, new NonPortableAddMutator());
+    // }
+  }
+
+  private void testWriteLockWithNonPortable(Wrapper w, Mutator mutator) throws Exception {
+    int currentSize = w.size();
+    LockMode curr_lockMode = w.getHandler().getLockMode();
+    boolean gotExpectedException = false;
+
+    if (await() == 0) {
+      w.getHandler().setLockMode(LockMode.WRITE);
+      try {
+        mutator.doMutate(w.getProxy());
+      } catch (Exception e) {
+        e.printStackTrace();
+        gotExpectedException = true;
+      }
+    }
+
+    await();
+    w.getHandler().setLockMode(curr_lockMode);
+
+    if (gotExpectedException) {
+      int newSize = w.size();
+      System.out.println("Map type: " + w.getObject().getClass().getName());
+      System.out.println("Current size: " + currentSize);
+      System.out.println("New size: " + newSize);
+      Assert.assertFalse(((Map) w.getObject()).containsKey("socket"));
+      Assert.assertTrue("Collection type: " + w.getObject().getClass() + ", lock: WRITE", newSize >= currentSize + 6);
+    }
   }
 
   private void createMaps() throws Exception {
@@ -94,40 +118,6 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
     }
   }
 
-  protected void validate(int oldSize, Wrapper wrapper, LockMode lockMode, Mutator mutator) throws Throwable {
-    int newSize = wrapper.size();
-    switch (lockMode) {
-      case NONE:
-      case READ:
-        Assert.assertEquals("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode,
-                            oldSize, newSize);
-        if (mutator instanceof AddEntryMutator) {
-          Collection values = ((Map) wrapper.getObject()).values();
-          for (Iterator it = values.iterator(); it.hasNext();) {
-            String value = (String) it.next();
-            Assert.assertFalse("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode, value.equals("hung"));
-          }
-        } else if (mutator instanceof NonPortableAddMutator) {
-          Collection values = ((Map) wrapper.getObject()).values();
-          for (Iterator it = values.iterator(); it.hasNext();) {
-            Object value = it.next();
-            Assert.assertFalse("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode,
-                               value instanceof Socket);
-          }
-        }
-        break;
-      case WRITE:
-        System.out.println("Map type: " + wrapper.getObject().getClass().getName());
-        System.out.println("Current size: " + newSize);
-        System.out.println("New size: " + newSize);
-        Assert.assertFalse("Type: " + wrapper.getObject().getClass() + ", socket shouldn't be added", ((Map) wrapper
-            .getObject()).containsKey("socket"));
-        break;
-      default:
-        throw new RuntimeException("Shouldn't happen");
-    }
-  }
-
   protected int await() {
     try {
       return barrier.await();
@@ -140,14 +130,16 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
     config.addNewModule("clustered-commons-collections-3.1", "1.0.0");
 
     String testClass = MapLocalStateTestApp.class.getName();
-    ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 
     config.addIncludePattern(testClass + "$*");
     config.addIncludePattern(GenericLocalStateTestApp.class.getName() + "$*");
 
-    config.addWriteAutolock("* " + testClass + "*.createMaps()");
-    config.addWriteAutolock("* " + testClass + "*.validate()");
-    config.addReadAutolock("* " + testClass + "*.runTest()");
+    String methodExpression = "* " + testClass + "*.createMaps()";
+    config.addWriteAutolock(methodExpression);
+
+    methodExpression = "* " + testClass + "*.runTest()";
+    config.addReadAutolock(methodExpression);
 
     spec.addRoot("root", "root");
     spec.addRoot("barrier", "barrier");
@@ -210,17 +202,6 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
       for (Iterator it = entries.iterator(); it.hasNext();) {
         Map.Entry entry = (Map.Entry) it.next();
         entry.setValue("hung");
-      }
-    }
-  }
-
-  private static class AddNonPortableEntryMutator implements Mutator {
-    public void doMutate(Object o) {
-      Map map = (Map) o;
-      Set entries = map.entrySet();
-      for (Iterator it = entries.iterator(); it.hasNext();) {
-        Map.Entry entry = (Map.Entry) it.next();
-        entry.setValue(new Socket());
       }
     }
   }

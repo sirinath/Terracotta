@@ -6,6 +6,7 @@ package com.tc.object.dna.impl;
 
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCByteBufferOutputStream.Mark;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNAWriter;
@@ -15,14 +16,14 @@ import com.tc.util.Conversion;
 public class DNAWriterImpl implements DNAWriter {
 
   private static final long              NULL_ID       = ObjectID.NULL_ID.toLong();
-  private static final LiteralValues     literalValues = new LiteralValues();
+  private static final ILiteralValues     literalValues = new LiteralValues();
 
   private final TCByteBufferOutputStream output;
   private final Mark                     headerMark;
   private final Mark                     parentIdMark;
   private final Mark                     arrayLengthMark;
   private final ObjectStringSerializer   serializer;
-  private final IDNAEncoding             encoding;
+  private final IDNAEncoding              encoding;
   private int                            actionCount   = 0;
 
   public DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
@@ -46,7 +47,7 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addLogicalAction(int method, Object[] parameters) {
     actionCount++;
-    output.writeByte(IDNAEncoding.LOGICAL_ACTION_TYPE);
+    output.writeByte(DNAEncoding.LOGICAL_ACTION_TYPE);
     output.writeInt(method);
     output.writeByte(parameters.length);
 
@@ -57,14 +58,14 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addSubArrayAction(int start, Object array, int length) {
     actionCount++;
-    output.writeByte(IDNAEncoding.SUB_ARRAY_ACTION_TYPE);
+    output.writeByte(DNAEncoding.SUB_ARRAY_ACTION_TYPE);
     output.writeInt(start);
     encoding.encodeArray(array, output, length);
   }
 
   public void addClassLoaderAction(String classLoaderFieldName, Object value) {
     actionCount++;
-    output.writeByte(IDNAEncoding.PHYSICAL_ACTION_TYPE);
+    output.writeByte(DNAEncoding.PHYSICAL_ACTION_TYPE);
     serializer.writeFieldName(output, classLoaderFieldName);
     encoding.encodeClassLoader(value, output);
   }
@@ -90,9 +91,9 @@ public class DNAWriterImpl implements DNAWriter {
     actionCount++;
     if (canBeReferenced && literalValues.isLiteralInstance(value)) {
       // an Object reference is set to a literal instance
-      output.writeByte(IDNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT);
+      output.writeByte(DNAEncoding.PHYSICAL_ACTION_TYPE_REF_OBJECT);
     } else {
-      output.writeByte(IDNAEncoding.PHYSICAL_ACTION_TYPE);
+      output.writeByte(DNAEncoding.PHYSICAL_ACTION_TYPE);
     }
     serializer.writeFieldName(output, fieldName);
     encoding.encode(value, output);
@@ -100,20 +101,20 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addArrayElementAction(int index, Object value) {
     actionCount++;
-    output.writeByte(IDNAEncoding.ARRAY_ELEMENT_ACTION_TYPE);
+    output.writeByte(DNAEncoding.ARRAY_ELEMENT_ACTION_TYPE);
     output.writeInt(index);
     encoding.encode(value, output);
   }
 
   public void addEntireArray(Object value) {
     actionCount++;
-    output.writeByte(IDNAEncoding.ENTIRE_ARRAY_ACTION_TYPE);
+    output.writeByte(DNAEncoding.ENTIRE_ARRAY_ACTION_TYPE);
     encoding.encodeArray(value, output);
   }
 
   public void addLiteralValue(Object value) {
     actionCount++;
-    output.writeByte(IDNAEncoding.LITERAL_VALUE_ACTION_TYPE);
+    output.writeByte(DNAEncoding.LITERAL_VALUE_ACTION_TYPE);
     encoding.encode(value, output);
   }
 

@@ -4,7 +4,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -28,7 +28,7 @@ public class ClusterMembershipMessage extends DSOMessageBase {
   }
 
   public ClusterMembershipMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                  TCMessageHeader header, ITCByteBuffer[] data) {
+                                  TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

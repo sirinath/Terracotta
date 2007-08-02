@@ -5,7 +5,7 @@
 package com.tc.object.dmi;
 
 import com.tc.async.api.EventContext;
-import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
@@ -62,7 +62,7 @@ public class DmiDescriptor implements TCSerializable, EventContext {
            + DmiClassSpec.toString(classSpecs) + "}";
   }
 
-  public Object deserializeFrom(TCByteBufferInput in) throws IOException {
+  public Object deserializeFrom(TCByteBufferInputStream in) throws IOException {
     receiverId = new ObjectID(in.readLong());
     dmiCallId = new ObjectID(in.readLong());
     faultReceiver = in.readBoolean();

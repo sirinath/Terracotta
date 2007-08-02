@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 
 import junit.framework.TestCase;
 
@@ -24,7 +24,7 @@ public class TransportHandshakeMessageTest extends TestCase {
     DefaultConnectionIdFactory connectionIDProvider = new DefaultConnectionIdFactory();
     ConnectionID connectionId = connectionIDProvider.nextConnectionId();
     message = factory.createSynAck(connectionId, null, isMaxConnectionsExceeded, maxConnections);
-    ITCByteBuffer payload[] = message.getPayload();
+    TCByteBuffer payload[] = message.getPayload();
 
     WireProtocolHeader header = new WireProtocolHeader();
     header.setProtocol(WireProtocolHeader.PROTOCOL_TRANSPORT_HANDSHAKE);

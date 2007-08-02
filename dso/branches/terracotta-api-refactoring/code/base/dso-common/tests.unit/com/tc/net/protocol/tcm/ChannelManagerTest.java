@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
@@ -169,7 +169,7 @@ public class ChannelManagerTest extends TestCase {
       return;
     }
 
-    public void receive(ITCByteBuffer[] msgData) {
+    public void receive(TCByteBuffer[] msgData) {
       return;
     }
 

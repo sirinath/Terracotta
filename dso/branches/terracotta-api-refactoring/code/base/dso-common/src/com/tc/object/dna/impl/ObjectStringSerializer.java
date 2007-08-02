@@ -3,8 +3,9 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCDataOutput;
 import com.tc.io.TCSerializable;
 import com.tc.util.Assert;
@@ -41,7 +42,7 @@ public class ObjectStringSerializer implements TCSerializable {
     stringToID.forEachEntry(new SerializeProcedure(serialOutput));
   }
 
-  public synchronized Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
+  public synchronized Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
     int size = serialInput.readInt();
     for (int i = 0; i < size; i++) {
       addStringAndID(serialInput.readString(), serialInput.readInt());
@@ -49,7 +50,7 @@ public class ObjectStringSerializer implements TCSerializable {
     return this;
   }
 
-  public synchronized void writeString(TCByteBufferOutput out, String string) {
+  public synchronized void writeString(TCByteBufferOutputStream out, String string) {
     int sid = -1;
     if (stringToID.containsKey(string)) {
       sid = idForString(string);
@@ -59,7 +60,7 @@ public class ObjectStringSerializer implements TCSerializable {
     out.writeInt(sid);
   }
 
-  public synchronized void writeFieldName(TCByteBufferOutput out, String fieldName) {
+  public synchronized void writeFieldName(TCByteBufferOutputStream out, String fieldName) {
     int lastDot = fieldName.lastIndexOf('.');
     String cn = fieldName.substring(0, lastDot);
     String fn = fieldName.substring(lastDot + 1, fieldName.length());
@@ -68,7 +69,7 @@ public class ObjectStringSerializer implements TCSerializable {
     writeString(out, fn);
   }
 
-  public synchronized String readString(TCByteBufferInput in) throws IOException {
+  public synchronized String readString(TCByteBufferInputStream in) throws IOException {
     int id = in.readInt();
 
     String string = stringForID(id);
@@ -77,7 +78,7 @@ public class ObjectStringSerializer implements TCSerializable {
     return string;
   }
 
-  public synchronized String readFieldName(TCByteBufferInput in) throws IOException {
+  public synchronized String readFieldName(TCByteBufferInputStream in) throws IOException {
     final int classId;
     classId = in.readInt();
 

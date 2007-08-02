@@ -5,7 +5,6 @@ package com.tc.exception;
 
 import org.mortbay.util.MultiException;
 
-
 public class MortbayMultiExceptionHelper implements ExceptionHelper {
 
   public boolean accepts(Throwable t) {

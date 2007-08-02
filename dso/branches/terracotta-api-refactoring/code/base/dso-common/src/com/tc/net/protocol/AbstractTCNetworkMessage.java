@@ -1,10 +1,8 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCInternalError;
 import com.tc.logging.TCLogger;
@@ -29,11 +27,11 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     this(header, msgPayload, null, true);
   }
 
-  protected AbstractTCNetworkMessage(TCNetworkHeader header, ITCByteBuffer[] payload) {
+  protected AbstractTCNetworkMessage(TCNetworkHeader header, TCByteBuffer[] payload) {
     this(header, null, payload, true);
   }
 
-  private AbstractTCNetworkMessage(TCNetworkHeader header, TCNetworkMessage msgPayload, ITCByteBuffer[] payload,
+  private AbstractTCNetworkMessage(TCNetworkHeader header, TCNetworkMessage msgPayload, TCByteBuffer[] payload,
                                    boolean seal) {
     Assert.eval(header != null);
 
@@ -75,12 +73,12 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     return messagePayload;
   }
 
-  public final ITCByteBuffer[] getPayload() {
+  public final TCByteBuffer[] getPayload() {
     checkNotRecycled();
     return payloadData;
   }
 
-  protected final void setPayload(ITCByteBuffer[] newPayload) {
+  protected final void setPayload(TCByteBuffer[] newPayload) {
     checkNotSealed();
 
     entireMessageData = null;
@@ -107,7 +105,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     }
   }
 
-  public final ITCByteBuffer[] getEntireMessageData() {
+  public final TCByteBuffer[] getEntireMessageData() {
     checkSealed();
 
     // this array should have already been set in seal()
@@ -191,16 +189,16 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
 
     return buf.toString();
   }
-
+  
   protected String dump() {
     StringBuffer toRet = new StringBuffer(toString());
     toRet.append("\n\n");
-    if (entireMessageData != null) {
+    if(entireMessageData != null) {
       for (int i = 0; i < entireMessageData.length; i++) {
         toRet.append('[').append(i).append(']').append('=').append(entireMessageData[i].toString());
         toRet.append(" =  { ");
-        byte ba[] = entireMessageData[i].array();
-        for (int j = 0; j < ba.length; j++) {
+          byte ba[] = entireMessageData[i].array();
+        for (int j = 0 ; j < ba.length; j++) {
           toRet.append(Byte.toString(ba[j])).append(' ');
         }
         toRet.append(" }  \n\n");
@@ -287,7 +285,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
   public final Runnable getSentCallback() {
     return this.sentCallback;
   }
-
+  
   private void checkNotRecycled() {
     if (isRecycled()) { throw new IllegalStateException("Message is already Recycled"); }
   }
@@ -300,16 +298,16 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     if (sealed.isSet()) { throw new IllegalStateException("Message is sealed"); }
   }
 
-  private final SetOnceFlag            sealed             = new SetOnceFlag();
-  private final SetOnceFlag            sentCallbackFired  = new SetOnceFlag();
-  private static final ITCByteBuffer[] EMPTY_BUFFER_ARRAY = {};
-  private final TCNetworkHeader        header;
-  private ITCByteBuffer[]              payloadData;
-  private TCNetworkMessage             messagePayload;
-  private ITCByteBuffer[]              entireMessageData;
-  private int                          totalLength;
-  private int                          dataLength;
-  private int                          headerLength;
-  private Runnable                     sentCallback       = null;
+  private final SetOnceFlag           sealed             = new SetOnceFlag();
+  private final SetOnceFlag           sentCallbackFired  = new SetOnceFlag();
+  private static final TCByteBuffer[] EMPTY_BUFFER_ARRAY = {};
+  private final TCNetworkHeader       header;
+  private TCByteBuffer[]              payloadData;
+  private TCNetworkMessage            messagePayload;
+  private TCByteBuffer[]              entireMessageData;
+  private int                         totalLength;
+  private int                         dataLength;
+  private int                         headerLength;
+  private Runnable                    sentCallback       = null;
 
 }

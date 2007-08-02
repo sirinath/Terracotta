@@ -4,7 +4,7 @@
  */
 package com.tc.object.dmi;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.ObjectID;
@@ -48,7 +48,7 @@ public class DmiDescriptorTest extends TestCase {
     return rv;
   }
 
-  private ITCByteBuffer[] write(DmiDescriptor dd) {
+  private TCByteBuffer[] write(DmiDescriptor dd) {
     final TCByteBufferOutputStream out = new TCByteBufferOutputStream();
     dd.serializeTo(out);
     out.close();

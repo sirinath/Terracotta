@@ -5,6 +5,7 @@ package com.tc.admin.dso;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.ConnectionContext;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.EnumInstance;
@@ -28,7 +29,7 @@ public class DSOField extends DSOObject {
   private DSOObject                  m_cycleRoot;
   private boolean                    m_isLiteral;
 
-  private final static LiteralValues m_literals = new LiteralValues();
+  private final static ILiteralValues m_literals = new LiteralValues();
 
   public DSOField(ConnectionContext cc, String name, boolean isPrimitive, String type, Object value, DSOObject parent) {
     super(cc, parent);

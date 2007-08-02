@@ -187,7 +187,7 @@ public class TCClassImpl implements TCClass {
 
   public String getName() {
     if (isProxyClass) { return ProxyInstance.class.getName(); }
-    if (isEnum) { return LiteralValues.ENUM_CLASS_DOTS; }
+    if (isEnum) { return ILiteralValues.ENUM_CLASS_DOTS; }
     return peer.getName();
   }
 

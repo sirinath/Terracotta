@@ -4,7 +4,7 @@
 package com.tc.net.protocol;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.core.TCConnection;
 import com.tc.util.Assert;
@@ -35,7 +35,7 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
   private static final int        PROTOCOL_HTTP     = 2;
 
   private volatile int            protocol          = PROTOCOL_UNKNOWN;
-  private final ITCByteBuffer[]    buffer            = new ITCByteBuffer[] { TCByteBufferFactory.wrap(new byte[INSPECT]) };
+  private final TCByteBuffer[]    buffer            = new TCByteBuffer[] { TCByteBufferFactory.wrap(new byte[INSPECT]) };
   private final TCProtocolAdaptor delegate;
   private final Sink              httpSink;
 
@@ -44,7 +44,7 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
     this.httpSink = httpSink;
   }
 
-  public void addReadData(TCConnection source, ITCByteBuffer[] data, int length) throws TCProtocolException {
+  public void addReadData(TCConnection source, TCByteBuffer[] data, int length) throws TCProtocolException {
     switch (protocol) {
       case PROTOCOL_NOT_HTTP: {
         delegate.addReadData(source, data, length);
@@ -52,7 +52,7 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
       }
       case PROTOCOL_UNKNOWN: {
         Assert.assertEquals(1, data.length);
-        ITCByteBuffer buf = data[0];
+        TCByteBuffer buf = data[0];
         if (buf.hasRemaining()) {
           // didn't get enough bytes yet to make a decision
           return;
@@ -85,13 +85,13 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
     // unreachable
   }
 
-  private void feedDataToDelegate(TCConnection source, ITCByteBuffer src) throws TCProtocolException {
+  private void feedDataToDelegate(TCConnection source, TCByteBuffer src) throws TCProtocolException {
     while (src.hasRemaining()) {
       int count = 0;
 
-      ITCByteBuffer[] readBuffers = delegate.getReadBuffers();
+      TCByteBuffer[] readBuffers = delegate.getReadBuffers();
       for (int i = 0; i < readBuffers.length; i++) {
-        ITCByteBuffer dest = readBuffers[i];
+        TCByteBuffer dest = readBuffers[i];
         int len = Math.min(src.remaining(), dest.remaining());
         count += len;
         for (int j = 0; j < len; j++) {
@@ -106,7 +106,7 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
     }
   }
 
-  private static boolean isHttp(ITCByteBuffer buf) {
+  private static boolean isHttp(TCByteBuffer buf) {
     Assert.assertEquals(INSPECT, buf.limit());
     byte[] bytes = new byte[buf.limit()];
     buf.get(bytes);
@@ -127,7 +127,7 @@ public class ProtocolSwitch implements TCProtocolAdaptor {
     return METHODS.contains(token);
   }
 
-  public ITCByteBuffer[] getReadBuffers() {
+  public TCByteBuffer[] getReadBuffers() {
     switch (protocol) {
       case PROTOCOL_NOT_HTTP: {
         return delegate.getReadBuffers();

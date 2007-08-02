@@ -10,6 +10,10 @@ import com.tc.objectserver.core.api.ManagedObject;
 
 public interface ManagedObjectReference extends Cacheable {
 
+  public boolean getProcessPendingOnRelease();
+
+  public void setProcessPendingOnRelease(boolean b);
+
   public void setRemoveOnRelease(boolean removeOnRelease);
   
   public boolean isRemoveOnRelease();

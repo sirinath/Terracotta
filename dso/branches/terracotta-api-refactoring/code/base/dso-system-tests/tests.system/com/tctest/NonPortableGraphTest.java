@@ -6,7 +6,7 @@ package com.tctest;
 
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.ILogLevel;
+import com.tc.logging.LogLevel;
 import com.tc.logging.TCAppender;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.ConfigVisitor;
@@ -119,7 +119,7 @@ public class NonPortableGraphTest extends TransparentTestBase {
     private static class LogAppender implements TCAppender {
       StringBuffer buffer = new StringBuffer();
 
-      public void append(ILogLevel arg0, Object arg1, Throwable arg2) {
+      public void append(LogLevel arg0, Object arg1, Throwable arg2) {
         buffer.append(arg1 + "\n");
       }
 

@@ -5,7 +5,6 @@ package com.tc.simulator.crasher;
 
 import com.tc.exception.TCRuntimeException;
 
-
 public class HelloWorld {
   
   public void run() {

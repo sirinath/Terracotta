@@ -19,6 +19,5 @@
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/spring-hibernate3-2.0-m5.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/spring-hibernate3-2.0-m4.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/common-api"/>
 	<classpathentry kind="output" path="build.eclipse/ECLIPSE.IS.MESSEDUP"/>
 </classpath>

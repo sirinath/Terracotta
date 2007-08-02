@@ -4,7 +4,6 @@
  */
 package com.tcclient.object;
 
-
 /**
  * Representation of a distributed method call
  */
@@ -35,8 +34,6 @@ public class DistributedMethodCall {
   }
 
   public final Object[] getParameters() {
-    // The parameters array is read here to make sure the elements are resolved -- passing the internal array to
-    // non-instrumented code would fail to resolve the elements, probably resulting in an NPE
     Object[] rv = new Object[parameters.length];
     for (int i = 0; i < parameters.length; i++)
       rv[i] = parameters[i];

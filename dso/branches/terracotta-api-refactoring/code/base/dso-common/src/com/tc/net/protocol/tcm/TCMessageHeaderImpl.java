@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.net.protocol.AbstractTCNetworkHeader;
 import com.tc.net.protocol.TCProtocolException;
 import com.tc.util.Assert;
@@ -16,7 +16,7 @@ import com.tc.util.Assert;
 public class TCMessageHeaderImpl extends AbstractTCNetworkHeader implements TCMessageHeader {
   // TODO: This class (and other network headers) should be auto-generated from some form of definition file
 
-  protected TCMessageHeaderImpl(ITCByteBuffer hdrData) {
+  protected TCMessageHeaderImpl(TCByteBuffer hdrData) {
     super(hdrData, MIN_LENGTH, MAX_LENGTH);
   }
 

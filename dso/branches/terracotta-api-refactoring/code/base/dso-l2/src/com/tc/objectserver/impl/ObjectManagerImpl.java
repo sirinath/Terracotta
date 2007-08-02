@@ -43,7 +43,10 @@ import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet2;
+import com.tc.util.TCAssertionError;
 import com.tc.util.concurrent.StoppableThread;
+
+import gnu.trove.THashSet;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -52,12 +55,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Manages access to all the Managed objects in the system.
+ * 
+ * @author steve
  */
 public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable {
 
@@ -73,7 +79,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
                                                                             .getInt(
                                                                                     "l2.objectmanager.maxObjectsToCommit");
   // XXX:: Should go to property file
-  private static final int                     INITIAL_SET_SIZE         = 16;
+  private static final int                     INITIAL_SET_SIZE         = 1;
   private static final float                   LOAD_FACTOR              = 0.75f;
   private static final int                     MAX_LOOKUP_OBJECTS_COUNT = 5000;
   private static final long                    REMOVE_THRESHOLD         = 300;
@@ -81,11 +87,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final ManagedObjectStore             objectStore;
   private final Map                            references;
   private final EvictionPolicy                 evictionPolicy;
-  private final Counter                        flushCount               = new Counter();
-  private final PendingList                    pending                  = new PendingList();
 
   private GarbageCollector                     collector                = new NullGarbageCollector();
   private int                                  checkedOutCount          = 0;
+  private PendingList                          pending                  = new PendingList();
+  private Counter                              flushCount               = new Counter();
 
   private volatile boolean                     inShutdown               = false;
 
@@ -171,7 +177,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   public boolean lookupObjectsAndSubObjectsFor(ChannelID channelID, ObjectManagerResultsContext responseContext,
                                                int maxReachableObjects) {
-    // maxReachableObjects is at least 1 so that addReachableObjectsIfNecessary does the right thing
+    // maxReachableObjects is atleast 1 so that addReachableObjectsIfNecessary does the right thing
     return lookupObjectsForOptionallyCreate(channelID, responseContext, maxReachableObjects <= 0 ? 1
         : maxReachableObjects);
   }
@@ -187,7 +193,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
     if (collector.isPausingOrPaused()) {
       // XXX:: since we are making pending without trying to lookup, cache hit count might be skewed
-      makePending(channelID, new ObjectManagerLookupContext(responseContext), maxReachableObjects);
+      makePending(channelID, new ObjectManagerLookupContext(responseContext), maxReachableObjects)
+          .setProcessPending(true);
       return false;
     }
     return basicLookupObjectsFor(channelID, new ObjectManagerLookupContext(responseContext), maxReachableObjects);
@@ -289,7 +296,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       if (!fmr.isFaultingInProgress()) {
         references.remove(id);
         if (isMissingOkay(flags)) { return null; }
-        throw new AssertionError("Request for a non-existent object: " + id + " context: " + context);
+        throw new AssertionError("Request for a non-existent object: " + id + 
+                                 " context: " + context);
       }
       if (isNewRequest(flags)) stats.cacheMiss();
     } else {
@@ -340,9 +348,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       }
       fmor = (FaultingManagedObjectReference) mor;
       addNewReference(mo, removeOnRelease);
-      makeUnBlocked(oid);
     }
-    postRelease();
+    postRelease(fmor.getProcessPendingOnRelease());
   }
 
   private ManagedObjectReference addNewReference(ManagedObject obj, boolean isRemoveOnRelease) throws AssertionError {
@@ -386,26 +393,26 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private void evicted(Collection managedObjects) {
+    boolean processPendingOnRelease = false;
     synchronized (this) {
       checkedOutCount -= managedObjects.size();
       for (Iterator i = managedObjects.iterator(); i.hasNext();) {
         ManagedObject mo = (ManagedObject) i.next();
-        ObjectID oid = mo.getID();
-        Object o = references.remove(oid);
+        Object o = references.remove(mo.getID());
         if (o == null) {
           logger.warn("Object ID : " + mo.getID()
                       + " was mapped to null but should have been mapped to a reference of  " + mo);
         } else {
           ManagedObjectReference ref = (ManagedObjectReference) o;
-          if (isBlocked(oid)) {
+          if (ref.getProcessPendingOnRelease()) {
+            processPendingOnRelease = true;
             ref.unmarkReference();
             addNewReference(mo, ref.isRemoveOnRelease());
-            makeUnBlocked(oid);
             i.remove();
           }
         }
       }
-      postRelease();
+      postRelease(processPendingOnRelease);
     }
 
   }
@@ -414,22 +421,24 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private boolean basicLookupObjectsFor(ChannelID channelID, ObjectManagerLookupContext context, int maxReachableObjects) {
     Set objects = createNewSet();
 
-    final Set newObjectIDs = context.getNewObjectIDs();
+    createNewObjectsIfNecessary(context);
+
+    boolean processPending = false;
     boolean available = true;
     Set ids = context.getLookupIDs();
     for (Iterator i = ids.iterator(); i.hasNext();) {
       ObjectID id = (ObjectID) i.next();
-      if (newObjectIDs.contains(id)) continue;
-      // We don't check available flag before doing calling getOrLookupReference() for two reasons.
+      // We dont check available flag before doing calling getOrLookupReference() for two reasons.
       // 1) To get the right hit/miss count and
       // 2) to Fault objects that are not available
-      ManagedObjectReference reference = getOrLookupReference(context, id, (context.isNewRequest() ? NEW_REQUEST
-          : DEFAULT_FLAG));
+      ManagedObjectReference reference = getOrLookupReference(context, id, (context.isPendingRequest() ? DEFAULT_FLAG
+          : NEW_REQUEST));
       if (available && reference.isReferenced()) {
         available = false;
         // Setting only the first referenced object to process Pending. If objects are being faulted in, then this
-        // will ensure that we don't run processPending multiple times unnecessarily.
-        addBlocked(channelID, context, maxReachableObjects, id);
+        // will
+        // ensure that we dont run processPending multiple times unnecessarily.
+        reference.setProcessPendingOnRelease(true);
       }
 
       if (reference == null) throw new AssertionError("ManagedObjectReference is null");
@@ -437,23 +446,35 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
 
     if (available) {
-      createNewObjectsAndAddTo(objects, newObjectIDs);
       Set processLater = addReachableObjectsIfNecessary(channelID, maxReachableObjects, objects);
       ObjectManagerLookupResults results = new ObjectManagerLookupResultsImpl(processObjectsRequest(objects),
                                                                               processLater);
       context.setResults(results);
+      return true;
     } else {
-      context.makeOldRequest();
+      PendingList pendingList = makePending(channelID, context, maxReachableObjects);
+      if (processPending) {
+        pendingList.setProcessPending(processPending);
+      }
+      return false;
     }
-    return available;
   }
 
-  private void createNewObjectsAndAddTo(Set objects, Set newObjectIDs) {
-    for (Iterator i = newObjectIDs.iterator(); i.hasNext();) {
-      ObjectID oid = (ObjectID) i.next();
-      ManagedObject mo = new ManagedObjectImpl(oid);
-      createObject(mo);
-      objects.add(mo.getReference());
+  private void createNewObjectsIfNecessary(ObjectManagerLookupContext context) {
+    if (!context.isNewObjectsCreated()) {
+      for (Iterator i = context.getNewObjectIDs().iterator(); i.hasNext();) {
+        ObjectID oid = (ObjectID) i.next();
+        ManagedObject mo = new ManagedObjectImpl(oid);
+        try {
+          createObject(mo);
+        } catch (TCAssertionError tca) {
+          // XXX::REmove:: ADDED for debugging
+          logger.error("Error creating New Objects for : " + oid + " new mo = " + mo + " old mo = " + getReference(oid)
+                       + " context = " + context);
+          throw tca;
+        }
+      }
+      context.newObjectsCreationComplete();
     }
   }
 
@@ -484,8 +505,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   // client
   public void releaseReadOnly(ManagedObject object) {
     synchronized (this) {
-      basicRelease(object);
-      postRelease();
+      boolean processPending = basicRelease(object);
+      postRelease(processPending);
     }
 
   }
@@ -493,30 +514,32 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public void release(PersistenceTransaction persistenceTransaction, ManagedObject object) {
     if (config.paranoid()) flush(persistenceTransaction, object);
     synchronized (this) {
-      basicRelease(object);
-      postRelease();
+      boolean processPending = basicRelease(object);
+      postRelease(processPending);
     }
 
   }
 
   public synchronized void releaseAll(Collection objects) {
+    boolean processPending = false;
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
       if (config.paranoid()) {
         Assert.assertFalse(mo.isDirty());
       }
-      basicRelease(mo);
+      processPending |= basicRelease(mo);
     }
-    postRelease();
+    postRelease(processPending);
   }
 
   public void releaseAll(PersistenceTransaction persistenceTransaction, Collection managedObjects) {
     if (config.paranoid()) flushAll(persistenceTransaction, managedObjects);
     synchronized (this) {
+      boolean processPending = false;
       for (Iterator i = managedObjects.iterator(); i.hasNext();) {
-        basicRelease((ManagedObject) i.next());
+        processPending |= basicRelease((ManagedObject) i.next());
       }
-      postRelease();
+      postRelease(processPending);
     }
   }
 
@@ -525,7 +548,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference ref = (ManagedObjectReference) references.remove(id);
       if (ref != null) {
-        Assert.assertFalse(ref.isReferenced() || ref.isNew());
+        Assert.assertFalse(ref.isReferenced() || ref.getProcessPendingOnRelease());
         evictionPolicy.remove(ref);
       }
     }
@@ -547,20 +570,26 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return objectStore.getAllObjectIDs();
   }
 
-  private void postRelease() {
+  private void postRelease(boolean processPending) {
     if (collector.isPausingOrPaused()) {
       checkAndNotifyGC();
-    } else if (pending.size() > 0) {
+    } else if (pending.size() > 0 && (processPending || pending.getProcessPending())) {
       processPendingLookups();
     }
     notifyAll();
   }
 
-  private void basicRelease(ManagedObject object) {
-    ManagedObjectReference mor = object.getReference();
+  private boolean basicRelease(ManagedObject object) {
+    ManagedObjectReference mor = getReference(object.getID());
+
+    validateManagedObjectReference(mor, object.getID());
+
     removeReferenceIfNecessary(mor);
+
     unmarkReferenced(mor);
-    makeUnBlocked(object.getID());
+    boolean isProcessPendingOnRelease = mor.getProcessPendingOnRelease();
+    mor.setProcessPendingOnRelease(false);
+    return isProcessPendingOnRelease;
   }
 
   private void removeReferenceIfNecessary(ManagedObjectReference mor) {
@@ -647,7 +676,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     pw.flush();
   }
 
-  // This method is for tests only
+  // This method is fo tests only
   public synchronized boolean isReferenced(ObjectID id) {
     ManagedObjectReference reference = getReference(id);
     return reference != null && reference.isReferenced();
@@ -740,33 +769,20 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private void processPendingLookups() {
-    List lp = pending.getAndResetPendingRequests();
+    List lp = pending;
+    pending = new PendingList();
+
+    // TODO:: Can be optimized to process only requests that becames available.
     for (Iterator i = lp.iterator(); i.hasNext();) {
       Pending p = (Pending) i.next();
       basicLookupObjectsFor(p.getChannelID(), p.getRequestContext(), p.getMaxReachableObjects());
     }
   }
 
-  private void addBlocked(ChannelID channelID, ObjectManagerLookupContext context, int maxReachableObjects,
-                          ObjectID blockedOid) {
-    pending.makeBlocked(blockedOid, new Pending(channelID, context, maxReachableObjects));
-
-    if (context.getProcessedCount() % 500 == 499) {
-      logger.warn("Reached " + context.getProcessedCount() + " Pending size : " + pending.size()
-                  + " : basic look up for : " + context + " maxReachable depth : " + maxReachableObjects);
-    }
-  }
-
-  private void makeUnBlocked(ObjectID id) {
-    pending.makeUnBlocked(id);
-  }
-
-  private boolean isBlocked(ObjectID id) {
-    return pending.isBlocked(id);
-  }
-
-  private void makePending(ChannelID channelID, ObjectManagerLookupContext context, int maxReachableObjects) {
-    pending.addPending(new Pending(channelID, context, maxReachableObjects));
+  private PendingList makePending(ChannelID channelID, ObjectManagerLookupContext context, int maxReachableObjects) {
+    context.makePending();
+    pending.add(new Pending(channelID, context, maxReachableObjects));
+    return pending;
   }
 
   private void syncAssertNotInShutdown() {
@@ -840,22 +856,27 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private static class ObjectManagerLookupContext implements ObjectManagerResultsContext {
 
     private final ObjectManagerResultsContext responseContext;
-    private int                               processedCount = 0;
+    private boolean                           pending           = false;
+    private boolean                           newObjectsCreated = false;
 
     public ObjectManagerLookupContext(ObjectManagerResultsContext responseContext) {
       this.responseContext = responseContext;
     }
 
-    public void makeOldRequest() {
-      processedCount++;
+    public boolean isPendingRequest() {
+      return pending;
     }
 
-    public int getProcessedCount() {
-      return processedCount;
+    public boolean isNewObjectsCreated() {
+      return newObjectsCreated;
     }
 
-    public boolean isNewRequest() {
-      return processedCount == 0;
+    public void newObjectsCreationComplete() {
+      newObjectsCreated = true;
+    }
+
+    public void makePending() {
+      this.pending = true;
     }
 
     public Set getLookupIDs() {
@@ -871,7 +892,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
 
     public String toString() {
-      return "ObjectManagerLookupContext : [ processed count = " + processedCount
+      return "ObjectManagerLookupContext : [ pending = " + pending + ", newObjectsCreated = " + newObjectsCreated
              + ", responseContext = " + responseContext + "] ";
     }
   }
@@ -906,42 +927,19 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   }
 
-  private static class PendingList {
-    List pending = new ArrayList();
-    Map  blocked = new HashMap();
+  private static class PendingList extends LinkedList {
+    boolean processPending = false;
 
-    public void makeBlocked(ObjectID blockedOid, Pending pd) {
-      ArrayList blockedRequests = (ArrayList) blocked.get(blockedOid);
-      if (blockedRequests == null) {
-        blockedRequests = new ArrayList(1);
-        blocked.put(blockedOid, blockedRequests);
-      }
-      blockedRequests.add(pd);
+    PendingList() {
+      super();
     }
 
-    public boolean isBlocked(ObjectID id) {
-      return blocked.containsKey(id);
+    public boolean getProcessPending() {
+      return this.processPending;
     }
 
-    public void makeUnBlocked(ObjectID id) {
-      ArrayList blockedRequests = (ArrayList) blocked.remove(id);
-      if (blockedRequests != null) {
-        pending.addAll(blockedRequests);
-      }
-    }
-
-    public List getAndResetPendingRequests() {
-      List rv = pending;
-      pending = new ArrayList();
-      return rv;
-    }
-
-    public void addPending(Pending pd) {
-      pending.add(pd);
-    }
-
-    public int size() {
-      return pending.size();
+    public void setProcessPending(boolean b) {
+      this.processPending = b;
     }
   }
 
@@ -952,7 +950,20 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     collector.changed(changedObject, oldReference, newReference);
   }
 
+  // TODO:: INITIAL_SET_SIZE too low and can use a pool
   private static Set createNewSet() {
-    return new HashSet(INITIAL_SET_SIZE, LOAD_FACTOR);
+    return new THashSet(INITIAL_SET_SIZE, LOAD_FACTOR);
+  }
+
+  private void validateManagedObjectReference(ManagedObjectReference mor, ObjectID id) {
+    if (mor == null) {
+      dump();
+      throw new AssertionError("ManagedObjectReference " + id + " is not found");
+    }
+
+    if (!mor.isReferenced()) {
+      logger.error("Basic Release is called for a object which is not referenced !  Reference = " + mor);
+      throw new AssertionError("Basic Release called without lookup !");
+    }
   }
 }

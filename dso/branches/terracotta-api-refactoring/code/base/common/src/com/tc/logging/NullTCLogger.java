@@ -59,19 +59,19 @@ public class NullTCLogger implements TCLogger {
     return false;
   }
 
-  public void log(ILogLevel level, Object message) {
+  public void log(LogLevel level, Object message) {
   //
   }
 
-  public void log(ILogLevel level, Object message, Throwable t) {
+  public void log(LogLevel level, Object message, Throwable t) {
   //
   }
 
-  public void setLevel(ILogLevel level) {
+  public void setLevel(LogLevel level) {
   //
   }
 
-  public ILogLevel getLevel() {
+  public LogLevel getLevel() {
     if (true) throw new ImplementMe();
     return null;
   }

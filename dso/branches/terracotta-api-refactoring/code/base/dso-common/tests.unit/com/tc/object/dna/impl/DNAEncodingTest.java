@@ -6,7 +6,7 @@ package com.tc.object.dna.impl;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
@@ -214,7 +214,7 @@ public class DNAEncodingTest extends TestCase {
     UTF8ByteDataHolder orgUTF;
     encoding.encode((orgUTF = new UTF8ByteDataHolder("teck".getBytes("UTF-8"))), output);
 
-    ITCByteBuffer[] data = output.toArray();
+    TCByteBuffer[] data = output.toArray();
 
     encoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
@@ -260,7 +260,7 @@ public class DNAEncodingTest extends TestCase {
     ClassInstance ci = new ClassInstance(name, def);
     encoding.encode(ci, output);
 
-    ITCByteBuffer[] data = output.toArray();
+    TCByteBuffer[] data = output.toArray();
 
     encoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
@@ -295,7 +295,7 @@ public class DNAEncodingTest extends TestCase {
     ClassInstance ci = new ClassInstance(name, def);
     encoding.encode(ci, output);
 
-    ITCByteBuffer[] data = output.toArray();
+    TCByteBuffer[] data = output.toArray();
 
     encoding = getSerializerEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);

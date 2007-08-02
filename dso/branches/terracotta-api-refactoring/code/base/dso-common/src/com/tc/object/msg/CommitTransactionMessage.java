@@ -3,7 +3,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.tx.TransactionBatch;
@@ -19,7 +19,7 @@ public interface CommitTransactionMessage {
 
   public void setBatch(TransactionBatch batch, ObjectStringSerializer serializer);
 
-  public ITCByteBuffer[] getBatchData();
+  public TCByteBuffer[] getBatchData();
   
   public Collection getAcknowledgedTransactionIDs();
 

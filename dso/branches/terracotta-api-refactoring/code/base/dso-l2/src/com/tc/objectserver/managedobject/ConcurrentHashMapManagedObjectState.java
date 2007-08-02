@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.objectserver.managedobject;
 
@@ -60,8 +59,7 @@ public class ConcurrentHashMapManagedObjectState extends MapManagedObjectState {
         segments = new ObjectID[((Integer) literalAction.getObject()).intValue()];
       } else if (action instanceof PhysicalAction) {
         PhysicalAction physicalAction = (PhysicalAction) action;
-        boolean updateSegment = updateReference(objectID, physicalAction.getFieldName(), physicalAction.getObject(),
-                                                segmentIndex, includeIDs);
+        boolean updateSegment = updateReference(physicalAction.getFieldName(), physicalAction.getObject(), segmentIndex);
         if (updateSegment) {
           segmentIndex++;
         }
@@ -69,8 +67,7 @@ public class ConcurrentHashMapManagedObjectState extends MapManagedObjectState {
     }
   }
 
-  private boolean updateReference(ObjectID objectID, String fieldName, Object value, int segmentIndex,
-                                  BackReferences includeIDs) {
+  private boolean updateReference(String fieldName, Object value, int segmentIndex) {
     if (SEGMENT_MASK_FIELD_NAME.equals(fieldName)) {
       segmentMask = value;
       return false;
@@ -78,9 +75,9 @@ public class ConcurrentHashMapManagedObjectState extends MapManagedObjectState {
       segmentShift = value;
       return false;
     } else if ((SEGMENT_FIELD_NAME + segmentIndex).equals(fieldName)) {
+      // XXX:: ReferenceCollector is not notified. Should be ok since this should happen first (segments are created in
+      // the constructor and never changed.
       segments[segmentIndex] = (ObjectID) value;
-      getListener().changed(objectID, null, segments[segmentIndex]);
-      includeIDs.addBackReference(segments[segmentIndex], objectID);
       return true;
     } else {
       return false;

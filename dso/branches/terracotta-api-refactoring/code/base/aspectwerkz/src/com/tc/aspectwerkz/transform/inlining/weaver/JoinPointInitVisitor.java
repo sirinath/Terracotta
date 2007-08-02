@@ -3,11 +3,8 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.FieldVisitor;
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.MethodVisitor;
+import com.tc.asm.*;
+
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.EmittedJoinPoint;

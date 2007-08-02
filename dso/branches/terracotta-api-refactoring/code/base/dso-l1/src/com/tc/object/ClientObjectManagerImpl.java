@@ -73,7 +73,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   private static final State                   STARTING                = new State("STARTING");
   private static final State                   RUNNING                 = new State("RUNNING");
 
-  private static final LiteralValues           literals                = new LiteralValues();
+  private static final ILiteralValues           literals                = new LiteralValues();
   private static final TCLogger                staticLogger            = TCLogging.getLogger(ClientObjectManager.class);
 
   private static final long                    POLL_TIME               = 1000;

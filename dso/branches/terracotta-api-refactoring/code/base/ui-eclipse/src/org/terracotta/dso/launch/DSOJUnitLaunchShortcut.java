@@ -11,20 +11,22 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
-import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.internal.junit.launcher.JUnitLaunchShortcut;
 import org.eclipse.jdt.internal.junit.ui.JUnitPlugin;
-import org.eclipse.jdt.junit.launcher.JUnitLaunchShortcut;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.terracotta.dso.TcPlugin;
 
 public class DSOJUnitLaunchShortcut extends JUnitLaunchShortcut implements IDSOLaunchConfigurationConstants {
-  protected String getLaunchConfigurationTypeId() {
-    return "launch.junitTestConfigurationDelegate";
+  protected ILaunchConfigurationType getJUnitLaunchConfigType() {
+    return getLaunchManager().getLaunchConfigurationType("launch.junitTestConfigurationDelegate");
   }
 
-  protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(IJavaElement element) throws CoreException {
-    ILaunchConfigurationWorkingCopy config = super.createLaunchConfiguration(element);
+  protected ILaunchConfiguration createConfiguration(IJavaProject project, String name, String mainType,
+                                                     String container, String testName) {
+    ILaunchConfiguration config = super.createConfiguration(project, name, mainType, container, testName);
     ILaunchConfigurationWorkingCopy wc = null;
     try {
       wc = config.getWorkingCopy();
@@ -36,7 +38,7 @@ public class DSOJUnitLaunchShortcut extends JUnitLaunchShortcut implements IDSOL
         String configSpec = variableManager.generateVariableExpression("workspace_loc", arg); //$NON-NLS-1$
         wc.setAttribute(ID_CONFIG_FILE_SPEC, configSpec);
       }
-      config = wc;
+      config = wc.doSave();
     } catch (CoreException exception) {
       JUnitPlugin.log(exception);
     }

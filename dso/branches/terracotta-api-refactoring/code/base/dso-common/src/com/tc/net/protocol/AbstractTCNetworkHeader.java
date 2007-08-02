@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.util.Assert;
 
@@ -15,15 +15,15 @@ import java.util.zip.Adler32;
  * @author teck
  */
 public abstract class AbstractTCNetworkHeader implements TCNetworkHeader {
-  protected static final int  LENGTH_NOT_AVAIL = -1;
+  protected static final int   LENGTH_NOT_AVAIL = -1;
 
-  private static final byte[] EMTPY_BYTE_ARRAY = new byte[] {};
-  private static final byte[] FOUR_ZERO_BYTES  = new byte[] { (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
+  private static final byte[]  EMTPY_BYTE_ARRAY = new byte[] {};
+  private static final byte[]  FOUR_ZERO_BYTES  = new byte[] { (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
 
-  protected final int         minLength;
-  protected final int         maxLength;
-  protected ITCByteBuffer     data;
-  private final boolean       localAllocation;
+  protected final int          minLength;
+  protected final int          maxLength;
+  protected TCByteBuffer data;
+  private final boolean        localAllocation;
 
   abstract protected void setHeaderLength(short headerLength);
 
@@ -37,16 +37,16 @@ public abstract class AbstractTCNetworkHeader implements TCNetworkHeader {
     return true;
   }
 
-  protected AbstractTCNetworkHeader(ITCByteBuffer hdrData, int min, int max) {
+  protected AbstractTCNetworkHeader(TCByteBuffer buffer, int min, int max) {
     this.minLength = min;
     this.maxLength = max;
 
-    if (hdrData == null) {
+    if (buffer == null) {
       this.data = TCByteBufferFactory.getInstance(false, max);
       this.data.limit(min);
       localAllocation = true;
     } else {
-      this.data = hdrData;
+      this.data = buffer;
       localAllocation = false;
     }
 
@@ -59,7 +59,7 @@ public abstract class AbstractTCNetworkHeader implements TCNetworkHeader {
     this(null, min, max);
   }
 
-  public ITCByteBuffer getDataBuffer() {
+  public TCByteBuffer getDataBuffer() {
     return data;
   }
 
@@ -67,10 +67,11 @@ public abstract class AbstractTCNetworkHeader implements TCNetworkHeader {
 
   public void recycle() {
     Assert.assertTrue(localAllocation);
-    if (data != null) {
+    if(data != null) {
       data.recycle();
       data = null;
-    } else {
+    }
+    else {
       // data is already null. Probably called recycle twice !!
       Thread.dumpStack();
     }

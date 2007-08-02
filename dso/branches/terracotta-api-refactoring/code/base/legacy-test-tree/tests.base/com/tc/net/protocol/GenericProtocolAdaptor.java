@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.TCConnection;
@@ -22,7 +22,7 @@ public class GenericProtocolAdaptor extends AbstractTCProtocolAdaptor {
     this.sink = sink;
   }
 
-  protected TCNetworkMessage createMessage(TCConnection conn, TCNetworkHeader hdr, ITCByteBuffer[] data) {
+  protected TCNetworkMessage createMessage(TCConnection conn, TCNetworkHeader hdr, TCByteBuffer[] data) {
     GenericNetworkMessage rv = new GenericNetworkMessage(conn, hdr, data);
     return rv;
   }
@@ -35,7 +35,7 @@ public class GenericProtocolAdaptor extends AbstractTCProtocolAdaptor {
     return ((GenericNetworkHeader) hdr).getMessageDataLength();
   }
 
-  public void addReadData(TCConnection source, ITCByteBuffer[] data, int length) throws TCProtocolException {
+  public void addReadData(TCConnection source, TCByteBuffer[] data, int length) throws TCProtocolException {
     final boolean msgDone = processIncomingData(source, data, length);
 
     if (msgDone) {

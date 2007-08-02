@@ -5,7 +5,6 @@
 package com.tc.object.event;
 
 import com.tc.object.dmi.DmiDescriptor;
-import com.tcclient.object.DistributedMethodCall;
 
 public interface DmiManager {
 
@@ -13,8 +12,6 @@ public interface DmiManager {
 
   void distributedInvokeCommit();
 
-  void invoke(DistributedMethodCall dmc);
-
-  DistributedMethodCall extract(DmiDescriptor dd);
+  void invoke(DmiDescriptor dd);
 
 }

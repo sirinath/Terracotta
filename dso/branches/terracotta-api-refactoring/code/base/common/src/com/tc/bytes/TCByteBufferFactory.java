@@ -34,7 +34,7 @@ public class TCByteBufferFactory {
   // XXX: make me configurable (one time only, fixed sized buffers need to stay the same size!)
   private static final int            fixedBufferSize    = DEFAULT_FIXED_SIZE;
 
-  private static final ITCByteBuffer[] EMPTY_BB_ARRAY     = new ITCByteBuffer[0];
+  private static final TCByteBuffer[] EMPTY_BB_ARRAY     = new TCByteBuffer[0];
 
   private static final TCLogger       logger             = TCLogging.getLogger(TCByteBufferFactory.class);
   private static final TCLogger       lossyLogger        = new LossyTCLogger(logger);
@@ -108,7 +108,7 @@ public class TCByteBufferFactory {
    * @return an array of TCByteBuffer instances (with length always >= 1). The limit of the last buffer may be less then
    *         it's capacity to adjust for the given length
    */
-  public static ITCByteBuffer[] getFixedSizedInstancesForLength(final boolean direct, final int length) {
+  public static TCByteBuffer[] getFixedSizedInstancesForLength(final boolean direct, final int length) {
     if (length > WARN_THRESHOLD) {
       logger.warn("Asking for a large amount of memory: " + length + " bytes");
     }
@@ -122,7 +122,7 @@ public class TCByteBufferFactory {
       numBuffers++;
     }
 
-    ITCByteBuffer rv[] = new ITCByteBuffer[numBuffers];
+    TCByteBuffer rv[] = new TCByteBuffer[numBuffers];
 
     if (disablePooling) {
       for (int i = 0; i < numBuffers; i++) {
@@ -135,7 +135,7 @@ public class TCByteBufferFactory {
     }
 
     // adjust limit of last buffer returned
-    ITCByteBuffer lastBuffer = rv[rv.length - 1];
+    TCByteBuffer lastBuffer = rv[rv.length - 1];
     lastBuffer.limit(lastBuffer.capacity() - ((numBuffers * fixedBufferSize) - length));
 
     // ensureSpace(rv, length);
@@ -164,16 +164,16 @@ public class TCByteBufferFactory {
     return buf;
   }
 
-  public static void returnBuffers(ITCByteBuffer buffers[]) {
+  public static void returnBuffers(TCByteBuffer buffers[]) {
     if (disablePooling) { return; }
 
     for (int i = 0; i < buffers.length; i++) {
-      ITCByteBuffer buf = buffers[i];
+      TCByteBuffer buf = buffers[i];
       returnBuffer(buf);
     }
   }
 
-  public static void returnBuffer(ITCByteBuffer buf) {
+  public static void returnBuffer(TCByteBuffer buf) {
     if (disablePooling) { return; }
 
     if (buf.capacity() == fixedBufferSize) {
@@ -203,8 +203,8 @@ public class TCByteBufferFactory {
     return TCByteBuffer.wrap(buf);
   }
 
-  public static ITCByteBuffer copyAndWrap(byte[] buf) {
-    ITCByteBuffer rv = null;
+  public static TCByteBuffer copyAndWrap(byte[] buf) {
+    TCByteBuffer rv = null;
     if (buf != null) {
       rv = getInstance(false, buf.length);
       rv.put(buf).rewind();

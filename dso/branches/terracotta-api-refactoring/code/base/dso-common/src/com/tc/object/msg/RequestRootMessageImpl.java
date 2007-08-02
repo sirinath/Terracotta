@@ -4,7 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -28,7 +28,7 @@ public class RequestRootMessageImpl extends DSOMessageBase implements EventConte
     super(sessionID, monitor, out, channel, type);
   }
 
-  public RequestRootMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, ITCByteBuffer[] data) {
+  public RequestRootMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

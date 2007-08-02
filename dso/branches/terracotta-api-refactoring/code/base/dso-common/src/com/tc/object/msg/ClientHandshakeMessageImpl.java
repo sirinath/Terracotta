@@ -4,7 +4,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -54,7 +54,7 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   }
 
   public ClientHandshakeMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                    TCMessageHeader header, ITCByteBuffer[] data) {
+                                    TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

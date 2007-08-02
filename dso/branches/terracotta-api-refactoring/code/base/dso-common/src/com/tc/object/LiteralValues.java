@@ -4,6 +4,10 @@
  */
 package com.tc.object;
 
+import com.tc.object.dna.impl.ClassInstance;
+import com.tc.object.dna.impl.ClassLoaderInstance;
+import com.tc.object.dna.impl.EnumInstance;
+import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 
@@ -15,42 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Responsible for handling literals
+ * Responsuible for handling literals
  */
-public class LiteralValues {
-  
-  public final static String ENUM_CLASS_DOTS                = "java.lang.Enum";
-  public final static String CLASSLOADERINSTANCE_CLASS_DOTS = "com.tc.object.dna.impl.ClassLoaderInstance";
-  public final static String ENUMINSTANCE_CLASS_DOTS        = "com.tc.object.dna.impl.EnumInstance";
-  public final static String CLASSINSTANCE_CLASS_DOTS       = "com.tc.object.dna.impl.ClassInstance";
-  public final static String UTF8BYTEDATAHOLDER_CLASS_DOTS  = "com.tc.object.dna.impl.UTF8ByteDataHolder";
-
-  // XXX:: If you are adding more types, please see PhysicalStateClassLoader and DNAEncoding
-  public final static int    INTEGER                        = 0;
-  public final static int    LONG                           = 1;
-  public final static int    CHARACTER                      = 2;
-  public final static int    FLOAT                          = 3;
-  public final static int    DOUBLE                         = 4;
-  public final static int    BYTE                           = 5;
-  public final static int    STRING                         = 6;
-  public final static int    BOOLEAN                        = 7;
-  public final static int    SHORT                          = 8;
-  public final static int    ARRAY                          = 9;
-  public final static int    OBJECT                         = 10;
-  public final static int    OBJECT_ID                      = 11;
-  public final static int    STRING_BYTES                   = 12;
-  public final static int    JAVA_LANG_CLASS                = 13;
-  public final static int    JAVA_LANG_CLASS_HOLDER         = 14;
-  public final static int    STACK_TRACE_ELEMENT            = 15;
-  public final static int    BIG_INTEGER                    = 16;
-  public final static int    BIG_DECIMAL                    = 17;
-  public final static int    JAVA_LANG_CLASSLOADER          = 18;
-  public final static int    JAVA_LANG_CLASSLOADER_HOLDER   = 19;
-  public final static int    ENUM                           = 20;
-  public final static int    ENUM_HOLDER                    = 21;
-  public final static int    CURRENCY                       = 22;
-
-  private final Map          values;
+public class LiteralValues implements ILiteralValues {
+  private final Map values;
 
   public LiteralValues() {
     super();
@@ -71,7 +43,7 @@ public class LiteralValues {
     addMapping(tmp, byte.class.getName(), BYTE);
     addMapping(tmp, String.class.getName(), STRING);
 
-    addMapping(tmp, UTF8BYTEDATAHOLDER_CLASS_DOTS, STRING_BYTES);
+    addMapping(tmp, UTF8ByteDataHolder.class.getName(), STRING_BYTES);
 
     addMapping(tmp, Short.class.getName(), SHORT);
     addMapping(tmp, short.class.getName(), SHORT);
@@ -83,16 +55,16 @@ public class LiteralValues {
 
     addMapping(tmp, java.lang.Class.class.getName(), JAVA_LANG_CLASS);
 
-    addMapping(tmp, CLASSINSTANCE_CLASS_DOTS, JAVA_LANG_CLASS_HOLDER);
+    addMapping(tmp, ClassInstance.class.getName(), JAVA_LANG_CLASS_HOLDER);
 
     addMapping(tmp, ObjectID.class.getName(), OBJECT_ID);
     addMapping(tmp, StackTraceElement.class.getName(), STACK_TRACE_ELEMENT);
 
-    addMapping(tmp, CLASSLOADERINSTANCE_CLASS_DOTS, JAVA_LANG_CLASSLOADER_HOLDER);
+    addMapping(tmp, ClassLoaderInstance.class.getName(), JAVA_LANG_CLASSLOADER_HOLDER);
 
     addMapping(tmp, ENUM_CLASS_DOTS, ENUM);
 
-    addMapping(tmp, ENUMINSTANCE_CLASS_DOTS, ENUM_HOLDER);
+    addMapping(tmp, EnumInstance.class.getName(), ENUM_HOLDER);
 
     addMapping(tmp, Currency.class.getName(), CURRENCY);
 
@@ -131,4 +103,3 @@ public class LiteralValues {
     return i.intValue();
   }
 }
-

@@ -22,11 +22,9 @@
 */
 package com.tc.jrexx.regex;
 
-import com.tc.jrexx.automaton.Automaton;
-import com.tc.jrexx.set.AutomatonSet_String;
-import com.tc.jrexx.set.ISet_char;
-
-import java.lang.ref.WeakReference;
+import java.lang.ref.*;
+import com.tc.jrexx.automaton.*;
+import com.tc.jrexx.set.*;
 
 /**
  * Regular expression based on a minimized deterministic automaton (FSA) and designed as a set of strings.

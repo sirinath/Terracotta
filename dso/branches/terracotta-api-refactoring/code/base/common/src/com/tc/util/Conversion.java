@@ -4,7 +4,7 @@
  */
 package com.tc.util;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCRuntimeException;
 
 import java.io.UnsupportedEncodingException;
@@ -333,7 +333,7 @@ public class Conversion {
     return rv;
   }
 
-  public static String buffer2String(int length, ITCByteBuffer buffer) {
+  public static String buffer2String(int length, TCByteBuffer buffer) {
     byte[] bytes = new byte[length];
     buffer.get(bytes);
     return Conversion.bytes2String(bytes);

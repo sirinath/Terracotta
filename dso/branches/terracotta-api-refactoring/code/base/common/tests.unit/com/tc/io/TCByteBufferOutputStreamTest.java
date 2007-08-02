@@ -3,7 +3,7 @@
  */
 package com.tc.io;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.io.TCByteBufferOutputStream.Mark;
 import com.tc.test.TCTestCase;
@@ -30,7 +30,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       }
 
       assertEquals(bytesToWrite, bbos.getBytesWritten());
-      ITCByteBuffer[] data = bbos.toArray();
+      TCByteBuffer[] data = bbos.toArray();
       assertEquals(bytesToWrite, length(data));
 
       for (int j = 0; j < 10; j++) {
@@ -186,8 +186,8 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
   public void testArrayWriteZeroLength() {
     TCByteBufferOutputStream output = new TCByteBufferOutputStream();
 
-    ITCByteBuffer[] bufs = new ITCByteBuffer[5];
-    ITCByteBuffer bufZeroLen = TCByteBufferFactory.getInstance(false, 0);
+    TCByteBuffer[] bufs = new TCByteBuffer[5];
+    TCByteBuffer bufZeroLen = TCByteBufferFactory.getInstance(false, 0);
     bufs[0] = bufZeroLen;
     bufs[1] = TCByteBufferFactory.getInstance(false, 10);
     bufs[2] = bufZeroLen;
@@ -198,7 +198,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
     output.write(bufs);
     assertEquals(buflength, output.getBytesWritten());
 
-    ITCByteBuffer[] bufsOut = output.toArray();
+    TCByteBuffer[] bufsOut = output.toArray();
     assertTrue(bufsOut.length < bufs.length); // 'coz its consolidated
   }
 
@@ -238,7 +238,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       bbos.write(write++);
     }
 
-    ITCByteBuffer[] data = bbos.toArray();
+    TCByteBuffer[] data = bbos.toArray();
     assertEquals(data.length, num);
 
     for (int i = 0; i < data.length; i++) {
@@ -249,7 +249,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
 
     byte expect = 0;
     for (int i = 0; i < data.length; i++) {
-      ITCByteBuffer buf = data[i];
+      TCByteBuffer buf = data[i];
       while (buf.hasRemaining()) {
         byte read = buf.get();
         assertEquals(expect++, read);
@@ -274,7 +274,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       os.write(b);
     }
 
-    ITCByteBuffer[] bufs = os.toArray();
+    TCByteBuffer[] bufs = os.toArray();
     assertEquals(2, bufs.length);
     assertEquals(4096, bufs[0].limit());
     assertEquals(4096, bufs[1].limit());
@@ -320,9 +320,9 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
         }
         case 3: { // write(TCByteBuffer[])
           int num = random.nextInt(5);
-          ITCByteBuffer[] b = new ITCByteBuffer[num];
+          TCByteBuffer[] b = new TCByteBuffer[num];
           for (int n = 0; n < b.length; n++) {
-            ITCByteBuffer buf = TCByteBufferFactory.getInstance(false, random.nextInt(bufSize * 2));
+            TCByteBuffer buf = TCByteBufferFactory.getInstance(false, random.nextInt(bufSize * 2));
             byte[] bites = new byte[buf.limit()];
             random.nextBytes(bites);
             buf.put(bites);
@@ -340,19 +340,19 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       }
     }
 
-    ITCByteBuffer[] bufsOut = os.toArray();
+    TCByteBuffer[] bufsOut = os.toArray();
     assertNoZeroLength(bufsOut);
 
     compareData(baos.toByteArray(), os.toArray());
   }
 
-  private void assertNoZeroLength(ITCByteBuffer[] bufs) {
+  private void assertNoZeroLength(TCByteBuffer[] bufs) {
     for (int i = 0; i < bufs.length; i++) {
       assertTrue("Buffer " + i + " has zero length", bufs[i].limit() > 0);
     }
   }
 
-  private void compareData(byte[] compare, ITCByteBuffer[] test) {
+  private void compareData(byte[] compare, TCByteBuffer[] test) {
     if (test.length == 0) {
       assertEquals(0, compare.length);
       return;
@@ -371,7 +371,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
     assertFalse(test[index].hasRemaining());
   }
 
-  private int length(ITCByteBuffer[] b) {
+  private int length(TCByteBuffer[] b) {
     int rv = 0;
     for (int i = 0; i < b.length; i++) {
       rv += b[i].limit();
@@ -389,14 +389,14 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       bbos.write(write++);
     }
 
-    ITCByteBuffer[] b = new ITCByteBuffer[1];
+    TCByteBuffer[] b = new TCByteBuffer[1];
     byte[] s = "Hello Steve".getBytes();
     b[0] = TCByteBufferFactory.getInstance(false, s.length);
     b[0].put(s);
     b[0].flip();
     bbos.write(b);
 
-    ITCByteBuffer[] data = bbos.toArray();
+    TCByteBuffer[] data = bbos.toArray();
     assertEquals(num + 1, data.length);
 
     for (int i = 0; i < data.length - 1; i++) {
@@ -411,7 +411,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
 
     byte expect = 0;
     for (int i = 0; i < data.length - 1; i++) {
-      ITCByteBuffer buf = data[i];
+      TCByteBuffer buf = data[i];
       while (buf.hasRemaining()) {
         byte read = buf.get();
         assertEquals(expect++, read);
@@ -447,7 +447,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
     }
 
     try {
-      bbos.write((ITCByteBuffer[]) null);
+      bbos.write((TCByteBuffer[]) null);
       fail();
     } catch (NullPointerException npe) {
       // expected
@@ -497,7 +497,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       dataWriten += data.length;
     }
 
-    ITCByteBuffer[] bufs = bbos.toArray();
+    TCByteBuffer[] bufs = bbos.toArray();
     for (int i = 0; i < bufs.length - 1; i++) {
       assertEquals(bufs[i].capacity(), bufs[i].limit());
       dataWriten -= bufs[i].limit();
@@ -525,7 +525,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
       written += 50;
     }
 
-    ITCByteBuffer[] bufs = bbos.toArray();
+    TCByteBuffer[] bufs = bbos.toArray();
     for (int i = 0; i < bufs.length - 1; i++) {
       assertEquals(bufs[i].capacity(), bufs[i].limit());
       written -= bufs[i].limit();
@@ -542,7 +542,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
   public void testEmpty() {
     TCByteBufferOutputStream bbos = new TCByteBufferOutputStream();
     bbos.close();
-    ITCByteBuffer[] data = bbos.toArray();
+    TCByteBuffer[] data = bbos.toArray();
     assertEquals(0, data.length);
   }
 
@@ -576,7 +576,7 @@ public class TCByteBufferOutputStreamTest extends TCTestCase {
     }
 
     try {
-      bbos.write(new ITCByteBuffer[] {});
+      bbos.write(new TCByteBuffer[] {});
       fail();
     } catch (IllegalStateException ise) {
       // expected

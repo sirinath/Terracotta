@@ -9,7 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.Latch;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
@@ -172,7 +172,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
   public void doRead(ScatteringByteChannel sbc) {
     final boolean debug = logger.isDebugEnabled();
-    final ITCByteBuffer[] readBuffers = getReadBuffers();
+    final TCByteBuffer[] readBuffers = getReadBuffers();
 
     int bytesRead = 0;
     boolean readEOF = false;
@@ -307,7 +307,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     return rv;
   }
 
-  static private ByteBuffer[] extractNioBuffers(ITCByteBuffer[] src) {
+  static private ByteBuffer[] extractNioBuffers(TCByteBuffer[] src) {
     ByteBuffer[] rv = new ByteBuffer[src.length];
     for (int i = 0, n = src.length; i < n; i++) {
       rv[i] = src[i].getNioBuffer();
@@ -316,7 +316,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     return rv;
   }
 
-  static private ByteBuffer extractNioBuffer(ITCByteBuffer buffer) {
+  static private ByteBuffer extractNioBuffer(TCByteBuffer buffer) {
     return buffer.getNioBuffer();
   }
 
@@ -524,7 +524,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
   }
 
-  private final void addNetworkData(ITCByteBuffer[] data, int length) {
+  private final void addNetworkData(TCByteBuffer[] data, int length) {
     lastActivityTime.set(System.currentTimeMillis());
 
     try {
@@ -535,7 +535,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
   }
 
-  protected final ITCByteBuffer[] getReadBuffers() {
+  protected final TCByteBuffer[] getReadBuffers() {
     // TODO: Hook in some form of read throttle. To throttle how much data is read from the network,
     // only return a subset of the buffers that the protocolAdaptor advises to be used.
 

@@ -4,7 +4,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -73,7 +73,7 @@ public class BroadcastTransactionMessageTest extends TestCase {
                    lowGlobalTransactionIDWatermark, notified, new HashMap(), DmiDescriptor.EMPTY_ARRAY);
     msg.dehydrate();
 
-    ITCByteBuffer[] data = out.toArray();
+    TCByteBuffer[] data = out.toArray();
     TCMessageHeader header = (TCMessageHeader) msg.getHeader();
     msg = new BroadcastTransactionMessageImpl(SessionID.NULL_ID, monitor, channel, header, data);
     msg.hydrate();

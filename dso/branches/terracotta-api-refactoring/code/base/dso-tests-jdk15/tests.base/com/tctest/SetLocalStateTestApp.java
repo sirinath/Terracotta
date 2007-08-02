@@ -6,10 +6,9 @@ package com.tctest;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
-import com.tc.util.Assert;
 
 import gnu.trove.THashSet;
 
@@ -23,12 +22,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CyclicBarrier;
 
 /**
- * Test to make sure local object state is preserved when TC throws:
- * 
- * UnlockedSharedObjectException ReadOnlyException TCNonPortableObjectError
- * 
- * Set version
- * 
+ * Test to make sure local object state is preserved when TC throws UnlockedSharedObjectException and ReadOnlyException -
  * INT-186
  * 
  * @author hhuynh
@@ -49,7 +43,7 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
     }
     await();
 
-    for (LockMode lockMode : LockMode.values()) {
+    for (LockMode lockMode : new LockMode[] { LockMode.NONE, LockMode.READ }) {
       for (Wrapper w : root) {
         testMutate(w, lockMode, new AddMutator());
         testMutate(w, lockMode, new AddAllMutator());
@@ -58,32 +52,6 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
         testMutate(w, lockMode, new RemoveAllMutator());
         testMutate(w, lockMode, new RetainAllMutator());
         testMutate(w, lockMode, new IteratorRemoveMutator());
-
-        // failing - DEV-844
-        // testMutate(w, lockMode, new AddAllNonPortableMutator());
-      }
-    }
-  }
-
-  protected void validate(int oldSize, Wrapper wrapper, LockMode lockMode, Mutator mutator) throws Throwable {
-    int newSize = wrapper.size();
-    switch (lockMode) {
-      case NONE:
-      case READ:
-        Assert.assertEquals("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode, oldSize, newSize);
-        break;
-      case WRITE:
-        // nothing yet
-        break;
-      default:
-        throw new RuntimeException("Shouldn't happen");
-    }
-
-    if (mutator instanceof AddAllNonPortableMutator) {
-      for (Iterator it = ((Set) wrapper.getObject()).iterator(); it.hasNext();) {
-        Object o = it.next();
-        Assert.assertFalse("Type: " + wrapper.getObject().getClass() + ", lock: " + lockMode + ", " + o.getClass(),
-                           o instanceof NonPortable);
       }
     }
   }
@@ -115,15 +83,16 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
     config.addNewModule("clustered-commons-collections-3.1", "1.0.0");
 
     String testClass = SetLocalStateTestApp.class.getName();
-    ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 
     config.addIncludePattern(testClass + "$*");
-    config.addExcludePattern(testClass + "$NonPortable");
     config.addIncludePattern(GenericLocalStateTestApp.class.getName() + "$*");
 
-    config.addWriteAutolock("* " + testClass + "*.createSets()");
-    config.addWriteAutolock("* " + testClass + "*.validate()");
-    config.addReadAutolock("* " + testClass + "*.runTest()");
+    String methodExpression = "* " + testClass + "*.createSets()";
+    config.addWriteAutolock(methodExpression);
+
+    methodExpression = "* " + testClass + "*.runTest()";
+    config.addReadAutolock(methodExpression);
 
     spec.addRoot("root", "root");
     spec.addRoot("barrier", "barrier");
@@ -145,19 +114,6 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
       Set s = (Set) o;
       Set anotherSet = new HashSet();
       anotherSet.add("v");
-      s.addAll(anotherSet);
-    }
-  }
-
-  private static class AddAllNonPortableMutator implements Mutator {
-    public void doMutate(Object o) {
-      Set s = (Set) o;
-      Set anotherSet = new HashSet();
-      anotherSet.add("v4");
-      anotherSet.add("v5");
-      anotherSet.add("v6");
-      anotherSet.add(new NonPortable());
-      anotherSet.add("v7");
       s.addAll(anotherSet);
     }
   }
@@ -203,12 +159,6 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
         it.next();
         it.remove();
       }
-    }
-  }
-
-  private static class NonPortable implements Comparable {
-    public int compareTo(Object o) {
-      return 1;
     }
   }
 }

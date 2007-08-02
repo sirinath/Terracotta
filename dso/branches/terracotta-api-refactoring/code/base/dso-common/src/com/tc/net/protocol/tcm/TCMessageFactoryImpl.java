@@ -7,7 +7,7 @@ import org.apache.commons.lang.ArrayUtils;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.session.SessionID;
@@ -20,7 +20,7 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
   private static final Class[]            SIG1            = new Class[] { SessionID.class, MessageMonitor.class, TCByteBufferOutput.class,
       MessageChannel.class, TCMessageType.class          };
   private static final Class[]            SIG2            = new Class[] { SessionID.class, MessageMonitor.class,
-      MessageChannel.class, TCMessageHeader.class, ITCByteBuffer[].class };
+      MessageChannel.class, TCMessageHeader.class, TCByteBuffer[].class };
   private static final TCMessageFinalizer NULL_FINALIZER  = new NullFinalizer();
 
   private final Map                       typeOnlyCstr    = new ConcurrentReaderHashMap();
@@ -44,7 +44,7 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
         new TCByteBufferOutputStream(4, 4096, false), source, type });
   }
 
-  public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, ITCByteBuffer[] data) {
+  public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, TCByteBuffer[] data) {
     return createMessage(lookupConstructor(type, typeAndDataCstr), new Object[] { sessionProvider.getSessionID(), monitor, source, header, data });
   }
 

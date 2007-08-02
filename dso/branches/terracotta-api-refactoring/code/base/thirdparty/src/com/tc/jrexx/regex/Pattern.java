@@ -22,11 +22,14 @@
 */
 package com.tc.jrexx.regex;
 
-import com.tc.jrexx.automaton.Automaton;
 import com.tc.jrexx.set.ISet_char;
 
+import java.util.*;
+
+
+import com.tc.jrexx.automaton.*;
+
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
 
 /**
  * Regular expression based on a minimized deterministic automaton (DFA) and designed as an immutable set of strings.

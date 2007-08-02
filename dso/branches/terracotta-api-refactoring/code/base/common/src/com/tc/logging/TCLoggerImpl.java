@@ -95,7 +95,7 @@ class TCLoggerImpl implements TCLogger {
     return logger.isInfoEnabled();
   }
 
-  public void log(ILogLevel level, Object message) {
+  public void log(LogLevel level, Object message) {
     if (message instanceof Throwable) {
       log(level, "Exception thrown", (Throwable) message);
     }
@@ -103,11 +103,11 @@ class TCLoggerImpl implements TCLogger {
     _log(level, message, null, false);
   }
 
-  public void log(ILogLevel level, Object message, Throwable t) {
+  public void log(LogLevel level, Object message, Throwable t) {
     _log(level, message, t, true);
   }
 
-  private void _log(ILogLevel level, Object message, Throwable t, boolean withException) {
+  private void _log(LogLevel level, Object message, Throwable t, boolean withException) {
     switch (level.getLevel()) {
       case LogLevel.LEVEL_DEBUG: {
         if (withException) {
@@ -156,11 +156,11 @@ class TCLoggerImpl implements TCLogger {
     }
   }
 
-  public void setLevel(ILogLevel level) {
+  public void setLevel(LogLevel level) {
     logger.setLevel(LogLevel.toLog4JLevel(level));
   }
 
-  public ILogLevel getLevel() {
+  public LogLevel getLevel() {
     return LogLevel.fromLog4JLevel(logger.getLevel());
   }
 

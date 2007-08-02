@@ -6,7 +6,6 @@ package com.tc.management.beans.sessions;
 import com.tc.management.TerracottaMBean;
 
 
-
 public interface SessionMonitorMBean extends TerracottaMBean {
 
   public static interface SessionsComptroller {

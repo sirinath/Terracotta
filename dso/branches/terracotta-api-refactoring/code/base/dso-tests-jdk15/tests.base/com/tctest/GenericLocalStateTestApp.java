@@ -5,11 +5,11 @@
 package com.tctest;
 
 import com.tc.exception.ImplementMe;
-import com.tc.exception.TCNonPortableObjectError;
 import com.tc.object.tx.ReadOnlyException;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.lang.reflect.InvocationHandler;
@@ -27,40 +27,32 @@ public abstract class GenericLocalStateTestApp extends AbstractErrorCatchingTran
     throw new ImplementMe();
   }
 
-  protected void testMutate(Wrapper wrapper, LockMode lockMode, Mutator mutator) throws Throwable {
-    int oldSize = wrapper.size();
-    LockMode curr_lockMode = wrapper.getHandler().getLockMode();
+  protected void testMutate(Wrapper m, LockMode lockMode, Mutator mutator) throws Throwable {
+    int currentSize = m.size();
+    LockMode curr_lockMode = m.getHandler().getLockMode();
     boolean gotExpectedException = false;
-    Throwable throwable = null;
 
     if (await() == 0) {
-      wrapper.getHandler().setLockMode(lockMode);
+      m.getHandler().setLockMode(lockMode);
       try {
-        mutator.doMutate(wrapper.getProxy());
+        mutator.doMutate(m.getProxy());
       } catch (UnlockedSharedObjectException usoe) {
-        gotExpectedException = lockMode == LockMode.NONE;
+        gotExpectedException = lockMode == LockMode.NONE;        
       } catch (ReadOnlyException roe) {
         gotExpectedException = lockMode == LockMode.READ;
-      } catch (TCNonPortableObjectError ne) {
-        gotExpectedException = lockMode == LockMode.WRITE;
-      } catch (Throwable t) {
-        throwable = t;
       }
     }
 
     await();
-    wrapper.getHandler().setLockMode(curr_lockMode);
+    m.getHandler().setLockMode(curr_lockMode);
 
     if (gotExpectedException) {
-      validate(oldSize, wrapper, lockMode, mutator);
+      int newSize = m.size();
+      Assert.assertEquals("Collection type: " + m.getObject().getClass() + ", lock: " + lockMode, currentSize, newSize);
     }
-
-    if (throwable != null) throw throwable;
   }
 
   protected abstract int await();
-
-  protected abstract void validate(int oldSize, Wrapper wrapper, LockMode lockMode, Mutator mutator) throws Throwable;
 
   static enum LockMode {
     NONE, READ, WRITE
@@ -68,7 +60,7 @@ public abstract class GenericLocalStateTestApp extends AbstractErrorCatchingTran
 
   static class Handler implements InvocationHandler {
     private final Object o;
-    private LockMode     lockMode = LockMode.NONE;
+    private LockMode    lockMode = LockMode.NONE;
 
     public Handler(Object o) {
       this.o = o;
@@ -94,7 +86,7 @@ public abstract class GenericLocalStateTestApp extends AbstractErrorCatchingTran
           case WRITE:
             return invokeWithWriteLock(method, args);
           default:
-            throw new RuntimeException("Should'n happen");
+            throw new RuntimeException("Should not happen");
         }
       } catch (InvocationTargetException e) {
         throw e.getTargetException();
@@ -150,11 +142,11 @@ public abstract class GenericLocalStateTestApp extends AbstractErrorCatchingTran
     public Object getProxy() {
       return proxy;
     }
-
+   
     public int size() {
       try {
         Method method = object.getClass().getMethod("size");
-        return (Integer) method.invoke(object);
+        return (Integer)method.invoke(object);
       } catch (Exception e) {
         e.printStackTrace();
         throw new RuntimeException(e);

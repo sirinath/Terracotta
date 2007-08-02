@@ -3,30 +3,25 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.Attribute;
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
+import java.lang.reflect.Modifier;
+import java.util.Iterator;
+import java.util.Set;
+
+import com.tc.asm.*;
+
 import com.tc.aspectwerkz.definition.SystemDefinition;
-import com.tc.aspectwerkz.expression.ExpressionContext;
-import com.tc.aspectwerkz.expression.PointcutType;
 import com.tc.aspectwerkz.intercept.AdvisableImpl;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
-import com.tc.aspectwerkz.reflect.ClassInfo;
-import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.TransformationUtil;
 import com.tc.aspectwerkz.transform.inlining.AsmCopyAdapter;
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
 import com.tc.aspectwerkz.transform.inlining.EmittedJoinPoint;
-
-import java.lang.reflect.Modifier;
-import java.util.Iterator;
-import java.util.Set;
+import com.tc.aspectwerkz.reflect.ClassInfo;
+import com.tc.aspectwerkz.reflect.MethodInfo;
+import com.tc.aspectwerkz.expression.PointcutType;
+import com.tc.aspectwerkz.expression.ExpressionContext;
 
 /**
  * Adds a "proxy method" to the methods that matches an <tt>execution</tt> pointcut as well as prefixing the "original

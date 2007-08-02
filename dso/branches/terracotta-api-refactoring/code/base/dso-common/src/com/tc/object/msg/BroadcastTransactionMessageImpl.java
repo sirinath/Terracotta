@@ -4,8 +4,8 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
-import com.tc.io.TCByteBufferInput;
+import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -78,7 +78,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   }
 
   public BroadcastTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                         TCMessageHeader header, ITCByteBuffer[] data) {
+                                         TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
@@ -276,7 +276,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
 
     }
 
-    public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
+    public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
       this.rootName = serialInput.readString();
       this.rootID = new ObjectID(serialInput.readLong());
       return this;

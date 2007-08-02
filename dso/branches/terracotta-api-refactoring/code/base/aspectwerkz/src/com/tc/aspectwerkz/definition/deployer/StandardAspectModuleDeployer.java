@@ -11,6 +11,7 @@ import com.tc.aspectwerkz.transform.Properties;
 import com.tc.aspectwerkz.util.Strings;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+// import com.tc.object.loaders.NamedClassLoader;
 
 import java.util.ArrayList;
 import java.util.HashMap;

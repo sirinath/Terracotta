@@ -5,6 +5,7 @@ package com.tc.admin.dso;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.ConnectionContext;
+import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.dna.impl.EnumInstance;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
@@ -21,7 +22,7 @@ public class DSORoot extends DSOObject {
   private String                     m_label;
   private boolean                    m_isLiteral;
   
-  private final static LiteralValues m_literals = new LiteralValues();
+  private final static ILiteralValues m_literals = new LiteralValues();
 
   public DSORoot(ConnectionContext cc, ObjectName bean) {
     super(cc);

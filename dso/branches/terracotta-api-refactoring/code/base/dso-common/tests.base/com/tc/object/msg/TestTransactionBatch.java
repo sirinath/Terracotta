@@ -4,7 +4,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.object.tx.TransactionBatch;
 
@@ -12,10 +12,10 @@ import java.util.Collection;
 
 public class TestTransactionBatch implements TransactionBatch {
 
-  private final ITCByteBuffer[] batchData;
+  private final TCByteBuffer[] batchData;
   private final Collection     acknowledged;
 
-  public TestTransactionBatch(ITCByteBuffer[] batchData, Collection acknowledged) {
+  public TestTransactionBatch(TCByteBuffer[] batchData, Collection acknowledged) {
     this.batchData = batchData;
     this.acknowledged = acknowledged;
   }
@@ -28,7 +28,7 @@ public class TestTransactionBatch implements TransactionBatch {
     throw new ImplementMe();
   }
 
-  public ITCByteBuffer[] getData() {
+  public TCByteBuffer[] getData() {
     return batchData;
   }
 

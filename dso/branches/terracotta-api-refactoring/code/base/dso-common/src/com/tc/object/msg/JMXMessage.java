@@ -3,9 +3,9 @@
  */
 package com.tc.object.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCRuntimeException;
-import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -31,7 +31,7 @@ public class JMXMessage extends DSOMessageBase implements TCSerializable {
   }
 
   public JMXMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header,
-                    ITCByteBuffer[] data) {
+                    TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
@@ -73,7 +73,7 @@ public class JMXMessage extends DSOMessageBase implements TCSerializable {
     }
   }
 
-  public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
+  public Object deserializeFrom(TCByteBufferInputStream serialInput) throws IOException {
     try {
       int length = serialInput.readInt();
       byte serializedObject[] = new byte[length];

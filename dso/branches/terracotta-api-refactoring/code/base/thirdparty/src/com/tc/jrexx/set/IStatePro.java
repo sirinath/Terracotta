@@ -22,6 +22,7 @@
 */
 package com.tc.jrexx.set;
 
+import com.tc.jrexx.set.ISet_char;
 
 /**
  * This interface represents a state of an automaton created via the automaton's addState method.

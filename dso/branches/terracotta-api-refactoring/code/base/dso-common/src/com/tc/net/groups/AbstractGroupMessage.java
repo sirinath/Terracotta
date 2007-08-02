@@ -4,7 +4,6 @@
  */
 package com.tc.net.groups;
 
-import com.tc.bytes.ITCByteBuffer;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.io.TCByteBufferInputStream;
@@ -90,10 +89,10 @@ public abstract class AbstractGroupMessage implements GroupMessage {
     tcbo.recycle();
   }
   
-  protected void writeByteBuffers(ObjectOutput out, ITCByteBuffer[] buffers) throws IOException {
+  protected void writeByteBuffers(ObjectOutput out, TCByteBuffer[] buffers) throws IOException {
     out.writeInt(buffers.length);
     for (int i = 0; i < buffers.length; i++) {
-      ITCByteBuffer buffer = buffers[i];
+      TCByteBuffer buffer = buffers[i];
       int length = buffer.limit();
       out.writeInt(length);
       out.write(buffer.array(), buffer.arrayOffset(), length);
@@ -102,7 +101,7 @@ public abstract class AbstractGroupMessage implements GroupMessage {
 
 
   protected ObjectStringSerializer readObjectStringSerializer(ObjectInput in) throws IOException {
-    ITCByteBuffer buffers[] = readByteBuffers(in);
+    TCByteBuffer buffers[] = readByteBuffers(in);
     ObjectStringSerializer lserializer = new ObjectStringSerializer();
     lserializer.deserializeFrom(new TCByteBufferInputStream(buffers));
     return lserializer;

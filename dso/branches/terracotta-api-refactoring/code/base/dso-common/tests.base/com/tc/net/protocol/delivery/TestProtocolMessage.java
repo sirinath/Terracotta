@@ -4,10 +4,11 @@
  */
 package com.tc.net.protocol.delivery;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.TCNetworkHeader;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.delivery.OOOProtocolMessage;
 
 /**
  * 
@@ -81,11 +82,11 @@ public class TestProtocolMessage implements OOOProtocolMessage {
     throw new ImplementMe();
   }
 
-  public ITCByteBuffer[] getPayload() {
+  public TCByteBuffer[] getPayload() {
     throw new ImplementMe();
   }
 
-  public ITCByteBuffer[] getEntireMessageData() {
+  public TCByteBuffer[] getEntireMessageData() {
     throw new ImplementMe();
   }
 

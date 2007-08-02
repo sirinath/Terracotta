@@ -6,6 +6,6 @@ package com.tc.logging;
 
 public interface TCAppender {
 
-  void append(ILogLevel level, Object message, Throwable throwable);
+  void append(LogLevel level, Object message, Throwable throwable);
 
 }

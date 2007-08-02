@@ -3,13 +3,13 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 
 public interface TCMessageFactory {
 
   public TCMessage createMessage(MessageChannel source, TCMessageType type);
 
-  public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, ITCByteBuffer[] data);
+  public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, TCByteBuffer[] data);
 
   public void addClassMapping(TCMessageType type, Class msgClass);
 

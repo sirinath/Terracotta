@@ -126,7 +126,6 @@ public class AutoLockMapTestApp extends GenericTestApp {
     }
   }
 
-  @SuppressWarnings("unchecked")
   void testEntrySetRetainAll(Map map, boolean validate) throws Exception {
     if (map instanceof HashMap) { return; }
 
@@ -147,7 +146,6 @@ public class AutoLockMapTestApp extends GenericTestApp {
     }
   }
 
-  @SuppressWarnings("unchecked")
   void testEntrySetRemoveAll(Map map, boolean validate) throws Exception {
     if (map instanceof HashMap) { return; }
 

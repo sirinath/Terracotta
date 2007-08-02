@@ -3,25 +3,23 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.Collection;
+
+import com.tc.asm.*;
+
 import com.tc.aspectwerkz.DeploymentModel;
+import com.tc.aspectwerkz.expression.PointcutType;
+import com.tc.aspectwerkz.expression.ExpressionInfo;
+import com.tc.aspectwerkz.expression.ExpressionContext;
+import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.definition.AdviceDefinition;
 import com.tc.aspectwerkz.definition.DeploymentScope;
 import com.tc.aspectwerkz.definition.SystemDefinition;
-import com.tc.aspectwerkz.expression.ExpressionContext;
-import com.tc.aspectwerkz.expression.ExpressionInfo;
-import com.tc.aspectwerkz.expression.PointcutType;
 import com.tc.aspectwerkz.perx.PerObjectAspect;
-import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * Adds an instance level aspect management to the target class.

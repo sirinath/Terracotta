@@ -3,7 +3,7 @@
  */
 package com.tc.io;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -12,11 +12,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TCByteBufferInputStream extends InputStream implements TCByteBufferInput {
+public class TCByteBufferInputStream extends InputStream implements TCDataInput {
   private static final int            EOF                     = -1;
-  private static final ITCByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ITCByteBuffer[] {};
+  private static final TCByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new TCByteBuffer[] {};
 
-  private ITCByteBuffer[]              data;
+  private TCByteBuffer[]              data;
   private int                         totalLength;
   private int                         numBufs;
   private boolean                     closed                  = false;
@@ -24,23 +24,23 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
   private int                         index                   = 0;
   private Mark                        mark                    = null;
 
-  private TCByteBufferInputStream(ITCByteBuffer[] sourceData, int dupeLength, int sourceIndex) {
+  private TCByteBufferInputStream(TCByteBuffer[] sourceData, int dupeLength, int sourceIndex) {
     this(sourceData, dupeLength, sourceIndex, true);
   }
 
-  public TCByteBufferInputStream(ITCByteBuffer data) {
-    this(new ITCByteBuffer[] { data });
+  public TCByteBufferInputStream(TCByteBuffer data) {
+    this(new TCByteBuffer[] { data });
   }
 
-  public TCByteBufferInputStream(ITCByteBuffer[] data) {
+  public TCByteBufferInputStream(TCByteBuffer[] data) {
     if (data == null) { throw new NullPointerException(); }
 
     long length = 0;
 
-    this.data = new ITCByteBuffer[data.length];
+    this.data = new TCByteBuffer[data.length];
 
     for (int i = 0, n = data.length; i < n; i++) {
-      ITCByteBuffer buf = data[i];
+      TCByteBuffer buf = data[i];
       if (buf == null) { throw new NullPointerException("null buffer at index " + i); }
 
       this.data[i] = buf.duplicate().rewind();
@@ -53,11 +53,11 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     this.totalLength = (int) length;
   }
 
-  private TCByteBufferInputStream(ITCByteBuffer[] sourceData, int dupeLength, int sourceIndex, boolean duplicate) {
+  private TCByteBufferInputStream(TCByteBuffer[] sourceData, int dupeLength, int sourceIndex, boolean duplicate) {
     // skipping checks. Invariants should hold since this is a private cstr()
 
     if (duplicate) {
-      this.data = new ITCByteBuffer[sourceData.length - sourceIndex];
+      this.data = new TCByteBuffer[sourceData.length - sourceIndex];
     } else {
       this.data = sourceData;
     }
@@ -80,7 +80,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
    * streams will have independent read positions. The read position of the result stream will initially be the same as
    * the source stream
    */
-  public TCByteBufferInput duplicate() {
+  public TCByteBufferInputStream duplicate() {
     checkClosed();
     return new TCByteBufferInputStream(data, available(), index);
   }
@@ -89,7 +89,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
    * Effectively the same thing as calling duplicate().limit(int), but potentially creating far less garbage (depending
    * on the size difference between the original stream and the slice you want)
    */
-  public TCByteBufferInput duplicateAndLimit(final int limit) {
+  public TCByteBufferInputStream duplicateAndLimit(final int limit) {
     checkClosed();
 
     if (limit > available()) { throw new IllegalArgumentException("Not enough data left in stream: " + limit + " > "
@@ -101,7 +101,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     int dataIndex = this.index;
     int lastLimit = -1;
     while (numBytesNeeded > 0) {
-      ITCByteBuffer buf = this.data[dataIndex];
+      TCByteBuffer buf = this.data[dataIndex];
       int numFromThisBuffer = Math.min(numBytesNeeded, buf.remaining());
       lastLimit = buf.position() + numFromThisBuffer;
       numBytesNeeded -= numFromThisBuffer;
@@ -111,7 +111,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     }
 
     int size = (dataIndex - this.index) + 1;
-    ITCByteBuffer[] limitedData = new ITCByteBuffer[size];
+    TCByteBuffer[] limitedData = new TCByteBuffer[size];
     for (int i = 0, n = limitedData.length; i < n; i++) {
       limitedData[i] = this.data[this.index + i].duplicate();
     }
@@ -121,12 +121,12 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     return new TCByteBufferInputStream(limitedData, limit, 0, false);
   }
 
-  public ITCByteBuffer[] toArray() {
+  public TCByteBuffer[] toArray() {
     checkClosed();
 
     if (available() == 0) { return EMPTY_BYTE_BUFFER_ARRAY; }
 
-    ITCByteBuffer[] rv = new ITCByteBuffer[numBufs - index];
+    TCByteBuffer[] rv = new TCByteBuffer[numBufs - index];
     rv[0] = data[index].slice();
     for (int i = 1, n = rv.length; i < n; i++) {
       rv[i] = data[index + i].duplicate();
@@ -148,7 +148,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     List newData = new ArrayList();
     int num = limit;
     while (num > 0) {
-      ITCByteBuffer current = data[index];
+      TCByteBuffer current = data[index];
       int avail = current.remaining();
       int take = Math.min(avail, num);
       if (take > 0) {
@@ -158,8 +158,8 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
       nextBuffer();
     }
 
-    this.data = new ITCByteBuffer[newData.size()];
-    this.data = (ITCByteBuffer[]) newData.toArray(this.data);
+    this.data = new TCByteBuffer[newData.size()];
+    this.data = (TCByteBuffer[]) newData.toArray(this.data);
     this.numBufs = this.data.length;
     this.totalLength = limit;
     this.position = 0;
@@ -212,7 +212,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
     int numToRead = Math.min(available(), len);
 
     while (index < numBufs) {
-      ITCByteBuffer buf = data[index];
+      TCByteBuffer buf = data[index];
       if (buf.hasRemaining()) {
         int read = Math.min(buf.remaining(), numToRead);
         buf.get(b, off, read);
@@ -289,7 +289,7 @@ public class TCByteBufferInputStream extends InputStream implements TCByteBuffer
 
     int bytesSkipped = 0;
     while (index < numBufs) {
-      ITCByteBuffer buf = data[index];
+      TCByteBuffer buf = data[index];
       int remaining = buf.remaining();
       if (remaining > 0) {
         int numToRead = Math.min(remaining, numToSkip);

@@ -4,7 +4,7 @@
 package com.tc.object.logging;
 
 import com.tc.exception.ImplementMe;
-import com.tc.logging.ILogLevel;
+import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 
 import java.util.HashMap;
@@ -174,11 +174,11 @@ public class OptionsTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public void log(ILogLevel level, Object message) {
+    public void log(LogLevel level, Object message) {
       throw new ImplementMe();
     }
 
-    public void log(ILogLevel level, Object message, Throwable t) {
+    public void log(LogLevel level, Object message, Throwable t) {
       throw new ImplementMe();
     }
 
@@ -190,11 +190,11 @@ public class OptionsTest extends TestCase {
       return false;
     }
 
-    public void setLevel(ILogLevel level) {
+    public void setLevel(LogLevel level) {
       throw new ImplementMe();
     }
 
-    public ILogLevel getLevel() {
+    public LogLevel getLevel() {
       throw new ImplementMe();
     }
 

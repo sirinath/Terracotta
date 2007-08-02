@@ -3,14 +3,9 @@
  */
 package com.zerog.ia.customcode.util.fileutils;
 
-import com.zerog.ia.api.pub.CustomCodeAction;
-import com.zerog.ia.api.pub.InstallException;
-import com.zerog.ia.api.pub.InstallerProxy;
-import com.zerog.ia.api.pub.NonfatalInstallException;
-import com.zerog.ia.api.pub.UninstallerProxy;
+import java.io.*;
 
-import java.io.File;
-import java.io.IOException;
+import com.zerog.ia.api.pub.*;
 
 /**
  * DeleteDirectory deletes the specified directory. If the directory is not empty, its contents are deleted recursively

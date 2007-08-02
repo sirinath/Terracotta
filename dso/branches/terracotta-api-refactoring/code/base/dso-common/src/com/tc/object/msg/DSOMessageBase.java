@@ -4,7 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.async.api.EventContext;
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -26,7 +26,7 @@ public class DSOMessageBase extends TCMessageImpl implements EventContext {
   }
 
   public DSOMessageBase(SessionID sessionID, MessageMonitor monitor, MessageChannel channel, TCMessageHeader header,
-                        ITCByteBuffer[] data) {
+                        TCByteBuffer[] data) {
     super(monitor, channel, header, data);
     this.localSessionID = sessionID;
   }

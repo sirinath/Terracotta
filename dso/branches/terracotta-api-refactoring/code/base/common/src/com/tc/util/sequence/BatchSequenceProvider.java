@@ -3,6 +3,7 @@
  */
 package com.tc.util.sequence;
 
+import com.tc.util.sequence.BatchSequenceReceiver;
 
 /**
  * @author steve Responsible for retrieving a sequence segment asynchronously

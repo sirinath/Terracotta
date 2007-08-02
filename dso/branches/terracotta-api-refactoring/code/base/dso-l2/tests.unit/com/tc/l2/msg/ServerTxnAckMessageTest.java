@@ -4,7 +4,7 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.NodeID;
@@ -46,7 +46,7 @@ public class ServerTxnAckMessageTest extends TestCase {
     acknowledged.add(new TransactionID(876));
     TestCommitTransactionMessage testCommitTransactionMessage = (TestCommitTransactionMessage) new TestCommitTransactionMessageFactory()
         .newCommitTransactionMessage();
-    testCommitTransactionMessage.setBatch(new TestTransactionBatch(new ITCByteBuffer[] { TCByteBufferFactory
+    testCommitTransactionMessage.setBatch(new TestTransactionBatch(new TCByteBuffer[] { TCByteBufferFactory
         .getInstance(false, 3452) }, acknowledged), new ObjectStringSerializer());
     testCommitTransactionMessage.setChannelID(new ChannelID(channelId));
 

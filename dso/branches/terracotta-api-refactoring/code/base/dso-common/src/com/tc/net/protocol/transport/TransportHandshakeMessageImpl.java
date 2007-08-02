@@ -3,7 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.TCNetworkHeader;
@@ -27,7 +27,7 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   private final int          maxConnections;
   private final boolean      isMaxConnectionsExceeded;
 
-  TransportHandshakeMessageImpl(TCConnection source, TCNetworkHeader header, ITCByteBuffer[] payload)
+  TransportHandshakeMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
       throws TCProtocolException {
     super(source, header, payload);
 

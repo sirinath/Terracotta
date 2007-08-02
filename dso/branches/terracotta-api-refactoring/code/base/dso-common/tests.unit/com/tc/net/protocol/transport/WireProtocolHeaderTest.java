@@ -5,6 +5,8 @@ package com.tc.net.protocol.transport;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
+import com.tc.net.protocol.transport.WireProtocolHeader;
+import com.tc.net.protocol.transport.WireProtocolHeaderFormatException;
 import com.tc.util.Conversion;
 
 import java.util.Arrays;

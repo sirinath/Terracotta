@@ -4,7 +4,7 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.bytes.ITCByteBuffer;
+import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -43,7 +43,7 @@ public class RelayedCommitTransactionMessageTest extends TestCase {
     acknowledged.add(new TransactionID(876));
     testCommitTransactionMessage = (TestCommitTransactionMessage) new TestCommitTransactionMessageFactory()
         .newCommitTransactionMessage();
-    testCommitTransactionMessage.setBatch(new TestTransactionBatch(new ITCByteBuffer[] { TCByteBufferFactory
+    testCommitTransactionMessage.setBatch(new TestTransactionBatch(new TCByteBuffer[] { TCByteBufferFactory
         .getInstance(false, 3452) }, acknowledged), new ObjectStringSerializer());
     testCommitTransactionMessage.setChannelID(new ChannelID(channelId));
 
@@ -92,8 +92,8 @@ public class RelayedCommitTransactionMessageTest extends TestCase {
           .getOrCreateGlobalTransactionID(serverTransactionID));
     }
 
-    ITCByteBuffer[] tcbb = rctm.getBatchData();
-    ITCByteBuffer[] tcbb1 = rctm1.getBatchData();
+    TCByteBuffer[] tcbb = rctm.getBatchData();
+    TCByteBuffer[] tcbb1 = rctm1.getBatchData();
     assertEquals(tcbb.length, tcbb1.length);
     for (int i = 0; i < tcbb.length; i++) {
       assertEquals(tcbb[i].getBoolean(), tcbb1[i].getBoolean());
