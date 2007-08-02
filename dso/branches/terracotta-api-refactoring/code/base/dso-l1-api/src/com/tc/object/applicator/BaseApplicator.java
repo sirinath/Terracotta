@@ -6,7 +6,7 @@ package com.tc.object.applicator;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientObjectManager;
-import com.tc.object.ILiteralValues;
+import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.IDNAEncoding;
@@ -17,14 +17,14 @@ import java.util.Map;
 public abstract class BaseApplicator implements ChangeApplicator {
 
   private static final TCLogger       logger   = TCLogging.getLogger(BaseApplicator.class);
-  private static final ILiteralValues literals = createLiteralValuesInstance();
+  private static final LiteralValues literals = createLiteralValuesInstance();
 
   protected final IDNAEncoding        encoding;
 
-  private static final ILiteralValues createLiteralValuesInstance() {
+  private static final LiteralValues createLiteralValuesInstance() {
     try {
       Class klazz = Class.forName("com.tc.object.LiteralValues");
-      return (ILiteralValues)klazz.newInstance();
+      return (LiteralValues)klazz.newInstance();
     } catch (ClassNotFoundException e) {
       throw new Error(e);
     } catch (InstantiationException e) {

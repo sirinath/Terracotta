@@ -8,7 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.ITransparencyClassSpec;
 import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
@@ -176,7 +176,7 @@ public class ArrayGCTest extends GCTestBase {
       new CyclicBarrierSpec().visit(visitor, config);
 
       String testClassName = App.class.getName();
-      TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
+      ITransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("root", "root");
       spec.addRoot("barrier", "barrier");
 

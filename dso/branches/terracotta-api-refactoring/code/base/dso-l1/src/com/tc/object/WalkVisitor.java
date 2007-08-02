@@ -24,7 +24,7 @@ import javax.swing.tree.MutableTreeNode;
 
 public class WalkVisitor implements Visitor, WalkTest {
 
-  private static final ILiteralValues    literals               = new LiteralValues();
+  private static final LiteralValues    literals               = new LiteralValues();
 
   private final ClientObjectManager     objMgr;
   private final DSOClientConfigHelper   config;

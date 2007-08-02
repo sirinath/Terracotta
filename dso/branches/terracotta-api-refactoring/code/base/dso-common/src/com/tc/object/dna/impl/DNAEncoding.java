@@ -9,7 +9,6 @@ import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.IDNAEncoding;
@@ -56,7 +55,7 @@ public class DNAEncoding implements IDNAEncoding {
   static final byte                  PHYSICAL_ACTION_TYPE_REF_OBJECT      = 6;
   static final byte                  SUB_ARRAY_ACTION_TYPE                = 7;
 
-  private static final ILiteralValues literalValues                        = new LiteralValues();
+  private static final LiteralValues literalValues                        = new LiteralValues();
   private static final TCLogger      logger                               = TCLogging.getLogger(DNAEncoding.class);
 
   private static final byte          TYPE_ID_REFERENCE                    = 1;
@@ -155,11 +154,11 @@ public class DNAEncoding implements IDNAEncoding {
     final int type = literalValues.valueFor(value);
 
     switch (type) {
-      case ILiteralValues.CURRENCY:
+      case LiteralValues.CURRENCY:
         output.writeByte(TYPE_ID_CURRENCY);
         writeString(((Currency) value).getCurrencyCode(), output);
         break;
-      case ILiteralValues.ENUM:
+      case LiteralValues.ENUM:
         output.writeByte(TYPE_ID_ENUM);
         Class enumClass = getEnumDeclaringClass(value);
         writeString(enumClass.getName(), output);
@@ -168,85 +167,85 @@ public class DNAEncoding implements IDNAEncoding {
         Object name = getEnumName(value);
         writeString((String) name, output);
         break;
-      case ILiteralValues.ENUM_HOLDER:
+      case LiteralValues.ENUM_HOLDER:
         output.writeByte(TYPE_ID_ENUM_HOLDER);
         writeEnumInstance((EnumInstance) value, output);
         break;
-      case ILiteralValues.JAVA_LANG_CLASSLOADER:
+      case LiteralValues.JAVA_LANG_CLASSLOADER:
         encodeClassLoader(value, output);
         break;
-      case ILiteralValues.JAVA_LANG_CLASSLOADER_HOLDER:
+      case LiteralValues.JAVA_LANG_CLASSLOADER_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER);
         writeClassLoaderInstance((ClassLoaderInstance) value, output);
         break;
-      case ILiteralValues.JAVA_LANG_CLASS:
+      case LiteralValues.JAVA_LANG_CLASS:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS);
         Class c = (Class) value;
         writeString(c.getName(), output);
         writeString(classProvider.getLoaderDescriptionFor(c), output);
         break;
-      case ILiteralValues.JAVA_LANG_CLASS_HOLDER:
+      case LiteralValues.JAVA_LANG_CLASS_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS_HOLDER);
         writeClassInstance((ClassInstance) value, output);
         break;
-      case ILiteralValues.BOOLEAN:
+      case LiteralValues.BOOLEAN:
         output.writeByte(TYPE_ID_BOOLEAN);
         output.writeBoolean(((Boolean) value).booleanValue());
         break;
-      case ILiteralValues.BYTE:
+      case LiteralValues.BYTE:
         output.writeByte(TYPE_ID_BYTE);
         output.writeByte(((Byte) value).byteValue());
         break;
-      case ILiteralValues.CHARACTER:
+      case LiteralValues.CHARACTER:
         output.writeByte(TYPE_ID_CHAR);
         output.writeChar(((Character) value).charValue());
         break;
-      case ILiteralValues.DOUBLE:
+      case LiteralValues.DOUBLE:
         output.writeByte(TYPE_ID_DOUBLE);
         output.writeDouble(((Double) value).doubleValue());
         break;
-      case ILiteralValues.FLOAT:
+      case LiteralValues.FLOAT:
         output.writeByte(TYPE_ID_FLOAT);
         output.writeFloat(((Float) value).floatValue());
         break;
-      case ILiteralValues.INTEGER:
+      case LiteralValues.INTEGER:
         output.writeByte(TYPE_ID_INT);
         output.writeInt(((Integer) value).intValue());
         break;
-      case ILiteralValues.LONG:
+      case LiteralValues.LONG:
         output.writeByte(TYPE_ID_LONG);
         output.writeLong(((Long) value).longValue());
         break;
-      case ILiteralValues.SHORT:
+      case LiteralValues.SHORT:
         output.writeByte(TYPE_ID_SHORT);
         output.writeShort(((Short) value).shortValue());
         break;
-      case ILiteralValues.STRING:
+      case LiteralValues.STRING:
         output.writeByte(TYPE_ID_STRING);
         writeString((String) value, output);
         break;
-      case ILiteralValues.STRING_BYTES:
+      case LiteralValues.STRING_BYTES:
         output.writeByte(TYPE_ID_STRING_BYTES);
         writeByteArray(((UTF8ByteDataHolder) value).getBytes(), output);
         break;
-      case ILiteralValues.OBJECT_ID:
+      case LiteralValues.OBJECT_ID:
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
         break;
-      case ILiteralValues.STACK_TRACE_ELEMENT:
+      case LiteralValues.STACK_TRACE_ELEMENT:
         output.writeByte(TYPE_ID_STACK_TRACE_ELEMENT);
         StackTraceElement ste = (StackTraceElement) value;
         writeStackTraceElement(ste, output);
         break;
-      case ILiteralValues.BIG_INTEGER:
+      case LiteralValues.BIG_INTEGER:
         output.writeByte(TYPE_ID_BIG_INTEGER);
         writeByteArray(((BigInteger) value).toByteArray(), output);
         break;
-      case ILiteralValues.BIG_DECIMAL:
+      case LiteralValues.BIG_DECIMAL:
         output.writeByte(TYPE_ID_BIG_DECIMAL);
         writeByteArray(((BigDecimal) value).toString().getBytes(), output);
         break;
-      case ILiteralValues.ARRAY:
+      case LiteralValues.ARRAY:
         encodeArray(value, output);
         break;
       default:

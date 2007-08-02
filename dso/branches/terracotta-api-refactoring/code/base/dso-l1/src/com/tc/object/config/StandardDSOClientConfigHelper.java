@@ -29,7 +29,6 @@ import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
@@ -102,7 +101,7 @@ public class StandardDSOClientConfigHelper implements IStandardDSOClientConfigHe
 
   private static final String                    CGLIB_PATTERN                      = "$$EnhancerByCGLIB$$";
 
-  private static final ILiteralValues             literalValues                      = new LiteralValues();
+  private static final LiteralValues             literalValues                      = new LiteralValues();
 
   private static final TCLogger                  logger                             = CustomerLogging
                                                                                         .getDSOGenericLogger();

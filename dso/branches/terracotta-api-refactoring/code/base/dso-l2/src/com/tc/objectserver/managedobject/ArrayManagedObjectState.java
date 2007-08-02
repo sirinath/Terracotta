@@ -6,7 +6,6 @@ package com.tc.objectserver.managedobject;
 
 import org.apache.commons.lang.ArrayUtils;
 
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA;
@@ -29,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class ArrayManagedObjectState extends LogicalManagedObjectState implements PrettyPrintable {
-  private static final ILiteralValues LITERAL_VALUES = (ILiteralValues) new LiteralValues();
+  private static final LiteralValues LITERAL_VALUES = (LiteralValues) new LiteralValues();
 
   private Object                      arrayData;
   private int                         size           = DNA.NULL_ARRAY_SIZE;
@@ -85,28 +84,28 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
 
   private static void setArrayElement(Object array, int index, Object value, int type) {
     switch (type) {
-      case ILiteralValues.BOOLEAN:
+      case LiteralValues.BOOLEAN:
         ((boolean[]) array)[index] = ((Boolean) value).booleanValue();
         break;
-      case ILiteralValues.BYTE:
+      case LiteralValues.BYTE:
         ((byte[]) array)[index] = ((Byte) value).byteValue();
         break;
-      case ILiteralValues.CHARACTER:
+      case LiteralValues.CHARACTER:
         ((char[]) array)[index] = ((Character) value).charValue();
         break;
-      case ILiteralValues.DOUBLE:
+      case LiteralValues.DOUBLE:
         ((double[]) array)[index] = ((Double) value).doubleValue();
         break;
-      case ILiteralValues.FLOAT:
+      case LiteralValues.FLOAT:
         ((float[]) array)[index] = ((Float) value).floatValue();
         break;
-      case ILiteralValues.INTEGER:
+      case LiteralValues.INTEGER:
         ((int[]) array)[index] = ((Integer) value).intValue();
         break;
-      case ILiteralValues.LONG:
+      case LiteralValues.LONG:
         ((long[]) array)[index] = ((Long) value).longValue();
         break;
-      case ILiteralValues.SHORT:
+      case LiteralValues.SHORT:
         ((short[]) array)[index] = ((Short) value).shortValue();
         break;
       default:
@@ -217,21 +216,21 @@ public class ArrayManagedObjectState extends LogicalManagedObjectState implement
 
   private static boolean equals(Object a1, Object a2, int type) {
     switch (type) {
-      case ILiteralValues.BOOLEAN:
+      case LiteralValues.BOOLEAN:
         return Arrays.equals((boolean[]) a1, (boolean[]) a2);
-      case ILiteralValues.BYTE:
+      case LiteralValues.BYTE:
         return Arrays.equals((byte[]) a1, (byte[]) a2);
-      case ILiteralValues.CHARACTER:
+      case LiteralValues.CHARACTER:
         return Arrays.equals((char[]) a1, (char[]) a2);
-      case ILiteralValues.DOUBLE:
+      case LiteralValues.DOUBLE:
         return Arrays.equals((double[]) a1, (double[]) a2);
-      case ILiteralValues.FLOAT:
+      case LiteralValues.FLOAT:
         return Arrays.equals((float[]) a1, (float[]) a2);
-      case ILiteralValues.INTEGER:
+      case LiteralValues.INTEGER:
         return Arrays.equals((int[]) a1, (int[]) a2);
-      case ILiteralValues.LONG:
+      case LiteralValues.LONG:
         return Arrays.equals((long[]) a1, (long[]) a2);
-      case ILiteralValues.SHORT:
+      case LiteralValues.SHORT:
         return Arrays.equals((short[]) a1, (short[]) a2);
       default:
         return Arrays.equals((Object[]) a1, (Object[]) a2);

@@ -13,7 +13,6 @@ import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.backport175.bytecode.AnnotationElement.Annotation;
 import com.tc.exception.TCLogicalSubclassNotPortableException;
-import com.tc.object.ILiteralValues;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.config.ITransparencyClassSpec;
@@ -35,7 +34,7 @@ class InstrumentationSpec {
   public static final byte            IS_NEEDED                   = 0x05;
   public static final byte            IS_PRESENT                  = 0x06;
 
-  private static final ILiteralValues  literalValues               = new LiteralValues();
+  private static final LiteralValues  literalValues               = new LiteralValues();
 
   private byte                        instrumentationAction       = TransparencyClassSpec.NOT_ADAPTABLE;
 
@@ -126,7 +125,7 @@ class InstrumentationSpec {
   }
 
   private boolean isArray(String className) {
-    return literalValues.valueForClassName(className) == ILiteralValues.ARRAY;
+    return literalValues.valueForClassName(className) == LiteralValues.ARRAY;
   }
 
   private void handleSubclassOfLogicalClass(int access, String className, String superName) {
