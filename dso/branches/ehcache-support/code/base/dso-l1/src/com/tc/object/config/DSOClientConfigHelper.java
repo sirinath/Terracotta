@@ -18,6 +18,7 @@ import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
+import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.terracottatech.config.Modules;
 
@@ -56,7 +57,9 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller, boolean disableSuperClassTypeChecking);
   
-  public ClassReplacementMapping getClassReplacementMapping();
+  ClassReplacementMapping getClassReplacementMapping();
+  
+  BytecodeProvider getBytecodeProvider(String className);
 
   boolean isCallConstructorOnLoad(ClassInfo classInfo);
 

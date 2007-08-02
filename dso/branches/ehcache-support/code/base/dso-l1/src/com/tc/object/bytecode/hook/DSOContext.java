@@ -5,8 +5,8 @@ package com.tc.object.bytecode.hook;
 
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.object.bytecode.Manager;
+import com.tc.object.loaders.BytecodeProvider;
 
-import java.net.URL;
 import java.util.Collection;
 
 public interface DSOContext extends ClassProcessor {
@@ -24,6 +24,5 @@ public interface DSOContext extends ClassProcessor {
 
   public int getSessionLockType(String appName);
   
-  public URL getClassResource(String className);
-
+  public BytecodeProvider getByteCodeProvider(String className);
 }

@@ -12,6 +12,7 @@ import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
+import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
@@ -123,14 +124,6 @@ public class ClassProcessorHelper {
   }
 
   public static URL getTCResource(String name, ClassLoader cl) {
-    DSOContext context = getContext(cl);
-    if (context != null) {
-      URL url = context.getClassResource(name);
-      if (url != null) {
-        return url;
-      }
-    }
-    
     if (!isAWRuntimeDependency(name.replace('/', '.'))) { return null; }
 
     try {
@@ -144,10 +137,13 @@ public class ClassProcessorHelper {
   public static byte[] getTCClass(String name, ClassLoader cl) throws ClassNotFoundException {
     DSOContext context = getContext(cl);
     if (context != null) {
-      URL url = context.getClassResource(name);
-      if (url != null) {
-       System.out.println("getTCClass : context - "+context+", "+url);
-       return getResourceBytes(url);
+      BytecodeProvider provider = context.getByteCodeProvider(name);
+      if (provider != null) {
+       byte[] bytecode = provider.__tc_getBytecodeForClass(name);
+       System.out.println(">>>>>> getTCClass : "+name+", "+provider+", "+bytecode);
+       if (bytecode != null) {
+         return bytecode;
+       }
       }
     }
 

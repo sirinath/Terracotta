@@ -21,11 +21,11 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.DSOContext;
-import com.tc.object.config.ClassReplacementMapping;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.IncompleteBootJarException;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.UnverifiedBootJarException;
+import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.plugins.ModulesLoader;
@@ -249,14 +249,7 @@ public class DSOContextImpl implements DSOContext {
     return configHelper.getSessionLockType(appName);
   }
   
-  public URL getClassResource(String className) {
-    ClassReplacementMapping mapping = configHelper.getClassReplacementMapping();
-    if (mapping.hasReplacement(className)) {
-      String replacement = mapping.getReplacementClassName(className);
-      if (className.equals(replacement)) {
-        return mapping.getReplacementResource(replacement);
-      }
-    }
-    return null;
+  public BytecodeProvider getByteCodeProvider(String className) {
+    return configHelper.getBytecodeProvider(className);
   }
 }

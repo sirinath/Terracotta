@@ -176,9 +176,8 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
           InputStream is = replacementResource.openStream();
           try {
             byte[] replacementBytes = ByteCodeUtil.getBytesForInputstream(is);
-            System.out.println(">>>>> bytes for resource "+replacementResource+" : "+replacementBytes.length+", "+replacementBytes);
             
-            // perfrom the rename transformation so that it can be used instead of the original class
+            // perform the rename transformation so that it can be used instead of the original class
             ClassReader cr = new ClassReader(replacementBytes);
             ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
             ClassVisitor cv = new RenameClassesAdapter(cw, mapping);

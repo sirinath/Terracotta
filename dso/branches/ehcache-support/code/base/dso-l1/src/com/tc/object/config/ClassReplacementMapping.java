@@ -54,9 +54,7 @@ public class ClassReplacementMapping {
     if (null == resource && 
         defaultClassLoader != null) {
       resource = defaultClassLoader.getResource(ByteCodeUtil.classNameToFileName(replacementClassName));
-    }
-    System.out.println(">>>>>> getReplacementResource : "+replacementClassName+", "+resource);
-    
+    }    
     return resource;
   }
   

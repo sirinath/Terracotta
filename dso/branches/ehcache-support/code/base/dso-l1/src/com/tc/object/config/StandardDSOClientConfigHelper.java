@@ -58,6 +58,7 @@ import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
 import com.tc.object.glassfish.transform.RuntimeModelAdapter;
+import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
@@ -146,6 +147,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private final Map                              customAdapters                     = new ConcurrentHashMap();
 
   private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMapping();
+  
+  private final Map                              bytecodeProviders                  = new ConcurrentHashMap();
 
   private final Map                              aspectModules                      = Collections
                                                                                         .synchronizedMap(new HashMap());
@@ -1094,6 +1097,19 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
       Assert.assertNull(prev);
     }
   }
+  
+  public ClassReplacementMapping getClassReplacementMapping() {
+    return classReplacements;
+  }
+
+  public void addBytecodeProvider(final String className, final BytecodeProvider provider) {
+    Object prev = this.bytecodeProviders.put(className, provider);
+    Assert.assertNull(prev);
+  }
+  
+  public BytecodeProvider getBytecodeProvider(final String className) {
+    return (BytecodeProvider)this.bytecodeProviders.get(className);
+  }
 
   private void markAllSpecsPreInstrumented() {
     for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
@@ -1544,10 +1560,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
       return new SafeSerialVersionUIDAdder(cv);
     }
-  }
-  
-  public ClassReplacementMapping getClassReplacementMapping() {
-    return classReplacements;
   }
 
   private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator, boolean rememberSpec) {
