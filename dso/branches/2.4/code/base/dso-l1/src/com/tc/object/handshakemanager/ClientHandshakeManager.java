@@ -162,6 +162,7 @@ public class ClientHandshakeManager implements ChannelEventListener {
     changeState(PAUSED);
     // all the activities paused then can switch to new session
     sessionManager.newSession();
+    logger.info("ClientHandshakeManager moves to "+ sessionManager);
   }
 
   public void unpause() {
