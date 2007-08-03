@@ -70,6 +70,7 @@ public class LinkedJavaProcess {
 
   public void setJavaHome(File javaHome) {
     this.javaHome = javaHome;
+    System.out.println("&&&&&&&&&& LinkedJavaProcess - set JavaHome to " + javaHome.getAbsolutePath());
   }
 
   public LinkedJavaProcess(String mainClassName) {
@@ -156,8 +157,18 @@ public class LinkedJavaProcess {
     if (this.arguments != null) fullCommandList.addAll(Arrays.asList(this.arguments));
 
     String[] fullCommand = (String[]) fullCommandList.toArray(new String[fullCommandList.size()]);
-
+// XXX: temporary debug code
+boolean isTCServerMain = "com.tc.server.TCServerMain".equals(this.mainClassName); 
+if (isTCServerMain) {
+  System.err.println("&&&&& About to invoke TCServerMain");
+  for (Iterator i = fullCommandList.iterator(); i.hasNext(); ) {
+    System.err.println("\t" + i.next());
+  }
+}
     this.process = Runtime.getRuntime().exec(fullCommand, makeEnv(env), this.directory);
+if (isTCServerMain ) {
+  System.err.println("&&&&& Back from invoking TCServerMain");
+}
     this.running = true;
   }
 
