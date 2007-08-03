@@ -33,7 +33,7 @@ public abstract class AbstractTransparentApp implements Application {
     }
     this.listenerProvider = listenerProvider;
     this.intensity = config.getIntensity();
-    this.coordinator = new TransparentAppCoordinator(appId, config.getGlobalParticipantCount());
+    this.coordinator = new TransparentAppCoordinator(appId, config.getGlobalMutatorCount());
   }
 
   protected int getIntensity() {

@@ -19,7 +19,7 @@ public abstract class SimpleTransparentTestBase extends TransparentTestBase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(getNodeCount()).setApplicationInstancePerClientCount(getExecutionCount())
+    getTransparentAppConfig().setMutatorCount(getNodeCount()).setApplicationInstancePerClientCount(getExecutionCount())
         .setIntensity(getLoopIterations());
     initializeTestRunner();
   }

@@ -10,7 +10,7 @@ public class FastReadSlowWriteTest  extends TransparentTestBase implements TestC
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(FastReadSlowWriteTestApp.NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(FastReadSlowWriteTestApp.NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
     t.initializeTestRunner();
   }
 

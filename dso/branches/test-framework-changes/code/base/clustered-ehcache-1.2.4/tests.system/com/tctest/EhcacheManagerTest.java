@@ -7,7 +7,7 @@ public class EhcacheManagerTest extends TransparentTestBase {
   }
   
   public void doSetUp(final TransparentTestIface tt) throws Exception {
-    tt.getTransparentAppConfig().setClientCount(
+    tt.getTransparentAppConfig().setMutatorCount(
         EhcacheManagerTestApp.EXPECTED_THREAD_COUNT);
     tt.initializeTestRunner();
   }

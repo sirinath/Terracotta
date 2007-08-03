@@ -13,7 +13,7 @@ public class SingleQueueThroughput extends TransparentTestBase {
   private static final int TIMEOUT    = 30 * 60 * 1000; // 30min;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     t.getRunnerConfig().setExecutionTimeout(TIMEOUT);
     t.initializeTestRunner();
   }

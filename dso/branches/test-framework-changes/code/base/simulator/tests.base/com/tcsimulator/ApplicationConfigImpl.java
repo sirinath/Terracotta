@@ -19,7 +19,7 @@ public class ApplicationConfigImpl implements ApplicationConfig {
 
   private final String applicatonClassname;
   private final int    intensity;
-  private final int    globalParticipantCount;
+  private final int    globalMutatorCount;
   private final Map    attributes;
   private int          hashCode;
   private final int    validatorCount;
@@ -30,18 +30,18 @@ public class ApplicationConfigImpl implements ApplicationConfig {
     config.addWriteAutolock("* " + classname + ".*(..)");
   }
 
-  public ApplicationConfigImpl(String applicatonClassname, int intensity, int globalParticipantCount) {
-    this(applicatonClassname, intensity, globalParticipantCount, 0);
+  public ApplicationConfigImpl(String applicatonClassname, int intensity, int globalMutatorCount) {
+    this(applicatonClassname, intensity, globalMutatorCount, 0);
   }
 
-  public ApplicationConfigImpl(String applicatonClassname, int intensity, int globalParticipantCount, int validatorCount) {
+  public ApplicationConfigImpl(String applicatonClassname, int intensity, int globalMutatorCount, int validatorCount) {
     this.applicatonClassname = applicatonClassname;
     this.intensity = intensity;
-    this.globalParticipantCount = globalParticipantCount;
+    this.globalMutatorCount = globalMutatorCount;
     this.validatorCount = validatorCount;
     attributes = new HashMap();
     hashCode = new HashCodeBuilder(17, 37).append(this.applicatonClassname).append(intensity)
-        .append(globalParticipantCount).append(attributes).toHashCode();
+        .append(globalMutatorCount).append(attributes).toHashCode();
   }
 
   public String getApplicationClassname() {
@@ -52,8 +52,8 @@ public class ApplicationConfigImpl implements ApplicationConfig {
     return intensity;
   }
 
-  public int getGlobalParticipantCount() {
-    return this.globalParticipantCount;
+  public int getGlobalMutatorCount() {
+    return this.globalMutatorCount;
   }
 
   public int getValidatorCount() {
@@ -62,7 +62,7 @@ public class ApplicationConfigImpl implements ApplicationConfig {
 
   public boolean equals(ApplicationConfig appconfig) {
     return applicatonClassname.equals(appconfig.getApplicationClassname()) && intensity == appconfig.getIntensity()
-           && globalParticipantCount == appconfig.getGlobalParticipantCount();
+           && globalMutatorCount == appconfig.getGlobalMutatorCount();
   }
 
   public int hashCode() {
@@ -78,7 +78,7 @@ public class ApplicationConfigImpl implements ApplicationConfig {
   }
 
   public ApplicationConfig copy() {
-    return new ApplicationConfigImpl(applicatonClassname, intensity, globalParticipantCount, validatorCount);
+    return new ApplicationConfigImpl(applicatonClassname, intensity, globalMutatorCount, validatorCount);
   }
 
   public ServerControl getServerControl() {

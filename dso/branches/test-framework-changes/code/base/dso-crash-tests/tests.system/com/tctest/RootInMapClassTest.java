@@ -8,7 +8,7 @@ public class RootInMapClassTest extends TransparentTestBase implements TestConfi
   private static final int NODE_COUNT = 5;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(1);
     t.initializeTestRunner();
   }
 

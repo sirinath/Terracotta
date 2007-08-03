@@ -7,7 +7,7 @@ public class GreedyLocksSystemTest extends TransparentTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(3).setApplicationInstancePerClientCount(GreedyLocksSystemTestApp.EXECUTION_COUNT)
+    getTransparentAppConfig().setMutatorCount(3).setApplicationInstancePerClientCount(GreedyLocksSystemTestApp.EXECUTION_COUNT)
         .setIntensity(GreedyLocksSystemTestApp.ITERATION_COUNT);
     initializeTestRunner();
   }

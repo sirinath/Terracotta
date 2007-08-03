@@ -29,7 +29,7 @@ public class RootClassChangeTestApp extends AbstractErrorCatchingTransparentApp 
   public RootClassChangeTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     this.appId = appId;
-    nodeCount = cfg.getGlobalParticipantCount();
+    nodeCount = cfg.getGlobalMutatorCount();
     adapted = Boolean.valueOf(cfg.getAttribute(appId + ApplicationConfig.ADAPTED_KEY)).booleanValue();
 
     tcHashMap = new HashMap();

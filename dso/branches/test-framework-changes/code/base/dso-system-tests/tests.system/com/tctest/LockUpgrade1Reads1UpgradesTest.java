@@ -14,7 +14,7 @@ public class LockUpgrade1Reads1UpgradesTest extends TransparentTestBase {
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(THREAD_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(THREAD_COUNT);
     t.initializeTestRunner();
   }
 

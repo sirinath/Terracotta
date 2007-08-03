@@ -45,7 +45,7 @@ public class LongrunningGCTestAppConfigObject implements LongrunningGCTestAppCon
     throw new AssertionError();
   }
 
-  public int getGlobalParticipantCount() {
+  public int getGlobalMutatorCount() {
     throw new AssertionError();
   }
 

@@ -24,36 +24,36 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   private ServerControl[]         serverControls;
   private TCPProxy[]              proxies;
   private int                     intensity;
-  private int                     clientCount;
+  private int                     mutatorCount;
   private int                     applicationInstancePerClientCount = 1;
   private int                     validatorCount;
   private int                     adaptedMutatorCount;
   private int                     adaptedValidatorCount;
 
-  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount,
+  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int mutatorCount,
                               int intensity, ServerControl[] serverControls, TCPProxy[] proxies) {
-    this(applicationClassname, idGenerator, clientCount, intensity, null, 0, 0, 0);
+    this(applicationClassname, idGenerator, mutatorCount, intensity, null, 0, 0, 0);
     this.serverControls = serverControls;
     this.proxies = proxies;
   }
 
-  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount,
+  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int mutatorCount,
                               int intensity, ServerControl serverControl) {
-    this(applicationClassname, idGenerator, clientCount, intensity, serverControl, 0, 0, 0);
+    this(applicationClassname, idGenerator, mutatorCount, intensity, serverControl, 0, 0, 0);
   }
 
-  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int clientCount,
+  public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int mutatorCount,
                               int intensity, ServerControl serverControl, int validatorCount, int adaptedMutatorCount,
                               int adaptedValidatorCount) {
     this.applicationClassname = applicationClassname;
     this.idGenerator = idGenerator;
-    if (clientCount < 1) throw new AssertionError("Client count must be greater than 0");
-    this.clientCount = clientCount;
+    if (mutatorCount < 1) throw new AssertionError("Client count must be greater than 0");
+    this.mutatorCount = mutatorCount;
     this.intensity = intensity;
     this.serverControl = serverControl;
     this.validatorCount = validatorCount;
     this.adaptedMutatorCount = adaptedMutatorCount;
-    isLessThanOrEqualTo(adaptedMutatorCount, clientCount, "adaptedMutatorCount");
+    isLessThanOrEqualTo(adaptedMutatorCount, mutatorCount, "adaptedMutatorCount");
     this.adaptedValidatorCount = adaptedValidatorCount;
     isLessThanOrEqualTo(adaptedValidatorCount, validatorCount, "adaptedValidatorCount");
   }
@@ -86,8 +86,8 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
     return (int) idGenerator.nextId();
   }
 
-  public int getGlobalParticipantCount() {
-    return this.clientCount * this.applicationInstancePerClientCount;
+  public int getGlobalMutatorCount() {
+    return this.mutatorCount * this.applicationInstancePerClientCount;
   }
 
   public TransparentAppConfig setApplicationInstancePerClientCount(int applicationInstanceCount) {
@@ -99,12 +99,12 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
     return this.applicationInstancePerClientCount;
   }
 
-  public int getClientCount() {
-    return this.clientCount;
+  public int getMutatorCount() {
+    return this.mutatorCount;
   }
 
-  public TransparentAppConfig setClientCount(int i) {
-    this.clientCount = i;
+  public TransparentAppConfig setMutatorCount(int i) {
+    this.mutatorCount = i;
     return this;
   }
 
@@ -122,7 +122,7 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   }
 
   public int getGlobalValidatorCount() {
-    return (clientCount + validatorCount) * applicationInstancePerClientCount;
+    return validatorCount * applicationInstancePerClientCount;
   }
 
   public int getValidatorCount() {
@@ -136,7 +136,7 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
 
   public TransparentAppConfig setAdaptedMutatorCount(int count) {
     adaptedMutatorCount = count;
-    isLessThanOrEqualTo(adaptedMutatorCount, clientCount, "adaptedMutatorCount");
+    isLessThanOrEqualTo(adaptedMutatorCount, mutatorCount, "adaptedMutatorCount");
     return this;
   }
 

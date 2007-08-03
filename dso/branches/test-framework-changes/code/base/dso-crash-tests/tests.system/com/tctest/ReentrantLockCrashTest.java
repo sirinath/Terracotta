@@ -16,7 +16,7 @@ public class ReentrantLockCrashTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig appConfig = t.getTransparentAppConfig();
-    appConfig.setClientCount(NODE_COUNT);
+    appConfig.setMutatorCount(NODE_COUNT);
     t.initializeTestRunner();
     appConfig.setAttribute(ReentrantLockTestApp.CRASH_TEST, "true");
   }

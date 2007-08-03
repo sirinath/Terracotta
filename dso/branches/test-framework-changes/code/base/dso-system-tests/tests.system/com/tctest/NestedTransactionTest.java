@@ -12,7 +12,7 @@ public class NestedTransactionTest  extends TransparentTestBase implements TestC
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NestedTransactionApp.NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(NestedTransactionApp.NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
     t.initializeTestRunner();
   }
 

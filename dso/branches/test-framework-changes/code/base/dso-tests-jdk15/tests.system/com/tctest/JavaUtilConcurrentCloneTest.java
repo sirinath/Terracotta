@@ -7,7 +7,7 @@ package com.tctest;
 public class JavaUtilConcurrentCloneTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(JavaUtilConcurrentCloneTestApp.NODE_COUNT)
+    t.getTransparentAppConfig().setMutatorCount(JavaUtilConcurrentCloneTestApp.NODE_COUNT)
         .setApplicationInstancePerClientCount(1).setIntensity(1);
     t.initializeTestRunner();
   }

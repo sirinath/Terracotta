@@ -14,7 +14,7 @@ public class ShadowVariableTest extends TransparentTestBase {
   
   public void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
+    getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(1);
     initializeTestRunner();
   }
 

@@ -30,7 +30,7 @@ public class ObjectDataSynchronousWriteL1ReconnectTest extends TransparentTestBa
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(clientCount).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(clientCount).setIntensity(1);
     t.initializeTestRunner();
   }
 

@@ -16,7 +16,7 @@ public class ReentrantReadWriteLockCrashTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig appConfig = t.getTransparentAppConfig();
-    appConfig.setClientCount(NODE_COUNT);
+    appConfig.setMutatorCount(NODE_COUNT);
     t.initializeTestRunner();
     appConfig.setAttribute(ReentrantReadWriteLockTestApp.CRASH_TEST, "true");
   }

@@ -11,7 +11,7 @@ public abstract class DualQueueFaultBase extends TransparentTestBase {
   private static final int TIMEOUT    = 30 * 60 * 1000; // 30min;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(nodeCount());
+    t.getTransparentAppConfig().setMutatorCount(nodeCount());
     t.getTransparentAppConfig().setIntensity(1);
     t.getRunnerConfig().setExecutionTimeout(TIMEOUT);
     t.initializeTestRunner();

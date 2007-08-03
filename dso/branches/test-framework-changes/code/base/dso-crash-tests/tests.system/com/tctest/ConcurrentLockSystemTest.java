@@ -20,7 +20,7 @@ public class ConcurrentLockSystemTest extends TransparentTestBase {
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(globalParticipantCount).setIntensity(intensity);
+    t.getTransparentAppConfig().setMutatorCount(globalParticipantCount).setIntensity(intensity);
     t.initializeTestRunner();
   }
 

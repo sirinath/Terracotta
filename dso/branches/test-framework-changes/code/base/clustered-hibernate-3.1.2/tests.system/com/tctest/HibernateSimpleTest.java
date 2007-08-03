@@ -7,7 +7,7 @@ public class HibernateSimpleTest extends TransparentTestBase {
   public void setUp() throws Exception {
     super.setUp();
     
-    getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(LOOP_COUNT);
+    getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(LOOP_COUNT);
     initializeTestRunner();
   }
 

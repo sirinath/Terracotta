@@ -26,19 +26,19 @@ import java.util.Map.Entry;
 
 public class LongrunningGCTestAppCLI {
   private static final String  PARTICIPANT_COUNT_ARG = "participantcount";
-  private static int           globalParticipantCount;
+  private static int           globalMutatorCount;
   private static int           intensity;
   private static CyclicBarrier barrier;
 
   public static void main(String[] args) throws ArgException, BrokenBarrierException, InterruptedException {
     parseArgs(args);
-    barrier = new CyclicBarrier(globalParticipantCount);
+    barrier = new CyclicBarrier(globalMutatorCount);
     ArgParser parser = new ArgParser(args, new SpecFactoryImpl(), false, false);
     intensity = parser.getIntensity();
 
     String appId = "1";
     String applicatonClassname = LongrunningGCTestApp.class.getName();
-    ApplicationConfig cfg = new ApplicationConfigImpl(applicatonClassname, intensity, globalParticipantCount);
+    ApplicationConfig cfg = new ApplicationConfigImpl(applicatonClassname, intensity, globalMutatorCount);
     ListenerProvider provider = new TestAppApplicationListenerProvider(new OutputListenerObject(), null);
     LongrunningGCTestApp testApp = new LongrunningGCTestApp(appId, cfg, provider);
 
@@ -53,10 +53,10 @@ public class LongrunningGCTestAppCLI {
       if (args[i].startsWith(PARTICIPANT_COUNT_ARG)) {
         String[] nvPair = args[i].split("=");
         if (nvPair.length != 2) { throw new ArgException("Malformed argument: " + args[i]); }
-        globalParticipantCount = Integer.parseInt(nvPair[1]);
+        globalMutatorCount = Integer.parseInt(nvPair[1]);
       }
     }
-    if (globalParticipantCount == 0) { throw new AssertionError("Participant count must be specified."); }
+    if (globalMutatorCount == 0) { throw new AssertionError("Participant count must be specified."); }
   }
 
   /* ======================================================================= */

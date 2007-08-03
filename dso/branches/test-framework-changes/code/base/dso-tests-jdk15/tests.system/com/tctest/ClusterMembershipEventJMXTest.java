@@ -35,7 +35,7 @@ public class ClusterMembershipEventJMXTest extends TransparentTestBase {
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     t.initializeTestRunner();
     TransparentAppConfig cfg = t.getTransparentAppConfig();
     cfg.setAttribute(ClusterMembershipEventJMXTestApp.CONFIG_FILE, configFile.getAbsolutePath());

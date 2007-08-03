@@ -16,7 +16,7 @@ public class SimpleLuceneDistributedIndexTest extends TransparentTestBase {
 	}
 
 	public void doSetUp(TransparentTestIface t) throws Exception {
-		t.getTransparentAppConfig().setClientCount(2);
+		t.getTransparentAppConfig().setMutatorCount(2);
 		t.getTransparentAppConfig().setIntensity(1);
 		t.initializeTestRunner();
 	}

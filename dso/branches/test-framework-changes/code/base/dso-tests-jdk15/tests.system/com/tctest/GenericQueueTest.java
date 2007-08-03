@@ -19,7 +19,7 @@ public class GenericQueueTest extends TransparentTestBase {
   
   protected void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(NODE_COUNT);
+    getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     initializeTestRunner();
   }
 

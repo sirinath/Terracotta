@@ -19,7 +19,7 @@ public interface ApplicationConfig {
 
   Object getAttributeObject(String key);
 
-  int getGlobalParticipantCount();
+  int getGlobalMutatorCount();
 
   int getIntensity();
 

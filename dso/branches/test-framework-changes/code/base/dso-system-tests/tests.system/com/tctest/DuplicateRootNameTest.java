@@ -9,7 +9,7 @@ public class DuplicateRootNameTest extends TransparentTestBase {
   public static final int NODE_COUNT = 1;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     t.initializeTestRunner();
   }
 

@@ -16,7 +16,7 @@ public class LongrunningGCTester extends TransparentTestBase implements TestConf
   int LOOP_ITERATION_COUNT = 1;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(LOOP_ITERATION_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }
 

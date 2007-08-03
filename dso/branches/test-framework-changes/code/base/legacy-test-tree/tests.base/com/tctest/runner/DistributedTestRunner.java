@@ -28,7 +28,7 @@ import com.tc.simulator.container.ContainerStateFactory;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.test.activepassive.ActivePassiveServerManager;
-import com.tcsimulator.ControlImpl;
+import com.tcsimulator.GlobalControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
 import com.tcsimulator.listener.QueuePrinter;
 
@@ -49,7 +49,7 @@ public class DistributedTestRunner implements ResultsListener {
   private final ApplicationConfig                       applicationConfig;
   private final ConfigVisitor                           configVisitor;
   private final ContainerConfig                         containerConfig;
-  private final Control                                 control;
+  private final Control                                 globalControl;
   private final ResultsListener[]                       resultsListeners;
   private final DSOClientConfigHelper                   configHelper;
   private final ContainerStateFactory                   containerStateFactory;
@@ -61,7 +61,7 @@ public class DistributedTestRunner implements ResultsListener {
   private final TestTVSConfigurationSetupManagerFactory configFactory;
   private boolean                                       startTimedOut;
   private boolean                                       executionTimedOut;
-  private final int                                     clientCount;
+  private final int                                     mutatorCount;
   private final int                                     applicationInstanceCount;
   private final LinkedQueue                             statsOutputQueue;
   private final QueuePrinter                            statsOutputPrinter;
@@ -97,7 +97,7 @@ public class DistributedTestRunner implements ResultsListener {
                                ActivePassiveServerManager serverManager, TransparentAppConfig transparentAppConfig)
       throws Exception {
     this.optionalAttributes = optionalAttributes;
-    this.clientCount = transparentAppConfig.getClientCount();
+    this.mutatorCount = transparentAppConfig.getMutatorCount();
     this.applicationInstanceCount = transparentAppConfig.getApplicationInstancePerClientCount();
     this.startServer = startServer;
     this.config = config;
@@ -115,7 +115,7 @@ public class DistributedTestRunner implements ResultsListener {
     this.statsOutputQueue = new LinkedQueue();
     this.statsOutputPrinter = new QueuePrinter(this.statsOutputQueue, System.out);
     this.containerStateFactory = new ContainerStateFactoryObject(statsOutputQueue);
-    this.control = newContainerControl();
+    this.globalControl = newGlobalContainerControl();
 
     adaptedMutatorCount = transparentAppConfig.getAdaptedMutatorCount();
     adaptedValidatorCount = transparentAppConfig.getAdaptedValidatorCount();
@@ -124,7 +124,7 @@ public class DistributedTestRunner implements ResultsListener {
       debugPrintln("***** adapter map is null!");
     }
 
-    this.resultsListeners = newResultsListeners(this.clientCount + this.validatorCount);
+    this.resultsListeners = newResultsListeners(this.mutatorCount + this.validatorCount);
 
     initializedClients();
 
@@ -140,18 +140,18 @@ public class DistributedTestRunner implements ResultsListener {
   }
 
   private void initializedClients() throws Exception {
-    applicationBuilders = newApplicationBuilders(this.clientCount + this.validatorCount);
+    applicationBuilders = newApplicationBuilders(this.mutatorCount + this.validatorCount);
 
     createMutators();
     createValidators();
   }
 
   private void createMutators() {
-    containers = new Container[clientCount];
+    containers = new Container[mutatorCount];
     boolean mutator = true;
     for (int i = 0; i < containers.length; i++) {
       containers[i] = new Container(this.containerConfig, this.containerStateFactory, this.globalIdGenerator,
-                                    this.control, this.resultsListeners[i], this.applicationBuilders[i],
+                                    this.globalControl, this.resultsListeners[i], this.applicationBuilders[i],
                                     this.isMutatorValidatorTest, mutator);
     }
   }
@@ -160,8 +160,8 @@ public class DistributedTestRunner implements ResultsListener {
     boolean isMutator = false;
     validatorContainers = new Container[validatorCount];
     for (int i = 0; i < validatorContainers.length; i++) {
-      validatorContainers[i] = new Container(containerConfig, containerStateFactory, globalIdGenerator, control,
-                                             resultsListeners[i + clientCount], applicationBuilders[i + clientCount],
+      validatorContainers[i] = new Container(containerConfig, containerStateFactory, globalIdGenerator, globalControl,
+                                             resultsListeners[i + mutatorCount], applicationBuilders[i + mutatorCount],
                                              isMutatorValidatorTest, isMutator);
     }
   }
@@ -175,7 +175,7 @@ public class DistributedTestRunner implements ResultsListener {
   public void run() {
     try {
 
-      debugPrintln("***** control=[" + control.toString() + "]");
+      debugPrintln("***** globalControl=[" + globalControl.toString() + "]");
 
       Thread statsOutputPrinterThread = new Thread(this.statsOutputPrinter);
       statsOutputPrinterThread.setDaemon(true);
@@ -192,7 +192,7 @@ public class DistributedTestRunner implements ResultsListener {
 
       // wait for all mutators to finish before starting the validators
       if (isMutatorValidatorTest) {
-        final boolean mutationComplete = this.control.waitForMutationComplete(config.executionTimeout());
+        final boolean mutationComplete = this.globalControl.waitForMutationComplete(config.executionTimeout());
 
         if (!mutationComplete) {
           notifyExecutionTimeout();
@@ -211,7 +211,7 @@ public class DistributedTestRunner implements ResultsListener {
           debugPrintln("***** DTR: Crashing active server");
           serverManager.crashActive();
           debugPrintln("***** DTR: Notifying the test-wide control");
-          control.notifyValidationStart();
+          globalControl.notifyValidationStart();
         }
       }
 
@@ -219,7 +219,7 @@ public class DistributedTestRunner implements ResultsListener {
         checkForErrors();
       }
 
-      final boolean complete = this.control.waitForAllComplete(this.config.executionTimeout());
+      final boolean complete = this.globalControl.waitForAllComplete(this.config.executionTimeout());
 
       if (!complete) {
         notifyExecutionTimeout();
@@ -324,14 +324,14 @@ public class DistributedTestRunner implements ResultsListener {
     };
   }
 
-  private Control newContainerControl() {
-    boolean crashActiveServerAfterMutate;
+  private Control newGlobalContainerControl() {
+    boolean pauseAfterMutate;
     if (isActivePassiveTest) {
-      crashActiveServerAfterMutate = serverManager.crashActiveServerAfterMutate();
+      pauseAfterMutate = serverManager.crashActiveServerAfterMutate();
     } else {
-      crashActiveServerAfterMutate = false;
+      pauseAfterMutate = false;
     }
-    return new ControlImpl(this.clientCount, validatorCount, crashActiveServerAfterMutate);
+    return new GlobalControlImpl(this.mutatorCount, validatorCount, pauseAfterMutate);
   }
 
   private ResultsListener[] newResultsListeners(int count) {
@@ -351,7 +351,7 @@ public class DistributedTestRunner implements ResultsListener {
       l1ConfigManager.setupLogging();
       PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(l1ConfigManager);
       if (adapterMap != null
-          && ((i < clientCount && i < adaptedMutatorCount) || (i >= clientCount && i < (adaptedValidatorCount + clientCount)))) {
+          && ((i < mutatorCount && i < adaptedMutatorCount) || (i >= mutatorCount && i < (adaptedValidatorCount + mutatorCount)))) {
         rv[i] = new DSOApplicationBuilder(this.configHelper, this.applicationConfig, components, adapterMap);
 
         for (Iterator iter = adapterMap.keySet().iterator(); iter.hasNext();) {

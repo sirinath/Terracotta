@@ -18,7 +18,7 @@ import com.tc.simulator.listener.OutputListener;
 import com.tc.simulator.listener.ResultsListener;
 import com.tc.simulator.listener.StatsListenerFactory;
 import com.tc.util.Assert;
-import com.tcsimulator.ControlImpl;
+import com.tcsimulator.ApplicationControlImpl;
 import com.tcsimulator.listener.ApplicationListenerProvider;
 
 import java.util.ArrayList;
@@ -31,39 +31,39 @@ public final class Container implements Runnable {
   private final ContainerConfig            config;
   private final ContainerState             containerState;
   private final GlobalIdGenerator          idGenerator;
-  private final Control                    control;
+  private final Control                    globalControl;
   private final ResultsListener            resultsListener;
   private final ApplicationBuilder         applicationBuilder;
   private final String                     globalId;
   private final boolean                    isMutateValidateTest;
   private final boolean                    isMutator;
   private final MutationCompletionListener mutationCompletionListener;
-  private final ControlImpl                applicationControl;
+  private final ApplicationControlImpl                applicationControl;
 
   public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
-                   Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder) {
-    this(config, containerStateFactory, idGenerator, control, resultsListener, applicationBuilder, false, true);
+                   Control globalControl, ResultsListener resultsListener, ApplicationBuilder applicationBuilder) {
+    this(config, containerStateFactory, idGenerator, globalControl, resultsListener, applicationBuilder, false, true);
   }
 
   public Container(ContainerConfig config, ContainerStateFactory containerStateFactory, GlobalIdGenerator idGenerator,
-                   Control control, ResultsListener resultsListener, ApplicationBuilder applicationBuilder,
+                   Control globalControl, ResultsListener resultsListener, ApplicationBuilder applicationBuilder,
                    boolean isMutateValidateTest, boolean isMutator) {
     this.config = config;
     this.idGenerator = idGenerator;
-    this.control = control;
+    this.globalControl = globalControl;
     this.resultsListener = resultsListener;
     this.applicationBuilder = applicationBuilder;
     this.isMutateValidateTest = isMutateValidateTest;
     this.isMutator = isMutator;
     this.globalId = this.idGenerator.nextId() + "";
 
-    applicationControl = new ControlImpl(this.config.getApplicationInstanceCount(), this.control);
+    applicationControl = new ApplicationControlImpl(this.config.getApplicationInstanceCount(), this.globalControl);
     applicationControl.setExecutionTimeout(this.config.getApplicationExecutionTimeout());
 
     mutationCompletionListener = applicationControl;
 
     this.containerState = containerStateFactory.newContainerState(this.globalId);
-    Assert.assertNoNullElements(new Object[] { this.config, this.idGenerator, this.control, this.resultsListener,
+    Assert.assertNoNullElements(new Object[] { this.config, this.idGenerator, this.globalControl, this.resultsListener,
         this.applicationBuilder });
   }
 
@@ -95,10 +95,10 @@ public final class Container implements Runnable {
         if (isMutator) {
           // wait for all app instances to complete mutation
           if (!waitForMutationComplete()) return;
-          control.notifyMutationComplete();
+          globalControl.notifyMutationComplete();
         }
         if (!waitForValidationStart()) return;
-        control.notifyValidationStart();
+        globalControl.notifyValidationStart();
       }
 
       if (!waitForAllComplete()) return;
@@ -109,9 +109,9 @@ public final class Container implements Runnable {
       notifyError("Unexpected error executing application.", t);
     } finally {
       isRunning.set(false);
-      control.notifyComplete();
+      globalControl.notifyComplete();
       try {
-        this.control.waitForAllComplete(this.config.getApplicationExecutionTimeout());
+        this.globalControl.waitForAllComplete(this.config.getApplicationExecutionTimeout());
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -151,7 +151,7 @@ public final class Container implements Runnable {
   private boolean waitForStart() throws TCBrokenBarrierException, InterruptedException {
     boolean rv = false;
     println("Waiting for all containers to start...");
-    this.control.waitForStart();
+    this.globalControl.waitForStart();
     rv = true;
     println("Done waiting for all containers to start.");
     return rv;
@@ -160,7 +160,7 @@ public final class Container implements Runnable {
   private boolean waitForMutationCompleteTestWide() throws InterruptedException {
     boolean rv = false;
     println("Waiting for all containers to finish mutation...");
-    this.control.waitForMutationComplete(config.getApplicationExecutionTimeout());
+    this.globalControl.waitForMutationComplete(config.getApplicationExecutionTimeout());
     rv = true;
     println("Done waiting for all containers to finish mutation.");
     return rv;

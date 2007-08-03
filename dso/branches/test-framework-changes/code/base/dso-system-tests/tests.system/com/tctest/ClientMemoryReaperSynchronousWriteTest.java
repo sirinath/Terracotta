@@ -17,7 +17,7 @@ public class ClientMemoryReaperSynchronousWriteTest extends TransparentTestBase 
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(THREADS_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(THREADS_COUNT);
     t.initializeTestRunner();
   }
 

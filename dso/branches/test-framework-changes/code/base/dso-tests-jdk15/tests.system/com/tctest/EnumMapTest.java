@@ -9,7 +9,7 @@ public final class EnumMapTest extends TransparentTestBase {
   private static final int NODE_COUNT = EnumMapTestApp.Fruit.values().length;
 
   public void doSetUp(final TransparentTestIface tt) throws Exception {
-    tt.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    tt.getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     tt.initializeTestRunner();
   }
 

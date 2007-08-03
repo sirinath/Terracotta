@@ -26,7 +26,7 @@ public class ShareInnerOfInnerClassTestApp extends AbstractTransparentApp {
 
   public ShareInnerOfInnerClassTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
-    barrier = new CyclicBarrier(cfg.getGlobalParticipantCount());
+    barrier = new CyclicBarrier(cfg.getGlobalMutatorCount());
   }
 
   public void run() {

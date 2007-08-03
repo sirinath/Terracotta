@@ -18,7 +18,7 @@ public class LargeGraphTester extends TransparentTestBase implements TestConfigu
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT)
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT)
     .setIntensity(LOOP_ITERATION_COUNT);
 
     t.initializeTestRunner();

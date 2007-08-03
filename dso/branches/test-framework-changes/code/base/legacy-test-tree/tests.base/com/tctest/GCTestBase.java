@@ -21,7 +21,7 @@ public abstract class GCTestBase extends TransparentTestBase implements TestConf
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(getNodeCount()).setIntensity(LOOP_ITERATION_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(getNodeCount()).setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }
 

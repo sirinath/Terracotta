@@ -55,7 +55,7 @@ public class WebAppContext_Test extends TransparentTestBase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
+    getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
         .setIntensity(LOOP_ITERATIONS);
     initializeTestRunner();
   }

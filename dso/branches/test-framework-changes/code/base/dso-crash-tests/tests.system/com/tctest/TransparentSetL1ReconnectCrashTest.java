@@ -19,7 +19,7 @@ public class TransparentSetL1ReconnectCrashTest extends TransparentTestBase impl
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
         .setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }

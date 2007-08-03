@@ -8,7 +8,7 @@ public class NestedReadOnlyTransactionTest  extends TransparentTestBase implemen
   private final static int     NODE_COUNT              = 2;
   
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(1).setIntensity(1);
     t.initializeTestRunner();
   }
 

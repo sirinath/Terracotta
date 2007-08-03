@@ -76,7 +76,7 @@ public class ResolveTwoActiveServersTest extends TransparentTestBase {
     setUpForMultipleExternalProcesses(factory, new StandardDSOClientConfigHelper(manager), dsoPorts, jmxPorts,
                                       l2GroupPorts, proxyPorts, serverNames, configFiles);
 
-    getTransparentAppConfig().setClientCount(NODES);
+    getTransparentAppConfig().setMutatorCount(NODES);
     initializeTestRunner();
 
     // TransparentAppConfig cfg = getTransparentAppConfig();

@@ -55,7 +55,7 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int                         DEFAULT_CLIENT_COUNT            = 2;
+  public static final int                         DEFAULT_MUTATOR_COUNT           = 2;
   public static final int                         DEFAULT_INTENSITY               = 10;
   public static final int                         DEFAULT_VALIDATOR_COUNT         = 0;
   public static final int                         DEFAULT_ADAPTED_MUTATOR_COUNT   = 0;
@@ -286,10 +286,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.configHelper = helper;
     if (serverControlsSet) {
       transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
-                                                      DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControls, proxies);
+                                                      DEFAULT_MUTATOR_COUNT, DEFAULT_INTENSITY, serverControls, proxies);
     } else {
       transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
-                                                      DEFAULT_CLIENT_COUNT, DEFAULT_INTENSITY, serverControl,
+                                                      DEFAULT_MUTATOR_COUNT, DEFAULT_INTENSITY, serverControl,
                                                       DEFAULT_VALIDATOR_COUNT, DEFAULT_ADAPTED_MUTATOR_COUNT,
                                                       DEFAULT_ADAPTED_VALIDATOR_COUNT);
     }

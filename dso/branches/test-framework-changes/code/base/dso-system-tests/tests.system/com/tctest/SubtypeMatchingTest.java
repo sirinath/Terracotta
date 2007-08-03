@@ -7,7 +7,7 @@ package com.tctest;
 public class SubtypeMatchingTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(1).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(1).setIntensity(1);
     t.initializeTestRunner();
   }
 

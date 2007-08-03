@@ -39,7 +39,7 @@ public class TestSpec {
     serverSpecsByHostName = new HashMap();
     serverSpecsByType = new HashMap();
     GlobalVmNameGenerator vmNameGenerator = new GlobalVmNameGenerator();
-    int globalParticipantCount = 0;
+    int globalMutatorCount = 0;
 
     for (Iterator i = cSpecs.iterator(); i.hasNext();) {
       ClientSpec cSpec = (ClientSpec) i.next();
@@ -49,7 +49,7 @@ public class TestSpec {
       globalVmCount += vmCount;
       int executionCount = cSpec.getExecutionCount();
       List jvmArgs = cSpec.getJvmOpts();
-      globalParticipantCount += (vmCount * executionCount);
+      globalMutatorCount += (vmCount * executionCount);
 
       Collection specList = (Collection) containerSpecsByHostname.get(hostName);
       if (specList == null) {
@@ -85,7 +85,7 @@ public class TestSpec {
       specList.add(sSpec);
     }
 
-    this.appConfig = new ApplicationConfigImpl(className, intensity, globalParticipantCount);
+    this.appConfig = new ApplicationConfigImpl(className, intensity, globalMutatorCount);
   }
 
   public TestSpec() {

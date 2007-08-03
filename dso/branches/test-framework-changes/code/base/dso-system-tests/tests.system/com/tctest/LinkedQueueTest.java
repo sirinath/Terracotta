@@ -12,7 +12,7 @@ public class LinkedQueueTest extends TransparentTestBase implements TestConfigur
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(clientCount).setApplicationInstancePerClientCount(2).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(clientCount).setApplicationInstancePerClientCount(2).setIntensity(1);
     t.initializeTestRunner();
 
   }

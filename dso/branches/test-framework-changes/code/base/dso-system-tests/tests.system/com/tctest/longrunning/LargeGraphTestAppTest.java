@@ -46,7 +46,7 @@ public class LargeGraphTestAppTest extends TestCase {
         throw new AssertionError();
       }
 
-      public int getGlobalParticipantCount() {
+      public int getGlobalMutatorCount() {
         throw new AssertionError();
       }
 

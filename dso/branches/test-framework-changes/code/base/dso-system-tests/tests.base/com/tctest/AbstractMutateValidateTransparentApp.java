@@ -27,7 +27,7 @@ public abstract class AbstractMutateValidateTransparentApp extends AbstractError
     this.listenerProvider = listenerProvider;
 
     validatorCount = cfg.getValidatorCount();
-    mutatorCount = cfg.getGlobalParticipantCount();
+    mutatorCount = cfg.getGlobalMutatorCount();
     isMutator = Boolean.valueOf(cfg.getAttribute(appId)).booleanValue();
 
     debugPrintln("***** appId=[" + appId + "]:  isMutator=[" + isMutator + "]");

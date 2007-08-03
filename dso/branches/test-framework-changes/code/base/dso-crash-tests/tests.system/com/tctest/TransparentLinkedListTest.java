@@ -13,7 +13,7 @@ public class TransparentLinkedListTest extends TransparentTestBase implements Te
   private static final int LOOP_ITERATION_COUNT = 3;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
         .setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }

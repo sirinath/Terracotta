@@ -37,7 +37,7 @@ public class SimpleApplicationConfig implements ApplicationConfig {
     throw new AssertionError();
   }
 
-  public int getGlobalParticipantCount() {
+  public int getGlobalMutatorCount() {
     throw new AssertionError();
   }
 

@@ -37,7 +37,7 @@ public class ContainerBuilder implements Runnable, ResultsListener {
     cfg.addIncludePattern(ContainerBuilder.class.getName());
     cfg.addWriteAutolock("* " + ContainerBuilder.class.getName() + ".*(..)");
     visitor.visitDSOApplicationConfig(cfg, ControlProviderImpl.class);
-    visitor.visitDSOApplicationConfig(cfg, ControlImpl.class);
+    visitor.visitDSOApplicationConfig(cfg, ApplicationControlImpl.class);
     visitor.visitDSOApplicationConfig(cfg, DistributedGlobalIdGenerator.class);
     visitor.visitDSOApplicationConfig(cfg, ContainerStateFactoryObject.class);
   }

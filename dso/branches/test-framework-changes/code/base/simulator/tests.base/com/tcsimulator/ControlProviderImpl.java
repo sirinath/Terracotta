@@ -23,7 +23,7 @@ public class ControlProviderImpl implements ControlProvider {
     config.addIncludePattern(classname);
     config.addAutolock("* " + classname + ".*(..)", ConfigLockLevel.WRITE);
     config.addRoot(new Root(classname, "controls", classname + ".controls"), true);
-    ControlImpl.visitL1DSOConfig(visitor, config);
+    ApplicationControlImpl.visitL1DSOConfig(visitor, config);
   }
 
   public static void visitDSOApplicationConfig(com.tc.object.config.ConfigVisitor visitor,
@@ -32,7 +32,7 @@ public class ControlProviderImpl implements ControlProvider {
     config.addIncludePattern(classname);
     config.addWriteAutolock("* " + classname + ".*(..)");
     config.addRoot("controls", classname + ".controls");
-    visitor.visitDSOApplicationConfig(config, ControlImpl.class);
+    visitor.visitDSOApplicationConfig(config, ApplicationControlImpl.class);
   }
 
   public ControlProviderImpl() {
@@ -43,7 +43,7 @@ public class ControlProviderImpl implements ControlProvider {
     synchronized (controls) {
       Control rv = (Control) controls.get(name);
       if (rv == null) {
-        rv = new ControlImpl(parties);
+        rv = new GlobalControlImpl(parties);
         controls.put(name, rv);
       }
       return rv;

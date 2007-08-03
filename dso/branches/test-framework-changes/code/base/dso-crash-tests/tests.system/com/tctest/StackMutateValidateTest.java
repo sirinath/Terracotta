@@ -18,7 +18,7 @@ public class StackMutateValidateTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig tac = t.getTransparentAppConfig();
-    tac.setClientCount(MUTATOR_NODE_COUNT).setIntensity(1).setValidatorCount(VALIDATOR_NODE_COUNT)
+    tac.setMutatorCount(MUTATOR_NODE_COUNT).setIntensity(1).setValidatorCount(VALIDATOR_NODE_COUNT)
         .setApplicationInstancePerClientCount(APP_INSTANCE_PER_NODE);
     t.initializeTestRunner(IS_MUTATE_VALIDATE_TEST);
   }

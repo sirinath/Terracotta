@@ -8,7 +8,7 @@ public class ConcurrentHashMapSwapingTest extends TransparentTestBase {
   private static final int NODE_COUNT = 3;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT);
     t.initializeTestRunner();
   }
 

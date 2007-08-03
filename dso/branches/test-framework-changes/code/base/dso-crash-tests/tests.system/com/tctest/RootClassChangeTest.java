@@ -19,7 +19,7 @@ public class RootClassChangeTest extends TransparentTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig tac = t.getTransparentAppConfig();
-    tac.setClientCount(MUTATOR_NODE_COUNT).setIntensity(1).setAdaptedMutatorCount(ADAPTED_MUTATOR_COUNT);
+    tac.setMutatorCount(MUTATOR_NODE_COUNT).setIntensity(1).setAdaptedMutatorCount(ADAPTED_MUTATOR_COUNT);
 
     Map adapterMap = new HashMap();
     adapterMap.put(RootClassChangeTestApp.DeepLargeObject.class.getName(), DeepLargeObjectAdapter.class);

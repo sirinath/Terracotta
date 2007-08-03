@@ -9,7 +9,7 @@ public class AutoLockMapTest extends TransparentTestBase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
+    getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(1);
     initializeTestRunner();
   }
   

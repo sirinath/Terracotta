@@ -8,7 +8,7 @@ public class LinkedHashMapTest extends TransparentTestBase {
   private static final int NODE_COUNT = 3;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(1);
     t.initializeTestRunner();
   }
 

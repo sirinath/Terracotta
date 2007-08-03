@@ -67,7 +67,7 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
     setUpControlledServer(factory, new StandardDSOClientConfigHelper(manager), port, adminPort, configFile
         .getAbsolutePath(), jvmArgs);
 
-    getTransparentAppConfig().setClientCount(nodeCount);
+    getTransparentAppConfig().setMutatorCount(nodeCount);
     initializeTestRunner();
     TransparentAppConfig cfg = getTransparentAppConfig();
     cfg.setAttribute(ServerCrashingAppBase.CONFIG_FILE, configFile.getAbsolutePath());

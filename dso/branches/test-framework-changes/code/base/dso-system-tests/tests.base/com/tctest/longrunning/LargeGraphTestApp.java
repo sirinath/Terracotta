@@ -459,7 +459,7 @@ public class LargeGraphTestApp implements Application, ApplicationConfigBuilder 
         throw new AssertionError();
       }
 
-      public int getGlobalParticipantCount() {
+      public int getGlobalMutatorCount() {
         throw new AssertionError();
       }
 

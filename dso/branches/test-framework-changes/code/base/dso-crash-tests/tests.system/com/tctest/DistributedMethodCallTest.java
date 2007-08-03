@@ -8,7 +8,7 @@ public class DistributedMethodCallTest extends TransparentTestBase implements Te
   private static final int LOOP_ITERATION_COUNT = 1;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(LOOP_ITERATION_COUNT);
+    t.getTransparentAppConfig().setMutatorCount(NODE_COUNT).setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }
   

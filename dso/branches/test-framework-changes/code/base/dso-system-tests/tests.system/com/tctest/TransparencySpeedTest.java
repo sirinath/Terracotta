@@ -18,7 +18,7 @@ public class TransparencySpeedTest extends TransparentTestBase implements TestCo
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(clientCount).setApplicationInstancePerClientCount(1).setIntensity(1);
+    t.getTransparentAppConfig().setMutatorCount(clientCount).setApplicationInstancePerClientCount(1).setIntensity(1);
     t.initializeTestRunner();
   }
 
