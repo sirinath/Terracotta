@@ -9,13 +9,8 @@ public interface IStandardDSOClientConfigHelper {
 
   // HACK: available only in IStandardDSOClientConfigHelper
 
-  void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
-                         boolean honorVolatile);
-
   void allowCGLIBInstrumentation();
 
-  void addAutolock(String methodPattern, ConfigLockLevel type);
-  
   // HACK: duplicated from DSOApplicationConfig
 
   void addRoot(String rootName, String rootFieldName);
@@ -35,4 +30,10 @@ public interface IStandardDSOClientConfigHelper {
   ITransparencyClassSpec getOrCreateSpec(String className, String applicator);
 
   void addCustomAdapter(String name, ClassAdapterFactory adapterFactory);
+
+  void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
+                         boolean honorVolatile);
+
+  void addAutolock(String methodPattern, ConfigLockLevel type);
+  
 }
