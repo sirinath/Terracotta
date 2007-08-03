@@ -58,7 +58,6 @@ import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
 import com.tc.object.glassfish.transform.RuntimeModelAdapter;
-import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
@@ -148,7 +147,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMapping();
   
-  private final Map                              bytecodeProviders                  = new ConcurrentHashMap();
+  private final Map                              classResources                     = new ConcurrentHashMap();
 
   private final Map                              aspectModules                      = Collections
                                                                                         .synchronizedMap(new HashMap());
@@ -1102,13 +1101,13 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return classReplacements;
   }
 
-  public void addBytecodeProvider(final String className, final BytecodeProvider provider) {
-    Object prev = this.bytecodeProviders.put(className, provider);
+  public void addClassResource(final String className, final URL resource) {
+    Object prev = this.classResources.put(className, resource);
     Assert.assertNull(prev);
   }
   
-  public BytecodeProvider getBytecodeProvider(final String className) {
-    return (BytecodeProvider)this.bytecodeProviders.get(className);
+  public URL getClassResource(String className) {
+    return (URL)this.classResources.get(className);
   }
 
   private void markAllSpecsPreInstrumented() {

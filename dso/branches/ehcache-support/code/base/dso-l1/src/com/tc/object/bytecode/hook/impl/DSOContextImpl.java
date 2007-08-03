@@ -25,7 +25,6 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.IncompleteBootJarException;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.UnverifiedBootJarException;
-import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.plugins.ModulesLoader;
@@ -249,7 +248,7 @@ public class DSOContextImpl implements DSOContext {
     return configHelper.getSessionLockType(appName);
   }
   
-  public BytecodeProvider getByteCodeProvider(String className) {
-    return configHelper.getBytecodeProvider(className);
+  public URL getClassResource(String className) {
+    return configHelper.getClassResource(className);
   }
 }

@@ -18,10 +18,10 @@ import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
-import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.terracottatech.config.Modules;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -59,7 +59,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   
   ClassReplacementMapping getClassReplacementMapping();
   
-  BytecodeProvider getBytecodeProvider(String className);
+  URL getClassResource(String className);
 
   boolean isCallConstructorOnLoad(ClassInfo classInfo);
 

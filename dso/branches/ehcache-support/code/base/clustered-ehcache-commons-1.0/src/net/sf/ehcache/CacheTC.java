@@ -269,7 +269,6 @@ public class CacheTC implements Ehcache {
                long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
                RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader,
                int maxElementsOnDisk) {
-    System.out.println(">>>>>> CacheTC");
     // overflowToDisk and diskPersistent are always false
     changeStatus(Status.STATUS_UNINITIALISED);
 
