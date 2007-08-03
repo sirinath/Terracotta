@@ -14,6 +14,8 @@ import com.tc.logging.TCLogging;
 public class TCServerMain {
 
   public static void main(final String[] args) {
+    // XXX: temporary debug output
+    System.err.println("&&&&& Got to TCServerMain.main");
     ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(TCServerMain.class));
 
     try {
