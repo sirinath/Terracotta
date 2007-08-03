@@ -5,6 +5,7 @@ import org.osgi.framework.BundleContext;
 import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
 import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.loaders.BytecodeProvider;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfiguratorModule implements BytecodeProvider {
+public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfiguratorModule implements BytecodeProvider, IConstants {
   static final String CACHE_CLASS_NAME_DOTS = "net.sf.ehcache.Cache";
   static final String CACHETC_CLASS_NAME_DOTS = "net.sf.ehcache.CacheTC";
   static final String MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS = "net.sf.ehcache.store.MemoryStoreEvictionPolicy";
@@ -74,6 +75,10 @@ public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfigurator
     spec = configHelper.getOrCreateSpec("com.tcclient.cache.CacheData");
     spec.setCallConstructorOnLoad(true);
     spec.setHonorTransient(true);
+    
+    ClassAdapterFactory factory = new EhcacheMemoryStoreAdapter();
+    spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
+    spec.setCustomClassAdapter(factory);
 	}
   
   private String getBundleJarUrl(Bundle bundle) {

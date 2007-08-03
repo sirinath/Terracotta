@@ -1,4 +1,4 @@
-package org.terracotta.modules.ehcache_1_2_4;
+package org.terracotta.modules.ehcache.commons_1_0;
 
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;

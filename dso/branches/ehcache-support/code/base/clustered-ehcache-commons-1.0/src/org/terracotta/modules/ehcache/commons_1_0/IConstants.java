@@ -1,5 +1,5 @@
-package org.terracotta.modules.ehcache_1_2_4;
+package org.terracotta.modules.ehcache.commons_1_0;
 
-interface IConstants {	
+interface IConstants {
 	static final String MEMORYSTORE_CLASS_NAME_DOTS = "net.sf.ehcache.store.MemoryStore";
 }

@@ -21,6 +21,9 @@
     <field-name>net.sf.ehcache.CacheManager.cacheManagerPeerProvider</field-name>
     <field-name>net.sf.ehcache.CacheManager.shutdownHook</field-name>
     <field-name>net.sf.ehcache.store.DiskStore.randomAccessFile</field-name>
+    <field-name>net.sf.ehcache.Element.nextToLastAccessTime</field-name>
+    <field-name>net.sf.ehcache.Element.lastAccessTime</field-name>
+    <field-name>net.sf.ehcache.Element.hitCount</field-name>
   </transient-fields>
 
   <roots>
@@ -39,13 +42,18 @@
     <root>
       <field-name>net.sf.ehcache.store.MemoryStoreEvictionPolicy.FIFO</field-name>
     </root>
+    <root>
+      <field-name>net.sf.ehcache.store.MemoryStoreEvictionPolicy.DSO</field-name>
+    </root>
   </roots>
 
   <locks>
+  <!--
     <autolock>
       <method-expression>* net.sf.ehcache.*..*.*(..)</method-expression>
       <lock-level>write</lock-level>
     </autolock>
+ -->
     <named-lock>
       <lock-name>__ehcache_lock__CacheManager.init</lock-name>
       <method-expression>* net.sf.ehcache.CacheManager.init(..)</method-expression>

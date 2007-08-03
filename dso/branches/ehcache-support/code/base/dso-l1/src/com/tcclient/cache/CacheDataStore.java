@@ -5,6 +5,7 @@
 package com.tcclient.cache;
 
 import com.tc.config.lock.LockLevel;
+import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
@@ -13,15 +14,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class CacheDataStore implements Serializable {
-  private final Map     store;                  // <Data>
-  private final Map     dtmStore;               // <Timestamp>
-  private final String  cacheName;
-  private final long    maxIdleTimeoutSeconds;
-  private final long    invalidatorSleepSeconds;
-  private Expirable     callback;
-  private transient int hitCount;
-  private transient int missCountExpired;
-  private transient int missCountNotFound;
+  private final Map        store;                  // <Data>
+  private final Map        dtmStore;               // <Timestamp>
+  private final String     cacheName;
+  private final long       maxIdleTimeoutSeconds;
+  private final long       invalidatorSleepSeconds;
+  private Expirable        callback;
+  private transient int    hitCount;
+  private transient int    missCountExpired;
+  private transient int    missCountNotFound;
   private transient Thread invalidatorThread;
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
@@ -42,7 +43,7 @@ public class CacheDataStore implements Serializable {
     invalidatorThread.start();
     Assert.post(invalidatorThread.isAlive());
   }
-  
+
   public void stopInvalidatorThread() {
     invalidatorThread.interrupt();
   }
@@ -75,8 +76,8 @@ public class CacheDataStore implements Serializable {
       if (!cd.isValid()) {
         missCountExpired++;
         invalidate(cd);
-//        System.err.println("rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
-//                           + cd.getIdleMillis());
+        // System.err.println("rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
+        // + cd.getIdleMillis());
         return null;
       } else {
         hitCount++;
@@ -129,11 +130,11 @@ public class CacheDataStore implements Serializable {
     store.clear();
     dtmStore.clear();
   }
-  
+
   public Map getStore() {
     return store;
   }
-  
+
   public long getMaxIdleTimeoutSeconds() {
     return maxIdleTimeoutSeconds;
   }
@@ -180,11 +181,16 @@ public class CacheDataStore implements Serializable {
     this.missCountNotFound = 0;
   }
 
-  private String[] getAllKeys() {
-    String[] rv;
-    synchronized (dtmStore) {
-      Set keys = dtmStore.keySet();
-      rv = (String[]) keys.toArray(new String[keys.size()]);
+  private Object[] getAllKeys() {
+    Object[] rv;
+    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    try {
+      synchronized (store) {
+        Set keys = dtmStore.keySet();
+        rv = keys.toArray(new Object[keys.size()]);
+      }
+    } finally {
+      ManagerUtil.monitorExit(store);
     }
     Assert.post(rv != null);
     return rv;
@@ -205,7 +211,7 @@ public class CacheDataStore implements Serializable {
   }
 
   private void invalidateCacheEntries() {
-    final String keys[] = getAllKeys();
+    final Object[] keys = getAllKeys();
     int totalCnt = 0;
     int invalCnt = 0;
     int evaled = 0;
@@ -213,7 +219,7 @@ public class CacheDataStore implements Serializable {
     int errors = 0;
 
     for (int i = 0; i < keys.length; i++) {
-      final String key = keys[i];
+      final Object key = keys[i];
       try {
         final Timestamp dtm = findTimestampUnlocked(key);
         if (dtm == null) continue;
@@ -264,7 +270,8 @@ public class CacheDataStore implements Serializable {
           try {
             evictExpiredElements();
           } catch (Throwable t) {
-            // logger.error("Unhandled exception occurred during session invalidation", t);
+            t.printStackTrace(System.err);
+            throw new TCRuntimeException(t);
           }
         }
       }

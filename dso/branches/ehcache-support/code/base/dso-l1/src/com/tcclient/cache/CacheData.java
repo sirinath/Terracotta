@@ -19,16 +19,16 @@ public class CacheData implements Serializable {
   public CacheData(Object value, long maxIdleSeconds) {
     this.value = value;
     this.maxIdleMillis = maxIdleSeconds * 1000;
-    this.timestamp = new Timestamp(this.createTime + maxIdleMillis);
     this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
+    this.timestamp = new Timestamp(this.createTime + maxIdleMillis);
     this.lastAccessedTimeInMillis = 0;
   }
 
   public CacheData() {
     this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
-    this.lastAccessedTimeInMillis = 0;
+    this.lastAccessedTimeInMillis = System.currentTimeMillis();
   }
 
   Timestamp getTimestamp() {
@@ -42,7 +42,6 @@ public class CacheData implements Serializable {
 
   synchronized long getIdleMillis() {
     if (lastAccessedTimeInMillis == 0) return 0;
-    if (startMillis > lastAccessedTimeInMillis) return startMillis - lastAccessedTimeInMillis;
     return Math.max(System.currentTimeMillis() - lastAccessedTimeInMillis, 0);
   }
 
