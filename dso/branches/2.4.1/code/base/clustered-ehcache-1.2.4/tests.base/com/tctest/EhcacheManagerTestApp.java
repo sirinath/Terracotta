@@ -64,7 +64,7 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
   protected void runTest() throws Throwable {
     final int CACHE_POPULATION = 10;
 
-    if (barrier.barrier() == 0) {
+    if (barrier.barrier() != 0) {
       // create 2 caches, wait for the other node to verify
       addCache("CACHE1", true);
       addCache("CACHE2", false);
