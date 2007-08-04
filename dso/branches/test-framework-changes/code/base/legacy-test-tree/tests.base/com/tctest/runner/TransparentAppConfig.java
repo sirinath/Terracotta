@@ -29,6 +29,8 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   private int                     validatorCount;
   private int                     adaptedMutatorCount;
   private int                     adaptedValidatorCount;
+  private boolean                 isMutateValidateTest              = false;
+  private boolean                 killMutators                      = false;
 
   public TransparentAppConfig(String applicationClassname, GlobalIdGenerator idGenerator, int mutatorCount,
                               int intensity, ServerControl[] serverControls, TCPProxy[] proxies) {
@@ -132,6 +134,22 @@ public class TransparentAppConfig implements ApplicationConfig, ApplicationConfi
   public TransparentAppConfig setValidatorCount(int count) {
     validatorCount = count;
     return this;
+  }
+
+  public void setIsMutateValidateTest(boolean val) {
+    isMutateValidateTest = val;
+  }
+
+  public boolean isMutateValidateTest() {
+    return isMutateValidateTest;
+  }
+
+  public void setKillMutators(boolean val) {
+    killMutators = val;
+  }
+
+  public boolean killMutators() {
+    return killMutators;
   }
 
   public TransparentAppConfig setAdaptedMutatorCount(int count) {

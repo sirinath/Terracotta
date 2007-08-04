@@ -92,8 +92,7 @@ public class DistributedTestRunner implements ResultsListener {
   public DistributedTestRunner(DistributedTestRunnerConfig config,
                                TestTVSConfigurationSetupManagerFactory configFactory,
                                DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
-                               ApplicationConfig applicationConfig, boolean startServer,
-                               boolean isMutatorValidatorTest, boolean isActivePassiveTest,
+                               ApplicationConfig applicationConfig, boolean startServer, boolean isActivePassiveTest,
                                ActivePassiveServerManager serverManager, TransparentAppConfig transparentAppConfig)
       throws Exception {
     this.optionalAttributes = optionalAttributes;
@@ -103,7 +102,7 @@ public class DistributedTestRunner implements ResultsListener {
     this.config = config;
     this.configFactory = configFactory;
     this.configHelper = configHelper;
-    this.isMutatorValidatorTest = isMutatorValidatorTest;
+    this.isMutatorValidatorTest = transparentAppConfig.isMutateValidateTest();
     this.validatorCount = transparentAppConfig.getValidatorCount();
     this.isActivePassiveTest = isActivePassiveTest;
     this.serverManager = serverManager;

@@ -15,8 +15,6 @@ public interface TransparentTestIface {
 
   void initializeTestRunner() throws Exception;
 
-  void initializeTestRunner(boolean isMutateValidateTest) throws Exception;
-
   TVSConfigurationSetupManagerFactory getConfigFactory();
 
   DSOClientConfigHelper getConfigHelper();
