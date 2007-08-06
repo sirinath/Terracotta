@@ -4,6 +4,7 @@
  */
 package com.tc.process;
 
+import com.tc.test.TestConfigObject;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
 
@@ -161,6 +162,8 @@ public class LinkedJavaProcess {
 boolean isTCServerMain = "com.tc.server.TCServerMain".equals(this.mainClassName); 
 if (isTCServerMain) {
   System.err.println("&&&&& About to invoke TCServerMain");
+  System.err.println("&&&&& l2.startup.mode: " + TestConfigObject.getInstance().getL2StartupMode());
+  System.err.println("&&&&& l2.startup.jvm: " + TestConfigObject.getInstance().getL2StartupJavaHome());
   for (Iterator i = fullCommandList.iterator(); i.hasNext(); ) {
     System.err.println("\t" + i.next());
   }
