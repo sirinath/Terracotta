@@ -479,7 +479,6 @@ modules:
         module: true
       dependencies:
         - common-api
-        - common
         - dso-l1-api
   - clustered-apache-struts-1.1:
       options:
@@ -490,7 +489,6 @@ modules:
         - aspectwerkz
         - linked-child-process
         - common-api
-        - common
         - dso-common
         - management
         - dso-common-jdk15
@@ -563,7 +561,6 @@ modules:
         - aspectwerkz
         - linked-child-process
         - common-api
-        - common
         - dso-common
         - management
         - dso-common-jdk15
@@ -607,8 +604,8 @@ modules:
         - modules-common-1.0
         - aspectwerkz
         - linked-child-process
-        - common-api
         - common
+        - common-api
         - management
         - dso-common
         - dso-common-jdk15
@@ -696,7 +693,6 @@ modules:
         - aspectwerkz
         - linked-child-process
         - common-api
-        - common
         - dso-common
         - management
         - dso-common-jdk15
