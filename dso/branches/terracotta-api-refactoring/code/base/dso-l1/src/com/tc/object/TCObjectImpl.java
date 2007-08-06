@@ -180,6 +180,10 @@ public abstract class TCObjectImpl implements TCObject {
     throw new AssertionError("shouldn't be called");
   }
 
+  public void setArrayReference(int index, ObjectID id) {
+    throw new AssertionError("shouldn't be called");
+  }
+
   public void setValue(String fieldName, Object obj) {
     try {
       TransparentAccess ta = (TransparentAccess) getPeerObject();
