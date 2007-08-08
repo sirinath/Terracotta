@@ -2,19 +2,18 @@ package com.tctest;
 
 public class EhcacheManagerTest extends TransparentTestBase {
 
-  public EhcacheManagerTest() {
-	disableAllUntil("2007-08-30");
-  }
-  
-  public void doSetUp(final TransparentTestIface tt) throws Exception {
-    tt.getTransparentAppConfig().setMutatorCount(
-        EhcacheManagerTestApp.EXPECTED_THREAD_COUNT);
-    tt.initializeTestRunner();
-  }
+	public EhcacheManagerTest() {
+		disableAllUntil("2007-08-30");
+	}
 
-  protected Class getApplicationClass() {
-    return EhcacheManagerTestApp.class;
-  }
-  
+	public void doSetUp(final TransparentTestIface tt) throws Exception {
+		tt.getTransparentAppConfig().setMutatorCount(
+				EhcacheManagerTestApp.EXPECTED_THREAD_COUNT);
+		tt.initializeTestRunner();
+	}
+
+	protected Class getApplicationClass() {
+		return EhcacheManagerTestApp.class;
+	}
+
 }
-

@@ -18,7 +18,7 @@ public class IllegalMonitorStateTest extends TransparentTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    getTransparentAppConfig().setClientCount(1).setIntensity(1);
+    getTransparentAppConfig().setMutatorCount(1).setIntensity(1);
     initializeTestRunner();
   }
 
