@@ -96,8 +96,9 @@ class BuildSubtree
 
             # Write out the properties that control how the L2 is started.  Since the L2 requires
             # a 1.5 or higher JVM, it must be started in an external JVM if the current JVM is 1.4.
-            jvm_15 = Registry[:jvm_set].find_jvm(:min_version => '1.5.0')
-            fail("Can't find JVM 15 or greater to run L2") unless jvm_15
+            unless jvm_15 = Registry[:jvm_set].find_jvm(:min_version => '1.5.0')
+              fail("Can't find JVM 15 or greater to run L2.  JvmSet:\n#{Registry[:jvm_set].to_s}")
+            end
             write_dynamic_property(file, "l2.startup.jvm", jvm_15.home.to_s)
 
             if jvm.version < '1.5.0'
