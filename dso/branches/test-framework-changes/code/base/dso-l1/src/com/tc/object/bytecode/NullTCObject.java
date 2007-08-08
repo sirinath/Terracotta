@@ -122,8 +122,8 @@ public class NullTCObject implements TCObject {
     return;
   }
 
-  public void setReference(String fieldName, ObjectID id) {
-    // do nothing
+  public ObjectID setReference(String fieldName, ObjectID id) {
+    return null;
   }
 
   public void setValue(String fieldName, Object obj) {
@@ -225,6 +225,10 @@ public class NullTCObject implements TCObject {
 
   public ArrayIndexOutOfBoundsException checkArrayIndex(int index) {
     return null;
+  }
+
+  public void setArrayReference(int index, ObjectID id) {
+    //
   }
 
 }
