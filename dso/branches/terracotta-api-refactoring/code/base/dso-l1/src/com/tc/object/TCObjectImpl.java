@@ -176,7 +176,7 @@ public abstract class TCObjectImpl implements TCObject {
     }
   }
 
-  public void setReference(String fieldName, ObjectID id) {
+  public ObjectID setReference(String fieldName, ObjectID id) {
     throw new AssertionError("shouldn't be called");
   }
 
