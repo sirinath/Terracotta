@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ITransparencyClassSpec;
+import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -32,6 +33,7 @@ public final class FastHashMapTestApp extends
 		final ITransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 		spec.addRoot("barrier", "barrier");
 		spec.addRoot("clusteredFastHashMap", "clusteredFastHashMap");
+	    new CyclicBarrierSpec().visit(visitor, config);
 	}
 
 	public FastHashMapTestApp(final String appId, final ApplicationConfig cfg,
