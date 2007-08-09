@@ -8,5 +8,9 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 public class EhcacheTerracottaConfigurator extends EhcacheTerracottaCommonsConfigurator {
 	protected void addInstrumentation(BundleContext context, StandardDSOClientConfigHelper configHelper) {
 	    super.addInstrumentation(context, configHelper);
-	  }
+	}
+  
+  protected String getExportedBundleName() {
+    return "org.terracotta.modules.clustered_ehcache_1.3";
+  }
 }

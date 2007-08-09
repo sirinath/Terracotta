@@ -8,16 +8,17 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 
-public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfiguratorModule implements IConstants {
+public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaConfiguratorModule implements IConstants {
 
   protected void addInstrumentation(final BundleContext context, final StandardDSOClientConfigHelper configHelper) {
 		super.addInstrumentation(context, configHelper);
+    String targetBundleName = getExportedBundleName();
 
     // find the bundle that contains the replacement classes
     Bundle[] bundles = context.getBundles();
     Bundle bundle = null;
     for (int i = 0; i < bundles.length; i++) {
-      if (BUNDLE_NAME.equals(bundles[i].getSymbolicName())) {
+      if (targetBundleName.equals(bundles[i].getSymbolicName())) {
         bundle = bundles[i];
         break;
       }
@@ -55,4 +56,6 @@ public class EhcacheTerracottaCommonsConfigurator extends TerracottaConfigurator
     spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
     spec.setCustomClassAdapter(factory);
 	}
+  
+  protected abstract String getExportedBundleName();
 }

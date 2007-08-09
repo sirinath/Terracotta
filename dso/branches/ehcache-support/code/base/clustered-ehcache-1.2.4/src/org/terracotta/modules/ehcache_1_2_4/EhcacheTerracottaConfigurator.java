@@ -9,4 +9,8 @@ public final class EhcacheTerracottaConfigurator extends EhcacheTerracottaCommon
   protected void addInstrumentation(BundleContext context, StandardDSOClientConfigHelper configHelper) {
     super.addInstrumentation(context, configHelper);
   }
+  
+  protected String getExportedBundleName() {
+    return "org.terracotta.modules.clustered_ehcache_1.2.4";
+  }
 }
