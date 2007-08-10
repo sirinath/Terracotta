@@ -299,6 +299,25 @@ public class CacheTC implements Ehcache {
 
     this.bootstrapCacheLoader = bootstrapCacheLoader;
   }
+  
+  // diskSpoolBufferSizeMB is ignored
+  public CacheTC(String name,
+               int maxElementsInMemory,
+               MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
+               boolean overflowToDisk,
+               String diskStorePath,
+               boolean eternal,
+               long timeToLiveSeconds,
+               long timeToIdleSeconds,
+               boolean diskPersistent,
+               long diskExpiryThreadIntervalSeconds,
+               RegisteredEventListeners registeredEventListeners,
+               BootstrapCacheLoader bootstrapCacheLoader,
+               int maxElementsOnDisk,
+               int diskSpoolBufferSizeMB) {
+    this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
+         timeToIdleSeconds, false, diskExpiryThreadIntervalSeconds, registeredEventListeners, bootstrapCacheLoader, 0);
+  }
 
   /**
    * Newly created caches do not have a {@link net.sf.ehcache.store.MemoryStore} or a
