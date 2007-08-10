@@ -78,8 +78,6 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     runSimplePutTimeoutGet(index);
     
-    System.err.println("Finish 1");
-    
     if (index == 0) {
       addCache("CACHE", TIME_TO_LIVE_IN_SECONDS*4);
     }
@@ -88,12 +86,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     runSimplePutSimpleGet(index);
     
-    System.err.println("Finish 2");
-
     runSimplePut(index);
     
-    System.err.println("Finish 3");
-
     if (index == 0) {
       shutdownCacheManager();
     }
