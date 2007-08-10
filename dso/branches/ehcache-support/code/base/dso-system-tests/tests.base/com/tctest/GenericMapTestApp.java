@@ -137,7 +137,7 @@ public class GenericMapTestApp extends GenericTestApp {
     config.addIncludePattern(SimpleEntry.class.getName());
     config.addExcludePattern(MyNonPortableObject.class.getName());
     
-    config.addNewModule("clustered-ehcache-1.2.4", "1.0.0");
+    config.addNewModule("clustered-ehcache-1.2.4", "1.0.0"); // this is just a quick way to add TimeExpiryMap to the instrumentation list
   }
 
   void testBasicUnSynchronizedPut(Map map, boolean validate) {
