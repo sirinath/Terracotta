@@ -17,8 +17,8 @@ import java.util.Map;
 public class TimeExpiryMemoryStore extends MemoryStore {
   private static final Log LOG = LogFactory.getLog(TimeExpiryMemoryStore.class.getName());
 
-  public TimeExpiryMemoryStore(Ehcache cache, DiskStore diskStore) {
-    super(cache, diskStore);
+  public TimeExpiryMemoryStore(Ehcache cache, Store diskStore) {
+    super(cache, (DiskStore)diskStore);
 
     try {
       map = loadMapInstance(cache.getName());

@@ -26,7 +26,9 @@ public class EhcacheMemoryStoreAdapter extends ClassAdapter implements
 			String signature, String[] exceptions) {
 		MethodVisitor mv = super.visitMethod(access, name, desc, signature,
 				exceptions);
-		if ("create".equals(name) && "(Lnet/sf/ehcache/Ehcache;Lnet/sf/ehcache/store/DiskStore;)Lnet/sf/ehcache/store/MemoryStore;".equals(desc)) {
+		if ("create".equals(name) && 
+        ("(Lnet/sf/ehcache/Ehcache;Lnet/sf/ehcache/store/DiskStore;)Lnet/sf/ehcache/store/MemoryStore;".equals(desc) ||
+            "(Lnet/sf/ehcache/Ehcache;Lnet/sf/ehcache/store/Store;)Lnet/sf/ehcache/store/MemoryStore;".equals(desc))   ) {
 			mv = new MemoryStoreCreateMethodAdapter(mv);
 		}
 		return mv;
@@ -52,7 +54,7 @@ public class EhcacheMemoryStoreAdapter extends ClassAdapter implements
 			mv.visitInsn(DUP);
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitVarInsn(ALOAD, 1);
-			mv.visitMethodInsn(INVOKESPECIAL, "net/sf/ehcache/store/TimeExpiryMemoryStore", "<init>", "(Lnet/sf/ehcache/Ehcache;Lnet/sf/ehcache/store/DiskStore;)V");
+			mv.visitMethodInsn(INVOKESPECIAL, "net/sf/ehcache/store/TimeExpiryMemoryStore", "<init>", "(Lnet/sf/ehcache/Ehcache;Lnet/sf/ehcache/store/Store;)V");
 			mv.visitInsn(ARETURN);
 			mv.visitLabel(l1);
 		}

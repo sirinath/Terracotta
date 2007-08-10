@@ -12,17 +12,9 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
 
   protected void addInstrumentation(final BundleContext context, final StandardDSOClientConfigHelper configHelper) {
 		super.addInstrumentation(context, configHelper);
-    String targetBundleName = getExportedBundleName();
 
     // find the bundle that contains the replacement classes
-    Bundle[] bundles = context.getBundles();
-    Bundle bundle = null;
-    for (int i = 0; i < bundles.length; i++) {
-      if (targetBundleName.equals(bundles[i].getSymbolicName())) {
-        bundle = bundles[i];
-        break;
-      }
-    }  
+    Bundle bundle = getExportedBundle(context);
     if (null == bundle) {
       throw new RuntimeException("Couldn't find bundle with symbolic name '"+BUNDLE_NAME+"' during the instrumentation configuration of the bunde '"+context.getBundle().getSymbolicName()+"'.");
     }
@@ -56,6 +48,21 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     spec = configHelper.getOrCreateSpec(MEMORYSTORE_CLASS_NAME_DOTS);
     spec.setCustomClassAdapter(factory);
 	}
+  
+  protected Bundle getExportedBundle(final BundleContext context) {
+    String targetBundleName = getExportedBundleName();
+
+    // find the bundle that contains the replacement classes
+    Bundle[] bundles = context.getBundles();
+    Bundle bundle = null;
+    for (int i = 0; i < bundles.length; i++) {
+      if (targetBundleName.equals(bundles[i].getSymbolicName())) {
+        bundle = bundles[i];
+        break;
+      }
+    }  
+    return bundle;
+  }
   
   protected abstract String getExportedBundleName();
 }
