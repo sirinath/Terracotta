@@ -42,6 +42,10 @@ public class ExtraL1ProcessControl extends ExtraProcessServerControl {
     setJVMArgs();
   }
 
+  public File getJavaHome() {
+    return javaHome;
+  }
+
   protected LinkedJavaProcess createLinkedJavaProcess() {
     LinkedJavaProcess out = super.createLinkedJavaProcess();
     out.setDirectory(this.directory);

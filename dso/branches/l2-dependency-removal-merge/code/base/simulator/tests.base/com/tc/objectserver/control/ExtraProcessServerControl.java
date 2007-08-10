@@ -31,11 +31,11 @@ public class ExtraProcessServerControl extends ServerControlBase {
   private final boolean       mergeOutput;
 
   protected LinkedJavaProcess process;
+  protected File              javaHome;
   protected final String      configFileLoc;
   protected final List        jvmArgs;
   private final File          runningDirectory;
   private final String        serverName;
-  private File                javaHome;
   private File                out;
   private FileOutputStream    fileOut;
   private StreamCopier        outCopier;
@@ -113,12 +113,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
                                    File javaHome, boolean useIdentifier) {
     super(host, dsoPort, adminPort);
     this.useIdentifier = useIdentifier;
-    if (javaHome != null) {
-      this.javaHome = javaHome;
-    }
-    else {
-      this.javaHome = new File(TestConfigObject.getInstance().getL2StartupJavaHome());
-    }
+    this.javaHome = javaHome;
     this.serverName = serverName;
     jvmArgs = new ArrayList();
 
@@ -199,6 +194,9 @@ public class ExtraProcessServerControl extends ServerControlBase {
    * The JAVA_HOME for the JVM to use when creating a {@link LinkedChildProcess}.
    */
   public File getJavaHome() {
+    if (javaHome == null) {
+      javaHome = new File(TestConfigObject.getInstance().getL2StartupJavaHome());
+    }
     return javaHome;
   }
 
