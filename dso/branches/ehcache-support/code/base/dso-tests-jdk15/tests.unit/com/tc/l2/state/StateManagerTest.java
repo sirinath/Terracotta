@@ -31,6 +31,7 @@ import java.util.Random;
 public class StateManagerTest extends TCTestCase {
   
   private static final TCLogger logger = TCLogging.getLogger(StateManagerImpl.class);
+  private static short portnum = 0;
 
   public StateManagerTest() {
     // disableAllUntil("2007-05-23");
@@ -42,13 +43,12 @@ public class StateManagerTest extends TCTestCase {
    * Must be called before joinMcast.
    */
   public void useRandomMcastPort() {
-    // generate a random port number
-    Random r = new Random();
-    r.setSeed(System.currentTimeMillis());
-    short portnum = 0;
-    do {
-      portnum = (short) r.nextInt(Short.MAX_VALUE - 1);
-    } while (portnum <= 1024);
+    if (portnum == 0) {
+      // generate a random port number
+      Random r = new Random();
+      r.setSeed(System.currentTimeMillis());
+      portnum = (short) (r.nextInt(Short.MAX_VALUE - 1025) + 1024);
+    }
     
     TCPropertiesImpl.setProperty("l2.nha.tribes.mcast.mcastPort", String.valueOf(portnum));
     logger.info("McastService uses random mcast port: "+portnum);
@@ -233,10 +233,15 @@ public class StateManagerTest extends TCTestCase {
   private void shutdown(TribesGroupManager[] groupMgr, L2StateMessageStage[] msgStage, int start, int end)
       throws Exception {
     for (int i = start; i < end; ++i) {
-      groupMgr[i].stop();
-      msgStage[i].requestStop();
+      try {
+        groupMgr[i].stop();
+        msgStage[i].requestStop();
+      } catch (Exception ex) {
+        System.out.println("*** Failed to stop Server[" + i + "] "+ groupMgr[i] + " " + ex);
+      }
     }
-    Thread.sleep(1000);
+    Thread.sleep(2000);
+    System.out.println("*** shutdown done");
   }
 
   private void nodesMixJoinAndElect(int nodes) throws Exception {

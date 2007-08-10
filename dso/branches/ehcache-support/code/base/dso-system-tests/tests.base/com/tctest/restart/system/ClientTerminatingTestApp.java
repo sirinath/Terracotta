@@ -73,9 +73,11 @@ public class ClientTerminatingTestApp extends ServerCrashingAppBase {
         File workingDir = new File(getConfigFileDirectoryPath(), "client-" + id + "-" + times);
         FileUtils.forceMkdir(workingDir);
         System.err.println(this + "Creating Client with args " + id + " , " + toAdd);
+        List jvmArgs = new ArrayList();
+        addTestTcPropertiesFile(jvmArgs);
         client = new ExtraL1ProcessControl(getHostName(), getPort(), Client.class, getConfigFilePath(), new String[] {
-            "" + id, "" + toAdd, "" + forceKill }, workingDir);
-        client.start(20000);
+            "" + id, "" + toAdd, "" + forceKill }, workingDir, jvmArgs);
+        client.start();
         int exitCode = client.waitFor();
         if (exitCode == 0) {
           System.err.println(this + "Client existed Normally");

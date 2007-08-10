@@ -40,6 +40,7 @@ import com.tctest.runner.TransparentAppConfig;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -115,6 +116,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                                                                  "proxy-connect needs l1reconnect enabled, please overwrite enableL1Reconnect()"); }
 
     ArrayList jvmArgs = new ArrayList();
+    addTestTcPropertiesFile(jvmArgs);
+
     // for some test cases to enable l1reconnect
     if (enableL1Reconnect()) {
       setJvmArgsL1Reconnect(jvmArgs);
@@ -163,6 +166,21 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
+  private final void addTestTcPropertiesFile(List jvmArgs) {
+    URL url = getClass().getResource("/com/tc/properties/tests.properties");
+    if (url == null) {
+      // System.err.println("\n\n ##### No tests.properties defined for this module \n\n");
+      return;
+    }
+    String pathToTestTcProperties = url.getPath();
+    if (pathToTestTcProperties == null || pathToTestTcProperties.equals("")) {
+      // System.err.println("\n\n ##### No path to tests.properties defined \n\n");
+      return;
+    }
+    // System.err.println("\n\n ##### -Dcom.tc.properties=" + pathToTestTcProperties + "\n\n");
+    jvmArgs.add("-Dcom.tc.properties=" + pathToTestTcProperties);
+  }
+
   private final void setUpActivePassiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
     controlledCrashMode = true;
     setJavaHome();
@@ -171,7 +189,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
                                                      ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
-                                                     runnerConfig.startTimeout(), javaHome, configFactory(), jvmArgs);
+                                                     javaHome, configFactory(), jvmArgs);
     apServerManager.addServersToL1Config(configFactory);
   }
 
@@ -228,7 +246,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected final void setUpControlledServer(TestTVSConfigurationSetupManagerFactory factory,
                                              DSOClientConfigHelper helper, int serverPort, int adminPort,
                                              String configFile) throws Exception {
-    setUpControlledServer(factory, helper, serverPort, adminPort, configFile, new ArrayList());
+    setUpControlledServer(factory, helper, serverPort, adminPort, configFile, null);
   }
 
   // used by ResolveTwoActiveServersTest... only works with 2 servers !!
@@ -256,8 +274,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected final void setUpControlledServer(TestTVSConfigurationSetupManagerFactory factory,
                                              DSOClientConfigHelper helper, int serverPort, int adminPort,
                                              String configFile, List jvmArgs) throws Exception {
-
     controlledCrashMode = true;
+    if (jvmArgs == null) {
+      jvmArgs = new ArrayList();
+    }
+    addTestTcPropertiesFile(jvmArgs);
     setUpExternalProcess(factory, helper, serverPort, adminPort, configFile, jvmArgs);
   }
 
@@ -396,7 +417,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected void startServerControlsAndProxies() throws Exception {
     assertEquals(serverControls.length, 2);
     for (int i = 0; i < serverControls.length; i++) {
-      serverControls[i].start(30 * 1000);
+      serverControls[i].start();
 
       // make sure that the first server becomes active
       if (i == 0) {
@@ -418,7 +439,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
         startServerControlsAndProxies();
       } else if (serverControl != null && crasher == null) {
         // normal mode tests
-        serverControl.start(30 * 1000);
+        serverControl.start();
       }
       // NOTE: for crash tests the server needs to be started by the ServerCrasher.. timing issue
 

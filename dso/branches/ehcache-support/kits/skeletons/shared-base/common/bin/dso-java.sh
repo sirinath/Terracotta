@@ -6,6 +6,13 @@
 #  All rights reserved.
 #
 
+if [ $# == 0 ]; then
+  echo "usage: dso-java [-options] class [args...]"
+  exit 0
+fi
+
+ARGS=$*
+
 # OS specific support.  $var _must_ be set to either true or false.
 cygwin=false
 case "`uname`" in
@@ -21,4 +28,4 @@ if $cygwin; then
   [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --windows "$JAVA_HOME"`
 fi
 
-exec "${JAVA_HOME}/bin/java" ${TC_JAVA_OPTS} ${JAVA_OPTS} "$@"
+exec "${JAVA_HOME}/bin/java" ${TC_JAVA_OPTS} ${JAVA_OPTS} $ARGS

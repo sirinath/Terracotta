@@ -67,24 +67,24 @@ public class JMXHeartBeatTestApp extends AbstractTransparentApp {
 
   private boolean isServerAlive() {
     boolean isAlive = false;
-    
+
     try {
-      String theUrl = "service:jmx:rmi:///jndi/rmi://localhost:" + config.getAttribute(JMX_PORT) + "/jmxrmi";
+      String theUrl = "service:jmx:jmxmp://localhost:" + config.getAttribute(JMX_PORT);
       JMXServiceURL url = new JMXServiceURL(theUrl);
       echo("connecting to jmx server....");
       jmxc = JMXConnectorFactory.connect(url, null);
       mbsc = jmxc.getMBeanServerConnection();
       echo("obtained mbeanserver connection");
-      serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler
-      .newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
+      serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
+                                                                                      L2MBeanNames.TC_SERVER_INFO,
+                                                                                      TCServerInfoMBean.class, false);
       String result = serverMBean.getHealthStatus();
       echo("got health status: " + result);
       jmxc.close();
-      isAlive = result.startsWith("OK"); 
+      isAlive = result.startsWith("OK");
     } catch (Throwable e) {
-      e.printStackTrace();            
-    }    
-    finally {
+      e.printStackTrace();
+    } finally {
       if (jmxc != null) {
         try {
           jmxc.close();
@@ -93,7 +93,7 @@ public class JMXHeartBeatTestApp extends AbstractTransparentApp {
         }
       }
     }
-    
+
     return isAlive;
   }
 
@@ -108,11 +108,11 @@ public class JMXHeartBeatTestApp extends AbstractTransparentApp {
     Assert.assertEquals(false, isServerAlive());
     echo("Server is crashed.");
     echo("About to restart server");
-    config.getServerControl().start(30 * 1000);
+    config.getServerControl().start();
     echo("Server restarted.");
     stage1.await();
     echo("Server restarted successfully.");
-    Assert.assertEquals(true, isServerAlive());    
+    Assert.assertEquals(true, isServerAlive());
   }
 
   private static void echo(String msg) {

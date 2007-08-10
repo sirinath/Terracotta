@@ -130,7 +130,7 @@ public class TestTCObject implements TCObject {
 
   }
 
-  public void setReference(String fieldName, ObjectID id) {
+  public ObjectID setReference(String fieldName, ObjectID id) {
     throw new ImplementMe();
 
   }
@@ -240,6 +240,10 @@ public class TestTCObject implements TCObject {
   }
 
   public ArrayIndexOutOfBoundsException checkArrayIndex(int index) {
+    throw new ImplementMe();
+  }
+
+  public void setArrayReference(int index, ObjectID id) {
     throw new ImplementMe();
   }
 }

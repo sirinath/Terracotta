@@ -100,17 +100,15 @@
              <with variable="selection">
                <count value="1"/>
                <iterate>
-                <or>
-               	  <test property="org.eclipse.jdt.launching.hasMain"/>
-               	  <and>
-               	  	 <test property="org.eclipse.jdt.launching.hasProjectNature" args="org.eclipse.jdt.core.javanature"/>
-               	  	 <or>
-               	     	<test property="org.eclipse.jdt.launching.isContainer"/>
-               	     	<test property="org.eclipse.jdt.launching.isPackageFragment"/>
-               	     	<test property="org.eclipse.jdt.launching.isPackageFragmentRoot"/>
-               	     </or>
-               	  </and>
-               	</or>
+                <and>
+                  <test property="org.eclipse.jdt.launching.hasProjectNature" args="org.terracotta.dso.ProjectNature"/>
+                  <or>
+               	    <test property="org.eclipse.jdt.launching.hasMain"/>
+              	    <test property="org.eclipse.jdt.launching.isContainer"/>
+               	    <test property="org.eclipse.jdt.launching.isPackageFragment"/>
+               	    <test property="org.eclipse.jdt.launching.isPackageFragmentRoot"/>
+                  </or>
+                 </and>
                </iterate>
              </with>
            </enablement>
@@ -127,11 +125,20 @@
              <with variable="selection">
                <count value="1"/>
                <iterate>
-                 <or>
-                   <test property="org.eclipse.debug.ui.matchesPattern" value="*.java"/>
-                   <test property="org.eclipse.debug.ui.matchesPattern" value="*.class"/>
-                   <instanceof value="org.eclipse.jdt.core.IJavaElement"/>
-                 </or>
+                 <and>
+                   <or>
+                     <test property="org.eclipse.jdt.launching.extendsInterface" args="junit.framework.Test"/>
+                     <test property="org.eclipse.jdt.launching.hasMethod" args="suite, ()QTest;, public static"/>
+                     <and>
+                       <test property="org.eclipse.jdt.launching.isContainer"/>
+                       <test property="org.eclipse.jdt.launching.buildpathReference" args="junit"/>
+                     </and>
+                     <test property="org.eclipse.jdt.launching.hasMethodWithAnnotation" args="Test, public"/>
+                     <test property="org.eclipse.jdt.launching.hasMethodWithAnnotation" args="Test, public final"/>
+                     <test property="org.eclipse.jdt.launching.hasTypeWithAnnotation" args="RunWith"/>
+                   </or>
+                   <test property="org.eclipse.jdt.launching.hasProjectNature" args="org.terracotta.dso.ProjectNature"/>
+	             </and>
                </iterate>
              </with>
            </enablement>

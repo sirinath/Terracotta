@@ -89,7 +89,7 @@ public class PortabilityImpl implements Portability {
         }
       } else {
         if (!isPortableClass(class2Inspect)) {
-          if (reasonCode == NonPortableReason.UNDEFINED) {
+          if (reasonCode == NonPortableReason.UNDEFINED || config.getSpec(topLevelClass.getName()) != null) {
             reasonCode = NonPortableReason.SUPER_CLASS_NOT_INSTRUMENTED;
           }
           uninstrumentedSupers.add(class2Inspect);
@@ -97,14 +97,14 @@ public class PortabilityImpl implements Portability {
       }
     }
 
-    if(uninstrumentedSupers.size() > 0 || reasonCode == NonPortableReason.CLASS_NOT_IN_BOOT_JAR) {
+    if (uninstrumentedSupers.size() > 0 || reasonCode == NonPortableReason.CLASS_NOT_IN_BOOT_JAR) {
       NonPortableReason reason = new NonPortableReason(topLevelClass, reasonCode);
       for (Iterator i = uninstrumentedSupers.iterator(); i.hasNext();) {
         reason.addErroneousSuperClass((Class) i.next());
       }
       return reason;
     }
-    
+
     // Now check if it is a subclass of logically managed class
     for (Iterator i = classes.iterator(); i.hasNext();) {
       Class class2Inspect = (Class) i.next();

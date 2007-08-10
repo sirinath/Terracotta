@@ -13,6 +13,7 @@ import com.tc.test.TCTestCase;
 import com.tc.util.PortChooser;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.runtime.ThreadDump;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -21,30 +22,28 @@ import java.util.Random;
 
 public class TribesGroupManagerTest extends TCTestCase {
 
-  private static final TCLogger logger = TCLogging.getLogger(TribesGroupManager.class);
-  
+  private static final TCLogger logger  = TCLogging.getLogger(TribesGroupManager.class);
+  private static short          portnum = 0;
+
   public TribesGroupManagerTest() {
     // use random mcast port for testing purpose.
     useRandomMcastPort();
   }
-  
+
   /*
-   * Choose a random mcast port number to avoid conflict with other LAN machines.
-   * Must be called before joinMcast.
+   * Choose a random mcast port number to avoid conflict with other LAN machines. Must be called before joinMcast.
    */
   public void useRandomMcastPort() {
-    // generate a random port number
-    Random r = new Random();
-    r.setSeed(System.currentTimeMillis());
-    short portnum = 0;
-    do {
-      portnum = (short) r.nextInt(Short.MAX_VALUE - 1);
-    } while (portnum <= 1024);
-    
-    TCPropertiesImpl.setProperty("l2.nha.tribes.mcast.mcastPort", String.valueOf(portnum));
-    logger.info("McastService uses random mcast port: "+portnum);
-  }
+    if (portnum == 0) {
+      // generate a random port number
+      Random r = new Random();
+      r.setSeed(System.currentTimeMillis());
+      portnum = (short) (r.nextInt(Short.MAX_VALUE - 1025) + 1024);
+    }
 
+    TCPropertiesImpl.setProperty("l2.nha.tribes.mcast.mcastPort", String.valueOf(portnum));
+    logger.info("McastService uses random mcast port: " + portnum);
+  }
 
   // public void testTribesTimeoutOnCrash() throws Exception {
   // PortChooser pc = new PortChooser();
@@ -156,6 +155,8 @@ public class TribesGroupManagerTest extends TCTestCase {
     final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
+    MyGroupEventListener g1 = new MyGroupEventListener();
+    gm1.registerForGroupEvents(g1);
     MyListener l1 = new MyListener();
     gm1.registerForMessages(TestMessage.class, l1);
     MyZapNodeRequestProcessor z1 = new MyZapNodeRequestProcessor();
@@ -172,7 +173,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     checkSendingReceivingMessages(gm1, l1, gm2, l2);
 
     System.err.println("ZAPPING NODE : " + n2);
-    gm1.zapNode(n2, 01, "test : Zap the other node " + n2 + " from " + n1);
+    gm1.zapNode(g1.getLastNodeJoined(), 01, "test : Zap the other node " + n2 + " from " + n1);
 
     Object r1 = z1.outgoing.take();
     Object r2 = z2.incoming.take();
@@ -184,6 +185,67 @@ public class TribesGroupManagerTest extends TCTestCase {
     assertNull(r2);
 
     gm1.stop();
+    gm2.stop();
+  }
+
+  public void testIfNodeIDsAreReferenceEqual() throws Exception {
+    PortChooser pc = new PortChooser();
+    final int p1 = pc.chooseRandomPort();
+    final int p2 = pc.chooseRandomPort();
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
+
+    TribesGroupManager gm1 = new TribesGroupManager();
+    MyGroupEventListener g1 = new MyGroupEventListener();
+    gm1.registerForGroupEvents(g1);
+    MyListener l1 = new MyListener();
+    gm1.registerForMessages(TestMessage.class, l1);
+    MyZapNodeRequestProcessor z1 = new MyZapNodeRequestProcessor();
+    gm1.setZapNodeRequestProcessor(z1);
+    NodeID n1 = gm1.joinStatic(allNodes[0], allNodes);
+
+    TribesGroupManager gm2 = new TribesGroupManager();
+    MyGroupEventListener g2 = new MyGroupEventListener();
+    gm2.registerForGroupEvents(g2);
+    MyListener l2 = new MyListener();
+    gm2.registerForMessages(TestMessage.class, l2);
+    MyZapNodeRequestProcessor z2 = new MyZapNodeRequestProcessor();
+    gm2.setZapNodeRequestProcessor(z2);
+    NodeID n2 = gm2.joinStatic(allNodes[1], allNodes);
+
+    ThreadUtil.reallySleep(5000);
+
+    NodeID n1sn2 = g1.getLastNodeJoined();
+    System.err.println("N1'sN2 = " + n1sn2);
+
+    NodeID n2sn1 = g2.getLastNodeJoined();
+    System.err.println("N2'sN1 = " + n2sn1);
+
+    TestMessage m1 = new TestMessage("Message 1");
+    gm1.sendAll(m1);
+
+    TestMessage m2 = (TestMessage) l2.take();
+    System.err.println(m2);
+    assertTrue(n2sn1 == m2.messageFrom());
+
+    System.err.println("Trying to ZAP NODE : " + n1);
+    // now trying to zap with different instance which is not reference equal
+    gm2.zapNode(n1, 01, "test : Should be ignored : Zap the other node " + n1 + " from " + n2);
+
+    Object r2 = z2.outgoing.poll(3000);
+    assertNull(r2);
+    Object r1 = z1.incoming.poll(2000);
+    assertNull(r1);
+
+    gm2.zapNode(n2sn1, 01, "test : Zap the other node " + n1 + " from " + n2);
+
+    r2 = z2.outgoing.take();
+    r1 = z1.incoming.take();
+    assertEquals(r1, r2);
+
+    gm1.stop();
+    ThreadUtil.reallySleep(3000);
+    assertTrue(n2sn1 == g2.getLastNodeLeft());
+
     gm2.stop();
   }
 
@@ -260,7 +322,15 @@ public class TribesGroupManagerTest extends TCTestCase {
 
     assertNotEquals(n1, n2);
 
-    checkMessagesOrdering(gm1, gm2);
+    try {
+      checkMessagesOrdering(gm1, gm2);
+    } catch (Exception e) {
+      System.out.println("*****  message order check failed: " + e.getStackTrace());
+      ThreadDump.dumpThreadsMany(3, 500);
+      throw e;
+    }
+
+    // checkMessagesOrdering(gm1, gm2);
 
     gm1.stop();
     gm2.stop();

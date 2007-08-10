@@ -151,7 +151,6 @@ import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionSequencer;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
-import com.tc.objectserver.tx.TransactionalStageCoordinator;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
@@ -415,10 +414,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     ManagedObjectFaultHandler managedObjectFaultHandler = new ManagedObjectFaultHandler();
     // Server initiated request processing queues shouldn't have any max queue size.
     Stage faultManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FAULT_STAGE,
-                                                             managedObjectFaultHandler, 4, -1);
+                                                             managedObjectFaultHandler, l2Properties
+                                                                 .getInt("seda.faultstage.threads"), -1);
     ManagedObjectFlushHandler managedObjectFlushHandler = new ManagedObjectFlushHandler();
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
-                                                             managedObjectFlushHandler, (persistent ? 1 : 4), -1);
+                                                             managedObjectFlushHandler, (persistent ? 1 : l2Properties
+                                                                 .getInt("seda.flushstage.threads")), -1);
 
     TCProperties objManagerProperties = l2Properties.getPropertiesFor("objectmanager");
 
@@ -436,7 +437,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
-      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties));
+      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties), getThreadGroup());
       if (logger.isDebugEnabled()) {
         logger.debug("CacheManager Enabled : " + cacheManager);
       }
@@ -467,6 +468,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
     SampledCounter globalTxnCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300, true, 0L));
 
+    
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
                                                                        globalTransactionIDSequence);
     ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator, transactionStore,
@@ -474,24 +476,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                                  gidSequenceProvider,
                                                                                  globalTransactionIDSequence);
 
-    stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
-                             maxStageSize);
-
-    // Lookup stage should never be blocked trying to add to apply stage
-    stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
-                             new ApplyTransactionChangeHandler(instanceMonitor, gtxm), 1, -1);
-
-    stageManager.createStage(ServerConfigurationContext.APPLY_COMPLETE_STAGE, new ApplyCompleteTransactionHandler(), 1,
-                             maxStageSize);
-
-    // Server initiated request processing stages should not be bounded
-    stageManager.createStage(ServerConfigurationContext.RECALL_OBJECTS_STAGE, new RecallObjectsHandler(), 1, -1);
-
-    int commitThreads = (persistent ? 4 : 1);
-    stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
-                             new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
-
-    TransactionalStageCoordinator txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
+    TransactionalStagesCoordinatorImpl txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, new TransactionSequencer(), gtxm,
                                                           txnStageCoordinator);
     objectManager.setTransactionalObjectManager(txnObjectManager);
@@ -502,6 +487,25 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
     ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
+
+    stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
+                             maxStageSize);
+
+    // Lookup stage should never be blocked trying to add to apply stage
+    stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
+                             new ApplyTransactionChangeHandler(instanceMonitor, transactionManager), 1, -1);
+
+    stageManager.createStage(ServerConfigurationContext.APPLY_COMPLETE_STAGE, new ApplyCompleteTransactionHandler(), 1,
+                             maxStageSize);
+
+    // Server initiated request processing stages should not be bounded
+    stageManager.createStage(ServerConfigurationContext.RECALL_OBJECTS_STAGE, new RecallObjectsHandler(), 1, -1);
+
+    int commitThreads = (persistent ? l2Properties.getInt("seda.commitstage.threads") : 1);
+    stageManager.createStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE,
+                             new CommitTransactionChangeHandler(transactionStorePTP), commitThreads, maxStageSize);
+    
+    txnStageCoordinator.lookUpSinks();
 
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
                                                new ProcessTransactionHandler(transactionBatchManager,
