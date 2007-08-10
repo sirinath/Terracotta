@@ -33,11 +33,11 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     
     configHelper.addIncludePattern("org.hibernate.type.ComponentType", false, false, false);
     
-    configHelper.addIncludePattern("org.hibernate.tuple..*", false, false, false);
+    configHelper.addIncludePattern("org.hibernate.tuple.*", false, false, false);
     
-    configHelper.addIncludePattern("org.hibernate.engine..*", false, false, false);
+    configHelper.addIncludePattern("org.hibernate.engine.*", false, false, false);
     
-    configHelper.addIncludePattern("org.hibernate.type..*", false, false, false);
+    configHelper.addIncludePattern("org.hibernate.type.*", false, false, false);
     
     configHelper.addIncludePattern("org.hibernate.FetchMode", false, false, false);
     
@@ -66,7 +66,6 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
      */
     configHelper.addIncludePattern("org.hibernate.cache.EhCache", false, false, false);
     configHelper.addIncludePattern("org.hibernate.cache.CacheKey", false, false, false);
-    configHelper.addIncludePattern("org.hibernate.cache.EhCacheProvider", false, false, false);
     configHelper.addIncludePattern("org.hibernate.EntityMode", false, false, false);
     configHelper.addIncludePattern("org.hibernate.type.IntegerType", false, false, false);
     configHelper.addIncludePattern("org.hibernate.type.PrimitiveType", false, false, false);
@@ -78,7 +77,7 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     configHelper.addIncludePattern("org.hibernate.cache.ReadWriteCache$Lock", false, false, false);
     configHelper.addIncludePattern("org.hibernate.cache.entry.CacheEntry", false, false, false);
     configHelper.addIncludePattern("org.hibernate.cache.entry.CollectionCacheEntry", false, false, false);
-    
+    configHelper.addRoot("ReadWriteCache", "org.hibernate.cache.ReadWriteCache.cache");
     /**
      * Second level cache ends
      */

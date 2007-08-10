@@ -514,6 +514,16 @@ modules:
         - thirdparty
         - legacy-test-tree
         - dso-container-tests
+  - clustered-ehcache-commons-1.0:
+      options:
+        jdk: J2SE-1.4
+        module: true
+      dependencies:
+        - dso-l1
+        - common
+        - dso-common
+        - modules-common-1.0
+        - thirdparty
   - clustered-ehcache-1.3:
       options:
         jdk: J2SE-1.5
@@ -532,6 +542,7 @@ modules:
         - deploy
         - thirdparty
         - legacy-test-tree
+        - clustered-ehcache-commons-1.0
   - clustered-ehcache-1.2.4:
       options:
         jdk: J2SE-1.4
@@ -550,6 +561,7 @@ modules:
         - deploy
         - thirdparty
         - legacy-test-tree
+        - clustered-ehcache-commons-1.0
   - clustered-hibernate-3.1.2:
       options:
         jdk: J2SE-1.4
@@ -570,6 +582,7 @@ modules:
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
+        - clustered-ehcache-commons-1.0
   - clustered-websphere-6.1.0.7:
       options:
         jdk: J2SE-1.5
@@ -652,6 +665,7 @@ module-groups:
     - clustered-cglib-2.1.3
     - clustered-iBatis-2.2.0
     - clustered-rife-1.6.0
+    - clustered-ehcache-commons-1.0
     - clustered-ehcache-1.3
     - clustered-ehcache-1.2.4
     - clustered-hibernate-3.1.2

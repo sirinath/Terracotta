@@ -69,7 +69,8 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
 
   private Object getNewPeerObject(Constructor ctor, Object[] args, TCClass type, Object parent)
       throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-    final Object rv;
+    //final Object rv;
+    Object rv;
 
     // XXX: hack to workaround issue with commons logging dependence on context loader
     final Thread thread = Thread.currentThread();
@@ -84,7 +85,7 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
       }
       thread.setContextClassLoader(newTcl);
     }
-
+    
     try {
       rv = ctor.newInstance(args);
       if (parent != null) {

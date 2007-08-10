@@ -32,13 +32,19 @@ import com.tc.aspectwerkz.transform.inlining.weaver.MethodCallVisitor;
 import com.tc.aspectwerkz.transform.inlining.weaver.MethodExecutionVisitor;
 import com.tc.aspectwerkz.transform.inlining.weaver.StaticInitializationVisitor;
 import com.tc.exception.TCLogicalSubclassNotPortableException;
+import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.RenameClassesAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
+import com.tc.object.config.ClassReplacementMapping;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.AdaptedClassDumper;
 import com.tc.util.InitialClassDumper;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,8 +72,8 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
   private final DSOClientConfigHelper m_configHelper;
   private final InstrumentationLogger m_logger;
   private final InstrumentationLogger m_instrumentationLogger;
-
-  public DefaultWeavingStrategy(final DSOClientConfigHelper configHelper, InstrumentationLogger instrumentationLogger) {
+  
+  public DefaultWeavingStrategy(final DSOClientConfigHelper configHelper, final InstrumentationLogger instrumentationLogger) {
     m_configHelper = configHelper;
     m_instrumentationLogger = instrumentationLogger;
     m_logger = new InstrumentationLoggerImpl(m_configHelper.getInstrumentationLoggingOptions());
@@ -149,6 +155,41 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
       if (m_instrumentationLogger.classInclusion()) {
         m_instrumentationLogger.classIncluded(className);
+      }
+      
+      // handle replacement classes
+      if (isDsoAdaptable) {
+        ClassReplacementMapping mapping = m_configHelper.getClassReplacementMapping();
+        String replacementClassName = mapping.getReplacementClassName(className);
+        
+        // check if there's a replacement class
+        if (replacementClassName != null &&
+            !replacementClassName.equals(className)) {
+          // obtain the resource of the replacement class either from a module bundle, or from the
+          // active classloader
+          URL replacementResource = mapping.getReplacementResource(replacementClassName, loader);
+          if (replacementResource == null) {
+            throw new ClassNotFoundException("No resource found for class: " + replacementClassName);
+          }
+          
+          // obtain the bytes of the replacement class
+          InputStream is = replacementResource.openStream();
+          try {
+            byte[] replacementBytes = ByteCodeUtil.getBytesForInputstream(is);
+            
+            // perform the rename transformation so that it can be used instead of the original class
+            ClassReader cr = new ClassReader(replacementBytes);
+            ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+            ClassVisitor cv = new RenameClassesAdapter(cw, mapping);
+            cr.accept(cv, ClassReader.SKIP_FRAMES);
+          
+            context.setCurrentBytecode(cw.toByteArray());
+          } catch (IOException e) {
+            throw new ClassNotFoundException("Error reading bytes for " + replacementResource, e);
+          } finally {
+            is.close();
+          }
+        }
       }
 
       // ------------------------------------------------

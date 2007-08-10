@@ -21,6 +21,7 @@ import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
 import com.terracottatech.config.Modules;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -55,6 +56,10 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller, boolean disableSuperClassTypeChecking);
+  
+  ClassReplacementMapping getClassReplacementMapping();
+  
+  URL getClassResource(String className);
 
   boolean isCallConstructorOnLoad(ClassInfo classInfo);
 

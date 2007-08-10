@@ -48,6 +48,10 @@ public class ClassProcessorHelper {
   // NOTE: This is not intended to be a public/documented system property,
   // it is for dev use only. It is NOT for QA or customer use
   private static final String                TC_CLASSPATH_SYSPROP    = "tc.classpath";
+  
+  // Used for converting resource names into class names
+  private static final String                CLASS_SUFFIX = ".class";
+  private static final int                   CLASS_SUFFIX_LENGTH = CLASS_SUFFIX.length();
 
   private static final boolean               GLOBAL_MODE_DEFAULT     = true;
 
@@ -123,22 +127,56 @@ public class ClassProcessorHelper {
   }
 
   public static URL getTCResource(String name, ClassLoader cl) {
-    if (!isAWRuntimeDependency(name.replace('/', '.'))) { return null; }
-
-    try {
-      URL u = tcLoader.findResource(name); // getResource() would cause an endless loop
-      return u;
-    } catch (Exception e) {
-      return null;
+    String className = null;
+    if (name.endsWith(CLASS_SUFFIX)) {
+      className = name
+        .substring(0, name.length() - CLASS_SUFFIX_LENGTH)
+        .replace('/', '.');
     }
+    
+    URL resource = getClassResource(className, cl);
+    
+    if (null == resource) {
+      if (!isAWRuntimeDependency(className)) { return null; }
+  
+      try {
+        resource = tcLoader.findResource(name); // getResource() would cause an endless loop
+      } catch (Exception e) {
+        resource = null;
+      }
+    }
+    
+    return resource;
   }
 
   public static byte[] getTCClass(String name, ClassLoader cl) throws ClassNotFoundException {
-    if (!isAWRuntimeDependency(name)) { return null; }
+    URL resource = getClassResource(name, cl);
+   
+    if (null == resource) {
+      if (!isAWRuntimeDependency(name)) { return null; }
+  
+      resource = tcLoader.findResource(name.replace('.', '/') + ".class"); // getResource() would cause an endless loop
+    }
+    
+    if (null == resource) {
+      return null;
+    }
 
-    URL url = tcLoader.findResource(name.replace('.', '/') + ".class"); // getResource() would cause an endless loop
-    if (url == null) return null;
+    return getResourceBytes(resource);
+  }
 
+  private static URL getClassResource(String name, ClassLoader cl) {
+    if (name != null) {
+      DSOContext context = getContext(cl);
+      if (context != null) {
+        return context.getClassResource(name);
+      }
+    }
+        
+    return null;
+  }
+
+  private static byte[] getResourceBytes(URL url) throws ClassNotFoundException {
     InputStream is = null;
     try {
       is = url.openStream();
@@ -169,6 +207,9 @@ public class ClassProcessorHelper {
   }
 
   private static boolean isAWRuntimeDependency(String name) {
+    if (null == name) { 
+      return false;
+     }
     return name.startsWith("com.tcspring.");
     // || name.startsWith("com.tc.aspectwerkz.definition.deployer.AspectModule")
     // || name.equals("com.tc.aspectwerkz.aspect.AspectContainer")

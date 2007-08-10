@@ -85,6 +85,7 @@ import com.terracottatech.config.SpringApplication;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -143,6 +144,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                                                                         .synchronizedMap(new HashMap());
 
   private final Map                              customAdapters                     = new ConcurrentHashMap();
+
+  private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMapping();
+  
+  private final Map                              classResources                     = new ConcurrentHashMap();
 
   private final Map                              aspectModules                      = Collections
                                                                                         .synchronizedMap(new HashMap());
@@ -694,7 +699,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     markAllSpecsPreInstrumented();
 
     addJDK15InstrumentedSpec();
-
+    
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");
     spec.setHonorTransient(true);
@@ -1085,6 +1090,26 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
+  public void addClassReplacement(final String originalClassName, final String replacementClassName, final URL replacementResource) {
+    synchronized (classReplacements) {
+      String prev = this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource);
+      Assert.assertNull(prev);
+    }
+  }
+  
+  public ClassReplacementMapping getClassReplacementMapping() {
+    return classReplacements;
+  }
+
+  public void addClassResource(final String className, final URL resource) {
+    Object prev = this.classResources.put(className, resource);
+    Assert.assertNull(prev);
+  }
+  
+  public URL getClassResource(String className) {
+    return (URL)this.classResources.get(className);
+  }
+
   private void markAllSpecsPreInstrumented() {
     for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
       TransparencyClassSpec s = (TransparencyClassSpec) i.next();
@@ -1365,6 +1390,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
     // If a root is defined then we automagically instrument
     if (classContainsAnyRoots(classInfo)) { return cacheIsAdaptable(fullClassName, true); }
+    // class replacements trump config.
+    if (classReplacements.hasReplacement(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // custom adapters trump config.
     if (customAdapters.containsKey(fullClassName)) { return cacheIsAdaptable(fullClassName, true); }
     // existing class specs trump config

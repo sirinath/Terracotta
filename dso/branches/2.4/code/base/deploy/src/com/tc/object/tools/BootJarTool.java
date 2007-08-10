@@ -142,12 +142,10 @@ import com.tcclient.util.MapEntrySetWrapper;
 import gnu.trove.TLinkable;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.AccessibleObject;
@@ -1264,38 +1262,10 @@ public class BootJarTool {
 
   private final byte[] getBytes(String className, ClassLoader provider) {
     try {
-      return getBytesForClass(className, provider);
+      return ByteCodeUtil.getBytesForClass(className, provider);
     } catch (ClassNotFoundException e) {
       throw exit("Error sourcing bytes for class " + className, e);
     }
-  }
-
-  public final byte[] getBytesForClass(String className, ClassLoader loader) throws ClassNotFoundException {
-    String resource = BootJar.classNameToFileName(className);
-    InputStream is = loader.getResourceAsStream(resource);
-    if (is == null) { throw new ClassNotFoundException("No resource found for class: " + className); }
-    final int size = 4096;
-    byte[] buffer = new byte[size];
-    ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
-
-    int read;
-    try {
-      while ((read = is.read(buffer, 0, size)) > 0) {
-        baos.write(buffer, 0, read);
-      }
-    } catch (IOException ioe) {
-      throw new ClassNotFoundException("Error reading bytes for " + resource, ioe);
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ioe) {
-          // ignore
-        }
-      }
-    }
-
-    return baos.toByteArray();
   }
 
   private final RuntimeException exit(String msg, Throwable t) {
@@ -2237,6 +2207,7 @@ public class BootJarTool {
 
     if (commandLine.hasOption("h")) {
       new HelpFormatter().printHelp("java " + BootJarTool.class.getName() + " " + MAKE_OR_SCAN_MODE, options);
+
       System.exit(1);
     }
 
