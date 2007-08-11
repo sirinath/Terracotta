@@ -103,8 +103,8 @@ public class MockTCObject implements TCObject {
     return;
   }
 
-  public void dehydrate(DNAWriter writer) throws DNAException {
-    return;
+  public boolean dehydrateIfNew(DNAWriter writer) throws DNAException {
+    return true;
   }
 
   public void objectFieldChanged(String classname, String fieldname, Object newValue, int index) {
@@ -213,10 +213,6 @@ public class MockTCObject implements TCObject {
 
   public void resolveAllReferences() {
     //
-  }
-
-  public boolean getAndResetNew() {
-    return false;
   }
 
   public void setIsNew() {
