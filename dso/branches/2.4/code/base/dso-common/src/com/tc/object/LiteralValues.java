@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object;
 
@@ -18,12 +19,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Responsuible for handling literals
+ * Responsible for handling literals
  */
 public class LiteralValues {
   public final static String ENUM_CLASS_DOTS              = "java.lang.Enum";
 
-  // XXX:: If you are adding more types, please see PhysicalStateClassLoader and DNAEncoding
+  /*********************************************************************************************************************
+   * NOTE:: READ THIS IF YOU ARE ADDING NEW TYPES TO THIS FILE. XXX:: If you are adding more types, please see
+   * PhysicalStateClassLoader and DNAEncoding. You need to be adding New code in both those classes or else some things
+   * will be broken.
+   ********************************************************************************************************************/
   public final static int    INTEGER                      = 0;
   public final static int    LONG                         = 1;
   public final static int    CHARACTER                    = 2;
@@ -85,7 +90,7 @@ public class LiteralValues {
     addMapping(tmp, ClassLoaderInstance.class.getName(), JAVA_LANG_CLASSLOADER_HOLDER);
     addMapping(tmp, ENUM_CLASS_DOTS, ENUM);
     addMapping(tmp, EnumInstance.class.getName(), ENUM_HOLDER);
-    
+
     addMapping(tmp, Currency.class.getName(), CURRENCY);
 
     values = Collections.unmodifiableMap(tmp);
@@ -96,7 +101,7 @@ public class LiteralValues {
 
     Class clazz = pojo.getClass();
     int i = valueForClassName(clazz.getName());
-    if(i == OBJECT && ClassUtils.isEnum(pojo.getClass())) { return ENUM; }
+    if (i == OBJECT && ClassUtils.isEnum(pojo.getClass())) { return ENUM; }
     return i;
   }
 
