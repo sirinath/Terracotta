@@ -40,7 +40,7 @@ public class DNAImplTest extends TestCase {
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
     dnaWriter.setParentObjectID(pid);
     dnaWriter.setArrayLength(arrayLen);
-    dnaWriter.finalizeDNA(true);
+    dnaWriter.finalizeDNA(getIsDelta());
 
     TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
     dna = createDNAImpl(serializer, true);
@@ -70,6 +70,10 @@ public class DNAImplTest extends TestCase {
     assertEquals(type, dna.getTypeName());
     assertEquals(arrayLen, dna.getArraySize());
     assertOverridable();
+  }
+
+  protected boolean getIsDelta() {
+    return true;
   }
 
   protected void assertOverridable() {

@@ -25,7 +25,9 @@ public class TCChangeBufferTest extends TestCase {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
     DNAEncoding encoding = new DNAEncoding(classProvider);
-    TCChangeBuffer buffer = new TCChangeBufferImpl(new MockTCObject(new ObjectID(1), this, false, true));
+    MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this, false, true);
+    mockTCObject.setDehydrateReturnValue(false);
+    TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     // physical updates should be ignored
     buffer.fieldChanged("classname", "fieldname", new ObjectID(12), -1);
@@ -61,7 +63,9 @@ public class TCChangeBufferTest extends TestCase {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
     DNAEncoding encoding = new DNAEncoding(classProvider);
-    TCChangeBuffer buffer = new TCChangeBufferImpl(new MockTCObject(new ObjectID(1), this));
+    MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this);
+    mockTCObject.setDehydrateReturnValue(false);
+    TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     for (int i = 0; i < 100; i++) {
       buffer.fieldChanged("class", "class.field", new ObjectID(i), -1);
@@ -94,7 +98,9 @@ public class TCChangeBufferTest extends TestCase {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
     DNAEncoding encoding = new DNAEncoding(classProvider);
-    TCChangeBuffer buffer = new TCChangeBufferImpl(new MockTCObject(new ObjectID(1), this, true, false));
+    MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this, true, false);
+    mockTCObject.setDehydrateReturnValue(false);
+    TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     for (int i = 0; i < 100; i++) {
       buffer.fieldChanged("class", "class.arrayField", new ObjectID(1000 + i), 1);
