@@ -45,13 +45,15 @@ public final class Weblogic8xAppServer extends CargoAppServer {
 
     public TCWebLogic8xInstalledLocalContainer(LocalConfiguration configuration) {
       super(configuration);
-      this.setBeaHome(this.getHome());
     }
 
     protected void setState(State state) {
       if (state.equals(State.STARTING)) {
         adjustConfig();
-        this.setBeaHome(this.getHome());
+        File license = new File(getHome(), "license.bea");
+        if (license.exists()) {
+          this.setBeaHome(this.getHome());
+        }
       }
     }
 
