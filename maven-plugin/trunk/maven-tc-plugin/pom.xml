@@ -99,19 +99,43 @@
       <artifactId>maven-project</artifactId>
       <version>2.0.7</version>
     </dependency>
+
+    <!-- surefire -->
     <dependency>
       <groupId>org.apache.maven.surefire</groupId>
       <artifactId>surefire-booter</artifactId>
       <version>2.3</version>
     </dependency>
-    <!-- 
     <dependency>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-antrun-plugin</artifactId>
-      <version>1.2-SNAPSHOT</version>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-api</artifactId>
+      <version>2.3</version>
     </dependency>
-    -->
-    
+    <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-junit</artifactId>
+      <version>2.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-junit4</artifactId>
+      <version>2.3</version>
+    </dependency>
+
+<!--
+    <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-testng</artifactId>
+      <version>2.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact</artifactId>
+      <version>2.0</version>
+    </dependency>
+-->
+
     <!-- Terracotta -->
     <dependency>
       <groupId>org.terracotta</groupId>
@@ -216,5 +240,14 @@
       <version>1.0.1_04</version>
     </dependency>
   </dependencies>
+
+  <distributionManagement>
+    <repository>
+      <id>tc.internal</id>
+      <name>Terracotta Internal Repository</name>
+      <url>file:///C:/dev/terr/tc-maven-plugin/11</url>
+    </repository>
+  </distributionManagement>
+
 </project>
 

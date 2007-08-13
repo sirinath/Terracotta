@@ -72,12 +72,12 @@ public abstract class CommandLineUtils {
     }
   }
 
-  public static int executeCommandLine(Commandline cl, StreamConsumer systemOut, StreamConsumer systemErr)
+  public static Process executeCommandLine(Commandline cl, StreamConsumer systemOut, StreamConsumer systemErr)
       throws CommandLineException {
     return executeCommandLine(cl, null, systemOut, systemErr, false);
   }
 
-  public static int executeCommandLine(Commandline cl, InputStream systemIn, StreamConsumer systemOut,
+  public static Process executeCommandLine(Commandline cl, InputStream systemIn, StreamConsumer systemOut,
       StreamConsumer systemErr, boolean spawn) throws CommandLineException {
     Process p = cl.execute();
 
@@ -94,12 +94,12 @@ public abstract class CommandLineUtils {
     errorPumper.start();
 
     if (spawn) {
-      return 0;
+      return p;
     }
 
     processes.put(new Long(cl.getPid()), p);
     try {
-      int returnValue = p.waitFor();
+      p.waitFor();
 
       if (inputFeeder != null) {
         synchronized (inputFeeder) {
@@ -123,7 +123,7 @@ public abstract class CommandLineUtils {
 
       processes.remove(new Long(cl.getPid()));
 
-      return returnValue;
+      return p;
       
     } catch (InterruptedException ex) {
       killProcess(cl.getPid());

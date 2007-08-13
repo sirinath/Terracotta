@@ -29,8 +29,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.surefire.booter.ForkConfiguration;
 import org.apache.maven.surefire.booter.SurefireBooter;
-import org.apache.maven.surefire.booter.SurefireBooterForkException;
-import org.apache.maven.surefire.booter.SurefireExecutionException;
 import org.apache.maven.surefire.report.BriefConsoleReporter;
 import org.apache.maven.surefire.report.BriefFileReporter;
 import org.apache.maven.surefire.report.ConsoleReporter;
@@ -44,17 +42,24 @@ import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 /**
- * @goal dso-surefire
- * @phase dso-test
+ * @goal test
+ * @phase test
+ * @requiresDependencyResolution test
+ * @execute phase="test"
  */
-public class DsoSurefireMojo extends AbstractDsoMojo {
+public class DsoSurefireMojo extends DsoLifecycleMojo {
 
-  /**
-   * Set this to 'true' to bypass unit tests entirely. Its use is NOT RECOMMENDED, but quite convenient on occasion.
-   * 
-   * @parameter expression="${maven.test.skip}"
-   */
-  private boolean skip;
+  // /**
+  //  * @parameter expression="${project}"
+  //  */
+  // private MavenProject project;
+  
+  //  /**
+  //   * Set this to 'true' to bypass unit tests entirely. Its use is NOT RECOMMENDED, but quite convenient on occasion.
+  //   * 
+  //   * parameter expression="${maven.test.skip}"
+  //   */
+  // private boolean skip;
 
   /**
    * Set this to 'true' to bypass unit tests execution, but still compile them. Its use is NOT RECOMMENDED, but quite
@@ -100,9 +105,9 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
   /**
    * Base directory where all reports are written to.
    * 
-   * @parameter expression="${project.build.directory}"
+   * @parameter expression="${project.build.directory}/surefire-reports"
    */
-  private File buildDirectory;
+  private File reportsDirectory;
 
   /**
    * The test source directory containing test class sources.
@@ -216,20 +221,9 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
    * Option to specify the forking mode. Can be "never", "once" or "always". "none" and "pertest" are also accepted for
    * backwards compatibility.
    * 
-   * @parameter expression="${forkMode}" default-value="pertest"
+   * @parameter expression="${forkMode}" default-value="once"
    */
   private String forkMode;
-
-  // /**
-  // * Option to specify the jvm (or path to the java executable) to use with
-  // the
-  // * forking options. For the default, the jvm will be the same as the one
-  // used
-  // * to run Maven.
-  // *
-  // * @parameter expression="${jvm}"
-  // */
-  // private String jvm;
 
   /**
    * Arbitrary options to set on the command line.
@@ -352,20 +346,6 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
   private boolean disableXmlReport;
 
   /**
-   * The attribute node-count allows you to specify how many nodes will be spawned
-   * 
-   * @parameter expression="${nodeCount}" default-value="2"
-   */
-  private int nodeCount;
-
-  /**
-   * @parameter expression="${bootjar}" default-value="${project.build.directory}/dso-boot.jar"
-   */
-  private File bootJar;
-
-  private int debugPort = 5000;
-
-  /**
    * Option to pass dependencies to the system's classloader instead of using an isolated class loader when forking.
    * Prevents problems with JDKs which implement the service provider lookup mechanism by using the system's
    * classloader.
@@ -374,16 +354,30 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
    */
   private boolean useSystemClassLoader;
 
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  // Terracotta configuration
+
+  /**
+   * The attribute node-count allows you to specify how many nodes will be spawned
+   * 
+   * @parameter expression="${numberOfNodes}" default-value="2"
+   */
+  private int numberOfNodes;
+
+  private int debugPort = 5000;
+
+  
+  protected void onExecute() throws MojoExecutionException, MojoFailureException {
     if (!verifyParameters()) {
       return;
     }
 
-    CyclicBarrier barrier = new CyclicBarrier(nodeCount + 1);
+    CyclicBarrier barrier = new CyclicBarrier(numberOfNodes + 1);
 
     ArrayList threads = new ArrayList();
 
-    for (int i = 0; i < nodeCount; i++) {
+    for (int i = 0; i < numberOfNodes; i++) {
+      getLog().info("------------------------------------------------------------------------");
+      getLog().info("Starting Surefire node " + i);
       SurefireThread surefireThread = new SurefireThread("node" + i, barrier);
       threads.add(surefireThread);
       new Thread(surefireThread).start();
@@ -444,30 +438,22 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
     }
 
     private void runSurefire() {
-      File reportsDirectory = new File(buildDirectory, "surefire-reports-" + nodeName);
-      getLog().info("Surefire report directory: " + reportsDirectory);
+      File nodeReportsDirectory = new File(reportsDirectory.getParent(), "surefire-reports-" + nodeName);
+      getLog().info("[" + nodeName + "] Surefire report directory: " + nodeReportsDirectory);
 
-      SurefireBooter surefireBooter = null;
       try {
-        surefireBooter = constructSurefireBooter(reportsDirectory);
-      } catch (MojoExecutionException e) {
-        getLog().error("[" + nodeName + "]", e);
-        exception = new MojoExecutionException(e.getMessage(), e);
-        return;
-      } catch (MojoFailureException e) {
-        getLog().error("[" + nodeName + "]", e);
-        exception = new MojoExecutionException(e.getMessage(), e);
-        return;
-      }
+        SurefireBooter surefireBooter = constructSurefireBooter(nodeReportsDirectory, nodeName);
+        boolean success = surefireBooter.run();
+        
+        if (!success) {
+          String msg = "There are test failures.";
+          getLog().error("[" + nodeName + "] " + msg);
+          if (!testFailureIgnore) {
+            failure = new MojoFailureException(msg);
+          }
+        }
 
-      boolean success;
-      try {
-        success = surefireBooter.run();
-      } catch (SurefireBooterForkException e) {
-        getLog().error("[" + nodeName + "]", e);
-        exception = new MojoExecutionException(e.getMessage(), e);
-        return;
-      } catch (SurefireExecutionException e) {
+      } catch (Exception e) {
         getLog().error("[" + nodeName + "]", e);
         exception = new MojoExecutionException(e.getMessage(), e);
         return;
@@ -477,23 +463,48 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
         // restore system properties
         System.setProperties(originalSystemProperties);
       }
+    }
+  }  
+  
+/*  
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    if (verifyParameters()) {
+      SurefireBooter surefireBooter = constructSurefireBooter();
+
+      getLog().info("Surefire report directory: " + reportsDirectory);
+
+      boolean success;
+      try {
+        success = surefireBooter.run();
+      } catch (SurefireBooterForkException e) {
+        throw new MojoExecutionException(e.getMessage(), e);
+      } catch (SurefireExecutionException e) {
+        throw new MojoExecutionException(e.getMessage(), e);
+      }
+
+      if (originalSystemProperties != null) {
+        // restore system properties
+        System.setProperties(originalSystemProperties);
+      }
 
       if (!success) {
         String msg = "There are test failures.";
-        getLog().error("[" + nodeName + "] " + msg);
-        if (!testFailureIgnore) {
-          failure = new MojoFailureException(msg);
+
+        if (testFailureIgnore) {
+          getLog().error(msg);
+        } else {
+          throw new MojoFailureException(msg);
         }
       }
     }
-
   }
-
+*/
+  
   private boolean verifyParameters() throws MojoFailureException {
-    if (skip || skipExec) {
-      getLog().info("Tests are skipped.");
-      return false;
-    }
+//    if (skip || skipExec) {
+//      getLog().info("Tests are skipped.");
+//      return false;
+//    }
 
     if (!testClassesDirectory.exists()) {
       getLog().info("No tests to run.");
@@ -531,19 +542,15 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
     }
   }
 
-  private SurefireBooter constructSurefireBooter(File reportsDirectory) throws MojoExecutionException,
-      MojoFailureException {
+  private SurefireBooter constructSurefireBooter(File reportsDirectory, String nodeName) throws MojoExecutionException, MojoFailureException {
     SurefireBooter surefireBooter = new SurefireBooter();
-
-    surefireBooter.setUseSystemClassLoader(true);
 
     Artifact surefireArtifact = (Artifact) pluginArtifactMap.get("org.apache.maven.surefire:surefire-booter");
     if (surefireArtifact == null) {
       throw new MojoExecutionException("Unable to locate surefire-booter in the list of plugin artifacts");
     }
 
-    surefireArtifact.isSnapshot(); // TODO: this is ridiculous, but it fixes
-    // getBaseVersion to be -SNAPSHOT if needed
+    surefireArtifact.isSnapshot(); // TODO: this is ridiculous, but it fixes getBaseVersion to be -SNAPSHOT if needed
 
     Artifact junitArtifact;
     Artifact testNgArtifact;
@@ -552,8 +559,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
 
       junitArtifact = (Artifact) projectArtifactMap.get("junit:junit");
 
-      // TODO: this is pretty manual, but I'd rather not require the plugin >
-      // dependencies section right now
+      // TODO: this is pretty manual, but I'd rather not require the plugin > dependencies section right now
       testNgArtifact = (Artifact) projectArtifactMap.get("org.testng:testng");
 
       if (testNgArtifact != null) {
@@ -571,16 +577,13 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
 
         addArtifact(surefireBooter, testNgArtifact);
 
-        // The plugin uses a JDK based profile to select the right testng. We
-        // might be explicity using a
-        // different one since its based on the source level, not the JVM. Prune
-        // using the filter.
+        // The plugin uses a JDK based profile to select the right testng. We might be explicity using a
+        // different one since its based on the source level, not the JVM. Prune using the filter.
         addProvider(surefireBooter, "surefire-testng", surefireArtifact.getBaseVersion(), testNgArtifact);
       } else if (junitArtifact != null && junitArtifact.getBaseVersion().startsWith("4")) {
         addProvider(surefireBooter, "surefire-junit4", surefireArtifact.getBaseVersion(), null);
       } else {
-        // add the JUnit provider as default - it doesn't require JUnit to be
-        // present,
+        // add the JUnit provider as default - it doesn't require JUnit to be present,
         // since it supports POJO tests.
         addProvider(surefireBooter, "surefire-junit", surefireArtifact.getBaseVersion(), null);
       }
@@ -625,8 +628,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
         excludes = this.excludes;
 
         // defaults here, qdox doesn't like the end javadoc value
-        // Have to wrap in an ArrayList as surefire expects an ArrayList instead
-        // of a List for some reason
+        // Have to wrap in an ArrayList as surefire expects an ArrayList instead of a List for some reason
         if (includes == null || includes.size() == 0) {
           includes = new ArrayList(Arrays
               .asList(new String[] { "**/Test*.java", "**/*Test.java", "**/*TestCase.java" }));
@@ -651,8 +653,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
         }
 
         // fall back to JUnit, which also contains POJO support. Also it can run
-        // classes compiled against JUnit since it has a dependency on JUnit
-        // itself.
+        // classes compiled against JUnit since it has a dependency on JUnit itself.
         surefireBooter.addTestSuite(junitDirectoryTestSuite, new Object[] { testClassesDirectory, includes, excludes });
       }
     }
@@ -663,8 +664,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
 
     getLog().debug("Test Classpath :");
 
-    // no need to add classes/test classes directory here - they are in the
-    // classpath elements already
+    // no need to add classes/test classes directory here - they are in the classpath elements already
 
     for (Iterator i = classpathElements.iterator(); i.hasNext();) {
       String classpathElement = (String) i.next();
@@ -681,7 +681,6 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
     ForkConfiguration fork = new ForkConfiguration();
 
     fork.setForkMode(forkMode);
-    fork.setDebug(true);
 
     processSystemProperties(!fork.isForking());
 
@@ -690,7 +689,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
     }
 
     if (fork.isForking()) {
-      // fork.setUseSystemClassLoader( useSystemClassLoader );
+//      fork.setUseSystemClassLoader(useSystemClassLoader);
 
       fork.setSystemProperties(systemProperties);
 
@@ -708,10 +707,14 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
         fork.setWorkingDirectory(basedir);
       }
 
+
       String args = "-Xbootclasspath/p:" + bootJar.getAbsolutePath();
 
+      args += " -Dtc.nodeName=" + nodeName;
+      args += " -Dtc.numberOfNodes=" + numberOfNodes;
+      
       int port = ++debugPort;
-      args += " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=" + port;
+      args += " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=" + port;
       // args += " -agentlib:jdwp=transport=dt_socket,address=localhost:" + port;
 
       args += " -Dtc.classloader.writeToDisk=true";
@@ -729,12 +732,17 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
       if (argLine != null && argLine.trim().length() > 0) {
         args += " " + argLine;
       }
+      
+      getLog().info("Args: " + args);
+      
       fork.setArgLine(args);
 
       fork.setEnvironmentVariables(environmentVariables);
 
       if (getLog().isDebugEnabled()) {
         showMap(environmentVariables, "environment variable");
+
+        fork.setDebug(true);
       }
     }
 
@@ -745,7 +753,7 @@ public class DsoSurefireMojo extends AbstractDsoMojo {
     surefireBooter.setChildDelegation(childDelegation);
 
     surefireBooter.setReportsDirectory(reportsDirectory);
-
+    
     addReporters(surefireBooter, fork.isForking(), reportsDirectory);
 
     return surefireBooter;

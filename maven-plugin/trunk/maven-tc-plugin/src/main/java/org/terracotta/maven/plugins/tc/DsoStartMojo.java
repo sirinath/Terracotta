@@ -5,7 +5,6 @@ package org.terracotta.maven.plugins.tc;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
@@ -21,27 +20,40 @@ import com.tc.server.TCServerMain;
 public class DsoStartMojo extends AbstractDsoMojo {
 
   /**
-   * @parameter expression="${spawn}" default-value="true"
+   * @parameter expression="${spawnServer}" default-value="true"
    */
-  private boolean spawn;
+  private boolean spawnServer;
 
   /**
-   * @parameter expression="${name}"
+   * @parameter expression="${serverName}"
    * @optional
    */
-  private String name;
+  private String serverName;
 
   /**
    * @parameter expression="${startServer}" default-value="true"
    */
   boolean startServer;
 
+  public DsoStartMojo() {
+  }
+  
+  public DsoStartMojo(AbstractDsoMojo mojo) {
+    super(mojo);
+  }
+  
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (!startServer) {
       getLog().info("Skipping starting DSO Server");
       return;
     }
 
+    String status = getServerStatus(serverName);
+    if(status!=null && status.startsWith("OK")) {
+      getLog().info("Server already started: " + status);
+      return;
+    }
+    
     Commandline cmd = createCommandLine();
 
     cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
@@ -57,10 +69,10 @@ public class DsoStartMojo extends AbstractDsoMojo {
       getLog().debug("tc-config file  = " + config.getAbsolutePath());
     }
 
-    if (name != null && name.length() > 0) {
+    if (serverName != null && serverName.length() > 0) {
       cmd.createArgument().setValue("-n");
-      cmd.createArgument().setValue(name);
-      getLog().debug("server name = " + name);
+      cmd.createArgument().setValue(serverName);
+      getLog().debug("server serverName = " + serverName);
     }
 
     ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
@@ -68,11 +80,44 @@ public class DsoStartMojo extends AbstractDsoMojo {
     getLog().info("------------------------------------------------------------------------");
     getLog().info("Starting DSO Server");
     try {
-      CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawn);
+      Process p = CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
       getLog().info("OK");
-    } catch (CommandLineException e) {
+      
+      long time = System.currentTimeMillis();
+      status = null;
+      while((System.currentTimeMillis()-time) < 30 * 1000L && status==null && isRunning(p)) {
+        status = getServerStatus(serverName);
+      }
+      
+      getLog().info("DSO Server status: " + status);
+      
+    } catch (Exception e) {
       getLog().error("Failed to start DSO server", e);
     }
   }
 
+  
+  private boolean isRunning(Process p) {
+    try {
+      p.exitValue();
+      return false;
+    } catch (IllegalThreadStateException e) {
+      return true;
+    }
+  }
+
+  // setters for the lifecycle simulation 
+  
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+  
+  public void setSpawnServer(boolean spawn) {
+    this.spawnServer = spawn;
+  }
+  
+  public void setStartServer(boolean startServer) {
+    this.startServer = startServer;
+  }
+  
 }

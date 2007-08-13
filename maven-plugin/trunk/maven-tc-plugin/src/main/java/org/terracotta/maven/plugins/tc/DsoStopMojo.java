@@ -21,21 +21,28 @@ import com.tc.admin.TCStop;
 public class DsoStopMojo extends AbstractDsoMojo {
 
   /**
-   * @parameter expression="${spawn}" default-value="true"
+   * @parameter expression="${spawnServer}" default-value="true"
    */
-  private boolean spawn;
+  private boolean spawnServer;
 
   /**
-   * @parameter expression="${name}"
+   * @parameter expression="${serverName}"
    * @optional
    */
-  private String name;
+  private String serverName;
 
   /**
    * @parameter expression="${startServer}" default-value="true"
    */
   boolean startServer;
 
+  public DsoStopMojo() {
+  }
+  
+  public DsoStopMojo(AbstractDsoMojo mojo) {
+    super(mojo);
+  }
+  
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (!startServer) {
       getLog().info("Skipping stopping DSO Server");
@@ -57,10 +64,10 @@ public class DsoStopMojo extends AbstractDsoMojo {
       getLog().debug("tc-config file  = " + config.getAbsolutePath());
     }
 
-    if (name != null && name.length() > 0) {
+    if (serverName != null && serverName.length() > 0) {
       cmd.createArgument().setValue("-n");
-      cmd.createArgument().setValue(name);
-      getLog().debug("server name = " + name);
+      cmd.createArgument().setValue(serverName);
+      getLog().debug("server name = " + serverName);
     }
 
     ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
@@ -68,11 +75,26 @@ public class DsoStopMojo extends AbstractDsoMojo {
     getLog().info("------------------------------------------------------------------------");
     getLog().info("Stopping DSO Server");
     try {
-      CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawn);
+      CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
       getLog().info("OK");
     } catch (CommandLineException e) {
       getLog().error("Failed to stop DSO server", e);
     }
   }
 
+  
+  // setters for the lifecycle simulation 
+  
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+  
+  public void setSpawnServer(boolean spawn) {
+    this.spawnServer = spawn;
+  }
+  
+  public void setStartServer(boolean startServer) {
+    this.startServer = startServer;
+  }
+  
 }

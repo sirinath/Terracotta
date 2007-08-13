@@ -27,20 +27,27 @@ public class BootjarMojo extends AbstractDsoMojo {
   private boolean verbose;
 
   /**
-   * @parameter expression="${overwrite}" default-value="false"
+   * @parameter expression="${overwriteBootjar}" default-value="false"
    */
-  private boolean overwrite;
+  private boolean overwriteBootjar;
 
   /**
    * @parameter expression="${bootjar}" default-value="${project.build.directory}/dso-boot.jar"
    */
   private File bootJar;
 
+  public BootjarMojo() {
+  }
+
+  public BootjarMojo(AbstractDsoMojo mojo) {
+    super(mojo);
+  }
+  
   /**
    * @see org.apache.maven.plugin.Mojo#execute()
    */
   public void execute() throws MojoExecutionException {
-    if (!overwrite && bootJar.exists()) {
+    if (!overwriteBootjar && bootJar.exists()) {
       getLog().info("BootJar already exist " + bootJar.getAbsolutePath());
       return;
     }
@@ -58,7 +65,7 @@ public class BootjarMojo extends AbstractDsoMojo {
       cmd.createArgument().setValue("-v");
     }
 
-    if (overwrite) {
+    if (overwriteBootjar) {
       cmd.createArgument().setValue("-w");
     }
 
@@ -82,4 +89,19 @@ public class BootjarMojo extends AbstractDsoMojo {
     }
   }
 
+  
+  // setters for the lifecycle simulation 
+  
+  public void setBootJar(File bootJar) {
+    this.bootJar = bootJar;
+  }
+  
+  public void setOverwriteBootjar(boolean overwriteBootjar) {
+    this.overwriteBootjar = overwriteBootjar;
+  }
+  
+  public void setVerbose(boolean verbose) {
+    this.verbose = verbose;
+  }
+  
 }

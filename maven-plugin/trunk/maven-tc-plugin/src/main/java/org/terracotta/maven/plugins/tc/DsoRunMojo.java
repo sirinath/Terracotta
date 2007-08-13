@@ -3,12 +3,13 @@
  */
 package org.terracotta.maven.plugins.tc;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
@@ -18,16 +19,12 @@ import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 /**
- * @goal dso-run
- * @phase dso-run
+ * @goal run
+ * @execute phase="compile"
  * @requiresDependencyResolution runtime
+ * @execute phase="compile"
  */
-public class DsoRunMojo extends AbstractDsoMojo {
-
-  /**
-   * @parameter expression="${bootjar}" default-value="${project.build.directory}/dso-boot.jar"
-   */
-  private File bootJar;
+public class DsoRunMojo extends DsoLifecycleMojo {
 
   //  /**
   //   * Configuration for the DSO-enabled processes
@@ -54,7 +51,8 @@ public class DsoRunMojo extends AbstractDsoMojo {
    */
   private int numberOfNodes;
 
-  public void execute() {
+  
+  protected void onExecute() throws MojoExecutionException, MojoFailureException {
     getLog().info("------------------------------------------------------------------------");
     getLog().info("Starting DSO processes");
 

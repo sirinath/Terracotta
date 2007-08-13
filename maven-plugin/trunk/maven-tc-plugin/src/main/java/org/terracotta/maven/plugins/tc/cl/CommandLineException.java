@@ -24,6 +24,8 @@ package org.terracotta.maven.plugins.tc.cl;
  * @version $Id$
  */
 public class CommandLineException extends Exception {
+  private static final long serialVersionUID = 1L;
+
   public CommandLineException(String message) {
     super(message);
   }
