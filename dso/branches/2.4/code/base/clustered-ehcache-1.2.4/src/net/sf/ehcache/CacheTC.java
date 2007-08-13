@@ -26,11 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-
 /**
  * Since DiskStore is not supported, most synchronized are removed since the memory store methods are being
  * synchronized.
- *
+ * 
  */
 public class CacheTC implements Ehcache {
   /**
@@ -58,7 +57,8 @@ public class CacheTC implements Ehcache {
    */
   public static final long                       DEFAULT_EXPIRY_THREAD_INTERVAL_SECONDS = 120;
 
-  private static final Log                       LOG                                    = LogFactory.getLog(Cache.class.getName());
+  private static final Log                       LOG                                    = LogFactory.getLog(Cache.class
+                                                                                            .getName());
 
   private static final MemoryStoreEvictionPolicy DSO_MEMORY_STORE_EVICTION_POLICY;
   private static final MemoryStoreEvictionPolicy DEFAULT_MEMORY_STORE_EVICTION_POLICY;
@@ -123,20 +123,21 @@ public class CacheTC implements Ehcache {
   private BootstrapCacheLoader                   bootstrapCacheLoader;
 
   public static CacheTC convert(Ehcache cache) {
-    CacheTC tcCache = new CacheTC(cache.getName(), cache.getMaxElementsInMemory(), cache.getMemoryStoreEvictionPolicy(),
-                              false, null, false, cache.getTimeToLiveSeconds(), cache.getTimeToIdleSeconds(), false,
-                              cache.getDiskExpiryThreadIntervalSeconds(), cache.getCacheEventNotificationService(),
-                              cache.getBootstrapCacheLoader(), cache.getMaxElementsOnDisk());
+    CacheTC tcCache = new CacheTC(cache.getName(), cache.getMaxElementsInMemory(),
+                                  cache.getMemoryStoreEvictionPolicy(), false, null, false, cache
+                                      .getTimeToLiveSeconds(), cache.getTimeToIdleSeconds(), false, cache
+                                      .getDiskExpiryThreadIntervalSeconds(), cache.getCacheEventNotificationService(),
+                                  cache.getBootstrapCacheLoader(), cache.getMaxElementsOnDisk());
     return tcCache;
   }
 
   /**
    * 1.0 Constructor. <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
-   * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them. <p/> This constructor
-   * creates disk stores, if specified, that do not persist between restarts. <p/> The default expiry thread interval of
-   * 120 seconds is used. This is the interval between runs of the expiry thread, where it checks the disk store for
-   * expired elements. It is not the the timeToLiveSeconds.
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache}
+   * to specify parameters other than the defaults. <p/> Only the CacheManager can initialise them. <p/> This
+   * constructor creates disk stores, if specified, that do not persist between restarts. <p/> The default expiry thread
+   * interval of 120 seconds is used. This is the interval between runs of the expiry thread, where it checks the disk
+   * store for expired elements. It is not the the timeToLiveSeconds.
    * 
    * @param name the name of the cache
    * @param maxElementsInMemory the maximum number of elements in memory, before they are evicted
@@ -147,7 +148,7 @@ public class CacheTC implements Ehcache {
    * @since 1.0
    */
   public CacheTC(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
-               long timeToIdleSeconds) {
+                 long timeToIdleSeconds) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
     this(name, maxElementsInMemory, DEFAULT_MEMORY_STORE_EVICTION_POLICY, false, null, false, timeToLiveSeconds,
@@ -156,8 +157,8 @@ public class CacheTC implements Ehcache {
 
   /**
    * 1.1 Constructor. <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
-   * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache}
+   * to specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
    * @param maxElementsInMemory the maximum number of elements in memory, before they are evicted
@@ -171,7 +172,7 @@ public class CacheTC implements Ehcache {
    * @since 1.1
    */
   public CacheTC(String name, int maxElementsInMemory, boolean overflowToDisk, boolean eternal, long timeToLiveSeconds,
-               long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds) {
+                 long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
     this(name, maxElementsInMemory, DEFAULT_MEMORY_STORE_EVICTION_POLICY, false, null, false, timeToLiveSeconds,
@@ -183,8 +184,8 @@ public class CacheTC implements Ehcache {
 
   /**
    * 1.2 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
-   * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache}
+   * to specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
    * @param maxElementsInMemory the maximum number of elements in memory, before they are evicted
@@ -202,9 +203,9 @@ public class CacheTC implements Ehcache {
    * @since 1.2
    */
   public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
-               boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
-               long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
-               RegisteredEventListeners registeredEventListeners) {
+                 boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
+                 long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
+                 RegisteredEventListeners registeredEventListeners) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
     this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
@@ -213,8 +214,8 @@ public class CacheTC implements Ehcache {
 
   /**
    * 1.2.1 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
-   * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache}
+   * to specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
    * @param maxElementsInMemory the maximum number of elements in memory, before they are evicted
@@ -234,9 +235,9 @@ public class CacheTC implements Ehcache {
    * @since 1.2.1
    */
   public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
-               boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
-               long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
-               RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader) {
+                 boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
+                 long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
+                 RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader) {
     // overflowToDisk and diskPersistent are always false
     // eternal is always false
     this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
@@ -245,8 +246,8 @@ public class CacheTC implements Ehcache {
 
   /**
    * 1.2.4 Constructor <p/> The {@link net.sf.ehcache.config.ConfigurationFactory} and clients can create these. <p/> A
-   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache} to
-   * specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
+   * client can specify their own settings here and pass the {@link CacheTC} object into {@link CacheManager#addCache}
+   * to specify parameters other than the defaults. <p/> Only the CacheManager can initialise them.
    * 
    * @param name the name of the cache
    * @param maxElementsInMemory the maximum number of elements in memory, before they are evicted
@@ -266,10 +267,10 @@ public class CacheTC implements Ehcache {
    * @since 1.2.4
    */
   public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
-               boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
-               long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
-               RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader,
-               int maxElementsOnDisk) {
+                 boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
+                 long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
+                 RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader,
+                 int maxElementsOnDisk) {
     // overflowToDisk and diskPersistent are always false
     changeStatus(Status.STATUS_UNINITIALISED);
 
@@ -299,22 +300,13 @@ public class CacheTC implements Ehcache {
 
     this.bootstrapCacheLoader = bootstrapCacheLoader;
   }
-  
+
   // diskSpoolBufferSizeMB is ignored
-  public CacheTC(String name,
-               int maxElementsInMemory,
-               MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
-               boolean overflowToDisk,
-               String diskStorePath,
-               boolean eternal,
-               long timeToLiveSeconds,
-               long timeToIdleSeconds,
-               boolean diskPersistent,
-               long diskExpiryThreadIntervalSeconds,
-               RegisteredEventListeners registeredEventListeners,
-               BootstrapCacheLoader bootstrapCacheLoader,
-               int maxElementsOnDisk,
-               int diskSpoolBufferSizeMB) {
+  public CacheTC(String name, int maxElementsInMemory, MemoryStoreEvictionPolicy memoryStoreEvictionPolicy,
+                 boolean overflowToDisk, String diskStorePath, boolean eternal, long timeToLiveSeconds,
+                 long timeToIdleSeconds, boolean diskPersistent, long diskExpiryThreadIntervalSeconds,
+                 RegisteredEventListeners registeredEventListeners, BootstrapCacheLoader bootstrapCacheLoader,
+                 int maxElementsOnDisk, int diskSpoolBufferSizeMB) {
     this(name, maxElementsInMemory, DSO_MEMORY_STORE_EVICTION_POLICY, false, diskStorePath, false, timeToLiveSeconds,
          timeToIdleSeconds, false, diskExpiryThreadIntervalSeconds, registeredEventListeners, bootstrapCacheLoader, 0);
   }
@@ -1049,9 +1041,9 @@ public class CacheTC implements Ehcache {
         .append(memoryStoreEvictionPolicy).append(" timeToLiveSeconds = ").append(timeToLiveSeconds)
         .append(" timeToIdleSeconds = ").append(timeToIdleSeconds).append(" diskPersistent = ").append(false)
         .append(" diskExpiryThreadIntervalSeconds = ").append(diskExpiryThreadIntervalSeconds)
-        .append(registeredEventListeners).append(" hitCount = ").append(getHitCount()).append(" memoryStoreHitCount = ")
-        .append(getMemoryStoreHitCount()).append(" missCountNotFound = ").append(getMissCountNotFound())
-        .append(" missCountExpired = ").append(getMissCountExpired()).append(" ]");
+        .append(registeredEventListeners).append(" hitCount = ").append(getHitCount())
+        .append(" memoryStoreHitCount = ").append(getMemoryStoreHitCount()).append(" missCountNotFound = ")
+        .append(getMissCountNotFound()).append(" missCountExpired = ").append(getMissCountExpired()).append(" ]");
 
     return dump.toString();
   }
@@ -1162,7 +1154,12 @@ public class CacheTC implements Ehcache {
    * @since 1.2
    */
   public final boolean isElementInMemory(Object key) {
-    return memoryStore.containsKey(key);
+    ManagerUtil.monitorEnter(memoryStore, LockLevel.READ);
+    try {
+      return memoryStore.containsKey(key);
+    } finally {
+      ManagerUtil.monitorExit(memoryStore);
+    }
   }
 
   /**
@@ -1212,7 +1209,7 @@ public class CacheTC implements Ehcache {
    */
   public synchronized void clearStatistics() throws IllegalStateException {
     checkStatus();
-    
+
     ManagerUtil.monitorEnter(memoryStore, LockLevel.WRITE);
     try {
       memoryStore.clearStatistics();
@@ -1292,8 +1289,8 @@ public class CacheTC implements Ehcache {
     } else if (statisticsAccuracy == Statistics.STATISTICS_ACCURACY_NONE) {
       size = getKeysNoDuplicateCheck().size();
     }
-    return new Statistics(this, statisticsAccuracy, getHitCount(), 0, getMemoryStoreHitCount(), getMissCountExpired()
-                                                                                      + getMissCountNotFound(), size);
+    return new Statistics(this, statisticsAccuracy, getHitCount(), 0, getMemoryStoreHitCount(),
+                          getMissCountExpired() + getMissCountNotFound(), size);
   }
 
   /**
@@ -1383,4 +1380,3 @@ public class CacheTC implements Ehcache {
     return null;
   }
 }
-
