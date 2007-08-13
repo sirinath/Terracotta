@@ -27,7 +27,7 @@
           <field-name>org.terracotta.maven.plugins.tc.test.SampleProcess.barrier</field-name>
         </root>
         <root>
-          <field-name>org.terracotta.maven.plugins.tc.test.SampleProcess.processes</field-name>
+          <field-name>org.terracotta.maven.plugins.tc.test.SampleProcess.nodes</field-name>
         </root>
 
         <root>

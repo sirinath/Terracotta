@@ -13,7 +13,7 @@ public class SampleProcess {
   private static CyclicBarrier barrier;
   
   // root
-  private static ArrayList processes = new ArrayList();
+  private static ArrayList nodes = new ArrayList();
   
   
   private final String nodeName;
@@ -24,15 +24,17 @@ public class SampleProcess {
   }
 
   public static void main(String[] args) throws Exception {
-    barrier = new CyclicBarrier(SampleUtils.getTotalNodes());
+    int totalNodes = SampleUtils.getTotalNodes();
+    System.err.println("Number of nodes: " + totalNodes);
+    barrier = new CyclicBarrier(totalNodes);
     
-    SampleProcess process = new SampleProcess(System.getProperty("tc.nodeName"));
-    process.process();
+    SampleProcess node = new SampleProcess(System.getProperty("tc.nodeName"));
+    node.process();
   }
 
   private void process() throws Exception {
-    synchronized(processes) {
-      processes.add(this);
+    synchronized(nodes) {
+      nodes.add(this);
     }
 
     synchronized(this) {
@@ -40,8 +42,8 @@ public class SampleProcess {
       barrier.barrier();
     }
     
-    synchronized(processes) {
-      System.err.println(processes);
+    synchronized(nodes) {
+      System.err.println("Nodes: " + nodes);
     }
   }
 
