@@ -4,7 +4,7 @@
   <groupId>org.terracotta.maven.plugins</groupId>
   <artifactId>tc-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   
   <!--  -->
   <repositories>
@@ -241,6 +241,7 @@
     </dependency>
   </dependencies>
 
+<!--
   <distributionManagement>
     <repository>
       <id>tc.internal</id>
@@ -248,6 +249,6 @@
       <url>file:///C:/dev/terr/tc-maven-plugin/11</url>
     </repository>
   </distributionManagement>
+-->
 
 </project>
-

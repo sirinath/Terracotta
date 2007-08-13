@@ -2,12 +2,7 @@
   This is a Maven plugin for Terracotta
 
 
-  This version depends on maven-antrun-plugin 1.2-SNAPSHOT
   This version is not avaialable from any snapshot repositories yet, but you can install it locally
-
-svn co https://svn.apache.org/repos/asf/maven/plugins/trunk/maven-antrun-plugin
-mvn install
-
 
   Additional artifacts required (all available from Terracotta install):
 
@@ -25,6 +20,6 @@ call mvn install:install-file -DgroupId=javax.management -DartifactId=jmxremote 
 call mvn install:install-file -DgroupId=javax.management -DartifactId=jmxremote_optional -Dversion=1.0.1_04 -Dpackaging=jar -Dfile=%tc%\jmxremote_optional-1.0.1_04-b58.jar
 
 
-  Ideally these dependencies and maven-antrun-plugin should be deployed to our own
+  Ideally these dependencies should be deployed to our own
   Maven repository, i.e. http://download.terracotta.org/maven2/
 

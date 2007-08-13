@@ -733,7 +733,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
         args += " " + argLine;
       }
       
-      getLog().info("Args: " + args);
+      getLog().debug("Command line: " + args);
       
       fork.setArgLine(args);
 
