@@ -30,7 +30,15 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
-      Map candidateMap = new SpoolingTimeExpiryMap(1 /* 1 sec */, cache.getTimeToLiveSeconds(), cacheName);
+      long intervalSec = cache.getDiskExpiryThreadIntervalSeconds();
+      long timeToIdleSec = cache.getTimeToIdleSeconds();
+      long timeToLiveSec = cache.getTimeToLiveSeconds();
+      if (timeToLiveSec < timeToIdleSec) {
+        intervalSec = timeToLiveSec;
+      } else if (timeToIdleSec < intervalSec) {
+        intervalSec = timeToIdleSec;
+      }
+      Map candidateMap = new SpoolingTimeExpiryMap(intervalSec, timeToIdleSec, timeToLiveSec, cacheName);
       if (LOG.isDebugEnabled()) {
         LOG.debug(cache.getName() + " Cache: Using SpoolingTimeExpiryMap implementation");
       }
@@ -71,8 +79,8 @@ public class TimeExpiryMemoryStore extends MemoryStore {
 
   public final class SpoolingTimeExpiryMap extends TimeExpiryMap {
 
-    public SpoolingTimeExpiryMap(long timeToIdleSec, long timeToLiveSec, String cacheName) {
-      super(timeToIdleSec, timeToLiveSec, cacheName);
+    public SpoolingTimeExpiryMap(long timeToIdleSec, long maxIdleSec, long timeToLiveSec, String cacheName) {
+      super(timeToIdleSec, maxIdleSec, timeToLiveSec, cacheName);
     }
 
     protected final synchronized void processExpired(Object key, Object value) {

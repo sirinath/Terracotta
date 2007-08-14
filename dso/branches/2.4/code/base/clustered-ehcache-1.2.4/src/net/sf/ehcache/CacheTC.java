@@ -1270,7 +1270,8 @@ public class CacheTC implements Ehcache {
   public boolean isValueInCache(Object value) {
     List keys = getKeys();
     for (int i = 0; i < keys.size(); i++) {
-      Element element = (Element) keys.get(i);
+      Object key = keys.get(i);
+      Element element = get(key);
       if (element != null && element.getObjectValue().equals(value)) { return true; }
     }
     return false;

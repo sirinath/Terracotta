@@ -7,17 +7,18 @@ package com.tctest;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.Arrays;
-import java.util.concurrent.CyclicBarrier;
 
 public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
 
@@ -27,10 +28,15 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   public CacheEvictorTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
-    cacheManager = CacheManager.create(getClass().getResource("cache-evictor-test.xml"));
   }
 
   protected void runTest() throws Throwable {
+    if (barrier.barrier() == 0) {
+      cacheManager = CacheManager.create(getClass().getResource("cache-evictor-test.xml"));
+    }
+
+    barrier.barrier();
+
     System.out.println(Arrays.asList(cacheManager.getCacheNames()));
 
     try {
@@ -39,7 +45,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       testIsValueInCache();
       testEntryExpired();
 
-      barrier.await();
+      barrier.barrier();
     } finally {
       cacheManager.shutdown();
     }
@@ -49,7 +55,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsElementInMemory() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isElementInMemory("k1"));
     Assert.assertTrue(cache.isElementInMemory("k2"));
@@ -57,7 +63,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   }
 
   private void populateCache(Cache cache) throws Exception {
-    if (barrier.await() == 0) {
+    if (barrier.barrier() == 0) {
       cache.removeAll();
       cache.put(new Element("k1", "v1"));
       cache.put(new Element("k2", "v2"));
@@ -68,7 +74,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsKeyInCache() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isKeyInCache("k1"));
     Assert.assertTrue(cache.isKeyInCache("k2"));
@@ -78,7 +84,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsValueInCache() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isValueInCache("v1"));
     Assert.assertTrue(cache.isValueInCache("v2"));
@@ -88,17 +94,17 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testEntryExpired() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Element e3 = cache.get("k3");
-    long timeout = System.currentTimeMillis() + (60 * 1000);
+    long timeout = System.currentTimeMillis() + (70000);
     while (System.currentTimeMillis() < timeout) {
       cache.get("k1");
       cache.get("k2");
       Thread.sleep(100);
     }
 
-    // k3,v3 should be expired after 60s, timeToIdleSeconds=5
+    // k3,v3 should be expired after 60s, timeToIdleSeconds=60
     System.out.println(cache);
     System.out.println(cache.get("k1"));
     System.out.println(cache.get("k2"));
@@ -109,11 +115,13 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    config.addNewModule("clustered-ehcache-1.3", "1.0.0");
+    config.addNewModule("clustered-ehcache-1.2.4", "1.0.0");
 
     String testClass = CacheEvictorTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("cacheManager", "cacheManager");
+
+    new CyclicBarrierSpec().visit(visitor, config);
   }
 }

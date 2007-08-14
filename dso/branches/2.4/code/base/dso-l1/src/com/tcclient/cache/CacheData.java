@@ -4,29 +4,34 @@
  */
 package com.tcclient.cache;
 
+import com.tc.object.bytecode.ManagerUtil;
+import com.tc.util.DebugUtil;
+
 import java.io.Serializable;
 
 public class CacheData implements Serializable {
-  private Object         value;
-  private long           maxIdleMillis;
-  private Timestamp      timestamp;               // timestamp contains the time when the CacheData will be expired
+  private Object              value;
+  private long                maxIdleMillis;
+  private long                maxTTLMillis;
+  private long                createTime;
+  private Timestamp           timestamp;                                      // timestamp contains the time when the
+                                                                              // CacheData will be expired
 
-  private transient long createTime;
-  private transient long lastAccessedTimeInMillis;
-  private transient long startMillis;
-  private boolean        invalidated = false;
+  private transient long      lastAccessedTimeInMillis;
+  private transient long      startMillis;
+  private boolean             invalidated = false;
 
-  public CacheData(Object value, long maxIdleSeconds) {
+  public CacheData(Object value, long maxIdleSeconds, long maxTTLSeconds) {
     this.value = value;
-    this.maxIdleMillis = maxIdleSeconds * 1000;
     this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
-    this.timestamp = new Timestamp(this.createTime + maxIdleMillis);
+    this.maxIdleMillis = maxIdleSeconds * 1000;
+    this.maxTTLMillis = maxTTLSeconds * 1000;
+    this.timestamp = new Timestamp(this.createTime + maxIdleMillis, this.createTime + maxTTLMillis);
     this.lastAccessedTimeInMillis = 0;
   }
 
   public CacheData() {
-    this.createTime = System.currentTimeMillis();
     this.startMillis = System.currentTimeMillis();
     this.lastAccessedTimeInMillis = System.currentTimeMillis();
   }
@@ -36,8 +41,27 @@ public class CacheData implements Serializable {
   }
 
   synchronized boolean isValid() {
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client id: " + ManagerUtil.getClientID() + " Checking if CacheData isValid [invalidated]: "
+                         + invalidated + " [lastAccessedTimeInMillis]: " + lastAccessedTimeInMillis);
+    }
     if (invalidated) { return false; }
+    return hasNotExpired() && isStillAlive();
+  }
+
+  private boolean hasNotExpired() {
+    if (DebugUtil.DEBUG) {
+      System.err.println(getIdleMillis());
+    }
     return getIdleMillis() < getMaxInactiveMillis();
+  }
+
+  private boolean isStillAlive() {
+    return System.currentTimeMillis() <= getTimeToDieMillis();
+  }
+
+  private long getTimeToDieMillis() {
+    return this.createTime + maxTTLMillis;
   }
 
   synchronized long getIdleMillis() {
@@ -56,6 +80,9 @@ public class CacheData implements Serializable {
 
   synchronized void accessed() {
     lastAccessedTimeInMillis = System.currentTimeMillis();
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " accessing " + lastAccessedTimeInMillis);
+    }
   }
 
   synchronized long getMaxInactiveMillis() {
@@ -73,15 +100,16 @@ public class CacheData implements Serializable {
   synchronized boolean isInvalidated() {
     return this.invalidated;
   }
-  
+
   public int hashCode() {
     return this.value.hashCode();
   }
-  
+
   public boolean equals(Object obj) {
-    if (! (obj instanceof CacheData)) { return false; }
-    CacheData cd = (CacheData)obj;
-    return this.value.equals(cd.value) && (this.maxIdleMillis == cd.maxIdleMillis);
+    if (!(obj instanceof CacheData)) { return false; }
+    CacheData cd = (CacheData) obj;
+    return this.value.equals(cd.value) && (this.maxIdleMillis == cd.maxIdleMillis)
+           && (this.maxTTLMillis == cd.maxTTLMillis);
   }
 
 }

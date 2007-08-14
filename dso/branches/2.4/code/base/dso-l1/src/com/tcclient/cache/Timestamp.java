@@ -6,18 +6,26 @@ package com.tcclient.cache;
 import java.util.Date;
 
 public class Timestamp {
-  private long millis = 0;
+  private long timeToExpireMillis = 0;
+  private long timeToDieMillis = 0;
 
-  public Timestamp(long millis) {
-    this.millis = millis;
+  public Timestamp(long millis, long timeToDieMillis) {
+    this.timeToExpireMillis = millis;
+    this.timeToDieMillis = timeToDieMillis;
   }
 
   public synchronized long getMillis() {
-    return millis;
+    return (timeToExpireMillis < timeToDieMillis)? timeToExpireMillis : timeToDieMillis;
+  }
+  
+  public synchronized long getExpiredTimeMillis() {
+    return timeToExpireMillis;
   }
 
-  public synchronized void setMillis(long millis) {
-    this.millis = millis;
+  public synchronized void setExpiredTimeMillis(long millis) {
+    if (timeToDieMillis > millis) {
+      this.timeToExpireMillis = millis;
+    }
   }
 
   public String toString() {

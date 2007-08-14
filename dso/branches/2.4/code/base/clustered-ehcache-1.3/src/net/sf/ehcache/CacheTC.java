@@ -1280,10 +1280,25 @@ public class CacheTC implements Ehcache {
    *         Element.
    */
   public boolean isValueInCache(Object value) {
-    List keys = getKeys();
+    boolean isSerializable = value instanceof Serializable;
+    List keys;
+    if (isSerializable) {
+      keys = getKeys();
+    } else {
+      keys = Arrays.asList(memoryStore.getKeyArray());
+    }
+
     for (int i = 0; i < keys.size(); i++) {
-      Element element = (Element) keys.get(i);
-      if (element != null && element.getObjectValue().equals(value)) { return true; }
+      Object key = keys.get(i);
+      Element element = get(key);
+      if (element != null) {
+        Object elementValue = element.getValue();
+        if (elementValue == null) {
+          if (value == null) { return true; }
+        } else {
+          if (elementValue.equals(value)) { return true; }
+        }
+      }
     }
     return false;
   }

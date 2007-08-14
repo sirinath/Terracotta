@@ -8,44 +8,52 @@ import com.tc.config.lock.LockLevel;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CacheDataStore implements Serializable {
-  private final Map        store;                  // <Data>
-  private final Map        dtmStore;               // <Timestamp>
-  private final String     cacheName;
-  private final long       maxIdleTimeoutSeconds;
-  private final long       invalidatorSleepSeconds;
-  private Expirable        callback;
-  private transient int    hitCount;
-  private transient int    missCountExpired;
-  private transient int    missCountNotFound;
-  private transient Thread invalidatorThread;
+  private final Map                       store;                                          // <Data>
+  private final Map                       dtmStore;                                       // <Timestamp>
+  private final String                    cacheName;
+  private final long                      maxIdleTimeoutSeconds;
+  private final long                      maxTTLSeconds;
+  private final long                      invalidatorSleepSeconds;
+  private Expirable                       callback;
+  private transient int                   hitCount;
+  private transient int                   missCountExpired;
+  private transient int                   missCountNotFound;
+  private transient CacheEntryInvalidator cacheInvalidator;
 
-  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
-                        String cacheName, Expirable callback) {
+  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, Map store,
+                        Map dtmStore, String cacheName, Expirable callback) {
     this.store = store;
     this.dtmStore = dtmStore;
     this.cacheName = cacheName;
     this.maxIdleTimeoutSeconds = maxIdleTimeoutSeconds;
+    this.maxTTLSeconds = maxTTLSeconds;
     this.invalidatorSleepSeconds = invalidatorSleepSeconds;
     this.callback = callback;
 
     this.hitCount = 0;
   }
 
+  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
+                        String cacheName, Expirable callback) {
+    this(invalidatorSleepSeconds, maxIdleTimeoutSeconds, Long.MAX_VALUE, store, dtmStore, cacheName, callback);
+  }
+
   public void initialize() {
-    invalidatorThread = new Thread(new CacheEntryInvalidator(invalidatorSleepSeconds), cacheName);
-    invalidatorThread.setDaemon(true);
-    invalidatorThread.start();
-    Assert.post(invalidatorThread.isAlive());
+    cacheInvalidator = new CacheEntryInvalidator(invalidatorSleepSeconds);
+    cacheInvalidator.scheduleNextInvalidation();
   }
 
   public void stopInvalidatorThread() {
-    invalidatorThread.interrupt();
+    cacheInvalidator.cancel();
   }
 
   public Object put(final Object key, final Object value) {
@@ -54,11 +62,14 @@ public class CacheDataStore implements Serializable {
     CacheData cd = (CacheData) store.get(key);
     Object rv = (cd == null) ? null : cd.getValue();
 
-    cd = new CacheData(value, maxIdleTimeoutSeconds);
+    cd = new CacheData(value, maxIdleTimeoutSeconds, maxTTLSeconds);
     ManagerUtil.monitorEnter(store, LockLevel.WRITE);
     try {
       cd.accessed();
       cd.start();
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " putting " + key);
+      }
       store.put(key, cd);
       dtmStore.put(key, cd.getTimestamp());
     } finally {
@@ -103,7 +114,7 @@ public class CacheDataStore implements Serializable {
 
   public boolean isExpired(final Object key) {
     CacheData rv = (CacheData) store.get(key);
-    return rv != null && rv.isValid();
+    return rv == null || !rv.isValid();
   }
 
   public Object remove(final Object key) {
@@ -139,15 +150,19 @@ public class CacheDataStore implements Serializable {
     return maxIdleTimeoutSeconds;
   }
 
+  public long getMaxTTLSeconds() {
+    return maxTTLSeconds;
+  }
+
   void updateTimestampIfNeeded(CacheData rv) {
     Assert.pre(rv != null);
     final long now = System.currentTimeMillis();
     final Timestamp t = rv.getTimestamp();
-    final long diff = t.getMillis() - now;
+    final long diff = t.getExpiredTimeMillis() - now;
     if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
       ManagerUtil.monitorEnter(store, LockLevel.WRITE);
       try {
-        t.setMillis(now + rv.getMaxInactiveMillis());
+        t.setExpiredTimeMillis(now + rv.getMaxInactiveMillis());
       } finally {
         ManagerUtil.monitorExit(store);
       }
@@ -224,6 +239,11 @@ public class CacheDataStore implements Serializable {
         final Timestamp dtm = findTimestampUnlocked(key);
         if (dtm == null) continue;
         totalCnt++;
+        if (DebugUtil.DEBUG) {
+          System.err.println("Client id: " + ManagerUtil.getClientID() + " key: " + key
+                             + " InvalidateCacheEntries [dtm.getMillis]: " + dtm.getMillis() + " [currentMillis]: "
+                             + System.currentTimeMillis());
+        }
         if (dtm.getMillis() < System.currentTimeMillis()) {
           evaled++;
           if (evaluateCacheEntry(dtm, key)) invalCnt++;
@@ -246,42 +266,37 @@ public class CacheDataStore implements Serializable {
     final CacheData sd = findCacheDataUnlocked(key);
     if (sd == null) return rv;
     if (!sd.isValid()) {
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " expiring " + key);
+      }
       expire(key, sd);
       rv = true;
-    } else {
-      updateTimestampIfNeeded(sd);
+      // } else {
+      // updateTimestampIfNeeded(sd);
     }
     return rv;
   }
 
-  private class CacheEntryInvalidator implements Runnable {
-    private final long sleepMillis;
+  private class CacheEntryInvalidator extends TimerTask {
+    private final long  sleepMillis;
+    private final Timer timer;
 
     public CacheEntryInvalidator(final long sleepSeconds) {
       this.sleepMillis = sleepSeconds * 1000;
+      this.timer = new Timer(true);
+      System.err.println("***** sleepMillis: " + sleepMillis);
+    }
+
+    public void scheduleNextInvalidation() {
+      timer.schedule(this, this.sleepMillis, this.sleepMillis);
     }
 
     public void run() {
-      while (true) {
-        sleep(sleepMillis);
-        if (Thread.interrupted()) {
-          break;
-        } else {
-          try {
-            evictExpiredElements();
-          } catch (Throwable t) {
-            t.printStackTrace(System.err);
-            throw new TCRuntimeException(t);
-          }
-        }
-      }
-    }
-
-    private void sleep(long l) {
       try {
-        Thread.sleep(l);
-      } catch (InterruptedException ignore) {
-        // nothing to do
+        evictExpiredElements();
+      } catch (Throwable t) {
+        t.printStackTrace(System.err);
+        throw new TCRuntimeException(t);
       }
     }
   }

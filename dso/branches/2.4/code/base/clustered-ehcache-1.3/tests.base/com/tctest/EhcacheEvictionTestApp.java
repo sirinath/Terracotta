@@ -4,6 +4,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
@@ -21,7 +22,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   private static final int    NUM_OF_CACHE_ITEMS      = 1000;
   private static final int    TIME_TO_LIVE_IN_SECONDS = 100;
 
-  static final int            EXPECTED_THREAD_COUNT   = 8;
+  static final int            EXPECTED_THREAD_COUNT   = 4;
 
   private final CyclicBarrier barrier;
 
@@ -69,6 +70,17 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     }
 
     barrier.barrier();
+    
+    if (index == 0) {
+      // setting time to idle 10 times time to live to make sure that it will not expire because of the idle time.
+      addCache("CACHE", TIME_TO_LIVE_IN_SECONDS, TIME_TO_LIVE_IN_SECONDS*10);
+    }
+
+    barrier.barrier();
+    
+    runSimplePutTimeToLiveTimeout(index);
+    
+    barrier.barrier();
 
     if (index == 0) {
       addCache("CACHE", TIME_TO_LIVE_IN_SECONDS);
@@ -94,6 +106,30 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     barrier.barrier();
     verifyCacheManagerShutdown();
+    barrier.barrier();
+  }
+  
+  private void runSimplePutTimeToLiveTimeout(int index) throws Throwable {
+    if (index == 1) {
+      doPut();
+    }
+    
+    barrier.barrier();
+    
+    Thread.sleep(TIME_TO_LIVE_IN_SECONDS*500);
+    
+    barrier.barrier();
+    
+    doGet();
+    
+    barrier.barrier();
+    
+    Thread.sleep(TIME_TO_LIVE_IN_SECONDS*500);
+    
+    barrier.barrier();
+    
+    doGetNull(index);
+    
     barrier.barrier();
   }
 
@@ -166,15 +202,21 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     }
   }
 
-  /**
-   * Add a cache into the CacheManager.
-   * 
-   * @param name The name of the cache to add
-   * @throws Throwable
-   */
-  private Cache addCache(final String name, long timeToLiveSeconds) throws Throwable {
+  private Cache addCache(final String name, long timeToIdleSeconds) throws Throwable {
     cacheManager.removeCache(name);
-    Cache cache = new Cache(name, 2, false, false, timeToLiveSeconds, 1);
+    Cache cache = new Cache(name, 2, MemoryStoreEvictionPolicy.LRU, false, null, false, timeToIdleSeconds*2, timeToIdleSeconds,
+                            false, 1, null);
+    cacheManager.addCache(cache);
+
+    cache = cacheManager.getCache(name);
+    return cache;
+  }
+  
+  private Cache addCache(final String name, long timeToLiveSeconds, long timeToIdleSeconds) throws Throwable {
+    cacheManager.removeCache(name);
+    Cache cache = new Cache(name, 2, MemoryStoreEvictionPolicy.LRU, false, null, false, timeToLiveSeconds, timeToIdleSeconds,
+                            false, 1, null);
+
     cacheManager.addCache(cache);
 
     cache = cacheManager.getCache(name);

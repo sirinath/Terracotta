@@ -26,8 +26,8 @@ import java.util.Set;
 public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   protected final CacheDataStore timeExpiryDataStore;
 
-  public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, String cacheName) {
-    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, new HashMap(),
+  public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName) {
+    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds, new HashMap(),
                                              new HashMap(), "CacheInvalidator - " + cacheName, this);
     timeExpiryDataStore.initialize();
   }
@@ -53,7 +53,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public boolean containsValue(Object value) {
-    return timeExpiryDataStore.getStore().containsValue(new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds()));
+    return timeExpiryDataStore.getStore().containsValue(new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds()));
   }
 
   public Set entrySet() {
@@ -162,7 +162,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
 
     public boolean contains(Object o) {
       if (! (o instanceof CacheData)) {
-        o = new CacheData(o, timeExpiryDataStore.getMaxIdleTimeoutSeconds());
+        o = new CacheData(o, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds());
       }
       return values.contains(o);
     }
@@ -226,7 +226,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
 
     public Object setValue(Object value) {
       if (!(value instanceof CacheData)) {
-        value = new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds());
+        value = new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds());
       }
       CacheData cd = (CacheData) entry.setValue(value);
       return cd.getValue();

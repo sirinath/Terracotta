@@ -5,6 +5,7 @@ package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -16,7 +17,7 @@ import com.tctest.runner.AbstractTransparentApp;
 
 public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   private final CyclicBarrier barrier;
-  private DataRoot            dataRoot = new DataRoot(new MockTimeExpiryMap(1, 5));
+  private DataRoot            dataRoot = null;
 
   public TimeExpiryMapTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -27,7 +28,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     try {
       int index = barrier.barrier();
 
-      //basicMapTest(index);
+      basicMapTTLTest(index);
+      basicMapTest(index);
       expiredItemsTest(index);
 
     } catch (Throwable t) {
@@ -35,7 +37,49 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
   }
   
+  private void basicMapTTLTest(int index) throws Exception {
+    if (index == 0) {
+      dataRoot = new DataRoot(new MockTimeExpiryMap(1, 50, 5));
+    }
+    
+    barrier.barrier();
+    
+    if (index == 0) {
+      dataRoot.put("key1", "val1");
+      dataRoot.put("key2", "val2");
+      dataRoot.put("key3", "val3");
+    }
+    
+    barrier.barrier();
+    
+    Thread.sleep(3000);
+    
+    Assert.assertEquals(3, dataRoot.size());
+    Assert.assertFalse(dataRoot.isExpired("key1"));
+    Assert.assertFalse(dataRoot.isExpired("key2"));
+    Assert.assertFalse(dataRoot.isExpired("key3"));
+    Assert.assertEquals("val1", dataRoot.get("key1"));
+    Assert.assertEquals("val2", dataRoot.get("key2"));
+    Assert.assertEquals("val3", dataRoot.get("key3"));
+    
+    Thread.sleep(3000);
+    
+    Assert.assertTrue(dataRoot.isExpired("key1"));
+    Assert.assertTrue(dataRoot.isExpired("key2"));
+    Assert.assertTrue(dataRoot.isExpired("key3"));
+    Assert.assertEquals(0, dataRoot.size());
+    Assert.assertEquals(3, dataRoot.getNumOfExpired());
+    
+    barrier.barrier();
+  }
+  
   private void basicMapTest(int index) throws Exception {
+    if (index == 0) {
+      dataRoot.setMap(new MockTimeExpiryMap(1, 5, 10));
+    }
+    
+    barrier.barrier();
+    
     if (index == 0) {
       dataRoot.put("key1", "val1");
       dataRoot.put("key2", "val2");
@@ -51,18 +95,22 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     barrier.barrier();
     
-    Thread.sleep(7000);
+    Thread.sleep(10000);
+    
+    barrier.barrier();
     
     Assert.assertEquals(0, dataRoot.size());
     
     barrier.barrier();
     
     Assert.assertEquals(3, dataRoot.getNumOfExpired());
+    
+    barrier.barrier();
   }
   
   private void expiredItemsTest(int index) throws Exception {
     if (index == 0) {
-      dataRoot.setMap(new MockTimeExpiryMap(1, 5));
+      dataRoot.setMap(new MockTimeExpiryMap(1, 5, 10));
     }
     
     barrier.barrier();
@@ -87,28 +135,23 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     if (index == 0) {
       Assert.assertEquals("val3", dataRoot.get("key3"));
       
-      Thread.sleep(3000);
-      
-      //Assert.assertEquals(1, dataRoot.size());
+      Thread.sleep(4000);
     }
     
     barrier.barrier();
     
-    if (index != 0) {
-//    Assert.assertEquals(0, dataRoot.getNumOfExpired());
-      Assert.assertEquals("val1", dataRoot.get("key1"));
-      Assert.assertEquals("val2", dataRoot.get("key2"));
-    }
+    System.err.println("index: " + index + ", size: " + dataRoot.size());
+
     barrier.barrier();
     
+    System.err.println("index: " + index + " client id: " + ManagerUtil.getClientID());
     if (index == 0) {
       Assert.assertEquals(2, dataRoot.getNumOfExpired());
       Assert.assertEquals(null, dataRoot.get("key1"));
-      Assert.assertEquals(null, dataRoot.get("key12"));
+      Assert.assertEquals(null, dataRoot.get("key2"));
     }
     
     barrier.barrier();
-    System.err.println("index: " + index + ", size: " + dataRoot.size());
     
   }
 
@@ -125,6 +168,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
 
     spec.addRoot("barrier", "barrier");
     spec.addRoot("dataRoot", "dataRoot");
+    
+    config.addNewModule("clustered-ehcache-1.2.4", "1.0.0"); // this is just a quick way to add TimeExpiryMap to the instrumentation list
   }
 
   private static class DataRoot {
@@ -154,21 +199,26 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     public synchronized void setMap(MockTimeExpiryMap map) {
       this.map = map;
     }
+    
+    public synchronized boolean isExpired(Object key) {
+      return map.isExpired(key);
+      
+    }
   }
   
   private static class MockTimeExpiryMap extends TimeExpiryMap {
     private int numOfExpired = 0;
     
-    public MockTimeExpiryMap(int invalidatorSleepSeconds, int maxIdleTimeoutSeconds) {
-      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds, "MockCache");
+    public MockTimeExpiryMap(int invalidatorSleepSeconds, int maxIdleTimeoutSeconds, int maxTTLSeconds) {
+      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds, "MockCache");
     }
     
-    protected final void processExpired(Object key, Object value) {
-      System.err.println("Expiring ... key: " + key + ", value: " + value);
+    protected final synchronized void processExpired(Object key, Object value) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " expiring ... key: " + key + ", value: " + value);
       numOfExpired++;
     }
     
-    public int getNumOfExpired() {
+    public synchronized int getNumOfExpired() {
       return this.numOfExpired;
     }
   }
