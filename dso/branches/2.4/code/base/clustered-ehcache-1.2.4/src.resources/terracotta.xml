@@ -133,10 +133,6 @@
     <autolock>
       <method-expression>* net.sf.ehcache.CacheManager.replaceCacheWithDecoratedCache(..)</method-expression>
       <lock-level>write</lock-level>
-    </autolock> 
+    </autolock>
   </locks>
-
-  <additional-boot-jar-classes>
-    <include>java.util.Random</include>
-  </additional-boot-jar-classes>
 </xml-fragment>
