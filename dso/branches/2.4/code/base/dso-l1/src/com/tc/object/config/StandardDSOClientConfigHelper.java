@@ -146,7 +146,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private final Map                              customAdapters                     = new ConcurrentHashMap();
 
   private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMapping();
-  
+
   private final Map                              classResources                     = new ConcurrentHashMap();
 
   private final Map                              aspectModules                      = Collections
@@ -699,7 +699,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     markAllSpecsPreInstrumented();
 
     addJDK15InstrumentedSpec();
-    
+
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");
     spec.setHonorTransient(true);
@@ -1090,13 +1090,14 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
-  public void addClassReplacement(final String originalClassName, final String replacementClassName, final URL replacementResource) {
+  public void addClassReplacement(final String originalClassName, final String replacementClassName,
+                                  final URL replacementResource) {
     synchronized (classReplacements) {
       String prev = this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource);
       Assert.assertNull(prev);
     }
   }
-  
+
   public ClassReplacementMapping getClassReplacementMapping() {
     return classReplacements;
   }
@@ -1105,9 +1106,9 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     Object prev = this.classResources.put(className, resource);
     Assert.assertNull(prev);
   }
-  
+
   public URL getClassResource(String className) {
-    return (URL)this.classResources.get(className);
+    return (URL) this.classResources.get(className);
   }
 
   private void markAllSpecsPreInstrumented() {
@@ -1687,16 +1688,16 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     BootJar bootJar = BootJar.getDefaultBootJarForReading();
     Set bjClasses = bootJar.getAllPreInstrumentedClasses();
     int bootJarPopulation = bjClasses.size();
-    TransparencyClassSpec[] allSpecs = getAllSpecs();
+
+    TransparencyClassSpec[] allSpecs = getAllSpecs(true);
     for (int i = 0; i < allSpecs.length; i++) {
       TransparencyClassSpec classSpec = allSpecs[i];
       Assert.assertNotNull(classSpec);
-      String message = "";
+
       if (classSpec.isPreInstrumented()) {
-        message = "* " + classSpec.getClassName() + "... ";
         preInstrumentedCount++;
         if (!(bjClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific())) {
-          message += "missing";
+          String message = "* " + classSpec.getClassName() + "... missing";
           missingCount++;
           logger.info(message);
         }
@@ -1728,6 +1729,21 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
                                            "IOException occurred while attempting to verify the contents of the boot jar.",
                                            ioex);
     }
+  }
+
+  private TransparencyClassSpec[] getAllSpecs(boolean includeBootJarSpecs) {
+    ArrayList rv = new ArrayList();
+
+    TransparencyClassSpec[] allSpecs = getAllSpecs();
+    for (int i = 0; i < allSpecs.length; i++) {
+      rv.add(allSpecs[i]);
+    }
+
+    for (Iterator i = getAllUserDefinedBootSpecs(); i.hasNext();) {
+      rv.add(i.next());
+    }
+
+    return (TransparencyClassSpec[]) rv.toArray(new TransparencyClassSpec[rv.size()]);
   }
 
   public synchronized TransparencyClassSpec[] getAllSpecs() {
