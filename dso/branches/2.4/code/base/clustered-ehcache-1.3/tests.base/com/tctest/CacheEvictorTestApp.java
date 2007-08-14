@@ -36,14 +36,13 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     try {
       testIsElementInMemory();
       testIsKeyInCache();
-      
 
       // DEV-886
       // testIsValueInCache();
 
       // DEV-887
       // testEntryExpired();
-      
+
       barrier.await();
     } finally {
       cacheManager.shutdown();
@@ -56,26 +55,17 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     populateCache(cache);
     barrier.await();
 
-    try {
-      Assert.assertTrue(cache.isElementInMemory("k1"));
-      Assert.assertTrue(cache.isElementInMemory("k2"));
-      Assert.assertTrue(cache.isElementInMemory("k3"));
-    } finally {
-      clearCache(cache);
-    }
+    Assert.assertTrue(cache.isElementInMemory("k1"));
+    Assert.assertTrue(cache.isElementInMemory("k2"));
+    Assert.assertTrue(cache.isElementInMemory("k3"));
   }
 
   private void populateCache(Cache cache) throws Exception {
     if (barrier.await() == 0) {
+      cache.removeAll();
       cache.put(new Element("k1", "v1"));
       cache.put(new Element("k2", "v2"));
       cache.put(new Element("k3", "v3"));
-    }
-  }
-
-  private void clearCache(Cache cache) throws Exception {
-    if (barrier.await() == 0) {
-      cache.removeAll();
     }
   }
 
@@ -84,13 +74,9 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     populateCache(cache);
     barrier.await();
 
-    try {
-      Assert.assertTrue(cache.isKeyInCache("k1"));
-      Assert.assertTrue(cache.isKeyInCache("k2"));
-      Assert.assertTrue(cache.isKeyInCache("k3"));
-    } finally {
-      clearCache(cache);
-    }
+    Assert.assertTrue(cache.isKeyInCache("k1"));
+    Assert.assertTrue(cache.isKeyInCache("k2"));
+    Assert.assertTrue(cache.isKeyInCache("k3"));
   }
 
   private void testIsValueInCache() throws Exception {
@@ -98,13 +84,9 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     populateCache(cache);
     barrier.await();
 
-    try {
-      Assert.assertTrue(cache.isValueInCache("v1"));
-      Assert.assertTrue(cache.isValueInCache("v2"));
-      Assert.assertTrue(cache.isValueInCache("v3"));
-    } finally {
-      clearCache(cache);
-    }
+    Assert.assertTrue(cache.isValueInCache("v1"));
+    Assert.assertTrue(cache.isValueInCache("v2"));
+    Assert.assertTrue(cache.isValueInCache("v3"));
   }
 
   private void testEntryExpired() throws Exception {
@@ -117,20 +99,17 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     while (System.currentTimeMillis() < timeout) {
       cache.get("k1");
       cache.get("k2");
+      Thread.sleep(100);
     }
 
-    try {
-      // k3,v3 should be expired after 60s, timeToIdleSeconds=5
-      System.out.println(cache);
-      System.out.println(cache.get("k1"));
-      System.out.println(cache.get("k2"));
-      System.out.println(cache.get("k3"));
-      Assert.assertFalse("Should not be in cache", cache.isKeyInCache("k3"));
-      Assert.assertFalse("Should not be in memory", cache.isElementInMemory("k3"));
-      Assert.assertTrue("Should expired", cache.isExpired(e3));            
-    } finally {
-      clearCache(cache);
-    }
+    // k3,v3 should be expired after 60s, timeToIdleSeconds=5
+    System.out.println(cache);
+    System.out.println(cache.get("k1"));
+    System.out.println(cache.get("k2"));
+    System.out.println(cache.get("k3"));
+    Assert.assertFalse("Should not be in cache", cache.isKeyInCache("k3"));
+    Assert.assertFalse("Should not be in memory", cache.isElementInMemory("k3"));
+    Assert.assertTrue("Should expired", cache.isExpired(e3));
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
