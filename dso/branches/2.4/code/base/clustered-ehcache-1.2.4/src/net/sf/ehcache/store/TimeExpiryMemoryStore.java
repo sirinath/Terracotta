@@ -33,7 +33,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       long intervalSec = cache.getDiskExpiryThreadIntervalSeconds();
       long timeToIdleSec = cache.getTimeToIdleSeconds();
       long timeToLiveSec = cache.getTimeToLiveSeconds();
-      if (timeToLiveSec < timeToIdleSec) {
+      if (timeToLiveSec <= timeToIdleSec) {
         intervalSec = timeToLiveSec;
       } else if (timeToIdleSec < intervalSec) {
         intervalSec = timeToIdleSec;
@@ -45,6 +45,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       return candidateMap;
     } catch (Exception e) {
       // Give up
+      e.printStackTrace(System.err);
       throw new CacheException(cache.getName() + "Cache: Cannot find com.tcclient.ehcache.TimeExpiryMap.");
     }
   }

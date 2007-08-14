@@ -284,7 +284,6 @@ public class CacheDataStore implements Serializable {
     public CacheEntryInvalidator(final long sleepSeconds) {
       this.sleepMillis = sleepSeconds * 1000;
       this.timer = new Timer(true);
-      System.err.println("***** sleepMillis: " + sleepMillis);
     }
 
     public void scheduleNextInvalidation() {
