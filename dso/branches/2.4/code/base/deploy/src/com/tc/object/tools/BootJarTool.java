@@ -2260,7 +2260,6 @@ public class BootJarTool {
     ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
     BootJarTool bjTool = new BootJarTool(new StandardDSOClientConfigHelper(config, false), targetFile, systemLoader,
                                          !verbose);
-
     if (mode.equals(MAKE_MODE)) {
       boolean makeItAnyway = commandLine.hasOption("w");
       if (makeItAnyway || !targetFile.exists() || (targetFile.exists() && !bjTool.isBootJarComplete(targetFile))) {
