@@ -120,13 +120,14 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     }
 
     try {
-      // k3,v3 should be timed out by now
+      // k3,v3 should be expired after 60s, timeToIdleSeconds=5
       System.out.println(cache);
       System.out.println(cache.get("k1"));
       System.out.println(cache.get("k2"));
       System.out.println(cache.get("k3"));
-      Assert.assertFalse(cache.isElementInMemory("k3"));
-      Assert.assertTrue(cache.isExpired(e3));            
+      Assert.assertFalse("Should not be in cache", cache.isKeyInCache("k3"));
+      Assert.assertFalse("Should not be in memory", cache.isElementInMemory("k3"));
+      Assert.assertTrue("Should expired", cache.isExpired(e3));            
     } finally {
       clearCache(cache);
     }
