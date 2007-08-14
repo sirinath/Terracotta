@@ -1731,25 +1731,20 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
-  private TransparencyClassSpec[] getAllSpecs(boolean includeBootJarSpecs) {
-    ArrayList rv = new ArrayList();
+  private synchronized TransparencyClassSpec[] getAllSpecs(boolean includeBootJarSpecs) {
+    ArrayList rv = new ArrayList(classSpecs.values());
 
-    TransparencyClassSpec[] allSpecs = getAllSpecs();
-    for (int i = 0; i < allSpecs.length; i++) {
-      rv.add(allSpecs[i]);
-    }
-
-    for (Iterator i = getAllUserDefinedBootSpecs(); i.hasNext();) {
-      rv.add(i.next());
+    if (includeBootJarSpecs) {
+      for (Iterator i = getAllUserDefinedBootSpecs(); i.hasNext();) {
+        rv.add(i.next());
+      }
     }
 
     return (TransparencyClassSpec[]) rv.toArray(new TransparencyClassSpec[rv.size()]);
   }
 
-  public synchronized TransparencyClassSpec[] getAllSpecs() {
-    TransparencyClassSpec[] allspecs = new TransparencyClassSpec[classSpecs.values().size()];
-    classSpecs.values().toArray(allspecs);
-    return allspecs;
+  public TransparencyClassSpec[] getAllSpecs() {
+    return getAllSpecs(false);
   }
 
   public void addDistributedMethodCall(DistributedMethodSpec dms) {
