@@ -21,14 +21,14 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
-import demo.sharededitor.events.IListListener;
-import demo.sharededitor.ui.IFillStyleConsts;
-import demo.sharededitor.ui.ITexturable;
+import demo.sharededitor.events.ListListener;
+import demo.sharededitor.ui.FillStyleConsts;
+import demo.sharededitor.ui.Texturable;
 
-public abstract class BaseObject implements IFillStyleConsts {
+public abstract class BaseObject implements FillStyleConsts {
 	private List listeners;
 
-	public void addListener(IListListener listListener) {
+	public void addListener(ListListener listListener) {
 			if (listeners == null) {
 				listeners = Collections.synchronizedList(new ArrayList());
 			}
@@ -40,7 +40,7 @@ public abstract class BaseObject implements IFillStyleConsts {
 			}
 	}
 
-	public void removeListener(IListListener listListener) {
+	public void removeListener(ListListener listListener) {
 			if ((listeners != null) && (listeners.contains(listListener))) {
 				synchronized (listeners) {
 					listeners.remove(listListener);
@@ -53,7 +53,7 @@ public abstract class BaseObject implements IFillStyleConsts {
 			return;
 
 		for (Iterator i = listeners.iterator(); i.hasNext();) {
-			IListListener listListener = (IListListener) i.next();
+			ListListener listListener = (ListListener) i.next();
 			listListener.changed(this, this);
 		}
 	}

@@ -17,10 +17,10 @@ import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
-import demo.sharededitor.ui.IFontable;
-import demo.sharededitor.ui.ITexturable;
+import demo.sharededitor.ui.Fontable;
+import demo.sharededitor.ui.Texturable;
 
-public class Text extends BaseObject implements IFontable, ITexturable {
+public class Text extends BaseObject implements Fontable, Texturable {
 	private Shape shape = null;
 
 	protected Shape getShape() {

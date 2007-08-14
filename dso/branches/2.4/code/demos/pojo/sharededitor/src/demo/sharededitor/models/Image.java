@@ -1,5 +1,5 @@
 /*
- @COPYRIGHT@
+@COPYRIGHT@
  */
 package demo.sharededitor.models;
 
@@ -17,4 +17,5 @@ final class Image extends Square {
 		}
 		super.draw(g, showAnchors);
 	}
+
 }
