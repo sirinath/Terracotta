@@ -337,7 +337,6 @@ public class RestartTestEnvironment {
     public void clean() {
       assertServerNotNull();
       assertServerOff();
-      server.clean();
     }
 
     public void waitUntilShutdown() throws Exception {
