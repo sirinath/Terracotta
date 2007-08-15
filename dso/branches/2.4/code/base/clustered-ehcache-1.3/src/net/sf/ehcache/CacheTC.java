@@ -30,6 +30,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * This is a modification of the Ehcache net.sf.ehcache.Cache.java class, which is under the Apache open source license.
+ * 
+ * In this implementation, DiskStore is not supported, and thus, most synchronized are removed since the memory store methods
+ * are being synchronized.
+ * 
+ */
 public class CacheTC implements Ehcache {
   /**
    * A reserved word for cache names. It denotes a default configuration which is applied to caches created without

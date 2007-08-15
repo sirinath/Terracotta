@@ -14,6 +14,10 @@ import com.tcclient.ehcache.TimeExpiryMap;
 
 import java.util.Map;
 
+/**
+ * This is an Terracotta implementation of a time based MemoryStore which use the time based eviction policy.
+ *
+ */
 public class TimeExpiryMemoryStore extends MemoryStore {
   private static final Log LOG = LogFactory.getLog(TimeExpiryMemoryStore.class.getName());
 
@@ -27,18 +31,26 @@ public class TimeExpiryMemoryStore extends MemoryStore {
     }
   }
   
+  private long getThreadIntervalSeconds(long threadIntervalSec, long timeToIdleSec, long timeToLiveSec) {
+    if (timeToIdleSec <= 0) {
+      return timeToLiveSec;
+    } else if (timeToLiveSec <= 0) {
+      return timeToIdleSec;
+    } else if (timeToLiveSec <= timeToIdleSec) {
+      return timeToLiveSec;
+    } else if (timeToIdleSec < threadIntervalSec) { return timeToIdleSec; }
+    return threadIntervalSec;
+  }
+  
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
-      long intervalSec = cache.getDiskExpiryThreadIntervalSeconds();
+      long threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
       long timeToIdleSec = cache.getTimeToIdleSeconds();
       long timeToLiveSec = cache.getTimeToLiveSeconds();
-      if (timeToLiveSec <= timeToIdleSec) {
-        intervalSec = timeToLiveSec;
-      } else if (timeToIdleSec < intervalSec) {
-        intervalSec = timeToIdleSec;
-      }
-      Map candidateMap = new SpoolingTimeExpiryMap(intervalSec, timeToIdleSec, timeToLiveSec, cacheName);
+      threadIntervalSec = getThreadIntervalSeconds(threadIntervalSec, timeToIdleSec, timeToLiveSec);
+      
+      Map candidateMap = new SpoolingTimeExpiryMap(threadIntervalSec, timeToIdleSec, timeToLiveSec, cacheName);
       if (LOG.isDebugEnabled()) {
         LOG.debug(cache.getName() + " Cache: Using SpoolingTimeExpiryMap implementation");
       }
