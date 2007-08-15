@@ -24,8 +24,6 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     addClassReplacement(configHelper, bundle, MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS, MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
 
     // setup the class resources
-    addExportedBundleClass(configHelper, bundle, "net.sf.ehcache.store.TimeExpiryMemoryStore");
-    addExportedBundleClass(configHelper, bundle, "net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap");
     addExportedTcJarClass(configHelper, "com.tcclient.ehcache.TimeExpiryMap");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.CacheData");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.CacheDataStore");
@@ -33,6 +31,8 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Expirable");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Lock");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Timestamp");
+    addExportedTcJarClass(configHelper, "net.sf.ehcache.store.TimeExpiryMemoryStore");
+    addExportedTcJarClass(configHelper, "net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap");
 
     // perform the rest of the configuration
     configHelper.addIncludePattern("com.tcclient.cache.*", false, false, false);
