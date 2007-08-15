@@ -38,6 +38,8 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       testIsKeyInCache();
       testIsValueInCache();
       testElementExpired();
+      
+      // DEV-893
       //testElementEvicted();
 
       barrier.await();
@@ -137,15 +139,13 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       cache.put(new Element("k4", "v4"));
     }
     barrier.await();
-    cache.evictExpiredElements();
+
     System.out.println(cache);
     System.out.println(cache.get("k1"));
     System.out.println(cache.get("k2"));
     System.out.println(cache.get("k3"));
     System.out.println(cache.get("k4"));
-    System.out.println(cache.get("k4"));
     
-    System.out.println("Cache size: " + cache.getSize());
     Assert.assertFalse(cache.isElementInMemory("k3"));
     Assert.assertFalse(cache.isKeyInCache("k3"));
     Assert.assertFalse(cache.isValueInCache("v3"));
