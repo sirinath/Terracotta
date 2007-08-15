@@ -37,7 +37,8 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       testIsElementInMemory();
       testIsKeyInCache();
       testIsValueInCache();
-      testEntryExpired();
+      testElementExpired();
+      //testElementEvicted();
 
       barrier.await();
     } finally {
@@ -85,27 +86,81 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     Assert.assertTrue(cache.isValueInCache("v3"));
   }
 
-  private void testEntryExpired() throws Exception {
+  private void testElementExpired() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
     barrier.await();
 
+    Element e1 = cache.get("k1");
+    Element e2 = cache.get("k2");
     Element e3 = cache.get("k3");
-    long timeout = System.currentTimeMillis() + (60 * 1000);
+    long timeout = System.currentTimeMillis() + (30 * 1000);
     while (System.currentTimeMillis() < timeout) {
       cache.get("k1");
       cache.get("k2");
       Thread.sleep(100);
     }
 
-    // k3,v3 should be expired after 60s, timeToIdleSeconds=5
+    // k3,v3 should be due to timeToIdleSeconds=15
     System.out.println(cache);
     System.out.println(cache.get("k1"));
     System.out.println(cache.get("k2"));
     System.out.println(cache.get("k3"));
-    Assert.assertFalse("Should not be in cache", cache.isKeyInCache("k3"));
-    Assert.assertFalse("Should not be in memory", cache.isElementInMemory("k3"));
-    Assert.assertTrue("Should expired", cache.isExpired(e3));
+
+    assertExpired(cache, e3);
+    assertInCache(cache, e1);
+    assertInCache(cache, e2);
+
+    timeout = System.currentTimeMillis() + (70 * 1000);
+    while (System.currentTimeMillis() < timeout) {
+      cache.get("k1");
+      Thread.sleep(100);
+    }
+
+    System.out.println(cache.get("k1"));
+    System.out.println(cache.get("k2"));
+    System.out.println(cache.get("k3"));
+
+    // both (k1,v2) and (k2,v2) should expired due to timeToLiveSeconds=60
+    assertExpired(cache, e1);
+    assertExpired(cache, e2);
+    assertExpired(cache, e3);
+  }
+
+  private void testElementEvicted() throws Exception {
+    Cache cache = cacheManager.getCache("sampleCache1");
+    populateCache(cache);
+    barrier.await();
+    cache.get("k1");
+    cache.get("k2");
+    if (barrier.await() == 0) {
+      cache.put(new Element("k4", "v4"));
+    }
+    barrier.await();
+    cache.evictExpiredElements();
+    System.out.println(cache);
+    System.out.println(cache.get("k1"));
+    System.out.println(cache.get("k2"));
+    System.out.println(cache.get("k3"));
+    System.out.println(cache.get("k4"));
+    System.out.println(cache.get("k4"));
+    
+    System.out.println("Cache size: " + cache.getSize());
+    Assert.assertFalse(cache.isElementInMemory("k3"));
+    Assert.assertFalse(cache.isKeyInCache("k3"));
+    Assert.assertFalse(cache.isValueInCache("v3"));
+  }
+
+  private void assertInCache(Cache cache, Element e) throws Exception {
+    Assert.assertTrue("Should be in cache", cache.isKeyInCache(e.getKey()));
+    Assert.assertTrue("Should be in memory", cache.isElementInMemory(e.getKey()));
+    Assert.assertFalse("Should not expire", cache.isExpired(e));
+  }
+
+  private void assertExpired(Cache cache, Element e) throws Exception {
+    Assert.assertFalse("Should not be in cache", cache.isKeyInCache(e.getKey()));
+    Assert.assertFalse("Should not be in memory", cache.isElementInMemory(e.getKey()));
+    Assert.assertTrue("Should expired", cache.isExpired(e));
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
