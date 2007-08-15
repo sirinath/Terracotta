@@ -9,7 +9,7 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 public final class EhcacheTerracottaConfigurator extends EhcacheTerracottaCommonsConfigurator {
   protected void addInstrumentation(BundleContext context, StandardDSOClientConfigHelper configHelper) {
     super.addInstrumentation(context, configHelper);
-    Bundle bundle = getExportedBundle(context);
+    Bundle bundle = getExportedBundle(context, getExportedBundleName());
     
     addClassReplacement(configHelper, bundle, MEMORYSTORE_CLASS_NAME_DOTS, MEMORYSTORETC_CLASS_NAME_DOTS);
   }
