@@ -14,7 +14,8 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
 		super.addInstrumentation(context, configHelper);
 
     // find the bundle that contains the replacement classes
-    Bundle bundle = getExportedBundle(context);
+    Bundle bundle = getExportedBundle(context, getExportedBundleName());
+    Bundle thisBundle = getExportedBundle(context, "org.terracotta.modules.clustered_ehcache_commons_1.0");
     if (null == bundle) {
       throw new RuntimeException("Couldn't find bundle with symbolic name '"+BUNDLE_NAME+"' during the instrumentation configuration of the bunde '"+context.getBundle().getSymbolicName()+"'.");
     }
@@ -24,6 +25,8 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     addClassReplacement(configHelper, bundle, MEMORYSTOREEVICTIONPOLICY_CLASS_NAME_DOTS, MEMORYSTOREEVICTIONPOLICYTC_CLASS_NAME_DOTS);
 
     // setup the class resources
+    addExportedBundleClass(configHelper, thisBundle, "net.sf.ehcache.store.TimeExpiryMemoryStore");
+    addExportedBundleClass(configHelper, thisBundle, "net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap");
     addExportedTcJarClass(configHelper, "com.tcclient.ehcache.TimeExpiryMap");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.CacheData");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.CacheDataStore");
@@ -31,8 +34,6 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Expirable");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Lock");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Timestamp");
-    addExportedTcJarClass(configHelper, "net.sf.ehcache.store.TimeExpiryMemoryStore");
-    addExportedTcJarClass(configHelper, "net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap");
 
     // perform the rest of the configuration
     configHelper.addIncludePattern("com.tcclient.cache.*", false, false, false);
@@ -49,9 +50,7 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     spec.setCustomClassAdapter(factory);
 	}
   
-  protected Bundle getExportedBundle(final BundleContext context) {
-    String targetBundleName = getExportedBundleName();
-
+  protected Bundle getExportedBundle(final BundleContext context, String targetBundleName) {
     // find the bundle that contains the replacement classes
     Bundle[] bundles = context.getBundles();
     Bundle bundle = null;
