@@ -103,7 +103,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       Thread.sleep(100);
     }
 
-    // k3,v3 should be due to timeToIdleSeconds=15
+    // k3,v3 should expire due to timeToIdleSeconds=15
     System.out.println(cache);
     System.out.println(cache.get("k1"));
     System.out.println(cache.get("k2"));
@@ -149,6 +149,10 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     Assert.assertFalse(cache.isElementInMemory("k3"));
     Assert.assertFalse(cache.isKeyInCache("k3"));
     Assert.assertFalse(cache.isValueInCache("v3"));
+    
+    assertInCache(cache, cache.get("k1"));
+    assertInCache(cache, cache.get("k2"));
+    assertInCache(cache, cache.get("k4"));
   }
 
   private void assertInCache(Cache cache, Element e) throws Exception {
