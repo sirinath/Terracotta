@@ -4,12 +4,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * This is a modification of the Ehcache net.sf.ehcache.store.MemoryStoreEvictionPolicy.java class, which is
+ * under the Apache open source license.
+ *
+ */
+/**
  * A typesafe enumeration of eviction policies. The policy used to evict elements from the
  * {@link net.sf.ehcache.store.MemoryStore}. This can be one of:
  * <ol>
  * <li>LRU - least recently used
  * <li>LFU - least frequently used
  * <li>FIFO - first in first out, the oldest element by creation time
+ * <li>DSO - a time based eviction policy implemented by Terracotta
  * </ol>
  * The default value is LRU
  * 

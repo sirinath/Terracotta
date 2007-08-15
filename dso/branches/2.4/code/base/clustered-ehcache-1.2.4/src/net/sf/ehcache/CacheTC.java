@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Since DiskStore is not supported, most synchronized are removed since the memory store methods are being
- * synchronized.
+ * This is a modification of the Ehcache net.sf.ehcache.Cache.java class, which is under the Apache open source license.
+ * 
+ * In this implementation, DiskStore is not supported, and thus, most synchronized are removed since the memory store methods
+ * are being synchronized.
  * 
  */
 public class CacheTC implements Ehcache {

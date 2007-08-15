@@ -15,6 +15,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
+ * This is a modification of the Ehcache net.sf.ehcache.store.MemoryStore.java class, which is under the Apache open source license.
+ *
+ */
+/**
  * An abstract class for the Memory Stores. All Memory store implementations for different policies (e.g: FIFO, LFU,
  * LRU, etc.) should extend this class.
  * 
