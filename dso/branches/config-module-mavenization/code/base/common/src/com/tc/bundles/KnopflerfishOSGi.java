@@ -83,7 +83,6 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
 
         if (!bundleDir.isDirectory()) { throw new BundleException("Invalid bundle repository specified in the URL ["
             + bundleDir + "]"); }
-
         final File[] bundleFiles = findBundleFiles(bundleDir);
         for (int j = 0; j < bundleFiles.length; j++) {
           installBundle(getBundleName(bundleFiles[j]), getBundleVersion(bundleFiles[j]));

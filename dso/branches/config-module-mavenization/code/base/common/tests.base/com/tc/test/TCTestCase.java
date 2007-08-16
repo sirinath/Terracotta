@@ -69,6 +69,8 @@ public class TCTestCase extends TestCase {
   private static final Timer               timeoutTimer              = new TCTimerImpl("Timeout Thread", true);
   private static final SynchronizedBoolean timeoutTaskAdded          = new SynchronizedBoolean(false);
 
+  private static boolean                   printedProcess            = false;
+
   // If you want to customize this, you have to do it in the constructor of your test case (setUp() is too late)
   private long                             timeoutThreshold          = DEFAULT_TIMEOUT_THRESHOLD;
 
@@ -82,14 +84,17 @@ public class TCTestCase extends TestCase {
 
   public TCTestCase() {
     super();
-
-    TCLogging.disableLocking();
+    init();
   }
 
   public TCTestCase(String arg0) {
     super(arg0);
+    init();
+  }
 
+  private void init() {
     TCLogging.disableLocking();
+    printOutCurrentJavaProcesses();
   }
 
   // called by timer thread (ie. NOT the main thread of test case)
@@ -140,8 +145,6 @@ public class TCTestCase extends TestCase {
       return;
     }
 
-    printOutCurrentJavaProcesses();
-
     // don't move this stuff to runTest(), you want the timeout timer to catch hangs in setUp() too.
     // Yes it means you can't customize the timeout threshold in setUp() -- take a deep breath and
     // set your value in the constructor of your test case instead of setUp()
@@ -173,11 +176,15 @@ public class TCTestCase extends TestCase {
     return;
   }
 
-  private void printOutCurrentJavaProcesses() throws Exception {
+  private void printOutCurrentJavaProcesses() {
+    if (printedProcess) return;
+    printedProcess = true;
     PrintWriter out = null;
     try {
       out = new PrintWriter(new FileWriter(this.getTempFile("javaprocesses.txt")));
-      out.println(ProcessInfo.ps_grep_java());      
+      out.println(ProcessInfo.ps_grep_java());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     } finally {
       if (out != null) out.close();
     }
@@ -238,7 +245,7 @@ public class TCTestCase extends TestCase {
   }
 
   protected boolean cleanTempDir() {
-    return false;
+    return true;
   }
 
   protected final synchronized DataDirectoryHelper getDataDirectoryHelper() {

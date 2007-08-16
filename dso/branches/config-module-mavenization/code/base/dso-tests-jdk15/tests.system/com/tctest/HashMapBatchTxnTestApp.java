@@ -16,7 +16,7 @@ import java.util.concurrent.CyclicBarrier;
 
 public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
   int BATCHSIZE = 2000;
-  int BATCHES = 200;
+  int BATCHES = 80;
   
   private final CyclicBarrier     barrier; 
   private final HashMap<Integer,  HashMap> hashmap_root = new HashMap<Integer, HashMap>();
@@ -50,7 +50,7 @@ public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
   private void testHashMapBatchTxn() throws Exception {
     int index = barrier.await();
     
-    for(int batch = 0; batch < BATCHES; ++batch) {
+    for(int batch = 0; batch < BATCHES; batch+=2) {
       if(index == 0) {
         synchronized(hashmap_root) {
           System.out.println("XXX Batching(client=0) "+batch);
@@ -64,7 +64,7 @@ public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
       }
       if(index == 1) {
         synchronized(hashmap_root) {
-          System.out.println("XXX Batching(client=1) "+batch);
+          System.out.println("XXX Batching(client=1) "+(batch+1));
           int id = BATCHSIZE * batch + BATCHSIZE;
           for(int i = 0; i < BATCHSIZE; ++i) {
             HashMap<Integer,Integer> submap = generateNewHashMap(id, 10+(id%10));
