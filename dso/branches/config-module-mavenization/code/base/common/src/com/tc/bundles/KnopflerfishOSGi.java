@@ -4,6 +4,7 @@
  */
 package com.tc.bundles;
 
+import org.apache.commons.io.FileUtils;
 import org.knopflerfish.framework.Framework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -16,13 +17,14 @@ import com.tc.logging.TCLogging;
 import com.tc.net.util.URLUtil;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Dictionary;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -125,27 +127,21 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
    */
   protected File[] findBundleFiles(final File repository) {
     List list = new ArrayList();
-    final File[] bundles = repository.listFiles();
-    for (int i = 0; i < bundles.length; i++) {
-      final File[] versions = bundles[i].listFiles();
-      for (int j = 0; j < versions.length; j++) {
-        final File[] jars = versions[j].listFiles(new FileFilter() {
-          public boolean accept(final File file) {
-            if (!isBundleFileName(file)) {
-              final String msg = MessageFormat.format("Skipped config-bundle installation of file: {0}, "
-                  + "config-bundle filenames are expected to conform to the following pattern: {1}", new String[] {
-                  file.getName(), BUNDLE_FILENAME_PATTERN });
-              logger.warn(msg);
-              return false;
-            }
-            return true;
-          }
-        });
-        for (int k = 0; k < jars.length; k++) {
-          list.add(jars[k]);
-        }
+    Collection jarFiles = FileUtils.listFiles(repository, new String[] {"jar"}, true);
+    for (Iterator i = jarFiles.iterator(); i.hasNext(); ) {
+      File jarFile = (File) i.next();
+      if (isBundleFileName(jarFile)) {
+        list.add(jarFile);
+      }
+      else {
+        final String msg = MessageFormat.format(
+            "Skipped config-bundle installation of file: {0}, config-bundle filenames are expected " +
+            "to conform to the following pattern: {1}",
+            new String[] { jarFile.getName(), BUNDLE_FILENAME_PATTERN });
+        logger.warn(msg);
       }
     }
+
     return (File[]) list.toArray(new File[list.size()]);
   }
 
@@ -238,8 +234,9 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
   }
 
   private URL getBundleURL(final String bundleName, final String bundleVersion) throws BundleException {
-    final String path = MessageFormat.format("{0}{2}{1}{2}" + BUNDLE_PATH, new String[] { bundleName, bundleVersion,
-        File.separator });
+    final String path = MessageFormat.format("org{2}terracotta{2}modules{2}{0}{2}{1}{2}" + BUNDLE_PATH,
+        new String[] { bundleName, bundleVersion, File.separator });
+
     try {
       final URL url = URLUtil.resolve(bundleRepositories, path);
       if (url == null) {
