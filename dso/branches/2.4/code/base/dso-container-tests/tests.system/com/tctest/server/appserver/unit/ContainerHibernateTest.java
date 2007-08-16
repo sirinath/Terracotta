@@ -30,9 +30,6 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public ContainerHibernateTest() {
-    // DEV-897
-    disableAllUntil("2007-08-31");
-    
     // MNK-287
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));

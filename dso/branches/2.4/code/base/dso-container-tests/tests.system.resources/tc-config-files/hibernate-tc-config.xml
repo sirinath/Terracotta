@@ -41,7 +41,9 @@
 
 			<instrumented-classes>
 				<include>
-					<class-expression>com.tctest.domain.*</class-expression>
+					<class-expression>
+						com.tctest.domain.*
+					</class-expression>
 				</include>
 			</instrumented-classes>
 		</dso>

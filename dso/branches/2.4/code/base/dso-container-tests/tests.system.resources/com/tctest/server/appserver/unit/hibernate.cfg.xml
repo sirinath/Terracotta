@@ -41,7 +41,7 @@
 		
 		<property name="cache.use_query_cache">true</property>
 		<property
-			name="cache.provider_configuration_file_resource_path ">
+			name="cache.provider_configuration_file_resource_path">
 			ehcache13.xml
 		</property>
 		<property name="cache.use_second_level_cache">true</property>
