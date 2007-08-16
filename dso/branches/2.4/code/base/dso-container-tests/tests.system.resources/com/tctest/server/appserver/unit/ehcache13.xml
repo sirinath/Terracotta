@@ -11,7 +11,7 @@
         memoryStoreEvictionPolicy="LRU"/> 
       
     <cache name="org.hibernate.cache.StandardQueryCache"
-        maxElementsInMemory="5"
+        maxElementsInMemory="100"
         eternal="false"
         timeToIdleSeconds="120"
         timeToLiveSeconds="120"
