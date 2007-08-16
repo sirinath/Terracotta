@@ -234,6 +234,7 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
   }
 
   private URL getBundleURL(final String bundleName, final String bundleVersion) throws BundleException {
+    // TODO: find a way to not hard-code the "org/terracotta/modules" structure into this path
     final String path = MessageFormat.format("org{2}terracotta{2}modules{2}{0}{2}{1}{2}" + BUNDLE_PATH,
         new String[] { bundleName, bundleVersion, File.separator });
 
