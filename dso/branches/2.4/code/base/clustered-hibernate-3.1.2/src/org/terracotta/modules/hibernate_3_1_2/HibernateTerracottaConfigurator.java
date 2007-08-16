@@ -43,6 +43,8 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     
     configHelper.addIncludePattern("org.hibernate.property..*", false, false, false);
     
+    configHelper.addIncludePattern("org.hibernate.cache.QueryKey", false, false, false);
+    
     /**
      * Session
      
