@@ -11,13 +11,14 @@ import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
 public class StateClassOnPassiveLosesInfoActivePassiveTest extends TransparentTestBase {
 
-  private static final int NODE_COUNT = 1;
+  private static final int NODE_COUNT = 2;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
     t.initializeTestRunner();
   }
 
+  @SuppressWarnings("unchecked")
   protected Class getApplicationClass() {
     return StateClassOnPassiveLosesInfoActivePassiveTestApp.class;
   }
