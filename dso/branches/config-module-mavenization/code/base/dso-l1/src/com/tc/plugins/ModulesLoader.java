@@ -25,6 +25,7 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.util.JarResourceLoader;
+import com.tc.util.Environment;
 import com.tc.util.VendorVmSignature;
 import com.tc.util.VendorVmSignatureException;
 import com.terracottatech.config.DsoApplication;
@@ -42,7 +43,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 public class ModulesLoader {
-  
+
   private static final Comparator SERVICE_COMPARATOR = new Comparator() {
 
                                                        public int compare(Object arg0, Object arg1) {
@@ -71,11 +72,20 @@ public class ModulesLoader {
     // cannot be instantiated
   }
 
+  private static void insertBasicConfigBundles(Modules modules) {
+    if (Environment.inTest()) return;
+    Module bundle = modules.addNewModule();
+    bundle.setName("modules-common-1.0");
+    bundle.setVersion("1.0.0");
+  }
+
   public static void initModules(final DSOClientConfigHelper configHelper, final ClassProvider classProvider,
                                  final boolean forBootJar) {
     EmbeddedOSGiRuntime osgiRuntime = null;
     synchronized (lock) {
-      final Modules modules = configHelper.getModulesForInitialization();
+      Modules modules = configHelper.getModulesForInitialization();
+      insertBasicConfigBundles(modules);
+
       if (modules != null && modules.sizeOfModuleArray() > 0) {
         try {
           osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
@@ -132,7 +142,7 @@ public class ModulesLoader {
       osgiRuntime.registerService(configHelper, serviceProps);
     }
 
-    // now start only the bundles that are listed in the modules section of the config
+    // now start the bundles that are listed in the modules section of the config
     EmbeddedOSGiRuntimeCallbackHandler callback = new EmbeddedOSGiRuntimeCallbackHandler() {
       public void callback(final Object payload) throws BundleException {
         Bundle bundle = (Bundle) payload;
@@ -196,26 +206,15 @@ public class ModulesLoader {
       final String TC_CONFIG_HEADER = "Terracotta-Configuration";
       final String TC_CONFIG_HEADER_FOR_VM = TC_CONFIG_HEADER + VendorVmSignature.SIGNATURE_SEPARATOR
                                              + vmsig.getSignature();
-
       // check if the config-bundle indicates a vm vendor specific terracotta configuration...
-      String configPath = (String) bundle.getHeaders().get(TC_CONFIG_HEADER_FOR_VM);
-      if (configPath != null) {
-        logger.info("Using VM vendor specific config for module " + bundle.getSymbolicName() + ": " + configPath);
+      String path = (String) bundle.getHeaders().get(TC_CONFIG_HEADER_FOR_VM); // config for vendor specific vm
+      if (path == null) { //
+        path = (String) bundle.getHeaders().get(TC_CONFIG_HEADER); // terracotta specific config (eg: tests)
+        if (path == null) { //
+          path = "terracotta.xml"; // default terracotta config
+        }
       }
-
-      // else, check if the config-bundle prefers a specific terracotta configuration
-      if (configPath == null) {
-        configPath = (String) bundle.getHeaders().get(TC_CONFIG_HEADER);
-        logger.info("Using specific config for module " + bundle.getSymbolicName() + ": " + configPath);
-      }
-
-      // else, just use the default terracotta configuration 
-      if (configPath == null) {
-        configPath = "terracotta.xml";
-        logger.info("Using default config for module " + bundle.getSymbolicName() + ": " + configPath);
-      }
-
-      return configPath;
+      return path;
     } catch (VendorVmSignatureException e) {
       throw new BundleException(e.getMessage());
     }
@@ -224,21 +223,21 @@ public class ModulesLoader {
   private static void loadConfiguration(final DSOClientConfigHelper configHelper, final Bundle bundle)
       throws BundleException {
 
-    // attempt to load the config-bundle's fragment of the configuration file 
-    final String config = getConfigPath(bundle);
+    // attempt to load the config-bundle's fragment of the configuration file
+    final String configPath = getConfigPath(bundle);
     final InputStream is;
     try {
-      is = JarResourceLoader.getJarResource(new URL(bundle.getLocation()), config);
+      is = JarResourceLoader.getJarResource(new URL(bundle.getLocation()), configPath);
     } catch (MalformedURLException murle) {
       throw new BundleException("Unable to create URL from: " + bundle.getLocation(), murle);
     } catch (IOException ioe) {
-      throw new BundleException("Unable to extract " + config + " from URL: " + bundle.getLocation(), ioe);
+      throw new BundleException("Unable to extract " + configPath + " from URL: " + bundle.getLocation(), ioe);
     }
 
     // if config-bundle's fragment of the configuration file is not included in the jar file
     // then we don't need to merge it in with the current configuration --- but make a note of it.
     if (is == null) {
-      logger.warn("The config file '" + config + "', for module '" + bundle.getSymbolicName()
+      logger.warn("The config file '" + configPath + "', for module '" + bundle.getSymbolicName()
                   + "' does not appear to be a part of the module's config-bundle jar file contents.");
       return;
     }
@@ -249,7 +248,7 @@ public class ModulesLoader {
       if (application != null) {
         ConfigLoader loader = new ConfigLoader(configHelper, logger);
         loader.loadDsoConfig(application);
-        logger.info("Module configuration loaded for " + bundle.getSymbolicName());
+        logger.info("Module configuration loaded for " + bundle.getSymbolicName() + " (" + configPath + ")");
         // loader.loadSpringConfig(application.getSpring());
       }
     } catch (IOException ioe) {

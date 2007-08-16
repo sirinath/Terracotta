@@ -14,8 +14,8 @@ import java.lang.reflect.Field;
  * inherit the given thread group. It is somewhat fragile, and sometimes impossible (see java.util.Timer) to be explicit
  * about the thread group when spawning threads <br>
  * <br>
- * XXX: At the moment, this class uses a hack of adjusting the current thread's group to the desired target group.
- * A nicer approach would be to start a new thread in the desiered target group and run the action in that thread and
+ * XXX: At the moment, this class uses a hack of adjusting the current thread's group to the desired target group. A
+ * nicer approach would be to start a new thread in the desiered target group and run the action in that thread and
  * join() it, except that can introduce locking problems (see MNK-65)
  */
 public class StartupHelper {
@@ -53,8 +53,11 @@ public class StartupHelper {
   }
 
   private static void setThreadGroup(Thread thread, ThreadGroup group) {
+    String fieldName = Vm.isIBM() ? "threadGroup" : "group";
+    Class c = Thread.class;
+
     try {
-      Field groupField = thread.getClass().getDeclaredField(Vm.isIBM() ? "threadGroup" : "group");
+      Field groupField = c.getDeclaredField(fieldName);
       groupField.setAccessible(true);
       groupField.set(thread, group);
     } catch (Exception e) {
@@ -62,5 +65,4 @@ public class StartupHelper {
       throw new RuntimeException(e);
     }
   }
-
 }
