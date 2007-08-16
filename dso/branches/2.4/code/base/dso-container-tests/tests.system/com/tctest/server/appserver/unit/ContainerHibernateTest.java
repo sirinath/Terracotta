@@ -4,6 +4,9 @@
  */
 package com.tctest.server.appserver.unit;
 
+import net.sf.ehcache.Cache;
+import net.sf.jsr107cache.CacheListener;
+
 import org.apache.derby.drda.NetworkServerControl;
 
 import com.meterware.httpunit.WebConversation;
@@ -27,6 +30,9 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public ContainerHibernateTest() {
+    // DEV-897
+    disableAllUntil("2007-08-31");
+    
     // MNK-287
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
@@ -69,11 +75,13 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(org.apache.commons.collections.Buffer.class); // commons-collections*.jar
       builder.addDirectoryOrJARContainingClass(org.apache.derby.jdbc.ClientDriver.class); // derby*.jar
       builder.addDirectoryOrJARContainingClass(antlr.Tool.class); // antlr*.jar
-      // WarBuilder includes these jars by default
-      //builder.addDirectoryOrJARContainingClass(Logger.class); // log4j
-      //builder.addDirectoryOrJARContainingClass(LogFactory.class); // common-loggings
+      builder.addDirectoryOrJARContainingClass(Cache.class); // ehcache-1.3.0.jar
+      builder.addDirectoryOrJARContainingClass(CacheListener.class); // jsr107cache-1.0.jar
+      
+      
 
       builder.addResource("/com/tctest/server/appserver/unit", "hibernate.cfg.xml", "WEB-INF/classes");
+      builder.addResource("/com/tctest/server/appserver/unit", "ehcache13.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Event.hbm.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Person.hbm.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "PhoneNumber.hbm.xml", "WEB-INF/classes");
