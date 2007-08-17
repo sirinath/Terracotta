@@ -16,6 +16,6 @@ public class CacheEvictor124Test extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return CacheEvictorTestApp.class;
+    return CacheEvictor124TestApp.class;
   }
 }
