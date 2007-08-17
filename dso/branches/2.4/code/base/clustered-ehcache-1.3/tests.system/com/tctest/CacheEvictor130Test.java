@@ -1,9 +1,9 @@
 package com.tctest;
 
-public class CacheEvictorTest extends TransparentTestBase {
+public class CacheEvictor130Test extends TransparentTestBase {
   public static final int NODE_COUNT = 2;
 
-  public CacheEvictorTest() {
+  public CacheEvictor130Test() {
     //
   }
 
@@ -13,6 +13,6 @@ public class CacheEvictorTest extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return CacheEvictorTestApp.class;
+    return CacheEvictor130TestApp.class;
   }
 }
