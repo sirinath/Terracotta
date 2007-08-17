@@ -7,17 +7,18 @@ package com.tctest;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
+import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.Arrays;
-import java.util.concurrent.CyclicBarrier;
 
 public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
 
@@ -38,11 +39,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
       testIsKeyInCache();
       testIsValueInCache();
       testElementExpired();
-      
-      // DEV-893
-      //testElementEvicted();
-
-      barrier.await();
+      barrier.barrier();
     } finally {
       cacheManager.shutdown();
     }
@@ -52,7 +49,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsElementInMemory() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isElementInMemory("k1"));
     Assert.assertTrue(cache.isElementInMemory("k2"));
@@ -60,7 +57,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   }
 
   private void populateCache(Cache cache) throws Exception {
-    if (barrier.await() == 0) {
+    if (barrier.barrier() == 0) {
       cache.removeAll();
       cache.put(new Element("k1", "v1"));
       cache.put(new Element("k2", "v2"));
@@ -71,7 +68,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsKeyInCache() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isKeyInCache("k1"));
     Assert.assertTrue(cache.isKeyInCache("k2"));
@@ -81,7 +78,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testIsValueInCache() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Assert.assertTrue(cache.isValueInCache("v1"));
     Assert.assertTrue(cache.isValueInCache("v2"));
@@ -91,7 +88,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testElementExpired() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
 
     Element e1 = cache.get("k1");
     Element e2 = cache.get("k2");
@@ -132,24 +129,24 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
   private void testElementEvicted() throws Exception {
     Cache cache = cacheManager.getCache("sampleCache1");
     populateCache(cache);
-    barrier.await();
+    barrier.barrier();
     cache.get("k1");
     cache.get("k2");
-    if (barrier.await() == 0) {
+    if (barrier.barrier() == 0) {
       cache.put(new Element("k4", "v4"));
     }
-    barrier.await();
+    barrier.barrier();
 
     System.out.println(cache);
     System.out.println(cache.get("k1"));
     System.out.println(cache.get("k2"));
     System.out.println(cache.get("k3"));
     System.out.println(cache.get("k4"));
-    
+
     Assert.assertFalse(cache.isElementInMemory("k3"));
     Assert.assertFalse(cache.isKeyInCache("k3"));
     Assert.assertFalse(cache.isValueInCache("v3"));
-    
+
     assertInCache(cache, cache.get("k1"));
     assertInCache(cache, cache.get("k2"));
     assertInCache(cache, cache.get("k4"));
@@ -174,5 +171,7 @@ public class CacheEvictorTestApp extends AbstractErrorCatchingTransparentApp {
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("cacheManager", "cacheManager");
+
+    new CyclicBarrierSpec().visit(visitor, config);
   }
 }

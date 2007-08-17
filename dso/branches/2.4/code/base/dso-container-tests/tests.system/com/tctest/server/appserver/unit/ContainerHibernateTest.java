@@ -15,7 +15,6 @@ import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.util.runtime.Vm;
 import com.tctest.webapp.servlets.ContainerHibernateTestServlet;
 
 import java.io.PrintWriter;
@@ -31,11 +30,6 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public ContainerHibernateTest() {
-    // ehcache 1.3 can't run with 1.4
-    if (Vm.isJDK14()) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
-    }
-    
     // MNK-287
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
