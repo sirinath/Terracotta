@@ -12,7 +12,6 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
-import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.util.URLUtil;
@@ -51,7 +50,6 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
                                                                   + BUNDLE_FILENAME_EXT_REGEX + "$";
 
   private final URL[]           bundleRepositories;
-  private final String          defaultGroupId;
   private final Framework       framework;
 
   static {
@@ -62,9 +60,8 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
   /**
    * Creates and starts an in-memory OSGi layer using Knopflerfish.
    */
-  public KnopflerfishOSGi(final String groupId, final URL[] bundleRepositories) throws Exception {
+  public KnopflerfishOSGi(final URL[] bundleRepositories) throws Exception {
     this.bundleRepositories = bundleRepositories;
-    this.defaultGroupId = groupId;
     System.setProperty("org.knopflerfish.osgi.registerserviceurlhandler", "false");
     framework = new Framework(null);
     framework.launch(0);
@@ -300,11 +297,6 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
 
   private String getBundleName(File bundleFile) {
     return bundleFile.getName().replaceFirst("-" + BUNDLE_VERSION_REGEX + BUNDLE_FILENAME_EXT_REGEX, "");
-  }
-
-  private String getBundleGroupId(File bundleFile) {
-    // TODO: IMPLEMENT ME
-    throw new ImplementMe();
   }
 
   /**
