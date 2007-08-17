@@ -49,6 +49,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       long threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
       long timeToIdleSec = cache.getTimeToIdleSeconds();
       long timeToLiveSec = cache.getTimeToLiveSeconds();
+
       threadIntervalSec = getThreadIntervalSeconds(threadIntervalSec, timeToIdleSec, timeToLiveSec);
 
       Map candidateMap = new SpoolingTimeExpiryMap(threadIntervalSec, timeToIdleSec, timeToLiveSec, cacheName);

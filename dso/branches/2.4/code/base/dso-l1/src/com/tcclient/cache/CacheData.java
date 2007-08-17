@@ -18,13 +18,11 @@ public class CacheData implements Serializable {
                                                                               // CacheData will be expired
 
   private transient long      lastAccessedTimeInMillis;
-  private transient long      startMillis;
   private boolean             invalidated = false;
 
   public CacheData(Object value, long maxIdleSeconds, long maxTTLSeconds) {
     this.value = value;
     this.createTime = System.currentTimeMillis();
-    this.startMillis = System.currentTimeMillis();
     this.maxIdleMillis = maxIdleSeconds * 1000;
     this.maxTTLMillis = maxTTLSeconds * 1000;
     this.timestamp = new Timestamp(this.createTime + maxIdleMillis, this.createTime + maxTTLMillis);
@@ -32,7 +30,6 @@ public class CacheData implements Serializable {
   }
 
   public CacheData() {
-    this.startMillis = System.currentTimeMillis();
     this.lastAccessedTimeInMillis = System.currentTimeMillis();
   }
 
@@ -69,12 +66,7 @@ public class CacheData implements Serializable {
     return Math.max(System.currentTimeMillis() - lastAccessedTimeInMillis, 0);
   }
 
-  synchronized void start() {
-    startMillis = System.currentTimeMillis();
-  }
-
   synchronized void finish() {
-    startMillis = 0;
     lastAccessedTimeInMillis = System.currentTimeMillis();
   }
 
