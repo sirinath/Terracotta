@@ -19,8 +19,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class CacheDataStore implements Serializable {
-  private static Logger                   logger = Logger.getLogger(CacheDataStore.class);
-
   private final Map                       store;                                          // <Data>
   private final Map                       dtmStore;                                       // <Timestamp>
   private final String                    cacheName;
@@ -292,7 +290,6 @@ public class CacheDataStore implements Serializable {
     public void scheduleNextInvalidation() {
       // If sleepMillis is <= 0, there will be no eviction, honoring the native ehcache semantics.
       if (this.sleepMillis <= 0) { 
-        logger.warn("Sleeping time for the CacheEntryInvalidator thread is 0. No Eviction will occur.");
         return;
       }
       timer.schedule(this, this.sleepMillis, this.sleepMillis);
