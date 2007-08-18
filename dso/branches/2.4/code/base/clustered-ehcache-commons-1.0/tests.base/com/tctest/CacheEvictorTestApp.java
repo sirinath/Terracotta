@@ -7,6 +7,7 @@ package com.tctest;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
@@ -29,6 +30,14 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
       testIsKeyInCache();
       testIsValueInCache();
       testElementExpired();
+
+      testIdleAndTimeToLive("cache1", 5, 10, 20);
+
+      // DEV-907
+      // testIdleAndTimeToLive("cache2", 10, 0, 20);
+      // testIdleAndTimeToLive("cache3", 0, 10, 20);
+      // testIdleAndTimeToLive("cache4", 0, 0, 20);
+
       barrier();
     } finally {
       getCacheManger().shutdown();
@@ -118,6 +127,46 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     assertExpired(cache, e1);
     assertExpired(cache, e2);
     assertExpired(cache, e3);
+  }
+
+  private void testIdleAndTimeToLive(String cacheName, int ttl, int idle, int sleep) throws Exception {
+
+    if (barrier() == 0) {
+      Cache newCache = new Cache(cacheName, 3, MemoryStoreEvictionPolicy.LFU, false, ".", false, ttl, idle, false, 120,
+                                 null, null, 100);
+      getCacheManger().addCache(newCache);
+      System.out.println(newCache);
+    }
+
+    barrier();
+
+    Cache cache = getCacheManger().getCache(cacheName);
+    populateCache(cache);
+    barrier();
+
+    System.out.println(cache.get("k1"));
+    System.out.println(cache.get("k2"));
+    System.out.println(cache.get("k3"));
+
+    Element e1 = cache.get("k1");
+    Element e2 = cache.get("k2");
+    Element e3 = cache.get("k3");
+
+    assertInCache(cache, e1);
+    assertInCache(cache, e2);
+    assertInCache(cache, e3);
+
+    Thread.sleep(sleep * 1000);
+
+    if (idle == 0 && ttl == 0) { // nothing expired ever
+      Assert.assertNotNull(cache.get("k1"));
+      Assert.assertNotNull(cache.get("k2"));
+      Assert.assertNotNull(cache.get("k3"));
+    } else {
+      Assert.assertNull(cache.get("k1"));
+      Assert.assertNull(cache.get("k2"));
+      Assert.assertNull(cache.get("k3"));
+    }
   }
 
   private void assertInCache(Cache cache, Element e) throws Exception {
