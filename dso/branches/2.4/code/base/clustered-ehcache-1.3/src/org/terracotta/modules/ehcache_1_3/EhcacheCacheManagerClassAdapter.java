@@ -10,9 +10,8 @@ import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.ClassAdapterFactory;
-import org.terracotta.modules.ehcache.commons_1_0.IConstants;
 
-public class EhcacheCacheManagerClassAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes, IConstants {
+public class EhcacheCacheManagerClassAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes {
   public EhcacheCacheManagerClassAdapter() {
     super(null);
   }

@@ -95,14 +95,13 @@ public final class ContainerHibernateTestServlet extends HttpServlet {
     httpSession.setAttribute("events", eventList);
     System.out.println("added event list to session");
 
-    // DEV-897
-    // HibernateUtil.getSessionFactory().close();
+    HibernateUtil.getSessionFactory().close();
   }
 
   private void doServer1(HttpSession httpSession) throws Exception {
     // comment this out intentionally
     // List events = (List) httpSession.getAttribute("events");
-    
+
     EventManager mgr = new EventManager();
     // this will get the data from ehcache
     List events = mgr.listEvents();

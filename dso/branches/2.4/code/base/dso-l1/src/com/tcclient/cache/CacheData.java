@@ -50,10 +50,12 @@ public class CacheData implements Serializable {
     if (DebugUtil.DEBUG) {
       System.err.println(getIdleMillis());
     }
+    if (getMaxInactiveMillis() <= 0) { return true; }
     return getIdleMillis() < getMaxInactiveMillis();
   }
 
   private boolean isStillAlive() {
+    if (maxTTLMillis <= 0) { return true; }
     return System.currentTimeMillis() <= getTimeToDieMillis();
   }
 

@@ -10,6 +10,7 @@ import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 import org.terracotta.modules.hibernate_3_1_2.object.config.HibernateChangeApplicatorSpec;
 import org.terracotta.modules.hibernate_3_1_2.object.config.HibernateModuleSpec;
 
+import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.ModuleSpec;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -94,6 +95,10 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
 //    configHelper.addIncludePattern("org.hibernate.impl.AbstractSessionImpl", true, false, false);
     
     //org.hibernate.proxy.pojo.cglib.CGLIBLazyInitializer, org.hibernate.proxy.pojo.BasicLazyInitializer, org.hibernate.proxy.AbstractLazyInitializer
+    
+    ClassAdapterFactory factory = new SessionFactoryClassAdapter();
+    spec = configHelper.getOrCreateSpec("org.hibernate.impl.SessionFactoryImpl");
+    spec.setCustomClassAdapter(factory);
   }
   
   protected final void registerModuleSpec(final BundleContext context) {

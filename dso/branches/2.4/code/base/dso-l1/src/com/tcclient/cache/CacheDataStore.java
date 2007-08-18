@@ -4,8 +4,6 @@
  */
 package com.tcclient.cache;
 
-import org.apache.log4j.Logger;
-
 import com.tc.config.lock.LockLevel;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
