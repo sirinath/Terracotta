@@ -33,10 +33,9 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
 
       testIdleAndTimeToLive("cache1", 5, 10, 20);
 
-      // DEV-907
-      // testIdleAndTimeToLive("cache2", 10, 0, 20);
-      // testIdleAndTimeToLive("cache3", 0, 10, 20);
-      // testIdleAndTimeToLive("cache4", 0, 0, 20);
+      testIdleAndTimeToLive("cache2", 10, 0, 20);
+      testIdleAndTimeToLive("cache3", 0, 10, 20);
+      testIdleAndTimeToLive("cache4", 0, 0, 20);
 
       barrier();
     } finally {
