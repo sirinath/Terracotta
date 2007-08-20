@@ -47,24 +47,6 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     configHelper.addIncludePattern("org.hibernate.cache.QueryKey", false, false, false);
     
     /**
-     * Session
-     
-    spec = configHelper.getOrCreateSpec("org.hibernate.jdbc.JDBCContext");
-    spec.addTransient("borrowedConnection");
-    spec.addTransient("hibernateTransaction");
-    
-    spec = configHelper.getOrCreateSpec("org.hibernate.jdbc.ConnectionManager");
-    spec.addTransient("connection");
-    spec.addTransient("borrowedConnection");
-    spec.addTransient("factory");
-    
-    configHelper.addIncludePattern("org.hibernate.ConnectionReleaseMode", false, false, false);
-    
-    configHelper.addIncludePattern("org.hibernate.EmptyInterceptor", false, false, false);
-    
-    */
-    
-    /**
      * Second level cache begin
      */
     configHelper.addIncludePattern("org.hibernate.cache.EhCache", false, false, false);
@@ -81,23 +63,20 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     configHelper.addIncludePattern("org.hibernate.cache.ReadWriteCache$Lock", false, false, false);
     configHelper.addIncludePattern("org.hibernate.cache.entry.CacheEntry", false, false, false);
     configHelper.addIncludePattern("org.hibernate.cache.entry.CollectionCacheEntry", false, false, false);
-    
     /**
      * Second level cache ends
      */
     
-    
-    //configHelper.addAutolock("* java.util.Collections$SynchronizedList.*(..)", ConfigLockLevel.WRITE);
     configHelper.addIncludePattern("org.hibernate.proxy.pojo.cglib.CGLIBLazyInitializer", false, false, false);
     configHelper.addIncludePattern("org.hibernate.proxy.pojo.BasicLazyInitializer", false, false, false);
     configHelper.addIncludePattern("org.hibernate.proxy.AbstractLazyInitializer", false, false, false);
-//    configHelper.addIncludePattern("org.hibernate.impl.SessionImpl", true, false, false);
-//    configHelper.addIncludePattern("org.hibernate.impl.AbstractSessionImpl", true, false, false);
     
-    //org.hibernate.proxy.pojo.cglib.CGLIBLazyInitializer, org.hibernate.proxy.pojo.BasicLazyInitializer, org.hibernate.proxy.AbstractLazyInitializer
+    ClassAdapterFactory factory = new EhcacheClassAdapter();
+    spec = configHelper.getOrCreateSpec("org.hibernate.cache.EhCache");
+    spec.setCustomClassAdapter(factory);
     
-    ClassAdapterFactory factory = new SessionFactoryClassAdapter();
-    spec = configHelper.getOrCreateSpec("org.hibernate.impl.SessionFactoryImpl");
+    factory = new EhcacheProviderClassAdapter();
+    spec = configHelper.getOrCreateSpec("org.hibernate.cache.EhCacheProvider");
     spec.setCustomClassAdapter(factory);
   }
   

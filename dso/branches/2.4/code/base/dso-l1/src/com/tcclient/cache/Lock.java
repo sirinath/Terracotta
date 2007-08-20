@@ -7,7 +7,10 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
 
-
+/**
+ * TODO: Merge with com.terracotta.session.util.Lock.java.
+ *
+ */
 public class Lock {
 
   private final String lockId;
@@ -15,7 +18,6 @@ public class Lock {
   private boolean      isLocked = false;
   private final int    lockType;
 
-  // for non-synchronous-write tests
   public Lock(final String lockId) {
     this(lockId, Manager.LOCK_TYPE_WRITE);
   }

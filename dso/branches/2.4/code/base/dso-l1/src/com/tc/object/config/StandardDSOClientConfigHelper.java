@@ -301,7 +301,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     return this.portability;
   }
 
-  private void addAutoLockExcludePattern(String expression) {
+  public void addAutoLockExcludePattern(String expression) {
     String executionExpression = ExpressionHelper.expressionPattern2ExecutionExpression(expression);
     ExpressionVisitor visitor = expressionHelper.createExpressionVisitor(executionExpression);
     autoLockExcludes.add(visitor);
