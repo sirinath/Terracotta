@@ -8,44 +8,12 @@
   <version>0.0.1</version>
   <description>See more details at http://www.terracotta.org/confluence/display/wiki/Terracotta+Maven+Plugin</description>
 
-  <repositories>
-    <repository>
-      <releases />
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>terracotta-repository</id>
-      <url>http://download.terracotta.org/maven2/</url>
-    </repository>
-    <repository>
-      <releases />
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>codehaus-repository</id>
-      <url>http://repository.codehaus.org/</url>
-    </repository>
-    <repository>
-      <id>java.net</id>
-      <url>http://download.java.net/maven/1</url>
-      <layout>legacy</layout>
-    </repository>
-    <repository>
-      <releases />
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>tomcat-repository</id>
-      <url>http://tomcat.apache.org/dev/dist/m2-repository/</url>
-    </repository>
-  </repositories>
-
   <build>
     <plugins>
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
         <configuration>
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->

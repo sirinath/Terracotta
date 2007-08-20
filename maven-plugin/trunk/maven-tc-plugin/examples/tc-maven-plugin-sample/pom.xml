@@ -13,8 +13,9 @@
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
         <configuration>
+          <!-- <verbose>true</verbose> -->
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->
           <!-- <startServer>true</startServer> -->

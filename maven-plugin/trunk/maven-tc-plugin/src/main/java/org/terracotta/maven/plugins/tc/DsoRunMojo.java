@@ -54,6 +54,8 @@ public class DsoRunMojo extends DsoLifecycleMojo {
   
   protected void onExecute() throws MojoExecutionException, MojoFailureException {
     getLog().info("------------------------------------------------------------------------");
+    resolveModuleArtifacts(false);
+
     getLog().info("Starting DSO processes");
 
     ProcessConfiguration process = new ProcessConfiguration("node", className, arguments, Collections.EMPTY_MAP,
