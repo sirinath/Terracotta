@@ -34,6 +34,13 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Expirable");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Lock");
     addExportedTcJarClass(configHelper, "com.tcclient.cache.Timestamp");
+    
+    // explicitly excluding autolocking
+    configHelper.addAutoLockExcludePattern("* com.tcclient.cache..*(..)");
+    configHelper.addAutoLockExcludePattern("* com.tcclient.ehcache..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.store.TimeExpiryMemoryStore.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache...*(..)");
 
     // perform the rest of the configuration
     configHelper.addIncludePattern("com.tcclient.cache.*", false, false, false);

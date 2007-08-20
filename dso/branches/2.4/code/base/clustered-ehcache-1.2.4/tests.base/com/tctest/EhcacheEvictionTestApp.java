@@ -7,6 +7,7 @@ import net.sf.ehcache.Status;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -48,7 +49,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
    */
   public static void visitL1DSOConfig(final ConfigVisitor visitor, final DSOClientConfigHelper config) {
     config.addNewModule("clustered-ehcache-1.2.4", "1.0.0");
-    // config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
+    config.addAutolock("* *..*.*(..)", ConfigLockLevel.WRITE);
 
     final String testClass = EhcacheEvictionTestApp.class.getName();
     final TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
