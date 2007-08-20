@@ -40,7 +40,20 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     configHelper.addAutoLockExcludePattern("* com.tcclient.ehcache..*(..)");
     configHelper.addAutoLockExcludePattern("* net.sf.ehcache.store.TimeExpiryMemoryStore.*(..)");
     configHelper.addAutoLockExcludePattern("* net.sf.ehcache.store.TimeExpiryMemoryStore$SpoolingTimeExpiryMap.*(..)");
-    configHelper.addAutoLockExcludePattern("* net.sf.ehcache...*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.Cache.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.Ehcache.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.Statistics.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.Status.*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.bootstrap.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.config.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.constructs.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.distribution.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.event.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.hibernate.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.jcache.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.management.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.store.*..*(..)");
+    configHelper.addAutoLockExcludePattern("* net.sf.ehcache.util.*..*(..)");
 
     // perform the rest of the configuration
     configHelper.addIncludePattern("com.tcclient.cache.*", false, false, false);
