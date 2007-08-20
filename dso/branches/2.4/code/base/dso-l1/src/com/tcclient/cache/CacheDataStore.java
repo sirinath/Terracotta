@@ -286,6 +286,9 @@ public class CacheDataStore implements Serializable {
     }
 
     public void scheduleNextInvalidation() {
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " schedule next invalidation " + this.sleepMillis);
+      }
       // If sleepMillis is <= 0, there will be no eviction, honoring the native ehcache semantics.
       if (this.sleepMillis <= 0) { 
         return;

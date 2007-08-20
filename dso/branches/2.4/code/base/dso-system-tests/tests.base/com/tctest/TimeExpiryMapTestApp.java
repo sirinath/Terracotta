@@ -12,6 +12,7 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tcclient.ehcache.TimeExpiryMap;
 import com.tctest.runner.AbstractTransparentApp;
 
@@ -74,6 +75,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   }
   
   private void basicMapTest(int index) throws Exception {
+    DebugUtil.DEBUG = true;
+    
     if (index == 0) {
       dataRoot.setMap(new MockTimeExpiryMap(1, 5, 10));
     }
@@ -106,6 +109,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     Assert.assertEquals(3, dataRoot.getNumOfExpired());
     
     barrier.barrier();
+    
+    DebugUtil.DEBUG = false;
   }
   
   private void expiredItemsTest(int index) throws Exception {
