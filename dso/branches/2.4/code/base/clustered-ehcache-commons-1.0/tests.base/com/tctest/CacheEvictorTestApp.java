@@ -30,9 +30,9 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
       testIsKeyInCache();
       testIsValueInCache();
       testElementExpired();
+      testRemove();
 
       testIdleAndTimeToLive("cache1", 5, 10, 20);
-
       testIdleAndTimeToLive("cache2", 10, 0, 20);
       testIdleAndTimeToLive("cache3", 0, 10, 20);
       testIdleAndTimeToLive("cache4", 0, 0, 20);
@@ -85,6 +85,25 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     Assert.assertTrue(cache.isValueInCache("v1"));
     Assert.assertTrue(cache.isValueInCache("v2"));
     Assert.assertTrue(cache.isValueInCache("v3"));
+  }
+
+  private void testRemove() throws Exception {
+    Cache cache = getCacheManger().getCache("sampleCache1");
+    populateCache(cache);
+
+    if (barrier() == 0) {
+      Assert.assertTrue(cache.remove("k1"));
+      Assert.assertTrue(cache.remove("k2"));
+    }
+    barrier();
+
+    Assert.assertFalse(cache.isElementInMemory("k1"));
+    Assert.assertFalse(cache.isElementInMemory("k2"));
+    Assert.assertTrue(cache.isElementInMemory("k3"));
+
+    Assert.assertFalse(cache.remove("k1"));
+    Assert.assertFalse(cache.remove("k2"));
+
   }
 
   private void testElementExpired() throws Exception {
