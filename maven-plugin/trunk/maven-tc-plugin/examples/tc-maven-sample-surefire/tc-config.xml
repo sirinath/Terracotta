@@ -11,10 +11,6 @@
 
   <clients>
     <logs>target/terracotta/%(tc.nodeName)</logs>
-    <modules>
-      <module name="clustered-surefire-2.3" version="1.0.0"/>
-      <repository>file:/C:/dev/terr/tc-trunk/code/base/build/dist/terracotta-trunk/modules/</repository>
-    </modules>
   </clients>
 
   <application>

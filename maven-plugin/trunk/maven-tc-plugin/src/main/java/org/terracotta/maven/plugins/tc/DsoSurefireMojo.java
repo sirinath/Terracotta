@@ -14,13 +14,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.ExcludesArtifactFilter;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
@@ -45,21 +42,9 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
  * @goal test
  * @phase test
  * @requiresDependencyResolution test
- * @execute phase="test"
+ * @execute phase="test-compile"
  */
 public class DsoSurefireMojo extends DsoLifecycleMojo {
-
-  // /**
-  //  * @parameter expression="${project}"
-  //  */
-  // private MavenProject project;
-  
-  //  /**
-  //   * Set this to 'true' to bypass unit tests entirely. Its use is NOT RECOMMENDED, but quite convenient on occasion.
-  //   * 
-  //   * parameter expression="${maven.test.skip}"
-  //   */
-  // private boolean skip;
 
   /**
    * Set this to 'true' to bypass unit tests execution, but still compile them. Its use is NOT RECOMMENDED, but quite
@@ -144,16 +129,6 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
    * @parameter
    */
   private List excludes;
-
-  /**
-   * ArtifactRepository of the localRepository. To obtain the directory of localRepository in unit tests use
-   * System.setProperty( "localRepository").
-   * 
-   * @parameter expression="${localRepository}"
-   * @required
-   * @readonly
-   */
-  private ArtifactRepository localRepository;
 
   /**
    * List of System properties to pass to the JUnit tests.
@@ -304,26 +279,6 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
    */
   private boolean trimStackTrace;
 
-  /**
-   * Resolves the artifacts needed.
-   * 
-   * @component
-   */
-  private ArtifactResolver artifactResolver;
-
-  /**
-   * Creates the artifact
-   * 
-   * @component
-   */
-  private ArtifactFactory artifactFactory;
-
-  /**
-   * The plugin remote repositories declared in the pom.
-   * 
-   * @parameter expression="${project.pluginArtifactRepositories}"
-   */
-  private List remoteRepositories;
 
   /**
    * For retrieval of artifact's metadata.
@@ -370,6 +325,11 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
     if (!verifyParameters()) {
       return;
     }
+    
+    getLog().info("------------------------------------------------------------------------");
+    resolveModuleArtifacts(true);
+
+    getLog().info("Starting Surefire");
 
     CyclicBarrier barrier = new CyclicBarrier(numberOfNodes + 1);
 
@@ -720,14 +680,8 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
       args += " -Dtc.classloader.writeToDisk=true";
       args += " -Dtc.classpath=" + createPluginClasspath();
 
-      if (modules != null && modules.trim().length() > 0) {
-        String location = modules.trim();
-        File modulesDir = new File(location);
-        if (modulesDir.isDirectory() && modulesDir.exists()) {
-          location = modulesDir.toURI().toString();
-        }
-        args += " -Dtc.tests.configuration.modules.url=" + location;
-      }
+      args += " -Dtc.tests.configuration.modules.url=" + getModulesRepository();
+      args += " -Dtc.tests.configuration.modules=clustered-surefire-2.3-1.0.0,modules-common-1.0-1.0.0";
 
       if (argLine != null && argLine.trim().length() > 0) {
         args += " " + argLine;
