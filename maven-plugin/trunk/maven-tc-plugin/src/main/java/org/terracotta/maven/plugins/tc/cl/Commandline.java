@@ -58,9 +58,13 @@ package org.terracotta.maven.plugins.tc.cl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 //import org.codehaus.plexus.util.cli.CommandLineException;
 //import org.codehaus.plexus.util.cli.shell.BourneShell;
@@ -596,6 +600,8 @@ public class Commandline implements Cloneable {
   }
 
   public static class Argument implements Arg {
+    public final static Pattern ARG_PATTERN = Pattern.compile("((?:[^\"\\s]\\S*[^\"\\s])|(?:\"[^\"]*\"))");
+    
     private String[] parts;
 
     /*
@@ -605,7 +611,16 @@ public class Commandline implements Cloneable {
      */
     public void setValue(String value) {
       if (value != null) {
-        parts = new String[] { value };
+        List valueParts = new ArrayList();
+        Matcher matcher = ARG_PATTERN.matcher(value);
+        while (matcher.find()) {
+          valueParts.add(matcher.group());
+        }
+        String[] partsArray = new String[valueParts.size()];
+        valueParts.toArray(partsArray);
+        parts = partsArray;
+      } else {
+        parts = null;
       }
     }
 
