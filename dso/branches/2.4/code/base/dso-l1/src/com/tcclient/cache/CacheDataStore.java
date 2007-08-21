@@ -159,15 +159,26 @@ public class CacheDataStore implements Serializable {
     Assert.pre(rv != null);
     final long now = System.currentTimeMillis();
     final Timestamp t = rv.getTimestamp();
-    final long diff = t.getExpiredTimeMillis() - now;
-    if (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis())) {
+    final long expiredTimeMillis = t.getExpiredTimeMillis();
+    if (needsUpdate(rv)) {
       ManagerUtil.monitorEnter(store, LockLevel.WRITE);
       try {
+        if (DebugUtil.DEBUG) {
+          System.err.println("Client " + ManagerUtil.getClientID() + " expiredTimeMillis before monitorEnter: " + expiredTimeMillis + 
+                             " expiredTimeMillis after monitorEnter: " + t.getExpiredTimeMillis());
+        }
         t.setExpiredTimeMillis(now + rv.getMaxInactiveMillis());
       } finally {
         ManagerUtil.monitorExit(store);
       }
     }
+  }
+  
+  boolean needsUpdate(CacheData rv) {
+    final long now = System.currentTimeMillis();
+    final Timestamp t = rv.getTimestamp();
+    final long diff = t.getExpiredTimeMillis() - now;
+    return (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis()));
   }
 
   Timestamp findTimestampUnlocked(final Object key) {
