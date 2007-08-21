@@ -165,7 +165,7 @@ public class CacheDataStore implements Serializable {
       try {
         if (DebugUtil.DEBUG) {
           System.err.println("Client " + ManagerUtil.getClientID() + " expiredTimeMillis before monitorEnter: " + expiredTimeMillis + 
-                             " expiredTimeMillis after monitorEnter: " + t.getExpiredTimeMillis());
+                             " expiredTimeMillis after monitorEnter: " + t.getExpiredTimeMillis() + " setting ExpiredTimeMillis: " + (now + rv.getMaxInactiveMillis()));
         }
         t.setExpiredTimeMillis(now + rv.getMaxInactiveMillis());
       } finally {
@@ -253,10 +253,10 @@ public class CacheDataStore implements Serializable {
         totalCnt++;
         if (DebugUtil.DEBUG) {
           System.err.println("Client id: " + ManagerUtil.getClientID() + " key: " + key
-                             + " InvalidateCacheEntries [dtm.getMillis]: " + dtm.getMillis() + " [currentMillis]: "
+                             + " InvalidateCacheEntries [dtm.getMillis]: " + dtm.getInvalidatedTimeMillis() + " [currentMillis]: "
                              + System.currentTimeMillis());
         }
-        if (dtm.getMillis() < System.currentTimeMillis()) {
+        if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
           if (evaluateCacheEntry(dtm, key)) invalCnt++;
         } else {

@@ -14,7 +14,7 @@ public class Timestamp {
     this.timeToDieMillis = timeToDieMillis;
   }
 
-  public synchronized long getMillis() {
+  public synchronized long getInvalidatedTimeMillis() {
     if (timeToDieMillis <= 0) { return timeToExpireMillis; }
     
     return (timeToExpireMillis < timeToDieMillis)? timeToExpireMillis : timeToDieMillis;
@@ -31,6 +31,6 @@ public class Timestamp {
   }
 
   public String toString() {
-    return new Date(getMillis()).toString();
+    return new Date(getInvalidatedTimeMillis()).toString();
   }
 }
