@@ -15,6 +15,8 @@ public class Timestamp {
   }
 
   public synchronized long getMillis() {
+    if (timeToDieMillis <= 0) { return timeToExpireMillis; }
+    
     return (timeToExpireMillis < timeToDieMillis)? timeToExpireMillis : timeToDieMillis;
   }
   
@@ -23,7 +25,7 @@ public class Timestamp {
   }
 
   public synchronized void setExpiredTimeMillis(long millis) {
-    if (timeToDieMillis > millis) {
+    if (timeToDieMillis <= 0 || timeToDieMillis > millis) {
       this.timeToExpireMillis = millis;
     }
   }

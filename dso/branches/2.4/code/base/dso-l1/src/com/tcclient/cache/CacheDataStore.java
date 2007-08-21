@@ -154,6 +154,8 @@ public class CacheDataStore implements Serializable {
   }
 
   void updateTimestampIfNeeded(CacheData rv) {
+    if (maxIdleTimeoutSeconds <= 0) { return; }
+    
     Assert.pre(rv != null);
     final long now = System.currentTimeMillis();
     final Timestamp t = rv.getTimestamp();

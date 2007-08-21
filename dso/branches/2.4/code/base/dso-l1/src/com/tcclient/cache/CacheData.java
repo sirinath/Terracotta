@@ -25,7 +25,11 @@ public class CacheData implements Serializable {
     this.createTime = System.currentTimeMillis();
     this.maxIdleMillis = maxIdleSeconds * 1000;
     this.maxTTLMillis = maxTTLSeconds * 1000;
-    this.timestamp = new Timestamp(this.createTime + maxIdleMillis, this.createTime + maxTTLMillis);
+    if (maxIdleMillis <= 0) {
+      this.timestamp = new Timestamp(this.createTime + maxTTLMillis, this.createTime + maxTTLMillis);
+    } else {
+      this.timestamp = new Timestamp(this.createTime + maxIdleMillis, this.createTime + maxTTLMillis);
+    }
     this.lastAccessedTimeInMillis = 0;
   }
 
