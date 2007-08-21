@@ -39,6 +39,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   }
   
   private void basicMapTTLTest(int index) throws Exception {
+    DebugUtil.DEBUG = true;
     if (index == 0) {
       dataRoot = new DataRoot(new MockTimeExpiryMap(1, 50, 5));
     }
@@ -72,6 +73,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     Assert.assertEquals(3, dataRoot.getNumOfExpired());
     
     barrier.barrier();
+    DebugUtil.DEBUG = false;
   }
   
   private void basicMapTest(int index) throws Exception {

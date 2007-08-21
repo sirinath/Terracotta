@@ -113,6 +113,9 @@ public class CacheDataStore implements Serializable {
 
   public boolean isExpired(final Object key) {
     CacheData rv = (CacheData) store.get(key);
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " checking isExpired for key: " + key + " rv: " + rv + " rv.isValid: " + ((rv == null)? false : rv.isValid()));
+    }
     return rv == null || !rv.isValid();
   }
 
@@ -189,7 +192,7 @@ public class CacheDataStore implements Serializable {
     final CacheData rv = (CacheData) store.get(key);
     return rv;
   }
-
+  
   public int getHitCount() {
     return hitCount;
   }
