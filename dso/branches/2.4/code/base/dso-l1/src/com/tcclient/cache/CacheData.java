@@ -44,7 +44,8 @@ public class CacheData implements Serializable {
   synchronized boolean isValid() {
     if (DebugUtil.DEBUG) {
       System.err.println("Client id: " + ManagerUtil.getClientID() + " Checking if CacheData isValid [invalidated]: "
-                         + invalidated + " [lastAccessedTimeInMillis]: " + lastAccessedTimeInMillis);
+                         + invalidated + " [lastAccessedTimeInMillis]: " + lastAccessedTimeInMillis + " current millis: " + System.currentTimeMillis());
+      
     }
     if (invalidated) { return false; }
     return hasNotExpired() && isStillAlive();
@@ -52,7 +53,7 @@ public class CacheData implements Serializable {
 
   private boolean hasNotExpired() {
     if (DebugUtil.DEBUG) {
-      System.err.println(getIdleMillis());
+      System.err.println("Client id: " + ManagerUtil.getClientID() + " getIdleMillis: " + getIdleMillis());
     }
     if (getMaxInactiveMillis() <= 0) { return true; }
     return getIdleMillis() < getMaxInactiveMillis();
@@ -79,7 +80,8 @@ public class CacheData implements Serializable {
   synchronized void accessed() {
     lastAccessedTimeInMillis = System.currentTimeMillis();
     if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " accessing " + lastAccessedTimeInMillis);
+      System.err.println("Client " + ManagerUtil.getClientID() + " accessing " + lastAccessedTimeInMillis + " current millis: " + System.currentTimeMillis());
+      Thread.dumpStack();
     }
   }
 
