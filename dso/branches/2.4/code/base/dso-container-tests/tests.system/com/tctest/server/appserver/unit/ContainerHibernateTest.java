@@ -6,8 +6,9 @@ package com.tctest.server.appserver.unit;
 
 import net.sf.ehcache.Cache;
 import net.sf.jsr107cache.CacheListener;
-
+import org.apache.commons.logging.LogFactory;
 import org.apache.derby.drda.NetworkServerControl;
+import org.apache.log4j.Logger;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
@@ -30,19 +31,17 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public ContainerHibernateTest() {
-    // MNK-287
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }
   }
 
   public boolean shouldDisable() {
+    // MNK-287
     boolean wasceOrWebSphere = AppServerFactory.currentAppServerBelongsTo(AppServerFactory.WASCE
                                                                           | AppServerFactory.WEBSPHERE);
-    boolean isJboss3 = AppServerFactory.JBOSS == AppServerFactory.getCurrentAppServerId()
-                       && "3".equals(AppServerFactory.getCurrentAppServerMajorVersion());
 
-    return super.shouldDisable() || wasceOrWebSphere || isJboss3;
+    return super.shouldDisable() || wasceOrWebSphere;
   }
 
   public void testHibernate() throws Exception {
@@ -77,11 +76,18 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(Cache.class); // ehcache-1.3.0.jar
       builder.addDirectoryOrJARContainingClass(CacheListener.class); // jsr107cache-1.0.jar
 
+      if (AppServerFactory.getCurrentAppServerId() != AppServerFactory.JBOSS) {
+        builder.addDirectoryOrJARContainingClass(Logger.class); // log4j
+        builder.addDirectoryOrJARContainingClass(LogFactory.class); // common-loggings
+      }
+
       builder.addResource("/com/tctest/server/appserver/unit", "hibernate.cfg.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "ehcache13.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Event.hbm.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "Person.hbm.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "PhoneNumber.hbm.xml", "WEB-INF/classes");
+
+      builder.addResource("/com/tctest/server/appserver/unit/containerhibernatetest", "jboss-web.xml", "WEB-INF");
 
       builder.addServlet("ContainerHibernateTestServlet", "/ContainerHibernateTestServlet/*",
                          ContainerHibernateTestServlet.class, null, true);
