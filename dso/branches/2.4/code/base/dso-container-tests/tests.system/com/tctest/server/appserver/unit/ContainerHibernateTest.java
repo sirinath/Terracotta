@@ -37,10 +37,12 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
   }
 
   public boolean shouldDisable() {
-    int appId = AppServerFactory.getCurrentAppServerId();
-    return super.shouldDisable()
-           || AppServerFactory.WASCE == appId
-           || AppServerFactory.WEBSPHERE == appId;
+    boolean wasceOrWebSphere = AppServerFactory.currentAppServerBelongsTo(AppServerFactory.WASCE
+                                                                          | AppServerFactory.WEBSPHERE);
+    boolean isJboss3 = AppServerFactory.JBOSS == AppServerFactory.getCurrentAppServerId()
+                       && "3".equals(AppServerFactory.getCurrentAppServerMajorVersion());
+
+    return super.shouldDisable() || wasceOrWebSphere || isJboss3;
   }
 
   public void testHibernate() throws Exception {
@@ -69,13 +71,11 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(org.dom4j.Node.class); // domj4*.jar
       builder.addDirectoryOrJARContainingClass(net.sf.cglib.core.ClassInfo.class); // cglib-nodep*.jar
       builder.addDirectoryOrJARContainingClass(javax.transaction.Transaction.class); // jta*.jar
-      builder.addDirectoryOrJARContainingClass(org.apache.commons.collections.Buffer.class); // commons-collections*.jar
+      builder.addDirectoryOrJARContainingClass(org.apache.commons.collections.Buffer.class); // 
       builder.addDirectoryOrJARContainingClass(org.apache.derby.jdbc.ClientDriver.class); // derby*.jar
       builder.addDirectoryOrJARContainingClass(antlr.Tool.class); // antlr*.jar
       builder.addDirectoryOrJARContainingClass(Cache.class); // ehcache-1.3.0.jar
       builder.addDirectoryOrJARContainingClass(CacheListener.class); // jsr107cache-1.0.jar
-      
-      
 
       builder.addResource("/com/tctest/server/appserver/unit", "hibernate.cfg.xml", "WEB-INF/classes");
       builder.addResource("/com/tctest/server/appserver/unit", "ehcache13.xml", "WEB-INF/classes");
