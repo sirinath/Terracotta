@@ -8,6 +8,8 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.NotInBootJar;
 import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 
@@ -94,11 +96,18 @@ public class BootJar {
     JarFile jarFile = new JarFile(bootJar, false);
     Manifest manifest = jarFile.getManifest();
     BootJarMetaData metaData = new BootJarMetaData(manifest);
-    
+
     // verify VM signature
     BootJarSignature signatureFromJar = new BootJarSignature(metaData.getVMSignature());
 
-    if (!expectedSignature.isCompatibleWith(signatureFromJar)) {
+    TCProperties props = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
+    
+    System.out.println(".......................................................");
+    System.out.println("> jvm.check.compatibility:" + props.getBoolean("jvm.check.compatibility"));
+    System.out.println(".......................................................");
+    
+    if (props.getBoolean("jvm.check.compatibility") &&
+        !expectedSignature.isCompatibleWith(signatureFromJar)) {
       // make formatter sane
       throw new InvalidJVMVersionException(
                                            "Incompatible boot jar JVM version; expected '"
