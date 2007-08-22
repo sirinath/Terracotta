@@ -114,7 +114,7 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     Element e1 = cache.get("k1");
     Element e2 = cache.get("k2");
     Element e3 = cache.get("k3");
-    long timeout = System.currentTimeMillis() + (30 * 1000);
+    long timeout = System.currentTimeMillis() + (40 * 1000);
     while (System.currentTimeMillis() < timeout) {
       cache.get("k1");
       cache.get("k2");
@@ -131,7 +131,7 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     assertInCache(cache, e1);
     assertInCache(cache, e2);
 
-    timeout = System.currentTimeMillis() + (70 * 1000);
+    timeout = System.currentTimeMillis() + (80 * 1000);
     while (System.currentTimeMillis() < timeout) {
       cache.get("k1");
       Thread.sleep(100);
