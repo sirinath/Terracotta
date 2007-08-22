@@ -56,6 +56,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     Thread.sleep(3000);
     
+    barrier.barrier();
+    
     Assert.assertEquals(3, dataRoot.size());
     Assert.assertFalse(dataRoot.isExpired("key1"));
     Assert.assertFalse(dataRoot.isExpired("key2"));
@@ -64,7 +66,11 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     Assert.assertEquals("val2", dataRoot.get("key2"));
     Assert.assertEquals("val3", dataRoot.get("key3"));
     
+    barrier.barrier();
+    
     Thread.sleep(3000);
+    
+    barrier.barrier();
     
     Assert.assertTrue(dataRoot.isExpired("key1"));
     Assert.assertTrue(dataRoot.isExpired("key2"));
@@ -116,6 +122,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   }
   
   private void expiredItemsTest(int index) throws Exception {
+    DebugUtil.DEBUG = true;
     if (index == 0) {
       dataRoot.setMap(new MockTimeExpiryMap(1, 5, 10));
     }
@@ -159,7 +166,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
     
     barrier.barrier();
-    
+    DebugUtil.DEBUG = false;
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
