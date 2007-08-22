@@ -7,6 +7,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.dijon.Button;
@@ -597,6 +598,17 @@ public class AdminClientPanel extends XContainer
     return true;
   }
  
+  /**
+   * Returns if the major and minor elements of the passed version strings match.
+   */
+  private static boolean versionsMatch(String v1, String v2) {
+    String[] v1Elems = StringUtils.split(v1, '.');
+    String[] v2Elems = StringUtils.split(v2, '.');
+
+    return v1Elems != null && v2Elems != null && v1Elems.length == v2Elems.length && v1Elems[0].equals(v2Elems[0])
+           && v1Elems[1].equals(v2Elems[1]);
+  }
+  
   public boolean testServerMatch(ServerNode serverNode) {
     if(com.tc.util.ProductInfo.getInstance().isDevMode()) {
       return true;
@@ -615,7 +627,7 @@ public class AdminClientPanel extends XContainer
       serverVersion = serverVersion.substring(spaceIndex+1);
     }
     
-    if (!consoleVersion.equals(serverVersion)) {
+    if (!versionsMatch(consoleVersion, serverVersion)) {
       Frame frame = getFrame();
       String msg = "<html>Version mismatch for "+serverNode+".<br><br><table><tr><td>Terracotta Server Version:</td><td>"+serverVersion+
         "</tr><tr><td>AdminConsole Version:</td><td>"+consoleVersion+"</td></tr></table><br>Continue?</html>";
