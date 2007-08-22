@@ -235,6 +235,9 @@ public class CacheDataStore implements Serializable {
 
     final Lock lock = new Lock(invalidatorLock);
     lock.tryWriteLock();
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " tryWriteLock status: " + lock.isLocked() + " lockName: " + invalidatorLock);
+    }
     if (!lock.isLocked()) return;
 
     try {
@@ -316,6 +319,9 @@ public class CacheDataStore implements Serializable {
 
     public void run() {
       try {
+        if (DebugUtil.DEBUG) {
+          System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
+        }
         evictExpiredElements();
       } catch (Throwable t) {
         t.printStackTrace(System.err);
