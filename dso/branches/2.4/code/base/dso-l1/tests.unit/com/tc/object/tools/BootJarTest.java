@@ -22,7 +22,7 @@ public class BootJarTest extends BaseDSOTestCase {
   private final ClassBytesProvider bytesProvider = new ClassLoaderBytesProvider(getClass().getClassLoader());
 
   public BootJarTest() {
-    //
+    disableAllUntil("2007-10-01");
   }
 
   public void testBootJarVersion() throws Exception {
