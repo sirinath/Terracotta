@@ -211,12 +211,12 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
     
     public synchronized void setMap(MockTimeExpiryMap map) {
+      this.map.stopTimeMonitoring();
       this.map = map;
     }
     
     public synchronized boolean isExpired(Object key) {
       return map.isExpired(key);
-      
     }
   }
   
