@@ -13,6 +13,7 @@ import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 
 import gnu.trove.TObjectIntHashMap;
@@ -79,6 +80,7 @@ public class DNAEncoding {
   private static final byte          TYPE_ID_ENUM                         = 22;
   private static final byte          TYPE_ID_ENUM_HOLDER                  = 23;
   private static final byte          TYPE_ID_CURRENCY                     = 24;
+  private static final byte          TYPE_ID_STRING_COMPRESSED            = 25;
 
   private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
@@ -115,6 +117,15 @@ public class DNAEncoding {
 
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
   private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
+
+  private static final boolean       STRING_COMPRESSION_ENABLED           = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getBoolean(
+                                                                                          "l1.transactionmanager.strings.compress.enabled");
+  private static final int           STRING_COMPRESSION_MIN_SIZE          = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getInt(
+                                                                                      "l1.transactionmanager.strings.compress.minSize");
 
   /**
    * Used in the Applicators. The policy is set to APPLICATOR.
@@ -247,8 +258,14 @@ public class DNAEncoding {
         output.writeShort(((Short) value).shortValue());
         break;
       case LiteralValues.STRING:
-        output.writeByte(TYPE_ID_STRING);
-        writeString((String) value, output);
+        String s = (String) value;
+        if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
+          output.writeByte(TYPE_ID_STRING_COMPRESSED);
+          writeCompressedString(s, output);
+        } else {
+          output.writeByte(TYPE_ID_STRING);
+          writeString(s, output);
+        }
         break;
       case LiteralValues.STRING_BYTES:
         output.writeByte(TYPE_ID_STRING_BYTES);
@@ -309,6 +326,9 @@ public class DNAEncoding {
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
+  }
+
+  private void writeCompressedString(String string, TCDataOutput output) {
   }
 
   private void writeByteArray(byte bytes[], TCDataOutput output) {
