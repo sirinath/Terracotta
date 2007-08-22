@@ -101,18 +101,8 @@ public class BootJar {
     BootJarSignature signatureFromJar = new BootJarSignature(metaData.getVMSignature());
 
     TCProperties props = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
-    boolean checkJvmCompatibility;
-    try {
-      checkJvmCompatibility = props.getBoolean("jvm.check.compatibility");
-    } catch (AssertionError e) {
-      checkJvmCompatibility = false;
-    }    
-
+    final boolean checkJvmCompatibility = props.getBoolean("jvm.check.compatibility");
     if (checkJvmCompatibility && !expectedSignature.isCompatibleWith(signatureFromJar)) {
-      System.out.println(".......................................................");
-      System.out.println("> jvm.check.compatibility:" + checkJvmCompatibility);
-      System.out.println(".......................................................");
-
       // make formatter sane
       throw new InvalidJVMVersionException(
                                            "Incompatible boot jar JVM version; expected '"
