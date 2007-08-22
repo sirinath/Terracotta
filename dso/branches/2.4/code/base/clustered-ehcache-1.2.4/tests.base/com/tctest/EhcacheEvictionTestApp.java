@@ -124,7 +124,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     barrier.barrier();
 
-    Thread.sleep(TIME_TO_LIVE_IN_SECONDS * 500);
+    Thread.sleep(TIME_TO_LIVE_IN_SECONDS * 700);
 
     barrier.barrier();
 
