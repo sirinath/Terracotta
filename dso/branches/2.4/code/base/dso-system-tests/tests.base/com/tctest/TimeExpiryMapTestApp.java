@@ -228,8 +228,10 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
     
     protected final synchronized void processExpired(Object key, Object value) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " expiring ... key: " + key + ", value: " + value);
       numOfExpired++;
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " expiring ... key: " + key + ", value: " + value + ", numOfExpired: " + numOfExpired);
+      }
     }
     
     public synchronized int getNumOfExpired() {
