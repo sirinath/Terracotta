@@ -4,13 +4,9 @@
  */
 package com.tc.object.dna.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.zip.InflaterInputStream;
 
 /**
  * Holds byte data for strings. The main purpose of this class is to simply hold the bytes data for a String (no sense
@@ -21,13 +17,13 @@ import java.util.zip.InflaterInputStream;
  */
 public class UTF8ByteDataHolder implements Serializable {
 
-  private final byte[]  bytes;
-  private final boolean isCompressed;
-  private int           hash = 0;
+  private final byte[] bytes;
+  private final int    uncompressedLength;
+  private int          hash = 0;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
-    this.isCompressed = false;
+    this.uncompressedLength = -1;
     try {
       this.bytes = str.getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
@@ -36,12 +32,12 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, false);
+    this(b, -1);
   }
 
-  public UTF8ByteDataHolder(byte[] b, boolean isCompressed) {
+  public UTF8ByteDataHolder(byte[] b, int uncompressedLenght) {
     this.bytes = b;
-    this.isCompressed = isCompressed;
+    this.uncompressedLength = uncompressedLenght;
   }
 
   public byte[] getBytes() {
@@ -49,27 +45,11 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   public String asString() {
-    return (isCompressed ? inflate() : getString());
+    return (isCompressed() ? inflate() : getString());
   }
 
-  /**
-   * TODO::There are 4 copies of byte arrays happening in this method. Ridiculous.
-   */
   private String inflate() {
-    try {
-      ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-      InflaterInputStream iis = new InflaterInputStream(bais);
-      ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
-      byte uncompressed[] = new byte[4096];
-      int read;
-      while ((read = iis.read(uncompressed)) != -1) {
-        baos.write(uncompressed, 0, read);
-      }
-      iis.close();
-      return new String(baos.toByteArray(), "UTF-8");
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
+    return DNAEncoding.inflateCompressedString(bytes, uncompressedLength);
   }
 
   private String getString() {
@@ -86,7 +66,7 @@ public class UTF8ByteDataHolder implements Serializable {
 
   public int hashCode() {
     if (hash == 0) {
-      int tmp = isCompressed ? 21 : 37;
+      int tmp = isCompressed() ? 21 : 37;
       for (int i = 0, n = bytes.length; i < n; i++) {
         tmp = 31 * tmp + bytes[i++];
       }
@@ -98,13 +78,17 @@ public class UTF8ByteDataHolder implements Serializable {
   public boolean equals(Object obj) {
     if (obj instanceof UTF8ByteDataHolder) {
       UTF8ByteDataHolder other = (UTF8ByteDataHolder) obj;
-      return ((isCompressed == other.isCompressed) && (Arrays.equals(this.bytes, other.bytes)) && this.getClass()
-          .equals(other.getClass()));
+      return ((uncompressedLength == other.uncompressedLength) && (Arrays.equals(this.bytes, other.bytes)) && this
+          .getClass().equals(other.getClass()));
     }
     return false;
   }
 
   public boolean isCompressed() {
-    return isCompressed;
+    return uncompressedLength != -1;
+  }
+  
+  public int getUnCompressedStringLength() {
+    return uncompressedLength;
   }
 }
