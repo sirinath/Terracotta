@@ -5,6 +5,7 @@
 package com.tc.object.dna.impl;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.io.TCByteArrayOutputStream;
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
@@ -18,7 +19,7 @@ import com.tc.util.Assert;
 
 import gnu.trove.TObjectIntHashMap;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
@@ -30,6 +31,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Currency;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 /**
  * Utility for encoding/decoding DNA
@@ -38,54 +40,54 @@ public class DNAEncoding {
 
   // XXX: These warning thresholds should be done in a non-static way so they can be made configurable
   // and architecture sensitive.
-  private static final int            WARN_THRESHOLD                       = 8 * 1000 * 1000;
-  private static final int            BOOLEAN_WARN                         = WARN_THRESHOLD / 1;
-  private static final int            BYTE_WARN                            = WARN_THRESHOLD / 1;
-  private static final int            CHAR_WARN                            = WARN_THRESHOLD / 2;
-  private static final int            DOUBLE_WARN                          = WARN_THRESHOLD / 8;
-  private static final int            FLOAT_WARN                           = WARN_THRESHOLD / 4;
-  private static final int            INT_WARN                             = WARN_THRESHOLD / 4;
-  private static final int            LONG_WARN                            = WARN_THRESHOLD / 8;
-  private static final int            SHORT_WARN                           = WARN_THRESHOLD / 2;
-  private static final int            REF_WARN                             = WARN_THRESHOLD / 4;
+  private static final int           WARN_THRESHOLD                       = 8 * 1000 * 1000;
+  private static final int           BOOLEAN_WARN                         = WARN_THRESHOLD / 1;
+  private static final int           BYTE_WARN                            = WARN_THRESHOLD / 1;
+  private static final int           CHAR_WARN                            = WARN_THRESHOLD / 2;
+  private static final int           DOUBLE_WARN                          = WARN_THRESHOLD / 8;
+  private static final int           FLOAT_WARN                           = WARN_THRESHOLD / 4;
+  private static final int           INT_WARN                             = WARN_THRESHOLD / 4;
+  private static final int           LONG_WARN                            = WARN_THRESHOLD / 8;
+  private static final int           SHORT_WARN                           = WARN_THRESHOLD / 2;
+  private static final int           REF_WARN                             = WARN_THRESHOLD / 4;
 
-  static final byte                   LOGICAL_ACTION_TYPE                  = 1;
-  static final byte                   PHYSICAL_ACTION_TYPE                 = 2;
-  static final byte                   ARRAY_ELEMENT_ACTION_TYPE            = 3;
-  static final byte                   ENTIRE_ARRAY_ACTION_TYPE             = 4;
-  static final byte                   LITERAL_VALUE_ACTION_TYPE            = 5;
-  static final byte                   PHYSICAL_ACTION_TYPE_REF_OBJECT      = 6;
-  static final byte                   SUB_ARRAY_ACTION_TYPE                = 7;
+  static final byte                  LOGICAL_ACTION_TYPE                  = 1;
+  static final byte                  PHYSICAL_ACTION_TYPE                 = 2;
+  static final byte                  ARRAY_ELEMENT_ACTION_TYPE            = 3;
+  static final byte                  ENTIRE_ARRAY_ACTION_TYPE             = 4;
+  static final byte                  LITERAL_VALUE_ACTION_TYPE            = 5;
+  static final byte                  PHYSICAL_ACTION_TYPE_REF_OBJECT      = 6;
+  static final byte                  SUB_ARRAY_ACTION_TYPE                = 7;
 
-  private static final LiteralValues  literalValues                        = new LiteralValues();
-  private static final TCLogger       logger                               = TCLogging.getLogger(DNAEncoding.class);
+  private static final LiteralValues literalValues                        = new LiteralValues();
+  private static final TCLogger      logger                               = TCLogging.getLogger(DNAEncoding.class);
 
-  private static final byte           TYPE_ID_REFERENCE                    = 1;
-  private static final byte           TYPE_ID_BOOLEAN                      = 2;
-  private static final byte           TYPE_ID_BYTE                         = 3;
-  private static final byte           TYPE_ID_CHAR                         = 4;
-  private static final byte           TYPE_ID_DOUBLE                       = 5;
-  private static final byte           TYPE_ID_FLOAT                        = 6;
-  private static final byte           TYPE_ID_INT                          = 7;
-  private static final byte           TYPE_ID_LONG                         = 10;
-  private static final byte           TYPE_ID_SHORT                        = 11;
-  private static final byte           TYPE_ID_STRING                       = 12;
-  private static final byte           TYPE_ID_STRING_BYTES                 = 13;
-  private static final byte           TYPE_ID_ARRAY                        = 14;
-  private static final byte           TYPE_ID_JAVA_LANG_CLASS              = 15;
-  private static final byte           TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
-  private static final byte           TYPE_ID_BIG_INTEGER                  = 17;
-  private static final byte           TYPE_ID_STACK_TRACE_ELEMENT          = 18;
-  private static final byte           TYPE_ID_BIG_DECIMAL                  = 19;
-  private static final byte           TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
-  private static final byte           TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
-  private static final byte           TYPE_ID_ENUM                         = 22;
-  private static final byte           TYPE_ID_ENUM_HOLDER                  = 23;
-  private static final byte           TYPE_ID_CURRENCY                     = 24;
-  private static final byte           TYPE_ID_STRING_COMPRESSED            = 25;
+  private static final byte          TYPE_ID_REFERENCE                    = 1;
+  private static final byte          TYPE_ID_BOOLEAN                      = 2;
+  private static final byte          TYPE_ID_BYTE                         = 3;
+  private static final byte          TYPE_ID_CHAR                         = 4;
+  private static final byte          TYPE_ID_DOUBLE                       = 5;
+  private static final byte          TYPE_ID_FLOAT                        = 6;
+  private static final byte          TYPE_ID_INT                          = 7;
+  private static final byte          TYPE_ID_LONG                         = 10;
+  private static final byte          TYPE_ID_SHORT                        = 11;
+  private static final byte          TYPE_ID_STRING                       = 12;
+  private static final byte          TYPE_ID_STRING_BYTES                 = 13;
+  private static final byte          TYPE_ID_ARRAY                        = 14;
+  private static final byte          TYPE_ID_JAVA_LANG_CLASS              = 15;
+  private static final byte          TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
+  private static final byte          TYPE_ID_BIG_INTEGER                  = 17;
+  private static final byte          TYPE_ID_STACK_TRACE_ELEMENT          = 18;
+  private static final byte          TYPE_ID_BIG_DECIMAL                  = 19;
+  private static final byte          TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
+  private static final byte          TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
+  private static final byte          TYPE_ID_ENUM                         = 22;
+  private static final byte          TYPE_ID_ENUM_HOLDER                  = 23;
+  private static final byte          TYPE_ID_CURRENCY                     = 24;
+  private static final byte          TYPE_ID_STRING_COMPRESSED            = 25;
 
-  private static final byte           ARRAY_TYPE_PRIMITIVE                 = 1;
-  private static final byte           ARRAY_TYPE_NON_PRIMITIVE             = 2;
+  private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
+  private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
   /**
    * When the policy is set to SERIALIZER then the DNAEncoding.decode() will return the exact Objects that where
@@ -94,7 +96,7 @@ public class DNAEncoding {
    * <p>
    * You may want such a policy in TCObjectInputStream, for example.
    */
-  public static final byte            SERIALIZER                           = 0x00;
+  public static final byte           SERIALIZER                           = 0x00;
 
   /**
    * When the policy is set to STORAGE then the DNAEncoding.decode() may return Objects that represent the original
@@ -103,7 +105,7 @@ public class DNAEncoding {
    * <p>
    * As the name says, you may want such a policy for storage in the L2.
    */
-  public static final byte            STORAGE                              = 0x01;
+  public static final byte           STORAGE                              = 0x01;
 
   /**
    * When the policy is set to APPLICATOR then the DNAEncoding.decode() will return the original Objects that were
@@ -112,27 +114,26 @@ public class DNAEncoding {
    * <p>
    * You may want such a policy in TCObjectInputStream, for example.
    */
-  public static final byte            APPLICATOR                           = 0x02;
+  public static final byte           APPLICATOR                           = 0x02;
 
-  private final ClassProvider         classProvider;
-  private final byte                  policy;
-  private final ByteArrayOutputStream byteArrayOS                          = new ByteArrayOutputStream(4096);
+  private final ClassProvider        classProvider;
+  private final byte                 policy;
 
-  private static final ClassProvider  FAILURE_PROVIDER                     = new FailureClassProvider();
-  private static final ClassProvider  LOCAL_PROVIDER                       = new LocalClassProvider();
+  private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
+  private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
 
-  private static final boolean        STRING_COMPRESSION_ENABLED           = TCPropertiesImpl
-                                                                               .getProperties()
-                                                                               .getBoolean(
-                                                                                           "l1.transactionmanager.strings.compress.enabled");
-  private static final boolean        STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
-                                                                               .getProperties()
-                                                                               .getBoolean(
-                                                                                           "l1.transactionmanager.strings.compress.logging.enabled");
-  private static final int            STRING_COMPRESSION_MIN_SIZE          = TCPropertiesImpl
-                                                                               .getProperties()
-                                                                               .getInt(
-                                                                                       "l1.transactionmanager.strings.compress.minSize");
+  private static final boolean       STRING_COMPRESSION_ENABLED           = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getBoolean(
+                                                                                          "l1.transactionmanager.strings.compress.enabled");
+  private static final boolean       STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getBoolean(
+                                                                                          "l1.transactionmanager.strings.compress.logging.enabled");
+  private static final int           STRING_COMPRESSION_MIN_SIZE          = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getInt(
+                                                                                      "l1.transactionmanager.strings.compress.minSize");
 
   /**
    * Used in the Applicators. The policy is set to APPLICATOR.
@@ -278,10 +279,12 @@ public class DNAEncoding {
         UTF8ByteDataHolder utfBytes = (UTF8ByteDataHolder) value;
         if (utfBytes.isCompressed()) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
+          output.writeInt(utfBytes.getUnCompressedStringLength());
+          writeByteArray(utfBytes.getBytes(), output);
         } else {
           output.writeByte(TYPE_ID_STRING_BYTES);
+          writeByteArray(utfBytes.getBytes(), output);
         }
-        writeByteArray(utfBytes.getBytes(), output);
         break;
       case LiteralValues.OBJECT_ID:
         output.writeByte(TYPE_ID_REFERENCE);
@@ -342,22 +345,28 @@ public class DNAEncoding {
 
   private void writeCompressedString(String string, TCDataOutput output) {
     try {
+      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
       // Stride is 512 bytes by default, should I increase ?
       DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
       byte[] uncompressed = string.getBytes("UTF-8");
       dos.write(uncompressed);
       dos.close();
-      byte[] compressed = byteArrayOS.toByteArray();
-      writeByteArray(compressed, output);
+      byte[] compressed = byteArrayOS.getInternalArray();
+      // XXX:: We are writting the original string's length so that we save a couple of copies when decompressing
+      output.writeInt(uncompressed.length);
+      writeByteArray(compressed, 0, byteArrayOS.size(), output);
       if (STRING_COMPRESSION_LOGGING_ENABLED) {
         logger.info("Compressed String of size : " + string.length() + " bytes : " + uncompressed.length
                     + " to  bytes : " + compressed.length);
       }
     } catch (Exception e) {
       throw new AssertionError(e);
-    } finally {
-      byteArrayOS.reset();
     }
+  }
+
+  private void writeByteArray(byte[] bytes, int offset, int length, TCDataOutput output) {
+    output.writeInt(length);
+    output.write(bytes, offset, length);
   }
 
   private void writeByteArray(byte bytes[], TCDataOutput output) {
@@ -878,12 +887,32 @@ public class DNAEncoding {
   }
 
   private Object readCompressedString(TCDataInput input) throws IOException {
+    int stringLength = input.readInt();
     byte[] data = readByteArray(input);
-    UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, true);
     if (policy == APPLICATOR) {
-      return utfBytes.asString();
+      return inflateCompressedString(data, stringLength);
     } else {
+      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringLength);
       return utfBytes;
+    }
+  }
+
+  public static String inflateCompressedString(byte[] data, int length) {
+    try {
+      ByteArrayInputStream bais = new ByteArrayInputStream(data);
+      InflaterInputStream iis = new InflaterInputStream(bais);
+      byte uncompressed[] = new byte[length];
+      int read;
+      int offset = 0;
+      while (length > 0 && (read = iis.read(uncompressed, offset, length)) != -1) {
+        offset += read;
+        length -= read;
+      }
+      iis.close();
+      Assert.assertEquals(0, length);
+      return new String(uncompressed, "UTF-8");
+    } catch (IOException e) {
+      throw new AssertionError(e);
     }
   }
 
