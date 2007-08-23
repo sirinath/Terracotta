@@ -141,9 +141,9 @@ public class CacheDataStore implements Serializable {
     }
   }
 
-  public void expire(Object key, CacheData sd) {
+  public void expire(Object key) {
     removeInternal(key);
-    callback.expire(key, sd);
+    callback.expire(key);
   }
 
   public void clear() {
@@ -284,7 +284,8 @@ public class CacheDataStore implements Serializable {
         }
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
-          if (evaluateCacheEntry(dtm, key)) invalCnt++;
+          expire(key);
+          //if (evaluateCacheEntry(dtm, key)) invalCnt++;
         } else {
           notEvaled++;
         }
@@ -296,24 +297,24 @@ public class CacheDataStore implements Serializable {
     }
   }
 
-  private boolean evaluateCacheEntry(final Timestamp dtm, final Object key) {
-    Assert.pre(key != null);
-
-    boolean rv = false;
-
-    final CacheData sd = findCacheDataUnlocked(key);
-    if (sd == null) return rv;
-    if (!sd.isValid()) {
-      if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " expiring " + key);
-      }
-      expire(key, sd);
-      rv = true;
-      // } else {
-      // updateTimestampIfNeeded(sd);
-    }
-    return rv;
-  }
+//  private boolean evaluateCacheEntry(final Timestamp dtm, final Object key) {
+//    Assert.pre(key != null);
+//
+//    boolean rv = false;
+//
+//    final CacheData sd = findCacheDataUnlocked(key);
+//    if (sd == null) return rv;
+//    if (!sd.isValid()) {
+//      if (DebugUtil.DEBUG) {
+//        System.err.println("Client " + ManagerUtil.getClientID() + " expiring " + key);
+//      }
+//      expire(key, sd);
+//      rv = true;
+//      // } else {
+//      // updateTimestampIfNeeded(sd);
+//    }
+//    return rv;
+//  }
 
   private class CacheEntryInvalidator extends TimerTask {
     private final long  sleepMillis;

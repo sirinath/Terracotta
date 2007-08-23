@@ -6,7 +6,6 @@ package net.sf.ehcache.store;
 
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -98,22 +97,23 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       super(timeToIdleSec, maxIdleSec, timeToLiveSec, cacheName);
     }
 
-    protected final synchronized void processExpired(Object key, Object value) {
-      // If cache is null, the cache has been disposed and the invalidator thread will be stopping soon.
-
-      if (cache == null) { return; }
-      // Already removed from the map at this point
-      Element element = (Element) value;
-      // When max size is 0
-      if (element == null) { return; }
-
-      // check for expiry before going to the trouble of spooling
-      if (element.isExpired()) {
-        notifyExpiry(element);
-      } else {
-        evict(element);
-      }
-    }
+// Notification are not supported yet
+//    protected final synchronized void processExpired(Object key, Object value) {
+//      // If cache is null, the cache has been disposed and the invalidator thread will be stopping soon.
+//
+//      if (cache == null) { return; }
+//      // Already removed from the map at this point
+//      Element element = (Element) value;
+//      // When max size is 0
+//      if (element == null) { return; }
+//
+//      // check for expiry before going to the trouble of spooling
+//      if (element.isExpired()) {
+//        notifyExpiry(element);
+//      } else {
+//        evict(element);
+//      }
+//    }
 
     public final void evictExpiredElements() {
       timeExpiryDataStore.evictExpiredElements();
