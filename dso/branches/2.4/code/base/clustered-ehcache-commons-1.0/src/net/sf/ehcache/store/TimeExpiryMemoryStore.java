@@ -107,9 +107,6 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       // When max size is 0
       if (element == null) { return; }
 
-      LOG.info("Cache " + cache.getName() + " ProcessExpired -- key: " + element.getKey() + ", value: "
-               + element.getValue());
-
       // check for expiry before going to the trouble of spooling
       if (element.isExpired()) {
         notifyExpiry(element);
