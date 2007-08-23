@@ -101,18 +101,18 @@ public class ServerNode extends ComponentNode
    * done in the primary event loop.
    */
   private class AutoConnectionListener implements ConnectionListener {
+    private boolean m_handlingConnection;
+    
     public void handleConnection() {
+      if(m_handlingConnection) return;
+      m_handlingConnection = true;
       if (m_connectManager != null) {
         final boolean isConnected = m_connectManager.isConnected();
 
         if (SwingUtilities.isEventDispatchThread()) {
-          SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-              if (m_connectManager != null) {
-                setConnected(isConnected);
-              }
-            }
-          });
+          if (m_connectManager != null) {
+            setConnected(isConnected);
+          }
         } else {
           try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -128,6 +128,7 @@ public class ServerNode extends ComponentNode
           }
         }
       }
+      m_handlingConnection = false;
     }
 
     public void handleException() {
@@ -135,13 +136,9 @@ public class ServerNode extends ComponentNode
         final Exception e = m_connectManager.getConnectionException();
 
         if (SwingUtilities.isEventDispatchThread()) {
-          SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-              if (m_connectManager != null) {
-                reportConnectionException(e);
-              }
-            }
-          });
+          if (m_connectManager != null) {
+            reportConnectionException(e);
+          }
         } else {
           try {
             SwingUtilities.invokeAndWait(new Runnable() {
