@@ -37,11 +37,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
     return timeExpiryDataStore.put(key, value);
   }
 
-  public void expire(Object key, CacheData cacheData) {
-    processExpired(key, cacheData.getValue());
+  public void expire(Object key) {
+    processExpired(key);
   }
 
-  protected void processExpired(Object key, Object cacheData) {
+  protected void processExpired(Object key) {
     if (DebugUtil.DEBUG) {
       System.err.println("Calling processExpired in the superclass");
     }

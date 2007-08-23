@@ -4,5 +4,5 @@
 package com.tcclient.cache;
 
 public interface Expirable {
-  public void expire(Object key, CacheData cacheData);
+  public void expire(Object key);
 }
