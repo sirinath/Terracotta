@@ -42,7 +42,7 @@ public final class Weblogic9xAppServer extends CargoAppServer {
   }
 
   protected void setConfigProperties(LocalConfiguration config) throws Exception {
-    // config.setProperty(WebLogicPropertySet.DOMAIN, "domain");
+    //
   }
 
   private static class TCWebLogic9xInstalledLocalContainer extends WebLogic9xInstalledLocalContainer {
