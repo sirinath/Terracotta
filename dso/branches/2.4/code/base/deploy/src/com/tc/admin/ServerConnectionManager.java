@@ -155,25 +155,27 @@ public class ServerConnectionManager implements NotificationListener {
     setConnected(true);
   }
 
-  protected synchronized void setConnected(boolean connected) {
+  protected void setConnected(boolean connected) {
     if (m_connected != connected) {
-      m_connected = connected;
-      if (m_connected == false) {
-        cancelActiveServices();
-        m_active = m_started = m_passiveUninitialized = m_passiveStandby = false;
-        if (isAutoConnect()) {
-          startConnect();
-        }
-      } else { // connected
-        cacheCredentials(ServerConnectionManager.this, getCredentials());
-        m_started = true;
-        if ((m_active = internalIsActive()) == false) {
-          if((m_passiveUninitialized = internalIsPassiveUninitialized()) == false) {
-            m_passiveStandby = internalIsPassiveStandby();
+      synchronized (this) {
+        m_connected = connected;
+        if (m_connected == false) {
+          cancelActiveServices();
+          m_active = m_started = m_passiveUninitialized = m_passiveStandby = false;
+          if (isAutoConnect()) {
+            startConnect();
           }
-          addActivationListener();
+        } else { // connected
+          cacheCredentials(ServerConnectionManager.this, getCredentials());
+          m_started = true;
+          if ((m_active = internalIsActive()) == false) {
+            if ((m_passiveUninitialized = internalIsPassiveUninitialized()) == false) {
+              m_passiveStandby = internalIsPassiveStandby();
+            }
+            addActivationListener();
+          }
+          initConnectionMonitor();
         }
-        initConnectionMonitor();
       }
 
       // Notify listener that the connection state changed.
