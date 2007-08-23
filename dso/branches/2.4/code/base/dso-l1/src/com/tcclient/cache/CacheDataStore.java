@@ -220,9 +220,15 @@ public class CacheDataStore implements Serializable {
   }
 
   private Object[] getAllKeys() {
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " getting All keyts");
+    }
     Object[] rv;
-    ManagerUtil.monitorEnter(store, LockLevel.WRITE);
+    ManagerUtil.monitorEnter(store, LockLevel.READ);
     try {
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " getting All keyts after grabbing READ lock for store");
+      }
       synchronized (store) {
         Set keys = dtmStore.keySet();
         rv = keys.toArray(new Object[keys.size()]);
@@ -258,6 +264,12 @@ public class CacheDataStore implements Serializable {
     int evaled = 0;
     int notEvaled = 0;
     int errors = 0;
+    
+    if (DebugUtil.DEBUG) {
+      for (int i=0; i<keys.length; i++) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: " + keys[i]);
+      }
+    }
 
     for (int i = 0; i < keys.length; i++) {
       final Object key = keys[i];
