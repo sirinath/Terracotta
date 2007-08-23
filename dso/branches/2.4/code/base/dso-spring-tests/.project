@@ -3,6 +3,7 @@
 	<name>dso-spring-tests</name>
 	<comment></comment>
 	<projects>
+		<project>dso-container-tests</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
