@@ -123,9 +123,14 @@ public class CacheDataStore implements Serializable {
   }
 
   public Object remove(final Object key) {
-    Assert.pre(key != null);
     CacheData cd = (CacheData) store.get(key);
     if (cd == null) return null;
+    removeInternal(key);
+    return cd.getValue();
+  }
+
+  private void removeInternal(final Object key) {
+    Assert.pre(key != null);
 
     ManagerUtil.monitorEnter(store, LockLevel.WRITE);
     try {
@@ -134,12 +139,11 @@ public class CacheDataStore implements Serializable {
     } finally {
       ManagerUtil.monitorExit(store);
     }
-    return cd.getValue();
   }
 
   public void expire(Object key, CacheData sd) {
-    remove(key);
-    callback.expire(key, sd.getValue());
+    removeInternal(key);
+    callback.expire(key, sd);
   }
 
   public void clear() {

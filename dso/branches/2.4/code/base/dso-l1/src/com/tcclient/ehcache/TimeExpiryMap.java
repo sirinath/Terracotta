@@ -36,11 +36,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
     return timeExpiryDataStore.put(key, value);
   }
 
-  public void expire(Object key, Object value) {
-    processExpired(key, value);
+  public void expire(Object key, CacheData cacheData) {
+    processExpired(key, cacheData);
   }
 
-  protected void processExpired(Object key, Object value) {
+  protected void processExpired(Object key, CacheData cacheData) {
     //
   }
 
@@ -185,24 +185,6 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
     public Object next() {
       Map.Entry e = (Map.Entry) super.next();
       return e.getValue();
-    }
-  }
-  
-  private static class ValueWrapper {
-
-    private final Object value;
-
-    public ValueWrapper(Object value) {
-      this.value = value;
-    }
-
-    public int hashCode() {
-      return value.hashCode();
-    }
-
-    public boolean equals(Object o) {
-      Assert.pre(value instanceof CacheData);
-      return ((CacheData)value).getValue().equals(o);
     }
   }
 
