@@ -29,6 +29,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
 
   // TODO:: markAccessed()
   private volatile transient TCObject $__tc_MANAGED;
+  private boolean                     evictionEnabled = true;
 
   public HashMapTC() {
     super();
@@ -216,10 +217,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       super.remove(key);
     }
   }
-  
+
   public Object[] __tc_getAllKeysSnapshot() {
     if (__tc_isManaged()) {
-      synchronized(__tc_managed().getResolveLock()) {
+      synchronized (__tc_managed().getResolveLock()) {
         Set keys = keySet();
         return keys.toArray(new Object[keys.size()]);
       }
@@ -329,6 +330,14 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       }
       return cleared;
     }
+  }
+
+  public boolean isEvictionEnabled() {
+    return evictionEnabled;
+  }
+
+  public void setEvictionEnabled(boolean enabled) {
+    evictionEnabled = enabled;
   }
 
   public void __tc_managed(TCObject tcObject) {
