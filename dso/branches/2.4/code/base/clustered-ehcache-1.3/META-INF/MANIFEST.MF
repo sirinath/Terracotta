@@ -13,4 +13,5 @@ Bundle-Version: 1.0.0
 Import-Package: net.sf.ehcache.store,
  org.terracotta.modules.configuration,
  org.terracotta.modules.ehcache.commons_1_0
-Require-Bundle: org.terracotta.modules.clustered_commons_collections_3.1
+Require-Bundle: org.terracotta.modules.clustered_commons_collections_3.1,
+ org.terracotta.modules.clustered_ehcache_commons_1.0
