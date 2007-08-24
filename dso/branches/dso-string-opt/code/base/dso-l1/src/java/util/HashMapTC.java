@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package java.util;
 
@@ -171,12 +172,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       return super.remove(key);
     }
   }
-  
+
   /**
-   * This method is only to be invoked from the applicator thread. This method does not need to check if the
-   * map is managed as it will always be managed when called by the applicator thread. In addition, this method
-   * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
-   * scope of such synchronization.
+   * This method is only to be invoked from the applicator thread. This method does not need to check if the map is
+   * managed as it will always be managed when called by the applicator thread. In addition, this method does not need
+   * to be synchronized under getResolveLock() as the applicator thread is already under the scope of such
+   * synchronization.
    */
   public void __tc_applicator_remove(Object key) {
     if (key == null) {
@@ -184,6 +185,47 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     } else {
       KeyWrapper kw = new KeyWrapper(key);
       super.remove(kw);
+    }
+  }
+
+  /**
+   * This method is to be invoked when one needs a remove to get broadcast, but do not want to fault in the value of a
+   * map entry.
+   */
+  public void __tc_remove_logical(Object key) {
+    if (__tc_isManaged()) {
+      // Managed Version
+      synchronized (__tc_managed().getResolveLock()) {
+        ManagerUtil.checkWriteAccess(this);
+        int sizeB4 = size();
+        Object orgKey;
+        if (key == null) {
+          super.remove(key);
+          orgKey = key;
+        } else {
+          KeyWrapper kw = new KeyWrapper(key);
+          super.remove(kw);
+          orgKey = kw.getOriginalKey();
+        }
+        if (sizeB4 != size()) {
+          ManagerUtil.logicalInvoke(this, "removeEntryForKey(Ljava/lang/Object;)Ljava/util/HashMap$Entry;",
+                                    new Object[] { orgKey });
+        }
+      }
+    } else {
+      super.remove(key);
+    }
+  }
+  
+  public Object[] __tc_getAllKeysSnapshot() {
+    if (__tc_isManaged()) {
+      synchronized(__tc_managed().getResolveLock()) {
+        Set keys = keySet();
+        return keys.toArray(new Object[keys.size()]);
+      }
+    } else {
+      Set keys = keySet();
+      return keys.toArray(new Object[keys.size()]);
     }
   }
 
@@ -225,12 +267,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       return super.put(key, value);
     }
   }
-  
+
   /**
-   * This method is only to be invoked from the applicator thread. This method does not need to check if the
-   * map is managed as it will always be managed when called by the applicator thread. In addition, this method
-   * does not need to be synchronized under getResolveLock() as the applicator thread is already under the
-   * scope of such synchronization.
+   * This method is only to be invoked from the applicator thread. This method does not need to check if the map is
+   * managed as it will always be managed when called by the applicator thread. In addition, this method does not need
+   * to be synchronized under getResolveLock() as the applicator thread is already under the scope of such
+   * synchronization.
    */
   public void __tc_applicator_put(Object key, Object value) {
     super.put(key, value);

@@ -188,6 +188,23 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     super.remove(key);
   }
 
+  public synchronized void __tc_remove_logical(Object key) {
+    if (__tc_isManaged()) {
+      ManagerUtil.checkWriteAccess(this);
+      Object removed = super.remove(key);
+      if (removed != null) {
+        ManagerUtil.logicalInvoke(this, "remove(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { key });
+      }
+    } else {
+      super.remove(key);
+    }
+  }
+  
+  public synchronized Object[] __tc_getAllKeysSnapshot() {
+    Set keys = keySet();
+    return keys.toArray(new Object[keys.size()]);
+  }
+
   public synchronized int size() {
     return super.size();
   }
