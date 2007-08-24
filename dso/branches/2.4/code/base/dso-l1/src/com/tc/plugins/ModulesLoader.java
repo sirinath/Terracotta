@@ -11,8 +11,9 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
+import com.tc.bundles.EmbeddedOSGiEventHandler;
 import com.tc.bundles.EmbeddedOSGiRuntime;
-import com.tc.bundles.EmbeddedOSGiRuntimeCallbackHandler;
+import com.tc.bundles.Resolver;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -24,6 +25,7 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
+import com.tc.util.Assert;
 import com.tc.util.VendorVmSignature;
 import com.tc.util.VendorVmSignatureException;
 import com.terracottatech.config.DsoApplication;
@@ -35,14 +37,19 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ModulesLoader {
+
   private static final Comparator SERVICE_COMPARATOR = new Comparator() {
 
                                                        public int compare(Object arg0, Object arg1) {
@@ -76,53 +83,42 @@ public class ModulesLoader {
     EmbeddedOSGiRuntime osgiRuntime = null;
     synchronized (lock) {
       final Modules modules = configHelper.getModulesForInitialization();
-      if (modules != null && modules.sizeOfModuleArray() > 0) {
+      if ((modules != null) && (modules.sizeOfModuleArray() > 0)) {
         try {
           osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        } catch (Exception e) {
-          throw new RuntimeException("Unable to create runtime for plugins", e);
-        }
-        try {
           initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), forBootJar);
           if (!forBootJar) {
             getModulesCustomApplicatorSpecs(osgiRuntime, configHelper);
           }
         } catch (BundleException be1) {
           consoleLogger.fatal("Unable to initialize modules, shutting down.  See log for details.", be1);
-          try {
-            osgiRuntime.shutdown();
-          } catch (BundleException be2) {
-            logger.error("Error shutting down plugin runtime", be2);
-          }
-          System.exit(-1);
-        } catch (InvalidSyntaxException be1) {
-          consoleLogger.fatal("Unable to initialize modules, shutting down.  See log for details", be1);
-          try {
-            osgiRuntime.shutdown();
-          } catch (BundleException be2) {
-            logger.error("Error shutting down plugin runtime", be2);
-          }
-          System.exit(-1);
+          shutdownAndExit(osgiRuntime);
+        } catch (InvalidSyntaxException ise) {
+          consoleLogger.fatal("Unable to initialize modules, shutting down.  See log for details", ise);
+          shutdownAndExit(osgiRuntime);
+        } catch (Exception e) {
+          throw new RuntimeException("Unable to create runtime for plugins", e);
         } finally {
           if (forBootJar) {
-            try {
-              osgiRuntime.shutdown();
-            } catch (BundleException be2) {
-              logger.error("Error shutting down plugin runtime", be2);
-            }
+            shutdown(osgiRuntime);
           }
         }
-      } else {
-        osgiRuntime = null;
       }
     }
+  }
+
+  private static void shutdownAndExit(final EmbeddedOSGiRuntime osgiRuntime) {
+    shutdown(osgiRuntime);
+    System.exit(-1);
+  }
+
+  private static void shutdown(final EmbeddedOSGiRuntime osgiRuntime) {
+    osgiRuntime.shutdown();
   }
 
   private static void initModules(final EmbeddedOSGiRuntime osgiRuntime, final DSOClientConfigHelper configHelper,
                                   final ClassProvider classProvider, final Module[] modules, final boolean forBootJar)
       throws BundleException {
-    // install all available bundles
-    osgiRuntime.installBundles();
 
     if (configHelper instanceof StandardDSOClientConfigHelper) {
       final Dictionary serviceProps = new Hashtable();
@@ -132,9 +128,9 @@ public class ModulesLoader {
       osgiRuntime.registerService(configHelper, serviceProps);
     }
 
-    // now start only the bundles that are listed in the modules section of the config
-    EmbeddedOSGiRuntimeCallbackHandler callback = new EmbeddedOSGiRuntimeCallbackHandler() {
+    EmbeddedOSGiEventHandler handler = new EmbeddedOSGiEventHandler() {
       public void callback(final Object payload) throws BundleException {
+        Assert.assertTrue(payload instanceof Bundle);
         Bundle bundle = (Bundle) payload;
         if (bundle != null) {
           if (!forBootJar) {
@@ -145,22 +141,63 @@ public class ModulesLoader {
       }
     };
 
-    for (int pos = 0; pos < modules.length; ++pos) {
-      String name = modules[pos].getName();
-      String version = modules[pos].getVersion();
-      osgiRuntime.startBundle(name, version, callback);
-    }
+    final List moduleList = new ArrayList();
+    moduleList.addAll(getAdditionalModules());
+    moduleList.addAll(Arrays.asList(modules));
+
+    final Module[] allModules = (Module[]) moduleList.toArray(new Module[moduleList.size()]);
+    final Resolver resolver = new Resolver(osgiRuntime.getRepositories(), allModules);
+    final URL[] locations = resolver.resolve();
+
+    osgiRuntime.installBundles(locations);
+    osgiRuntime.startBundles(locations, handler);
   }
-  
-  public static String getBundleClassLoaderName(final ClassLoader loader) {
-    return Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, loader.toString());
+
+  private static List getAdditionalModules() {
+    final List modules = new ArrayList();
+
+    // TODO: should use tc properties
+    final String additionalModuleList = System.getProperty("tc.tests.configuration.modules", "");
+    final String[] additionalModules = additionalModuleList.split(",");
+
+    // clustered-apache-struts-1.1-1.1.0.jar
+    // org.terracotta.modules.clustered-apache-struts-1.1-1.1.0.jar
+    Pattern pattern = Pattern.compile("(.+?)-([0-9\\.]+)-([0-9\\.\\-]+)");
+    for (int i = 0; i < additionalModules.length; i++) {
+      if (additionalModules[i].length() == 0) {
+        continue;
+      }
+
+      final Matcher matcher = pattern.matcher(additionalModules[i]);
+      if (!matcher.find() || matcher.groupCount() < 3) {
+        logger.error("Invalid module id " + additionalModules[i]);
+        continue;
+      }
+
+      String component = matcher.group(1);
+      final String componentVersion = matcher.group(2);
+      final String moduleVersion = matcher.group(3);
+
+      final Module module = Module.Factory.newInstance();
+      String groupId = module.getGroupId(); // rely on the constant defined in the schema for the default groupId
+      final int n = component.lastIndexOf('.');
+      if (n > 0) {
+        groupId = component.substring(0, n);
+        component = component.substring(n + 1);
+        module.setGroupId(groupId);
+      }
+      module.setName(component + "-" + componentVersion);
+      module.setVersion(moduleVersion);
+      modules.add(module);
+    }
+    return modules;
   }
 
   private static void registerClassLoader(final ClassProvider classProvider, final Bundle bundle)
       throws BundleException {
     NamedClassLoader ncl = getClassLoader(bundle);
 
-    String loaderName = getBundleClassLoaderName((ClassLoader)ncl);
+    String loaderName = Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, ncl.toString());
     ncl.__tc_setClassLoaderName(loaderName);
     classProvider.registerNamedLoader(ncl);
   }
@@ -200,26 +237,15 @@ public class ModulesLoader {
       final String TC_CONFIG_HEADER = "Terracotta-Configuration";
       final String TC_CONFIG_HEADER_FOR_VM = TC_CONFIG_HEADER + VendorVmSignature.SIGNATURE_SEPARATOR
                                              + vmsig.getSignature();
-
       // check if the config-bundle indicates a vm vendor specific terracotta configuration...
-      String configPath = (String) bundle.getHeaders().get(TC_CONFIG_HEADER_FOR_VM);
-      if (configPath != null) {
-        logger.info("Using VM vendor specific config for module " + bundle.getSymbolicName() + ": " + configPath);
+      String path = (String) bundle.getHeaders().get(TC_CONFIG_HEADER_FOR_VM); // config for vendor specific vm
+      if (path == null) { //
+        path = (String) bundle.getHeaders().get(TC_CONFIG_HEADER); // terracotta specific config (eg: tests)
+        if (path == null) { //
+          path = "terracotta.xml"; // default terracotta config
+        }
       }
-
-      // else, check if the config-bundle prefers a specific terracotta configuration
-      if (configPath == null) {
-        configPath = (String) bundle.getHeaders().get(TC_CONFIG_HEADER);
-        logger.info("Using specific config for module " + bundle.getSymbolicName() + ": " + configPath);
-      }
-
-      // else, just use the default terracotta configuration 
-      if (configPath == null) {
-        configPath = "terracotta.xml";
-        logger.info("Using default config for module " + bundle.getSymbolicName() + ": " + configPath);
-      }
-
-      return configPath;
+      return path;
     } catch (VendorVmSignatureException e) {
       throw new BundleException(e.getMessage());
     }
@@ -228,21 +254,21 @@ public class ModulesLoader {
   private static void loadConfiguration(final DSOClientConfigHelper configHelper, final Bundle bundle)
       throws BundleException {
 
-    // attempt to load the config-bundle's fragment of the configuration file 
-    final String config = getConfigPath(bundle);
+    // attempt to load the config-bundle's fragment of the configuration file
+    final String configPath = getConfigPath(bundle);
     final InputStream is;
     try {
-      is = getJarResource(new URL(bundle.getLocation()), config);
+      is = getJarResource(new URL(bundle.getLocation()), configPath);
     } catch (MalformedURLException murle) {
       throw new BundleException("Unable to create URL from: " + bundle.getLocation(), murle);
     } catch (IOException ioe) {
-      throw new BundleException("Unable to extract " + config + " from URL: " + bundle.getLocation(), ioe);
+      throw new BundleException("Unable to extract " + configPath + " from URL: " + bundle.getLocation(), ioe);
     }
 
     // if config-bundle's fragment of the configuration file is not included in the jar file
     // then we don't need to merge it in with the current configuration --- but make a note of it.
     if (is == null) {
-      logger.warn("The config file '" + config + "', for module '" + bundle.getSymbolicName()
+      logger.warn("The config file '" + configPath + "', for module '" + bundle.getSymbolicName()
                   + "' does not appear to be a part of the module's config-bundle jar file contents.");
       return;
     }
@@ -253,7 +279,7 @@ public class ModulesLoader {
       if (application != null) {
         ConfigLoader loader = new ConfigLoader(configHelper, logger);
         loader.loadDsoConfig(application);
-        logger.info("Module configuration loaded for " + bundle.getSymbolicName());
+        logger.info("Module configuration loaded for " + bundle.getSymbolicName() + " (" + configPath + ")");
         // loader.loadSpringConfig(application.getSpring());
       }
     } catch (IOException ioe) {
