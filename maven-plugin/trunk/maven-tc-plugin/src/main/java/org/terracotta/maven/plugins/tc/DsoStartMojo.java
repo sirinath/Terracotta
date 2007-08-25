@@ -32,33 +32,36 @@ public class DsoStartMojo extends AbstractDsoMojo {
   private String serverName;
 
   /**
-   * Only set by DsoLifecycleMojo 
+   * Only set by DsoLifecycleMojo
    */
   private boolean startServer = true;
 
   public DsoStartMojo() {
   }
-  
+
   public DsoStartMojo(AbstractDsoMojo mojo) {
     super(mojo);
   }
-  
+
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (!startServer) {
       getLog().info("Skipping starting DSO Server");
       return;
     }
 
+    String jmxUrl = null;
     try {
-      String status = getServerStatus(serverName);
-      if(status!=null && status.startsWith("OK")) {
+      jmxUrl = getJMXUrl(serverName);
+      
+      String status = getServerStatus(jmxUrl);
+      if (status != null && status.startsWith("OK")) {
         getLog().info("Server already started: " + status);
         return;
       }
     } catch (Exception e) {
       getLog().error("Failed to verify DSO server status", e);
     }
-    
+
     Commandline cmd = createCommandLine();
 
     cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
@@ -68,7 +71,7 @@ public class DsoStartMojo extends AbstractDsoMojo {
 
     cmd.createArgument().setValue(TCServerMain.class.getName());
 
-    if(config.exists()) {
+    if (config.exists()) {
       getLog().debug("tc-config file " + config.getAbsolutePath());
       cmd.createArgument().setValue("-f");
       cmd.createArgument().setFile(config);
@@ -89,21 +92,21 @@ public class DsoStartMojo extends AbstractDsoMojo {
     try {
       Process p = CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
       getLog().info("OK");
-      
-      long time = System.currentTimeMillis();
-      String status = null;
-      while((System.currentTimeMillis()-time) < 30 * 1000L && status==null && isRunning(p)) {
-        status = getServerStatus(serverName);
+
+      if (jmxUrl != null) {
+        long time = System.currentTimeMillis();
+        String status = null;
+        while ((System.currentTimeMillis() - time) < 30 * 1000L && status == null && isRunning(p)) {
+          status = getServerStatus(jmxUrl);
+        }
+        getLog().info("DSO Server status: " + status);
       }
-      
-      getLog().info("DSO Server status: " + status);
-      
+
     } catch (Exception e) {
       getLog().error("Failed to start DSO server", e);
     }
   }
 
-  
   private boolean isRunning(Process p) {
     try {
       p.exitValue();
@@ -114,17 +117,17 @@ public class DsoStartMojo extends AbstractDsoMojo {
   }
 
   // setters for the lifecycle simulation 
-  
+
   public void setServerName(String serverName) {
     this.serverName = serverName;
   }
-  
+
   public void setSpawnServer(boolean spawn) {
     this.spawnServer = spawn;
   }
-  
+
   public void setStartServer(boolean startServer) {
     this.startServer = startServer;
   }
-  
+
 }
