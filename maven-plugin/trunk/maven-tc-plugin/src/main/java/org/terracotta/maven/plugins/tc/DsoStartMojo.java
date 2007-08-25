@@ -16,6 +16,7 @@ import com.tc.server.TCServerMain;
  * @goal start
  * @requiresDependencyResolution runtime
  * @execute phase="validate"
+ * @requiresDependencyResolution runtime
  */
 public class DsoStartMojo extends AbstractDsoMojo {
 
@@ -31,9 +32,9 @@ public class DsoStartMojo extends AbstractDsoMojo {
   private String serverName;
 
   /**
-   * @parameter expression="${startServer}" default-value="true"
+   * Only set by DsoLifecycleMojo 
    */
-  boolean startServer;
+  private boolean startServer = true;
 
   public DsoStartMojo() {
   }
@@ -48,10 +49,14 @@ public class DsoStartMojo extends AbstractDsoMojo {
       return;
     }
 
-    String status = getServerStatus(serverName);
-    if(status!=null && status.startsWith("OK")) {
-      getLog().info("Server already started: " + status);
-      return;
+    try {
+      String status = getServerStatus(serverName);
+      if(status!=null && status.startsWith("OK")) {
+        getLog().info("Server already started: " + status);
+        return;
+      }
+    } catch (Exception e) {
+      getLog().error("Failed to verify DSO server status", e);
     }
     
     Commandline cmd = createCommandLine();
@@ -64,9 +69,11 @@ public class DsoStartMojo extends AbstractDsoMojo {
     cmd.createArgument().setValue(TCServerMain.class.getName());
 
     if(config.exists()) {
+      getLog().debug("tc-config file " + config.getAbsolutePath());
       cmd.createArgument().setValue("-f");
       cmd.createArgument().setFile(config);
-      getLog().debug("tc-config file  = " + config.getAbsolutePath());
+    } else {
+      getLog().debug("tc-config file doesn't exists " + config.getAbsolutePath());
     }
 
     if (serverName != null && serverName.length() > 0) {
@@ -84,7 +91,7 @@ public class DsoStartMojo extends AbstractDsoMojo {
       getLog().info("OK");
       
       long time = System.currentTimeMillis();
-      status = null;
+      String status = null;
       while((System.currentTimeMillis()-time) < 30 * 1000L && status==null && isRunning(p)) {
         status = getServerStatus(serverName);
       }

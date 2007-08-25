@@ -18,6 +18,7 @@ import com.tc.object.tools.BootJarTool;
  * @goal bootjar
  * @execute phase="validate"
  * @phase integration-test
+ * @requiresDependencyResolution runtime
  */
 public class BootjarMojo extends AbstractDsoMojo {
 

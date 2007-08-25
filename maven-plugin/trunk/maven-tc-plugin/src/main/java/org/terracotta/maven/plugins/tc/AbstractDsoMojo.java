@@ -5,6 +5,7 @@ package org.terracotta.maven.plugins.tc;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   /**
    * The plugin remote repositories declared in the pom.
    * 
-   * @parameter expression="${project.pluginArtifactRepositories}"
+   * @parameter expression="${project.remoteArtifactRepositories}"
    */
   protected List remoteRepositories;
 
@@ -91,7 +92,6 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * 
    * @parameter expression="${plugin.artifacts}"
    * @required
-   * @readonly
    */
   protected List pluginArtifacts;
 
@@ -147,16 +147,13 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     cmd.createArgument().setValue("-Dtc.tests.configuration.modules.url=" + modulesRepository);
     getLog().debug("tc.tests.configuration.modules.url = " + modulesRepository);
 
-    if (getLog().isDebugEnabled()) {
-      cmd.createArgument().setValue("-Dtc.classloader.writeToDisk=true");
-    }
-
     // DSO debugging
     if (getLog().isDebugEnabled()) {
       int port = ++debugPort;
       cmd.createArgument().setValue("-Xdebug");
-      // cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,suspend=y,server=y,address=" + port);
-      cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,server=y,address=" + port);
+      cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,suspend=y,server=y,address=" + port);
+//      cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,server=y,address=" + port);
+
       cmd.createArgument().setValue("-Dtc.classloader.writeToDisk=true");
     }
 
@@ -198,50 +195,52 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
-  public String getServerStatus(String serverName) {
+  public String getServerStatus(String serverName) throws ConfigurationSetupException, MalformedURLException {
     String host = "localhost";
     int port = 9520;
 
-    JMXConnector jmxc = null;
-    try {
-      if (config != null && config.exists()) {
-        String args = "";
-        if (serverName != null) {
-          args += "-n " + serverName;
-        }
-        if (config != null) {
-          args += " -f " + config.getName();
-        }
-
-        TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(args.split(" "), //
-            true, new MavenIllegalConfigurationChangeHandler());
-
-        L2TVSConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(serverName);
-
-        NewCommonL2Config serverConfig = manager.commonL2ConfigFor(serverName);
-
-        host = serverConfig.host().getString();
-        if (host == null) {
-          host = "localhost";
-        }
-
-        port = serverConfig.jmxPort().getInt();
+    if (config != null && config.exists()) {
+      String args = "";
+      if (config != null) {
+        args += "-f " + config.getAbsolutePath();
+      }
+      if (serverName != null) {
+        args += " -n " + serverName;
       }
 
-      String jmxUrl = "service:jmx:jmxmp://" + host + ":" + port;
-      getLog().debug("Connecting to DSO server at " + jmxUrl);
+      TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(args.split(" "), //
+          true, new MavenIllegalConfigurationChangeHandler());
 
-      JMXServiceURL url = new JMXServiceURL(jmxUrl);
+      L2TVSConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(serverName);
+
+      NewCommonL2Config serverConfig = manager.commonL2ConfigFor(serverName);
+
+      host = serverConfig.host().getString();
+      if (host == null) {
+        host = "localhost";
+      }
+
+      port = serverConfig.jmxPort().getInt();
+    }
+
+    String jmxUrl = "service:jmx:jmxmp://" + host + ":" + port;
+    getLog().debug("Connecting to DSO server at " + jmxUrl);
+
+    JMXServiceURL url = new JMXServiceURL(jmxUrl);
+    
+    JMXConnector jmxc = null;
+    try {
       jmxc = JMXConnectorFactory.connect(url, null);
       MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
       TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
           L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
 
       return serverMBean.getHealthStatus();
-    } catch (Exception ex) {
+
+    } catch (IOException ex) {
       getLog().debug("Connection error: " + ex.toString(), ex);
       return null;
-
+      
     } finally {
       if (jmxc != null) {
         try {
@@ -290,40 +289,36 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
           String artifactId = module.getName();
           VersionRange version = VersionRange.createFromVersionSpec(module.getVersion());
 
-          Artifact artifact = artifactFactory.createDependencyArtifact( // 
-              groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
-
-          getLog().info("Resolving module " + artifact.toString());
-          artifactResolver.resolve(artifact, remoteRepositories, localRepository);
+          resolveArtifact(groupId, artifactId, version);
         }
       }
       
       if(addSurefireModule) {
-        VersionRange version = VersionRange.createFromVersionSpec("1.0.0");
+        VersionRange version = VersionRange.createFromVersionSpec("[1.0.0,)");
 
-        Artifact surefireArtifact = artifactFactory.createDependencyArtifact( // 
-            "org.terracotta.modules", "clustered-surefire-2.3", version, "jar", null, Artifact.SCOPE_RUNTIME);
-
-        getLog().info("Resolving module " + surefireArtifact.toString());
-        artifactResolver.resolve(surefireArtifact, remoteRepositories, localRepository);
-
-        Artifact commonArtifact = artifactFactory.createDependencyArtifact( // 
-            "org.terracotta.modules", "modules-common-1.0", version, "jar", null, Artifact.SCOPE_RUNTIME);
-
-        getLog().info("Resolving module " + commonArtifact.toString());
-        artifactResolver.resolve(commonArtifact, remoteRepositories, localRepository);
-      
+        resolveArtifact("org.terracotta.modules", "modules-common-1.0", version);
+        resolveArtifact("org.terracotta.modules", "clustered-surefire-2.3", version);
       }
 
     } catch (ConfigurationSetupException ex) {
       getLog().error(ex);
     } catch (InvalidVersionSpecificationException ex) {
       getLog().error(ex);
+    }
+  }
+
+  private Artifact resolveArtifact(String groupId, String artifactId, VersionRange version) {
+    Artifact artifact = artifactFactory.createDependencyArtifact( // 
+        groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
+    getLog().info("Resolving module " + artifact.toString());
+    try {
+      artifactResolver.resolve(artifact, remoteRepositories, localRepository);
     } catch (ArtifactResolutionException ex) {
       getLog().error(ex);
     } catch (ArtifactNotFoundException ex) {
       getLog().error(ex);
     }
+    return artifact;
   }
 
 }
