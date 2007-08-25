@@ -13,8 +13,9 @@
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.3</version>
+        <version>0.0.4-SNAPSHOT</version>
         <configuration>
+          <!-- <config>${basedir}/tc-config.xml</config> -->
           <!-- <verbose>true</verbose> -->
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->
@@ -51,24 +52,10 @@
         </executions>
       </plugin>
 
-      <!-- needed in order to readdress tests to dso -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-
     </plugins>
   </build>
 
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.2</version>
-    </dependency>
     <dependency>
       <groupId>concurrent</groupId>
       <artifactId>concurrent</artifactId>
@@ -76,4 +63,17 @@
     </dependency>
   </dependencies>
 
+  <pluginRepositories>
+    <pluginRepository>
+      <id>terracotta-repository</id>
+      <url>http://download.terracotta.org/maven2/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+  
 </project>
