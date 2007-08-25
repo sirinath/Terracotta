@@ -31,10 +31,7 @@ public class DsoStopMojo extends AbstractDsoMojo {
    */
   private String serverName;
 
-  /**
-   * @parameter expression="${startServer}" default-value="true"
-   */
-  boolean startServer;
+  private boolean startServer = true;
 
   public DsoStopMojo() {
   }
