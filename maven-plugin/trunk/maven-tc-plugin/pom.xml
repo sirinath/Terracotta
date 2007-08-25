@@ -261,14 +261,13 @@
     </dependency>
   </dependencies>
 
-<!--
   <distributionManagement>
     <repository>
-      <id>tc.internal</id>
+      <id>kong</id>
       <name>Terracotta Internal Repository</name>
-      <url>file:///C:/dev/terr/tc-maven-plugin/11</url>
+      <url>scp://kong/export1/maven2</url>
     </repository>
   </distributionManagement>
--->
 
 </project>
+
