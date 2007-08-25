@@ -74,7 +74,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   /**
    * The plugin remote repositories declared in the pom.
    * 
-   * @parameter expression="${project.remoteArtifactRepositories}"
+   * @parameter expression="${project.pluginArtifactRepositories}"
    */
   protected List remoteRepositories;
 
@@ -195,7 +195,34 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
-  public String getServerStatus(String serverName) throws ConfigurationSetupException, MalformedURLException {
+  public String getServerStatus(String jmxUrl) throws ConfigurationSetupException, MalformedURLException {
+    getLog().debug("Connecting to DSO server at " + jmxUrl);
+    JMXServiceURL url = new JMXServiceURL(jmxUrl);
+    JMXConnector jmxc = null;
+    try {
+      jmxc = JMXConnectorFactory.connect(url, null);
+      MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
+      TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
+          L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
+
+      return serverMBean.getHealthStatus();
+
+    } catch (IOException ex) {
+      getLog().debug("Connection error: " + ex.toString(), ex);
+      return null;
+      
+    } finally {
+      if (jmxc != null) {
+        try {
+          jmxc.close();
+        } catch (IOException ex) {
+          getLog().error("Error closing jmx connection", ex);
+        }
+      }
+    }
+  }
+
+  protected String getJMXUrl(String serverName) throws ConfigurationSetupException {
     String host = "localhost";
     int port = 9520;
 
@@ -224,32 +251,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
 
     String jmxUrl = "service:jmx:jmxmp://" + host + ":" + port;
-    getLog().debug("Connecting to DSO server at " + jmxUrl);
-
-    JMXServiceURL url = new JMXServiceURL(jmxUrl);
-    
-    JMXConnector jmxc = null;
-    try {
-      jmxc = JMXConnectorFactory.connect(url, null);
-      MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
-      TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
-          L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
-
-      return serverMBean.getHealthStatus();
-
-    } catch (IOException ex) {
-      getLog().debug("Connection error: " + ex.toString(), ex);
-      return null;
-      
-    } finally {
-      if (jmxc != null) {
-        try {
-          jmxc.close();
-        } catch (IOException ex) {
-          getLog().error("Error closing jmx connection", ex);
-        }
-      }
-    }
+    return jmxUrl;
   }
 
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
