@@ -61,6 +61,7 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     TransparencyClassSpec spec = configHelper.getOrCreateSpec("com.tcclient.cache.CacheDataStore");
     spec.setHonorTransient(true);
     spec.setCallMethodOnLoad("initialize");
+    spec.addDistributedMethodCall("stopInvalidatorThread", "()V", false);
     spec = configHelper.getOrCreateSpec("com.tcclient.cache.CacheData");
     spec.setCallConstructorOnLoad(true);
     spec.setHonorTransient(true);

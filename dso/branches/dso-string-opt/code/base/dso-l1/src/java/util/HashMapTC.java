@@ -11,6 +11,7 @@ import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.hook.impl.Util;
+import com.tc.util.DebugUtil;
 
 /*
  * This class will be merged with java.lang.HashMap in the bootjar. This HashMap can store ObjectIDs instead of Objects
@@ -218,16 +219,46 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
   }
 
-  public Object[] __tc_getAllKeysSnapshot() {
+  public Object[] __tc_getAllLocalEntriesSnapshot() {
     if (__tc_isManaged()) {
       synchronized (__tc_managed().getResolveLock()) {
-        Set keys = keySet();
-        return keys.toArray(new Object[keys.size()]);
+        return __tc_getAllLocalEntriesSnapshotInternal();
       }
     } else {
-      Set keys = keySet();
-      return keys.toArray(new Object[keys.size()]);
+      return __tc_getAllLocalEntriesSnapshotInternal();
     }
+  }
+  
+  private Object[] __tc_getAllLocalEntriesSnapshotInternal() {
+    Set entrySet = super.entrySet();
+    int entrySetSize = entrySet.size();
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " entrySetSize: " + entrySetSize);
+    }
+    if (entrySetSize == 0) { return new Object[0]; }
+    
+    Object[] tmp = new Object[entrySetSize];
+    int index = -1;
+    for (Iterator i=entrySet.iterator(); i.hasNext(); ) {
+      Map.Entry e = (Map.Entry)i.next();
+      if (DebugUtil.DEBUG) {
+        System.err.println("In HashMap Client " + ManagerUtil.getClientID() + " e.getKey(): " + e.getKey() + " e.getValue(): " + e.getValue() + " -- ");
+      }
+
+      if (!(e.getValue() instanceof ObjectID)) {
+        index++;
+        tmp[index] = e;
+      }
+    }
+    
+    if (DebugUtil.DEBUG) {
+      System.err.println("In HashMap Client " + ManagerUtil.getClientID() + " no of local objects: " + index);
+    }
+
+    if (index < 0) { return new Object[0]; }
+    Object[] rv = new Object[index+1];
+    System.arraycopy(tmp, 0, rv, 0, index+1);
+    return rv;
   }
 
   public Object clone() {

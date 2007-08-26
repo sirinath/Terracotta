@@ -81,6 +81,7 @@ public class CacheData implements Serializable {
     lastAccessedTimeInMillis = System.currentTimeMillis();
     if (DebugUtil.DEBUG) {
       System.err.println("Client " + ManagerUtil.getClientID() + " accessing " + lastAccessedTimeInMillis + " current millis: " + System.currentTimeMillis());
+      Thread.dumpStack();
     }
   }
 
