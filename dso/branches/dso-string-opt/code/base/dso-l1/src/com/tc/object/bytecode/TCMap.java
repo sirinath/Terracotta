@@ -12,5 +12,5 @@ public interface TCMap {
   
   public void __tc_remove_logical(Object key);
   
-  public Object[] __tc_getAllKeysSnapshot();
+  public Object[] __tc_getAllLocalEntriesSnapshot();
 }

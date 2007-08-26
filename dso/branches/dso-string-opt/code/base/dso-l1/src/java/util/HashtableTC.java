@@ -201,9 +201,25 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
   }
 
-  public synchronized Object[] __tc_getAllKeysSnapshot() {
-    Set keys = keySet();
-    return keys.toArray(new Object[keys.size()]);
+  public synchronized Object[] __tc_getAllLocalEntriesSnapshot() {
+    Set entrySet = super.entrySet();
+    int entrySetSize = entrySet.size();
+    if (entrySetSize == 0) { return new Object[0]; }
+    
+    Object[] tmp = new Object[entrySetSize];
+    int index = -1;
+    for (Iterator i = entrySet.iterator(); i.hasNext();) {
+      Map.Entry e = (Map.Entry) i.next();
+      if (!(e.getValue() instanceof ObjectID)) {
+        index++;
+        tmp[index] = e;
+      }
+    }
+    
+    if (index < 0) { return new Object[0]; }
+    Object[] rv = new Object[index+1];
+    System.arraycopy(tmp, 0, rv, 0, index+1);
+    return rv;
   }
 
   public synchronized int size() {

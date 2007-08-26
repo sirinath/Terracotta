@@ -6,15 +6,16 @@ package com.tcclient.cache;
 
 import com.tc.config.lock.LockLevel;
 import com.tc.exception.TCRuntimeException;
+import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class CacheDataStore implements Serializable {
   private final Map                       store;                  // <Data>
@@ -27,7 +28,7 @@ public class CacheDataStore implements Serializable {
   private transient int                   hitCount;
   private transient int                   missCountExpired;
   private transient int                   missCountNotFound;
-  private transient CacheEntryInvalidator cacheInvalidator;
+  private transient CacheInvalidationTimer cacheInvalidationTimer;
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, Map store,
                         Map dtmStore, String cacheName, Expirable callback) {
@@ -42,6 +43,8 @@ public class CacheDataStore implements Serializable {
     this.callback = callback;
 
     this.hitCount = 0;
+
+    ((Clearable) dtmStore).setEvictionEnabled(false);
   }
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
@@ -50,12 +53,12 @@ public class CacheDataStore implements Serializable {
   }
 
   public void initialize() {
-    cacheInvalidator = new CacheEntryInvalidator(invalidatorSleepSeconds);
-    cacheInvalidator.scheduleNextInvalidation();
+    this.cacheInvalidationTimer = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName + " invalidation thread", new CacheEntryInvalidator());
+    this.cacheInvalidationTimer.schedule(true);
   }
 
   public void stopInvalidatorThread() {
-    cacheInvalidator.cancel();
+    cacheInvalidationTimer.cancel();
   }
 
   public Object put(final Object key, final Object value) {
@@ -67,9 +70,9 @@ public class CacheDataStore implements Serializable {
     if (DebugUtil.DEBUG) {
       System.err.println("Client " + ManagerUtil.getClientID() + " putting " + key);
     }
-    CacheData rcd = (CacheData)store.put(key, cd);
+    CacheData rcd = (CacheData) store.put(key, cd);
     dtmStore.put(key, cd.getTimestamp());
-    
+
     Object rv = (rcd == null) ? null : rcd.getValue();
     return rv;
   }
@@ -186,8 +189,8 @@ public class CacheDataStore implements Serializable {
     return (diff < (rv.getMaxInactiveMillis() / 2) || diff > (rv.getMaxInactiveMillis()));
   }
 
-  Timestamp findTimestampUnlocked(final Object key) {
-    return (Timestamp) dtmStore.get(key);
+  Timestamp findTimestampUnlocked(final Map.Entry timeStampEntry) {
+    return (Timestamp) timeStampEntry.getValue();
   }
 
   CacheData findCacheDataUnlocked(final Object key) {
@@ -213,62 +216,48 @@ public class CacheDataStore implements Serializable {
     this.missCountNotFound = 0;
   }
 
-  private Object[] getAllKeys() {
+  private Object[] getAllLocalEntries() {
     if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " getting All keyts");
+      System.err.println("Client " + ManagerUtil.getClientID() + " getting All entries");
     }
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID()
-                         + " getting All keyts after grabbing READ lock for store");
-    }
-    return ((TCMap)dtmStore).__tc_getAllKeysSnapshot();
+    return ((TCMap) dtmStore).__tc_getAllLocalEntriesSnapshot();
   }
 
   public void evictExpiredElements() {
-    final String invalidatorLock = "tc:time_expiry_cache_invalidator_lock_" + cacheName;
-
-    final Lock lock = new Lock(invalidatorLock);
-    lock.tryWriteLock();
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " tryWriteLock status: " + lock.isLocked()
-                         + " lockName: " + invalidatorLock);
-    }
-    if (!lock.isLocked()) return;
-
-    try {
-      invalidateCacheEntries();
-    } finally {
-      lock.commitLock();
-    }
+    invalidateLocalCacheEntries();
   }
 
-  private void invalidateCacheEntries() {
-    final Object[] keys = getAllKeys();
+  private void invalidateLocalCacheEntries() {
+    final Object[] localEntries = getAllLocalEntries();
     int totalCnt = 0;
     int evaled = 0;
     int notEvaled = 0;
     int errors = 0;
 
     if (DebugUtil.DEBUG) {
-      for (int i = 0; i < keys.length; i++) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: " + keys[i]);
+      for (int i = 0; i < localEntries.length; i++) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: "
+                           + localEntries[i]);
       }
     }
 
-    for (int i = 0; i < keys.length; i++) {
-      final Object key = keys[i];
+    for (int i = 0; i < localEntries.length; i++) {
+      final Map.Entry timestampEntry = (Map.Entry) localEntries[i];
       try {
-        final Timestamp dtm = findTimestampUnlocked(key);
+        final Timestamp dtm = findTimestampUnlocked(timestampEntry);
         if (dtm == null) continue;
         totalCnt++;
         if (DebugUtil.DEBUG) {
-          System.err.println("Client id: " + ManagerUtil.getClientID() + " key: " + key
+          System.err.println("Client id: " + ManagerUtil.getClientID() + " key: " + timestampEntry.getKey()
                              + " InvalidateCacheEntries [dtm.getMillis]: " + dtm.getInvalidatedTimeMillis()
                              + " [currentMillis]: " + System.currentTimeMillis());
         }
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
-          expire(key);
+          if (DebugUtil.DEBUG) {
+            System.err.println("Client id: " + ManagerUtil.getClientID() + " exipring key: " + timestampEntry.getKey());
+          }
+          expire(timestampEntry.getKey());
           // if (evaluateCacheEntry(dtm, key)) invalCnt++;
         } else {
           notEvaled++;
@@ -279,6 +268,7 @@ public class CacheDataStore implements Serializable {
         // logger.error("Unhandled exception inspecting session " + key + " for invalidation", t);
       }
     }
+    System.err.println("Client " + ManagerUtil.getClientID() + " finish evicting " + evaled + " cache entries.");
   }
 
   // private boolean evaluateCacheEntry(final Timestamp dtm, final Object key) {
@@ -300,34 +290,111 @@ public class CacheDataStore implements Serializable {
   // return rv;
   // }
 
-  private class CacheEntryInvalidator extends TimerTask {
-    private final long  sleepMillis;
-    private final Timer timer;
+  private class CacheEntryInvalidator implements Runnable {
+    private final TCProperties globalEnvictionProperties;
+    private final Lock globalInvalidationLock;
+    private final Lock localInvalidationLock;
+    private boolean    isGlobalInvalidator = false;
 
-    public CacheEntryInvalidator(final long sleepSeconds) {
-      this.sleepMillis = sleepSeconds * 1000;
-      this.timer = new Timer(true);
-    }
-
-    public void scheduleNextInvalidation() {
-      if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " schedule next invalidation " + this.sleepMillis);
-      }
-      // If sleepMillis is <= 0, there will be no eviction, honoring the native ehcache semantics.
-      if (this.sleepMillis <= 0) { return; }
-      timer.schedule(this, this.sleepMillis, this.sleepMillis);
+    public CacheEntryInvalidator() {
+      String localEvictionLockName = "tc:local_time_expiry_cache_invalidator_lock_" + cacheName;
+      String globalEvictionLockName = "tc:global_time_expiry_cache_invalidator_lock_" + cacheName;
+      localInvalidationLock = new Lock(localEvictionLockName);
+      globalInvalidationLock = new Lock(globalEvictionLockName);
+      globalEnvictionProperties = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache.global.eviction");
     }
 
     public void run() {
       try {
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
+        //System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
+        //tryToBeGlobalInvalidator();
+
+        localInvalidationLock.writeLock();
+        try {
+          evictExpiredElements();
+          if (isTimeForGlobalInvalidation()) {
+            //
+          }
+        } finally {
+          localInvalidationLock.commitLock();
         }
-        evictExpiredElements();
       } catch (Throwable t) {
         t.printStackTrace(System.err);
         throw new TCRuntimeException(t);
       }
+    }
+
+    public void postRun() {
+      if (isGlobalInvalidator) {
+        globalInvalidationLock.commitLock();
+        isGlobalInvalidator = false;
+      }
+    }
+
+    private boolean isTimeForGlobalInvalidation() {
+      return false;
+    }
+    
+    private boolean isGlobalEnvictionEnabled() {
+      return globalEnvictionProperties.getBoolean("enable");
+    }
+
+    private void tryToBeGlobalInvalidator() {
+      if (isGlobalEnvictionEnabled() && !isGlobalInvalidator) {
+        if (globalInvalidationLock.tryWriteLock()) {
+          isGlobalInvalidator = true;
+        }
+      }
+    }
+  }
+
+  private class CacheInvalidationTimer implements Runnable {
+    private final long                  delayMillis;
+    private boolean                     recurring = true;
+    private final String                timerName;
+    private final CacheEntryInvalidator invalidationTask;
+
+    public CacheInvalidationTimer(final long delayInSecs, final String timerName,
+                                  final CacheEntryInvalidator invalidationTask) {
+      this.timerName = timerName;
+      this.invalidationTask = invalidationTask;
+      this.delayMillis = delayInSecs * 1000;
+    }
+
+    public void schedule(boolean recurring) {
+      if (delayMillis <= 0) { return; }
+      
+      this.recurring = recurring;
+      Thread t = new Thread(this, timerName);
+      t.setDaemon(true);
+      t.start();
+    }
+
+    public void run() {
+      long nextDelay = delayMillis;
+      try {
+        do {
+          if (DebugUtil.DEBUG) {
+            System.err.println("Client " + ManagerUtil.getClientID() + " going to sleep for " + nextDelay);
+          }
+          sleep(nextDelay);
+          invalidationTask.run();
+        } while (recurring);
+      } finally {
+        invalidationTask.postRun();
+      }
+    }
+
+    private void sleep(long l) {
+      try {
+        Thread.sleep(l);
+      } catch (InterruptedException ignore) {
+        // nothing to do
+      }
+    }
+
+    public void cancel() {
+      recurring = false;
     }
   }
 }
