@@ -54,7 +54,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     barrier.barrier();
     
-    Thread.sleep(3000);
+    Thread.sleep(1000);
     
     barrier.barrier();
     
@@ -68,7 +68,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     barrier.barrier();
     
-    Thread.sleep(3000);
+    Thread.sleep(9000);
     
     barrier.barrier();
     

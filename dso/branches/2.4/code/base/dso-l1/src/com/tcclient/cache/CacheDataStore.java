@@ -8,7 +8,6 @@ import com.tc.config.lock.LockLevel;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.util.Assert;
-import com.tc.util.DebugUtil;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -66,9 +65,6 @@ public class CacheDataStore implements Serializable {
     ManagerUtil.monitorEnter(store, LockLevel.WRITE);
     try {
       cd.accessed();
-      if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " putting " + key);
-      }
       store.put(key, cd);
       dtmStore.put(key, cd.getTimestamp());
     } finally {
@@ -86,10 +82,6 @@ public class CacheDataStore implements Serializable {
       if (!cd.isValid()) {
         missCountExpired++;
         invalidate(cd);
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client " + ManagerUtil.getClientID() + " rv is not valid -- key: " + key + ", value: " + cd.getValue() + " rv.getIdleMillis(): "
-                             + cd.getIdleMillis());
-        }
         return null;
       } else {
         hitCount++;
@@ -115,10 +107,6 @@ public class CacheDataStore implements Serializable {
 
   public boolean isExpired(final Object key) {
     CacheData rv = (CacheData) store.get(key);
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " checking isExpired for key: " + key + " rv: " + rv
-                         + " rv.isValid: " + ((rv == null) ? false : rv.isValid()));
-    }
     return rv == null || !rv.isValid();
   }
 
@@ -173,11 +161,6 @@ public class CacheDataStore implements Serializable {
     if (needsUpdate(rv)) {
       ManagerUtil.monitorEnter(store, LockLevel.WRITE);
       try {
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client " + ManagerUtil.getClientID() + " expiredTimeMillis before monitorEnter: "
-                             + expiredTimeMillis + " expiredTimeMillis after monitorEnter: " + t.getExpiredTimeMillis()
-                             + " setting ExpiredTimeMillis: " + (now + rv.getMaxInactiveMillis()));
-        }
         t.setExpiredTimeMillis(now + rv.getMaxInactiveMillis());
       } finally {
         ManagerUtil.monitorExit(store);
@@ -220,15 +203,9 @@ public class CacheDataStore implements Serializable {
   }
 
   private Object[] getAllKeys() {
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " getting All keyts");
-    }
     Object[] rv;
     ManagerUtil.monitorEnter(store, LockLevel.READ);
     try {
-      if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " getting All keyts after grabbing READ lock for store");
-      }
       synchronized (store) {
         Set keys = dtmStore.keySet();
         rv = keys.toArray(new Object[keys.size()]);
@@ -245,9 +222,6 @@ public class CacheDataStore implements Serializable {
 
     final Lock lock = new Lock(invalidatorLock);
     lock.tryWriteLock();
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " tryWriteLock status: " + lock.isLocked() + " lockName: " + invalidatorLock);
-    }
     if (!lock.isLocked()) return;
 
     try {
@@ -265,23 +239,12 @@ public class CacheDataStore implements Serializable {
     int notEvaled = 0;
     int errors = 0;
     
-    if (DebugUtil.DEBUG) {
-      for (int i=0; i<keys.length; i++) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: " + keys[i]);
-      }
-    }
-
     for (int i = 0; i < keys.length; i++) {
       final Object key = keys[i];
       try {
         final Timestamp dtm = findTimestampUnlocked(key);
         if (dtm == null) continue;
         totalCnt++;
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client id: " + ManagerUtil.getClientID() + " key: " + key
-                             + " InvalidateCacheEntries [dtm.getMillis]: " + dtm.getInvalidatedTimeMillis()
-                             + " [currentMillis]: " + System.currentTimeMillis());
-        }
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
           expire(key);
@@ -326,9 +289,6 @@ public class CacheDataStore implements Serializable {
     }
 
     public void scheduleNextInvalidation() {
-      if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " schedule next invalidation " + this.sleepMillis);
-      }
       // If sleepMillis is <= 0, there will be no eviction, honoring the native ehcache semantics.
       if (this.sleepMillis <= 0) { return; }
       timer.schedule(this, this.sleepMillis, this.sleepMillis);
@@ -336,9 +296,6 @@ public class CacheDataStore implements Serializable {
 
     public void run() {
       try {
-        if (DebugUtil.DEBUG) {
-          System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
-        }
         evictExpiredElements();
       } catch (Throwable t) {
         t.printStackTrace(System.err);

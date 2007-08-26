@@ -5,7 +5,6 @@
 package com.tcclient.ehcache;
 
 import com.tc.util.Assert;
-import com.tc.util.DebugUtil;
 import com.tcclient.cache.CacheData;
 import com.tcclient.cache.CacheDataStore;
 import com.tcclient.cache.Expirable;
@@ -42,9 +41,6 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   protected void processExpired(Object key) {
-    if (DebugUtil.DEBUG) {
-      System.err.println("Calling processExpired in the superclass");
-    }
     //
   }
 

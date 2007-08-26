@@ -4,9 +4,6 @@
  */
 package com.tcclient.cache;
 
-import com.tc.object.bytecode.ManagerUtil;
-import com.tc.util.DebugUtil;
-
 import java.io.Serializable;
 
 public class CacheData implements Serializable {
@@ -42,19 +39,11 @@ public class CacheData implements Serializable {
   }
 
   synchronized boolean isValid() {
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client id: " + ManagerUtil.getClientID() + " Checking if CacheData isValid [invalidated]: "
-                         + invalidated + " [lastAccessedTimeInMillis]: " + lastAccessedTimeInMillis + " current millis: " + System.currentTimeMillis());
-      
-    }
     if (invalidated) { return false; }
     return hasNotExpired() && isStillAlive();
   }
 
   private boolean hasNotExpired() {
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client id: " + ManagerUtil.getClientID() + " getIdleMillis: " + getIdleMillis());
-    }
     if (getMaxInactiveMillis() <= 0) { return true; }
     return getIdleMillis() < getMaxInactiveMillis();
   }
@@ -79,9 +68,6 @@ public class CacheData implements Serializable {
 
   synchronized void accessed() {
     lastAccessedTimeInMillis = System.currentTimeMillis();
-    if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " accessing " + lastAccessedTimeInMillis + " current millis: " + System.currentTimeMillis());
-    }
   }
 
   synchronized long getMaxInactiveMillis() {
