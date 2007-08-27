@@ -9,13 +9,13 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CacheDataStore implements Serializable {
   private final Map                       store;                  // <Data>
@@ -28,7 +28,8 @@ public class CacheDataStore implements Serializable {
   private transient int                   hitCount;
   private transient int                   missCountExpired;
   private transient int                   missCountNotFound;
-  private transient CacheInvalidationTimer cacheInvalidationTimer;
+  // private transient CacheInvalidationTimer cacheInvalidationTimer;
+  private transient CacheEntryInvalidator cacheInvalidator;
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, Map store,
                         Map dtmStore, String cacheName, Expirable callback) {
@@ -53,12 +54,18 @@ public class CacheDataStore implements Serializable {
   }
 
   public void initialize() {
-    this.cacheInvalidationTimer = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName + " invalidation thread", new CacheEntryInvalidator());
-    this.cacheInvalidationTimer.schedule(true);
+    // this.cacheInvalidationTimer = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName
+    // + " invalidation thread",
+    // new CacheEntryInvalidator());
+    // this.cacheInvalidationTimer.schedule(true);
+    //    
+    cacheInvalidator = new CacheEntryInvalidator(invalidatorSleepSeconds);
+    cacheInvalidator.scheduleNextInvalidation();
   }
 
   public void stopInvalidatorThread() {
-    cacheInvalidationTimer.cancel();
+    //cacheInvalidationTimer.cancel();
+    cacheInvalidator.cancel();
   }
 
   public Object put(final Object key, final Object value) {
@@ -290,31 +297,39 @@ public class CacheDataStore implements Serializable {
   // return rv;
   // }
 
-  private class CacheEntryInvalidator implements Runnable {
-    private final TCProperties globalEnvictionProperties;
-    private final Lock globalInvalidationLock;
-    private final Lock localInvalidationLock;
-    private boolean    isGlobalInvalidator = false;
+  private class CacheEntryInvalidator extends TimerTask {
+    private final Lock  globalInvalidationLock;
+    private final Lock  localInvalidationLock;
+    private boolean     isGlobalInvalidator = false;
+    private final long  sleepMillis;
+    private final Timer timer;
 
-    public CacheEntryInvalidator() {
+    public CacheEntryInvalidator(final long sleepSeconds) {
+      this.sleepMillis = sleepSeconds * 1000;
+      this.timer = new Timer(true);
       String localEvictionLockName = "tc:local_time_expiry_cache_invalidator_lock_" + cacheName;
       String globalEvictionLockName = "tc:global_time_expiry_cache_invalidator_lock_" + cacheName;
       localInvalidationLock = new Lock(localEvictionLockName);
       globalInvalidationLock = new Lock(globalEvictionLockName);
-      globalEnvictionProperties = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache.global.eviction");
+    }
+
+    public void scheduleNextInvalidation() {
+      if (DebugUtil.DEBUG) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " schedule next invalidation " + this.sleepMillis);
+      }
+      // If sleepMillis is <= 0, there will be no eviction, honoring the native ehcache semantics.
+      if (this.sleepMillis <= 0) { return; }
+      timer.schedule(this, this.sleepMillis, this.sleepMillis);
     }
 
     public void run() {
       try {
-        //System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
-        //tryToBeGlobalInvalidator();
-
+        if (DebugUtil.DEBUG) {
+          System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
+        }
         localInvalidationLock.writeLock();
         try {
           evictExpiredElements();
-          if (isTimeForGlobalInvalidation()) {
-            //
-          }
         } finally {
           localInvalidationLock.commitLock();
         }
@@ -323,78 +338,113 @@ public class CacheDataStore implements Serializable {
         throw new TCRuntimeException(t);
       }
     }
-
-    public void postRun() {
-      if (isGlobalInvalidator) {
-        globalInvalidationLock.commitLock();
-        isGlobalInvalidator = false;
-      }
-    }
-
-    private boolean isTimeForGlobalInvalidation() {
-      return false;
-    }
-    
-    private boolean isGlobalEnvictionEnabled() {
-      return globalEnvictionProperties.getBoolean("enable");
-    }
-
-    private void tryToBeGlobalInvalidator() {
-      if (isGlobalEnvictionEnabled() && !isGlobalInvalidator) {
-        if (globalInvalidationLock.tryWriteLock()) {
-          isGlobalInvalidator = true;
-        }
-      }
-    }
   }
 
-  private class CacheInvalidationTimer implements Runnable {
-    private final long                  delayMillis;
-    private boolean                     recurring = true;
-    private final String                timerName;
-    private final CacheEntryInvalidator invalidationTask;
-
-    public CacheInvalidationTimer(final long delayInSecs, final String timerName,
-                                  final CacheEntryInvalidator invalidationTask) {
-      this.timerName = timerName;
-      this.invalidationTask = invalidationTask;
-      this.delayMillis = delayInSecs * 1000;
-    }
-
-    public void schedule(boolean recurring) {
-      if (delayMillis <= 0) { return; }
-      
-      this.recurring = recurring;
-      Thread t = new Thread(this, timerName);
-      t.setDaemon(true);
-      t.start();
-    }
-
-    public void run() {
-      long nextDelay = delayMillis;
-      try {
-        do {
-          if (DebugUtil.DEBUG) {
-            System.err.println("Client " + ManagerUtil.getClientID() + " going to sleep for " + nextDelay);
-          }
-          sleep(nextDelay);
-          invalidationTask.run();
-        } while (recurring);
-      } finally {
-        invalidationTask.postRun();
-      }
-    }
-
-    private void sleep(long l) {
-      try {
-        Thread.sleep(l);
-      } catch (InterruptedException ignore) {
-        // nothing to do
-      }
-    }
-
-    public void cancel() {
-      recurring = false;
-    }
-  }
+  // private class CacheEntryInvalidator implements Runnable {
+  // private final TCProperties globalEnvictionProperties;
+  // private final Lock globalInvalidationLock;
+  // private final Lock localInvalidationLock;
+  // private boolean isGlobalInvalidator = false;
+  //
+  // public CacheEntryInvalidator() {
+  // String localEvictionLockName = "tc:local_time_expiry_cache_invalidator_lock_" + cacheName;
+  // String globalEvictionLockName = "tc:global_time_expiry_cache_invalidator_lock_" + cacheName;
+  // localInvalidationLock = new Lock(localEvictionLockName);
+  // globalInvalidationLock = new Lock(globalEvictionLockName);
+  // globalEnvictionProperties = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache.global.eviction");
+  // }
+  //
+  // public void run() {
+  // try {
+  // //System.err.println("Client " + ManagerUtil.getClientID() + " running evictExpiredElements");
+  // //tryToBeGlobalInvalidator();
+  //
+  // localInvalidationLock.writeLock();
+  // try {
+  // evictExpiredElements();
+  // if (isTimeForGlobalInvalidation()) {
+  // //
+  // }
+  // } finally {
+  // localInvalidationLock.commitLock();
+  // }
+  // } catch (Throwable t) {
+  // t.printStackTrace(System.err);
+  // throw new TCRuntimeException(t);
+  // }
+  // }
+  //
+  // public void postRun() {
+  // if (isGlobalInvalidator) {
+  // globalInvalidationLock.commitLock();
+  // isGlobalInvalidator = false;
+  // }
+  // }
+  //
+  // private boolean isTimeForGlobalInvalidation() {
+  // return false;
+  // }
+  //    
+  // private boolean isGlobalEnvictionEnabled() {
+  // return globalEnvictionProperties.getBoolean("enable");
+  // }
+  //
+  // private void tryToBeGlobalInvalidator() {
+  // if (isGlobalEnvictionEnabled() && !isGlobalInvalidator) {
+  // if (globalInvalidationLock.tryWriteLock()) {
+  // isGlobalInvalidator = true;
+  // }
+  // }
+  // }
+  // }
+  //
+  // private class CacheInvalidationTimer implements Runnable {
+  // private final long delayMillis;
+  // private boolean recurring = true;
+  // private final String timerName;
+  // private final CacheEntryInvalidator invalidationTask;
+  //
+  // public CacheInvalidationTimer(final long delayInSecs, final String timerName,
+  // final CacheEntryInvalidator invalidationTask) {
+  // this.timerName = timerName;
+  // this.invalidationTask = invalidationTask;
+  // this.delayMillis = delayInSecs * 1000;
+  // }
+  //
+  // public void schedule(boolean recurring) {
+  // if (delayMillis <= 0) { return; }
+  //      
+  // this.recurring = recurring;
+  // Thread t = new Thread(this, timerName);
+  // t.setDaemon(true);
+  // t.start();
+  // }
+  //
+  // public void run() {
+  // long nextDelay = delayMillis;
+  // try {
+  // do {
+  // if (DebugUtil.DEBUG) {
+  // System.err.println("Client " + ManagerUtil.getClientID() + " going to sleep for " + nextDelay);
+  // }
+  // sleep(nextDelay);
+  // invalidationTask.run();
+  // } while (recurring);
+  // } finally {
+  // invalidationTask.postRun();
+  // }
+  // }
+  //
+  // private void sleep(long l) {
+  // try {
+  // Thread.sleep(l);
+  // } catch (InterruptedException ignore) {
+  // // nothing to do
+  // }
+  // }
+  //
+  // public void cancel() {
+  // recurring = false;
+  // }
+  // }
 }
