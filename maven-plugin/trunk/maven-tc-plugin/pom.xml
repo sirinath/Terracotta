@@ -265,7 +265,7 @@
     <repository>
       <id>kong</id>
       <name>Terracotta Internal Repository</name>
-      <url>scp://kong/export1/maven2</url>
+      <url>scp://kong/export1/maven2-snapshots</url>
     </repository>
   </distributionManagement>
 
