@@ -28,6 +28,7 @@ import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.osgi.framework.BundleException;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
@@ -213,7 +214,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       return serverMBean.getHealthStatus();
 
     } catch (IOException ex) {
-      getLog().debug("Connection error: " + ex.toString(), ex);
+      log("Connection error: " + ex.toString(), ex);
       return null;
       
     } finally {
@@ -255,11 +256,12 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       port = serverConfig.jmxPort().getInt();
     }
 
-    String jmxUrl = "service:jmx:jmxmp://" + host + ":" + port;
-    return jmxUrl;
+    return "service:jmx:jmxmp://" + host + ":" + port;
   }
 
-  public void resolveModuleArtifacts(boolean addSurefireModule) {
+  protected void resolveModuleArtifacts(boolean addSurefireModule) throws MojoExecutionException {
+    List modules = new ArrayList();
+
     try {
       String[] commandLine = config == null ? new String[] {} : new String[] { "-f", config.getAbsolutePath() };
       StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
@@ -268,30 +270,40 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       NullTCLogger tcLogger = new NullTCLogger();
       L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(tcLogger);
 
-      List modules = new ArrayList();
       if (config.commonL1Config().modules() != null && config.commonL1Config().modules().getModuleArray() != null) {
         Module[] moduleArray = config.commonL1Config().modules().getModuleArray();
         modules.addAll(Arrays.asList(moduleArray));
       }
+    } catch (ConfigurationSetupException ex) {
+      String msg = "Can't read Terracotta configuration from " + config.getAbsolutePath();
+      log(msg, ex);
+      throw new MojoExecutionException(msg, ex);
+    }
+     
+    if(addSurefireModule) {
+      Module surefireModule = Module.Factory.newInstance();
+      surefireModule.setGroupId("org.terracotta.modules");
+      surefireModule.setName("clustered-surefire-2.3");
+      surefireModule.setVersion("1.0.0");
       
-      if(addSurefireModule) {
-        Module surefireModule = Module.Factory.newInstance();
-        surefireModule.setGroupId("org.terracotta.modules");
-        surefireModule.setName("clustered-surefire-2.3");
-        surefireModule.setVersion("1.0.0");
-        
-        modules.add(surefireModule);
-      }
-      
+      modules.add(surefireModule);
+    }
+
+    try {
       MavenResolver resolver = new MavenResolver();
       resolver.resolve((Module[]) modules.toArray(new Module[modules.size()]));
-
-    } catch (ConfigurationSetupException ex) {
-      getLog().error(ex);
-
     } catch (BundleException ex) {
-      getLog().error(ex);
-    
+      String msg = "Can't resolve module artifacts";
+      log(msg, ex);
+      throw new MojoExecutionException(msg, ex);
+    }
+  }
+
+  void log(String msg, Exception ex) {
+    if(getLog().isDebugEnabled()) {
+      getLog().error(msg, ex);
+    } else {
+      getLog().error(msg);
     }
   }
 
@@ -318,10 +330,8 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
           version = VersionRange.createFromVersionSpec(versionSpec);
         }
         return resolveArtifact(groupId, name, version);
-        
       } catch (InvalidVersionSpecificationException ex) {
-        getLog().error("Invalid version spec " + versionSpec + " for " + spec, ex);
-      
+        log("Invalid version spec " + versionSpec + " for " + spec, ex);
       }
       return null;
     }
@@ -336,13 +346,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
         return artifact.getFile().toURL();
         
       } catch (MalformedURLException ex) {
-        getLog().error("Malformed URL for " + artifact.toString(), ex);
-      
+        log("Malformed URL for " + artifact.toString(), ex);
       } catch (ArtifactResolutionException ex) {
-        getLog().error(ex);
-      
+        log("Can't resolve artifact " + artifact.toString(), ex);
       } catch (ArtifactNotFoundException ex) {
-        getLog().error(ex);
+        log("Can't find artifact " + artifact.toString(), ex);
       }    
       return null;
     }
