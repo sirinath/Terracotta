@@ -48,7 +48,7 @@ import javax.management.MBeanServerConnection;
 import junit.framework.Assert;
 
 public class GenericServer extends AbstractStoppable implements WebApplicationServer {
-  private static final boolean              GC_LOGGGING     = false;
+  private static final boolean              GC_LOGGGING     = true;
   private static final boolean              ENABLE_DEBUGGER = false;
 
   private final int                         jmxRemotePort;
@@ -125,6 +125,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
       case AppServerFactory.WEBLOGIC:
         // bumped up because ContainerHibernateTest was failing with WL 9
         parameters.appendJvmArgs("-XX:MaxPermSize=128m");
+        parameters.appendJvmArgs("-Xms128m -Xmx256m");
         break;
     }
 
@@ -145,6 +146,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     if (GC_LOGGGING && !Vm.isIBM()) {
       parameters.appendJvmArgs("-verbose:gc");
       parameters.appendJvmArgs("-XX:+PrintGCDetails");
+      parameters.appendJvmArgs("-XX:+PrintGCTimeStamps");
       parameters.appendJvmArgs("-Xloggc:"
                                + new File(this.installation.sandboxDirectory(), "server_" + serverId + "-gc.log")
                                    .getAbsolutePath());
