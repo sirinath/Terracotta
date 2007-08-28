@@ -6,6 +6,9 @@ package org.terracotta.maven.plugins.tc;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,13 +29,15 @@ import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.plugin.AbstractMojo;
 import org.codehaus.plexus.util.cli.StreamConsumer;
+import org.osgi.framework.BundleException;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
+import com.tc.bundles.BundleSpec;
+import com.tc.bundles.Resolver;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.setup.ConfigurationSetupException;
-import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
@@ -254,6 +259,97 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     return jmxUrl;
   }
 
+  public void resolveModuleArtifacts(boolean addSurefireModule) {
+    try {
+      String[] commandLine = config == null ? new String[] {} : new String[] { "-f", config.getAbsolutePath() };
+      StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
+          commandLine, false, new MavenIllegalConfigurationChangeHandler());
+
+      NullTCLogger tcLogger = new NullTCLogger();
+      L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(tcLogger);
+
+      List modules = new ArrayList();
+      if (config.commonL1Config().modules() != null && config.commonL1Config().modules().getModuleArray() != null) {
+        Module[] moduleArray = config.commonL1Config().modules().getModuleArray();
+        modules.addAll(Arrays.asList(moduleArray));
+      }
+      
+      if(addSurefireModule) {
+        Module surefireModule = Module.Factory.newInstance();
+        surefireModule.setGroupId("org.terracotta.modules");
+        surefireModule.setName("clustered-surefire-2.3");
+        surefireModule.setVersion("1.0.0");
+        
+        modules.add(surefireModule);
+      }
+      
+      MavenResolver resolver = new MavenResolver();
+      resolver.resolve((Module[]) modules.toArray(new Module[modules.size()]));
+
+    } catch (ConfigurationSetupException ex) {
+      getLog().error(ex);
+
+    } catch (BundleException ex) {
+      getLog().error(ex);
+    
+    }
+  }
+
+  
+  private class MavenResolver extends Resolver {
+
+    public MavenResolver() {
+      super(new URL[0]);
+    }
+    
+    protected URL resolveLocation(final String name, final String version, final String groupId) {
+      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
+    }
+    
+    protected URL resolveBundle(BundleSpec spec) {
+      String groupId = spec.getGroupId();
+      String name = spec.getName().replace('_', '-');
+      String versionSpec = spec.getVersion();
+      try {
+        VersionRange version;
+        if("(any-version)".equals(versionSpec)) {
+          version = VersionRange.createFromVersion("1.0.0");
+        } else {
+          version = VersionRange.createFromVersionSpec(versionSpec);
+        }
+        return resolveArtifact(groupId, name, version);
+        
+      } catch (InvalidVersionSpecificationException ex) {
+        getLog().error("Invalid version spec " + versionSpec + " for " + spec, ex);
+      
+      }
+      return null;
+    }
+
+    private URL resolveArtifact(String groupId, String artifactId, VersionRange version) {
+      Artifact artifact = artifactFactory.createDependencyArtifact( // 
+          groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
+      getLog().info("Resolving module " + artifact.toString());
+
+      try {
+        artifactResolver.resolve(artifact, remoteRepositories, localRepository);
+        return artifact.getFile().toURL();
+        
+      } catch (MalformedURLException ex) {
+        getLog().error("Malformed URL for " + artifact.toString(), ex);
+      
+      } catch (ArtifactResolutionException ex) {
+        getLog().error(ex);
+      
+      } catch (ArtifactNotFoundException ex) {
+        getLog().error(ex);
+      }    
+      return null;
+    }
+    
+  }
+
+  
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
     public void changeFailed(ConfigItem item, Object oldValue, Object newValue) {
       String text = "Inconsistent Terracotta configuration.\n\n"
@@ -273,54 +369,5 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
-
-  public void resolveModuleArtifacts(boolean addSurefireModule) {
-    try {
-      String[] commandLine = config == null ? new String[] {} : new String[] { "-f", config.getAbsolutePath() };
-      StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
-          commandLine, false, new FatalIllegalConfigurationChangeHandler());
-
-      NullTCLogger tcLogger = new NullTCLogger();
-      L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(tcLogger);
-
-      if (config.commonL1Config().modules() != null && config.commonL1Config().modules().getModuleArray() != null) {
-        Module[] moduleArray = config.commonL1Config().modules().getModuleArray();
-        for (int i = 0; i < moduleArray.length; i++) {
-          Module module = moduleArray[i];
-          String groupId = module.getGroupId() == null ? "org.terracotta.modules" : module.getGroupId();
-          String artifactId = module.getName();
-          VersionRange version = VersionRange.createFromVersionSpec(module.getVersion());
-
-          resolveArtifact(groupId, artifactId, version);
-        }
-      }
-      
-      if(addSurefireModule) {
-        VersionRange version = VersionRange.createFromVersionSpec("[1.0.0,)");
-
-        resolveArtifact("org.terracotta.modules", "modules-common-1.0", version);
-        resolveArtifact("org.terracotta.modules", "clustered-surefire-2.3", version);
-      }
-
-    } catch (ConfigurationSetupException ex) {
-      getLog().error(ex);
-    } catch (InvalidVersionSpecificationException ex) {
-      getLog().error(ex);
-    }
-  }
-
-  private Artifact resolveArtifact(String groupId, String artifactId, VersionRange version) {
-    Artifact artifact = artifactFactory.createDependencyArtifact( // 
-        groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
-    getLog().info("Resolving module " + artifact.toString());
-    try {
-      artifactResolver.resolve(artifact, remoteRepositories, localRepository);
-    } catch (ArtifactResolutionException ex) {
-      getLog().error(ex);
-    } catch (ArtifactNotFoundException ex) {
-      getLog().error(ex);
-    }
-    return artifact;
-  }
-
+  
 }
