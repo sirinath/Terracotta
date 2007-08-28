@@ -501,8 +501,23 @@ public class ServerConnectionManager implements NotificationListener {
     return getHostname() + ":" + getJMXPortNumber();
   }
 
+  public String getStatusString() {
+    StringBuffer sb = new StringBuffer(this.toString());
+    sb.append(":");
+    sb.append("connected=");
+    sb.append(m_connected);
+    if(m_connected) {
+      sb.append(",status=");
+      if(m_active) sb.append("active");
+      else if(m_passiveUninitialized) sb.append("passive-uninitialized");
+      else if(m_passiveStandby) sb.append("passive-standby");
+      else if(m_started) sb.append("started");
+    }
+    return sb.toString();
+  }
+  
   public void dump(String prefix) {
-    System.out.println(prefix+this+",connected="+m_connected+",autoConnect="+m_autoConnect+",started="+m_started+",exception="+m_connectException);
+    System.out.println(prefix+this+":connected="+m_connected+",autoConnect="+m_autoConnect+",started="+m_started+",exception="+m_connectException);
   }
   
   void cancelActiveServices() {
