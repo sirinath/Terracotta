@@ -263,7 +263,7 @@
 
   <distributionManagement>
     <repository>
-      <id>tc-internal-snapshots</id>
+      <id>kong</id>
       <name>Terracotta Internal Repository</name>
       <url>scp://kong/export1/maven2-snapshots</url>
     </repository>
