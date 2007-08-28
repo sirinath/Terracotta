@@ -9,8 +9,8 @@ import org.osgi.framework.BundleException;
 
 import com.tc.bundles.exception.InvalidBundleManifestException;
 import com.tc.bundles.exception.MissingBundleException;
-import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.terracottatech.config.Module;
 
 import java.io.File;
@@ -98,7 +98,7 @@ public class Resolver {
       }
       resolveDependencies(required);
     }
-    
+
     addToRegistry(location, manifest);
   }
 
@@ -115,7 +115,6 @@ public class Resolver {
       if (location.getProtocol().equalsIgnoreCase("file")) {
         final File repository = new File(location.getFile());
         if (!repository.exists() || !repository.isDirectory()) {
-          System.out.println("xxxxxxxxxxxxxx invalid repository: " + repository.exists() + " " + repository.isDirectory());
           warn(Message.WARN_REPOSITORY_UNRESOLVED, new Object[] { location });
           continue;
         }
@@ -124,14 +123,12 @@ public class Resolver {
         for (Iterator j = jarfiles.iterator(); j.hasNext();) {
           final File bundleFile = (File) j.next();
           if (!bundleFile.isFile() || !bundleFile.getName().matches(BUNDLE_FILENAME_PATTERN)) {
-            System.out.println("xxxxxxxxxxxxxx invalid file name");
             warn(Message.WARN_FILE_IGNORED_INVALID_NAME, new Object[] { bundleFile.getName() });
             continue;
           }
 
           final Manifest manifest = getManifest(bundleFile);
           if (manifest == null) {
-            System.out.println("xxxxxxxxxxxxxx manifest missing");
             warn(Message.WARN_FILE_IGNORED_MISSING_MANIFEST, new Object[] { bundleFile.getName() });
             continue;
           }
@@ -304,7 +301,8 @@ public class Resolver {
     }
   }
 
-  private static final TCLogger       logger = CustomerLogging.getConsoleLogger();
+  // private static final TCLogger logger = CustomerLogging.getConsoleLogger();
+  private static final TCLogger       logger = TCLogging.getLogger(Resolver.class);
   private static final ResourceBundle resourceBundle;
 
   static {
