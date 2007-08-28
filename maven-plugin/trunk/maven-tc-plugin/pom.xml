@@ -9,25 +9,25 @@
   <!--  -->
   <repositories>
     <repository>
+      <id>terracotta-snapshots</id>
+      <url>http://download.terracotta.org/maven2-snapshots</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
-      <id>terracotta-repository</id>
-      <url>http://download.terracotta.org/maven2/</url>
     </repository>
-    
+
     <repository>
+      <id>terracotta-repository</id>
+      <url>http://download.terracotta.org/maven2</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
-      <id>terracotta-internal-repository</id>
-      <url>http://kong/maven2/</url>
     </repository>
 
     <repository>
@@ -53,21 +53,43 @@
     </repository>
   </repositories>
 
-  <!--  -->
   <pluginRepositories>
+    <pluginRepository>
+      <id>terracotta-snapshots</id>
+      <url>http://download.terracotta.org/maven2-snapshots</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
+
+    <pluginRepository>
+      <id>terracotta-repository</id>
+      <url>http://download.terracotta.org/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+
+    <!--  -->
     <pluginRepository>
       <id>codehaus-repository</id>
       <name>Codehaus Repository</name>
       <url>http://repository.codehaus.org/</url>
     </pluginRepository>
     <pluginRepository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots />
       <id>codehaus-repository-snapshot</id>
       <name>Codehaus Snapshot Repository</name>
       <url>http://snapshots.repository.codehaus.org/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots/>
     </pluginRepository>
   </pluginRepositories>
 
@@ -135,20 +157,6 @@
       <artifactId>surefire-junit4</artifactId>
       <version>2.3</version>
     </dependency>
-
-<!--
-    <dependency>
-      <groupId>org.apache.maven.surefire</groupId>
-      <artifactId>surefire-testng</artifactId>
-      <version>2.3</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-      <version>2.0</version>
-    </dependency>
--->
 
     <!-- Terracotta -->
     <dependency>
