@@ -1,10 +1,12 @@
 package org.terracotta.maven.plugins.tc;
 
-import org.terracotta.maven.plugins.tc.cl.CommandLineException;
+import java.io.IOException;
+
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
 import com.tc.admin.TCStop;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.server.TCServerMain;
 
 public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
@@ -28,16 +30,26 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
   protected void start() {
     String jmxUrl = null;
+ 
+
     try {
       jmxUrl = getJMXUrl(serverName);
+    } catch (Exception e) {
+      getLog().error("Failed to verify DSO server status", e);
+      return;
+    }
 
+    try {
       String status = getServerStatus(jmxUrl);
-      if (status != null && status.startsWith("OK")) {
+      if (status.startsWith("OK")) {
         getLog().info("Server already started: " + status);
         return;
       }
-    } catch (Exception e) {
-      getLog().error("Failed to verify DSO server status", e);
+    } catch (ConfigurationSetupException cse) {
+      getLog().error("Failed to verify DSO server status", cse);
+      return;
+    } catch (IOException ioe) {
+      // ok - we expect to not connect
     }
 
     try {
@@ -76,7 +88,11 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
         long time = System.currentTimeMillis();
         String status = null;
         while ((System.currentTimeMillis() - time) < 30 * 1000L && status == null && isRunning(p)) {
-          status = getServerStatus(jmxUrl);
+          try {
+            status = getServerStatus(jmxUrl);
+          } catch (IOException ioe) {
+            // ok - we're waiting for the connection
+          }
         }
         getLog().info("DSO Server status: " + status);
       }
@@ -119,22 +135,16 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
       if (wait) {
         getLog().info("Waiting for server to stop...");
-        try {
-          String jmxUrl = getJMXUrl(serverName);
-          String status = null;
-          long time = System.currentTimeMillis();
-          do {
-            status = getServerStatus(jmxUrl);
-          }  while ((System.currentTimeMillis() - time) < 30 * 1000L && status != null);
-        } catch (Exception e) {
-          getLog().warn(e);
-        }
+        String jmxUrl = getJMXUrl(serverName);
+        String status = null;
+        long time = System.currentTimeMillis();
+        do {
+          status = getServerStatus(jmxUrl);
+        }  while ((System.currentTimeMillis() - time) < 30 * 1000L && status != null);
       }
-
       getLog().info("OK");
-
     } catch (Exception e) {
-      getLog().error("Failed to stop DSO server", e);
+      getLog().error("Error stopping DSO server", e);
     }
   }
 
