@@ -108,14 +108,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected String jvm;
 
   /**
-   * @parameter expression="${workingDirectory}" default-value="."
+   * @parameter expression="${workingDirectory}" default-value="${basedir}"
    */
   protected File workingDirectory;
 
   /**
-   * @parameter expression="${config}"
+   * @parameter expression="${config}" default-value="${basedir}/tc-config.xml"
    */
-  private String config;
+  protected File config;
 
   /**
    * @parameter expression="${modules}"
@@ -229,26 +229,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
   
-  protected File resolveConfig() throws ConfigurationSetupException 
-  {
-    assert workingDirectory != null;
-
-    File ret = null;
-    if (config != null) {
-      File f = new File(config);
-      ret = f.isAbsolute() ? f : new File(workingDirectory, config);
-    } else {
-      ret = new  File(workingDirectory, "tc-config.xml");
-    }
-    if (!ret.exists()) throw new ConfigurationSetupException("Invalid config file spec: " + ret);
-    return ret;
-  }
-
   protected String getJMXUrl(String serverName) throws ConfigurationSetupException {
     String host = "localhost";
     int port = 9520;
 
-    String args = "-f" + resolveConfig().getAbsolutePath();
+    String args = "-f" + config.getAbsolutePath();
     if (serverName != null) {
       args += " -n " + serverName;
     }
@@ -274,7 +259,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     List modules = new ArrayList();
 
     try {
-      String[] commandLine = new String[] { "-f", resolveConfig().getAbsolutePath() };
+      String[] commandLine = new String[] { "-f", config.getAbsolutePath() };
       StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
           commandLine, false, new MavenIllegalConfigurationChangeHandler());
 

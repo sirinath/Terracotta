@@ -1,0 +1,50 @@
+<con:tc-config xmlns:con="http://www.terracotta.org/config">
+  <clients>
+    <logs>terracotta/client-logs</logs>
+    <modules>
+     <module name="clustered-ehcache-1.2.4" version="1.0.0"/>
+    </modules>
+  </clients>
+  <application>
+    <dso>
+      <instrumented-classes>
+        <include>
+          <class-expression>org.sharrissf.performance..*</class-expression>
+          <honor-transient>true</honor-transient>
+        </include>
+      </instrumented-classes>
+      <roots>
+        <root>
+          <field-name>org.sharrissf.performance.PerformanceManager.config</field-name>
+        </root>
+        <root>
+          <field-name>org.sharrissf.performance.PerformanceManager.barrier</field-name>
+        </root>
+        <root>
+          <field-name>org.sharrissf.performance.PerformanceManager.allConnectedNodes</field-name>
+        </root>
+        <root>
+          <field-name>org.sharrissf.performance.action.AbstractMapPerformanceAction.root</field-name>
+        </root>
+      </roots>
+      <locks>
+        <autolock>
+          <method-expression>* org.sharrissf.performance..*.*(..)</method-expression>
+          <lock-level>write</lock-level>
+        </autolock>
+        <autolock>
+          <method-expression>* org.sharrissf.performance..*.get()</method-expression>
+          <lock-level>read</lock-level>
+        </autolock>
+      </locks>
+    </dso>
+  </application>
+  <servers>
+    <server name="localhost" host="localhost">
+      <dso-port>9510</dso-port>
+      <jmx-port>9520</jmx-port>
+      <data>terracotta/data</data>
+      <logs>terracotta/logs</logs>
+    </server>
+  </servers>
+</con:tc-config>
