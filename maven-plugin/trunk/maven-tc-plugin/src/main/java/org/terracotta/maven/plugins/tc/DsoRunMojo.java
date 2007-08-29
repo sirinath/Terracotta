@@ -51,7 +51,11 @@ public class DsoRunMojo extends DsoLifecycleMojo {
    */
   private int numberOfNodes;
 
-  
+  /**
+   * @parameter 
+   */
+  private String workingDirectory;
+    
   protected void onExecute() throws MojoExecutionException, MojoFailureException {
     getLog().info("------------------------------------------------------------------------");
     resolveModuleArtifacts(false);
@@ -100,6 +104,10 @@ public class DsoRunMojo extends DsoLifecycleMojo {
   private Commandline createCommandLine(ProcessConfiguration process, String nodeName) {
     Commandline cmd = super.createCommandLine();
 
+    if (workingDirectory != null) {
+      cmd.setWorkingDirectory(workingDirectory); 
+    }
+  
     cmd.createArgument().setValue("-Xbootclasspath/p:" + bootJar.getAbsolutePath());
 
     cmd.createArgument().setValue("-Dtc.nodeName=" + nodeName);

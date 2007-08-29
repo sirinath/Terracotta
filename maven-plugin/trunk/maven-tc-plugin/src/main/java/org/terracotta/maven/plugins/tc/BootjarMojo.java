@@ -51,7 +51,7 @@ public class BootjarMojo extends AbstractDsoMojo {
     resolveModuleArtifacts(false);
     
     if (!overwriteBootjar && bootJar.exists()) {
-      getLog().info("BootJar already exist " + bootJar.getAbsolutePath());
+      getLog().info("BootJar already exists: " + bootJar.getAbsolutePath());
       return;
     }
 
@@ -83,7 +83,7 @@ public class BootjarMojo extends AbstractDsoMojo {
     ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("bootjar");
 
     getLog().info("------------------------------------------------------------------------");
-    getLog().info("Statrting bootjar tool");
+    getLog().info("Starting bootjar tool");
     try {
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, false);
       getLog().info("OK");
