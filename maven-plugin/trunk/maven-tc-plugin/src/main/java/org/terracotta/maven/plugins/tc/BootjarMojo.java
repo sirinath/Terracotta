@@ -72,22 +72,22 @@ public class BootjarMojo extends AbstractDsoMojo {
       cmd.createArgument().setValue("-w");
     }
 
-    cmd.createArgument().setValue("-o");
-    cmd.createArgument().setFile(bootJar);
-    getLog().debug("bootjar file  = " + bootJar.getAbsolutePath());
-
-    cmd.createArgument().setValue("-f");
-    cmd.createArgument().setFile(config);
-    getLog().debug("tc-config file  = " + config.getAbsolutePath());
-
-    ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("bootjar");
-
-    getLog().info("------------------------------------------------------------------------");
-    getLog().info("Starting bootjar tool");
     try {
+      cmd.createArgument().setValue("-o");
+      cmd.createArgument().setFile(bootJar);
+      getLog().debug("bootjar file  = " + bootJar.getAbsolutePath());
+
+      cmd.createArgument().setValue("-f");
+      cmd.createArgument().setFile(resolveConfig());
+      getLog().debug("tc-config file  = " + resolveConfig().getAbsolutePath());
+
+      ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("bootjar");
+
+      getLog().info("------------------------------------------------------------------------");
+      getLog().info("Starting bootjar tool");
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, false);
       getLog().info("OK");
-    } catch (CommandLineException e) {
+    } catch (Exception e) {
       getLog().error("Failed to execute bootjar tool", e);
     }
   }

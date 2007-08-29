@@ -50,11 +50,6 @@ public class DsoRunMojo extends DsoLifecycleMojo {
    * @parameter expression="${numberOfNodes}" default-value="1"
    */
   private int numberOfNodes;
-
-  /**
-   * @parameter 
-   */
-  private String workingDirectory;
     
   protected void onExecute() throws MojoExecutionException, MojoFailureException {
     getLog().info("------------------------------------------------------------------------");

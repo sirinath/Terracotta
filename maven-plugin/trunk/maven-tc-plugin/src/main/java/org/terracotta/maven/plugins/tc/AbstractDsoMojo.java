@@ -108,9 +108,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected String jvm;
 
   /**
-   * @parameter expression="${config}" default-value="tc-config.xml"
+   * @parameter expression="${workingDirectory}" default-value="."
    */
-  protected File config;
+  protected File workingDirectory;
+
+  /**
+   * @parameter expression="${config}"
+   */
+  private String config;
 
   /**
    * @parameter expression="${modules}"
@@ -130,6 +135,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
     modules = mojo.modules;
     config = mojo.config;
+    workingDirectory = mojo.workingDirectory;
     jvm = mojo.jvm;
     classpathElements = mojo.classpathElements;
     pluginArtifacts = mojo.pluginArtifacts;
@@ -227,34 +233,44 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
+  
+  protected File resolveConfig() throws ConfigurationSetupException 
+  {
+    assert workingDirectory != null;
+
+    File ret = null;
+    if (config != null) {
+      File f = new File(config);
+      ret = f.isAbsolute() ? f : new File(workingDirectory, config);
+    } else {
+      ret = new  File(workingDirectory, "tc-config.xml");
+    }
+    if (!ret.exists()) throw new ConfigurationSetupException("Invalid config file spec: " + ret);
+    return ret;
+  }
 
   protected String getJMXUrl(String serverName) throws ConfigurationSetupException {
     String host = "localhost";
     int port = 9520;
 
-    if (config != null && config.exists()) {
-      String args = "";
-      if (config != null) {
-        args += "-f " + config.getAbsolutePath();
-      }
-      if (serverName != null) {
-        args += " -n " + serverName;
-      }
-
-      TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(args.split(" "), //
-          true, new MavenIllegalConfigurationChangeHandler());
-
-      L2TVSConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(serverName);
-
-      NewCommonL2Config serverConfig = manager.commonL2ConfigFor(serverName);
-
-      host = serverConfig.host().getString();
-      if (host == null) {
-        host = "localhost";
-      }
-
-      port = serverConfig.jmxPort().getInt();
+    String args = "-f" + resolveConfig().getAbsolutePath();
+    if (serverName != null) {
+      args += " -n " + serverName;
     }
+
+    TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(args.split(" "), //
+        true, new MavenIllegalConfigurationChangeHandler());
+
+    L2TVSConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(serverName);
+
+    NewCommonL2Config serverConfig = manager.commonL2ConfigFor(serverName);
+
+    host = serverConfig.host().getString();
+    if (host == null) {
+      host = "localhost";
+    }
+
+    port = serverConfig.jmxPort().getInt();
 
     return "service:jmx:jmxmp://" + host + ":" + port;
   }
@@ -263,7 +279,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     List modules = new ArrayList();
 
     try {
-      String[] commandLine = config == null ? new String[] {} : new String[] { "-f", config.getAbsolutePath() };
+      String[] commandLine = new String[] { "-f", resolveConfig().getAbsolutePath() };
       StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
           commandLine, false, new MavenIllegalConfigurationChangeHandler());
 
@@ -275,9 +291,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
         modules.addAll(Arrays.asList(moduleArray));
       }
     } catch (ConfigurationSetupException ex) {
-      String msg = "Can't read Terracotta configuration from " + config.getAbsolutePath();
-      log(msg, ex);
-      throw new MojoExecutionException(msg, ex);
+      throw new MojoExecutionException("Configuration Error", ex);
     }
      
     if(addSurefireModule) {
