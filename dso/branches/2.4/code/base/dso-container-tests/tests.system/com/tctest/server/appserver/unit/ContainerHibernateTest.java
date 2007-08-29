@@ -74,10 +74,6 @@ public class ContainerHibernateTest extends AbstractTwoServerDeploymentTest {
       builder.addDirectoryOrJARContainingClass(antlr.Tool.class); // antlr*.jar
       builder.addDirectoryOrJARContainingClass(Cache.class); // ehcache-1.3.0.jar
       builder.addDirectoryOrJARContainingClass(CacheListener.class); // jsr107cache-1.0.jar
-<<<<<<< .working
-=======
-      builder.addDirectoryOrJARContainingClass(TimeExpiryMemoryStore.class); // ehcache-commons-1.0
->>>>>>> .merge-right.r5323
 
       if (AppServerFactory.getCurrentAppServerId() != AppServerFactory.JBOSS) {
         builder.addDirectoryOrJARContainingClass(Logger.class); // log4j
