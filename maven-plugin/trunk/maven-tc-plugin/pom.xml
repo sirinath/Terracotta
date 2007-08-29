@@ -267,7 +267,32 @@
       <artifactId>jmxremote_optional</artifactId>
       <version>1.0.1_04</version>
     </dependency>
+
+    <!-- admin console -->
+    <dependency>
+      <groupId>org.dijon</groupId>
+      <artifactId>appframe</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>treemap</groupId>
+      <artifactId>treemap</artifactId>
+      <version>2.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>jfree</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
   </dependencies>
+
+
 
   <distributionManagement>
     <repository>
