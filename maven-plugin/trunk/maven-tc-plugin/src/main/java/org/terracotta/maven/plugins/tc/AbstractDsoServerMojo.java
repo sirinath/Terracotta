@@ -62,12 +62,12 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
       cmd.createArgument().setValue(TCServerMain.class.getName());
 
-      if (resolveConfig().exists()) {
-        getLog().debug("tc-config file " + resolveConfig().getAbsolutePath());
+      if (config.exists()) {
+        getLog().debug("tc-config file " + config.getAbsolutePath());
         cmd.createArgument().setValue("-f");
-        cmd.createArgument().setFile(resolveConfig());
+        cmd.createArgument().setFile(config);
       } else {
-        getLog().debug("tc-config file doesn't exists " + resolveConfig().getAbsolutePath());
+        getLog().debug("tc-config file doesn't exists " + config.getAbsolutePath());
       }
 
       if (serverName != null && serverName.length() > 0) {
@@ -115,10 +115,10 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
     cmd.createArgument().setValue(TCStop.class.getName());
 
     try {
-      if(resolveConfig().exists()) {
+      if(config.exists()) {
         cmd.createArgument().setValue("-f");
-        cmd.createArgument().setFile(resolveConfig());
-        getLog().debug("tc-config file  = " + resolveConfig().getAbsolutePath());
+        cmd.createArgument().setFile(config);
+        getLog().debug("tc-config file  = " + config.getAbsolutePath());
       }
 
       if (serverName != null && serverName.length() > 0) {

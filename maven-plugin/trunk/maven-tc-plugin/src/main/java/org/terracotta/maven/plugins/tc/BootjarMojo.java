@@ -6,7 +6,6 @@ package org.terracotta.maven.plugins.tc;
 import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
@@ -78,8 +77,8 @@ public class BootjarMojo extends AbstractDsoMojo {
       getLog().debug("bootjar file  = " + bootJar.getAbsolutePath());
 
       cmd.createArgument().setValue("-f");
-      cmd.createArgument().setFile(resolveConfig());
-      getLog().debug("tc-config file  = " + resolveConfig().getAbsolutePath());
+      cmd.createArgument().setFile(config);
+      getLog().debug("tc-config file  = " + config.getAbsolutePath());
 
       ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("bootjar");
 
