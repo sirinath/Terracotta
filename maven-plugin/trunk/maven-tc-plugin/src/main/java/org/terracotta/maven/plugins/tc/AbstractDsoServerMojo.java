@@ -40,34 +40,35 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
       getLog().error("Failed to verify DSO server status", e);
     }
 
-    Commandline cmd = createCommandLine();
-
-    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
-
-    cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue(createPluginClasspath());
-
-    cmd.createArgument().setValue(TCServerMain.class.getName());
-
-    if (config.exists()) {
-      getLog().debug("tc-config file " + config.getAbsolutePath());
-      cmd.createArgument().setValue("-f");
-      cmd.createArgument().setFile(config);
-    } else {
-      getLog().debug("tc-config file doesn't exists " + config.getAbsolutePath());
-    }
-
-    if (serverName != null && serverName.length() > 0) {
-      cmd.createArgument().setValue("-n");
-      cmd.createArgument().setValue(serverName);
-      getLog().debug("server serverName = " + serverName);
-    }
-
-    ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
-
-    getLog().info("------------------------------------------------------------------------");
-    getLog().info("Starting DSO Server");
     try {
+      Commandline cmd = createCommandLine();
+
+      cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
+
+      cmd.createArgument().setValue("-cp");
+      cmd.createArgument().setValue(createPluginClasspath());
+
+      cmd.createArgument().setValue(TCServerMain.class.getName());
+
+      if (resolveConfig().exists()) {
+        getLog().debug("tc-config file " + resolveConfig().getAbsolutePath());
+        cmd.createArgument().setValue("-f");
+        cmd.createArgument().setFile(resolveConfig());
+      } else {
+        getLog().debug("tc-config file doesn't exists " + resolveConfig().getAbsolutePath());
+      }
+
+      if (serverName != null && serverName.length() > 0) {
+        cmd.createArgument().setValue("-n");
+        cmd.createArgument().setValue(serverName);
+        getLog().debug("server serverName = " + serverName);
+      }
+
+      ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
+
+      getLog().info("------------------------------------------------------------------------");
+      getLog().info("Starting DSO Server");
+
       Process p = CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
       getLog().info("OK");
 
@@ -86,7 +87,7 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
   }
 
   protected void stop() { stop(false); }
-  
+
   protected void stop(boolean wait) {
     Commandline cmd = createCommandLine();
 
@@ -97,25 +98,25 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
     cmd.createArgument().setValue(TCStop.class.getName());
 
-    if(config.exists()) {
-      cmd.createArgument().setValue("-f");
-      cmd.createArgument().setFile(config);
-      getLog().debug("tc-config file  = " + config.getAbsolutePath());
-    }
-
-    if (serverName != null && serverName.length() > 0) {
-      cmd.createArgument().setValue("-n");
-      cmd.createArgument().setValue(serverName);
-      getLog().debug("server name = " + serverName);
-    }
-
-    ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
-
-    getLog().info("------------------------------------------------------------------------");
-    getLog().info("Stopping DSO Server");
     try {
+      if(resolveConfig().exists()) {
+        cmd.createArgument().setValue("-f");
+        cmd.createArgument().setFile(resolveConfig());
+        getLog().debug("tc-config file  = " + resolveConfig().getAbsolutePath());
+      }
+
+      if (serverName != null && serverName.length() > 0) {
+        cmd.createArgument().setValue("-n");
+        cmd.createArgument().setValue(serverName);
+        getLog().debug("server name = " + serverName);
+      }
+
+      ForkedProcessStreamConsumer streamConsumer = new ForkedProcessStreamConsumer("dso start");
+
+      getLog().info("------------------------------------------------------------------------");
+      getLog().info("Stopping DSO Server");
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
-      
+
       if (wait) {
         getLog().info("Waiting for server to stop...");
         try {
@@ -131,8 +132,8 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
       }
 
       getLog().info("OK");
-  
-    } catch (CommandLineException e) {
+
+    } catch (Exception e) {
       getLog().error("Failed to stop DSO server", e);
     }
   }
