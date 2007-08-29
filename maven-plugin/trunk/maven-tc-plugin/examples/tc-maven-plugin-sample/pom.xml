@@ -24,6 +24,11 @@
           <!-- used by tc:run need to be moved into execution -->
           <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
           <numberOfNodes>2</numberOfNodes>
+
+          <processes>
+            <process nodeName="master" className="org.terracotta.maven.plugins.tc.test.MasterProcess" count="1"/>
+            <process nodeName="sample" className="org.terracotta.maven.plugins.tc.test.SampleProcess" count="2"/>
+          </processes>
         </configuration>
 
         <executions>
