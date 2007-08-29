@@ -207,7 +207,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
-  public String getServerStatus(String jmxUrl) throws ConfigurationSetupException, MalformedURLException {
+  public String getServerStatus(String jmxUrl) throws ConfigurationSetupException, MalformedURLException, IOException {
     getLog().debug("Connecting to DSO server at " + jmxUrl);
     JMXServiceURL url = new JMXServiceURL(jmxUrl);
     JMXConnector jmxc = null;
@@ -217,12 +217,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
           L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
 
-      return serverMBean.getHealthStatus();
-
-    } catch (IOException ex) {
-      log("Connection error: " + ex.toString(), ex);
-      return null;
-      
+      return serverMBean.getHealthStatus();      
     } finally {
       if (jmxc != null) {
         try {
