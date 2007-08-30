@@ -41,7 +41,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   private void basicMapTTLTest(int index) throws Exception {
     DebugUtil.DEBUG = true;
     if (index == 0) {
-      dataRoot = new DataRoot(new MockTimeExpiryMap(1, 50, 5));
+      dataRoot = new DataRoot();
+      dataRoot.setMap(new MockTimeExpiryMap(1, 50, 5));
     }
     
     barrier.barrier();
@@ -182,9 +183,8 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
   private static class DataRoot {
     private MockTimeExpiryMap map;
 
-    public DataRoot(MockTimeExpiryMap map) {
+    public DataRoot() {
       super();
-      this.map = map;
     }
     
     public synchronized void put(Object key, Object val) {
@@ -205,6 +205,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     public synchronized void setMap(MockTimeExpiryMap map) {
       this.map = map;
+      this.map.initialize();
     }
     
     public synchronized boolean isExpired(Object key) {
