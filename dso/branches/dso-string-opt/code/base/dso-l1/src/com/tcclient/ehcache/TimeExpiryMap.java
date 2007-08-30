@@ -28,9 +28,20 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   protected final CacheDataStore timeExpiryDataStore;
 
   public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName) {
-    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds, new HashMap(),
-                                             new HashMap(), "CacheInvalidator - " + cacheName, this);
-    timeExpiryDataStore.initialize();
+    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds,
+                                             new HashMap(), new HashMap(), "CacheInvalidator - " + cacheName, this);
+  }
+
+  // For test only
+  public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName,
+                       boolean globalEvictionEnabled, int globalEvictionDuration) {
+    timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds,
+                                             new HashMap(), new HashMap(), "CacheInvalidator - " + cacheName, this,
+                                             globalEvictionEnabled, globalEvictionDuration);
+  }
+  
+  public void initialize() {
+    timeExpiryDataStore.initialize();    
   }
 
   public Object put(Object key, Object value) {
@@ -57,13 +68,16 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public boolean containsValue(Object value) {
-    return timeExpiryDataStore.getStore().containsValue(new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds()));
+    return timeExpiryDataStore.getStore().containsValue(
+                                                        new CacheData(value, timeExpiryDataStore
+                                                            .getMaxIdleTimeoutSeconds(), timeExpiryDataStore
+                                                            .getMaxTTLSeconds()));
   }
 
   public Set entrySet() {
     return new EntrySetWrapper(timeExpiryDataStore.getStore().entrySet());
   }
-  
+
   Set nativeEntrySet() {
     return timeExpiryDataStore.getStore().entrySet();
   }
@@ -114,7 +128,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   public boolean isExpired(final Object key) {
     return timeExpiryDataStore.isExpired(key);
   }
-  
+
   public final void stopTimeMonitoring() {
     timeExpiryDataStore.stopInvalidatorThread();
   }
@@ -151,7 +165,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
       return entries.size();
     }
   }
-  
+
   private class ValuesCollectionWrapper extends AbstractCollection {
 
     private final Collection values;
@@ -165,7 +179,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
     }
 
     public boolean contains(Object o) {
-      if (! (o instanceof CacheData)) {
+      if (!(o instanceof CacheData)) {
         o = new CacheData(o, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds());
       }
       return values.contains(o);
@@ -179,7 +193,7 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
       return values.size();
     }
   }
-  
+
   private class ValuesIterator extends EntriesIterator {
 
     public ValuesIterator(Iterator iterator) {
@@ -212,16 +226,17 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
 
     public Object setValue(Object value) {
       if (!(value instanceof CacheData)) {
-        value = new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore.getMaxTTLSeconds());
+        value = new CacheData(value, timeExpiryDataStore.getMaxIdleTimeoutSeconds(), timeExpiryDataStore
+            .getMaxTTLSeconds());
       }
       CacheData cd = (CacheData) entry.setValue(value);
       return cd.getValue();
     }
 
     public boolean equals(Object o) {
-      if (! (o instanceof Map.Entry)) { return false; }
-      
-      Map.Entry e = (Map.Entry)o;
+      if (!(o instanceof Map.Entry)) { return false; }
+
+      Map.Entry e = (Map.Entry) o;
       return getKey().equals(e.getKey()) && getValue().equals(e.getValue());
     }
 

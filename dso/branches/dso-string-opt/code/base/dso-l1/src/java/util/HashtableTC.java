@@ -200,7 +200,12 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       super.remove(key);
     }
   }
-
+  
+  public synchronized Object[] __tc_getAllEntriesSnapshot() {
+    Set entrySet = super.entrySet();
+    return entrySet.toArray(new Object[entrySet.size()]);
+  }
+  
   public synchronized Object[] __tc_getAllLocalEntriesSnapshot() {
     Set entrySet = super.entrySet();
     int entrySetSize = entrySet.size();
