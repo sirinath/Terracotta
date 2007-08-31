@@ -10,7 +10,6 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.ClientConfigurationContext;
-import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.event.DmiEventContext;
 import com.tc.object.event.DmiManager;
@@ -26,12 +25,10 @@ import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.Assert;
 import com.tcclient.object.DistributedMethodCall;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author steve
@@ -45,9 +42,6 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   private final ChannelIDProvider                    cidProvider;
   private final Sink                                 dmiSink;
   private final DmiManager                           dmiManager;
-
-  // TODO: cindy remove
-  public static final List                           receivedList = new ArrayList();
 
   public ReceiveTransactionHandler(ChannelIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
@@ -81,12 +75,6 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
 
         txManager.apply(btm.getTransactionType(), btm.getLockIDs(), btm.getObjectChanges(), btm.getLookupObjectIDs(),
                         btm.getNewRoots());
-
-        // TODO: cindy remove
-        receivedList.add("\n #####  apply done:  cidProvider.getChannelID()=[" + cidProvider.getChannelID()
-                         + "] committer=[" + btm.getCommitterID() + "] gtxnid=[" + btm.getGlobalTransactionID()
-                         + "] lookupObjectIds=[" + getContents(btm.getLookupObjectIDs()) + "] txnID=[" + btm.getTransactionID()
-                         + "]");
       }
     }
 
@@ -118,21 +106,6 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     btm.recycle();
   }
   
-  private String getContents(Set objectIDs) {
-    StringBuffer buffer = new StringBuffer();
-    boolean first = true;
-    for (Iterator iter = objectIDs.iterator(); iter.hasNext();) {
-      ObjectID oid = (ObjectID) iter.next();
-      if (first) {
-        first = false;
-      } else {
-        buffer.append(",");
-      }
-      buffer.append(oid.toLong());
-    }
-    return buffer.toString();
-  }
-
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;
