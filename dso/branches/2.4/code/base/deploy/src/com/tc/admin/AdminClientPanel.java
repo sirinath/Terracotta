@@ -602,7 +602,8 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   }
 
   public boolean testServerMatch(ServerNode serverNode) {
-    if (!m_versionCheckAction.isVersionCheckEnabled() || com.tc.util.ProductInfo.getInstance().isDevMode()) { return true; }
+    if (m_versionCheckAction == null || !m_versionCheckAction.isVersionCheckEnabled()
+        || com.tc.util.ProductInfo.getInstance().isDevMode()) { return true; }
 
     ProductInfo consoleInfo = new ProductInfo();
     String consoleVersion = consoleInfo.getVersion();
