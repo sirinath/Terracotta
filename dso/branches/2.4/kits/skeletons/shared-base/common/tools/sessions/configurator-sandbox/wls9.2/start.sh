@@ -46,9 +46,4 @@ if test "$2" != "nodso"; then
 fi
 
 cd "${SANDBOX}/wls9.2/${PORT}"
-rm -f SerializedSystemIni.dat
-rm -rf myserver
-rm -rf applications/.wlnotdelete
-cp tmpls/* .
-
 exec ../startWLS.sh
