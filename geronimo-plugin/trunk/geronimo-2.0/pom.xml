@@ -182,6 +182,12 @@
                 <version>${geronimoVersion}</version>
                 <type>car</type>
             </dependency>
+            <dependency>
+                <groupId>org.apache.geronimo.configs</groupId>
+                <artifactId>jasper</artifactId>
+                <version>${geronimoVersion}</version>
+                <type>car</type>
+            </dependency>
             <!-- Terracotta -->
             <dependency>
                 <groupId>org.terracotta</groupId>
