@@ -19,74 +19,84 @@ import com.tc.server.AbstractServerFactory;
 import com.tc.server.TCServer;
 
 /**
- * TerracottaServerGBean
- * Gbean that allows the embedding of Terracotta Server inside of Apache Geronimo
+ * TerracottaServerGBean Gbean that allows the embedding of Terracotta Server
+ * inside of Apache Geronimo
  * 
  * @author Jeff Genender
  */
 public class TerracottaServerGBean implements GBeanLifecycle {
 
     private TCServer server = null;
+
     private String terracottaRootDir = null;
+
     private String tcConfigFile = null;
+
     private String serverName = null;
-    
-    public TerracottaServerGBean(String terracottaRootDir, String tcConfigFile, ServerInfo serverInfo, ClassLoader classLoader) throws Exception{
-        
+
+    public TerracottaServerGBean(String terracottaRootDir, String tcConfigFile, ServerInfo serverInfo, ClassLoader classLoader) throws Exception {
+
         if (classLoader == null) {
-            //This should never happen since the classloader is a magic attribute
+            // This should never happen since the classloader is a magic
+            // attribute
             throw new IllegalArgumentException("classLoader cannot be null.");
         }
 
-        if (serverInfo == null){
+        if (serverInfo == null) {
             throw new IllegalArgumentException("Reference ServerInfo cannot be null.");
         }
-        
-        if (terracottaRootDir == null){
+
+        if (terracottaRootDir == null) {
             throw new IllegalArgumentException("Attribute terracottaRootDir cannot be null.");
         }
         this.terracottaRootDir = serverInfo.resolvePath(terracottaRootDir);
         File rootDir = new File(this.terracottaRootDir);
-        if (!rootDir.exists()){
+        if (!rootDir.exists()) {
             throw new IllegalArgumentException("Attribute terracottaRootDir (" + rootDir.getAbsolutePath() + ") does not exist.");
         }
-        System.setProperty("tc.install-root",rootDir.getAbsolutePath());
-        System.setProperty("geronimo-terracotta.home",rootDir.getAbsolutePath());
-        
-        if (tcConfigFile == null){
+        System.setProperty("tc.install-root", rootDir.getAbsolutePath());
+        System.setProperty("geronimo-terracotta.home", rootDir.getAbsolutePath());
+
+        if (tcConfigFile == null) {
             throw new IllegalArgumentException("Attribute tcConfigFile cannot be null.");
         }
         this.tcConfigFile = tcConfigFile;
         File configFile = new File(rootDir, this.tcConfigFile);
-        if (!configFile.exists()){
+        if (!configFile.exists()) {
             throw new IllegalArgumentException("Attribute tcConfigFile (" + configFile.getAbsolutePath() + ") does not exist.");
         }
-        
+
         List<String> args = new ArrayList<String>();
         args.add("-f");
         args.add(configFile.getAbsolutePath());
-        if (serverName != null){
+        if (serverName != null) {
             args.add("-n");
             args.add(serverName);
         }
-        
-        // Declaring of the TCServerMain in TCLogging is just a hack since the TCLogging can only use "com.tc"
-        ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(com.tc.server.TCServerMain.class));
-        TCThreadGroup threadGroup = new TCThreadGroup(throwableHandler);
-        TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(args.toArray(new String[args.size()]), true, new FatalIllegalConfigurationChangeHandler());
-        AbstractServerFactory serverFactory = AbstractServerFactory.getFactory();
-        server = serverFactory.createServer(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
+
     }
 
     public void doFail() {
     }
 
     public void doStart() throws Exception {
+        if (server == null) {
+            // Declaring of the TCServerMain in TCLogging is just a hack since
+            // the TCLogging can only use "com.tc"
+            ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(com.tc.server.TCServerMain.class));
+            TCThreadGroup threadGroup = new TCThreadGroup(throwableHandler);
+            TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(getArgs(), true, new FatalIllegalConfigurationChangeHandler());
+            AbstractServerFactory serverFactory = AbstractServerFactory.getFactory();
+            server = serverFactory.createServer(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
+
+        } 
         server.start();
     }
 
     public void doStop() throws Exception {
-        server.stop();
+        if (server != null && server.isStarted()) {
+            server.stop();
+        }
     }
 
     public String getServerName() {
@@ -95,6 +105,20 @@ public class TerracottaServerGBean implements GBeanLifecycle {
 
     public void setServerName(String serverName) {
         this.serverName = serverName;
+    }
+
+    private String[] getArgs() {
+        File rootDir = new File(this.terracottaRootDir);
+        File configFile = new File(rootDir, this.tcConfigFile);
+        List<String> args = new ArrayList<String>();
+        args.add("-f");
+        args.add(configFile.getAbsolutePath());
+        if (serverName != null) {
+            args.add("-n");
+            args.add(serverName);
+        }
+
+        return args.toArray(new String[args.size()]);
     }
 
     public static final GBeanInfo GBEAN_INFO;
@@ -108,7 +132,7 @@ public class TerracottaServerGBean implements GBeanLifecycle {
         infoFactory.addReference("ServerInfo", ServerInfo.class, "GBean");
         infoFactory.addAttribute("classLoader", ClassLoader.class, false);
 
-        infoFactory.setConstructor(new String[]{"terracottaRootDir", "tcConfigFile", "ServerInfo", "classLoader"});
+        infoFactory.setConstructor(new String[] { "terracottaRootDir", "tcConfigFile", "ServerInfo", "classLoader" });
         GBEAN_INFO = infoFactory.getBeanInfo();
     }
 

@@ -58,7 +58,7 @@ public class TerracottaServerGBeanTest extends TestSupport {
         
         //Create the gbean
         TerracottaServerGBean gbean = new TerracottaServerGBean(tcRootDir.getAbsolutePath(), FILE_NAME, serverInfo, cl);
-        gbean.setServerName("Geronimo");
+        //gbean.setServerName("Geronimo");
         
         //Start the gbean
         gbean.doStart();
