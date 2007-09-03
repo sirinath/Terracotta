@@ -13,6 +13,7 @@ import org.apache.commons.io.FileUtils;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.bundles.EmbeddedOSGiRuntime;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.objectserver.control.ExtraL1ProcessControl;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
@@ -67,7 +68,7 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
     t1.start();
     t2.start();
 
-    Thread.sleep(20000);
+    Thread.sleep(60000);
 
     DebugUtil.DEBUG = false;
   }
@@ -115,8 +116,8 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
 
     public void execute() throws Exception {
       barrier.barrier();
-      Cache cache = getCacheManager().getCache("sampleCache1");
-      populateCache(cache, index, 0);
+      Cache cache = cacheManager.getCache("sampleCache1");
+      populateCache(cache, index, 1);
       barrier.barrier();
 
       Thread.sleep(1000);
@@ -128,7 +129,7 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       Assert.assertEquals(new Element("key13", "val13"), cache.get("key13"));
       Assert.assertEquals(6, cache.getSize());
 
-      Thread.sleep(60000);
+      Thread.sleep(20000);
       Assert.assertTrue(cache.isExpired(new Element("key01", "val01")));
       Assert.assertTrue(cache.isExpired(new Element("key02", "val02")));
       Assert.assertTrue(cache.isExpired(new Element("key03", "val03")));
@@ -163,6 +164,8 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
 
         Assert.assertEquals(0, cache.getSize());
       }
+      System.err.println("Client " + ManagerUtil.getClientID() + " index " + index + " end ");
+
     }
 
     private CacheManager getCacheManager() {
@@ -170,16 +173,10 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
     }
 
     private void populateCache(Cache cache, int index, int startValue) throws Exception {
-      if (barrier() == 0) {
-        cache.removeAll();
-        cache.put(new Element("k" + index + startValue, "v" + index + startValue));
-        cache.put(new Element("k" + index + (startValue + 1), "v" + index + (startValue + 1)));
-        cache.put(new Element("k" + index + (startValue + 2), "v" + index + (startValue + 2)));
-      }
-    }
-
-    private int barrier() throws Exception {
-      return barrier.barrier();
+      System.err.println("Client " + ManagerUtil.getClientID() + " populateCache " + index + " " + startValue);
+      cache.put(new Element("key" + index + startValue, "val" + index + startValue));
+      cache.put(new Element("key" + index + (startValue + 1), "val" + index + (startValue + 1)));
+      cache.put(new Element("key" + index + (startValue + 2), "val" + index + (startValue + 2)));
     }
   }
 

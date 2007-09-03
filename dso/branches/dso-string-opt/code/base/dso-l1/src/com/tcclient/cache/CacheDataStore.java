@@ -102,7 +102,6 @@ public class CacheDataStore implements Serializable {
   }
 
   private void initializeGlobalKeySet() {
-    System.err.println("*******concurrency: " + concurrency);
     for (int i = 0; i < concurrency; i++) {
       globalKeySet[i] = new GlobalKeySet(cacheName);
     }
@@ -120,7 +119,7 @@ public class CacheDataStore implements Serializable {
     int numOfStorePerInvalidator = this.concurrency / this.evictorPoolSize;
     int startEvitionIndex = 0;
     int invalidatorId = 0;
-    this.cacheInvalidationTimer = new CacheInvalidationTimer[concurrency];
+    this.cacheInvalidationTimer = new CacheInvalidationTimer[evictorPoolSize];
     for (int i = 0; i < evictorPoolSize; i++) {
       int lastEvitionIndex = startEvitionIndex + numOfStorePerInvalidator;
       cacheInvalidationTimer[i] = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName
@@ -142,14 +141,14 @@ public class CacheDataStore implements Serializable {
    * well.
    */
   public void stopInvalidatorThread() {
-    for (int i = 0; i < concurrency; i++) {
+    for (int i = 0; i < evictorPoolSize; i++) {
       cacheInvalidationTimer[i].cancel();
     }
   }
 
   private int getStoreIndex(Object key) {
     if (this.concurrency == 1) { return 0; }
-    int hashValue = hash(key.hashCode());
+    int hashValue = Math.abs(hash(key.hashCode()));
     return hashValue % this.concurrency;
   }
 
@@ -166,8 +165,10 @@ public class CacheDataStore implements Serializable {
     }
 
     CacheData rcd = (CacheData) store[storeIndex].put(key, cd);
-    dumpStore();
-    dtmStore[storeIndex].put(key, cd.getTimestamp());
+    // Only need to put into the timestamp map only when the invalidator thread will be active
+    if (invalidatorSleepSeconds >= 0) {
+      dtmStore[storeIndex].put(key, cd.getTimestamp());
+    }
 
     Object rv = (rcd == null) ? null : rcd.getValue();
     return rv;
@@ -175,7 +176,7 @@ public class CacheDataStore implements Serializable {
 
   private void dumpStore() {
     for (int i = 0; i < concurrency; i++) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " " + store[i]);
+      System.err.println("Dump store Client " + ManagerUtil.getClientID() + "i: " + i + " " + store[i]);
     }
   }
 
@@ -346,9 +347,6 @@ public class CacheDataStore implements Serializable {
   }
 
   CacheData findCacheDataUnlocked(final Object key) {
-    for (int i = 0; i < this.concurrency; i++) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " i: " + i + " " + store[i]);
-    }
     int storeIndex = getStoreIndex(key);
     if (DebugUtil.DEBUG) {
       System.err.println("Client " + ManagerUtil.getClientID() + " findCacheDataUnlocked -- key: " + key
@@ -386,7 +384,6 @@ public class CacheDataStore implements Serializable {
       Collection t = ((TCMap) dtmStore[i]).__tc_getAllLocalEntriesSnapshot();
       allLocalEntries.addAll(t);
     }
-    System.err.println("Client " + ManagerUtil.getClientID() + " all local entries: " + allLocalEntries);
     return allLocalEntries;
   }
 
@@ -413,7 +410,6 @@ public class CacheDataStore implements Serializable {
         it.remove();
       }
     }
-    System.err.println("Client " + ManagerUtil.getClientID() + " all orphan entries " + allEntries);
     return allEntries;
   }
 
@@ -444,7 +440,7 @@ public class CacheDataStore implements Serializable {
     int evaled = 0;
     int notEvaled = 0;
     int errors = 0;
-    int numOfObjectsPerChunk = entriesToBeExamined.size();
+    long numOfObjectsPerChunk = entriesToBeExamined.size();
 
     if (DebugUtil.DEBUG) {
       for (Iterator it = entriesToBeExamined.iterator(); it.hasNext();) {
@@ -453,7 +449,7 @@ public class CacheDataStore implements Serializable {
     }
 
     if (isGlobalInvalidation) {
-      numOfObjectsPerChunk = Math.round(entriesToBeExamined.size() / numOfChunks);
+      numOfObjectsPerChunk = Math.round(entriesToBeExamined.size()*1.0 / numOfChunks);
     }
 
     for (Iterator it = entriesToBeExamined.iterator(); it.hasNext();) {
@@ -487,7 +483,6 @@ public class CacheDataStore implements Serializable {
         if (isGlobalInvalidation) {
           if ((totalCnt % numOfObjectsPerChunk) == 0) {
             try {
-              System.err.println("Client " + ManagerUtil.getClientID() + " resting " + restMillis + " " + numOfObjectsPerChunk + " " + numOfChunks);
               Thread.sleep(restMillis);
             } catch (InterruptedException e) {
               // ignore
@@ -496,7 +491,6 @@ public class CacheDataStore implements Serializable {
         }
       }
     }
-    System.err.println("Client " + ManagerUtil.getClientID() + " finish evicting " + evaled + " cache entries.");
   }
 
   private class CacheEntryInvalidator implements Runnable {
@@ -591,9 +585,6 @@ public class CacheDataStore implements Serializable {
 
     private boolean isTimeForGlobalInvalidation() {
       Assert.eval(globalEvictionFrequency > 0);
-
-      System.err.println("Client " + ManagerUtil.getClientID() + " globalEvictionFreq: " + globalEvictionFrequency
-                         + " numOfLocalEviction: " + numOfLocalEvictionOccurred);
       return globalEvictionFrequency == numOfLocalEvictionOccurred;
     }
 

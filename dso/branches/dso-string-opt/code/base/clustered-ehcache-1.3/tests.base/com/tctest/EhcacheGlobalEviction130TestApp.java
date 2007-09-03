@@ -6,10 +6,10 @@ package com.tctest;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 
-public class EhcacheGlobalEviction124TestApp extends EhcacheGlobalEvictionTestApp {
+public class EhcacheGlobalEviction130TestApp extends EhcacheGlobalEvictionTestApp {
   private final static int NUM_OF_L1 = 2;
 
-  public EhcacheGlobalEviction124TestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
+  public EhcacheGlobalEviction130TestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 }
