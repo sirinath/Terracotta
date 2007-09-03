@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -29,15 +28,15 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
 
   public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName) {
     timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds,
-                                             new HashMap(), new HashMap(), "CacheInvalidator - " + cacheName, this);
+                                             "CacheInvalidator - " + cacheName, this);
   }
 
   // For test only
   public TimeExpiryMap(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName,
-                       boolean globalEvictionEnabled, int globalEvictionDuration) {
+                       boolean globalEvictionEnabled, int globalEvictionDuration, int concurrency, int evictorPoolSize) {
     timeExpiryDataStore = new CacheDataStore(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds,
-                                             new HashMap(), new HashMap(), "CacheInvalidator - " + cacheName, this,
-                                             globalEvictionEnabled, globalEvictionDuration);
+                                             "CacheInvalidator - " + cacheName, this,
+                                             globalEvictionEnabled, globalEvictionDuration, concurrency, evictorPoolSize);
   }
   
   public void initialize() {
@@ -64,22 +63,19 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public boolean containsKey(Object key) {
-    return timeExpiryDataStore.getStore().containsKey(key);
+    return timeExpiryDataStore.getStore(key).containsKey(key);
   }
 
   public boolean containsValue(Object value) {
-    return timeExpiryDataStore.getStore().containsValue(
-                                                        new CacheData(value, timeExpiryDataStore
-                                                            .getMaxIdleTimeoutSeconds(), timeExpiryDataStore
-                                                            .getMaxTTLSeconds()));
+    return timeExpiryDataStore.containsValue(value);
   }
 
   public Set entrySet() {
-    return new EntrySetWrapper(timeExpiryDataStore.getStore().entrySet());
+    return new EntrySetWrapper(timeExpiryDataStore.entrySet());
   }
 
   Set nativeEntrySet() {
-    return timeExpiryDataStore.getStore().entrySet();
+    return timeExpiryDataStore.entrySet();
   }
 
   public Object get(Object key) {
@@ -87,11 +83,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public boolean isEmpty() {
-    return timeExpiryDataStore.getStore().isEmpty();
+    return timeExpiryDataStore.isEmpty();
   }
 
   public Set keySet() {
-    return timeExpiryDataStore.getStore().keySet();
+    return timeExpiryDataStore.keySet();
   }
 
   public void putAll(Map map) {
@@ -106,11 +102,11 @@ public class TimeExpiryMap implements Map, Expirable, Cloneable, Serializable {
   }
 
   public int size() {
-    return timeExpiryDataStore.getStore().size();
+    return timeExpiryDataStore.size();
   }
 
   public Collection values() {
-    return new ValuesCollectionWrapper(timeExpiryDataStore.getStore().values());
+    return new ValuesCollectionWrapper(timeExpiryDataStore.values());
   }
 
   public int getHitCount() {

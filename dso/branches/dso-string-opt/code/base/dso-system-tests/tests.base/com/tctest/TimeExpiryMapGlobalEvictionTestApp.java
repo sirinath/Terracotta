@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -38,10 +39,15 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
   private void basicGlobalEvictionTest() throws Exception {
     DebugUtil.DEBUG = true;
 
+    final List jvmArgs = new ArrayList();
+    String modules_url = System.getProperty(EmbeddedOSGiRuntime.MODULES_URL_PROPERTY_NAME);
+    if (modules_url != null) {
+      jvmArgs.add("-D"+EmbeddedOSGiRuntime.MODULES_URL_PROPERTY_NAME+"="+modules_url);
+    }
     Thread t1 = new Thread(new Runnable() {
       public void run() {
         try {
-          spawnNewClient("0", L1Client.class, new String[] { "0" });
+          spawnNewClient("0", L1Client.class, new String[] { "0" }, jvmArgs);
         } catch (Exception e) {
           e.printStackTrace(System.err);
         }
@@ -51,7 +57,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     Thread t2 = new Thread(new Runnable() {
       public void run() {
         try {
-          spawnNewClient("1", L1Client.class, new String[] { "1" });
+          spawnNewClient("1", L1Client.class, new String[] { "1" }, jvmArgs);
         } catch (Exception e) {
           e.printStackTrace(System.err);
         }
@@ -67,7 +73,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     DebugUtil.DEBUG = false;
   }
 
-  protected ExtraL1ProcessControl spawnNewClient(String clientId, Class clientClass, String[] mainArgs)
+  protected ExtraL1ProcessControl spawnNewClient(String clientId, Class clientClass, String[] mainArgs, List jvmArgs)
       throws Exception {
     final String hostName = getHostName();
     final int port = getPort();
@@ -75,7 +81,6 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     File workingDir = new File(configFile.getParentFile(), "client-" + clientId);
     FileUtils.forceMkdir(workingDir);
 
-    List jvmArgs = new ArrayList();
     addTestTcPropertiesFile(jvmArgs);
     ExtraL1ProcessControl client = new ExtraL1ProcessControl(hostName, port, clientClass, configFile.getAbsolutePath(),
                                                              mainArgs, workingDir, jvmArgs);
@@ -186,6 +191,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     }
 
     private void addData(int index, int startIndex) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " adding for index " + index);
       dataRoot.put("key" + index + startIndex, "val" + index + startIndex);
       dataRoot.put("key" + index + (startIndex+1), "val" + index + (startIndex+1));
       dataRoot.put("key" + index + (startIndex+2), "val" + index + (startIndex+2));
@@ -229,7 +235,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     private int numOfEvicted = 0;
 
     public MockTimeExpiryMap(int invalidatorSleepSeconds, int maxIdleTimeoutSeconds, int maxTTLSeconds) {
-      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds, "MockCache", true, 10);
+      super(invalidatorSleepSeconds, maxIdleTimeoutSeconds, maxTTLSeconds, "MockCache", true, 3, 4, 2);
     }
 
     protected final synchronized void processExpired(Object key) {
