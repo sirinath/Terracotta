@@ -112,11 +112,15 @@ public class DsoRunMojo extends DsoLifecycleMojo {
     if (workingDirectory != null) {
       cmd.setWorkingDirectory(workingDirectory); 
     }
-  
+
     cmd.createArgument().setValue("-Xbootclasspath/p:" + bootJar.getAbsolutePath());
 
     cmd.createArgument().setValue("-Dtc.nodeName=" + nodeName);
     cmd.createArgument().setValue("-Dtc.numberOfNodes=" + totalNumberOfNodes);
+
+    if (config != null) {
+      cmd.createArgument().setValue("-Dtc.config=" + config.getAbsolutePath());
+    }
 
     // system properties      
     for (Iterator it = process.getProperties().entrySet().iterator(); it.hasNext();) {
