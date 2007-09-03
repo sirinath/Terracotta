@@ -148,11 +148,6 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     
     barrier.barrier();
     
-    System.err.println("index: " + index + ", size: " + dataRoot.size());
-
-    barrier.barrier();
-    
-    System.err.println("index: " + index + " client id: " + ManagerUtil.getClientID());
     if (index == 0) {
       Assert.assertEquals(2, dataRoot.getNumOfExpired());
       Assert.assertEquals(null, dataRoot.get("key1"));
@@ -204,6 +199,9 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     }
     
     public synchronized void setMap(MockTimeExpiryMap map) {
+      if (this.map != null) {
+        this.map.stopTimeMonitoring();
+      }
       this.map = map;
       this.map.initialize();
     }

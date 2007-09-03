@@ -68,7 +68,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
     t1.start();
     t2.start();
 
-    Thread.sleep(20000);
+    Thread.sleep(60000);
 
     DebugUtil.DEBUG = false;
   }
@@ -149,7 +149,7 @@ public class TimeExpiryMapGlobalEvictionTestApp extends ServerCrashingAppBase {
       Assert.assertEquals("val13", dataRoot.get("key13"));
       Assert.assertEquals(6, dataRoot.size());
       
-      Thread.sleep(60000);
+      Thread.sleep(10000);
       Assert.assertTrue(dataRoot.isExpired("key01"));
       Assert.assertTrue(dataRoot.isExpired("key02"));
       Assert.assertTrue(dataRoot.isExpired("key03"));
