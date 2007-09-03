@@ -201,15 +201,16 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
   }
   
-  public synchronized Object[] __tc_getAllEntriesSnapshot() {
+  public synchronized Collection __tc_getAllEntriesSnapshot() {
     Set entrySet = super.entrySet();
-    return entrySet.toArray(new Object[entrySet.size()]);
+    Object[] tmp = entrySet.toArray(new Object[entrySet.size()]);
+    return new ArrayList(entrySet);
   }
   
-  public synchronized Object[] __tc_getAllLocalEntriesSnapshot() {
+  public synchronized Collection __tc_getAllLocalEntriesSnapshot() {
     Set entrySet = super.entrySet();
     int entrySetSize = entrySet.size();
-    if (entrySetSize == 0) { return new Object[0]; }
+    if (entrySetSize == 0) { return Collections.EMPTY_LIST; }
     
     Object[] tmp = new Object[entrySetSize];
     int index = -1;
@@ -221,10 +222,10 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       }
     }
     
-    if (index < 0) { return new Object[0]; }
+    if (index < 0) { return Collections.EMPTY_LIST; }
     Object[] rv = new Object[index+1];
     System.arraycopy(tmp, 0, rv, 0, index+1);
-    return rv;
+    return Arrays.asList(rv);
   }
 
   public synchronized int size() {

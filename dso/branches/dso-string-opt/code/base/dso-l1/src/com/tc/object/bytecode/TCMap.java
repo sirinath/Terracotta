@@ -3,6 +3,8 @@
  */
 package com.tc.object.bytecode;
 
+import java.util.Collection;
+
 
 public interface TCMap {
 
@@ -12,7 +14,7 @@ public interface TCMap {
   
   public void __tc_remove_logical(Object key);
   
-  public Object[] __tc_getAllLocalEntriesSnapshot();
+  public Collection __tc_getAllLocalEntriesSnapshot();
   
-  public Object[] __tc_getAllEntriesSnapshot();
+  public Collection __tc_getAllEntriesSnapshot();
 }

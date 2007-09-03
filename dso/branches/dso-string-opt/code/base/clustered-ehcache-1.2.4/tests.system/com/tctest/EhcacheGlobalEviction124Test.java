@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -15,18 +15,19 @@ import com.tc.config.schema.test.L2ConfigBuilder;
 import com.tc.config.schema.test.LockConfigBuilderImpl;
 import com.tc.config.schema.test.RootConfigBuilderImpl;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
-import com.tctest.TimeExpiryMapGlobalEvictionTestApp.DataRoot;
-import com.tctest.TimeExpiryMapGlobalEvictionTestApp.L1Client;
-import com.tctest.TimeExpiryMapGlobalEvictionTestApp.MockTimeExpiryMap;
+import com.tctest.EhcacheGlobalEviction124TestApp.L1Client;
 
-public class TimeExpiryMapGlobalEvictionTest extends ServerCrashingTestBase {
+public class EhcacheGlobalEviction124Test extends ServerCrashingTestBase {
   private final static int NODE_COUNT = 1;
-
-  public TimeExpiryMapGlobalEvictionTest() {
+  
+  public EhcacheGlobalEviction124Test() {
     super(NODE_COUNT);
     // disableAllUntil("2007-08-31");
   }
-
+//  public void setUp() throws Exception {
+//    super.setUp();
+//  }
+  
   public void setUp() throws Exception {
     super.setUp();
 
@@ -35,78 +36,61 @@ public class TimeExpiryMapGlobalEvictionTest extends ServerCrashingTestBase {
   }
 
   protected Class getApplicationClass() {
-    return TimeExpiryMapGlobalEvictionTestApp.class;
+    return EhcacheGlobalEviction124TestApp.class;
   }
 
   protected void createConfig(TerracottaConfigBuilder cb) {
     cb.getServers().getL2s()[0].setPersistenceMode(L2ConfigBuilder.PERSISTENCE_MODE_TEMPORARY_SWAP_ONLY);
 
-    String testClassName = TimeExpiryMapGlobalEvictionTestApp.class.getName();
+    String testClassName = EhcacheGlobalEvictionTestApp.class.getName();
     String clientClassName = L1Client.class.getName();
-    String dataRootClassName = DataRoot.class.getName();
-    String expiryMapClassName = MockTimeExpiryMap.class.getName();
     String barrierClassName = CyclicBarrier.class.getName();
-    
+
     L1ConfigBuilder l1Config = cb.getClient();
     l1Config.addModule("clustered-ehcache-1.2.4", "1.0.0");
-
-    LockConfigBuilder lock1 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
-    lock1.setMethodExpression("* " + testClassName + "*.*(..)");
-    setLockLevel(lock1);
 
     LockConfigBuilder lock2 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
     lock2.setMethodExpression("* " + clientClassName + "*.*(..)");
     setLockLevel(lock2);
 
     LockConfigBuilder lock3 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
-    lock3.setMethodExpression("* " + dataRootClassName + "*.*(..)");
+    lock3.setMethodExpression("* " + barrierClassName + "*.*(..)");
     setLockLevel(lock3);
 
     LockConfigBuilder lock4 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
-    lock4.setMethodExpression("* " + expiryMapClassName + "*.*(..)");
+    lock4.setMethodExpression("* " + getApplicationClass().getName() + "*.*(..)");
     setLockLevel(lock4);
-    
-    LockConfigBuilder lock5 = new LockConfigBuilderImpl(LockConfigBuilder.TAG_AUTO_LOCK);
-    lock5.setMethodExpression("* " + barrierClassName + "*.*(..)");
-    setLockLevel(lock5);
-    
-    cb.getApplication().getDSO().setLocks(new LockConfigBuilder[] { lock1, lock2, lock3, lock4, lock5 });
 
+    cb.getApplication().getDSO().setLocks(new LockConfigBuilder[] { lock2, lock3, lock4 });
+    
     RootConfigBuilder root = new RootConfigBuilderImpl();
     root.setFieldName(clientClassName + ".barrier");
     root.setRootName("barrier");
     RootConfigBuilder root2 = new RootConfigBuilderImpl();
-    root2.setFieldName(clientClassName + ".dataRoot");
-    root2.setRootName("dataRoot");
+    root2.setFieldName(clientClassName + ".cacheManager");
+    root2.setRootName("cacheManager");
     cb.getApplication().getDSO().setRoots(new RootConfigBuilder[] { root, root2 });
-
-    InstrumentedClassConfigBuilder instrumented1 = new InstrumentedClassConfigBuilderImpl();
-    instrumented1.setClassExpression(testClassName + "*");
 
     InstrumentedClassConfigBuilder instrumented2 = new InstrumentedClassConfigBuilderImpl();
     instrumented2.setClassExpression(clientClassName + "*");
 
     InstrumentedClassConfigBuilder instrumented3 = new InstrumentedClassConfigBuilderImpl();
-    instrumented3.setClassExpression(dataRootClassName + "*");
-
+    instrumented3.setClassExpression(barrierClassName + "*");
+    
     InstrumentedClassConfigBuilder instrumented4 = new InstrumentedClassConfigBuilderImpl();
-    instrumented4.setClassExpression(expiryMapClassName + "*");
-    
-    InstrumentedClassConfigBuilder instrumented5 = new InstrumentedClassConfigBuilderImpl();
-    instrumented5.setClassExpression(barrierClassName + "*");
-    
+    instrumented4.setClassExpression(getApplicationClass().getName() + "*");
+
     cb.getApplication().getDSO().setInstrumentedClasses(
-                                                        new InstrumentedClassConfigBuilder[] { instrumented1,
-                                                            instrumented2, instrumented3, instrumented4, instrumented5 });
+                                                        new InstrumentedClassConfigBuilder[] { 
+                                                            instrumented2, instrumented3, instrumented4 });
 
   }
 
-  private void setLockLevel(LockConfigBuilder lock) {
+  protected void setLockLevel(LockConfigBuilder lock) {
     lock.setLockLevel(LockConfigBuilder.LEVEL_WRITE);
   }
-  
-  private void setReadLockLevel(LockConfigBuilder lock) {
+
+  protected void setReadLockLevel(LockConfigBuilder lock) {
     lock.setLockLevel(LockConfigBuilder.LEVEL_READ);
   }
-
 }

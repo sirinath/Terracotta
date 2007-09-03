@@ -15,81 +15,125 @@ import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CacheDataStore implements Serializable {
-  private final Map                        store;                         // <Data>
-  private final Map                        dtmStore;                      // <Timestamp>
-  private final String                     cacheName;
-  private final long                       maxIdleTimeoutSeconds;
-  private final long                       maxTTLSeconds;
-  private final long                       invalidatorSleepSeconds;
-  private final GlobalKeySet               globalKeySet;
-  private final CacheParticipants          cacheParticipants = new CacheParticipants();
-  private final Expirable                  callback;
-  private final boolean                    globalEvictionEnabled;
-  private final int                        globalEvictionDuration;
-  private transient int                    hitCount;
-  private transient int                    missCountExpired;
-  private transient int                    missCountNotFound;
-  private transient CacheInvalidationTimer cacheInvalidationTimer;
+  private final Map[]                        store;                                      // <Data>
+  private final Map[]                        dtmStore;                                   // <Timestamp>
+  private final String                       cacheName;
+  private final long                         maxIdleTimeoutSeconds;
+  private final long                         maxTTLSeconds;
+  private final long                         invalidatorSleepSeconds;
+  private final GlobalKeySet[]               globalKeySet;
+  private final CacheParticipants            cacheParticipants = new CacheParticipants();
+  private final Expirable                    callback;
+  private int                                concurrency;
+  private int                                evictorPoolSize;
+  private boolean                            globalEvictionEnabled;
+  private int                                globalEvictionFrequency;
+  private transient int                      hitCount;
+  private transient int                      missCountExpired;
+  private transient int                      missCountNotFound;
+  private transient CacheInvalidationTimer[] cacheInvalidationTimer;
 
-  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, Map store,
-                        Map dtmStore, String cacheName, Expirable callback) {
-    Assert.assertTrue(store instanceof TCMap);
-    Assert.assertTrue(dtmStore instanceof TCMap);
-    this.store = store;
-    this.dtmStore = dtmStore;
+  /**
+   * Copy from java.util.HashMap.newHash()
+   */
+  private static int hash(int h) {
+    // This function ensures that hashCodes that differ only by
+    // constant multiples at each bit position have a bounded
+    // number of collisions (approximately 8 at default load factor).
+    h ^= (h >>> 20) ^ (h >>> 12);
+    return h ^ (h >>> 7) ^ (h >>> 4);
+  }
+
+  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName,
+                        Expirable callback) {
+    TCProperties ehcacheProperies = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache");
+    this.concurrency = ehcacheProperies.getInt("concurrency");
+    this.evictorPoolSize = ehcacheProperies.getInt("evictor.pool.size");
+
+    this.store = new Map[concurrency];
+    this.dtmStore = new Map[concurrency];
+    this.globalKeySet = new GlobalKeySet[concurrency];
+
     this.cacheName = cacheName;
     this.maxIdleTimeoutSeconds = maxIdleTimeoutSeconds;
     this.maxTTLSeconds = maxTTLSeconds;
     this.invalidatorSleepSeconds = invalidatorSleepSeconds;
     this.callback = callback;
     this.hitCount = 0;
-    this.globalKeySet = new GlobalKeySet(cacheName);
 
-    TCProperties globalEvictionProperties = TCPropertiesImpl.getProperties()
-        .getPropertiesFor("ehcache.global.eviction");
-    this.globalEvictionEnabled = globalEvictionProperties.getBoolean("enable");
-    this.globalEvictionDuration = globalEvictionProperties.getInt("duration");
-
-    ((Clearable) dtmStore).setEvictionEnabled(false);
+    this.globalEvictionEnabled = ehcacheProperies.getBoolean("global.eviction.enable");
+    this.globalEvictionFrequency = ehcacheProperies.getInt("global.eviction.frequency");
+    initializeGlobalKeySet();
+    initializeStore();
   }
 
   // For test only
-  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, Map store,
-                        Map dtmStore, String cacheName, Expirable callback, boolean globalEvictionEnabled,
-                        int globalEvictionDuration) {
-    Assert.assertTrue(store instanceof TCMap);
-    Assert.assertTrue(dtmStore instanceof TCMap);
-    this.store = store;
-    this.dtmStore = dtmStore;
+  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName,
+                        Expirable callback, boolean globalEvictionEnabled, int globalEvictionFrequency,
+                        int concurrency, int evictorPoolSize) {
+    this.concurrency = concurrency;
+    this.evictorPoolSize = evictorPoolSize;
+
+    this.store = new Map[concurrency];
+    this.dtmStore = new Map[concurrency];
+    this.globalKeySet = new GlobalKeySet[concurrency];
+
     this.cacheName = cacheName;
     this.maxIdleTimeoutSeconds = maxIdleTimeoutSeconds;
     this.maxTTLSeconds = maxTTLSeconds;
     this.invalidatorSleepSeconds = invalidatorSleepSeconds;
     this.callback = callback;
     this.hitCount = 0;
-    this.globalKeySet = new GlobalKeySet(cacheName);
 
     this.globalEvictionEnabled = globalEvictionEnabled;
-    this.globalEvictionDuration = globalEvictionDuration;
-
-    ((Clearable) dtmStore).setEvictionEnabled(false);
+    this.globalEvictionFrequency = globalEvictionFrequency;
+    initializeGlobalKeySet();
+    initializeStore();
   }
 
-  public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, Map store, Map dtmStore,
-                        String cacheName, Expirable callback) {
-    this(invalidatorSleepSeconds, maxIdleTimeoutSeconds, Long.MAX_VALUE, store, dtmStore, cacheName, callback);
+  private void initializeGlobalKeySet() {
+    System.err.println("*******concurrency: " + concurrency);
+    for (int i = 0; i < concurrency; i++) {
+      globalKeySet[i] = new GlobalKeySet(cacheName);
+    }
+  }
+
+  private void initializeStore() {
+    for (int i = 0; i < this.concurrency; i++) {
+      this.store[i] = new HashMap();
+      this.dtmStore[i] = new HashMap();
+      ((Clearable) dtmStore[i]).setEvictionEnabled(false);
+    }
   }
 
   public void initialize() {
-    this.cacheInvalidationTimer = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName
-                                                                                      + " invalidation thread",
-                                                             new CacheEntryInvalidator(globalEvictionEnabled,
-                                                                                       globalEvictionDuration));
-    this.cacheInvalidationTimer.schedule(true);
+    int numOfStorePerInvalidator = this.concurrency / this.evictorPoolSize;
+    int startEvitionIndex = 0;
+    int invalidatorId = 0;
+    this.cacheInvalidationTimer = new CacheInvalidationTimer[concurrency];
+    for (int i = 0; i < evictorPoolSize; i++) {
+      int lastEvitionIndex = startEvitionIndex + numOfStorePerInvalidator;
+      cacheInvalidationTimer[i] = new CacheInvalidationTimer(invalidatorSleepSeconds, cacheName
+                                                                                      + " invalidation thread"
+                                                                                      + invalidatorId,
+                                                             new CacheEntryInvalidator(globalKeySet[invalidatorId],
+                                                                                       globalEvictionEnabled,
+                                                                                       globalEvictionFrequency,
+                                                                                       startEvitionIndex,
+                                                                                       lastEvitionIndex));
+      cacheInvalidationTimer[i].schedule(true);
+      startEvitionIndex = lastEvitionIndex;
+    }
     this.cacheParticipants.register();
   }
 
@@ -98,7 +142,15 @@ public class CacheDataStore implements Serializable {
    * well.
    */
   public void stopInvalidatorThread() {
-    cacheInvalidationTimer.cancel();
+    for (int i = 0; i < concurrency; i++) {
+      cacheInvalidationTimer[i].cancel();
+    }
+  }
+
+  private int getStoreIndex(Object key) {
+    if (this.concurrency == 1) { return 0; }
+    int hashValue = hash(key.hashCode());
+    return hashValue % this.concurrency;
   }
 
   public Object put(final Object key, final Object value) {
@@ -107,14 +159,24 @@ public class CacheDataStore implements Serializable {
 
     CacheData cd = new CacheData(value, maxIdleTimeoutSeconds, maxTTLSeconds);
     cd.accessed();
+    int storeIndex = getStoreIndex(key);
     if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " putting " + key);
+      System.err.println("Client " + ManagerUtil.getClientID() + " putting " + key + ", storeIndex: " + storeIndex
+                         + " isMap shared: " + ManagerUtil.isManaged(store));
     }
-    CacheData rcd = (CacheData) store.put(key, cd);
-    dtmStore.put(key, cd.getTimestamp());
+
+    CacheData rcd = (CacheData) store[storeIndex].put(key, cd);
+    dumpStore();
+    dtmStore[storeIndex].put(key, cd.getTimestamp());
 
     Object rv = (rcd == null) ? null : rcd.getValue();
     return rv;
+  }
+
+  private void dumpStore() {
+    for (int i = 0; i < concurrency; i++) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " " + store[i]);
+    }
   }
 
   public Object get(final Object key) {
@@ -172,10 +234,9 @@ public class CacheDataStore implements Serializable {
   private void removeInternal(final Object key) {
     Assert.pre(key != null);
 
-    ((TCMap) store).__tc_remove_logical(key);
-    ((TCMap) dtmStore).__tc_remove_logical(key);
-    // store.remove(key);
-    // dtmStore.remove(key);
+    int storeIndex = getStoreIndex(key);
+    ((TCMap) store[storeIndex]).__tc_remove_logical(key);
+    ((TCMap) dtmStore[storeIndex]).__tc_remove_logical(key);
   }
 
   public void expire(Object key) {
@@ -184,12 +245,62 @@ public class CacheDataStore implements Serializable {
   }
 
   public void clear() {
-    store.clear();
-    dtmStore.clear();
+    for (int i = 0; i < this.concurrency; i++) {
+      store[i].clear();
+      dtmStore[i].clear();
+    }
   }
 
-  public Map getStore() {
-    return store;
+  public Map getStore(Object key) {
+    int storeIndex = getStoreIndex(key);
+    return store[storeIndex];
+  }
+
+  public Set entrySet() {
+    Set entrySet = new HashSet();
+    for (int i = 0; i < this.concurrency; i++) {
+      entrySet.addAll(store[i].entrySet());
+    }
+    return entrySet();
+  }
+
+  public boolean isEmpty() {
+    for (int i = 0; i < this.concurrency; i++) {
+      if (!store[i].isEmpty()) { return false; }
+    }
+    return true;
+  }
+
+  public Set keySet() {
+    Set keySet = new HashSet();
+    for (int i = 0; i < this.concurrency; i++) {
+      keySet.addAll(store[i].keySet());
+    }
+    return keySet;
+  }
+
+  public boolean containsValue(Object value) {
+    CacheData cd = new CacheData(value, this.maxIdleTimeoutSeconds, this.maxTTLSeconds);
+    for (int i = 0; i < this.concurrency; i++) {
+      if (store[i].containsValue(cd)) { return true; }
+    }
+    return false;
+  }
+
+  public int size() {
+    int size = 0;
+    for (int i = 0; i < this.concurrency; i++) {
+      size += store[i].size();
+    }
+    return size;
+  }
+
+  public Collection values() {
+    List values = new ArrayList();
+    for (int i = 0; i < this.concurrency; i++) {
+      values.addAll(store[i].values());
+    }
+    return values;
   }
 
   public long getMaxIdleTimeoutSeconds() {
@@ -230,11 +341,20 @@ public class CacheDataStore implements Serializable {
   }
 
   Timestamp findTimestampUnlocked(final Object key) {
-    return (Timestamp) dtmStore.get(key);
+    int storeIndex = getStoreIndex(key);
+    return (Timestamp) dtmStore[storeIndex].get(key);
   }
 
   CacheData findCacheDataUnlocked(final Object key) {
-    final CacheData rv = (CacheData) store.get(key);
+    for (int i = 0; i < this.concurrency; i++) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " i: " + i + " " + store[i]);
+    }
+    int storeIndex = getStoreIndex(key);
+    if (DebugUtil.DEBUG) {
+      System.err.println("Client " + ManagerUtil.getClientID() + " findCacheDataUnlocked -- key: " + key
+                         + ", storeIndex: " + storeIndex);
+    }
+    final CacheData rv = (CacheData) store[storeIndex].get(key);
     return rv;
   }
 
@@ -256,66 +376,88 @@ public class CacheDataStore implements Serializable {
     this.missCountNotFound = 0;
   }
 
-  private Object[] getAllLocalEntries() {
+  private Collection getAllLocalEntries(int startEvictionIndex, int lastEvictionIndex) {
     if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + " getting All entries");
+      System.err.println("Client " + ManagerUtil.getClientID() + " getting All entries from " + startEvictionIndex
+                         + " to " + lastEvictionIndex);
     }
-    return ((TCMap) dtmStore).__tc_getAllLocalEntriesSnapshot();
+    Collection allLocalEntries = new ArrayList();
+    for (int i = startEvictionIndex; i < lastEvictionIndex; i++) {
+      Collection t = ((TCMap) dtmStore[i]).__tc_getAllLocalEntriesSnapshot();
+      allLocalEntries.addAll(t);
+    }
+    System.err.println("Client " + ManagerUtil.getClientID() + " all local entries: " + allLocalEntries);
+    return allLocalEntries;
   }
 
-  private Object[] getAllLocalKeys() {
-    Object[] allLocalEntires = getAllLocalEntries();
-    Object[] allLocalKeys = new Object[allLocalEntires.length];
-    for (int i = 0; i < allLocalEntires.length; i++) {
-      Map.Entry e = (Map.Entry) allLocalEntires[i];
+  private Object[] getAllLocalKeys(int startEvictionIndex, int lastEvictionIndex) {
+    Collection allLocalEntires = getAllLocalEntries(startEvictionIndex, lastEvictionIndex);
+    Object[] allLocalKeys = new Object[allLocalEntires.size()];
+    int i = 0;
+    for (Iterator it = allLocalEntires.iterator(); it.hasNext();) {
+      Map.Entry e = (Map.Entry) it.next();
       allLocalKeys[i] = e.getKey();
     }
     return allLocalKeys;
   }
 
-  private Object[] getAllOrphanEntries() {
-    Collection remoteKeys = globalKeySet.allGlobalKeys();
-    Object[] allEntries = ((TCMap) dtmStore).__tc_getAllEntriesSnapshot();
-    for (int i = 0; i < allEntries.length; i++) {
-      Map.Entry e = (Map.Entry) allEntries[i];
+  private Collection getAllOrphanEntries(Collection remoteKeys, int startEvictionIndex, int lastEvictionIndex) {
+    Collection allEntries = new ArrayList();
+    for (int i = startEvictionIndex; i < lastEvictionIndex; i++) {
+      Collection t = ((TCMap) dtmStore[i]).__tc_getAllEntriesSnapshot();
+      allEntries.addAll(t);
+    }
+    for (Iterator it = allEntries.iterator(); it.hasNext();) {
+      Map.Entry e = (Map.Entry) it.next();
       if (remoteKeys.contains(e.getKey())) {
-        allEntries[i] = null;
+        it.remove();
       }
     }
+    System.err.println("Client " + ManagerUtil.getClientID() + " all orphan entries " + allEntries);
     return allEntries;
   }
 
   public void evictExpiredElements() {
-    final Object[] localEntries = getAllLocalEntries();
-    invalidateCacheEntries(localEntries, false);
+    evictExpiredElements(0, this.concurrency);
   }
 
-  public void evictAllExpiredElements() {
-    final Object[] orphanEntries = getAllOrphanEntries();
+  public void evictExpiredElements(int startEvictionIndex, int lastEvictionIndex) {
+    final Collection localEntries = getAllLocalEntries(startEvictionIndex, lastEvictionIndex);
+    invalidateCacheEntries(localEntries, false, -1, -1);
+  }
+
+  public void evictAllExpiredElements(Collection remoteKeys, int startEvictionIndex, int lastEvictionIndex) {
+    final Collection orphanEntries = getAllOrphanEntries(remoteKeys, startEvictionIndex, lastEvictionIndex);
     if (DebugUtil.DEBUG) {
-      System.err.println("all orphanentries: " + orphanEntries + " size: " + orphanEntries.length);
+      System.err.println("all orphanentries: " + orphanEntries + " size: " + orphanEntries.size());
     }
-    invalidateCacheEntries(orphanEntries, true);
+    TCProperties ehcacheProperies = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache.global.eviction");
+    int numOfChunks = ehcacheProperies.getInt("segments");
+    long restMillis = ehcacheProperies.getLong("rest.timeMillis");
+
+    invalidateCacheEntries(orphanEntries, true, numOfChunks, restMillis);
   }
 
-  private void invalidateCacheEntries(final Object[] entriesToBeExamined, boolean isGlobalInvalidation) {
+  private void invalidateCacheEntries(final Collection entriesToBeExamined, boolean isGlobalInvalidation,
+                                      int numOfChunks, long restMillis) {
     int totalCnt = 0;
     int evaled = 0;
     int notEvaled = 0;
     int errors = 0;
+    int numOfObjectsPerChunk = entriesToBeExamined.size();
 
     if (DebugUtil.DEBUG) {
-      for (int i = 0; i < entriesToBeExamined.length; i++) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: "
-                           + entriesToBeExamined[i]);
+      for (Iterator it = entriesToBeExamined.iterator(); it.hasNext();) {
+        System.err.println("Client " + ManagerUtil.getClientID() + " invalidateCacheEntries -- keys: " + it.next());
       }
     }
 
-    for (int i = 0; i < entriesToBeExamined.length; i++) {
-      final Map.Entry timestampEntry = (Map.Entry) entriesToBeExamined[i];
-      if (timestampEntry == null) {
-        continue;
-      }
+    if (isGlobalInvalidation) {
+      numOfObjectsPerChunk = Math.round(entriesToBeExamined.size() / numOfChunks);
+    }
+
+    for (Iterator it = entriesToBeExamined.iterator(); it.hasNext();) {
+      final Map.Entry timestampEntry = (Map.Entry) it.next();
 
       try {
         final Timestamp dtm = findTimestampUnlocked(timestampEntry.getKey());
@@ -329,8 +471,8 @@ public class CacheDataStore implements Serializable {
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
           if (DebugUtil.DEBUG) {
-            System.err.println("Client id: " + ManagerUtil.getClientID() + " exipring key: "
-                               + timestampEntry.getKey() + " globalInvalidation: " + isGlobalInvalidation);
+            System.err.println("Client id: " + ManagerUtil.getClientID() + " exipring key: " + timestampEntry.getKey()
+                               + " globalInvalidation: " + isGlobalInvalidation);
           }
           expire(timestampEntry.getKey());
           // if (evaluateCacheEntry(dtm, key)) invalCnt++;
@@ -341,26 +483,46 @@ public class CacheDataStore implements Serializable {
         errors++;
         t.printStackTrace(System.err);
         // logger.error("Unhandled exception inspecting session " + key + " for invalidation", t);
+      } finally {
+        if (isGlobalInvalidation) {
+          if ((totalCnt % numOfObjectsPerChunk) == 0) {
+            try {
+              System.err.println("Client " + ManagerUtil.getClientID() + " resting " + restMillis + " " + numOfObjectsPerChunk + " " + numOfChunks);
+              Thread.sleep(restMillis);
+            } catch (InterruptedException e) {
+              // ignore
+            }
+          }
+        }
       }
     }
     System.err.println("Client " + ManagerUtil.getClientID() + " finish evicting " + evaled + " cache entries.");
   }
 
   private class CacheEntryInvalidator implements Runnable {
-    private final Lock    globalInvalidationLock;
-    private final Lock    localInvalidationLock;
-    private boolean       isGlobalInvalidator = false;
-    private final boolean globalEvictionEnabled;
-    private final int     globalEvictionDuration;
-    private int           numOfLocalEvictionOccurred;
+    private final Lock         globalInvalidationLock;
+    private final Lock         localInvalidationLock;
+    private boolean            isGlobalInvalidator = false;
+    private final GlobalKeySet globalKeySet;
+    private final boolean      globalEvictionEnabled;
+    private final int          globalEvictionFrequency;
+    private final int          startEvictionIndex;
+    private final int          lastEvictionIndex;
+    private int                numOfLocalEvictionOccurred;
 
-    public CacheEntryInvalidator(boolean globalEvictionEnabled, int globalEvictionDuration) {
-      String localEvictionLockName = "tc:local_time_expiry_cache_invalidator_lock_" + cacheName;
-      String globalEvictionLockName = "tc:global_time_expiry_cache_invalidator_lock_" + cacheName;
+    public CacheEntryInvalidator(GlobalKeySet globalKeySet, boolean globalEvictionEnabled, int globalEvictionFrequency,
+                                 int startEvitionIndex, int lastEvitionIndex) {
+      String localEvictionLockName = "tc:local_time_expiry_cache_invalidator_lock_" + cacheName + ":"
+                                     + startEvitionIndex + ":" + lastEvitionIndex;
+      String globalEvictionLockName = "tc:global_time_expiry_cache_invalidator_lock_" + cacheName + ":"
+                                      + startEvitionIndex + ":" + lastEvitionIndex;
+      this.globalKeySet = globalKeySet;
       this.localInvalidationLock = new Lock(localEvictionLockName);
       this.globalInvalidationLock = new Lock(globalEvictionLockName);
       this.globalEvictionEnabled = globalEvictionEnabled;
-      this.globalEvictionDuration = globalEvictionDuration;
+      this.globalEvictionFrequency = globalEvictionFrequency;
+      this.startEvictionIndex = startEvitionIndex;
+      this.lastEvictionIndex = lastEvitionIndex;
     }
 
     public void run() {
@@ -382,7 +544,7 @@ public class CacheDataStore implements Serializable {
     }
 
     protected void evictLocalElements() {
-      evictExpiredElements();
+      evictExpiredElements(this.startEvictionIndex, this.lastEvictionIndex);
     }
 
     private void globalEvictionIfNecessary() {
@@ -393,7 +555,7 @@ public class CacheDataStore implements Serializable {
           if (isGlobalInvalidator) {
             try {
               globalEvictionStarted();
-              evictAllExpiredElements();
+              evictAllExpiredElements(globalKeySet.allGlobalKeys(), startEvictionIndex, lastEvictionIndex);
             } finally {
               globalKeySet.globalEvictionEnd();
             }
@@ -412,7 +574,8 @@ public class CacheDataStore implements Serializable {
     }
 
     private void notifyLocalKeySet() {
-      globalKeySet.addLocalKeySet(cacheParticipants.getNodeId(), getAllLocalKeys());
+      globalKeySet
+          .addLocalKeySet(cacheParticipants.getNodeId(), getAllLocalKeys(startEvictionIndex, lastEvictionIndex));
     }
 
     private void globalEvictionStarted() {
@@ -427,9 +590,11 @@ public class CacheDataStore implements Serializable {
     }
 
     private boolean isTimeForGlobalInvalidation() {
-      Assert.eval(globalEvictionDuration > 0);
+      Assert.eval(globalEvictionFrequency > 0);
 
-      return globalEvictionDuration == numOfLocalEvictionOccurred;
+      System.err.println("Client " + ManagerUtil.getClientID() + " globalEvictionFreq: " + globalEvictionFrequency
+                         + " numOfLocalEviction: " + numOfLocalEvictionOccurred);
+      return globalEvictionFrequency == numOfLocalEvictionOccurred;
     }
 
     private boolean isGlobalEvictionEnabled() {

@@ -218,7 +218,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
   }
   
-  public Object[] __tc_getAllEntriesSnapshot() {
+  public Collection __tc_getAllEntriesSnapshot() {
     if (__tc_isManaged()) {
       synchronized (__tc_managed().getResolveLock()) {
         return __tc_getAllEntriesSnapshotInternal();
@@ -228,12 +228,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
   }
   
-  private Object[] __tc_getAllEntriesSnapshotInternal() {
+  public synchronized Collection __tc_getAllEntriesSnapshotInternal() {
     Set entrySet = super.entrySet();
-    return entrySet.toArray(new Object[entrySet.size()]);
+    return new ArrayList(entrySet);
   }
-
-  public Object[] __tc_getAllLocalEntriesSnapshot() {
+  
+  public Collection __tc_getAllLocalEntriesSnapshot() {
     if (__tc_isManaged()) {
       synchronized (__tc_managed().getResolveLock()) {
         return __tc_getAllLocalEntriesSnapshotInternal();
@@ -243,10 +243,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
   }
   
-  private Object[] __tc_getAllLocalEntriesSnapshotInternal() {
+  private Collection __tc_getAllLocalEntriesSnapshotInternal() {
     Set entrySet = super.entrySet();
     int entrySetSize = entrySet.size();
-    if (entrySetSize == 0) { return new Object[0]; }
+    if (entrySetSize == 0) { return Collections.EMPTY_LIST; }
     
     Object[] tmp = new Object[entrySetSize];
     int index = -1;
@@ -258,10 +258,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       }
     }
     
-    if (index < 0) { return new Object[0]; }
+    if (index < 0) { return Collections.EMPTY_LIST; }
     Object[] rv = new Object[index+1];
     System.arraycopy(tmp, 0, rv, 0, index+1);
-    return rv;
+    return Arrays.asList(rv);
   }
 
   public Object clone() {
