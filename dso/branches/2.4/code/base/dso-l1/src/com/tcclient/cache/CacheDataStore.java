@@ -10,7 +10,6 @@ import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 
 import java.io.Serializable;
@@ -55,7 +54,7 @@ public class CacheDataStore implements Serializable {
 
   public CacheDataStore(long invalidatorSleepSeconds, long maxIdleTimeoutSeconds, long maxTTLSeconds, String cacheName,
                         Expirable callback) {
-    TCProperties ehcacheProperies = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache");
+    TCProperties ehcacheProperies = ManagerUtil.getTCProperties().getPropertiesFor("ehcache");
     this.concurrency = ehcacheProperies.getInt("concurrency");
     this.evictorPoolSize = ehcacheProperies.getInt("evictor.pool.size");
 
@@ -398,7 +397,7 @@ public class CacheDataStore implements Serializable {
 
   public void evictAllExpiredElements(Collection remoteKeys, int startEvictionIndex, int lastEvictionIndex) {
     final Collection orphanEntries = getAllOrphanEntries(remoteKeys, startEvictionIndex, lastEvictionIndex);
-    TCProperties ehcacheProperies = TCPropertiesImpl.getProperties().getPropertiesFor("ehcache.global.eviction");
+    TCProperties ehcacheProperies = ManagerUtil.getTCProperties().getPropertiesFor("ehcache.global.eviction");
     int numOfChunks = ehcacheProperies.getInt("segments");
     long restMillis = ehcacheProperies.getLong("rest.timeMillis");
 
