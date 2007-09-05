@@ -65,7 +65,9 @@ public class InstrumentEverythingTestApp extends AbstractErrorCatchingTransparen
       List local = new ArrayList();
       addALotOfObjects(local);
       moveToStageAndWait(INTERMEDIATE);
-      verify(local, root);
+      synchronized (root) {
+        verify(local, root);
+      }
     }
     printDetails();
     moveToStage(END);
