@@ -118,7 +118,7 @@ public interface Manager {
 
   public SessionMonitorMBean getSessionMonitorMBean();
 
-  public TCProperties getTCProperites();
+  public TCProperties getTCProperties();
 
   public void addClusterEventListener(ClusterEventListener cel);
 
