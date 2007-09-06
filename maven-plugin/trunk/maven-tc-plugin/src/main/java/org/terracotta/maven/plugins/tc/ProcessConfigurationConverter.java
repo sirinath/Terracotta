@@ -45,6 +45,7 @@ public class ProcessConfigurationConverter extends AbstractConfigurationConverte
       String nodeName = configuration.getAttribute("nodeName", defaultNodeName);
       String className = configuration.getAttribute("className");
       String arguments = configuration.getAttribute("arguments", null);
+      String jvmArgs = configuration.getAttribute("jvmargs", null);
       int count = Integer.parseInt(configuration.getAttribute("count", "1"));
 
       Map systemProperties = new HashMap();
@@ -55,7 +56,7 @@ public class ProcessConfigurationConverter extends AbstractConfigurationConverte
         }
       }
 
-      return new ProcessConfiguration(nodeName, className, arguments, systemProperties, count);
+      return new ProcessConfiguration(nodeName, className, arguments, jvmArgs, systemProperties, count);
     } catch (NumberFormatException ex) {
       throw new ComponentConfigurationException(configuration, ex);
     } catch (PlexusConfigurationException ex) {

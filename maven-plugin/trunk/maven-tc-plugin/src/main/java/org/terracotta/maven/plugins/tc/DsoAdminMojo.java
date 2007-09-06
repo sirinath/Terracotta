@@ -37,7 +37,10 @@ public class DsoAdminMojo extends AbstractDsoMojo {
 
       getLog().info("------------------------------------------------------------------------");
       getLog().info("Starting Terracotta Admin");
+      getLog().debug("cmd: " + cmd);
+      
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, true);
+
       getLog().info("OK");
     } catch (Exception e) {
       getLog().error("Failed to execute bootjar tool", e);

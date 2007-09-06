@@ -161,15 +161,13 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
     // DSO debugging
     if (getLog().isDebugEnabled()) {
-      int port = ++debugPort;
-      cmd.createArgument().setValue("-Xdebug");
-      cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,suspend=y,server=y,address=" + port);
-//      cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,server=y,address=" + port);
+      // int port = ++debugPort;
+      // cmd.createArgument().setValue("-Xdebug");
+      // cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,server=y,address=" + port);
+      // cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,suspend=n,server=y,address=" + port);
 
       cmd.createArgument().setValue("-Dtc.classloader.writeToDisk=true");
     }
-
-    getLog().debug("cmd: " + cmd);
 
     return cmd;
   }
