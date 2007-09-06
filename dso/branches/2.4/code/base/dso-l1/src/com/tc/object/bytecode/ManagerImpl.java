@@ -711,7 +711,7 @@ public class ManagerImpl implements Manager {
     return ret;
   }
 
-  public TCProperties getTCProperites() {
+  public TCProperties getTCProperties() {
     return TCPropertiesImpl.getProperties();
   }
 
