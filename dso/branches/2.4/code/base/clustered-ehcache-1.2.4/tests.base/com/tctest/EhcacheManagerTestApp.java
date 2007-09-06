@@ -4,7 +4,6 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
@@ -18,7 +17,6 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.lang.reflect.Field;
 import java.util.Iterator;
 
 public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
@@ -176,22 +174,14 @@ public class EhcacheManagerTestApp extends AbstractErrorCatchingTransparentApp {
     if (mustDelegate) {
       cacheManager.addCache(name);
     } else {
-      Cache cache = new Cache(name, 2, false, true, 0, 2);
+      Cache cache = new Cache(name, 2, false, true, 0, 0); // setting both maxIdleTime and maxTTL to 0, so the cache entries
+                                                           // never expire.
       cacheManager.addCache(cache);
     }
 
     Cache cache = cacheManager.getCache(name);
-    //setTimeEvictPolicy(cache);
     cache.put(new Element(name + "key1", "value1"));
     cache.put(new Element(name + "key2", "value1"));
-  }
-
-  private void setTimeEvictPolicy(Cache cache) throws Exception {
-    synchronized (cache) {
-      Field f = Cache.class.getDeclaredField("memoryStoreEvictionPolicy");
-      f.setAccessible(true);
-      f.set(cache, MemoryStoreEvictionPolicy.fromString("DSO"));
-    }
   }
 
 	/**
