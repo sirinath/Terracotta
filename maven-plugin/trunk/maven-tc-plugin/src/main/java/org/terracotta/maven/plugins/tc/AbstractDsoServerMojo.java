@@ -80,7 +80,8 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
       getLog().info("------------------------------------------------------------------------");
       getLog().info("Starting DSO Server");
-
+      getLog().debug("cmd: " + cmd);
+      
       Process p = CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
       getLog().info("OK");
 
@@ -131,6 +132,8 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
 
       getLog().info("------------------------------------------------------------------------");
       getLog().info("Stopping DSO Server");
+      getLog().debug("cmd: " + cmd);
+      
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, spawnServer);
 
       if (wait) {

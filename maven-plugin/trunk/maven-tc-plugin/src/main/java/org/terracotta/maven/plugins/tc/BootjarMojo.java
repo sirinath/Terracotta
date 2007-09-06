@@ -84,6 +84,8 @@ public class BootjarMojo extends AbstractDsoMojo {
 
       getLog().info("------------------------------------------------------------------------");
       getLog().info("Starting bootjar tool");
+      getLog().debug("cmd: " + cmd);
+      
       CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, false);
       getLog().info("OK");
     } catch (Exception e) {

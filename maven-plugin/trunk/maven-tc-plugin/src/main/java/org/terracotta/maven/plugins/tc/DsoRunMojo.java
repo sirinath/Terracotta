@@ -50,6 +50,12 @@ public class DsoRunMojo extends DsoLifecycleMojo {
   private String arguments;
 
   /**
+   * @parameter expression="${jvmargs}"
+   * @optional
+   */
+  private String jvmArgs;
+  
+  /**
    * @parameter expression="${numberOfNodes}" default-value="1"
    */
   private int numberOfNodes;
@@ -63,7 +69,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
 
     List processes = new ArrayList();
     if (className != null) {
-      processes.add(new ProcessConfiguration("node", className, arguments, Collections.EMPTY_MAP, numberOfNodes));
+      processes.add(new ProcessConfiguration("node", className, arguments, jvmArgs, Collections.EMPTY_MAP, numberOfNodes));
     }
     if(processes!=null) {
       processes.addAll(Arrays.asList(this.processes));
@@ -113,10 +119,15 @@ public class DsoRunMojo extends DsoLifecycleMojo {
       cmd.setWorkingDirectory(workingDirectory); 
     }
 
+    if (process.getJvmArgs() != null) {
+      cmd.createArgument().setValue(process.getJvmArgs());
+    }
+
     cmd.createArgument().setValue("-Xbootclasspath/p:" + bootJar.getAbsolutePath());
 
     cmd.createArgument().setValue("-Dtc.nodeName=" + nodeName);
     cmd.createArgument().setValue("-Dtc.numberOfNodes=" + totalNumberOfNodes);
+    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
 
     if (config != null) {
       cmd.createArgument().setValue("-Dtc.config=" + config.getAbsolutePath());
@@ -128,12 +139,9 @@ public class DsoRunMojo extends DsoLifecycleMojo {
       cmd.createArgument().setValue("-D" + e.getKey() + "=" + e.getValue());
     }
 
-    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
-
     cmd.createArgument().setValue("-cp");
     cmd.createArgument().setValue(createProjectClasspath());
 
-    // arguments
     cmd.createArgument().setValue(process.getClassName());
     if (process.getArgs() != null) {
       cmd.createArgument().setValue(process.getArgs());
