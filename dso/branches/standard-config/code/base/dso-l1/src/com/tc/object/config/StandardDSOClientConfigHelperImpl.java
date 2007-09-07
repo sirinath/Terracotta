@@ -203,6 +203,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // addPermanentExcludePattern("com.tc..*");
     // addPermanentExcludePattern("com.terracottatech..*");
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     addPermanentExcludePattern("java.awt.Component");
     addPermanentExcludePattern("java.lang.Thread");
     addPermanentExcludePattern("java.lang.ThreadLocal");
@@ -232,10 +236,21 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // Fix for CDV-357: Getting verifier errors when instrumenting obfuscated classes
     // These classes are obfuscated and as such can't be instrumented. 
     addPermanentExcludePattern("com.sun.crypto.provider..*");
+    */
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     addUnsupportedJavaUtilConcurrentTypes();
+    */
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     addAutoLockExcludePattern("* java.lang.Throwable.*(..)");
+    */
 
     nonportablesMatcher = new CompoundExpressionMatcher();
     addNonportablePattern("javax.servlet.GenericServlet");
@@ -270,6 +285,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     this.allowCGLIBInstrumentation = true;
   }
 
+  /**
+  // --------------------------------------------------------------
+  // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+  // --------------------------------------------------------------
   private void addUnsupportedJavaUtilConcurrentTypes() {
     addPermanentExcludePattern("java.util.concurrent.AbstractExecutorService");
     addPermanentExcludePattern("java.util.concurrent.ArrayBlockingQueue*");
@@ -304,18 +323,19 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addPermanentExcludePattern("java.util.concurrent.locks.AbstractQueuedSynchronizer*");
     addPermanentExcludePattern("java.util.concurrent.locks.LockSupport*");
   }
+  */
 
   public Portability getPortability() {
     return this.portability;
   }
 
-  public void addAutoLockExcludePattern(String expression) {
+  public synchronized void addAutoLockExcludePattern(String expression) {
     String executionExpression = ExpressionHelper.expressionPattern2ExecutionExpression(expression);
     ExpressionVisitor visitor = expressionHelper.createExpressionVisitor(executionExpression);
     autoLockExcludes.add(visitor);
   }
 
-  public void addPermanentExcludePattern(String pattern) {
+  public synchronized void addPermanentExcludePattern(String pattern) {
     permanentExcludesMatcher.add(new ClassExpressionMatcherImpl(expressionHelper, pattern));
   }
 
@@ -404,16 +424,15 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public DSOInstrumentationLoggingOptions instrumentationLoggingOptions() {
     return this.configSetupManager.dsoL1Config().instrumentationLoggingOptions();
   }
-
-  private void doAutoconfig(boolean interrogateBootJar) {
+  
+  /**
+  // --------------------------------------------------------------
+  // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+  // --------------------------------------------------------------
+  private void addSwingAndAWTConfig() {
     TransparencyClassSpec spec = null;
     LockDefinition ld = null;
-
-    // ------------------------------------------------------------------
-    // NOTE: AWT and Swing models intsrumentation moved to StandardConfig 
-    // config bundle configurator.
     
-    // ---------------------------
     // Color
     addIncludePattern("java.awt.Color", true);
     spec = getOrCreateSpec("java.awt.Color");
@@ -545,6 +564,19 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     ld.commit();
     addLock("* javax.swing.DefaultListModel.*(..)", ld);
     // ====================================================
+  }
+  */
+
+  private void doAutoconfig(boolean interrogateBootJar) {
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
+    addSwingAndAWTConfig();
+    */
+    
+    TransparencyClassSpec spec = null;
+    LockDefinition ld = null;
     
     //
     spec = getOrCreateSpec("java.util.Arrays");
@@ -688,10 +720,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // JVM crashes.
     // spec.generateNonStaticTCFields(false);
 
-    // -----------------------------------------------------------
-    // NOTE: Java Exception intrumentation moved to StandardConfig 
-    // config bundle configurator.
-    // -----------------------------------------------------------
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     spec = getOrCreateSpec("java.lang.Exception");
     spec = getOrCreateSpec("java.lang.RuntimeException");
     spec = getOrCreateSpec("java.lang.InterruptedException");
@@ -701,15 +733,26 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.lang.Error");
     spec = getOrCreateSpec("java.util.ConcurrentModificationException");
     spec = getOrCreateSpec("java.util.NoSuchElementException");
+    */
     // =================================================================
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     spec = getOrCreateSpec("java.util.EventObject");
     spec.setHonorTransient(true);
+    */
 
     spec = getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     spec = getOrCreateSpec("java.io.File");
     spec.setHonorTransient(true);
+    */
 
     spec = getOrCreateSpec("java.util.Date", "com.tc.object.applicator.DateApplicator");
     spec.addAlwaysLogSpec(SerializationUtil.SET_TIME_SIGNATURE);
@@ -726,8 +769,13 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     addPermanentExcludePattern("java.util.WeakHashMap+");
     addPermanentExcludePattern("java.lang.ref.*");
+    */
     addReflectionPreInstrumentedSpec();
 
     addJDK15PreInstrumentedSpec();
@@ -1157,7 +1205,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return (URL) this.classResources.get(className);
   }
 
-  private void markAllSpecsPreInstrumented() {
+  private synchronized void markAllSpecsPreInstrumented() {
     for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
       TransparencyClassSpec s = (TransparencyClassSpec) i.next();
       s.markPreInstrumented();
@@ -1273,7 +1321,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     throw Assert.failure("No such root for fieldName " + fi.getName() + " in class " + fi.getDeclaringType().getName());
   }
 
-  private Root findMatchingRootDefinition(FieldInfo fi) {
+  private synchronized Root findMatchingRootDefinition(FieldInfo fi) {
     for (Iterator i = roots.iterator(); i.hasNext();) {
       Root r = (Root) i.next();
       if (r.matches(fi, expressionHelper)) { return r; }
@@ -1349,7 +1397,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return rv;
   }
 
-  private boolean matchesAutoLockExcludes(MemberInfo methodInfo) {
+  private synchronized boolean matchesAutoLockExcludes(MemberInfo methodInfo) {
     ExpressionContext ctxt = expressionHelper.createExecutionExpressionContext(methodInfo);
     for (Iterator i = autoLockExcludes.iterator(); i.hasNext();) {
       ExpressionVisitor visitor = (ExpressionVisitor) i.next();
@@ -1792,11 +1840,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return getAllSpecs(false);
   }
 
-  public void addDistributedMethodCall(DistributedMethodSpec dms) {
+  public synchronized void addDistributedMethodCall(DistributedMethodSpec dms) {
     this.distributedMethods.add(dms);
   }
 
-  public DistributedMethodSpec getDmiSpec(MemberInfo memberInfo) {
+  public synchronized DistributedMethodSpec getDmiSpec(MemberInfo memberInfo) {
     if (Modifier.isStatic(memberInfo.getModifiers()) || "<init>".equals(memberInfo.getName())
         || "<clinit>".equals(memberInfo.getName())) { return null; }
     for (Iterator i = distributedMethods.iterator(); i.hasNext();) {
