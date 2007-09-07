@@ -1,0 +1,34 @@
+name: Terracotta DSO API
+internal_name: api
+kit_name_pattern: terracotta-api-version-PREALPHA-bundle
+root_directory: terracotta-api-version
+bundled_components:
+  - base:
+      module_packages:
+        - tc-compile-version-PREALPHA:
+            modules:
+              - common-api
+              - dso-l1-api
+              - modules-common
+              - thirdparty-api
+        - tc.test-compile-version-PREALPHA:
+            source: tests.base
+            filter: "**/*Test.class, **/*TestApp.class"
+            modules:
+              - common
+              - dso-container-tests
+              - dso-l1
+              - legacy-test-tree
+              - simulator
+packaging:
+  - mvn
+postscripts:
+  - make-terracotta-api-pom:
+      args:
+        - version-PREALPHA
+  - maven-deploy:
+      args:
+        - artifact: tc-compile
+          file: tc-compile-version-PREALPHA.jar
+        - artifact: tc.test-compile
+          file: tc.test-compile-version-PREALPHA.jar
