@@ -24,11 +24,21 @@ public class StandardConfigConfigurator
       this.configHelper = configHelper;
       configAutoLockExcludes();
       configPermanentExcludes();
-      configFileObjects();
-      configEventObjects();
-      configExceptions();
+      configFileTypes();
+      configEventTypes();
+      configExceptionTypes();
+      configArrayTypes();
       configAWTModels();
       configSwingModels();
+   }
+   
+   private void configArrayTypes() {
+      final TransparencyClassSpec spec = getOrCreateSpec("java.util.Arrays");
+      spec.addDoNotInstrument("copyOfRange");
+      spec.addDoNotInstrument("copyOf");
+      
+      //
+      getOrCreateSpec("java.util.Arrays$ArrayList");
    }
    
    private void configAutoLockExcludes() {
@@ -100,17 +110,17 @@ public class StandardConfigConfigurator
       configHelper.addPermanentExcludePattern("java.util.concurrent.locks.LockSupport*");
    }
 
-   private void configFileObjects() {
+   private void configFileTypes() {
       final TransparencyClassSpec spec = getOrCreateSpec("java.io.File");
       spec.setHonorTransient(true);
    }
    
-   private void configEventObjects() {
+   private void configEventTypes() {
       final TransparencyClassSpec spec = getOrCreateSpec("java.util.EventObject");
       spec.setHonorTransient(true);
    }
 
-   private void configExceptions() {
+   private void configExceptionTypes() {
       getOrCreateSpec("java.lang.Exception");
       getOrCreateSpec("java.lang.RuntimeException");
       getOrCreateSpec("java.lang.InterruptedException");

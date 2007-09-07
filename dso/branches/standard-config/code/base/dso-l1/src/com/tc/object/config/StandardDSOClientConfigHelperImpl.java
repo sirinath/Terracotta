@@ -337,7 +337,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public synchronized void addPermanentExcludePattern(String pattern) {
     permanentExcludesMatcher.add(new ClassExpressionMatcherImpl(expressionHelper, pattern));
-  }
+ }
 
   public LockDefinition createLockDefinition(String name, ConfigLockLevel level) {
     return new LockDefinitionImpl(name, level);
@@ -578,12 +578,16 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     TransparencyClassSpec spec = null;
     LockDefinition ld = null;
     
-    //
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
     spec = getOrCreateSpec("java.util.Arrays");
     spec.addDoNotInstrument("copyOfRange");
     spec.addDoNotInstrument("copyOf");
 
     spec = getOrCreateSpec("java.util.Arrays$ArrayList");
+    */
 
     spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
     spec.setUseNonDefaultConstructor(true);
@@ -599,7 +603,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     spec = getOrCreateSpec("java.util.Hashtable", "com.tc.object.applicator.PartialHashMapApplicator");
 
-    /*
+    /**
      * spec.addSupportMethodCreator(new HashtableMethodCreator());
      * spec.addHashtablePutLogSpec(SerializationUtil.PUT_SIGNATURE);
      * spec.addHashtableRemoveLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
@@ -608,12 +612,15 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
      * spec.addMethodAdapter("keySet()Ljava/util/Set;", new HashtableAdapter.KeySetAdapter());
      * spec.addMethodAdapter("values()Ljava/util/Collection;", new HashtableAdapter.ValuesAdapter());
      */
-    // addWriteAutolock("synchronized * java.util.Hashtable.*(..)");
-    // addReadAutolock(new String[] { "synchronized * java.util.Hashtable.get(..)",
-    // "synchronized * java.util.Hashtable.hashCode(..)", "synchronized * java.util.Hashtable.contains*(..)",
-    // "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
-    // "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized * java.util.Hashtable.keys(..)",
-    // "synchronized * java.util.Hashtable.size(..)", "synchronized * java.util.Hashtable.toString(..)" });
+    
+    /**
+     * addWriteAutolock("synchronized * java.util.Hashtable.*(..)");
+     * addReadAutolock(new String[] { "synchronized * java.util.Hashtable.get(..)",
+     * "synchronized * java.util.Hashtable.hashCode(..)", "synchronized * java.util.Hashtable.contains*(..)",
+     * "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
+     * "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized * java.util.Hashtable.keys(..)",
+     * "synchronized * java.util.Hashtable.size(..)", "synchronized * java.util.Hashtable.toString(..)" });
+     */
     spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
     addWriteAutolock("synchronized * java.util.Properties.*(..)");
 
@@ -624,6 +631,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
 
+    
     spec = getOrCreateSpec("java.util.BitSet");
     spec.setHonorTransient(false);
 
