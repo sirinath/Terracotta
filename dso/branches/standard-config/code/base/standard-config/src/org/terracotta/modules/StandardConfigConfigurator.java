@@ -36,8 +36,6 @@ public class StandardConfigConfigurator
       final TransparencyClassSpec spec = getOrCreateSpec("java.util.Arrays");
       spec.addDoNotInstrument("copyOfRange");
       spec.addDoNotInstrument("copyOf");
-      
-      //
       getOrCreateSpec("java.util.Arrays$ArrayList");
    }
    
