@@ -40,7 +40,8 @@ class BuildResults
         FilePath.new(@build_dir, subtree.build_module.name, "#{subtree.name}.classes").ensure_directory
     end
 
-    def boot_jar_directory
+    # Returns a FilePath representing the directory where shared boot JARs are stored.
+    def shared_boot_jar_directory
       FilePath.new(@build_dir, "boot-jars")
     end
 
@@ -78,7 +79,7 @@ class BuildResults
     # the Eclipse project by our Eclipse-project-generation mechanism, and used by check_prep to write
     # files out that can be read in as resources by our Eclipse code.
     def classes_directory_for_eclipse(subtree)
-        FilePath.new(subtree.build_module.name, "build.eclipse", "%s.classes" % subtree.name).ensure_directory
+        FilePath.new(subtree.build_module.name, "build.eclipse", "#{subtree.name}.classes").ensure_directory
     end
 
     # The "tools home", which is the working directory we set when running various random Java processes
@@ -97,7 +98,7 @@ class BuildResults
         if @build_dir.exist?
           path = FilePath.new(path)
           FilePath.new(path.directoryname).ensure_directory
-          puts "Archiving entire build directory ('%s') to '%s'..." % [ @build_dir.to_s, path.to_s ]
+          puts "Archiving entire build directory ('#@build_dir') to '#{path}'..."
 
           ant.jar(:destfile => path.to_s) do
               ant.fileset(:dir => @build_dir.to_s,
