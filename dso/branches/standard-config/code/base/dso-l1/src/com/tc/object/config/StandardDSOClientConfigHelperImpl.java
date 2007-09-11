@@ -867,10 +867,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // --------------------------------------------------------------
     // NOTE: Moved to StandardConfig config bundle configurator - JAG 
     // --------------------------------------------------------------
-    // doAutoconfigForSpring();
-    */
     // TODO move into its own plugin/module
-    doAutoconfigForSpringWebFlow();
+    // doAutoconfigForSpring();
+    // doAutoconfigForSpringWebFlow();
+    */
 
     if (interrogateBootJar) {
       // pre-load specs from boot jar
@@ -955,6 +955,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
   */
 
+  /**
+  // --------------------------------------------------------------
+  // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+  // --------------------------------------------------------------
   private void doAutoconfigForSpringWebFlow() {
     addAspectModule("org.springframework.webflow", "com.tc.object.config.SpringWebFlowAspectModule");
     addIncludePattern("com.tcspring.DSOConversationLock", false, false, false);
@@ -1008,6 +1012,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // org.springframework.webflow.registry.FlowRegistryImpl
     // etc...
   }
+  */
 
   private void addReflectionPreInstrumentedSpec() {
     if (supportSharingThroughReflection) {
@@ -1893,7 +1898,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     throw new UnsupportedOperationException();
   }
 
-  public void addAspectModule(String pattern, String moduleName) {
+  public synchronized void addAspectModule(String pattern, String moduleName) {
     List modules = (List) this.aspectModules.get(pattern);
     if (modules == null) {
       modules = new ArrayList();
