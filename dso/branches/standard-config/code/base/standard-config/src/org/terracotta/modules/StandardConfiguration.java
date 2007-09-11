@@ -19,7 +19,6 @@ public class StandardConfiguration
    protected void addInstrumentation(final BundleContext context,
          final StandardDSOClientConfigHelper configHelper) {
       super.addInstrumentation(context, configHelper);
-      this.configHelper = configHelper;
       configAutoLockExcludes();
       configPermanentExcludes();
       configFileTypes();
