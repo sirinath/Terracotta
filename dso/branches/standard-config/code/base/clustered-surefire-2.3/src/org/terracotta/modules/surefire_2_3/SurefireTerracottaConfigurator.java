@@ -7,14 +7,13 @@ import org.osgi.framework.BundleContext;
 import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
 import com.tc.object.config.ConfigLockLevel;
-import com.tc.object.config.StandardDSOClientConfigHelper;
 
 /**
  * @author Eugene Kuleshov
  */
 public class SurefireTerracottaConfigurator extends TerracottaConfiguratorModule {
 
-  protected void addInstrumentation(BundleContext context, StandardDSOClientConfigHelper config) {
+  protected void addInstrumentation(BundleContext context) {
     config.addCustomAdapter("junit.framework.TestSuite", new JUnitTestSuiteAdapter());
     config.addCustomAdapter("org.apache.maven.surefire.booter.IsolatedClassLoader", new IsolatedClassLoaderAdapter());
     

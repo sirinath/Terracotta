@@ -16,6 +16,7 @@ import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
+import com.tc.util.Assert;
 
 public abstract class TerracottaConfiguratorModule
       implements BundleActivator {
@@ -39,7 +40,8 @@ public abstract class TerracottaConfiguratorModule
       final ServiceReference configHelperRef = getConfigHelperReference(context);
       configHelper = (StandardDSOClientConfigHelper) context
             .getService(configHelperRef);
-      addInstrumentation(context, configHelper);
+      Assert.assertNotNull(configHelper);
+      addInstrumentation(context);
       context.ungetService(configHelperRef);
       registerModuleSpec(context);
    }
@@ -49,8 +51,7 @@ public abstract class TerracottaConfiguratorModule
       // Ignore this, we don't need to stop anything
    }
 
-   protected void addInstrumentation(final BundleContext context,
-         final StandardDSOClientConfigHelper configHelper) {
+   protected void addInstrumentation(final BundleContext context) {
       // default empty body
    }
 
@@ -62,8 +63,7 @@ public abstract class TerracottaConfiguratorModule
       return "jar:" + bundle.getLocation() + "!/";
    }
 
-   protected final void addClassReplacement(
-         final StandardDSOClientConfigHelper configHelper, final Bundle bundle,
+   protected final void addClassReplacement(final Bundle bundle,
          final String originalClassName, final String replacementClassName) {
       String url = getBundleJarUrl(bundle)
             + ByteCodeUtil.classNameToFileName(replacementClassName);
@@ -76,8 +76,7 @@ public abstract class TerracottaConfiguratorModule
       }
    }
 
-   protected final void addExportedBundleClass(
-         final StandardDSOClientConfigHelper configHelper, final Bundle bundle,
+   protected final void addExportedBundleClass(final Bundle bundle,
          final String classname) {
       String url = getBundleJarUrl(bundle)
             + ByteCodeUtil.classNameToFileName(classname);
@@ -89,9 +88,7 @@ public abstract class TerracottaConfiguratorModule
       }
    }
 
-   protected final void addExportedTcJarClass(
-         final StandardDSOClientConfigHelper configHelper,
-         final String classname) {
+   protected final void addExportedTcJarClass(final String classname) {
       configHelper.addClassResource(classname,
             TerracottaConfiguratorModule.class.getClassLoader().getResource(
                   ByteCodeUtil.classNameToFileName(classname)));
