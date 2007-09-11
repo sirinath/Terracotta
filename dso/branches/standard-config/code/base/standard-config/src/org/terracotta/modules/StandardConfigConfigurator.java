@@ -16,8 +16,6 @@ import com.tc.util.runtime.Vm;
 public class StandardConfigConfigurator
       extends TerracottaConfiguratorModule {
 
-   private StandardDSOClientConfigHelper configHelper;
-
    protected void addInstrumentation(final BundleContext context,
          final StandardDSOClientConfigHelper configHelper) {
       super.addInstrumentation(context, configHelper);
@@ -262,16 +260,6 @@ public class StandardConfigConfigurator
             "(Ljava/lang/Object;II)V", false);
       spec.addDistributedMethodCall("fireIntervalRemoved",
             "(Ljava/lang/Object;II)V", false);
-   }
-
-   private TransparencyClassSpec getOrCreateSpec(final String expr) {
-      final TransparencyClassSpec spec = configHelper.getOrCreateSpec(expr);
-      spec.markPreInstrumented();
-      return spec;
-   }
-
-   private void addLock(final String expr, final LockDefinition ld) {
-      configHelper.addLock(expr, ld);
    }
 
 }
