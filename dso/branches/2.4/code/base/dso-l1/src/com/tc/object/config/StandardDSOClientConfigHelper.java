@@ -75,7 +75,6 @@ import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
 import com.tc.weblogic.transform.EventsManagerAdapter;
 import com.tc.weblogic.transform.FilterManagerAdapter;
 import com.tc.weblogic.transform.GenericClassLoaderAdapter;
-import com.tc.weblogic.transform.RJVMImplAdapter;
 import com.tc.weblogic.transform.ServerAdapter;
 import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.TerracottaServletResponseImplAdapter;
@@ -127,7 +126,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private final CompoundExpressionMatcher        permanentExcludesMatcher;
   private final CompoundExpressionMatcher        nonportablesMatcher;
   private final List                             autoLockExcludes                   = new CopyOnWriteArrayList();
-  private final List                             distributedMethods                 = new CopyOnWriteArrayList();                    // <DistributedMethodSpec>
+  private final List                             distributedMethods                 = new CopyOnWriteArrayList();          // <DistributedMethodSpec>
   private final Map                              userDefinedBootSpecs               = new HashMap();
 
   // private final ClassInfoFactory classInfoFactory;
@@ -1078,10 +1077,6 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
     addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
                      new TerracottaServletResponseImplAdapter());
-
-    if (Boolean.getBoolean("com.tc.weblogic.rjvm.debug")) {
-      addCustomAdapter("weblogic.rjvm.RJVMImpl", new RJVMImplAdapter());
-    }
   }
 
   public boolean removeCustomAdapter(String name) {
