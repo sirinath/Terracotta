@@ -14,8 +14,6 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 public class SpringConfiguration
       extends TerracottaConfiguratorModule {
 
-   private StandardDSOClientConfigHelper configHelper;
-
    protected void addInstrumentation(final BundleContext context,
          final StandardDSOClientConfigHelper configHelper) {
       super.addInstrumentation(context, configHelper);
