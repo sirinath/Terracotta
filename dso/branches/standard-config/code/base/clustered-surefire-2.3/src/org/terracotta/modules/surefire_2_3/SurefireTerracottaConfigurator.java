@@ -14,11 +14,11 @@ import com.tc.object.config.ConfigLockLevel;
 public class SurefireTerracottaConfigurator extends TerracottaConfiguratorModule {
 
   protected void addInstrumentation(BundleContext context) {
-    config.addCustomAdapter("junit.framework.TestSuite", new JUnitTestSuiteAdapter());
-    config.addCustomAdapter("org.apache.maven.surefire.booter.IsolatedClassLoader", new IsolatedClassLoaderAdapter());
+    configHelper.addCustomAdapter("junit.framework.TestSuite", new JUnitTestSuiteAdapter());
+    configHelper.addCustomAdapter("org.apache.maven.surefire.booter.IsolatedClassLoader", new IsolatedClassLoaderAdapter());
     
-    config.addIncludePattern("EDU.oswego.cs.dl.util.concurrent.CyclicBarrier", true);
-    config.addAutolock("* EDU.oswego.cs.dl.util.concurrent.CyclicBarrier.*(..)", ConfigLockLevel.WRITE);
+    configHelper.addIncludePattern("EDU.oswego.cs.dl.util.concurrent.CyclicBarrier", true);
+    configHelper.addAutolock("* EDU.oswego.cs.dl.util.concurrent.CyclicBarrier.*(..)", ConfigLockLevel.WRITE);
   }
   
 }
