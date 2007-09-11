@@ -13,7 +13,7 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.util.runtime.Vm;
 
-public class StandardConfigConfigurator
+public class StandardConfiguration
       extends TerracottaConfiguratorModule {
 
    protected void addInstrumentation(final BundleContext context,
