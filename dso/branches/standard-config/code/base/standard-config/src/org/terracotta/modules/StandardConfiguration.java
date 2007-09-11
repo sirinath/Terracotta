@@ -9,16 +9,14 @@ import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
 import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.LockDefinition;
-import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.util.runtime.Vm;
 
 public class StandardConfiguration
       extends TerracottaConfiguratorModule {
 
-   protected void addInstrumentation(final BundleContext context,
-         final StandardDSOClientConfigHelper configHelper) {
-      super.addInstrumentation(context, configHelper);
+   protected void addInstrumentation(final BundleContext context) {
+      super.addInstrumentation(context);
       configAutoLockExcludes();
       configPermanentExcludes();
       configFileTypes();

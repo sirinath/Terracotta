@@ -13,7 +13,7 @@ import com.tc.object.config.StandardDSOClientConfigHelper;
 
 public final class JettyConfigurator extends TerracottaConfiguratorModule {
 
-  protected void addInstrumentation(final BundleContext context, final StandardDSOClientConfigHelper configHelper) {
+  protected void addInstrumentation(final BundleContext context) {
     addLoaderAdapters(configHelper);
   }
 
