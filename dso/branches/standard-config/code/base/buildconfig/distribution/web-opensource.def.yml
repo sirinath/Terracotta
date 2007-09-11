@@ -61,6 +61,8 @@ bundled_modules:
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
         - clustered-wicket-1.3
+        - spring-config
+        - standard-config
         - modules-common
 packaging:
   - tar

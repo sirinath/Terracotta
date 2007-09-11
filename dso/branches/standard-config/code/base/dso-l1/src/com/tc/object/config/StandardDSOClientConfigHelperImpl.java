@@ -367,7 +367,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addIncludePattern(expression, honorTransient, false, false);
   }
 
-  public void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
+  public synchronized void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
                                 boolean honorVolatile) {
     IncludeOnLoad onLoad = new IncludeOnLoad();
     if (oldStyleCallConstructorOnLoad) {
@@ -863,8 +863,13 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     ld.commit();
     addLock("* test.event.*.setTextArea(..)", ld);
 
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
+    // doAutoconfigForSpring();
+    */
     // TODO move into its own plugin/module
-    doAutoconfigForSpring();
     doAutoconfigForSpringWebFlow();
 
     if (interrogateBootJar) {
@@ -899,8 +904,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   /**
-   * Configure defaults for Spring Runtime
-   */
+  // --------------------------------------------------------------
+  // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+  // --------------------------------------------------------------
   private void doAutoconfigForSpring() {
     addIncludePattern("org.springframework.context.ApplicationEvent", false, false, false);
     addIncludePattern("com.tcspring.ApplicationContextEventProtocol", true, true, true);
@@ -947,6 +953,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addIncludePattern("org.springframework.binding..*", true, false, false);
     addIncludePattern("org.springframework.validation..*", true, false, false);
   }
+  */
 
   private void doAutoconfigForSpringWebFlow() {
     addAspectModule("org.springframework.webflow", "com.tc.object.config.SpringWebFlowAspectModule");
