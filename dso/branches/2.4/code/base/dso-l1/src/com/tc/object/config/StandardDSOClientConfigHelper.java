@@ -116,7 +116,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
 
   private final L1TVSConfigurationSetupManager   configSetupManager;
 
-  private Lock[]                                 locks                              = new Lock[0];
+  private final List                             locks                              = new CopyOnWriteArrayList();
   private final List                             roots                              = new CopyOnWriteArrayList();
   private final Set                              transients                         = Collections
                                                                                         .synchronizedSet(new HashSet());
@@ -126,8 +126,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
   private final List                             synchronousWriteApplications       = new ArrayList();
   private final CompoundExpressionMatcher        permanentExcludesMatcher;
   private final CompoundExpressionMatcher        nonportablesMatcher;
-  private final List                             autoLockExcludes                   = new ArrayList();
-  private final List                             distributedMethods                 = new LinkedList();                    // <DistributedMethodSpec>
+  private final List                             autoLockExcludes                   = new CopyOnWriteArrayList();
+  private final List                             distributedMethods                 = new CopyOnWriteArrayList();                    // <DistributedMethodSpec>
   private final Map                              userDefinedBootSpecs               = new HashMap();
 
   // private final ClassInfoFactory classInfoFactory;
@@ -1280,8 +1280,8 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     for (int j = 0; j < methods.length; j++) {
       MemberInfo methodInfo = methods[j];
       if (patterns.indexOf(methodInfo.getName() + methodInfo.getSignature()) > -1) {
-        for (int i = 0; i < locks.length; i++) {
-          Lock lock = locks[i];
+        for (Iterator i = locks.iterator(); i.hasNext();) {
+          Lock lock = (Lock) i.next();
           if (matches(lock, methodInfo)) {
             LockDefinition ld = lock.getLockDefinition();
             if (ld.isAutolock() && ld.getLockLevel() != ConfigLockLevel.READ) {
@@ -1294,20 +1294,28 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     }
   }
 
-  public synchronized LockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
-    boolean isAutoLocksExcluded = matchesAutoLockExcludes(memberInfo);
+  public LockDefinition[] lockDefinitionsFor(MemberInfo memberInfo) {
+    final boolean isAutoLocksExcluded = matchesAutoLockExcludes(memberInfo);
+    boolean foundMatchingAutoLock = false;
+
     List lockDefs = new ArrayList();
-    for (int i = locks.length - 1; i >= 0; i--) {
-      if (matches(this.locks[i], memberInfo)) {
-        LockDefinition definition = this.locks[i].getLockDefinition();
-        if (!(definition.isAutolock() && isAutoLocksExcluded)) {
-          lockDefs.add(definition);
-          if (definition.isAutolock()) {
-            isAutoLocksExcluded = true;
+
+    for (Iterator i = locks.iterator(); i.hasNext();) {
+      Lock lock = (Lock) i.next();
+      if (matches(lock, memberInfo)) {
+        LockDefinition definition = lock.getLockDefinition();
+
+        if (definition.isAutolock()) {
+          if (!isAutoLocksExcluded && !foundMatchingAutoLock) {
+            foundMatchingAutoLock = true;
+            lockDefs.add(definition);
           }
+        } else {
+          lockDefs.add(definition);
         }
       }
     }
+
     LockDefinition[] rv = new LockDefinition[lockDefs.size()];
     lockDefs.toArray(rv);
     return rv;
@@ -1351,7 +1359,7 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addAutolock(methodPattern, ConfigLockLevel.READ);
   }
 
-  public synchronized void addAutolock(String methodPattern, ConfigLockLevel type) {
+  public void addAutolock(String methodPattern, ConfigLockLevel type) {
     LockDefinition lockDefinition = new LockDefinition(LockDefinition.TC_AUTOLOCK_NAME, type);
     lockDefinition.commit();
     addLock(methodPattern, lockDefinition);
@@ -1365,11 +1373,11 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
     addAutolock(methodPattern, ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE);
   }
 
-  public synchronized void addLock(String methodPattern, LockDefinition lockDefinition) {
-    Lock[] result = new Lock[locks.length + 1];
-    System.arraycopy(locks, 0, result, 0, locks.length);
-    result[locks.length] = new Lock(methodPattern, lockDefinition);
-    locks = result;
+  public void addLock(String methodPattern, LockDefinition lockDefinition) {
+    // keep the list in reverse order of add
+    synchronized (locks) {
+      locks.add(0, new Lock(methodPattern, lockDefinition));
+    }
   }
 
   public boolean shouldBeAdapted(ClassInfo classInfo) {
