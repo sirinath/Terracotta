@@ -36,7 +36,6 @@ import java.util.Map.Entry;
  * This class is a kludge but I think it will do the trick for now. It is responsible for any communications to the
  * server for object retrieval and removal
  * 
- * @author steve
  */
 public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
@@ -48,6 +47,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   private final Map                                dnaRequests               = new THashMap();
   private final Map                                outstandingObjectRequests = new THashMap();
   private final Map                                outstandingRootRequests   = new THashMap();
+  private final Set                                missingObjectIDs          = new HashSet();
   private long                                     objectRequestIDCounter    = 0;
   private final ObjectRequestMonitor               requestMonitor;
   private final ChannelIDProvider                  cip;
@@ -75,7 +75,25 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     this.requestMonitor = requestMonitor;
     this.defaultDepth = defaultDepth;
     this.sessionManager = sessionManager;
+    // test();
   }
+
+  // private void test() {
+  // Thread thread = new Thread("Test Thread Saro") {
+  // public void run() {
+  // System.err.println("SARO waiting for 1 min.");
+  // ThreadUtil.reallySleep(60000);
+  // System.err.println("Doing bogus lookup");
+  // try {
+  // RemoteObjectManagerImpl.this.retrieve(new ObjectID(Long.MAX_VALUE));
+  // } catch (Throwable t) {
+  // logger.error("Got error for bogus lookup : ", t);
+  // throw new TCRuntimeException(t);
+  // }
+  // }
+  // };
+  //    thread.start();
+  //  }
 
   public synchronized void pause() {
     assertNotPaused("Attempt to pause while PAUSED");
@@ -153,9 +171,11 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
     ObjectRequestContext ctxt = new ObjectRequestContextImpl(this.cip.getChannelID(),
                                                              new ObjectRequestID(objectRequestIDCounter++), id, depth);
-    while (!dnaRequests.containsKey(id) || dnaRequests.get(id) == null) {
+    while (!dnaRequests.containsKey(id) || dnaRequests.get(id) == null || missingObjectIDs.contains(id)) {
       waitUntilRunning();
-      if (!dnaRequests.containsKey(id)) {
+      if (missingObjectIDs.contains(id)) {
+        throw new AssertionError("Requested Object is missing : " + id + " Missing Oids = " + missingObjectIDs);
+      } else if (!dnaRequests.containsKey(id)) {
         sendRequest(ctxt);
       } else if (!outstandingObjectRequests.containsKey(id)) {
         outstandingObjectRequests.put(id, ctxt);
@@ -262,6 +282,18 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
       }
       basicAddObject(dna);
     }
+    notifyAll();
+  }
+
+  public synchronized void objectsNotFoundFor(SessionID sessionID, long batchID, Set missingOIDs) {
+    waitUntilRunning();
+    if (!sessionManager.isCurrentSession(sessionID)) {
+      logger.warn("Ignoring Missing Object IDs " + missingOIDs + " from a different session: " + sessionID + ", "
+                  + sessionManager);
+      return;
+    }
+    logger.warn("Received Missing Object IDs from server : " + missingOIDs);
+    missingObjectIDs.addAll(missingOIDs);
     notifyAll();
   }
 
