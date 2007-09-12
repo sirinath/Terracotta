@@ -1479,7 +1479,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
-  public synchronized boolean shouldBeAdapted(ClassInfo classInfo) {
+  public boolean shouldBeAdapted(ClassInfo classInfo) {
     String fullClassName = classInfo.getName();
     Boolean cache = readAdaptableCache(fullClassName);
     if (cache != null) { return cache.booleanValue(); }
