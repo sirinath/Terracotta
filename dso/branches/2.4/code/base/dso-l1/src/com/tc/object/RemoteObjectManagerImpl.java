@@ -35,7 +35,6 @@ import java.util.Map.Entry;
 /**
  * This class is a kludge but I think it will do the trick for now. It is responsible for any communications to the
  * server for object retrieval and removal
- * 
  */
 public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
@@ -75,25 +74,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     this.requestMonitor = requestMonitor;
     this.defaultDepth = defaultDepth;
     this.sessionManager = sessionManager;
-    // test();
   }
-
-  // private void test() {
-  // Thread thread = new Thread("Test Thread Saro") {
-  // public void run() {
-  // System.err.println("SARO waiting for 1 min.");
-  // ThreadUtil.reallySleep(60000);
-  // System.err.println("Doing bogus lookup");
-  // try {
-  // RemoteObjectManagerImpl.this.retrieve(new ObjectID(Long.MAX_VALUE));
-  // } catch (Throwable t) {
-  // logger.error("Got error for bogus lookup : ", t);
-  // throw new TCRuntimeException(t);
-  // }
-  // }
-  // };
-  //    thread.start();
-  //  }
 
   public synchronized void pause() {
     assertNotPaused("Attempt to pause while PAUSED");
