@@ -7,8 +7,6 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitResultFormatter;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 
-import com.tc.text.Banner;
-
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,19 +30,16 @@ public class TCJUnitFormatter implements JUnitResultFormatter {
     boolean passed = (theTest.errorCount() == 0 && theTest.failureCount() == 0);
 
     if (!passed) {
-      System.err.println("*** " + theTest.getName() + " FAILED: " + this.currentExceptions.size() + " exceptions:");
+      System.out.println("*** " + theTest.getName() + " has " + this.currentExceptions.size() + " exceptions:");
       Iterator iter = this.currentExceptions.iterator();
       while (iter.hasNext()) {
-        System.err.println(iter.next().toString());
-        System.err.println("");
-        System.err.flush();
+        System.out.println(iter.next().toString());
+        System.out.println();        
       }
-    } else {
-      System.out.println("*** " + theTest.getName() + " PASSED.");
-      System.out.println();
-    }
-
+    } 
+    
     this.currentExceptions.clear();
+    System.out.println(" --- TEST FINISHED: " + (passed ? "PASSED" : "FAILED") + " ---");
   }
 
   public void setOutput(OutputStream theStream) {
@@ -60,7 +55,11 @@ public class TCJUnitFormatter implements JUnitResultFormatter {
   }
 
   public void startTestSuite(JUnitTest theTest) throws BuildException {
-    Banner.infoBanner("STARTING TESTSUITE: " + theTest.getName() + "...");
+    String decor = "****************************************************************************";
+    System.out.println();
+    System.out.println(decor);
+    System.out.println("* STARTING TESTSUITE: " + theTest.getName());
+    System.out.println(decor);
   }
 
   public void addError(Test arg0, Throwable arg1) {
