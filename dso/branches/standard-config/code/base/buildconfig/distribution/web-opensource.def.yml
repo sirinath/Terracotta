@@ -62,10 +62,14 @@ bundled_modules:
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
         - clustered-wicket-1.3
+<<<<<<< .working
         - excludes-config
         - guimodels-config
         - spring-config
         - standard-config
+=======
+        - standard-config
+>>>>>>> .merge-right.r5580
         - modules-common
 packaging:
   - tar

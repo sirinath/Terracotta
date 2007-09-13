@@ -560,6 +560,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addSwingAndAWTConfig();
     */
     
+
     TransparencyClassSpec spec = null;
     LockDefinition ld = null;
     
