@@ -328,13 +328,13 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return this.portability;
   }
 
-  public synchronized void addAutoLockExcludePattern(String expression) {
+  public void addAutoLockExcludePattern(String expression) {
     String executionExpression = ExpressionHelper.expressionPattern2ExecutionExpression(expression);
     ExpressionVisitor visitor = expressionHelper.createExpressionVisitor(executionExpression);
     autoLockExcludes.add(visitor);
   }
 
-  public synchronized void addPermanentExcludePattern(String pattern) {
+  public void addPermanentExcludePattern(String pattern) {
     permanentExcludesMatcher.add(new ClassExpressionMatcherImpl(expressionHelper, pattern));
  }
 
@@ -366,7 +366,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addIncludePattern(expression, honorTransient, false, false);
   }
 
-  public synchronized void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
+  public void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
                                 boolean honorVolatile) {
     IncludeOnLoad onLoad = new IncludeOnLoad();
     if (oldStyleCallConstructorOnLoad) {
@@ -1210,7 +1210,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return (URL) this.classResources.get(className);
   }
 
-  private synchronized void markAllSpecsPreInstrumented() {
+  private void markAllSpecsPreInstrumented() {
     for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
       TransparencyClassSpec s = (TransparencyClassSpec) i.next();
       s.markPreInstrumented();
@@ -1326,7 +1326,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     throw Assert.failure("No such root for fieldName " + fi.getName() + " in class " + fi.getDeclaringType().getName());
   }
 
-  private synchronized Root findMatchingRootDefinition(FieldInfo fi) {
+  private Root findMatchingRootDefinition(FieldInfo fi) {
     for (Iterator i = roots.iterator(); i.hasNext();) {
       Root r = (Root) i.next();
       if (r.matches(fi, expressionHelper)) { return r; }
@@ -1410,7 +1410,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return rv;
   }
 
-  private synchronized boolean matchesAutoLockExcludes(MemberInfo methodInfo) {
+  private boolean matchesAutoLockExcludes(MemberInfo methodInfo) {
     ExpressionContext ctxt = expressionHelper.createExecutionExpressionContext(methodInfo);
     for (Iterator i = autoLockExcludes.iterator(); i.hasNext();) {
       ExpressionVisitor visitor = (ExpressionVisitor) i.next();
@@ -1853,11 +1853,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return getAllSpecs(false);
   }
 
-  public synchronized void addDistributedMethodCall(DistributedMethodSpec dms) {
+  public void addDistributedMethodCall(DistributedMethodSpec dms) {
     this.distributedMethods.add(dms);
   }
 
-  public synchronized DistributedMethodSpec getDmiSpec(MemberInfo memberInfo) {
+  public DistributedMethodSpec getDmiSpec(MemberInfo memberInfo) {
     if (Modifier.isStatic(memberInfo.getModifiers()) || "<init>".equals(memberInfo.getName())
         || "<clinit>".equals(memberInfo.getName())) { return null; }
     for (Iterator i = distributedMethods.iterator(); i.hasNext();) {
@@ -1883,7 +1883,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     throw new UnsupportedOperationException();
   }
 
-  public synchronized void addAspectModule(String pattern, String moduleName) {
+  public void addAspectModule(String pattern, String moduleName) {
     List modules = (List) this.aspectModules.get(pattern);
     if (modules == null) {
       modules = new ArrayList();
