@@ -35,6 +35,10 @@ import com.tc.util.concurrent.ThreadUtil;
 public class MaxConnectionTest extends BaseDSOTestCase {
 
   private TCServerImpl server;
+  
+  public MaxConnectionTest() {
+    this.disableAllUntil("2007-09-30");
+  }
 
   private DistributedObjectClient newClient() throws Exception {
     L1TVSConfigurationSetupManager manager = super.createL1ConfigManager();
