@@ -59,6 +59,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
   private TestGlobalTransactionManager gtxm;
   private TestLockManager              lockManager;
 
+  public BroadcastChangeHandlerTest() {
+    disableAllUntil("2007-09-30");
+  }
+  
   public void setUp() throws Exception {
     transactionBatchManager = new TestTransactionBatchManager();
     transactionManager = new TestServerTransactionManager();
