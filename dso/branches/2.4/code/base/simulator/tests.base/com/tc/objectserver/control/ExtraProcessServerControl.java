@@ -13,6 +13,7 @@ import com.tc.process.LinkedJavaProcess;
 import com.tc.process.StreamCopier;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.server.ServerConstants;
+import com.tc.util.runtime.Vm;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -139,6 +140,10 @@ public class ExtraProcessServerControl extends ServerControlBase {
     addClasspath(jvmArgs);
     addLibPath(jvmArgs);
     addEnvVarsForWindows(jvmArgs);
+    
+    if (!Vm.isIBM()) {
+      jvmArgs.add("-XX:+HeapDumpOnOutOfMemoryError");
+    }
   }
 
   private String getStreamIdentifier(int dsoPort, String streamType) {
