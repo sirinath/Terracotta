@@ -20,7 +20,7 @@ public class SessionAspectModule implements AspectModule {
   
   private boolean isWL9() {
     try {
-        Class.forName("weblogic.kernel.KernelInitializer", true, ClassLoader.getSystemClassLoader());
+        Class.forName("weblogic.kernel.KernelInitializer", false, ClassLoader.getSystemClassLoader());
     } catch(ClassNotFoundException e) {
         return false;
     }
