@@ -5,30 +5,16 @@
 package com.tc.runtime;
 
 import com.tc.test.TCTestCase;
-import com.tc.util.runtime.Vm;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 public class MemoryPoolsTest extends TCTestCase {
 
   public MemoryPoolsTest() {
-    if (Vm.isIBM()) {
-      // IBM doesn't have these beans
-      disableAllUntil(new Date(Long.MAX_VALUE));
-      
-      // make sure that these beans are actually not present in the IBM JDK,
-      // in case this changes in later revisions
-      try {
-        new TCMemoryManagerJdk15PoolMonitor();
-        fail("Expecting AssertionError");
-      } catch (AssertionError e) {
-        assertNotNull(e);
-      }
-    }
+    //
   }
 
   public void testMemoryPools() throws Exception {
