@@ -59,10 +59,6 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
   private TestGlobalTransactionManager gtxm;
   private TestLockManager              lockManager;
 
-  public BroadcastChangeHandlerTest() {
-    disableAllUntil("2007-09-30");
-  }
-  
   public void setUp() throws Exception {
     transactionBatchManager = new TestTransactionBatchManager();
     transactionManager = new TestServerTransactionManager();
@@ -82,7 +78,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     context.addStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, stageRTO);
     context.lockManager = lockManager;
 
-    handler.initialize(context);
+    handler.initializeContext(context);
   }
 
   public void testBatchAccounting() throws Exception {
