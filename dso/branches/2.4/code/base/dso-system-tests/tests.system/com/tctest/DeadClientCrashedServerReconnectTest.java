@@ -37,10 +37,6 @@ public class DeadClientCrashedServerReconnectTest extends BaseDSOTestCase {
 
   private TestPauseListener pauseListener;
 
-  public DeadClientCrashedServerReconnectTest() {
-    this.disableAllUntil("2007-09-30");
-  }
-
   public void setUp() {
     pauseListener = new TestPauseListener();
   }
