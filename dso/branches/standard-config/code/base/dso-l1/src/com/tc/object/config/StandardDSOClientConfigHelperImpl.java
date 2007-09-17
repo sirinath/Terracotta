@@ -263,6 +263,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     supportSharingThroughReflection = appConfig.supportSharingThroughReflection().getBoolean();
     try {
+      doPreInstrumentedAutoconfig(interrogateBootJar);
       doAutoconfig(interrogateBootJar);
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
@@ -554,7 +555,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
   */
 
-  private void doAutoconfig(boolean interrogateBootJar) {
+  private void doPreInstrumentedAutoconfig(boolean interrogateBootJar) {
     /**
     // ----------------------------
     // implicit config-bundle - JAG 
@@ -779,10 +780,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // ----------------------------
     // addJDK15PreInstrumentedSpec();
     */
-
-    /* ******* ALL ABOVE SPECS ARE PRE-INSTRUMENTED ******* */
     markAllSpecsPreInstrumented();
-
+  }
+  
+  private void doAutoconfig(boolean interrogateBootJar) {
+    TransparencyClassSpec spec;
+    
     addJDK15InstrumentedSpec();
 
     // Generic Session classes
@@ -851,7 +854,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addCustomAdapter("com.sun.jdo.api.persistence.model.RuntimeModel", new RuntimeModelAdapter());
 
     // TODO for the Event Swing sample only
-    ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
+    LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
     ld.commit();
     addLock("* test.event.*.setTextArea(..)", ld);
 
