@@ -16,6 +16,7 @@ public class SpringConfiguration
    protected void addInstrumentation(final BundleContext context) {
       super.addInstrumentation(context);
       configSpringTypes();
+      configSpringWebFlowTypes();
    }
    
    private void configSpringTypes() {
