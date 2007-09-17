@@ -18,6 +18,11 @@ import com.tc.object.logging.InstrumentationLogger;
 
 public interface TransparencyClassSpec {
 
+  public static final byte            NOT_SET                    = 0x00;
+  public static final byte            NOT_ADAPTABLE              = 0x01;
+  public static final byte            ADAPTABLE                  = 0x02;
+  public static final byte            PORTABLE                   = 0x03;
+
   public boolean hasPhysicallyPortableSpecs(ClassInfo classInfo);
 
   public TransparencyClassSpec addRoot(String variableName, String rootName);
