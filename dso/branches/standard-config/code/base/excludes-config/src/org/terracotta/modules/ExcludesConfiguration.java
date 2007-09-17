@@ -14,8 +14,13 @@ public class ExcludesConfiguration
       super.addInstrumentation(context);
       configAutoLockExcludes();
       configPermanentExcludes();
-}
+      configNonPortables();
+   }
 
+   private void configNonPortables() {
+      configHelper.addNonportablePattern("javax.servlet.GenericServlet");
+   }
+   
    private void configAutoLockExcludes() {
       configHelper.addAutoLockExcludePattern("* java.lang.Throwable.*(..)");      
    }
