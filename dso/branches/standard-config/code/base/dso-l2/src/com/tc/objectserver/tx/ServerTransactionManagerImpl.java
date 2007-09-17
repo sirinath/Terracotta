@@ -115,24 +115,45 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     System.err.println(buf.toString());
   }
 
-  // TODO:: shutdown clients should not be cleared immediately. some time to apply all the transactions
-  // on the wire should be given before removing if from accounting and releasing the lock.
-  public void shutdownClient(ChannelID waitee) {
+  /**
+   * Shutdown clients are not cleared immediately. Only on completing of all txns this is processed.
+   */
+  public void shutdownClient(final ChannelID waitee) {
+    boolean callBackAdded = false;
     synchronized (transactionAccounts) {
-      transactionAccounts.remove(waitee);
+      TransactionAccount deadClientTA = (TransactionAccount) transactionAccounts.get(waitee);
+      if (deadClientTA != null) {
+        deadClientTA.clientDead(new TransactionAccount.CallBackOnComplete() {
+          public void onComplete(ChannelID dead) {
+            synchronized (ServerTransactionManagerImpl.this.transactionAccounts) {
+              transactionAccounts.remove(waitee);
+            }
+            stateManager.shutdownClient(waitee);
+            lockManager.clearAllLocksFor(waitee);
+            gtxm.shutdownClient(waitee);
+            fireClientDisconnectedEvent(waitee);
+          }
+        });
+        callBackAdded = true;
+      }
+
       for (Iterator i = transactionAccounts.entrySet().iterator(); i.hasNext();) {
         Entry entry = (Entry) i.next();
         TransactionAccount client = (TransactionAccount) entry.getValue();
+        if (client == deadClientTA) continue;
         for (Iterator it = client.requestersWaitingFor(waitee).iterator(); it.hasNext();) {
           TransactionID reqID = (TransactionID) it.next();
           acknowledgement(client.getClientID(), reqID, waitee);
         }
       }
     }
-    stateManager.shutdownClient(waitee);
-    lockManager.clearAllLocksFor(waitee);
-    gtxm.shutdownClient(waitee);
-    fireClientDisconnectedEvent(waitee);
+
+    if (!callBackAdded) {
+      stateManager.shutdownClient(waitee);
+      lockManager.clearAllLocksFor(waitee);
+      gtxm.shutdownClient(waitee);
+      fireClientDisconnectedEvent(waitee);
+    }
   }
 
   public void start(Set cids) {
@@ -250,11 +271,9 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     final ChannelID channelID = txn.getChannelID();
     final TransactionID txnID = txn.getTransactionID();
     TransactionAccount ci = getTransactionAccount(channelID);
+    fireTransactionAppliedEvent(txn.getServerTransactionID());
     if (ci.skipApplyAndCommit(txnID)) {
-      fireTransactionAppliedEvent(txn.getServerTransactionID());
       acknowledge(channelID, txnID);
-    } else {
-      fireTransactionAppliedEvent(txn.getServerTransactionID());
     }
   }
 
@@ -543,4 +562,5 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
 
   }
+
 }
