@@ -252,7 +252,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     */
 
     nonportablesMatcher = new CompoundExpressionMatcher();
-    addNonportablePattern("javax.servlet.GenericServlet");
+    /**
+    // --------------------------------------------------------------
+    // NOTE: Moved to StandardConfig config bundle configurator - JAG 
+    // --------------------------------------------------------------
+    //addNonportablePattern("javax.servlet.GenericServlet");
+    */
 
     NewDSOApplicationConfig appConfig = configSetupManager
         .dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME);
@@ -342,7 +347,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return new LockDefinitionImpl(name, level);
   }
 
-  private void addNonportablePattern(String pattern) {
+  public void addNonportablePattern(String pattern) {
     nonportablesMatcher.add(new ClassExpressionMatcherImpl(expressionHelper, pattern));
   }
 
