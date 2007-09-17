@@ -7,11 +7,89 @@ package org.terracotta.modules;
 import org.osgi.framework.BundleContext;
 import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
+import com.tc.object.config.StandardDSOClientConfigHelper;
+import com.tc.object.config.TransparencyClassSpec;
+import com.tc.util.runtime.Vm;
+
 public class Jdk15PreInstrumentedConfiguration
       extends TerracottaConfiguratorModule {
 
    protected void addInstrumentation(final BundleContext context) {
       super.addInstrumentation(context);
+      addJDK15PreInstrumentedSpec();
    }
 
+   private void addJDK15PreInstrumentedSpec() {
+      if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
+         TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
+         configHelper.addCustomAdapter("sun.misc.Unsafe",
+               StandardDSOClientConfigHelper.UNSAFE_CLASSADAPTER_FACTORY);
+         spec = getOrCreateSpec("com.tcclient.util.DSOUnsafe");
+         configHelper.addCustomAdapter("com.tcclient.util.DSOUnsafe",
+               StandardDSOClientConfigHelper.DSOUNSAFE_CLASSADAPTER_FACTORY);
+         spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
+         spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
+         spec.setHonorJDKSubVersionSpecific(true);
+         spec = getOrCreateSpec("java.util.concurrent.TimeUnit");
+
+         // ---------------------------------------------------------------------
+         // The following section of specs are specified in the BootJarTool
+         // also.
+         // They are placed again so that the honorTransient flag will
+         // be honored during runtime.
+         // ---------------------------------------------------------------------
+
+         // ---------------------------------------------------------------------
+         // SECTION BEGINS
+         // ---------------------------------------------------------------------
+
+         addJavaUtilConcurrentHashMapSpec();
+         addLogicalAdaptedLinkedBlockingQueueSpec();
+         addJavaUtilConcurrentFutureTaskSpec();
+
+         spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
+         spec.setHonorTransient(true);
+         spec.setCallConstructorOnLoad(true);
+
+         // ---------------------------------------------------------------------
+         // SECTION ENDS
+         // ---------------------------------------------------------------------
+      }
+   }
+
+   private void addJavaUtilConcurrentHashMapSpec() {
+      TransparencyClassSpec spec = configHelper.getOrCreateSpec(
+            "java.util.concurrent.ConcurrentHashMap",
+            "com.tc.object.applicator.ConcurrentHashMapApplicator");
+      spec.setHonorTransient(true);
+      spec.setPostCreateMethod("__tc_rehash");
+      spec.markPreInstrumented();
+
+      spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
+      spec.setCallConstructorOnLoad(true);
+      spec.setHonorTransient(true);
+   }
+
+   private void addLogicalAdaptedLinkedBlockingQueueSpec() {
+      TransparencyClassSpec spec = getOrCreateSpec("java.util.AbstractQueue");
+      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+      spec = configHelper.getOrCreateSpec(
+            "java.util.concurrent.LinkedBlockingQueue",
+            "com.tc.object.applicator.LinkedBlockingQueueApplicator");
+      spec.markPreInstrumented();
+   }
+
+   private void addJavaUtilConcurrentFutureTaskSpec() {
+      if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() >= 6) {
+         getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
+      }
+
+      TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.FutureTask$Sync");
+      configHelper
+            .addWriteAutolock("* java.util.concurrent.FutureTask$Sync.*(..)");
+      spec.setHonorTransient(true);
+      spec.addDistributedMethodCall("managedInnerCancel", "()V", false);
+      getOrCreateSpec("java.util.concurrent.FutureTask");
+      getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter");
+   }
 }

@@ -101,7 +101,7 @@ public abstract class TerracottaConfiguratorModule
          spec.markPreInstrumented();
       return spec;
    }
-
+   
    protected TransparencyClassSpec getOrCreateSpec(final String expr) {
       return getOrCreateSpec(expr, true);
    }
