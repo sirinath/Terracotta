@@ -21,16 +21,16 @@ public class Jdk15PreInstrumentedConfiguration
 
    private void addJDK15PreInstrumentedSpec() {
       if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
-         TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
+         getOrCreateSpec("sun.misc.Unsafe");
          configHelper.addCustomAdapter("sun.misc.Unsafe",
                StandardDSOClientConfigHelper.UNSAFE_CLASSADAPTER_FACTORY);
-         spec = getOrCreateSpec("com.tcclient.util.DSOUnsafe");
+         getOrCreateSpec("com.tcclient.util.DSOUnsafe");
          configHelper.addCustomAdapter("com.tcclient.util.DSOUnsafe",
                StandardDSOClientConfigHelper.DSOUNSAFE_CLASSADAPTER_FACTORY);
-         spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
-         spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
+         getOrCreateSpec("java.util.concurrent.CyclicBarrier");
+         TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
          spec.setHonorJDKSubVersionSpecific(true);
-         spec = getOrCreateSpec("java.util.concurrent.TimeUnit");
+         getOrCreateSpec("java.util.concurrent.TimeUnit");
 
          // ---------------------------------------------------------------------
          // The following section of specs are specified in the BootJarTool
@@ -43,8 +43,8 @@ public class Jdk15PreInstrumentedConfiguration
          // SECTION BEGINS
          // ---------------------------------------------------------------------
 
-         addJavaUtilConcurrentHashMapSpec();
-         addLogicalAdaptedLinkedBlockingQueueSpec();
+         // addJavaUtilConcurrentHashMapSpec();
+         // addLogicalAdaptedLinkedBlockingQueueSpec();
          addJavaUtilConcurrentFutureTaskSpec();
 
          spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
@@ -64,18 +64,19 @@ public class Jdk15PreInstrumentedConfiguration
       spec.setHonorTransient(true);
       spec.setPostCreateMethod("__tc_rehash");
       spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
+      
+      spec = configHelper.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
+      spec.markPreInstrumented();
    }
 
    private void addLogicalAdaptedLinkedBlockingQueueSpec() {
-      TransparencyClassSpec spec = getOrCreateSpec("java.util.AbstractQueue");
+      TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.AbstractQueue");
       spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec = configHelper.getOrCreateSpec(
-            "java.util.concurrent.LinkedBlockingQueue",
-            "com.tc.object.applicator.LinkedBlockingQueueApplicator");
+
+      spec = configHelper.getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
+                             "com.tc.object.applicator.LinkedBlockingQueueApplicator");
       spec.markPreInstrumented();
    }
 
