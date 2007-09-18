@@ -778,8 +778,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // ----------------------------
     // implicit config-bundle - JAG 
     // ----------------------------
-    // addJDK15PreInstrumentedSpec();
     */
+    addJDK15PreInstrumentedSpec();
     markAllSpecsPreInstrumented();
   }
   
@@ -1085,19 +1085,20 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   // ----------------------------
   // implicit config-bundle - JAG 
   // ----------------------------
+   * */
   private void addJDK15PreInstrumentedSpec() {
     if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
-      TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
-      addCustomAdapter("sun.misc.Unsafe", new UnsafeAdapter());
-      spec = getOrCreateSpec(DSOUnsafe.CLASS_DOTS);
-      addCustomAdapter(DSOUnsafe.CLASS_DOTS, new DSOUnsafeAdapter());
+      //TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
+      //addCustomAdapter("sun.misc.Unsafe", new UnsafeAdapter());
+      //spec = getOrCreateSpec(DSOUnsafe.CLASS_DOTS);
+      //addCustomAdapter(DSOUnsafe.CLASS_DOTS, new DSOUnsafeAdapter());
 
-      spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
+      //spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
 
-      spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
-      spec.setHonorJDKSubVersionSpecific(true);
+      //spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
+      //spec.setHonorJDKSubVersionSpecific(true);
 
-      spec = getOrCreateSpec("java.util.concurrent.TimeUnit");
+      //spec = getOrCreateSpec("java.util.concurrent.TimeUnit");
 
        // This section of spec are specified in the BootJarTool also. They are placed again so that the honorTransient *
        // flag will be honored during runtime. *
@@ -1106,11 +1107,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
       addLogicalAdaptedLinkedBlockingQueueSpec();
 
-      addJavaUtilConcurrentFutureTaskSpec();
+      //addJavaUtilConcurrentFutureTaskSpec();
 
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
-      spec.setHonorTransient(true);
-      spec.setCallConstructorOnLoad(true);
+      //spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
+      //spec.setHonorTransient(true);
+      //spec.setCallConstructorOnLoad(true);
 
        // This section of spec are specified in the BootJarTool also. They are placed again so that the honorTransient *
        // flag will be honored during runtime. *
@@ -1136,6 +1137,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
                            "com.tc.object.applicator.LinkedBlockingQueueApplicator");
   }
 
+  /**
+  // ----------------------------
+  // implicit config-bundle - JAG 
+  // ----------------------------
   private void addJavaUtilConcurrentFutureTaskSpec() {
     if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() >= 6) {
       getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
