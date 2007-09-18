@@ -779,7 +779,18 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // implicit config-bundle - JAG 
     // ----------------------------
     */
-    addJDK15PreInstrumentedSpec();
+    // addJDK15PreInstrumentedSpec();
+
+    // This section of spec are specified in the BootJarTool also
+    // They are placed again so that the honorTransient 
+    // flag will be honored during runtime. 
+    // SECTION BEGINS
+    if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
+      addJavaUtilConcurrentHashMapSpec();           // should be in jdk15-preinst-config bundle
+      addLogicalAdaptedLinkedBlockingQueueSpec();   // should be in jdk15-preinst-config bundle 
+    }
+    // SECTION ENDS
+    
     markAllSpecsPreInstrumented();
   }
   
@@ -1085,7 +1096,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   // ----------------------------
   // implicit config-bundle - JAG 
   // ----------------------------
-   * */
   private void addJDK15PreInstrumentedSpec() {
     if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
       //TransparencyClassSpec spec = getOrCreateSpec("sun.misc.Unsafe");
@@ -1104,10 +1114,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
        // flag will be honored during runtime. *
      
       addJavaUtilConcurrentHashMapSpec();
-
       addLogicalAdaptedLinkedBlockingQueueSpec();
 
-      //addJavaUtilConcurrentFutureTaskSpec();
+      addJavaUtilConcurrentFutureTaskSpec();
 
       //spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
       //spec.setHonorTransient(true);
@@ -1117,25 +1126,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
        // flag will be honored during runtime. *
     }
   }
-  
-  private void addJavaUtilConcurrentHashMapSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap",
-                                                 "com.tc.object.applicator.ConcurrentHashMapApplicator");
-    spec.setHonorTransient(true);
-    spec.setPostCreateMethod("__tc_rehash");
-
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
-    spec.setCallConstructorOnLoad(true);
-    spec.setHonorTransient(true);
-  }
-
-  private void addLogicalAdaptedLinkedBlockingQueueSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.AbstractQueue");
-    spec.setInstrumentationAction(TransparencyClassSpecImpl.ADAPTABLE);
-
-    spec = getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
-                           "com.tc.object.applicator.LinkedBlockingQueueApplicator");
-  }
+  */
 
   /**
   // ----------------------------
@@ -1156,6 +1147,25 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter");
   }
   */
+  
+  private void addJavaUtilConcurrentHashMapSpec() {
+    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap",
+                                                 "com.tc.object.applicator.ConcurrentHashMapApplicator");
+    spec.setHonorTransient(true);
+    spec.setPostCreateMethod("__tc_rehash");
+
+    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
+    spec.setCallConstructorOnLoad(true);
+    spec.setHonorTransient(true);
+  }
+
+  private void addLogicalAdaptedLinkedBlockingQueueSpec() {
+    TransparencyClassSpec spec = getOrCreateSpec("java.util.AbstractQueue");
+    spec.setInstrumentationAction(TransparencyClassSpecImpl.ADAPTABLE);
+
+    spec = getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
+                           "com.tc.object.applicator.LinkedBlockingQueueApplicator");
+  }
 
   private void addTomcatCustomAdapters() {
     addCustomAdapter("org.apache.jasper.runtime.JspWriterImpl", new JspWriterImplAdapter());

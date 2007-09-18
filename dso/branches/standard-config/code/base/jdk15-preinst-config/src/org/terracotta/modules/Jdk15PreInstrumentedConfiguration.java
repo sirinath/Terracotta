@@ -43,41 +43,18 @@ public class Jdk15PreInstrumentedConfiguration
          // SECTION BEGINS
          // ---------------------------------------------------------------------
 
-         // addJavaUtilConcurrentHashMapSpec();
-         // addLogicalAdaptedLinkedBlockingQueueSpec();
-         addJavaUtilConcurrentFutureTaskSpec();
-
          spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
          spec.setHonorTransient(true);
          spec.setCallConstructorOnLoad(true);
+
+         // addJavaUtilConcurrentHashMapSpec();
+         // addLogicalAdaptedLinkedBlockingQueueSpec();
+         addJavaUtilConcurrentFutureTaskSpec();
 
          // ---------------------------------------------------------------------
          // SECTION ENDS
          // ---------------------------------------------------------------------
       }
-   }
-
-   private void addJavaUtilConcurrentHashMapSpec() {
-      TransparencyClassSpec spec = configHelper.getOrCreateSpec(
-            "java.util.concurrent.ConcurrentHashMap",
-            "com.tc.object.applicator.ConcurrentHashMapApplicator");
-      spec.setHonorTransient(true);
-      spec.setPostCreateMethod("__tc_rehash");
-      spec.markPreInstrumented();
-      
-      spec = configHelper.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
-      spec.setCallConstructorOnLoad(true);
-      spec.setHonorTransient(true);
-      spec.markPreInstrumented();
-   }
-
-   private void addLogicalAdaptedLinkedBlockingQueueSpec() {
-      TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.AbstractQueue");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-
-      spec = configHelper.getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
-                             "com.tc.object.applicator.LinkedBlockingQueueApplicator");
-      spec.markPreInstrumented();
    }
 
    private void addJavaUtilConcurrentFutureTaskSpec() {
