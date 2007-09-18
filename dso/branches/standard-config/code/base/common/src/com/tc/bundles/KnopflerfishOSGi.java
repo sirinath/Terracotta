@@ -79,7 +79,6 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
     info(Message.STARTING_BUNDLE, new Object[] { bundle.getSymbolicName() });    
     framework.startBundle(bundle.getBundleId());
     info(Message.BUNDLE_STARTED, new Object[] { bundle.getSymbolicName() });
-    System.out.println("[...] bundle state: " + bundle.getState());
     Assert.assertEquals(bundle.getState() & Bundle.ACTIVE, bundle.getState());
     handler.callback(bundle);
   }
