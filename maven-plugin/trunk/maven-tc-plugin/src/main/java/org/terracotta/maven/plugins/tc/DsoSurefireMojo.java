@@ -681,7 +681,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
       args += " -Dtc.classpath=" + createPluginClasspath();
 
       args += " -Dtc.tests.configuration.modules.url=" + getModulesRepository();
-      args += " -Dtc.tests.configuration.modules=clustered-surefire-2.3-1.0.0,modules-common-1.0-1.0.0";
+      args += " -Dtc.tests.configuration.modules=clustered-surefire-2.3-1.0.0,modules-common-1.0.0";
 
       if (argLine != null && argLine.trim().length() > 0) {
         args += " " + argLine;
