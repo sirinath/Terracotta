@@ -80,7 +80,7 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     spec.setCustomClassAdapter(factory);
     
     Bundle thisBundle = getExportedBundle(context, "org.terracotta.modules.clustered-hibernate-3.1.2");
-    addExportedBundleClass(configHelper, thisBundle, "org.terracotta.modules.hibernate_3_1_2.util.HibernateUtil");
+    addExportedBundleClass(thisBundle, "org.terracotta.modules.hibernate_3_1_2.util.HibernateUtil");
   }
   
   protected final void registerModuleSpec(final BundleContext context) {
