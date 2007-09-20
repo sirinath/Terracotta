@@ -678,10 +678,11 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
       // args += " -agentlib:jdwp=transport=dt_socket,address=localhost:" + port;
 
       args += " -Dtc.classloader.writeToDisk=true";
-      args += " -Dtc.classpath=" + createPluginClasspath();
+      args += " -Dtc.classpath=" + createPluginClasspathAsFile();
 
       args += " -Dtc.tests.configuration.modules.url=" + getModulesRepository();
-      args += " -Dtc.tests.configuration.modules=clustered-surefire-2.3-1.0.0,modules-common-1.0.0";
+
+      args += " -Dtc.tests.configuration.modules=clustered-surefire-2.3-1.0.0";
 
       if (argLine != null && argLine.trim().length() > 0) {
         args += " " + argLine;

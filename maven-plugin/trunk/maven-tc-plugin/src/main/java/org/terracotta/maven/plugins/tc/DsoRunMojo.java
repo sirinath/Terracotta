@@ -127,7 +127,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
 
     cmd.createArgument().setValue("-Dtc.nodeName=" + nodeName);
     cmd.createArgument().setValue("-Dtc.numberOfNodes=" + totalNumberOfNodes);
-    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspath());
+    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
 
     if (config != null) {
       cmd.createArgument().setValue("-Dtc.config=" + config.getAbsolutePath());
@@ -140,7 +140,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
     }
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue(createProjectClasspath());
+    cmd.createArgument().setValue("\"" + createProjectClasspath() + "\"");
 
     cmd.createArgument().setValue(process.getClassName());
     if (process.getArgs() != null) {
