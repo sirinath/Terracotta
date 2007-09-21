@@ -10,23 +10,13 @@
  
  <pluginRepositories>
     <pluginRepository>
-      <id>terracotta-snapshots</id>
-      <url>http://download.terracotta.org/maven2-snapshots</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
       <id>terracotta-repository</id>
       <url>http://download.terracotta.org/maven2</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </pluginRepository>
  </pluginRepositories>
