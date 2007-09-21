@@ -58,7 +58,7 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
       cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
 
       cmd.createArgument().setValue("-cp");
-      cmd.createArgument().setValue("\"" + createPluginClasspath() + "\"");
+      cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
 
       cmd.createArgument().setValue(TCServerMain.class.getName());
 
@@ -111,7 +111,7 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
     cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue("\"" + createPluginClasspath() + "\"");
+    cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
 
     cmd.createArgument().setValue(TCStop.class.getName());
 

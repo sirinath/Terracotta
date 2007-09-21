@@ -59,7 +59,7 @@ public class BootjarMojo extends AbstractDsoMojo {
     cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue("\"" + createPluginClasspath() + "\"");
+    cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
 
     cmd.createArgument().setValue(BootJarTool.class.getName());
 
