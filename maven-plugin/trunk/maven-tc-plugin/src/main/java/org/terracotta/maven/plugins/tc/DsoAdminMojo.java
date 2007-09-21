@@ -26,7 +26,7 @@ public class DsoAdminMojo extends AbstractDsoMojo {
     Commandline cmd = createCommandLine();
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue(createPluginClasspath());
+    cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
 
     cmd.createArgument().setValue(AdminClient.class.getName());
     

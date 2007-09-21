@@ -190,17 +190,23 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
       Artifact artifact = (Artifact) it.next();
       classpath += artifact.getFile().getAbsolutePath() + File.pathSeparator;
-    }    
+    }
     return classpath;
   }
-  
+
+  protected String quoteIfNeeded(String path) {
+    if (path.indexOf(" ") > 0)
+      return "'" + path + "'";
+    return path;
+  }
+
   protected String createPluginClasspathAsFile() {
     FileOutputStream fos = null;
     File tempClasspath = null;
-    try {      
+    try {
       tempClasspath = File.createTempFile("tc-classpath", "m2-tc-plugin");
       tempClasspath.deleteOnExit();
-      fos = new FileOutputStream(tempClasspath);      
+      fos = new FileOutputStream(tempClasspath);
       IOUtils.write(createPluginClasspath(), fos);
     } catch (IOException e) {
       throw new RuntimeException("Failed to create tc.classpath", e);

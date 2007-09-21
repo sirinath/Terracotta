@@ -140,7 +140,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
     }
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue("\"" + createProjectClasspath() + "\"");
+    cmd.createArgument().setValue(createProjectClasspath());
 
     cmd.createArgument().setValue(process.getClassName());
     if (process.getArgs() != null) {
