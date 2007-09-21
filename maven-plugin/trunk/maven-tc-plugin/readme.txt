@@ -23,3 +23,5 @@ call mvn install:install-file -DgroupId=javax.management -DartifactId=jmxremote_
   Ideally these dependencies should be deployed to our own
   Maven repository, i.e. http://download.terracotta.org/maven2/
 
+  For more information see http://www.terracotta.org/confluence/display/wiki/Terracotta+Maven+Plugin
+
