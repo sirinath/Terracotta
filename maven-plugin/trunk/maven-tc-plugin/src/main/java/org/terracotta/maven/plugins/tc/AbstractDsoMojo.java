@@ -196,7 +196,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   protected String quoteIfNeeded(String path) {
     if (path.indexOf(" ") > 0)
-      return "'" + path + "'";
+      return "\"" + path + "\"";
     return path;
   }
 
