@@ -72,7 +72,7 @@
   <pluginRepositories>
     <pluginRepository>
       <id>terracotta-snapshots</id>
-      <url>http://download.terracotta.org/maven2-snapshots/</url>
+      <url>http://download.terracotta.org/maven2</url>
       <releases>
         <enabled>true</enabled>
       </releases>

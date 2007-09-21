@@ -8,16 +8,6 @@
   
   <!--  -->
   <repositories>
-    <repository>
-      <id>terracotta-snapshots</id>
-      <url>http://download.terracotta.org/maven2-snapshots</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
 
     <repository>
       <id>terracotta-repository</id>
@@ -26,7 +16,7 @@
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
 
@@ -55,24 +45,13 @@
 
   <pluginRepositories>
     <pluginRepository>
-      <id>terracotta-snapshots</id>
-      <url>http://download.terracotta.org/maven2-snapshots</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-
-    <pluginRepository>
       <id>terracotta-repository</id>
       <url>http://download.terracotta.org/maven2</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </pluginRepository>
 
@@ -298,7 +277,7 @@
     <repository>
       <id>kong</id>
       <name>Terracotta Internal Repository</name>
-      <url>scp://kong/export1/maven2-snapshots</url>
+      <url>scpexe://kong/export1/maven2</url>
     </repository>
   </distributionManagement>
 
