@@ -53,7 +53,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
    * @parameter expression="${jvmargs}"
    * @optional
    */
-  private String jvmArgs;
+  private String jvmargs;
   
   /**
    * @parameter expression="${numberOfNodes}" default-value="1"
@@ -69,7 +69,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
 
     List processes = new ArrayList();
     if (className != null) {
-      processes.add(new ProcessConfiguration("node", className, arguments, jvmArgs, Collections.EMPTY_MAP, numberOfNodes));
+      processes.add(new ProcessConfiguration("node", className, arguments, jvmargs, Collections.EMPTY_MAP, numberOfNodes));
     }
     if(processes!=null) {
       processes.addAll(Arrays.asList(this.processes));
@@ -140,7 +140,7 @@ public class DsoRunMojo extends DsoLifecycleMojo {
     }
 
     cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue(createProjectClasspath());
+    cmd.createArgument().setValue(quoteIfNeeded(createProjectClasspath()));
 
     cmd.createArgument().setValue(process.getClassName());
     if (process.getArgs() != null) {
