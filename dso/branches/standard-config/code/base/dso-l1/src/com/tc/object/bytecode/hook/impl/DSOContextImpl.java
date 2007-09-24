@@ -77,7 +77,7 @@ public class DSOContextImpl implements DSOContext {
 
   private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
     checkForProperlyInstrumentedBaseClasses();
-    if (configHelper == null) { throw new NullPointerException(); }
+    Assert.assertNotNull("DSOClientConfigHelper should not be null.", configHelper);
 
     this.configHelper = configHelper;
     this.manager = manager;
