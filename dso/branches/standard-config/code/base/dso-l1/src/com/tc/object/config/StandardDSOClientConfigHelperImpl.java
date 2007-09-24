@@ -1206,19 +1206,23 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public void addCustomAdapter(final String name, final String factoryName) {
-    ClassAdapterFactory factory = null;
-    try {
-      final Class clazz = Class.forName(factoryName);
-      factory = (ClassAdapterFactory) clazz.newInstance();
-    } catch (ClassNotFoundException e) {
-      logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
-    } catch (InstantiationException e) {
-      logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
-    } catch (IllegalAccessException e) {
-      logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
+    synchronized (customAdapters) {
+      ClassAdapterFactory factory = null;
+      try {
+        final Class clazz = Class.forName(factoryName);
+        factory = (ClassAdapterFactory) clazz.newInstance();
+      } catch (ClassNotFoundException e) {
+        logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
+      } catch (InstantiationException e) {
+        logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
+      } catch (IllegalAccessException e) {
+        logger.fatal("Unable to create instance of ClassAdapterFactory: '" + factoryName + "'", e);
+      }
+      Assert.assertNotNull(factory);
+      if (customAdapters.containsKey(name)) { return; }
+      Object prev = this.customAdapters.put(name, factory);
+      Assert.assertNull(prev);
     }
-    Assert.assertNotNull(factory);
-    addCustomAdapter(name, factory);
   }
 
   public void addCustomAdapter(final String name, final ClassAdapterFactory factory) {
