@@ -1,0 +1,189 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <!--
+    Initially created using the following command
+    mvn archetype:create 
+      -DarchetypeGroupId=org.codehaus.cargo 
+      -DarchetypeArtifactId=cargo-archetype-webapp-single-module 
+      -DarchetypeVersion=1.0-SNAPSHOT 
+      -DartifactId=tc-maven-webapp 
+      -DgroupId=org.terracotta.maven.plugins
+  -->
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.terracotta.maven.plugins</groupId>
+  <artifactId>tc-maven-webapp</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+  <build>
+    <finalName>tc-maven-webapp</finalName>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/it/**</exclude>
+          </excludes>
+        </configuration>
+        
+        <executions>
+          <execution>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>none</exclude>
+              </excludes>
+              <includes>
+                <include>**/it/**</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.terracotta.maven.plugins</groupId>
+        <artifactId>tc-maven-plugin</artifactId>
+        <version>0.0.5-SNAPSHOT</version>
+        <executions>
+           <execution>
+              <id>tc-package</id>
+              <phase>package</phase>
+              <goals>
+                 <goal>bootjar</goal>
+              </goals>
+           </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.cargo</groupId>
+        <artifactId>cargo-maven2-plugin</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <configuration>
+          <wait>false</wait>
+        </configuration>
+
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>start</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>jetty6x</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.cargo</groupId>
+            <artifactId>cargo-maven2-plugin</artifactId>
+            <configuration>
+              <container>
+                <containerId>jetty6x</containerId>
+                <zipUrlInstaller>
+                  <url>http://dist.codehaus.org/jetty/jetty-6.1.5/jetty-6.1.5.zip</url>
+                  <installDir>${user.home}/cargo/jetty6x</installDir>
+                </zipUrlInstaller>
+              </container>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.terracotta.maven.plugins</groupId>
+            <artifactId>tc-maven-plugin</artifactId>
+            <version>0.0.5-SNAPSHOT</version>
+            <configuration>
+              <processes>
+                <process nodeName="cargo" count="1">
+                  <container>
+                    <containerId>jetty6x</containerId>
+                    <zipUrlInstaller>
+                      <url>http://dist.codehaus.org/jetty/jetty-6.1.5/jetty-6.1.5.zip</url>
+                      <installDir>${user.home}/cargo/jetty6x</installDir>
+                    </zipUrlInstaller>
+                  </container>
+                </process>
+              </processes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>tomcat5x</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.cargo</groupId>
+            <artifactId>cargo-maven2-plugin</artifactId>
+            <configuration>
+              <container>
+                <containerId>tomcat5x</containerId>
+                <zipUrlInstaller>
+                  <url>http://www.apache.org/dist/tomcat/tomcat-5/v5.5.25/bin/apache-tomcat-5.5.25.zip</url>
+                  <installDir>${user.home}/cargo/tomcat5x</installDir>
+                </zipUrlInstaller>
+              </container>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <groupId>org.terracotta.maven.plugins</groupId>
+            <artifactId>tc-maven-plugin</artifactId>
+            <version>0.0.5-SNAPSHOT</version>
+            <configuration>
+              <processes>
+                <process nodeName="cargo" count="1">
+                  <container>
+                    <containerId>tomcat5x</containerId>
+                    <zipUrlInstaller>
+                      <url>http://www.apache.org/dist/tomcat/tomcat-5/v5.5.25/bin/apache-tomcat-5.5.25.zip</url>
+                      <installDir>${user.home}/cargo/tomcat5x</installDir>
+                    </zipUrlInstaller>
+                  </container>
+                </process>
+              </processes>
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
