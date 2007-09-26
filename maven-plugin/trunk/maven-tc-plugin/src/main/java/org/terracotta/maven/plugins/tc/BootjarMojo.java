@@ -54,24 +54,24 @@ public class BootjarMojo extends AbstractDsoMojo {
       return;
     }
 
-    Commandline cmd = createCommandLine();
-
-    cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
-
-    cmd.createArgument().setValue("-cp");
-    cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
-
-    cmd.createArgument().setValue(BootJarTool.class.getName());
-
-    if (verbose) {
-      cmd.createArgument().setValue("-v");
-    }
-
-    if (overwriteBootjar) {
-      cmd.createArgument().setValue("-w");
-    }
-
     try {
+      Commandline cmd = createCommandLine();
+      
+      cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
+      
+      cmd.createArgument().setValue("-cp");
+    cmd.createArgument().setValue(quoteIfNeeded(createPluginClasspath()));
+      
+      cmd.createArgument().setValue(BootJarTool.class.getName());
+      
+      if (verbose) {
+        cmd.createArgument().setValue("-v");
+      }
+      
+      if (overwriteBootjar) {
+        cmd.createArgument().setValue("-w");
+      }
+      
       cmd.createArgument().setValue("-o");
       cmd.createArgument().setFile(bootJar);
       getLog().debug("bootjar file  = " + bootJar.getAbsolutePath());

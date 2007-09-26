@@ -28,7 +28,7 @@ public class MasterProcess {
       
       while(SampleProcess.nodes.size()<totalNodes) {
         try {
-          SampleProcess.nodes.wait();
+          SampleProcess.nodes.wait(100L);
         } catch (Exception e) {
           // ignore
         }

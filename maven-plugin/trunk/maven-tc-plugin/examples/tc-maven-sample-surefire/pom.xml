@@ -13,7 +13,7 @@
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.4-SNAPSHOT</version>
+        <version>0.0.5-SNAPSHOT</version>
         <configuration>
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->

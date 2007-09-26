@@ -3,51 +3,92 @@
  */
 package org.terracotta.maven.plugins.tc;
 
+import java.util.HashMap;
 import java.util.Map;
+
+import org.codehaus.cargo.maven2.configuration.Configuration;
+import org.codehaus.cargo.maven2.configuration.Container;
 
 /**
  * @author Eugene Kuleshov
  */
 public class ProcessConfiguration {
 
-  private final String nodeName;
-  private final String className;
-  private final String args;
-  private final String jvmArgs;
-  private final Map properties;
-  private final int count;
-
-  public ProcessConfiguration(String nodeName, String className, String args, String jvmArgs, Map properties, int count) {
-    this.nodeName = nodeName;
-    this.className = className;
-    this.args = args;
-    this.jvmArgs = jvmArgs;
-    this.properties = properties;
-    this.count = count;
-  }
+  private String nodeName;
+  private String className;
+  private String args;
+  private String jvmArgs;
+  private Map properties = new HashMap();
+  private Container container;
+  private int count;
+  private Configuration configuration;
 
   public String getNodeName() {
     return nodeName;
+  }
+
+  public void setNodeName(String nodeName) {
+    this.nodeName = nodeName;
   }
 
   public String getClassName() {
     return className;
   }
 
+  public void setClassName(String className) {
+    this.className = className;
+  }
+  
   public String getArgs() {
     return args;
+  }
+
+  public void setArgs(String args) {
+    this.args = args;
   }
 
   public String getJvmArgs() {
     return jvmArgs;
   }
   
-  public Map getProperties() {
-    return properties;
+  public void setJvmArgs(String jvmArgs) {
+    this.jvmArgs = jvmArgs;
   }
 
   public int getCount() {
     return count;
   }
+  
+  public void setCount(int count) {
+    this.count = count;
+  }
 
+  public Map getProperties() {
+    return properties;
+  }
+  
+  public void setProperties(Map properties) {
+    this.properties = properties;
+  }
+  
+  public void addProperty(String key, String value) {
+    properties.put(key, value);
+  }
+
+  public Container getContainer() {
+    return container;
+  }
+
+  public void setContainer(Container container) {
+    this.container = container;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+  
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+  
 }

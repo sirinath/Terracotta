@@ -64,14 +64,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * @readonly
    */
   protected ArtifactRepository localRepository;
-
+  
   /**
    * Creates the artifact
    * 
    * @component
    */
   protected ArtifactFactory artifactFactory;
-
+  
   /**
    * Resolves the artifacts needed.
    * 
@@ -127,6 +127,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   protected int debugPort = 5000;
 
+
   public AbstractDsoMojo() {
   }
 
@@ -140,7 +141,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     jvm = mojo.jvm;
     classpathElements = mojo.classpathElements;
     pluginArtifacts = mojo.pluginArtifacts;
-
+    
     localRepository = mojo.localRepository;
     remoteRepositories = mojo.remoteRepositories;
     artifactFactory = mojo.artifactFactory;
@@ -156,8 +157,16 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       cmd.setExecutable(System.getProperty("java.home") + "/bin/java");
     }
 
-    String modulesRepository = getModulesRepository();
-    cmd.createArgument().setValue("-Dtc.tests.configuration.modules.url=" + modulesRepository);
+    cmd.createArgument().setLine(createJvmArguments());
+    
+    return cmd;
+  }
+
+  protected String createJvmArguments() {
+    StringBuffer sb = new StringBuffer();
+
+    String modulesRepository = getModulesRepository(); 
+    sb.append("-Dtc.tests.configuration.modules.url=" + modulesRepository);
     getLog().debug("tc.tests.configuration.modules.url = " + modulesRepository);
 
     // DSO debugging
@@ -167,10 +176,10 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       // cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,server=y,address=" + port);
       // cmd.createArgument().setValue("-Xrunjdwp:transport=dt_socket,suspend=n,server=y,address=" + port);
 
-      cmd.createArgument().setValue("-Dtc.classloader.writeToDisk=true");
+      sb.append(" -Dtc.classloader.writeToDisk=true");
     }
 
-    return cmd;
+    return sb.toString();
   }
 
   protected String getModulesRepository() {
@@ -194,17 +203,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     return classpath;
   }
 
-  protected String quoteIfNeeded(String path) {
-    if (path.indexOf(" ") > 0)
-      return "\"" + path + "\"";
-    return path;
-  }
-
   protected String createPluginClasspathAsFile() {
     FileOutputStream fos = null;
     File tempClasspath = null;
     try {
-      tempClasspath = File.createTempFile("tc-classpath", "m2-tc-plugin");
+      tempClasspath = File.createTempFile("tc-classpath", ".tmp");
       tempClasspath.deleteOnExit();
       fos = new FileOutputStream(tempClasspath);
       IOUtils.write(createPluginClasspath(), fos);
@@ -215,6 +218,30 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
     return tempClasspath.toURI().toString();
   }
+  
+  protected String createSessionClasspath() {
+    for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
+      Artifact artifact = (Artifact) it.next();
+      if ("terracotta".equals(artifact.getArtifactId())) {
+        String version = artifact.getVersion();
+        URL url = resolveArtifact(artifact.getGroupId(), "terracotta-session", VersionRange.createFromVersion(version));
+        String path = url.getPath();
+        if(!new File(path).exists() && path.startsWith("/")) {
+          path = path.substring(1);
+        }
+        getLog().info("terracotta-sessions " + path);
+        return path;
+      }
+    }
+    return "";
+  }
+
+  protected String quoteIfNeeded(String path) {
+    if (path.indexOf(" ") > 0)
+      return "\"" + path + "\"";
+    return path;
+  }
+  
 
   class ForkedProcessStreamConsumer implements StreamConsumer {
     private String prefix;
@@ -238,7 +265,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
           L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
 
-      return serverMBean.getHealthStatus();
+      return serverMBean.getHealthStatus();      
     } finally {
       if (jmxc != null) {
         try {
@@ -249,7 +276,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
-
+  
   protected String getJMXUrl(String serverName) throws ConfigurationSetupException {
     String host = "localhost";
     int port = 9520;
@@ -294,17 +321,18 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     } catch (ConfigurationSetupException ex) {
       throw new MojoExecutionException("Configuration Error", ex);
     }
-
-    if (addSurefireModule) {
+     
+    if(addSurefireModule) {
       Module surefireModule = Module.Factory.newInstance();
       surefireModule.setGroupId("org.terracotta.modules");
       surefireModule.setName("clustered-surefire-2.3");
       surefireModule.setVersion("1.0.0");
-
+      
       modules.add(surefireModule);
     }
 
     try {
+      getLog().info("Resolving modules: " + modules);
       MavenResolver resolver = new MavenResolver();
       resolver.resolve((Module[]) modules.toArray(new Module[modules.size()]));
     } catch (BundleException ex) {
@@ -314,8 +342,27 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
+  protected URL resolveArtifact(String groupId, String artifactId, VersionRange version) {
+    Artifact artifact = artifactFactory.createDependencyArtifact( // 
+        groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
+    getLog().info("Resolving module " + artifact.toString());
+    
+    try {
+      artifactResolver.resolve(artifact, remoteRepositories, localRepository);
+      return artifact.getFile().toURL();
+      
+    } catch (MalformedURLException ex) {
+      log("Malformed URL for " + artifact.toString(), ex);
+    } catch (ArtifactResolutionException ex) {
+      log("Can't resolve artifact " + artifact.toString(), ex);
+    } catch (ArtifactNotFoundException ex) {
+      log("Can't find artifact " + artifact.toString(), ex);
+    }    
+    return null;
+  }
+  
   void log(String msg, Exception ex) {
-    if (getLog().isDebugEnabled()) {
+    if(getLog().isDebugEnabled()) {
       getLog().error(msg, ex);
     } else {
       getLog().error(msg);
@@ -327,18 +374,21 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     public MavenResolver() {
       super(new URL[0]);
     }
-
+    
     protected URL resolveLocation(final String name, final String version, final String groupId) {
+      getLog().debug("Resolving location: " + groupId + ":" + name + ":" + version);
       return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
     }
-
+    
     protected URL resolveBundle(BundleSpec spec) {
+      getLog().debug("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + spec.getVersion());
+
       String groupId = spec.getGroupId();
       String name = spec.getName().replace('_', '-');
       String versionSpec = spec.getVersion();
       try {
         VersionRange version;
-        if ("(any-version)".equals(versionSpec)) {
+        if("(any-version)".equals(versionSpec)) {
           version = VersionRange.createFromVersion("1.0.0");
         } else {
           version = VersionRange.createFromVersionSpec(versionSpec);
@@ -349,28 +399,10 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
       return null;
     }
-
-    private URL resolveArtifact(String groupId, String artifactId, VersionRange version) {
-      Artifact artifact = artifactFactory.createDependencyArtifact( // 
-          groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
-      getLog().info("Resolving module " + artifact.toString());
-
-      try {
-        artifactResolver.resolve(artifact, remoteRepositories, localRepository);
-        return artifact.getFile().toURL();
-
-      } catch (MalformedURLException ex) {
-        log("Malformed URL for " + artifact.toString(), ex);
-      } catch (ArtifactResolutionException ex) {
-        log("Can't resolve artifact " + artifact.toString(), ex);
-      } catch (ArtifactNotFoundException ex) {
-        log("Can't find artifact " + artifact.toString(), ex);
-      }
-      return null;
-    }
-
+    
   }
 
+  
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
     public void changeFailed(ConfigItem item, Object oldValue, Object newValue) {
       String text = "Inconsistent Terracotta configuration.\n\n"
@@ -390,5 +422,5 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
-
+  
 }

@@ -5,7 +5,7 @@
   <name>Sample for the Maven Plugin for Terracotta</name>
   <groupId>org.terracotta.maven.plugins</groupId>
   <artifactId>tc-maven-plugin-sample</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>See more details at http://www.terracotta.org/confluence/display/wiki/Terracotta+Maven+Plugin</description>
 
   <build>
@@ -13,7 +13,7 @@
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.4-SNAPSHOT</version>
+        <version>0.0.5-SNAPSHOT</version>
         <configuration>
           <!-- <config>${basedir}/tc-config.xml</config> -->
           <!-- <verbose>true</verbose> -->
