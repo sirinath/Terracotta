@@ -128,7 +128,7 @@
             <version>0.0.5-SNAPSHOT</version>
             <configuration>
               <processes>
-                <process nodeName="cargo" count="1">
+                <process nodeName="cargo" count="2">
                   <container>
                     <containerId>jetty6x</containerId>
                     <zipUrlInstaller>
@@ -168,7 +168,7 @@
             <version>0.0.5-SNAPSHOT</version>
             <configuration>
               <processes>
-                <process nodeName="cargo" count="1">
+                <process nodeName="cargo" count="2">
                   <container>
                     <containerId>tomcat5x</containerId>
                     <zipUrlInstaller>
