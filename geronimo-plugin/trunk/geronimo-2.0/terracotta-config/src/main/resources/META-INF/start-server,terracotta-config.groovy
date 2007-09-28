@@ -1,1 +1,3 @@
-command.javaFlags << '-Dtc.install-root=var/terracotta -Xbootclasspath/p:<dso-boot-jar-path> -Dtc.config=<tc-config-path>'
+def installRoot = new File(command.geronimoHome, 'var/terracotta')
+command.properties['tc.install-root'] = "${installRoot}"
+command.properties['tc.config'] = "${installRoot}/tc-config-geronimo.xml"
