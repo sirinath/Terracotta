@@ -108,7 +108,7 @@
 
     <properties>
         <geronimoSchemaVersion>1.2</geronimoSchemaVersion>
-        <geronimoVersion>2.0.1</geronimoVersion>
+        <geronimoVersion>2.1-SNAPSHOT</geronimoVersion>
         <pluginVersion>1.0-SNAPSHOT</pluginVersion>
     </properties>
 
@@ -323,6 +323,18 @@
                             <!-- Do not include META-INF/maven to avoid long file problems on windows -->
                             <addMavenDescriptor>false</addMavenDescriptor>
                         </archive>
+                        <osiApproved>false</osiApproved>
+                        <commonInstance>
+                            <plugin-artifact>
+                                <geronimo-version>${geronimoVersion}</geronimo-version>
+                                <jvm-version>1.5</jvm-version>
+                                <source-repository>~/.m2/repository/</source-repository>
+                                <source-repository>http://download.terracotta.org/maven2-snapshots/</source-repository>
+                                <source-repository>http://repo1.maven.org/maven2/</source-repository>
+                                <source-repository>http://people.apache.org/repo/m2-snapshot-repository/</source-repository>
+                                <source-repository>http://people.apache.org/repo/m2-incubating-repository/</source-repository>
+                            </plugin-artifact>
+                        </commonInstance>
                     </configuration>
                 </plugin>
             </plugins>

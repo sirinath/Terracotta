@@ -87,7 +87,7 @@ public class TerracottaServerGBean implements GBeanLifecycle {
             TCThreadGroup threadGroup = new TCThreadGroup(throwableHandler);
             TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(getArgs(), true, new FatalIllegalConfigurationChangeHandler());
             AbstractServerFactory serverFactory = AbstractServerFactory.getFactory();
-            server = serverFactory.createServer(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
+            server = new TCGeronimoServerImpl(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
 
         } 
         server.start();
