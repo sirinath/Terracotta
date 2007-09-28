@@ -161,11 +161,24 @@
             <plugin>
                 <groupId>org.apache.geronimo.plugins</groupId>
                 <artifactId>car-maven-plugin</artifactId>
-                <extensions>true</extensions>
                 <configuration>
-                    <archive>
-                        <addMavenDescriptor>false</addMavenDescriptor>
-                    </archive>
+                    <useMavenDependencies>
+                        <value>true</value>
+                        <includeVersion>true</includeVersion>
+                    </useMavenDependencies>
+                    <category>Clustering</category>
+                    <instance>
+                        <plugin-artifact>
+                            <copy-file relative-to="server" dest-dir="var/terracotta"></copy-file>
+                            <config-xml-content>
+                                <gbean name="TerracottaServer">
+                                    <attribute name="terracottaRootDir">var/terracotta</attribute>
+
+                                    <attribute name="tcConfigFile">tc-config-geronimo.xml</attribute>
+                                </gbean>
+                            </config-xml-content>
+                        </plugin-artifact>
+                    </instance>
                 </configuration>
             </plugin>
         </plugins>
