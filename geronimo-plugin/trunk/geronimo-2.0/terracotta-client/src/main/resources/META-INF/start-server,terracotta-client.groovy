@@ -20,7 +20,6 @@ if (!bootJar.exists()){
             pathelement(location: new File(repoDir, 'trove/trove/1.1-beta-5/trove-1.1-beta-5.jar'))
             pathelement(location: new File(repoDir, 'knopflerfish-tc/knopflerfish-tc/2.0.1/knopflerfish-tc-2.0.1.jar'))
         }
-        arg(value: '-v')
         arg(value: '-o')
         arg(value: bootJar)
         arg(value: '-f')
