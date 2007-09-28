@@ -1,5 +1,5 @@
 def installRoot = new File(command.geronimoHome, 'var/terracotta')
-def bootJar = new File(installRoot, 'var/terracotta/boot.jar')
+def bootJar = new File(installRoot, 'var/terracotta/dso-boot.jar')
 if (!bootJar.exists()){
     def ant = new AntBuilder()
     def repoDir = new File(command.geronimoHome, 'repository')
@@ -29,4 +29,4 @@ if (!bootJar.exists()){
     }   
 }   
 
-command.javaFlags << "-Xbootclasspath/p:\"${installRoot}/boot.jar\""
+command.javaFlags << "-Xbootclasspath/p:\"${bootJar}\""
