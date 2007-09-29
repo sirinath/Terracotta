@@ -4,8 +4,7 @@ if (!bootJar.exists()){
     def ant = new AntBuilder()
     def repoDir = new File(command.geronimoHome, 'repository')
     def tcConfig = new File(installRoot, 'tc-config-geronimo.xml')
-    ant.java(classname: 'com.tc.object.tools.BootJarTool') {
-        classpath {
+    ant.path(id: "cp"){
             pathelement(location: new File(repoDir, 'org/terracotta/terracotta/2.5-SNAPSHOT/terracotta-2.5-SNAPSHOT.jar'))
             pathelement(location: new File(repoDir, 'commons-cli/commons-cli/1.0/commons-cli-1.0.jar'))
             pathelement(location: new File(repoDir, 'commons-io/commons-io/1.2/commons-io-1.2.jar'))
@@ -19,12 +18,16 @@ if (!bootJar.exists()){
             pathelement(location: new File(repoDir, 'stax/stax-api/1.0.1/stax-api-1.0.1.jar'))
             pathelement(location: new File(repoDir, 'trove/trove/1.1-beta-5/trove-1.1-beta-5.jar'))
             pathelement(location: new File(repoDir, 'knopflerfish-tc/knopflerfish-tc/2.0.1/knopflerfish-tc-2.0.1.jar'))
-        }
+    }
+    ant.property(name:'tcp', refid: "cp")
+    def tcPath=ant.antProject.getProperty('tcp')
+    ant.java(classname: 'com.tc.object.tools.BootJarTool', classpathref:"cp") {
         arg(value: '-o')
         arg(value: bootJar)
         arg(value: '-f')
         arg(value: tcConfig)
         sysproperty(key:"geronimo-terracotta.home", value:tcConfig)
+        sysproperty(key:"tc.classpath", value:tcPath)
     }   
 }   
 

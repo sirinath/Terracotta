@@ -57,7 +57,7 @@
             <id>terracotta-snapshot-repository</id>
             <url>http://download.terracotta.org/maven2-snapshots</url>
             <releases>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
@@ -300,6 +300,12 @@
                 <groupId>javax.management</groupId>
                 <artifactId>jmxremote_optional</artifactId>
                 <version>1.0.1_04</version>
+            </dependency>
+            <!-- modules-->
+            <dependency>
+                <groupId>org.terracotta.modules</groupId>
+                <artifactId>modules-common-1.0</artifactId>
+                <version>1.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
