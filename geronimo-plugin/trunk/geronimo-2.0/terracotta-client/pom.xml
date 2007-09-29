@@ -110,6 +110,13 @@
             <groupId>javax.management</groupId>
             <artifactId>jmxremote_optional</artifactId>
         </dependency>
+
+        <!-- modules-->
+        <dependency>
+            <groupId>org.terracotta.modules</groupId>
+            <artifactId>modules-common-1.0</artifactId>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
