@@ -15,7 +15,6 @@ import com.terracottatech.config.Module;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,16 +31,8 @@ import java.util.jar.Manifest;
 
 public class Resolver {
 
-  private static final String BUNDLE_VERSION            = "Bundle-Version";
-  private static final String BUNDLE_SYMBOLICNAME       = "Bundle-SymbolicName";
-
-  private static final String BUNDLE_FILENAME_EXT       = ".jar";
-  private static final String BUNDLE_PATH               = "{0}-{1}" + BUNDLE_FILENAME_EXT;
-  private static final String BUNDLE_VERSION_REGEX      = "[0-9]+\\.[0-9]+\\.[0-9]+";
-  private static final String BUNDLE_FILENAME_REGEX     = ".+-";
-  private static final String BUNDLE_FILENAME_EXT_REGEX = "\\" + BUNDLE_FILENAME_EXT;
-  private static final String BUNDLE_FILENAME_PATTERN   = "^" + BUNDLE_FILENAME_REGEX + BUNDLE_VERSION_REGEX
-                                                            + BUNDLE_FILENAME_EXT_REGEX + "$";
+  private static final String BUNDLE_VERSION      = "Bundle-Version";
+  private static final String BUNDLE_SYMBOLICNAME = "Bundle-SymbolicName";
 
   private URL[]               repositories;
   private Module[]            modules;
@@ -122,7 +113,7 @@ public class Resolver {
         final Collection jarfiles = FileUtils.listFiles(repository, new String[] { "jar" }, true);
         for (Iterator j = jarfiles.iterator(); j.hasNext();) {
           final File bundleFile = (File) j.next();
-          if (!bundleFile.isFile() || !bundleFile.getName().matches(BUNDLE_FILENAME_PATTERN)) {
+          if (!bundleFile.isFile()) {
             warn(Message.WARN_FILE_IGNORED_INVALID_NAME, new Object[] { bundleFile.getName() });
             continue;
           }
@@ -183,35 +174,33 @@ public class Resolver {
   }
 
   private final URL resolveLocation(final Module module) {
-    final String groupId = module.getGroupId();
-    final String name = module.getName();
+    final String symname = MessageFormat.format("{0}.{1}", new Object[] { module.getGroupId(), module.getName() })
+        .replace('-', '_');
     final String version = module.getVersion();
-    return resolveLocation(name, version, groupId);
-  }
-
-  private final URL resolveLocation(final String name, final String version, final String groupId) {
-    final String path = MessageFormat.format(BUNDLE_PATH, new String[] { name, version });
-    return resolveUrls(path);
-  }
-
-  private URL resolveUrls(final String path) {
     for (int i = 0; i < repositories.length; i++) {
-      URL location = null;
-      InputStream is = null;
       try {
-        location = new URL(repositories[i].toString() + (repositories[i].toString().endsWith("/") ? "" : "/") + path);
-        is = location.openStream();
-        is.read();
-        is.close();
-        return location;
-      } catch (IOException e) {
-        // ignore bad or unreachable URL
-      } finally {
-        try {
-          if (is != null) is.close();
-        } catch (IOException e) {
-          // ignore
+        final URL url = new URL(repositories[i].toString() + (repositories[i].toString().endsWith("/") ? "" : "/"));
+        final File directory = FileUtils.toFile(url);
+        
+        // ignore non-existent locations
+        if (!directory.exists()) continue;
+        
+        final Collection jars = FileUtils.listFiles(directory, new String[] { "jar" }, true);
+        for (final Iterator j = jars.iterator(); j.hasNext();) {
+          final File jar = (File) j.next();
+          final Manifest manifest = this.getManifest(jar);
+
+          // ignore bad JAR files
+          if (manifest == null) continue;
+
+          // found a match!
+          if (symname.equalsIgnoreCase(manifest.getMainAttributes().getValue(BUNDLE_SYMBOLICNAME))
+              && version.equalsIgnoreCase(manifest.getMainAttributes().getValue(BUNDLE_VERSION))) { return this
+              .addToRegistry(jar.toURL(), manifest); }
+
         }
+      } catch (MalformedURLException e) {
+        // ignore bad URLs
       }
     }
     return null;
