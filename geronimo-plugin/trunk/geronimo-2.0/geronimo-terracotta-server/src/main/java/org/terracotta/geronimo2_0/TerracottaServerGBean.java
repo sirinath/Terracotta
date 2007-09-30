@@ -17,6 +17,7 @@ import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
 import com.tc.server.AbstractServerFactory;
 import com.tc.server.TCServer;
+import com.tc.server.TCServerImpl;
 
 /**
  * TerracottaServerGBean Gbean that allows the embedding of Terracotta Server
@@ -87,7 +88,7 @@ public class TerracottaServerGBean implements GBeanLifecycle {
             TCThreadGroup threadGroup = new TCThreadGroup(throwableHandler);
             TVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(getArgs(), true, new FatalIllegalConfigurationChangeHandler());
             AbstractServerFactory serverFactory = AbstractServerFactory.getFactory();
-            server = new TCGeronimoServerImpl(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
+            server = new TCServerImpl(factory.createL2TVSConfigurationSetupManager(null), threadGroup);
 
         } 
         server.start();

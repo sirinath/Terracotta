@@ -131,6 +131,7 @@
                     <category>Clustering</category>
                     <instance>
                         <plugin-artifact>
+                            <copy-file relative-to="server" dest-dir="var/terracotta/lib/dso-boot">META-INF/README</copy-file>
                             <copy-file relative-to="server" dest-dir="etc/rc.d/">META-INF/start-server,terracotta-client.groovy</copy-file>
                         </plugin-artifact>
                     </instance>

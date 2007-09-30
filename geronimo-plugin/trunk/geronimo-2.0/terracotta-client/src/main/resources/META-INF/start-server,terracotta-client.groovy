@@ -1,34 +1,29 @@
 def installRoot = new File(command.geronimoHome, 'var/terracotta')
-def bootJar = new File(installRoot, 'var/terracotta/dso-boot.jar')
+def bootJar = new File(installRoot, 'lib/dso-boot/dso-boot.jar')
 if (!bootJar.exists()){
     def ant = new AntBuilder()
     def repoDir = new File(command.geronimoHome, 'repository')
     def tcConfig = new File(installRoot, 'tc-config-geronimo.xml')
     ant.path(id: "cp"){
-            pathelement(location: new File(repoDir, 'org/terracotta/terracotta/2.5-SNAPSHOT/terracotta-2.5-SNAPSHOT.jar'))
-            pathelement(location: new File(repoDir, 'commons-cli/commons-cli/1.0/commons-cli-1.0.jar'))
-            pathelement(location: new File(repoDir, 'commons-io/commons-io/1.2/commons-io-1.2.jar'))
-            pathelement(location: new File(repoDir, 'commons-lang/commons-lang/2.2/commons-lang-2.2.jar'))
-            pathelement(location: new File(repoDir, 'org/apache/xmlbeans/xmlbeans/2.3.0/xmlbeans-2.3.0.jar'))
-            pathelement(location: new File(repoDir, 'log4j/log4j/1.2.14/log4j-1.2.14.jar'))
-            pathelement(location: new File(repoDir, 'concurrent/concurrent/1.3.4/concurrent-1.3.4.jar'))
-            pathelement(location: new File(repoDir, 'org/terracotta/tcconfig2/2.0/tcconfig2-2.0.jar'))
-            pathelement(location: new File(repoDir, 'org/terracotta/tcconfig1/1.0/tcconfig1-1.0.jar'))
-            pathelement(location: new File(repoDir, 'org/terracotta/tcconfig/2.5-SNAPSHOT/tcconfig-2.5-SNAPSHOT.jar'))
-            pathelement(location: new File(repoDir, 'stax/stax-api/1.0.1/stax-api-1.0.1.jar'))
-            pathelement(location: new File(repoDir, 'trove/trove/1.1-beta-5/trove-1.1-beta-5.jar'))
-            pathelement(location: new File(repoDir, 'knopflerfish-tc/knopflerfish-tc/2.0.1/knopflerfish-tc-2.0.1.jar'))
+      ant.fileset(dir:repoDir){
+        include(name:"**/*.jar")
+      }
     }
     ant.property(name:'tcp', refid: "cp")
     def tcPath=ant.antProject.getProperty('tcp')
-    ant.java(classname: 'com.tc.object.tools.BootJarTool', classpathref:"cp") {
+
+    ant.java(classname: 'com.tc.object.tools.BootJarTool', classpathref:"cp", fork:true) {
         arg(value: '-o')
         arg(value: bootJar)
         arg(value: '-f')
         arg(value: tcConfig)
+        arg(value: 'make')
+
         sysproperty(key:"geronimo-terracotta.home", value:tcConfig)
         sysproperty(key:"tc.classpath", value:tcPath)
+        sysproperty(key:"tc.install-root", value:installRoot)
+        sysproperty(key:"tc.tests.configuration.modules.url", value:repoDir)
     }   
 }   
 
-command.javaFlags << "-Xbootclasspath/p:\"${bootJar}\""
+command.javaFlags << "-Xbootclasspath/p:${bootJar}"
