@@ -46,6 +46,9 @@ For more information, please see the product documentation.
           <class-expression>*..*</class-expression>
         </include>
 
+        <!-- Exclude Sun Crypto Classes-->
+        <exclude>com.sun.crypto.provider..*</exclude>
+
         <!-- Exclude tomcat internals to improve performance of webapp loading -->
         <exclude>org.apache.coyote..*</exclude>
         <exclude>org.apache.catalina..*</exclude>

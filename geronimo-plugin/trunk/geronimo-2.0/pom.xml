@@ -57,7 +57,7 @@
             <id>terracotta-snapshot-repository</id>
             <url>http://download.terracotta.org/maven2-snapshots</url>
             <releases>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
@@ -199,12 +199,12 @@
             <dependency>
                 <groupId>org.terracotta</groupId>
                 <artifactId>terracotta</artifactId>
-                <version>2.5-SNAPSHOT</version>
+                <version>2.4</version>
             </dependency>
             <dependency>
                 <groupId>org.terracotta</groupId>
                 <artifactId>tcconfig</artifactId>
-                <version>2.5-SNAPSHOT</version>
+                <version>2.4</version>
             </dependency>
             <dependency>
                 <groupId>org.terracotta</groupId>
