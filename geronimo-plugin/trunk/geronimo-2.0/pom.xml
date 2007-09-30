@@ -317,10 +317,14 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>geronimo-terracotta-server</module>
                 <module>terracotta-config</module>
                 <module>terracotta-client</module>
+
+                <!-- Disabling server until Terracotta fixes the hanging sockets 
+
+                <module>geronimo-terracotta-server</module>
                 <module>terracotta-server</module>
+                -->
             </modules>
         </profile>
     </profiles>
