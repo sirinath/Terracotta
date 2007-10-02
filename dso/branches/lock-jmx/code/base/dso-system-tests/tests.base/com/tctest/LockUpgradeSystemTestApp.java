@@ -4,6 +4,7 @@
  */
 package com.tctest;
 
+import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.Root;
@@ -72,13 +73,18 @@ public class LockUpgradeSystemTestApp extends AbstractTransparentApp {
   }
 
   private void writeLock(int depth) {
-    synchronized (root) {
-      readLock();
-      writeLock();
+    try {
+      synchronized (root) {
+        readLock();
+        writeLock();
 
-      if (depth > 0) {
-        writeLock(depth - 1);
+        if (depth > 0) {
+          writeLock(depth - 1);
+        }
       }
+      throw new RuntimeException("Should have thrown a TCLockUpgradeNotSupportedError");
+    } catch (TCLockUpgradeNotSupportedError e) {
+      // expected
     }
   }
 

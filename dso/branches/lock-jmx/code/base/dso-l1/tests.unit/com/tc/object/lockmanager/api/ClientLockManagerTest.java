@@ -9,9 +9,11 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
+import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
+import com.tc.management.ClientLockStatManager;
 import com.tc.object.lockmanager.api.TestRemoteLockManager.LockResponder;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.session.SessionID;
@@ -47,7 +49,7 @@ public class ClientLockManagerTest extends TestCase {
     super.setUp();
     sessionManager = new TestSessionManager();
     rmtLockManager = new TestRemoteLockManager(sessionManager);
-    lockManager = new ClientLockManagerImpl(new NullTCLogger(), rmtLockManager, sessionManager);
+    lockManager = new ClientLockManagerImpl(new NullTCLogger(), rmtLockManager, sessionManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     rmtLockManager.setClientLockManager(lockManager);
   }
 
@@ -196,7 +198,7 @@ public class ClientLockManagerTest extends TestCase {
 
       public TryLockClientLockManager(TCLogger logger, RemoteLockManager remoteLockManager,
                                       SessionManager sessionManager, CyclicBarrier awardBarrier) {
-        super(logger, remoteLockManager, sessionManager);
+        super(logger, remoteLockManager, sessionManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
         this.awardBarrier = awardBarrier;
       }
 
@@ -663,7 +665,8 @@ public class ClientLockManagerTest extends TestCase {
     assertEquals(2, rmtLockManager.getUnlockRequestCount());
   }
 
-  public void testLockChangesAfterUpgrade() throws Exception {
+  // Lock upgrade is no longer supported
+  public void disableTestLockChangesAfterUpgrade() throws Exception {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     ThreadID tid0 = new ThreadID(0);
     LockID lid0 = new LockID("0");
@@ -691,8 +694,13 @@ public class ClientLockManagerTest extends TestCase {
     assertEquals(1, rmtLockManager.getLockRequestCount());
 
     // upgrade lock
-    lockManager.lock(lid0, tid0, LockLevel.WRITE);
-    assertEquals(2, rmtLockManager.getLockRequestCount());
+    try {
+      lockManager.lock(lid0, tid0, LockLevel.WRITE);
+      throw new AssertionError("Should have thrown a TCLockUpgradeNotSupportedError.");
+    } catch (TCLockUpgradeNotSupportedError e) {
+      // expected
+    }
+    assertEquals(1, rmtLockManager.getLockRequestCount());
   }
 
   public void testNestedReadLocksGrantsLocally() throws Exception {
