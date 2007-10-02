@@ -54,6 +54,8 @@ public final class TCMessageType {
   public static final int           TYPE_CLUSTER_MEMBERSHIP_EVENT_MESSAGE         = 39;
   public static final int           TYPE_CLIENT_JMX_READY_MESSAGE                 = 40;
   public static final int           TYPE_OBJECTS_NOT_FOUND_RESPONSE_MESSAGE       = 41;
+  public static final int           TYPE_LOCK_STAT_MESSAGE                        = 42;
+  public static final int           TYPE_LOCK_STATISTICS_RESPONSE_MESSAGE         = 43;
 
   public static final TCMessageType PING_MESSAGE                                  = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                  = new TCMessageType();
@@ -62,6 +64,8 @@ public final class TCMessageType {
   public static final TCMessageType LOCK_RECALL_MESSAGE                           = new TCMessageType();
   public static final TCMessageType LOCK_RESPONSE_MESSAGE                         = new TCMessageType();
   public static final TCMessageType LOCK_QUERY_RESPONSE_MESSAGE                   = new TCMessageType();
+  public static final TCMessageType LOCK_STAT_MESSAGE                             = new TCMessageType();
+  public static final TCMessageType LOCK_STATISTICS_RESPONSE_MESSAGE              = new TCMessageType();
   public static final TCMessageType COMMIT_TRANSACTION_MESSAGE                    = new TCMessageType();
   public static final TCMessageType REQUEST_ROOT_RESPONSE_MESSAGE                 = new TCMessageType();
   public static final TCMessageType REQUEST_MANAGED_OBJECT_MESSAGE                = new TCMessageType();
