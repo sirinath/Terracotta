@@ -59,6 +59,10 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
     }
   }
   
+  public int getBatchSize() {
+    return this.batch;
+  }
+  
   private void send(LockID lockID, List stackTraces) {
     sink.add(createLockStatisticsResponseMessage(channel.channel(), lockID, stackTraces));
   }

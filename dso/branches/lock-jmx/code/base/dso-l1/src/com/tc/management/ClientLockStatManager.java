@@ -29,7 +29,10 @@ public interface ClientLockStatManager {
     public void start(DSOClientMessageChannel channel, Sink sink) {
       // do nothing
     }
-    
+
+    public int getBatchSize() {
+      return 0;
+    }
   };
   
   public void start(DSOClientMessageChannel channel, Sink sink);
@@ -41,4 +44,6 @@ public interface ClientLockStatManager {
   public void disableStat(LockID lockID);
   
   public boolean isStatEnabled(LockID lockID);
+  
+  public int getBatchSize();
 }
