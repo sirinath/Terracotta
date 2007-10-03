@@ -18,9 +18,10 @@ public class ProcessConfiguration {
   private String className;
   private String args;
   private String jvmArgs;
+  private String modules;
+  private int count;
   private Map properties = new HashMap();
   private Container container;
-  private int count;
   private Configuration configuration;
 
   public String getNodeName() {
@@ -89,6 +90,14 @@ public class ProcessConfiguration {
   
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
+  }
+
+  public String getModules() {
+    return modules;
+  }
+
+  public void setModules(String modules) {
+    this.modules = modules;
   }
   
 }
