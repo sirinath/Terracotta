@@ -1123,7 +1123,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
 
   public boolean getAutoStartServerOption(IProject project) {
     String option = getPersistentProperty(project, AUTO_START_SERVER_OPTION);
-    return option != null && Boolean.parseBoolean(option);
+    return option != null ? Boolean.parseBoolean(option) : DEFAULT_AUTO_START_SERVER_OPTION;
   }
 
   public boolean hasTerracottaNature(IJavaElement element) {
