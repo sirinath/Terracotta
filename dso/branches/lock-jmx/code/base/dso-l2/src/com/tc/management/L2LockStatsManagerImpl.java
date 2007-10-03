@@ -113,8 +113,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   private LockHolder newLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID, int lockLevel, long timeStamp) {
-    return new LockHolder(lockID, nodeID, channelManager.getChannelAddress(nodeID), threadID, lockLevel,
-                          timeStamp);
+    return new LockHolder(lockID, nodeID, channelManager.getChannelAddress(nodeID), threadID, lockLevel, timeStamp);
   }
 
   private LockKey newLockKey(LockID lockID, NodeID nodeID, ThreadID threadID) {
@@ -332,12 +331,12 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   private static class LockKey {
-    private LockID    lockID;
-    private NodeID nodeID;
-    private ThreadID  threadID;
-    private int       hashCode;
+    private LockID   lockID;
+    private NodeID   nodeID;
+    private ThreadID threadID;
+    private int      hashCode;
 
-    private LockKey   subKey;
+    private LockKey  subKey;
 
     public LockKey(LockID lockID, NodeID nodeID) {
       this.lockID = lockID;
@@ -470,9 +469,9 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     }
   }
 
-  private static class LockStackTracesStat implements Serializable {
+  public static class LockStackTracesStat implements Serializable {
     private final NodeID nodeID;
-    private final List      stackTraces;
+    private final List   stackTraces;
 
     public LockStackTracesStat(NodeID nodeID, List stackTraces) {
       this.nodeID = nodeID;
@@ -481,6 +480,14 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
 
     public void addStackTraces(List stackTraces) {
       this.stackTraces.addAll(stackTraces);
+    }
+
+    public NodeID getNodeID() {
+      return this.nodeID;
+    }
+
+    public List getStackTraces() {
+      return this.stackTraces;
     }
 
     public String toString() {
