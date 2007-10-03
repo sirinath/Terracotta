@@ -30,7 +30,6 @@ public abstract class DsoLifecycleMojo extends AbstractDsoMojo {
    */
   protected File bootJar;
 
-  
   // start/stop
 
   /**
@@ -51,30 +50,48 @@ public abstract class DsoLifecycleMojo extends AbstractDsoMojo {
 
   
   public final void execute() throws MojoExecutionException, MojoFailureException {
-    BootjarMojo bootjarMojo = new BootjarMojo(this);
-    bootjarMojo.setBootJar(bootJar);
-    bootjarMojo.setVerbose(verbose);
-    bootjarMojo.setOverwriteBootjar(overwriteBootjar);
-    bootjarMojo.execute();
+    if (generateBootJar()) {
+      BootjarMojo bootjarMojo = new BootjarMojo(this);
+      bootjarMojo.setBootJar(bootJar);
+      bootjarMojo.setVerbose(verbose);
+      bootjarMojo.setOverwriteBootjar(overwriteBootjar);
+      bootjarMojo.execute();
+    }
     
-    DsoStartMojo dsoStartMojo = new DsoStartMojo(this);
-    dsoStartMojo.setSpawnServer(spawnServer);
-    dsoStartMojo.setServerName(serverName);
-    dsoStartMojo.setStartServer(startServer);
-    dsoStartMojo.execute();
+    if(startDsoServer()) {
+      DsoStartMojo dsoStartMojo = new DsoStartMojo(this);
+      dsoStartMojo.setSpawnServer(spawnServer);
+      dsoStartMojo.setServerName(serverName);
+      dsoStartMojo.setStartServer(startServer);
+      dsoStartMojo.execute();
+    }
     
     try {
       onExecute();
       
     } finally {
-      DsoStopMojo dsoStopMojo = new DsoStopMojo(this);
-      dsoStopMojo.setSpawnServer(spawnServer);
-      dsoStopMojo.setServerName(serverName);
-      dsoStopMojo.setStartServer(startServer);
-      dsoStopMojo.execute();
+      if(stopDsoServer()) {
+        DsoStopMojo dsoStopMojo = new DsoStopMojo(this);
+        dsoStopMojo.setSpawnServer(spawnServer);
+        dsoStopMojo.setServerName(serverName);
+        dsoStopMojo.setStartServer(startServer);
+        dsoStopMojo.execute();
+      }
     }
   }
 
+  protected boolean generateBootJar() {
+    return true;
+  }
+
+  protected boolean startDsoServer() {
+    return true;
+  }
+
+  protected boolean stopDsoServer() {
+    return true;
+  }
+  
   protected abstract void onExecute()  throws MojoExecutionException, MojoFailureException;
 
 }

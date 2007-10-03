@@ -19,10 +19,12 @@ Request URL: <%= request.getRequestURL() %> <a href="<%= response.encodeURL(url2
 Cookies:<br/>
 <%
   javax.servlet.http.Cookie[] cookies = request.getCookies();
-  for(int i = 0; i<cookies.length; i++) {
+  if(cookies!=null) {
+    for(int i = 0; i<cookies.length; i++) {
 %>
 &nbsp; <%= cookies[i].getName() %> : <%= cookies[i].getPath() %> : <%= cookies[i].getValue() %><br/>
 <% 
+    }
   }
 %>
 

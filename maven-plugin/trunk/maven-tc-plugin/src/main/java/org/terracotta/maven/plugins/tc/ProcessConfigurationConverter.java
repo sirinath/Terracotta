@@ -6,6 +6,7 @@ package org.terracotta.maven.plugins.tc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.cargo.maven2.configuration.Configuration;
 import org.codehaus.cargo.maven2.configuration.Container;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.ConfigurationListener;
@@ -71,6 +72,7 @@ public class ProcessConfigurationConverter extends AbstractConfigurationConverte
       String className = configuration.getAttribute("className", null);
       String arguments = configuration.getAttribute("arguments", null);
       String jvmArgs = configuration.getAttribute("jvmargs", null);
+      String modules = configuration.getAttribute("modules", null);
       int count = Integer.parseInt(configuration.getAttribute("count", "1"));
 
       ProcessConfiguration process = new ProcessConfiguration();
@@ -78,6 +80,7 @@ public class ProcessConfigurationConverter extends AbstractConfigurationConverte
       process.setClassName(className);
       process.setArgs(arguments);
       process.setJvmArgs(jvmArgs);
+      process.setModules(modules);
       process.setCount(count);
       
       for (int i = 0; i < configuration.getChildCount(); i++) {
@@ -93,6 +96,12 @@ public class ProcessConfigurationConverter extends AbstractConfigurationConverte
           Container container = (Container) converter.fromConfiguration(converterLookup, child, //
               Container.class, Container.class, classLoader, evaluator, listener);
           process.setContainer(container);
+          
+        } else if ("configuration".equals(child.getName())) {
+          ObjectWithFieldsConverter converter = new ObjectWithFieldsConverter();
+          Configuration cconfiguration = (Configuration) converter.fromConfiguration(converterLookup, child, //
+              Configuration.class, Configuration.class, classLoader, evaluator, listener);
+          process.setConfiguration(cconfiguration);
           
         }
       }
