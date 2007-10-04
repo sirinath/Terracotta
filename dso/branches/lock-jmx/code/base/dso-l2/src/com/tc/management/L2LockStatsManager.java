@@ -94,7 +94,7 @@ public interface L2LockStatsManager {
       return Collections.EMPTY_LIST;
     }
     
-    public Collection getTopPingPongLocks(int n) {
+    public Collection getTopLockHops(int n) {
       return Collections.EMPTY_LIST;
     }
 
@@ -159,7 +159,7 @@ public interface L2LockStatsManager {
   
   public Collection getTopContentedLocks(int n);
   
-  public Collection getTopPingPongLocks(int n);
+  public Collection getTopLockHops(int n);
   
   public Collection getStackTraces(LockID lockID);
 }

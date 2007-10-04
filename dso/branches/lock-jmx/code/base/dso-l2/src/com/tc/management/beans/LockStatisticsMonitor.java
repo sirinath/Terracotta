@@ -32,8 +32,8 @@ public class LockStatisticsMonitor implements LockStatisticsMonitorMBean, Serial
     return this.lockStatsManager.getTopContentedLocks(n);
   }
   
-  public Collection getTopPingPongLocks(int n) {
-    return this.lockStatsManager.getTopPingPongLocks(n);
+  public Collection getTopLockHops(int n) {
+    return this.lockStatsManager.getTopLockHops(n);
   }
   
   public Collection getStackTraces(String lockID) {
