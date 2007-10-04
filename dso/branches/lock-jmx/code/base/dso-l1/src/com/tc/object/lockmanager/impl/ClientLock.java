@@ -352,7 +352,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     boolean isRemote;
     waitUntillRunning();
     recordStatIfEnabled();
-    
+
     checkValidWaitNotifyState(threadID);
     if (!greediness.isNotGreedy()) {
       isRemote = notifyLocalWaits(threadID, all);
@@ -459,8 +459,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
    * XXX:: This method is called from a stage-thread and should never block.
    */
   public void awardLock(ThreadID threadID, int level) {
-    recordStatIfEnabled();
-    
     final Object waitLock;
     synchronized (this) {
       // debug("awardLock() - BEGIN - ", requesterID, LockLevel.toString(level));
@@ -817,20 +815,25 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     return false;
   }
 
-  private synchronized void award(ThreadID threadID, int level) {
+  private void award(ThreadID threadID, int level) {
     // debug("award() - BEGIN - ", id, LockLevel.toString(level));
-    LockHold holder = (LockHold) this.holders.get(threadID);
-    if (holder == null) {
-      holders.put(threadID, new LockHold(this.lockID, level));
-    } else if (holder.isHolding()) {
-      holder.add(level);
-    } else {
-      // Lock is awarded after wait
-      try {
-        holder.goToHolding(level);
-      } catch (TCAssertionError er) {
-        logger.warn("Lock in wrong STATE for holder - (" + threadID + ", " + LockLevel.toString(level) + ") - " + this);
-        throw er;
+    recordStatIfEnabled();
+
+    synchronized (this) {
+      LockHold holder = (LockHold) this.holders.get(threadID);
+      if (holder == null) {
+        holders.put(threadID, new LockHold(this.lockID, level));
+      } else if (holder.isHolding()) {
+        holder.add(level);
+      } else {
+        // Lock is awarded after wait
+        try {
+          holder.goToHolding(level);
+        } catch (TCAssertionError er) {
+          logger.warn("Lock in wrong STATE for holder - (" + threadID + ", " + LockLevel.toString(level) + ") - "
+                      + this);
+          throw er;
+        }
       }
     }
   }

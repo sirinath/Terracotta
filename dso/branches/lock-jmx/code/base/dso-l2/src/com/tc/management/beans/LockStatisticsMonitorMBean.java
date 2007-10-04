@@ -16,7 +16,7 @@ public interface LockStatisticsMonitorMBean {
 
   public Collection getTopContentedLocks(int n);
   
-  public Collection getTopPingPongLocks(int n);
+  public Collection getTopLockHops(int n);
   
   public Collection getStackTraces(String lockID);
   

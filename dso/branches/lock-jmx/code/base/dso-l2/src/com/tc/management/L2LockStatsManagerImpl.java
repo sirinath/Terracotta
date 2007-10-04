@@ -95,15 +95,26 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   private final int               topN;
   private final Map               clientStatEnabledLock;
   private final LRUMap            lockStackTraces;
+  private final boolean           lockStatEnabled;
 
   public L2LockStatsManagerImpl() {
     TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("lock.statistics");
-    clientStatEnabledLock = new HashMap();
-    this.topN = tcProperties.getInt("max", TOP_N);
-    holderStats = new LockHolderStats(topN);
-    lockStats = new LRUMap(topN);
-    previousLockHolders = new LRUMap(topN);
-    lockStackTraces = new LRUMap(topN);
+    if (tcProperties == null) {
+      this.lockStatEnabled = false;
+      this.topN = TOP_N;
+    } else {
+      if (tcProperties.getProperty("enabled") == null) {
+        this.lockStatEnabled = false;
+      } else {
+        this.lockStatEnabled = tcProperties.getBoolean("enabled");
+      }
+      this.topN = tcProperties.getInt("max", TOP_N);
+    }
+    this.clientStatEnabledLock = new HashMap();
+    this.holderStats = new LockHolderStats(topN);
+    this.lockStats = new LRUMap(topN);
+    this.previousLockHolders = new LRUMap(topN);
+    this.lockStackTraces = new LRUMap(topN);
   }
 
   public synchronized void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink) {
@@ -121,6 +132,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public void enableClientStat(LockID lockID) {
+    if (!lockStatEnabled) { return; }
+
     synchronized (this) {
       Set statEnabledClients = (Set) clientStatEnabledLock.get(lockID);
       if (statEnabledClients == null) {
@@ -132,6 +145,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public void disableClientStat(LockID lockID) {
+    if (!lockStatEnabled) { return; }
+
     Set statEnabledClients = null;
     synchronized (this) {
       statEnabledClients = (Set) clientStatEnabledLock.remove(lockID);
@@ -153,12 +168,16 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void recordClientStatEnabled(LockID lockID, NodeID nodeID) {
+    if (!lockStatEnabled) { return; }
+
     Set statEnabledClients = (Set) clientStatEnabledLock.get(lockID);
     Assert.assertNotNull(statEnabledClients);
     statEnabledClients.add(nodeID);
   }
 
   public synchronized void lockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, int lockLevel) {
+    if (!lockStatEnabled) { return; }
+
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     if (lockStat == null) {
       lockStat = new LockStat(lockID);
@@ -180,6 +199,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
 
   public synchronized void lockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,
                                        long lockAwardTimestamp) {
+    if (!lockStatEnabled) { return; }
+
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     LockHolder lockHolder = getLockHolder(lockKey);
 
@@ -206,6 +227,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void lockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {
+    if (!lockStatEnabled) { return; }
+
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     if (lockStat != null) {
       lockStat.lockReleased();
@@ -236,6 +259,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void lockRejected(LockID lockID, NodeID nodeID, ThreadID threadID) {
+    if (!lockStatEnabled) { return; }
+
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     Assert.assertNotNull(lockStat);
     lockStat.lockRejected();
@@ -244,6 +269,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void lockWait(LockID lockID) {
+    if (!lockStatEnabled) { return; }
+
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     if (lockStat != null) {
       lockStat.lockWaited();
@@ -251,6 +278,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void lockNotified(LockID lockID, int n) {
+    if (!lockStatEnabled) { return; }
+
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     if (lockStat != null) {
       lockStat.lockNotified(n);
@@ -258,6 +287,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized void recordStackTraces(LockID lockID, NodeID nodeID, List stackTraces) {
+    if (!lockStatEnabled) { return; }
+
     Map existingStackTraces = (Map) lockStackTraces.get(lockID);
     LockKey lockKey = new LockKey(lockID, nodeID);
     if (existingStackTraces == null) {
@@ -317,7 +348,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     return topNLockStats.getDataSnapshot();
   }
 
-  public synchronized Collection getTopPingPongLocks(int n) {
+  public synchronized Collection getTopLockHops(int n) {
     Collection allLockStats = lockStats.values();
     TopN topNLockStats = new TopN(LOCK_PING_PONG_REQUESTED_COMPARATOR, n);
     topNLockStats.evaluate(allLockStats);
@@ -501,7 +532,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     }
   }
 
-  private static class LockStat implements Serializable {
+  public static class LockStat implements Serializable {
     private static final long serialVersionUID = 618840956490853662L;
 
     private final LockID      lockID;
@@ -519,6 +550,10 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       numOfPendingRequests = 0;
       numOfPendingWaiters = 0;
       numOfPingPongRequests = 0;
+    }
+
+    public LockID getLockID() {
+      return lockID;
     }
 
     public void lockRequested() {
