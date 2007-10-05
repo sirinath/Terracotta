@@ -522,8 +522,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
+    int broadcastThreads = l2Properties.getInt("seda.broadcaststage.threads");
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
-                             new BroadcastChangeHandler(transactionBatchManager), 1, maxStageSize);
+                             new BroadcastChangeHandler(transactionBatchManager), broadcastThreads, -1);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
