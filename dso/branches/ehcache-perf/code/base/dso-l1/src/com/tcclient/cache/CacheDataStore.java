@@ -40,8 +40,7 @@ public class CacheDataStore implements Serializable {
   private transient int                      missCountExpired;
   private transient int                      missCountNotFound;
   private transient CacheInvalidationTimer[] cacheInvalidationTimer;
-  
-  
+
   private static int hash(int h) {
     h += ~(h << 9);
     h ^= (h >>> 14);
@@ -485,13 +484,15 @@ public class CacheDataStore implements Serializable {
       try {
         tryToBeGlobalInvalidator();
 
-        localInvalidationLock.writeLock();
-        try {
-          evictLocalElements();
-        } finally {
-          localInvalidationLock.commitLock();
-          numOfLocalEvictionOccurred++;
+        for (int i = startEvictionIndex; i < lastEvictionIndex; i++) {
+          localInvalidationLock.writeLock();
+          try {
+            evictLocalElements(i);
+          } finally {
+            localInvalidationLock.commitLock();
+          }
         }
+        numOfLocalEvictionOccurred++;
         globalEvictionIfNecessary();
       } catch (Throwable t) {
         t.printStackTrace(System.err);
@@ -499,8 +500,8 @@ public class CacheDataStore implements Serializable {
       }
     }
 
-    protected void evictLocalElements() {
-      evictExpiredElements(this.startEvictionIndex, this.lastEvictionIndex);
+    protected void evictLocalElements(int index) {
+      evictExpiredElements(index, index + 1);
     }
 
     private void globalEvictionIfNecessary() {
