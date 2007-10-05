@@ -1,10 +1,12 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
@@ -12,6 +14,7 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
+import com.tc.objectserver.handler.BroadcastAction;
 import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.tx.ServerTransaction;
@@ -21,7 +24,7 @@ import java.util.Map;
 
 /**
  * Context need to broadcast the transaction to the interested nodes
- *
+ * 
  * @author steve
  */
 public class BroadcastChangeContext implements EventContext {
@@ -29,14 +32,22 @@ public class BroadcastChangeContext implements EventContext {
   private final GlobalTransactionID lowGlobalTransactionIDWatermark;
   private final NotifiedWaiters     notifiedWaiters;
   private final BackReferences      includeIDs;
+  private final MessageChannel      channel;
+  private final BroadcastAction     action;
 
-  public BroadcastChangeContext(ServerTransaction tx,
-                                GlobalTransactionID lowGlobalTransactionIDWatermark, NotifiedWaiters notifiedWaiters,
-                                BackReferences includeIDs) {
+  public BroadcastChangeContext(ServerTransaction tx, GlobalTransactionID lowGlobalTransactionIDWatermark,
+                                NotifiedWaiters notifiedWaiters, BackReferences includeIDs, MessageChannel channel,
+                                BroadcastAction action) {
     this.tx = tx;
     this.lowGlobalTransactionIDWatermark = lowGlobalTransactionIDWatermark;
     this.notifiedWaiters = notifiedWaiters;
     this.includeIDs = includeIDs;
+    this.channel = channel;
+    this.action = action;
+  }
+
+  public MessageChannel getMessageChannel() {
+    return channel;
   }
 
   public BackReferences getIncludeIDs() {
@@ -58,7 +69,7 @@ public class BroadcastChangeContext implements EventContext {
   public TransactionID getTransactionID() {
     return tx.getTransactionID();
   }
-  
+
   public TxnBatchID getBatchID() {
     return tx.getBatchID();
   }
@@ -82,13 +93,17 @@ public class BroadcastChangeContext implements EventContext {
   public NotifiedWaiters getNewlyPendingWaiters() {
     return notifiedWaiters;
   }
-  
+
   public Map getNewRoots() {
     return tx.getNewRoots();
   }
-  
+
   public DmiDescriptor[] getDmiDescriptors() {
     return tx.getDmiDescriptors();
+  }
+
+  public boolean complete() {
+    return action.completed();
   }
 
 }

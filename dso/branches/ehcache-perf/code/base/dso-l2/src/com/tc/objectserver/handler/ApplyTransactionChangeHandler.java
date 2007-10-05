@@ -8,8 +8,11 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionManager;
 import com.tc.object.lockmanager.api.Notify;
+import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.context.ApplyTransactionContext;
@@ -37,6 +40,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
   private final ObjectInstanceMonitor    instanceMonitor;
   private final GlobalTransactionManager gtxm;
   private TransactionalObjectManager     txnObjectMgr;
+  private DSOChannelManager              channelManager;
 
   public ApplyTransactionChangeHandler(ObjectInstanceMonitor instanceMonitor, GlobalTransactionManager gtxm) {
     this.instanceMonitor = instanceMonitor;
@@ -66,8 +70,27 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     }
 
     if (txn.needsBroadcast()) {
-      broadcastChangesSink.add(new BroadcastChangeContext(txn, gtxm.getLowGlobalTransactionIDWatermark(),
-                                                          notifiedWaiters, includeIDs));
+      addToAllClients(txn, gtxm.getLowGlobalTransactionIDWatermark(), notifiedWaiters, includeIDs);
+      // broadcastChangesSink.add(new BroadcastChangeContext(txn, gtxm.getLowGlobalTransactionIDWatermark(),
+      // notifiedWaiters, includeIDs));
+      // transactionManager.broadcasted(stxnID.getChannelID(), stxnID.getClientTransactionID());
+    }
+  }
+
+  private void addToAllClients(ServerTransaction txn, GlobalTransactionID lowGlobalTransactionIDWatermark,
+                               NotifiedWaiters notifiedWaiters, BackReferences includeIDs) {
+    MessageChannel[] channels = channelManager.getActiveChannels();
+    if (channels.length == 0) {
+      ServerTransactionID stxnID = txn.getServerTransactionID();
+      transactionManager.broadcasted(stxnID.getChannelID(), stxnID.getClientTransactionID());
+      return;
+    }
+    
+    BroadcastAction ba = new BroadcastAction(channels.length, txn.getServerTransactionID(), transactionManager);
+    for (int i = 0; i < channels.length; i++) {
+      // TODO:: Add order here
+      broadcastChangesSink.add(new BroadcastChangeContext(txn, lowGlobalTransactionIDWatermark, notifiedWaiters,
+                                                          includeIDs, channels[i], ba));
     }
   }
 
@@ -78,5 +101,6 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     this.broadcastChangesSink = scc.getStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE).getSink();
     this.txnObjectMgr = scc.getTransactionalObjectManager();
     this.lockManager = scc.getLockManager();
+    this.channelManager = scc.getChannelManager();
   }
 }

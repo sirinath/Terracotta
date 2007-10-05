@@ -134,7 +134,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
   private EventContext getBroadcastTxnContext(ServerTransaction tx) {
     return new BroadcastChangeContext(tx, gtxm.getLowGlobalTransactionIDWatermark(), new NotifiedWaiters(),
-                                      new BackReferences());
+                                      new BackReferences(), null, null);
   }
 
   private void assertBatchComponentCompleteCalled(TxnBatchID batchID, TransactionID txID, ChannelID channelID) {

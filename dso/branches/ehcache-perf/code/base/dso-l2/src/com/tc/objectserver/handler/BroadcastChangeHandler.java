@@ -58,61 +58,59 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
     final ChannelID committerID = bcc.getChannelID();
     final TransactionID txnID = bcc.getTransactionID();
 
-    final MessageChannel[] channels = channelManager.getActiveChannels();
+    final MessageChannel client = bcc.getMessageChannel();
 
-    for (int i = 0; i < channels.length; i++) {
-      MessageChannel client = channels[i];
-      ChannelID clientID = client.getChannelID();
+    ChannelID clientID = client.getChannelID();
 
-      Map newRoots = bcc.getNewRoots();
-      Set notifiedWaiters = bcc.getNewlyPendingWaiters().getNotifiedFor(clientID);
-      List prunedChanges = Collections.EMPTY_LIST;
-      Set lookupObjectIDs = new HashSet();
+    Map newRoots = bcc.getNewRoots();
+    Set notifiedWaiters = bcc.getNewlyPendingWaiters().getNotifiedFor(clientID);
+    List prunedChanges = Collections.EMPTY_LIST;
+    Set lookupObjectIDs = new HashSet();
 
-      if (!clientID.equals(committerID)) {
-        prunedChanges = clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(), bcc.getIncludeIDs(),
-                                                                               clientID, lookupObjectIDs);
-      }
-
-      DmiDescriptor[] prunedDmis = pruneDmiDescriptors(bcc.getDmiDescriptors(), clientID, clientStateManager);
-      final boolean includeDmi = !clientID.equals(committerID) && prunedDmis.length > 0;
-      if (!prunedChanges.isEmpty() || !lookupObjectIDs.isEmpty() || !notifiedWaiters.isEmpty() || !newRoots.isEmpty()
-          || includeDmi) {
-        transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
-        if (lookupObjectIDs.size() > 0) {
-          // TODO:: Request ID is not used anywhere. RemoveIT.
-          // XXX:: It is important to keep the maxReachableSize to <= 0 so that we dont go into recursive lookups @see
-          // ObjectManagerImpl
-          this.managedObjectRequestSink.add(new ManagedObjectRequestContext(clientID, ObjectRequestID.NULL_ID,
-                                                                            lookupObjectIDs, -1,
-                                                                            this.respondObjectRequestSink,
-                                                                            "BroadcastChangeHandler"));
-        }
-        final DmiDescriptor[] dmi = (includeDmi) ? prunedDmis : DmiDescriptor.EMPTY_ARRAY;
-        BroadcastTransactionMessage responseMessage = (BroadcastTransactionMessage) client
-            .createMessage(TCMessageType.BROADCAST_TRANSACTION_MESSAGE);
-        responseMessage.initialize(prunedChanges, lookupObjectIDs, bcc.getSerializer(), bcc.getLockIDs(),
-                                   getNextChangeIDFor(clientID), txnID, committerID, bcc.getGlobalTransactionID(), bcc
-                                       .getTransactionType(), bcc.getLowGlobalTransactionIDWatermark(),
-                                   notifiedWaiters, newRoots, dmi);
-
-        responseMessage.send();
-      }
+    if (!clientID.equals(committerID)) {
+      prunedChanges = clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(), bcc.getIncludeIDs(),
+                                                                             clientID, lookupObjectIDs);
     }
-    transactionManager.broadcasted(committerID, txnID);
-    try {
-      TxnBatchID batchID = bcc.getBatchID();
-      if (transactionBatchManager.batchComponentComplete(committerID, batchID, txnID)) {
-        try {
-          BatchTransactionAcknowledgeMessage msg = channelManager.newBatchTransactionAcknowledgeMessage(committerID);
-          msg.initialize(batchID);
-          msg.send();
-        } catch (NoSuchChannelException e) {
-          getLogger().warn("Can't send transaction batch acknowledge message to unconnected client: " + committerID);
-        }
+
+    DmiDescriptor[] prunedDmis = pruneDmiDescriptors(bcc.getDmiDescriptors(), clientID, clientStateManager);
+    final boolean includeDmi = !clientID.equals(committerID) && prunedDmis.length > 0;
+    if (!prunedChanges.isEmpty() || !lookupObjectIDs.isEmpty() || !notifiedWaiters.isEmpty() || !newRoots.isEmpty()
+        || includeDmi) {
+      transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
+      if (lookupObjectIDs.size() > 0) {
+        // TODO:: Request ID is not used anywhere. RemoveIT.
+        // XXX:: It is important to keep the maxReachableSize to <= 0 so that we dont go into recursive lookups @see
+        // ObjectManagerImpl
+        this.managedObjectRequestSink.add(new ManagedObjectRequestContext(clientID, ObjectRequestID.NULL_ID,
+                                                                          lookupObjectIDs, -1,
+                                                                          this.respondObjectRequestSink,
+                                                                          "BroadcastChangeHandler"));
       }
-    } catch (NoSuchBatchException e) {
-      throw new EventHandlerException(e);
+      final DmiDescriptor[] dmi = (includeDmi) ? prunedDmis : DmiDescriptor.EMPTY_ARRAY;
+      BroadcastTransactionMessage responseMessage = (BroadcastTransactionMessage) client
+          .createMessage(TCMessageType.BROADCAST_TRANSACTION_MESSAGE);
+      responseMessage.initialize(prunedChanges, lookupObjectIDs, bcc.getSerializer(), bcc.getLockIDs(),
+                                 getNextChangeIDFor(clientID), txnID, committerID, bcc.getGlobalTransactionID(), bcc
+                                     .getTransactionType(), bcc.getLowGlobalTransactionIDWatermark(), notifiedWaiters,
+                                 newRoots, dmi);
+
+      responseMessage.send();
+    }
+    if (bcc.complete()) {
+      try {
+        TxnBatchID batchID = bcc.getBatchID();
+        if (transactionBatchManager.batchComponentComplete(committerID, batchID, txnID)) {
+          try {
+            BatchTransactionAcknowledgeMessage msg = channelManager.newBatchTransactionAcknowledgeMessage(committerID);
+            msg.initialize(batchID);
+            msg.send();
+          } catch (NoSuchChannelException e) {
+            getLogger().warn("Can't send transaction batch acknowledge message to unconnected client: " + committerID);
+          }
+        }
+      } catch (NoSuchBatchException e) {
+        throw new EventHandlerException(e);
+      }
     }
   }
 

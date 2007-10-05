@@ -74,9 +74,9 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
     }
     if (this.lowWatermark.toLong() + ALLOWED_LWM_DELTA > lowWatermark.toLong()) {
       if (ignoredCount++ > ALLOWED_LWM_DELTA * 10) {
-        logger.warn("Current Low water Mark = " + this.lowWatermark + " Server sent " + lowWatermark);
-        logger.warn("Server didnt send a Low water mark higher than ALLOWED_LWM_DELTA for " + ignoredCount
-                    + " times. This may lead to OutOfMemoryError. Resetting count.");
+        // logger.warn("Current Low water Mark = " + this.lowWatermark + " Server sent " + lowWatermark);
+        // logger.warn("Server didnt send a Low water mark higher than ALLOWED_LWM_DELTA for " + ignoredCount
+        // + " times. This may lead to OutOfMemoryError. Resetting count.");
         ignoredCount = 0;
       }
       return;
