@@ -40,7 +40,7 @@ import java.util.List;
 
 /**
  * JDK14 (nio) implementation of TCConnection
- * 
+ *
  * @author teck
  */
 final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJDK14ChannelWriter {
@@ -150,7 +150,30 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private Socket detachImpl() throws IOException {
     comm.unregister(channel);
     channel.configureBlocking(true);
+
+    Socket s = channel.socket();
+    new Thread(new Watch(comm, s)).start();
+
     return channel.socket();
+  }
+
+  private static class Watch implements Runnable {
+
+    private final Socket      s;
+    private final TCCommJDK14 c;
+
+    Watch(TCCommJDK14 c, Socket s) {
+      this.c = c;
+      this.s = s;
+    }
+
+    public void run() {
+      while (!s.isClosed()) {
+        ThreadUtil.reallySleep(1000);
+      }
+      c.stop();
+    }
+
   }
 
   private boolean asynchConnectImpl(TCSocketAddress address) throws IOException {

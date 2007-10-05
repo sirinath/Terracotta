@@ -36,12 +36,12 @@ import java.util.Set;
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
  * <code>TCConnection</code>'s
- * 
+ *
  * @author teck
  */
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
-  protected static final TCLogger logger = TCLogging.getLogger(TCComm.class);
+  protected static final TCLogger logger   = TCLogging.getLogger(TCComm.class);
 
   TCCommJDK14() {
     // nada
@@ -239,6 +239,10 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
   void requestReadInterest(TCJDK14ChannelReader reader, ScatteringByteChannel channel) {
     handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, reader, SelectionKey.OP_READ));
+  }
+
+  private void requestRWInterest(TCConnectionJDK14 conn, SocketChannel channel) {
+    handleRequest(InterestRequest.createAddInterestRequest(channel, conn, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
   }
 
   void requestWriteInterest(TCJDK14ChannelWriter writer, GatheringByteChannel channel) {
@@ -494,8 +498,12 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         logger.warn("IOException trying to setTcpNoDelay()", ioe);
       }
 
-      TCConnectionJDK14 conn = lsnr.createConnection(sc);
-      sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
+      TCCommJDK14 newComm = new TCCommJDK14();
+      newComm.start();
+
+      TCConnectionJDK14 conn = lsnr.createConnection(sc, newComm);
+      newComm.requestRWInterest(conn, sc);
+
     } catch (IOException ioe) {
       if (logger.isInfoEnabled()) {
         logger.info("IO Exception accepting new connection", ioe);
