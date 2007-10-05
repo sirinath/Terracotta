@@ -9,6 +9,8 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.core.event.TCConnectionErrorEvent;
+import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.core.event.TCConnectionEventListener;
 import com.tc.net.core.event.TCListenerEvent;
 import com.tc.net.core.event.TCListenerEventListener;
@@ -23,18 +25,20 @@ import com.tc.util.concurrent.TCFuture;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * TCListener implementation
- * 
+ *
  * @author teck
  */
-final class TCListenerJDK14 implements TCListener {
+final class TCListenerJDK14 implements TCListener, TCConnectionEventListener {
   protected final static TCLogger         logger          = TCLogging.getLogger(TCListener.class);
 
   private final ServerSocketChannel       ssc;
-  private final TCCommJDK14               comm;
   private final TCConnectionEventListener listener;
   private final TCConnectionManagerJDK14  parent;
   private final InetAddress               addr;
@@ -47,26 +51,32 @@ final class TCListenerJDK14 implements TCListener {
   private final CopyOnWriteArraySet       listeners       = new CopyOnWriteArraySet();
   private final ProtocolAdaptorFactory    factory;
 
+  private final TCCommJDK14               listenerComm;
+
+  private final Map                       clientComms     = Collections.synchronizedMap(new IdentityHashMap());
+
   TCListenerJDK14(ServerSocketChannel ssc, ProtocolAdaptorFactory factory, TCCommJDK14 comm,
                   TCConnectionEventListener listener, TCConnectionManagerJDK14 managerJDK14) {
+    this.listenerComm = comm;
     this.addr = ssc.socket().getInetAddress();
     this.port = ssc.socket().getLocalPort();
     this.sockAddr = new TCSocketAddress(this.addr, this.port);
     this.factory = factory;
     this.staticEvent = new TCListenerEvent(this);
     this.ssc = ssc;
-    this.comm = comm;
     this.listener = listener;
     this.parent = managerJDK14;
   }
 
   protected void stopImpl(Runnable callback) {
-    comm.stopListener(ssc, callback);
+    listenerComm.stopListener(ssc, callback);
   }
 
-  TCConnectionJDK14 createConnection(SocketChannel ch) {
+  TCConnectionJDK14 createConnection(SocketChannel ch, TCCommJDK14 comm) {
     TCProtocolAdaptor adaptor = getProtocolAdaptorFactory().getInstance();
     TCConnectionJDK14 rv = new TCConnectionJDK14(listener, comm, adaptor, ch, parent);
+    clientComms.put(rv, comm);
+    rv.addListener(this);
     rv.finishConnect();
     parent.newConnection(rv);
     return rv;
@@ -167,5 +177,25 @@ final class TCListenerJDK14 implements TCListener {
 
   final ProtocolAdaptorFactory getProtocolAdaptorFactory() {
     return factory;
+  }
+
+  public void closeEvent(TCConnectionEvent event) {
+    TCConnection conn = event.getSource();
+    TCCommJDK14 comm = (TCCommJDK14) clientComms.remove(conn);
+    if (comm != null) {
+      comm.stop();
+    }
+  }
+
+  public void connectEvent(TCConnectionEvent event) {
+    //
+  }
+
+  public void endOfFileEvent(TCConnectionEvent event) {
+    //
+  }
+
+  public void errorEvent(TCConnectionErrorEvent errorEvent) {
+    //
   }
 }
