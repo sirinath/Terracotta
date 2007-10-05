@@ -40,6 +40,10 @@ public class LockHolder implements Serializable {
     this.timeRequested = -1;
     this.lockLevel = LockLevel.toString(level);
   }
+  
+  public LockID getLockID() {
+    return this.lockID;
+  }
 
   public String getLockLevel() {
     return this.lockLevel;
