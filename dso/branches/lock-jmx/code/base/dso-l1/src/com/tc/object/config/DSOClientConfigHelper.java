@@ -109,7 +109,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   void addReadAutolock(String methodPattern);
 
   void addAutolock(String methodPattern, ConfigLockLevel type);
-  
+
   void addAutoLockExcludePattern(String expression);
 
   void addReadAutoSynchronize(String methodPattern);
@@ -184,22 +184,30 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
 
   Modules getModulesForInitialization();
 
+  void addRepository(String location);
+  
   void addNewModule(String name, String version);
 
   boolean removeCustomAdapter(String name);
 
   // HACK: is also in IStandardDSOClientConfigHelper
   /**
-   * If an adapter with the same name was already present, this new one
-   * will not be added, and the operation will simply return as a no-op.
+   * If an adapter with the same name was already present, this new one will not be added, and the operation will simply
+   * return as a no-op.
    */
   void addCustomAdapter(String name, ClassAdapterFactory adapterFactory);
 
   int getSessionLockType(String appName);
 
   Class getTCPeerClass(Class clazz);
-  
+
   ClassReplacementMapping getClassReplacementMapping();
-  
+
   URL getClassResource(String className);
+
+  boolean hasCustomAdapter(ClassInfo classInfo);
+
+  ClassAdapterFactory getCustomAdapter(ClassInfo classInfo);
+
+  boolean reflectionEnabled();
 }

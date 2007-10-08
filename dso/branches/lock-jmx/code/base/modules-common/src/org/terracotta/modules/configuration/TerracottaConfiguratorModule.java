@@ -25,7 +25,7 @@ public abstract class TerracottaConfiguratorModule
 
    protected ServiceReference getConfigHelperReference(BundleContext context)
          throws Exception {
-      final String CONFIGHELPER_CLASS_NAME = "com.tc.object.config.StandardDSOClientConfigHelperImpl";
+      final String CONFIGHELPER_CLASS_NAME = "com.tc.object.config.StandardDSOClientConfigHelper";
       final ServiceReference configHelperRef = context
             .getServiceReference(CONFIGHELPER_CLASS_NAME);
       if (configHelperRef == null) {
@@ -89,9 +89,14 @@ public abstract class TerracottaConfiguratorModule
    }
 
    protected final void addExportedTcJarClass(final String classname) {
-      configHelper.addClassResource(classname,
-            TerracottaConfiguratorModule.class.getClassLoader().getResource(
-                  ByteCodeUtil.classNameToFileName(classname)));
+      URL resource = TerracottaConfiguratorModule.class.getClassLoader().getResource(
+	      ByteCodeUtil.classNameToFileName(classname));
+      
+      if(resource == null) {
+    	  throw new RuntimeException("Exported TC jar class " + classname + " does not exist.");
+      }
+      
+	  configHelper.addClassResource(classname, resource);
    }
 
    protected TransparencyClassSpec getOrCreateSpec(final String expr,
