@@ -50,16 +50,6 @@
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>terracotta-snapshot-repository</id>
-            <url>http://download.terracotta.org/maven2-snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
                 <enabled>true</enabled>
             </snapshots>
         </repository>
@@ -419,7 +409,6 @@
                                 <jvm-version>1.5</jvm-version>
                                 <source-repository>~/.m2/repository/</source-repository>
                                 <source-repository>http://www.terracotta.org/download/reflector/maven2/</source-repository>
-                                <source-repository>http://download.terracotta.org/maven2-snapshots/</source-repository>
                                 <source-repository>http://repo1.maven.org/maven2/</source-repository>
                                 <source-repository>http://people.apache.org/repo/m2-snapshot-repository/</source-repository>
                                 <source-repository>http://people.apache.org/repo/m2-incubating-repository/</source-repository>
