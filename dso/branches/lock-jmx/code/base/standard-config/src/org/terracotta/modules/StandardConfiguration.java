@@ -9,43 +9,55 @@ import org.terracotta.modules.configuration.TerracottaConfiguratorModule;
 
 import com.tc.object.config.TransparencyClassSpec;
 
-public class StandardConfiguration
-      extends TerracottaConfiguratorModule {
+public class StandardConfiguration extends TerracottaConfiguratorModule {
 
-   protected void addInstrumentation(final BundleContext context) {
-      super.addInstrumentation(context);
-      configFileTypes();
-      configEventTypes();
-      configExceptionTypes();
-      configArrayTypes();
-   }
+    protected void addInstrumentation(final BundleContext context) {
+        super.addInstrumentation(context);
+        configFileTypes();
+        configEventTypes();
+        configExceptionTypes();
+        configArrayTypes();
+        configUnsafe();
+    }
 
-   private void configArrayTypes() {
-      final TransparencyClassSpec spec = getOrCreateSpec("java.util.Arrays");
-      spec.addDoNotInstrument("copyOfRange");
-      spec.addDoNotInstrument("copyOf");
-      getOrCreateSpec("java.util.Arrays$ArrayList");
-   }
+    private void configUnsafe() {
+        TransparencyClassSpec spec;
 
-   private void configFileTypes() {
-      final TransparencyClassSpec spec = getOrCreateSpec("java.io.File");
-      spec.setHonorTransient(true);
-   }
+        spec = getOrCreateSpec("sun.misc.Unsafe");
+        spec.setCustomClassAdapter(new UnsafeAdapter());
+        spec.markPreInstrumented();
 
-   private void configEventTypes() {
-      getOrCreateSpec("java.util.EventObject");
-   }
+        spec = getOrCreateSpec("com.tcclient.util.DSOUnsafe");
+        spec.setCustomClassAdapter(new DSOUnsafeAdapter());
+        spec.markPreInstrumented();
+    }
 
-   private void configExceptionTypes() {
-      getOrCreateSpec("java.lang.Exception");
-      getOrCreateSpec("java.lang.RuntimeException");
-      getOrCreateSpec("java.lang.InterruptedException");
-      getOrCreateSpec("java.awt.AWTException");
-      getOrCreateSpec("java.io.IOException");
-      getOrCreateSpec("java.io.FileNotFoundException");
-      getOrCreateSpec("java.lang.Error");
-      getOrCreateSpec("java.util.ConcurrentModificationException");
-      getOrCreateSpec("java.util.NoSuchElementException");
-   }
+    private void configArrayTypes() {
+        final TransparencyClassSpec spec = getOrCreateSpec("java.util.Arrays");
+        spec.addDoNotInstrument("copyOfRange");
+        spec.addDoNotInstrument("copyOf");
+        getOrCreateSpec("java.util.Arrays$ArrayList");
+    }
+
+    private void configFileTypes() {
+        final TransparencyClassSpec spec = getOrCreateSpec("java.io.File");
+        spec.setHonorTransient(true);
+    }
+
+    private void configEventTypes() {
+        getOrCreateSpec("java.util.EventObject");
+    }
+
+    private void configExceptionTypes() {
+        getOrCreateSpec("java.lang.Exception");
+        getOrCreateSpec("java.lang.RuntimeException");
+        getOrCreateSpec("java.lang.InterruptedException");
+        getOrCreateSpec("java.awt.AWTException");
+        getOrCreateSpec("java.io.IOException");
+        getOrCreateSpec("java.io.FileNotFoundException");
+        getOrCreateSpec("java.lang.Error");
+        getOrCreateSpec("java.util.ConcurrentModificationException");
+        getOrCreateSpec("java.util.NoSuchElementException");
+    }
 
 }

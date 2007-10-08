@@ -17,6 +17,6 @@ public class JavaUtilConcurrentHashMapValueIteratorAdapter extends ClassAdapter 
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-    return new JavaUtilConcurrentHashMapLazyValuesMethodAdapter(access, desc, mv);
+    return new JavaUtilConcurrentHashMapLazyValuesMethodAdapter(access, desc, mv, false);
   }
 }
