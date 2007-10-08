@@ -34,7 +34,6 @@ import java.util.Iterator;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
@@ -55,7 +54,7 @@ public class LocksPanel extends XContainer {
   private final String               HOLDER_TYPE_WAITING_LOCKS = "WaitingLocks";
 
   private final String               STAT_TYPE_REQUESTED       = "Requested";
-  private final String               STAT_TYPE_CONTENDED_LOCKS = "ContentedLocks";
+  private final String               STAT_TYPE_CONTENDED_LOCKS = "ContendedLocks";
   private final String               STAT_TYPE_LOCK_HOPS       = "LockHops";
 
   private final String[]             ALL_TYPES                 = { HOLDER_TYPE_HELD, HOLDER_TYPE_WAITING_LOCKS,
@@ -145,15 +144,12 @@ public class LocksPanel extends XContainer {
     }
     
     public void actionPerformed(ActionEvent ae) {
-      JCheckBoxMenuItem item = (JCheckBoxMenuItem)ae.getSource();
       int row = m_lockTable.getSelectedRow();
       if(row != -1) {
         LockElementWrapper wrapper = (LockElementWrapper)m_lockTableModel.getObjectAt(row);
         String id = wrapper.getLockID();
-        if(item.isSelected()) {
-          lockStatsMBean.enableClientStat(id);
-          AdminClient.getContext().log("Enabled stats for '"+id+"'");
-        }
+        lockStatsMBean.enableClientStat(id);
+        AdminClient.getContext().log("Enabled stats for '"+id+"'");
       }
     }
   }
@@ -180,15 +176,12 @@ public class LocksPanel extends XContainer {
     }
     
     public void actionPerformed(ActionEvent ae) {
-      JCheckBoxMenuItem item = (JCheckBoxMenuItem)ae.getSource();
       int row = m_lockTable.getSelectedRow();
       if(row != -1) {
         LockElementWrapper wrapper = (LockElementWrapper)m_lockTableModel.getObjectAt(row);
         String id = wrapper.getLockID();
-        if(item.isSelected()) {
-          lockStatsMBean.disableClientStat(id);
-          AdminClient.getContext().log("Disabled stats for '"+id+"'");
-        }
+        lockStatsMBean.disableClientStat(id);
+        AdminClient.getContext().log("Disabled stats for '"+id+"'");
       }
     }
   }
