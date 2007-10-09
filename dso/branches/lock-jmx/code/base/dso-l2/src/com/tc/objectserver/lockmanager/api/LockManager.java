@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public interface LockManager {
   
-  public void enableClientStat(LockID lockID, Sink sink);
+  public void enableClientStat(LockID lockID, Sink sink , int stackTraceDepth, int statCollectFrequency);
   
   public void disableClientStat(LockID lockID, Set statEnabledClients, Sink sink);
 

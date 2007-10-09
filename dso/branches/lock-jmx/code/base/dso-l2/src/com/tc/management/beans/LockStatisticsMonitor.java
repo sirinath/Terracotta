@@ -28,8 +28,8 @@ public class LockStatisticsMonitor implements LockStatisticsMonitorMBean, Serial
     return this.lockStatsManager.getTopWaitingLocks(n);
   }
   
-  public Collection getTopContentedLocks(int n) {
-    return this.lockStatsManager.getTopContentedLocks(n);
+  public Collection getTopContendedLocks(int n) {
+    return this.lockStatsManager.getTopContendedLocks(n);
   }
   
   public Collection getTopLockHops(int n) {
@@ -44,8 +44,15 @@ public class LockStatisticsMonitor implements LockStatisticsMonitorMBean, Serial
     this.lockStatsManager.enableClientStat(new LockID(lockID));
   }
   
+  public void enableClientStat(String lockID, int stackTraceDepth, int statCollectFrequency) {
+    this.lockStatsManager.enableClientStat(new LockID(lockID), stackTraceDepth, statCollectFrequency);
+  }
+  
   public void disableClientStat(String lockID) {
     this.lockStatsManager.disableClientStat(new LockID(lockID));
   }
 
+  public boolean isClientStatEnabled(String lockID) {
+    return this.lockStatsManager.isClientLockStatEnable(new LockID(lockID));
+  }
 }

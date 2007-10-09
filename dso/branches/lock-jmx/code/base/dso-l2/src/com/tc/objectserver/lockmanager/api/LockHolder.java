@@ -84,7 +84,9 @@ public class LockHolder implements Serializable {
   }
 
   public long getWaitTimeInMillis() {
-    if (timeAcquired <= 0) {
+    if (timeAcquired <=0 && timeRequested <= 0) {
+      return 0;
+    } else if (timeAcquired <= 0) {
       return System.currentTimeMillis() - timeRequested;
     } else {
       return timeAcquired - timeRequested;
@@ -92,7 +94,9 @@ public class LockHolder implements Serializable {
   }
 
   public long getHeldTimeInMillis() {
-    if (timeReleased <= 0) { return System.currentTimeMillis() - timeAcquired; }
+    if (timeReleased <= 0 && timeAcquired <=0) {
+      return 0;
+    } else if (timeReleased <= 0) { return System.currentTimeMillis() - timeAcquired; }
     return timeReleased - timeAcquired;
   }
 

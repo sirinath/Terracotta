@@ -134,14 +134,24 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   public void enableClientStat(LockID lockID) {
     if (!lockStatEnabled) { return; }
 
+    ClientLockStatContext clientLockStatContext = new ClientLockStatContext();
+    enableClientStat(lockID, clientLockStatContext);
+  }
+
+  public void enableClientStat(LockID lockID, int stackTraceDepth, int statCollectFrequency) {
+    if (!lockStatEnabled) { return; }
+
+    ClientLockStatContext clientLockStatContext = new ClientLockStatContext(statCollectFrequency, stackTraceDepth);
+    enableClientStat(lockID, clientLockStatContext);
+  }
+  
+  private void enableClientStat(LockID lockID, ClientLockStatContext clientLockStatContext) {
     synchronized (this) {
-      Set statEnabledClients = (Set) clientStatEnabledLock.get(lockID);
-      if (statEnabledClients == null) {
-        statEnabledClients = new HashSet();
-        clientStatEnabledLock.put(lockID, statEnabledClients);
-      }
+      lockStackTraces.remove(lockID);
+      clientStatEnabledLock.put(lockID, clientLockStatContext);
     }
-    lockManager.enableClientStat(lockID, sink);
+    lockManager.enableClientStat(lockID, sink, clientLockStatContext.getStackTraceDepth(), clientLockStatContext
+        .getCollectFrequency());
   }
 
   public void disableClientStat(LockID lockID) {
@@ -149,8 +159,9 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
 
     Set statEnabledClients = null;
     synchronized (this) {
-      statEnabledClients = (Set) clientStatEnabledLock.remove(lockID);
       lockStackTraces.remove(lockID);
+      ClientLockStatContext clientLockStatContext = (ClientLockStatContext)clientStatEnabledLock.remove(lockID);
+      statEnabledClients = clientLockStatContext.getStatEnabledClients();
     }
     if (statEnabledClients != null) {
       lockManager.disableClientStat(lockID, statEnabledClients, sink);
@@ -161,18 +172,28 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     return clientStatEnabledLock.containsKey(lockID);
   }
 
+  public synchronized int getLockStackTraceDepth(LockID lockID) {
+    ClientLockStatContext clientLockStatContext = (ClientLockStatContext) clientStatEnabledLock.get(lockID);
+    return clientLockStatContext.getStackTraceDepth();
+  }
+
+  public synchronized int getLockStatCollectFrequency(LockID lockID) {
+    ClientLockStatContext clientLockStatContext = (ClientLockStatContext) clientStatEnabledLock.get(lockID);
+    return clientLockStatContext.getCollectFrequency();
+  }
+
   public synchronized boolean isLockStatEnabledInClient(LockID lockID, NodeID nodeID) {
-    Set statEnabledClients = (Set) clientStatEnabledLock.get(lockID);
-    if (statEnabledClients == null) { return false; }
-    return statEnabledClients.contains(nodeID);
+    ClientLockStatContext clientLockStatContext = (ClientLockStatContext) clientStatEnabledLock.get(lockID);
+    if (clientLockStatContext == null) { return false; }
+    return clientLockStatContext.isClientLockStatEnabled(nodeID);
   }
 
   public synchronized void recordClientStatEnabled(LockID lockID, NodeID nodeID) {
     if (!lockStatEnabled) { return; }
 
-    Set statEnabledClients = (Set) clientStatEnabledLock.get(lockID);
-    Assert.assertNotNull(statEnabledClients);
-    statEnabledClients.add(nodeID);
+    ClientLockStatContext clientLockStatContext = (ClientLockStatContext) clientStatEnabledLock.get(lockID);
+    Assert.assertNotNull(clientLockStatContext);
+    clientLockStatContext.addClient(nodeID);
   }
 
   public synchronized void lockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, int lockLevel) {
@@ -293,12 +314,12 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     LockKey lockKey = new LockKey(lockID, nodeID);
     if (existingStackTraces == null) {
       existingStackTraces = new LRUMap(topN);
-      existingStackTraces.put(lockKey, new LockStackTracesStat(nodeID, stackTraces));
+      existingStackTraces.put(lockKey, new LockStackTracesStat(nodeID, lockID, stackTraces, topN));
       lockStackTraces.put(lockID, existingStackTraces);
     } else {
       LockStackTracesStat stackTracesStat = (LockStackTracesStat) existingStackTraces.get(lockKey);
       if (stackTracesStat == null) {
-        stackTracesStat = new LockStackTracesStat(nodeID, stackTraces);
+        stackTracesStat = new LockStackTracesStat(nodeID, lockID, stackTraces, topN);
         existingStackTraces.put(lockKey, stackTracesStat);
       } else {
         stackTracesStat.addStackTraces(stackTraces);
@@ -341,7 +362,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     return holderStats.topN(n, LOCK_ACQUIRED_WAITING_COMPARATOR);
   }
 
-  public synchronized Collection getTopContentedLocks(int n) {
+  public synchronized Collection getTopContendedLocks(int n) {
     Collection allLockStats = lockStats.values();
     TopN topNLockStats = new TopN(PENDING_LOCK_REQUESTS_COMPARATOR, n);
     topNLockStats.evaluate(allLockStats);
@@ -359,6 +380,59 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     Map stackTraces = (Map) lockStackTraces.get(lockID);
     if (stackTraces == null) { return Collections.EMPTY_LIST; }
     return new ArrayList(stackTraces.values());
+  }
+
+  private static class ClientLockStatContext {
+    private final static int DEFAULT_DEPTH             = 0;
+    private final static int DEFAULT_COLLECT_FREQUENCY = 10;
+
+    private int              collectFrequency;
+    private int              stackTraceDepth           = 0;
+    private Set              statEnabledClients        = new HashSet();
+
+    public ClientLockStatContext() {
+      TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock.stacktrace");
+      if (tcProperties != null) {
+        this.stackTraceDepth = tcProperties.getInt("defaultDepth", DEFAULT_DEPTH);
+      }
+      tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
+      if (tcProperties != null) {
+        this.collectFrequency = tcProperties.getInt("collectFrequency", DEFAULT_COLLECT_FREQUENCY);
+      }
+    }
+
+    public ClientLockStatContext(int collectFrequency, int stackTraceDepth) {
+      this.collectFrequency = collectFrequency;
+      this.stackTraceDepth = stackTraceDepth;
+    }
+
+    public int getCollectFrequency() {
+      return collectFrequency;
+    }
+
+    public void setCollectFrequency(int collectFrequency) {
+      this.collectFrequency = collectFrequency;
+    }
+
+    public int getStackTraceDepth() {
+      return stackTraceDepth;
+    }
+
+    public void setStackTraceDepth(int stackTraceDepth) {
+      this.stackTraceDepth = stackTraceDepth;
+    }
+
+    public void addClient(NodeID nodeID) {
+      statEnabledClients.add(nodeID);
+    }
+    
+    public boolean isClientLockStatEnabled(NodeID nodeID) {
+      return statEnabledClients.contains(nodeID);
+    }
+    
+    public Set getStatEnabledClients() {
+      return statEnabledClients;
+    }
   }
 
   private static class LockKey {
@@ -501,16 +575,30 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public static class LockStackTracesStat implements Serializable {
-    private final NodeID nodeID;
-    private final List   stackTraces;
+    private final NodeID     nodeID;
+    private final LockID     lockID;
+    private final LinkedList stackTraces;
+    private final int        maxNumOfStackTraces;
 
-    public LockStackTracesStat(NodeID nodeID, List stackTraces) {
+    public LockStackTracesStat(NodeID nodeID, LockID lockID, List newStackTraces, int maxNumOfStackTraces) {
       this.nodeID = nodeID;
-      this.stackTraces = stackTraces;
+      this.lockID = lockID;
+      this.stackTraces = new LinkedList();
+      this.maxNumOfStackTraces = maxNumOfStackTraces;
+      addStackTraces(newStackTraces);
     }
 
-    public void addStackTraces(List stackTraces) {
-      this.stackTraces.addAll(stackTraces);
+    public void addStackTraces(List newStackTraces) {
+      for (Iterator i = newStackTraces.iterator(); i.hasNext();) {
+        this.stackTraces.addFirst(i.next());
+      }
+      removeIfOverFlow();
+    }
+
+    private void removeIfOverFlow() {
+      while (this.stackTraces.size() > maxNumOfStackTraces) {
+        this.stackTraces.removeLast();
+      }
     }
 
     public NodeID getNodeID() {
@@ -523,6 +611,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
 
     public String toString() {
       StringBuffer sb = new StringBuffer(nodeID.toString());
+      sb.append(" ");
+      sb.append(lockID);
       sb.append("\n");
       for (Iterator i = stackTraces.iterator(); i.hasNext();) {
         sb.append(i.next().toString());

@@ -100,7 +100,7 @@ public interface ClientLockManager {
 
   public void queryLockCommit(ThreadID threadID, GlobalLockInfo globalLockInfo);
   
-  public void enableStat(LockID lockID);
+  public void enableStat(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency);
   
   public void disableStat(LockID lockID);
 }

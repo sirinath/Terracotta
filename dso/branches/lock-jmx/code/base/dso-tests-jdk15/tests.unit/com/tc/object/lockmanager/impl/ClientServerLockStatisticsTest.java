@@ -99,7 +99,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
     clientLockManager.lock(lockID1, tx1, LockLevel.READ);
     serverLockStatManager.enableClientStat(lockID1);
 
-    for (int i=0; i<clientLockStatManager.getBatchSize(); i++) {
+    for (int i=0; i<10; i++) {
       clientLockManager.lock(lockID1, tx2, LockLevel.READ);
       clientLockManager.unlock(lockID1, tx2);
     }
@@ -111,8 +111,8 @@ public class ClientServerLockStatisticsTest extends TestCase {
     for (Iterator i=stackTraces.iterator(); i.hasNext(); ) {
       LockStackTracesStat s = (LockStackTracesStat)i.next();
       Assert.assertEquals(channelId1, ((ClientID)s.getNodeID()).getChannelID());
-      // 10 stacktraces for lock, 10 for award, and 10 for unlock.
-      Assert.assertEquals(clientLockStatManager.getBatchSize()*3, s.getStackTraces().size());
+      // 10 stacktraces for lock,  and 10 for unlock.
+      Assert.assertEquals(20, s.getStackTraces().size());
     }
   }
 

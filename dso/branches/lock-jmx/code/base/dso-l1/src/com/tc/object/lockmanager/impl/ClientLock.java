@@ -77,7 +77,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
 
   private void recordStatIfEnabled() {
     if (lockStatManager.isStatEnabled(lockID)) {
-      lockStatManager.recordStackTrace(lockID, new Exception());
+      lockStatManager.recordStackTrace(lockID);
     }
   }
 
@@ -817,8 +817,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
 
   private void award(ThreadID threadID, int level) {
     // debug("award() - BEGIN - ", id, LockLevel.toString(level));
-    recordStatIfEnabled();
-
     synchronized (this) {
       LockHold holder = (LockHold) this.holders.get(threadID);
       if (holder == null) {

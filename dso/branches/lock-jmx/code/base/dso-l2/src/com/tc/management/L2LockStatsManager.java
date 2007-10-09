@@ -26,6 +26,10 @@ public interface L2LockStatsManager {
       // do nothing
     }
     
+    public void enableClientStat(LockID lockID, int stackTraceDepth, int statCollectFrequency) {
+      // do nothing
+    }
+    
     public void disableClientStat(LockID lockID) {
       // do nothing
     }
@@ -90,7 +94,7 @@ public interface L2LockStatsManager {
       return Collections.EMPTY_LIST;
     }
     
-    public Collection getTopContentedLocks(int n) {
+    public Collection getTopContendedLocks(int n) {
       return Collections.EMPTY_LIST;
     }
     
@@ -113,11 +117,21 @@ public interface L2LockStatsManager {
     public void recordClientStatEnabled(LockID lockID, NodeID nodeID) {
       // do nothing
     }
+
+    public int getLockStackTraceDepth(LockID lockID) {
+      return 0;
+    }
+
+    public int getLockStatCollectFrequency(LockID lockID) {
+      return 0;
+    }
   };
   
   public void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink);
   
   public void enableClientStat(LockID lockID);
+  
+  public void enableClientStat(LockID lockID, int stackTraceDepth, int statCollectFrequency);
   
   public void disableClientStat(LockID lockID);
   
@@ -157,9 +171,13 @@ public interface L2LockStatsManager {
   
   public Collection getTopWaitingLocks(int n);
   
-  public Collection getTopContentedLocks(int n);
+  public Collection getTopContendedLocks(int n);
   
   public Collection getTopLockHops(int n);
   
   public Collection getStackTraces(LockID lockID);
+  
+  public int getLockStackTraceDepth(LockID lockID);
+  
+  public int getLockStatCollectFrequency(LockID lockID);
 }

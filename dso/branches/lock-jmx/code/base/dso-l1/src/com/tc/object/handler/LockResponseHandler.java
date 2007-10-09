@@ -44,7 +44,7 @@ public class LockResponseHandler extends AbstractEventHandler {
     } else if (msg.isLockInfo()) {
       lockManager.queryLockCommit(msg.getThreadID(), msg.getGlobalLockInfo());
     } else if (msg.isLockStatEnabled()) {
-      lockManager.enableStat(msg.getLockID());
+      lockManager.enableStat(msg.getLockID(), msg.getStackTraceDepth(), msg.getStatCollectFrequency());
     } else if (msg.isLockStatDisabled()) {
       lockManager.disableStat(msg.getLockID());
     } else {
