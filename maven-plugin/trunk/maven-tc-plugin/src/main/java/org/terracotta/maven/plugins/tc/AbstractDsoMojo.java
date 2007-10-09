@@ -222,9 +222,13 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected String createSessionClasspath() {
     for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
       Artifact artifact = (Artifact) it.next();
-      if (("terracotta".equals(artifact.getArtifactId())) || ("tc".equals(artifact.getArtifactId()))) {
+      if ("terracotta".equals(artifact.getArtifactId())) {
         String version = artifact.getVersion();
-        URL url = resolveArtifact(artifact.getGroupId(), "tc-session", VersionRange.createFromVersion(version));
+        VersionRange versionRange = VersionRange.createFromVersion(version);
+        URL url = resolveArtifact(artifact.getGroupId(), "tc-session", versionRange);
+        if(url==null) {
+          throw new RuntimeException("Can't resolve " + artifact.getGroupId() + ":tc-session:" + versionRange);
+        }
         String path = url.getPath();
         if(!new File(path).exists() && path.startsWith("/")) {
           path = path.substring(1);
@@ -327,6 +331,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       surefireModule.setGroupId("org.terracotta.modules");
       surefireModule.setName("clustered-surefire-2.3");
       surefireModule.setVersion("1.0.0");
+      
       modules.add(surefireModule);
     }
 
@@ -372,13 +377,53 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
+  /**
+   * Special Resolver implementation that is using Maven mechanisms to download
+   * modules jars to the local Maven repository using remote Maven repositories 
+   * listed in the project pom 
+   */
   private class MavenResolver extends Resolver {
 
     public MavenResolver() throws BundleException, MalformedURLException {
-      super(new URL[] { new File(localRepository.getBasedir()).toURL() } );
-     }
+      super(new URL[] {new File(localRepository.getBasedir()).toURL()});
+    }
+    
+    protected URL resolveLocation(final String name, final String version, final String groupId) {
+      getLog().info("Resolving location: " + groupId + ":" + name + ":" + version);
+      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
+    }
+    
+    protected URL resolveBundle(BundleSpec spec) {
+      String version = spec.getVersion();
+      // TODO why do we need to do this?
+      if(version.startsWith("\"")) {
+        version = version.substring(1, version.length()-1);
+      }
+      // hack to align OSGi version to Maven versions
+      if(version.endsWith(".SNAPSHOT")) {
+        version = version.substring(0, version.indexOf(".SNAPSHOT")) + "-SNAPSHOT";
+      }
+      getLog().info("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + version);
+
+      String groupId = spec.getGroupId();
+      String name = spec.getName().replace('_', '-');
+      String versionSpec = version;
+      try {
+        VersionRange versionRange;
+        if("(any-version)".equals(versionSpec)) {
+          versionRange = VersionRange.createFromVersion("1.0.0");
+        } else {
+          versionRange = VersionRange.createFromVersionSpec(versionSpec);
+        }
+        return resolveArtifact(groupId, name, versionRange);
+      } catch (InvalidVersionSpecificationException ex) {
+        log("Invalid version spec " + versionSpec + " for " + spec, ex);
+      }
+      return null;
+    }
     
   }
+
   
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
     public void changeFailed(ConfigItem item, Object oldValue, Object newValue) {
