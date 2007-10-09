@@ -125,6 +125,14 @@ public interface L2LockStatsManager {
     public int getLockStatCollectFrequency(LockID lockID) {
       return 0;
     }
+    
+    public void enableLockStatistics() {
+      // do nothing
+    }
+    
+    public void disableLockStatistics() {
+      // do nothing
+    }
   };
   
   public void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink);
@@ -180,4 +188,8 @@ public interface L2LockStatsManager {
   public int getLockStackTraceDepth(LockID lockID);
   
   public int getLockStatCollectFrequency(LockID lockID);
+  
+  public void enableLockStatistics();
+  
+  public void disableLockStatistics();
 }

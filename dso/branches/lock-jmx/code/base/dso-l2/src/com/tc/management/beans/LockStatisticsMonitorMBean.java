@@ -27,4 +27,8 @@ public interface LockStatisticsMonitorMBean {
   public void disableClientStat(String lockID);
   
   public boolean isClientStatEnabled(String lockID);
+  
+  public void enableLockStatistics();
+  
+  public void disableLockStatistics();
 }
