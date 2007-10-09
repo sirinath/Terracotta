@@ -17,8 +17,6 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.objectserver.lockmanager.api.LockHolder;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -129,13 +127,10 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       verifyStackTraces(ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName), 2);
       disconnect();
     } else {
-      TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock.stacktrace");
-      int batch = tcProperties.getInt("batch");
-
-      for (int i = 0; i < batch; i++) {
+      for (int i = 0; i < 10; i++) {
         ManagerUtil.monitorEnter(lockName, LockLevel.READ);
       }
-      for (int i = 0; i < batch; i++) {
+      for (int i = 0; i < 10; i++) {
         ManagerUtil.monitorExit(lockName);
       }
 
