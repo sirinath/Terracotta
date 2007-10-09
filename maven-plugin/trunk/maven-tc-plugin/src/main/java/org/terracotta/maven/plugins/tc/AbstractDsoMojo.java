@@ -327,7 +327,6 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       surefireModule.setGroupId("org.terracotta.modules");
       surefireModule.setName("clustered-surefire-2.3");
       surefireModule.setVersion("1.0.0");
-      
       modules.add(surefireModule);
     }
 
@@ -335,6 +334,10 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       getLog().info("Resolving modules: " + modules);
       MavenResolver resolver = new MavenResolver();
       resolver.resolve((Module[]) modules.toArray(new Module[modules.size()]));
+    } catch (MalformedURLException ex) {
+       String msg = "Failed to create URL for local repository";
+       log(msg, ex);
+       throw new MojoExecutionException(msg, ex);
     } catch (BundleException ex) {
       String msg = "Can't resolve module artifacts";
       log(msg, ex);
@@ -371,37 +374,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   private class MavenResolver extends Resolver {
 
-    public MavenResolver() throws BundleException {
-      super(new URL[0]);
+    public MavenResolver() throws BundleException, MalformedURLException {
+      super(new URL[] { new File(localRepository.getBasedir()).toURL() } );
      }
     
-//    protected URL resolveLocation(final String name, final String version, final String groupId) {
-//      getLog().debug("Resolving location: " + groupId + ":" + name + ":" + version);
-//      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
-//    }
-    
-// protected URL resolveBundle(BundleSpec spec) {
-//   getLog().debug("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + spec.getVersion());
-//
-//   String groupId = spec.getGroupId();
-//   String name = spec.getName().replace('_', '-');
-//   String versionSpec = spec.getVersion();
-//   try {
-//     VersionRange version;
-//     if("(any-version)".equals(versionSpec)) {
-//       version = VersionRange.createFromVersion("1.0.0");
-//     } else {
-//       version = VersionRange.createFromVersionSpec(versionSpec);
-//     }
-//     return resolveArtifact(groupId, name, version);
-//   } catch (InvalidVersionSpecificationException ex) {
-//     log("Invalid version spec " + versionSpec + " for " + spec, ex);
-//   }
-//   return null;
-// }
-    
   }
-
   
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
     public void changeFailed(ConfigItem item, Object oldValue, Object newValue) {

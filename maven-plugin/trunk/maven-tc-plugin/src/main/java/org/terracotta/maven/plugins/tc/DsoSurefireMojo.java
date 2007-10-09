@@ -769,9 +769,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
     }
 
     originalSystemProperties = (Properties) System.getProperties().clone();
-
     systemProperties.setProperty("basedir", basedir.getAbsolutePath());
-
     systemProperties.setProperty("localRepository", localRepository.getBasedir());
 
     if (setInSystem) {
