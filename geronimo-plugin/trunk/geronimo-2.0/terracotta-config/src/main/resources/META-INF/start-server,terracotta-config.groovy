@@ -32,3 +32,4 @@ def tcPath=ant.antProject.getProperty('tcp')
 command.properties['tc.install-root'] = "${installRoot}"
 command.properties['tc.config'] = "${installRoot}/tc-config-geronimo.xml"
 command.properties['tc.classpath'] = tcPath
+command.properties['com.tc.l1.modules.repositories'] = repoDir.toURL()
