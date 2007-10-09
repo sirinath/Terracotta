@@ -385,7 +385,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   private class MavenResolver extends Resolver {
 
     public MavenResolver() throws BundleException, MalformedURLException {
-      super(new URL[] {new File(localRepository.getBasedir()).toURL()});
+      super(new URL[] { new URL(getModulesRepository()) });
     }
     
     protected URL resolveLocation(final String name, final String version, final String groupId) {
