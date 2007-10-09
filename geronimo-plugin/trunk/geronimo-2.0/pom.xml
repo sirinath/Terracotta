@@ -384,7 +384,7 @@
             </dependency>
             <dependency>
                 <groupId>org.terracotta.modules</groupId>
-                <artifactId>modules-common-1.0</artifactId>
+                <artifactId>modules-common</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
