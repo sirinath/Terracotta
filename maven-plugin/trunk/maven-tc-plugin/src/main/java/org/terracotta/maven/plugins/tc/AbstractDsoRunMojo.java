@@ -176,9 +176,9 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
     Commandline cmd = super.createCommandLine();
 
     if (process.getModules() != null) {
-      cmd.createArgument().setValue("-Dtc.tests.configuration.modules=" + process.getModules());
+      cmd.createArgument().setValue("-Dcom.tc.l1.modules.additional=" + process.getModules());
     } else if (modules != null) {
-      cmd.createArgument().setValue("-Dtc.tests.configuration.modules=" + modules);
+       cmd.createArgument().setValue("-Dcom.tc.l1.modules.additional=" + modules);
     }
 
     if (workingDirectory != null) {
@@ -253,9 +253,10 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
     } else {
       logger = new MavenLogger(getLog());
     }
-    if (container.getLogLevel() != null) {
-      logger.setLevel(container.getLogLevel());
-    }
+    // XXX: the code below fails to compile
+    // if (container.getLogLevel() != null) {
+    //   logger.setLevel(container.getLogLevel());
+    // }
     return logger;
   }
 

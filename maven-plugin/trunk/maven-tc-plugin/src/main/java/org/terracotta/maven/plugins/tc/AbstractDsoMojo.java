@@ -166,8 +166,8 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     StringBuffer sb = new StringBuffer();
 
     String modulesRepository = getModulesRepository(); 
-    sb.append("-Dtc.tests.configuration.modules.url=" + modulesRepository);
-    getLog().debug("tc.tests.configuration.modules.url = " + modulesRepository);
+    sb.append("-Dcom.tc.l1.modules.repositories=" + modulesRepository);
+    getLog().debug("com.tc.l1.modules.repositories = " + modulesRepository);
 
     // DSO debugging
     if (getLog().isDebugEnabled()) {
@@ -222,14 +222,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected String createSessionClasspath() {
     for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
       Artifact artifact = (Artifact) it.next();
-      if ("terracotta".equals(artifact.getArtifactId())) {
+      if (("terracotta".equals(artifact.getArtifactId())) || ("tc".equals(artifact.getArtifactId()))) {
         String version = artifact.getVersion();
-        URL url = resolveArtifact(artifact.getGroupId(), "terracotta-session", VersionRange.createFromVersion(version));
+        URL url = resolveArtifact(artifact.getGroupId(), "tc-session", VersionRange.createFromVersion(version));
         String path = url.getPath();
         if(!new File(path).exists() && path.startsWith("/")) {
           path = path.substring(1);
         }
-        getLog().info("terracotta-sessions " + path);
+        getLog().info("tc-session " + path);
         return path;
       }
     }
@@ -371,34 +371,34 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   private class MavenResolver extends Resolver {
 
-    public MavenResolver() {
+    public MavenResolver() throws BundleException {
       super(new URL[0]);
-    }
+     }
     
-    protected URL resolveLocation(final String name, final String version, final String groupId) {
-      getLog().debug("Resolving location: " + groupId + ":" + name + ":" + version);
-      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
-    }
+//    protected URL resolveLocation(final String name, final String version, final String groupId) {
+//      getLog().debug("Resolving location: " + groupId + ":" + name + ":" + version);
+//      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
+//    }
     
-    protected URL resolveBundle(BundleSpec spec) {
-      getLog().debug("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + spec.getVersion());
-
-      String groupId = spec.getGroupId();
-      String name = spec.getName().replace('_', '-');
-      String versionSpec = spec.getVersion();
-      try {
-        VersionRange version;
-        if("(any-version)".equals(versionSpec)) {
-          version = VersionRange.createFromVersion("1.0.0");
-        } else {
-          version = VersionRange.createFromVersionSpec(versionSpec);
-        }
-        return resolveArtifact(groupId, name, version);
-      } catch (InvalidVersionSpecificationException ex) {
-        log("Invalid version spec " + versionSpec + " for " + spec, ex);
-      }
-      return null;
-    }
+// protected URL resolveBundle(BundleSpec spec) {
+//   getLog().debug("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + spec.getVersion());
+//
+//   String groupId = spec.getGroupId();
+//   String name = spec.getName().replace('_', '-');
+//   String versionSpec = spec.getVersion();
+//   try {
+//     VersionRange version;
+//     if("(any-version)".equals(versionSpec)) {
+//       version = VersionRange.createFromVersion("1.0.0");
+//     } else {
+//       version = VersionRange.createFromVersionSpec(versionSpec);
+//     }
+//     return resolveArtifact(groupId, name, version);
+//   } catch (InvalidVersionSpecificationException ex) {
+//     log("Invalid version spec " + versionSpec + " for " + spec, ex);
+//   }
+//   return null;
+// }
     
   }
 
