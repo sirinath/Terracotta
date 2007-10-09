@@ -30,7 +30,7 @@ public class LockStatisticsJMXTest extends TransparentTestBase {
   private int              adminPort;
 
   public LockStatisticsJMXTest() {
-    this.disableAllUntil("2007-10-10");
+    //this.disableAllUntil("2007-10-10");
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
