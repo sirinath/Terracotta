@@ -120,13 +120,13 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
     return this.threadContextFactory.getCount();
   }
   
-  public synchronized void enableClientStat(LockID lockID, Sink sink) {
+  public synchronized void enableClientStat(LockID lockID, Sink sink, int stackTraceDepth, int statCollectFrequency) {
     assertNotStarting();
     assertNotStopped();
     
     Lock lock = getLockFor(lockID);
     if (lock != Lock.NULL_LOCK) {
-      lock.enableClientStat(sink);
+      lock.enableClientStat(sink, stackTraceDepth, statCollectFrequency);
     }
   }
   

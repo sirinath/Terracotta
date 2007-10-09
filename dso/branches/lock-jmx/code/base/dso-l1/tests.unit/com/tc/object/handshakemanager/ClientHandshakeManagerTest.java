@@ -380,7 +380,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void enableStat(LockID lockID) {
+    public void enableStat(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency) {
       throw new ImplementMe();
     }
 

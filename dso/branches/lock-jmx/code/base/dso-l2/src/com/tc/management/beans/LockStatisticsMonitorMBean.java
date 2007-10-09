@@ -14,7 +14,7 @@ public interface LockStatisticsMonitorMBean {
   
   public Collection getTopWaitingLocks(int n);
 
-  public Collection getTopContentedLocks(int n);
+  public Collection getTopContendedLocks(int n);
   
   public Collection getTopLockHops(int n);
   
@@ -22,5 +22,9 @@ public interface LockStatisticsMonitorMBean {
   
   public void enableClientStat(String lockID);
   
+  public void enableClientStat(String lockID, int stackTraceDepth, int statCollectFrequency);
+  
   public void disableClientStat(String lockID);
+  
+  public boolean isClientStatEnabled(String lockID);
 }

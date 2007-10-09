@@ -359,7 +359,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
   }
 
   private void verifyLockContented(String lockName, int expectedValue) {
-    Collection c = statMBean.getTopContentedLocks(10);
+    Collection c = statMBean.getTopContendedLocks(10);
     for (Iterator<LockStat> i = c.iterator(); i.hasNext();) {
       LockStat s = i.next();
       if (s.getLockID().asString().endsWith(lockName)) {

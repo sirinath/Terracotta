@@ -131,8 +131,8 @@ public class Lock {
   }
 
   static LockResponseContext createLockStatEnableResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID,
-                                                                 int level) {
-    return new LockResponseContext(lockID, nodeID, threadID, level, LockResponseContext.LOCK_STAT_ENABLED);
+                                                                 int level, int stackTraceDepth, int statCollectFrequency) {
+    return new LockResponseContext(lockID, nodeID, threadID, level, LockResponseContext.LOCK_STAT_ENABLED, stackTraceDepth, statCollectFrequency);
   }
   
   static LockResponseContext createLockStatDisableResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID, int level) {
@@ -184,10 +184,10 @@ public class Lock {
     return new LockMBeanImpl(lockID, holds, reqs, waits);
   }
 
-  synchronized void enableClientStat(Sink lockResponseSink) {
-    enableClientStatInHolders(lockResponseSink);
-    enableClientStatInPendings(lockResponseSink);
-    enableClientStatInWaiters(lockResponseSink);
+  synchronized void enableClientStat(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
+    enableClientStatInHolders(lockResponseSink, stackTraceDepth, statCollectFrequency);
+    enableClientStatInPendings(lockResponseSink, stackTraceDepth, statCollectFrequency);
+    enableClientStatInWaiters(lockResponseSink, stackTraceDepth, statCollectFrequency);
   }
 
   synchronized void disableClientStat(Set statEnabledClients, Sink lockResponseSink) {
@@ -197,37 +197,37 @@ public class Lock {
     }
   }
 
-  private void enableClientStatInHolders(Sink lockResponseSink) {
+  private void enableClientStatInHolders(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
     for (Iterator i = holders.values().iterator(); i.hasNext();) {
       Holder holder = (Holder) i.next();
-      remoteEnableClientStat(lockResponseSink, holder.getNodeID());
+      remoteEnableClientStat(lockResponseSink, holder.getNodeID(), stackTraceDepth, statCollectFrequency);
     }
   }
 
-  private void enableClientStatInPendings(Sink lockResponseSink) {
+  private void enableClientStatInPendings(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
     for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
       Request request = (Request) i.next();
-      remoteEnableClientStat(lockResponseSink, request.getThreadContext().getId().getNodeID());
+      remoteEnableClientStat(lockResponseSink, request.getThreadContext().getId().getNodeID(), stackTraceDepth, statCollectFrequency);
     }
   }
 
-  private void enableClientStatInWaiters(Sink lockResponseSink) {
+  private void enableClientStatInWaiters(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
     for (Iterator i = waiters.values().iterator(); i.hasNext();) {
       LockWaitContext ctxt = (LockWaitContext) i.next();
-      remoteEnableClientStat(lockResponseSink, ctxt.getNodeID());
+      remoteEnableClientStat(lockResponseSink, ctxt.getNodeID(), stackTraceDepth, statCollectFrequency);
     }
   }
-
-  private void remoteEnableClientStat(Sink lockResponseSink, NodeID nodeID) {
+  
+  private void remoteEnableClientStat(Sink lockResponseSink, NodeID nodeID, int stackTraceDepth, int statCollectFrequency) {
     if (!lockStatsManager.isLockStatEnabledInClient(lockID, nodeID)) {
-      lockResponseSink.add(createLockStatEnableResponseContext(lockID, nodeID, ThreadID.VM_ID, level));
+      lockResponseSink.add(createLockStatEnableResponseContext(lockID, nodeID, ThreadID.VM_ID, level, stackTraceDepth, statCollectFrequency));
       lockStatsManager.recordClientStatEnabled(lockID, nodeID);
     }
   }
 
   private void enableClientStatIfNeeded(Sink lockResponseSink, ServerThreadContext txn) {
     if (lockStatsManager.isClientLockStatEnable(lockID)) {
-      remoteEnableClientStat(lockResponseSink, txn.getId().getNodeID());
+      remoteEnableClientStat(lockResponseSink, txn.getId().getNodeID(), lockStatsManager.getLockStackTraceDepth(lockID), lockStatsManager.getLockStatCollectFrequency(lockID));
     }
   }
 

@@ -135,7 +135,7 @@ public class TestLockManager implements LockManager {
     throw new ImplementMe();
   }
 
-  public void enableClientStat(LockID lockID, Sink sink) {
+  public void enableClientStat(LockID lockID, Sink sink, int lockStackTraceDepth, int lockStatCollectFrequency) {
     throw new ImplementMe();
   }
 }

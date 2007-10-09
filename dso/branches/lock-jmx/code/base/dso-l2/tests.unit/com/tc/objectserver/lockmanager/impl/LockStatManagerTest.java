@@ -10,7 +10,6 @@ import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.tx.WaitInvocation;
 import com.tc.objectserver.api.TestSink;
@@ -138,23 +137,6 @@ public class LockStatManagerTest extends TestCase {
 
     lockManager.unlock(l1, cid3, s1);
     assertEquals(6, lockStatManager.getNumberOfLockReleased(l1));
-  }
-
-  private ServerThreadID[] makeUniqueTxns(int num) {
-    ServerThreadID[] rv = new ServerThreadID[num];
-    for (int i = 0; i < num; i++) {
-      rv[i] = new ServerThreadID(new ClientID(new ChannelID(i)), new ThreadID(i));
-    }
-    return rv;
-  }
-
-  private LockID[] makeUniqueLocks(int num) {
-    LockID[] rv = new LockID[num];
-    for (int i = 0; i < num; i++) {
-      rv[i] = new LockID("lock-" + i);
-    }
-
-    return rv;
   }
 
 }
