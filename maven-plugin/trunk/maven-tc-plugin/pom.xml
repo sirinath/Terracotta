@@ -272,11 +272,6 @@
     <!-- Cargo support -->
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
-      <artifactId>cargo-core-api-util</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-maven2-plugin</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
