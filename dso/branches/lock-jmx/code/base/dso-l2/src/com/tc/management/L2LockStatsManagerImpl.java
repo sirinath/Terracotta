@@ -95,7 +95,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   private final int               topN;
   private final Map               clientStatEnabledLock;
   private final LRUMap            lockStackTraces;
-  private final boolean           lockStatEnabled;
+  private boolean                 lockStatEnabled;
 
   public L2LockStatsManagerImpl() {
     TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("lock.statistics");
@@ -123,6 +123,14 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     this.sink = sink;
   }
 
+  public synchronized void enableLockStatistics() {
+    this.lockStatEnabled = true;
+  }
+  
+  public synchronized void disableLockStatistics() {
+    this.lockStatEnabled = false;
+  }
+
   private LockHolder newLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID, int lockLevel, long timeStamp) {
     return new LockHolder(lockID, nodeID, channelManager.getChannelAddress(nodeID), threadID, lockLevel, timeStamp);
   }
@@ -144,7 +152,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     ClientLockStatContext clientLockStatContext = new ClientLockStatContext(statCollectFrequency, stackTraceDepth);
     enableClientStat(lockID, clientLockStatContext);
   }
-  
+
   private void enableClientStat(LockID lockID, ClientLockStatContext clientLockStatContext) {
     synchronized (this) {
       lockStackTraces.remove(lockID);
@@ -160,7 +168,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     Set statEnabledClients = null;
     synchronized (this) {
       lockStackTraces.remove(lockID);
-      ClientLockStatContext clientLockStatContext = (ClientLockStatContext)clientStatEnabledLock.remove(lockID);
+      ClientLockStatContext clientLockStatContext = (ClientLockStatContext) clientStatEnabledLock.remove(lockID);
       statEnabledClients = clientLockStatContext.getStatEnabledClients();
     }
     if (statEnabledClients != null) {
@@ -425,11 +433,11 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     public void addClient(NodeID nodeID) {
       statEnabledClients.add(nodeID);
     }
-    
+
     public boolean isClientLockStatEnabled(NodeID nodeID) {
       return statEnabledClients.contains(nodeID);
     }
-    
+
     public Set getStatEnabledClients() {
       return statEnabledClients;
     }
