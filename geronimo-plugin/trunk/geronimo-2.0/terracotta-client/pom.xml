@@ -35,6 +35,10 @@
         </dependency>
         <dependency>
             <groupId>org.terracotta</groupId>
+            <artifactId>tc-session</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.terracotta</groupId>
             <artifactId>tcconfig1</artifactId>
         </dependency>
         <dependency>
