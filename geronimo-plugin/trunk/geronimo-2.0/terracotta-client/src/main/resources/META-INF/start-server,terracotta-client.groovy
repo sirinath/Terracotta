@@ -44,7 +44,7 @@ if (!bootJar.exists()){
         sysproperty(key:"tc.classpath", value:tcPath)
         sysproperty(key:"tc.install-root", value:installRoot)
         sysproperty(key:"tc.session.classpath", value:sessionJar)
-        sysproperty(key:"com.tc.l1.modules.repositories", value:repoDir)
+        sysproperty(key:"com.tc.l1.modules.repositories", value:repoDir.toURL())
     }   
 }   
 
