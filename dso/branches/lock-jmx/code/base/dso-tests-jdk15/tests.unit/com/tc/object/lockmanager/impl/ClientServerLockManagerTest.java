@@ -128,41 +128,6 @@ public class ClientServerLockManagerTest extends TestCase {
     if (!equals(lockBeans1, lockBeans2)) { throw new AssertionError("The locks are not the same"); }
   }
 
-  // lock upgrade is no longer supported and this test becomes similar to testLockWaitWriteServer
-  public void disableTestWaitRWServer() {
-    final LockID lockID1 = new LockID("1");
-    final ThreadID tx1 = new ThreadID(1);
-
-    clientLockManager.lock(lockID1, tx1, LockLevel.READ);
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE); // Upgrade
-
-    Thread waitCallThread = new Thread() {
-
-      public void run() {
-        try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
-        } catch (InterruptedException ie) {
-          handleExceptionForTest(ie);
-        }
-      }
-    };
-    waitCallThread.start();
-    sleep(1000l);
-
-    clientLockManager.pause();
-    LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
-
-    LockManagerImpl server2 = glue.restartServer();
-
-    LockMBean[] lockBeans2 = server2.getAllLocks();
-    if (!equals(lockBeans1, lockBeans2)) { throw new AssertionError("The locks are not the same"); }
-  }
-
   public void testWaitWRServer() {
     final LockID lockID1 = new LockID("1");
     final ThreadID tx1 = new ThreadID(1);
