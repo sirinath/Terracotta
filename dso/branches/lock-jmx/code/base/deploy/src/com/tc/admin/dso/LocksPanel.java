@@ -211,7 +211,6 @@ public class LocksPanel extends XContainer {
       if (wrapper != null) {
         String id = wrapper.getLockID();
         lockStatsMBean.enableClientStat(id, getTraceDepth(), getGatherInterval());
-        AdminClient.getContext().log("Enabled stats for '" + id + "'");
       }
     }
   }
@@ -230,7 +229,6 @@ public class LocksPanel extends XContainer {
         String id = wrapper.getLockID();
         lockStatsMBean.enableClientStat(id, traceDepth, gatherInterval);
       }
-      AdminClient.getContext().log("Enabled all stats");
     }
   }
 
@@ -244,7 +242,7 @@ public class LocksPanel extends XContainer {
       if (wrapper != null) {
         String id = wrapper.getLockID();
         lockStatsMBean.disableClientStat(id);
-        AdminClient.getContext().log("Disabled stats for '" + id + "'");
+        wrapper.setStackTrace(null);
       }
     }
   }
@@ -260,8 +258,8 @@ public class LocksPanel extends XContainer {
         LockElementWrapper wrapper = m_lockTable.getWrapperAt(i);
         String id = wrapper.getLockID();
         lockStatsMBean.disableClientStat(id);
+        wrapper.setStackTrace(null);
       }
-      AdminClient.getContext().log("Disabled all stats");
     }
   }
 
@@ -273,17 +271,18 @@ public class LocksPanel extends XContainer {
     public void actionPerformed(ActionEvent ae) {
       LockElementWrapper wrapper = m_lockTable.getSelectedWrapper();
       if (wrapper != null) {
-        gatherTrace(wrapper);
+        gatherTrace(wrapper, true);
       }
     }
   }
 
-  private void gatherTrace(LockElementWrapper wrapper) {
+  private void gatherTrace(LockElementWrapper wrapper, boolean toConsole) {
     String id = wrapper.getLockID();
     Collection<LockStackTracesStat> c = lockStatsMBean.getStackTraces(id);
     Iterator<LockStackTracesStat> iter = c.iterator();
     while (iter.hasNext()) {
       LockStackTracesStat sts = iter.next();
+      if(toConsole) AdminClient.getContext().log(sts.toString());
       List<TCStackTraceElement> stackTraces = sts.getStackTraces();
       if(!stackTraces.isEmpty()) {
         int size = stackTraces.size();
@@ -291,8 +290,9 @@ public class LocksPanel extends XContainer {
         TCStackTraceElement elem = stackTraces.get(last);
         StringBuffer sb = new StringBuffer("<html>");
         for(StackTraceElement ste : elem.getStackTraceElements()) {
+          String s = ste.toString();
           sb.append("<p>");
-          sb.append(ste.toString());
+          sb.append(s);
           sb.append("</p>\n");
         }
         if(last > 0) {
@@ -317,7 +317,7 @@ public class LocksPanel extends XContainer {
       int count = m_lockTableModel.getRowCount();
       for (int i = 0; i < count; i++) {
         LockElementWrapper wrapper = m_lockTable.getWrapperAt(i);
-        gatherTrace(wrapper);
+        gatherTrace(wrapper, false);
       }
     }
   }
