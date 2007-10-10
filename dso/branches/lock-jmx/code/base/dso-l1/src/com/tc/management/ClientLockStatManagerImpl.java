@@ -55,15 +55,15 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
     ClientLockStatContext lockStatContext = (ClientLockStatContext) statEnabledLocks.get(lockID);
     if (lockStatContext.getLockAccessedFrequency() == 0) {
 
-//      List stackTraces = (List) stackTracesMap.get(lockID);
-//      if (stackTraces == null) {
-//        stackTraces = new LRUList(batch);
-//        stackTracesMap.put(lockID, stackTraces);
-//      }
-//      stackTraces.add(getStackTraceElements(lockStatContext.getStackTraceDepth()));
-//      send(lockID, new LinkedList(stackTraces));
-//      stackTraces.clear();
-      
+      // List stackTraces = (List) stackTracesMap.get(lockID);
+      // if (stackTraces == null) {
+      // stackTraces = new LRUList(batch);
+      // stackTracesMap.put(lockID, stackTraces);
+      // }
+      // stackTraces.add(getStackTraceElements(lockStatContext.getStackTraceDepth()));
+      // send(lockID, new LinkedList(stackTraces));
+      // stackTraces.clear();
+
       List stackTraces = new ArrayList();
       stackTraces.add(getStackTraceElements(lockStatContext.getStackTraceDepth()));
       send(lockID, stackTraces);
@@ -85,7 +85,9 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
       }
       list.addLast(stackTraces[i]);
       numOfStackTraceCollected++;
-      if (numOfStackTraceCollected > stackTraceDepth) { break; }
+      if (numOfStackTraceCollected > stackTraceDepth) {
+        break;
+      }
     }
     StackTraceElement[] rv = new StackTraceElement[list.size()];
     return (StackTraceElement[]) list.toArray(rv);
@@ -104,11 +106,9 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
   }
 
   public void enableStat(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency) {
-    ClientLockStatContext lockStatContext = (ClientLockStatContext) statEnabledLocks.get(lockID);
-    if (lockStatContext == null) {
-      lockStatContext = new ClientLockStatContext(lockStatCollectFrequency, lockStackTraceDepth);
-      statEnabledLocks.put(lockID, lockStatContext);
-    }
+    statEnabledLocks.remove(lockID);
+    ClientLockStatContext lockStatContext = new ClientLockStatContext(lockStatCollectFrequency, lockStackTraceDepth);
+    statEnabledLocks.put(lockID, lockStatContext);
   }
 
   public void disableStat(LockID lockID) {

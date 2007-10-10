@@ -18,9 +18,6 @@ import com.tc.objectserver.lockmanager.api.NullChannelManager;
 
 import junit.framework.TestCase;
 
-/**
- * @author steve
- */
 public class LockStatManagerTest extends TestCase {
   private TestSink           sink;
   private LockManagerImpl    lockManager;
@@ -78,8 +75,27 @@ public class LockStatManagerTest extends TestCase {
       resetLockManager();
     }
   }
-
+  
   public void testLockStatsManager() {
+    veriyLockStatsManagerStatistics();
+    
+    lockStatManager.disableLockStatistics();
+    
+    LockID l1 = new LockID("1");
+    ThreadID s1 = new ThreadID(0);
+    
+    final ClientID cid1 = new ClientID(new ChannelID(1));
+    
+    lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, sink);
+    assertEquals(0, lockStatManager.getNumberOfLockRequested(l1));
+    lockManager.unlock(l1, cid1, s1);
+    
+    lockStatManager.enableLockStatistics();
+    
+    veriyLockStatsManagerStatistics();
+  }
+
+  private void veriyLockStatsManagerStatistics() {
     LockID l1 = new LockID("1");
     ThreadID s1 = new ThreadID(0);
     
@@ -110,7 +126,7 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
 
     lockManager.unlock(l1, cid2, s1); // grant to c1 again
-    assertEquals(1, lockStatManager.getNumberOfLockPingPongRequests(l1));
+    assertEquals(1, lockStatManager.getNumberOfLockHopRequests(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(2, lockStatManager.getNumberOfLockReleased(l1));
 
@@ -131,7 +147,7 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
 
     lockManager.unlock(l1, cid4, s1); // grant to c3 again
-    assertEquals(2, lockStatManager.getNumberOfLockPingPongRequests(l1));
+    assertEquals(2, lockStatManager.getNumberOfLockHopRequests(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(5, lockStatManager.getNumberOfLockReleased(l1));
 

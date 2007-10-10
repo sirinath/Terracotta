@@ -50,8 +50,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
                                                                           LockStat s1 = (LockStat) o1;
                                                                           LockStat s2 = (LockStat) o2;
                                                                           if (s1 == s2) { return 0; }
-                                                                          if (s1.getNumOfPingPongRequests() <= s2
-                                                                              .getNumOfPingPongRequests()) { return -1; }
+                                                                          if (s1.getNumOfLockHopRequests() <= s2
+                                                                              .getNumOfLockHopRequests()) { return -1; }
                                                                           return 1;
                                                                         }
                                                                       };
@@ -116,6 +116,14 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     this.previousLockHolders = new LRUMap(topN);
     this.lockStackTraces = new LRUMap(topN);
   }
+  
+  private void clearAllStatistics() {
+    this.clientStatEnabledLock.clear();
+    this.holderStats.clear();
+    this.lockStats.clear();
+    this.previousLockHolders.clear();
+    this.lockStackTraces.clear();
+  }
 
   public synchronized void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink) {
     this.channelManager = channelManager;
@@ -129,6 +137,11 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   
   public synchronized void disableLockStatistics() {
     this.lockStatEnabled = false;
+    for (Iterator i=clientStatEnabledLock.keySet().iterator(); i.hasNext(); ) {
+      LockID lockID = (LockID)i.next();
+      disableClientStat(lockID);
+    }
+    clearAllStatistics();
   }
 
   private LockHolder newLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID, int lockLevel, long timeStamp) {
@@ -249,7 +262,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       List previousLockHolderList = (List) previousLockHolders.get(lockID);
       if (previousLockHolderList != null) {
         if (previousLockHolderList.size() > 1 && previousLockHolderList.get(0).equals(lockHolder.getNodeID())) {
-          lockStat.lockPingPong();
+          lockStat.lockHop();
         }
       }
     }
@@ -336,26 +349,38 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized long getNumberOfLockRequested(LockID lockID) {
+    if (!lockStatEnabled) { return 0; }
+    
     return ((LockStat) lockStats.get(lockID)).getNumOfLockRequested();
   }
 
   public synchronized long getNumberOfLockReleased(LockID lockID) {
+    if (!lockStatEnabled) { return 0; }
+    
     return ((LockStat) lockStats.get(lockID)).getNumOfLockReleased();
   }
 
   public synchronized long getNumberOfPendingRequests(LockID lockID) {
+    if (!lockStatEnabled) { return 0; }
+
     return ((LockStat) lockStats.get(lockID)).getNumOfPendingRequests();
   }
 
   public synchronized LockHolder getLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID) {
+    if (!lockStatEnabled) { return null; }
+
     return getLockHolder(newLockKey(lockID, nodeID, threadID));
   }
 
-  public synchronized long getNumberOfLockPingPongRequests(LockID lockID) {
-    return ((LockStat) lockStats.get(lockID)).getNumOfPingPongRequests();
+  public synchronized long getNumberOfLockHopRequests(LockID lockID) {
+    if (!lockStatEnabled) { return 0; }
+
+    return ((LockStat) lockStats.get(lockID)).getNumOfLockHopRequests();
   }
 
   public synchronized Collection getTopLockStats(int n) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     Collection allLockStats = lockStats.values();
     TopN topNLockStats = new TopN(LOCK_REQUESTED_COMPARATOR, n);
     topNLockStats.evaluate(allLockStats);
@@ -363,14 +388,20 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized Collection getTopLockHoldersStats(int n) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     return holderStats.topN(n, LOCK_HELD_COMPARATOR);
   }
 
   public synchronized Collection getTopWaitingLocks(int n) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     return holderStats.topN(n, LOCK_ACQUIRED_WAITING_COMPARATOR);
   }
 
   public synchronized Collection getTopContendedLocks(int n) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     Collection allLockStats = lockStats.values();
     TopN topNLockStats = new TopN(PENDING_LOCK_REQUESTS_COMPARATOR, n);
     topNLockStats.evaluate(allLockStats);
@@ -378,6 +409,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized Collection getTopLockHops(int n) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     Collection allLockStats = lockStats.values();
     TopN topNLockStats = new TopN(LOCK_PING_PONG_REQUESTED_COMPARATOR, n);
     topNLockStats.evaluate(allLockStats);
@@ -385,6 +418,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   }
 
   public synchronized Collection getStackTraces(LockID lockID) {
+    if (!lockStatEnabled) { return Collections.EMPTY_LIST; }
+
     Map stackTraces = (Map) lockStackTraces.get(lockID);
     if (stackTraces == null) { return Collections.EMPTY_LIST; }
     return new ArrayList(stackTraces.values());
@@ -519,6 +554,11 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       historyData = new LinkedList();
       this.maxSize = maxSize;
     }
+    
+    public void clear() {
+      this.pendingData.clear();
+      this.historyData.clear();
+    }
 
     public void put(LockKey key, Object value) {
       LockKey subKey = key.subKey();
@@ -639,7 +679,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     private long              numOfRequested;
     private long              numOfReleased;
     private long              numOfRejected;
-    private long              numOfPingPongRequests;
+    private long              numOfLockHopRequests;
 
     public LockStat(LockID lockID) {
       this.lockID = lockID;
@@ -647,7 +687,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       numOfReleased = 0;
       numOfPendingRequests = 0;
       numOfPendingWaiters = 0;
-      numOfPingPongRequests = 0;
+      numOfLockHopRequests = 0;
     }
 
     public LockID getLockID() {
@@ -676,8 +716,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       numOfPendingWaiters -= n;
     }
 
-    public void lockPingPong() {
-      numOfPingPongRequests++;
+    public void lockHop() {
+      numOfLockHopRequests++;
     }
 
     public long getNumOfLockRequested() {
@@ -700,8 +740,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       return numOfPendingWaiters;
     }
 
-    public long getNumOfPingPongRequests() {
-      return numOfPingPongRequests;
+    public long getNumOfLockHopRequests() {
+      return numOfLockHopRequests;
     }
 
     public String toString() {
@@ -716,7 +756,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       sb.append(", number of pending waiters: ");
       sb.append(numOfPendingWaiters);
       sb.append(", number of ping pong: ");
-      sb.append(numOfPingPongRequests);
+      sb.append(numOfLockHopRequests);
       sb.append("]");
       return sb.toString();
     }

@@ -74,7 +74,7 @@ public interface L2LockStatsManager {
       return 0;
     }
     
-    public long getNumberOfLockPingPongRequests(LockID lockID) {
+    public long getNumberOfLockHopRequests(LockID lockID) {
       return 0;
     }
     
@@ -169,7 +169,7 @@ public interface L2LockStatsManager {
   
   public long getNumberOfPendingRequests(LockID lockID);
   
-  public long getNumberOfLockPingPongRequests(LockID lockID);
+  public long getNumberOfLockHopRequests(LockID lockID);
   
   public LockHolder getLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID);
   
