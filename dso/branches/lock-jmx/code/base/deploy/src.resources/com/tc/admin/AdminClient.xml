@@ -147,13 +147,21 @@
                 <combo name="TypeCombo" class="com.tc.admin.common.XComboBox"/>
                 <label text="Maximum locks"/>
                 <spinner name="CountSpinner"/>
+                <label text="Trace depth"/>
+                <spinner name="TraceDepthSpinner"/>
+                <label text="Gather interval"/>
+                <spinner name="GatherIntervalSpinner"/>
                 <button name="RefreshButton" text="Refresh" class="com.tc.admin.common.XButton"/>
               </children>
 		      <connections>
 			    <item bottom="-1,bottom:n" height="n" left="-1,left:n" right="1,left:n" top="-1,top:n" width="n"/>
-			    <item bottom="-1,bottom:s" height="n" left="0,right:n" right="2,left:ns" top="-1,top:s" width="n"/>
-			    <item bottom="-1,bottom:n" height="n" left="1,right:n" right="3,left:ns" top="-1,top:n" width="n"/>			    
-			    <item bottom="-1,bottom:n" height="n" left="2,right:ns" right="-1,right:n" top="-1,top:n" width="n"/>			    			    
+			    <item bottom="-1,bottom:s" height="n" left="0,right:n" right="2,left:n" top="-1,top:s" width="n"/>
+			    <item bottom="-1,bottom:n" height="n" left="1,right:n" right="3,left:n" top="-1,top:n" width="ns"/>			    
+                <item bottom="-1,bottom:s" height="n" left="2,right:n" right="4,left:n" top="-1,top:s" width="n"/>
+                <item bottom="-1,bottom:n" height="n" left="3,right:n" right="5,left:n" top="-1,top:n" width="ns"/>            
+                <item bottom="-1,bottom:s" height="n" left="4,right:n" right="6,left:n" top="-1,top:s" width="n"/>
+                <item bottom="-1,bottom:n" height="n" left="5,right:n" right="7,left:ns" top="-1,top:n" width="ns"/>            
+			    <item bottom="-1,bottom:n" height="n" left="6,right:ns" right="-1,right:n" top="-1,top:n" width="n"/>			    			    
 		      </connections>
 		    </container>
 			<scrollpane>

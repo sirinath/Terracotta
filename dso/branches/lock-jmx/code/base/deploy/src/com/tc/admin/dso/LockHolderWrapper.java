@@ -9,6 +9,7 @@ import com.tc.objectserver.lockmanager.api.LockHolder;
 public class LockHolderWrapper implements LockElementWrapper {
   private LockHolder lockHolder;
   private String lockId;
+  private String stackTrace;
 
   public LockHolderWrapper(LockHolder lockHolder) {
     this.lockHolder = lockHolder;
@@ -27,6 +28,14 @@ public class LockHolderWrapper implements LockElementWrapper {
   public long getThreadID() { return lockHolder.getThreadID().toLong(); }
   public long getWaitTimeInMillis() { return lockHolder.getWaitTimeInMillis(); }
   public long getHeldTimeInMillis() { return lockHolder.getHeldTimeInMillis(); }
+  
+  public void setStackTrace(String stackTrace) {
+    this.stackTrace = stackTrace;
+  }
+  
+  public String getStackTrace() {
+    return this.stackTrace;
+  }
 }
 
 

@@ -5,4 +5,6 @@ package com.tc.admin.common;
 
 public interface LockElementWrapper {
   String getLockID();
+  void setStackTrace(String s);
+  String getStackTrace();
 }
