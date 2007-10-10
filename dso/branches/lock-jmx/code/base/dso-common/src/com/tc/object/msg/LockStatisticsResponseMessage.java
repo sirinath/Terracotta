@@ -53,7 +53,7 @@ public class LockStatisticsResponseMessage extends DSOMessageBase {
   private void put(Collection stackTraces) {
     super.putNVPair(NUMBER_OF_STACK_TRACE, stackTraces.size());
     for (Iterator i = stackTraces.iterator(); i.hasNext();) {
-      putNVPair(STACK_TRACE, new TCStackTraceElement((StackTraceElement[]) i.next()));
+      putNVPair(STACK_TRACE, (TCStackTraceElement) i.next());
     }
   }
 
