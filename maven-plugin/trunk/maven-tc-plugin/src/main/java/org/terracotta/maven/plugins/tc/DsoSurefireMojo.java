@@ -35,6 +35,8 @@ import org.apache.maven.surefire.report.ForkingConsoleReporter;
 import org.apache.maven.surefire.report.XMLReporter;
 import org.codehaus.plexus.util.StringUtils;
 
+import com.terracottatech.config.Module;
+
 import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
@@ -46,6 +48,12 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
  */
 public class DsoSurefireMojo extends DsoLifecycleMojo {
 
+  private static final String SUREFIRE_MODULE_GROUP_ID = "org.terracotta.modules";
+  
+  private static final String SUREFIRE_MODULE_NAME = "clustered_surefire_2.3";
+
+  private static final String SUREFIRE_MODULE_VERSION = "1.0.0.SNAPSHOT";
+  
   /**
    * Set this to 'true' to bypass unit tests execution, but still compile them. Its use is NOT RECOMMENDED, but quite
    * convenient on occasion.
@@ -279,7 +287,6 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
    */
   private boolean trimStackTrace;
 
-
   /**
    * For retrieval of artifact's metadata.
    * 
@@ -320,14 +327,19 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
 
   private int debugPort = 5000;
 
-  
   protected void onExecute() throws MojoExecutionException, MojoFailureException {
     if (!verifyParameters()) {
       return;
     }
-    
+
     getLog().info("------------------------------------------------------------------------");
-    resolveModuleArtifacts(true);
+
+    Module surefireModule = Module.Factory.newInstance();
+    surefireModule.setGroupId(SUREFIRE_MODULE_GROUP_ID);
+    surefireModule.setName(SUREFIRE_MODULE_NAME);
+    surefireModule.setVersion(SUREFIRE_MODULE_VERSION);
+
+    resolveModuleArtifacts(Collections.singletonList(surefireModule));
 
     getLog().info("Starting Surefire");
 
@@ -404,7 +416,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
       try {
         SurefireBooter surefireBooter = constructSurefireBooter(nodeReportsDirectory, nodeName);
         boolean success = surefireBooter.run();
-        
+
         if (!success) {
           String msg = "There are test failures.";
           getLog().error("[" + nodeName + "] " + msg);
@@ -424,9 +436,9 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
         System.setProperties(originalSystemProperties);
       }
     }
-  }  
-  
-/*  
+  }
+
+  /*
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (verifyParameters()) {
       SurefireBooter surefireBooter = constructSurefireBooter();
@@ -458,13 +470,13 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
       }
     }
   }
-*/
-  
+   */
+
   private boolean verifyParameters() throws MojoFailureException {
-//    if (skip || skipExec) {
-//      getLog().info("Tests are skipped.");
-//      return false;
-//    }
+    //    if (skip || skipExec) {
+    //      getLog().info("Tests are skipped.");
+    //      return false;
+    //    }
 
     if (!testClassesDirectory.exists()) {
       getLog().info("No tests to run.");
@@ -502,7 +514,8 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
     }
   }
 
-  private SurefireBooter constructSurefireBooter(File reportsDirectory, String nodeName) throws MojoExecutionException, MojoFailureException {
+  private SurefireBooter constructSurefireBooter(File reportsDirectory, String nodeName) throws MojoExecutionException,
+      MojoFailureException {
     SurefireBooter surefireBooter = new SurefireBooter();
 
     Artifact surefireArtifact = (Artifact) pluginArtifactMap.get("org.apache.maven.surefire:surefire-booter");
@@ -649,7 +662,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
     }
 
     if (fork.isForking()) {
-//      fork.setUseSystemClassLoader(useSystemClassLoader);
+      //      fork.setUseSystemClassLoader(useSystemClassLoader);
 
       fork.setSystemProperties(systemProperties);
 
@@ -667,28 +680,28 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
         fork.setWorkingDirectory(basedir);
       }
 
-
       String args = "-Xbootclasspath/p:" + bootJar.getAbsolutePath();
 
-      args += " -Dtc.nodeName=" + nodeName;
-      args += " -Dtc.numberOfNodes=" + numberOfNodes;
-      
       int port = ++debugPort;
       args += " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=" + port;
       // args += " -agentlib:jdwp=transport=dt_socket,address=localhost:" + port;
+
+      args += " -Dtc.nodeName=" + nodeName;
+      args += " -Dtc.numberOfNodes=" + numberOfNodes;
 
       args += " -Dtc.classloader.writeToDisk=true";
       args += " -Dtc.classpath=" + createPluginClasspathAsFile();
 
       args += " -Dcom.tc.l1.modules.repositories=" + getModulesRepository();
-      args += " -Dcom.tc.l1.modules.additional=clustered-surefire-2.3-1.0.0";
+      args += " -Dcom.tc.l1.modules.additional=" + //
+          SUREFIRE_MODULE_GROUP_ID + '.' + SUREFIRE_MODULE_NAME + ";bundle-version:=" + SUREFIRE_MODULE_VERSION;
 
       if (argLine != null && argLine.trim().length() > 0) {
         args += " " + argLine;
       }
-      
-      getLog().debug("Command line: " + args);
-      
+
+      getLog().info("Command line: " + args);
+
       fork.setArgLine(args);
 
       fork.setEnvironmentVariables(environmentVariables);
@@ -707,7 +720,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
     surefireBooter.setChildDelegation(childDelegation);
 
     surefireBooter.setReportsDirectory(reportsDirectory);
-    
+
     addReporters(surefireBooter, fork.isForking(), reportsDirectory);
 
     return surefireBooter;

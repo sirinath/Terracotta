@@ -47,7 +47,7 @@ public class BootjarMojo extends AbstractDsoMojo {
    * @see org.apache.maven.plugin.Mojo#execute()
    */
   public void execute() throws MojoExecutionException {
-    resolveModuleArtifacts(false);
+    resolveModuleArtifacts(getAdditionalModules());
     
     if (!overwriteBootjar && bootJar.exists()) {
       getLog().info("BootJar already exists: " + bootJar.getAbsolutePath());
