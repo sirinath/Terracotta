@@ -9,6 +9,7 @@ import com.tc.management.L2LockStatsManagerImpl.LockStat;
 public class LockStatWrapper implements LockElementWrapper {
   private LockStat lockStat;
   private String lockId;
+  private String stackTrace;
 
   public LockStatWrapper(LockStat lockStat) {
     this.lockStat = lockStat;
@@ -24,6 +25,14 @@ public class LockStatWrapper implements LockElementWrapper {
   public long getNumOfPendingRequests() { return lockStat.getNumOfPendingRequests(); }
   public long getNumOfPendingWaiters() { return lockStat.getNumOfPendingWaiters(); }
   public long getNumOfPingPongRequests() { return lockStat.getNumOfLockHopRequests(); }
+  
+  public void setStackTrace(String stackTrace) {
+    this.stackTrace = stackTrace;
+  }
+  
+  public String getStackTrace() {
+    return this.stackTrace;
+  }
 }
 
 
