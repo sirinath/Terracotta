@@ -665,26 +665,6 @@ public class ClientLockManagerTest extends TestCase {
     assertEquals(2, rmtLockManager.getUnlockRequestCount());
   }
 
-  // Lock upgrade is no longer supported
-  public void disableTestLockChangesAfterUpgrade() throws Exception {
-    assertEquals(0, rmtLockManager.getLockRequestCount());
-    ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
-
-    lockManager.lock(lid0, tid0, LockLevel.READ);
-    assertEquals(1, rmtLockManager.getLockRequestCount());
-
-    // upgrade lock
-    lockManager.lock(lid0, tid0, LockLevel.WRITE);
-    assertEquals(2, rmtLockManager.getLockRequestCount());
-
-    // get more locks (should see no requests to L2)
-    lockManager.lock(lid0, tid0, LockLevel.WRITE);
-    assertEquals(2, rmtLockManager.getLockRequestCount());
-    lockManager.lock(lid0, tid0, LockLevel.READ);
-    assertEquals(2, rmtLockManager.getLockRequestCount());
-  }
-
   public void testLockUpgradeMakesRemoteRequest() throws Exception {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     ThreadID tid0 = new ThreadID(0);

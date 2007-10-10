@@ -702,42 +702,6 @@ public class GreedyLockManagerTest extends TestCase {
     lockManager.clearAllLocksFor(c1);
   }
 
-  public void disableTestUpgradeDeadLock() {
-    // Detect deadlock in competing upgrades
-    LockID l1 = new LockID("L1");
-
-    ClientID c0 = new ClientID(new ChannelID(0));
-    ThreadID s1 = new ThreadID(1);
-    ThreadID s2 = new ThreadID(2);
-
-    ServerThreadID thread1 = new ServerThreadID(c0, s1);
-    ServerThreadID thread2 = new ServerThreadID(c0, s2);
-
-    lockManager.start();
-
-    // thread1 gets lock1 (R)
-    lockManager.requestLock(l1, c0, s1, LockLevel.READ, sink);
-    // thread2 gets lock1 (R)
-    lockManager.requestLock(l1, c0, s2, LockLevel.READ, sink);
-
-    // thread1 requests upgrade
-    lockManager.requestLock(l1, c0, s1, LockLevel.WRITE, sink);
-    // thread2 requests upgrade
-    lockManager.requestLock(l1, c0, s2, LockLevel.WRITE, sink);
-
-    TestDeadlockResults deadlocks = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(deadlocks);
-
-    assertEquals(1, deadlocks.chains.size());
-
-    Map check = new HashMap();
-    check.put(thread1, l1);
-    check.put(thread2, l1);
-    assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
-
-    lockManager.clearAllLocksFor(c0);
-  }
-
   public void testLackOfDeadlock() throws InterruptedException {
     lockManager.start();
     for (int i = 0; i < 50; i++) {
