@@ -55,6 +55,10 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
     try {
       Commandline cmd = createCommandLine();
 
+      if(jvmargs!=null) {
+        cmd.createArgument().setLine(jvmargs);
+      }
+      
       cmd.createArgument().setValue("-Dtc.classpath=" + createPluginClasspathAsFile());
 
       cmd.createArgument().setValue("-cp");

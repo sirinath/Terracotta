@@ -57,12 +57,6 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
   private String arguments;
 
   /**
-   * @parameter expression="${jvmargs}"
-   * @optional
-   */
-  private String jvmargs;
-
-  /**
    * @parameter expression="${numberOfNodes}" default-value="1"
    */
   private int numberOfNodes;
