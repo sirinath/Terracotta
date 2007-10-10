@@ -550,8 +550,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                              new RespondToObjectRequestHandler(), 4, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
+    
+    int txnAckThreads = l2Properties.getInt("seda.txnackstage.threads");
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
-                                                    new TransactionAcknowledgementHandler(), 1, maxStageSize);
+                                                    new TransactionAcknowledgementHandler(), txnAckThreads, maxStageSize);
     Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.CLIENT_HANDSHAKE_STAGE,
                                                      new ClientHandshakeHandler(), 1, maxStageSize);
     Stage hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK,

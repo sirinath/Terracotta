@@ -7,6 +7,7 @@ package com.tc.bytes;
 import com.tc.logging.LossyTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.properties.TCPropertiesImpl;
 
 import java.util.LinkedList;
 
@@ -21,7 +22,7 @@ public class TCByteBufferFactory {
   // 10485760 == 10MB
   private static final int            WARN_THRESHOLD     = 10485760;
 
-  private static final boolean        disablePooling     = false;
+  private static final boolean        disablePooling     = ! TCPropertiesImpl.getProperties().getBoolean("tc.bytebuffer.pooling.enabled");
 
   private static final LinkedList     directFreePool     = new LinkedList();
 
