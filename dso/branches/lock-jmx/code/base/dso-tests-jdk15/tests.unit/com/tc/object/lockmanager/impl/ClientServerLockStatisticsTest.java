@@ -47,6 +47,8 @@ import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 
@@ -55,6 +57,7 @@ import java.lang.reflect.Constructor;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -67,7 +70,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
   private ClientLockStatManager           clientLockStatManager;
   private L2LockStatsManager              serverLockStatManager;
   private ClientServerLockStatManagerGlue statGlue;
-  private ChannelID channelId1 = new ChannelID(1);
+  private ChannelID                       channelId1 = new ChannelID(1);
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -91,28 +94,63 @@ public class ClientServerLockStatisticsTest extends TestCase {
     statGlue = new ClientServerLockStatManagerGlue(sink);
     statGlue.set(clientLockStatManager, serverLockStatManager);
   }
+  
+  private int getClientLockStatCollectionFrequency() {
+    TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
+    return tcProperties.getInt("collectFrequency");
+  }
 
   public void testCollectLockStackTraces() {
     final LockID lockID1 = new LockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(1);
     clientLockManager.lock(lockID1, tx1, LockLevel.READ);
-    serverLockStatManager.enableClientStat(lockID1);
 
-    for (int i=0; i<10; i++) {
+    serverLockStatManager.enableClientStat(lockID1, 0, 1);
+    sleep(1000);
+    clientLockManager.lock(lockID1, tx2, LockLevel.READ);
+    sleep(2000);
+    assertStackTraces(lockID1, 1, 1);
+
+    clientLockManager.unlock(lockID1, tx2);
+    sleep(2000);
+    assertStackTraces(lockID1, 2, 1);
+    
+    serverLockStatManager.enableClientStat(lockID1, 1, 1);
+    sleep(1000);
+    clientLockManager.lock(lockID1, tx2, LockLevel.READ);
+    sleep(2000);
+    assertStackTraces(lockID1, 1, 2);
+    clientLockManager.unlock(lockID1, tx2);
+    
+    serverLockStatManager.enableClientStat(lockID1);
+    sleep(1000);
+    int clientLockStatCollectFrequency = getClientLockStatCollectionFrequency();
+    for (int i=0; i<clientLockStatCollectFrequency+1; i++) {
       clientLockManager.lock(lockID1, tx2, LockLevel.READ);
+    }
+    sleep(2000);
+    assertStackTraces(lockID1, 2, 1);
+    for (int i=0; i<clientLockStatCollectFrequency+1; i++) {
       clientLockManager.unlock(lockID1, tx2);
     }
-
-    sleep(2000);
-    Collection stackTraces = serverLockStatManager.getStackTraces(lockID1);
     
-    Assert.assertEquals(1, stackTraces.size());
-    for (Iterator i=stackTraces.iterator(); i.hasNext(); ) {
-      LockStackTracesStat s = (LockStackTracesStat)i.next();
-      Assert.assertEquals(channelId1, ((ClientID)s.getNodeID()).getChannelID());
-      // 10 stacktraces for lock,  and 10 for unlock.
-      Assert.assertEquals(20, s.getStackTraces().size());
+    clientLockManager.unlock(lockID1, tx2);
+  }
+
+  private void assertStackTraces(LockID lockID, int numOfStackTraces, int depthOfStackTraces) {
+    Collection stackTraces = serverLockStatManager.getStackTraces(lockID);
+
+    Assert.assertEquals(1, stackTraces.size()); // only one client in this test
+    for (Iterator i = stackTraces.iterator(); i.hasNext();) {
+      LockStackTracesStat s = (LockStackTracesStat) i.next();
+      Assert.assertEquals(channelId1, ((ClientID) s.getNodeID()).getChannelID());
+      List oneStackTraces = s.getStackTraces();
+      Assert.assertEquals(numOfStackTraces, oneStackTraces.size());
+      for (Iterator j = oneStackTraces.iterator(); j.hasNext();) {
+        StackTraceElement[] stackTracesElement = (StackTraceElement[]) j.next();
+        Assert.assertEquals(depthOfStackTraces, stackTracesElement.length);
+      }
     }
   }
 
@@ -143,8 +181,8 @@ public class ClientServerLockStatisticsTest extends TestCase {
       try {
         Constructor constructor = theClass.getConstructor(new Class[] { SessionID.class, MessageMonitor.class,
             TCByteBufferOutput.class, MessageChannel.class, TCMessageType.class });
-        TCMessageImpl message = (TCMessageImpl) constructor.newInstance(new Object[] { SessionID.NULL_ID, new NullMessageMonitor(),
-            new TCByteBufferOutputStream(4, 4096, false), this, type });
+        TCMessageImpl message = (TCMessageImpl) constructor.newInstance(new Object[] { SessionID.NULL_ID,
+            new NullMessageMonitor(), new TCByteBufferOutputStream(4, 4096, false), this, type });
         message.seal();
         return message;
       } catch (Exception e) {
@@ -198,17 +236,17 @@ public class ClientServerLockStatisticsTest extends TestCase {
 
     public void addClassMapping(TCMessageType messageType, Class messageClass) {
       throw new ImplementMe();
-      
+
     }
 
     public void addListener(ChannelEventListener listener) {
       throw new ImplementMe();
-      
+
     }
 
     public void close() {
       throw new ImplementMe();
-      
+
     }
 
     public AcknowledgeTransactionMessageFactory getAcknowledgeTransactionMessageFactory() {
@@ -253,12 +291,12 @@ public class ClientServerLockStatisticsTest extends TestCase {
 
     public void open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException, IOException {
       throw new ImplementMe();
-      
+
     }
 
     public void routeMessageType(TCMessageType messageType, Sink destSink, Sink hydrateSink) {
       throw new ImplementMe();
-      
+
     }
   }
 }

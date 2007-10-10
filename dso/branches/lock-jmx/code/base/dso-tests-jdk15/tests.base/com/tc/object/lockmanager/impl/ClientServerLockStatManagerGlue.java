@@ -45,7 +45,7 @@ public class ClientServerLockStatManagerGlue implements Runnable {
       if (ec instanceof LockResponseContext) {
         LockResponseContext lrc = (LockResponseContext) ec;
         if (lrc.isLockStatEnabled()) {
-          clientLockStatManager.enableStat(lrc.getLockID(), 0, 1);
+          clientLockStatManager.enableStat(lrc.getLockID(), lrc.getStackTraceDepth(), lrc.getStatCollectFrequency());
         }
       } else if (ec instanceof LockStatisticsResponseMessage) {
         LockStatisticsResponseMessage lsrm = (LockStatisticsResponseMessage)ec;

@@ -23,7 +23,7 @@ public class LockStatWrapper implements LockElementWrapper {
   public long getNumOfLockReleased() { return lockStat.getNumOfLockReleased(); }
   public long getNumOfPendingRequests() { return lockStat.getNumOfPendingRequests(); }
   public long getNumOfPendingWaiters() { return lockStat.getNumOfPendingWaiters(); }
-  public long getNumOfPingPongRequests() { return lockStat.getNumOfPingPongRequests(); }
+  public long getNumOfPingPongRequests() { return lockStat.getNumOfLockHopRequests(); }
 }
 
 

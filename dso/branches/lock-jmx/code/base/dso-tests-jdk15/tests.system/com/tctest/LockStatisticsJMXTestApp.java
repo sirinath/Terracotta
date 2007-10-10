@@ -5,6 +5,7 @@
 package com.tctest;
 
 import com.tc.management.JMXConnectorProxy;
+import com.tc.management.L2LockStatsManagerImpl.LockStackTracesStat;
 import com.tc.management.L2LockStatsManagerImpl.LockStat;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
@@ -16,7 +17,10 @@ import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.lockmanager.impl.TCStackTraceElement;
 import com.tc.objectserver.lockmanager.api.LockHolder;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -25,6 +29,7 @@ import com.tctest.runner.AbstractTransparentApp;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 
 import javax.management.MBeanServerConnection;
@@ -84,7 +89,11 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
       enableStackTraces(lockName, index);
 
-      testStackTracesStatistics(lockName, index);
+      testStackTracesStatistics(lockName, index, 1);
+      
+      enableStackTraces(lockName, index, 1, getClientLockStatCollectionFrequency());
+
+      testStackTracesStatistics(lockName, index, 2);
       
       testLockHeldTime("lock3", "lock4", index);
       
@@ -118,19 +127,36 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
+  
+  private void enableStackTraces(String lockName, int index, int stackTraceDepth, int statCollectFrequency ) throws Throwable {
+    if (index == 0) {
+      connect();
+      statMBean.enableClientStat(ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName), stackTraceDepth, statCollectFrequency);
+      disconnect();
+    }
 
-  private void testStackTracesStatistics(String lockName, int index) throws Throwable {
+    barrier.await();
+  }
+  
+  private int getClientLockStatCollectionFrequency() {
+    TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
+    return tcProperties.getInt("collectFrequency");
+  }
+
+  private void testStackTracesStatistics(String lockName, int index, int depthOfEachStackTrace) throws Throwable {
     if (index == 0) {
       waitForAllToMoveOn();
       connect();
       Thread.sleep(2000);
-      verifyStackTraces(ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName), 2);
+      verifyStackTraces(ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName), 2,
+                        3, depthOfEachStackTrace);
       disconnect();
     } else {
-      for (int i = 0; i < 10; i++) {
+      int clientLockStatCollectFrequency = getClientLockStatCollectionFrequency();
+      for (int i = 0; i < clientLockStatCollectFrequency+1; i++) {
         ManagerUtil.monitorEnter(lockName, LockLevel.READ);
       }
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < clientLockStatCollectFrequency+1; i++) {
         ManagerUtil.monitorExit(lockName);
       }
 
@@ -214,14 +240,14 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       waitForAllToMoveOn();
       
       Thread.sleep(1000);
-      verifyLockContented(lockName, 1);
+      verifyLockContended(lockName, 1);
       verifyLockHolder(lockName, indexToNodeMap.get(new Integer(2)).longValue());
       verifyLockAwarded(lockName, indexToNodeMap.get(new Integer(2)).longValue(), false);
       waitForTwoToMoveOn();
 
       waitForAllToMoveOn();
       verifyLockRequest(lockName, 2);
-      verifyLockContented(lockName, 0);
+      verifyLockContended(lockName, 0);
       verifyLockHolder(lockName, indexToNodeMap.get(new Integer(1)).longValue());
       verifyLockHolder(lockName, indexToNodeMap.get(new Integer(2)).longValue());
       verifyLockAwarded(lockName, indexToNodeMap.get(new Integer(2)).longValue(), true);
@@ -231,7 +257,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       waitForAllToMoveOn();
       
       verifyLockHop(lockName, 2);
-      verifyStackTraces(lockName, 0);
+      verifyStackTraces(lockName, 0, -1, -1);
       waitForAllToMoveOn();
       disconnect();
       
@@ -353,7 +379,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     throw new AssertionError(lockName + " does not exist.");
   }
 
-  private void verifyLockContented(String lockName, int expectedValue) {
+  private void verifyLockContended(String lockName, int expectedValue) {
     Collection c = statMBean.getTopContendedLocks(10);
     for (Iterator<LockStat> i = c.iterator(); i.hasNext();) {
       LockStat s = i.next();
@@ -369,15 +395,26 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator<LockStat> i = c.iterator(); i.hasNext();) {
       LockStat s = i.next();
       if (s.getLockID().asString().endsWith(lockName)) {
-        Assert.assertEquals(expectedValue, s.getNumOfPingPongRequests());
+        Assert.assertEquals(expectedValue, s.getNumOfLockHopRequests());
         break;
       }
     }
   }
 
-  private void verifyStackTraces(String lockName, int expectedValue) {
+  private void verifyStackTraces(String lockName, int numOfClientsStackTraces, int numOfStackTraces, int depthOfStackTraces) {
     Collection c = statMBean.getStackTraces(lockName);
-    Assert.assertEquals(expectedValue, c.size());
+    Assert.assertEquals(numOfClientsStackTraces, c.size());
+    
+    for (Iterator i=c.iterator(); i.hasNext(); ) {
+      LockStackTracesStat s = (LockStackTracesStat) i.next();
+      List oneStackTraces = s.getStackTraces();
+      Assert.assertEquals(numOfStackTraces, oneStackTraces.size());
+      for (Iterator j = oneStackTraces.iterator(); j.hasNext();) {
+        TCStackTraceElement tcStackTraceElement = (TCStackTraceElement)j.next();
+        StackTraceElement[] stackTracesElement = tcStackTraceElement.getStackTraceElements();
+        Assert.assertEquals(depthOfStackTraces, stackTracesElement.length);
+      }
+    }
   }
 
   private static void echo(String msg) {
