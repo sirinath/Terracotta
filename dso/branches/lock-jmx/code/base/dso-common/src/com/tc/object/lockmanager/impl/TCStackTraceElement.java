@@ -4,6 +4,8 @@
  */
 package com.tc.object.lockmanager.impl;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.tc.exception.TCRuntimeException;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
@@ -18,6 +20,7 @@ import java.io.Serializable;
 
 public class TCStackTraceElement implements TCSerializable, Serializable {
   private StackTraceElement[] stackTraceElements;
+  private int hashCode;
 
   public TCStackTraceElement() {
     return;
@@ -25,6 +28,16 @@ public class TCStackTraceElement implements TCSerializable, Serializable {
 
   public TCStackTraceElement(StackTraceElement[] stackTraceElements) {
     this.stackTraceElements = stackTraceElements;
+    
+    computeHashCode();
+  }
+  
+  private void computeHashCode() {
+    HashCodeBuilder hashCodeBuilder = new HashCodeBuilder(5503, 6737);
+    for (int i = 0; i < stackTraceElements.length; i++) {
+      hashCodeBuilder.append(stackTraceElements[i].hashCode());
+    }
+    this.hashCode = hashCodeBuilder.toHashCode();
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
@@ -42,6 +55,7 @@ public class TCStackTraceElement implements TCSerializable, Serializable {
         throw new TCRuntimeException(e);
       }
     }
+    computeHashCode();
 
     return this;
   }
@@ -78,5 +92,20 @@ public class TCStackTraceElement implements TCSerializable, Serializable {
     }
     return sb.toString();
   }
+  
+  public boolean equals(Object obj) {
+    if (!(obj instanceof TCStackTraceElement)) { return false; }
+    if (this == obj) { return true; }
 
+    TCStackTraceElement so = (TCStackTraceElement) obj;
+    if (this.stackTraceElements.length != so.stackTraceElements.length) { return false; }
+    for (int i = 0; i < this.stackTraceElements.length; i++) {
+      if (!this.stackTraceElements[i].equals(so.stackTraceElements[i])) { return false; }
+    }
+    return true;
+  }
+
+  public int hashCode() {
+    return hashCode;
+  }
 }

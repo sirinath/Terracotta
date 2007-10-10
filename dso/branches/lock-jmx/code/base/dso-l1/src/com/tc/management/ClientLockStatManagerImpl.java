@@ -8,10 +8,9 @@ import com.tc.async.api.Sink;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.lockmanager.impl.TCStackTraceElement;
 import com.tc.object.msg.LockStatisticsResponseMessage;
 import com.tc.object.net.DSOClientMessageChannel;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +24,6 @@ import java.util.Set;
 // Methods in this class are not synchronized. They should be called from a proper synchronized
 // context.
 public class ClientLockStatManagerImpl implements ClientLockStatManager {
-  private final static int        DEFAULT_BATCH_SIZE          = 100;
   private final static Set        IGNORE_STACK_TRACES_PACKAGE = new HashSet();
 
   private final Map               stackTracesMap              = new HashMap();
@@ -55,18 +53,22 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
     ClientLockStatContext lockStatContext = (ClientLockStatContext) statEnabledLocks.get(lockID);
     if (lockStatContext.getLockAccessedFrequency() == 0) {
 
-      // List stackTraces = (List) stackTracesMap.get(lockID);
-      // if (stackTraces == null) {
-      // stackTraces = new LRUList(batch);
-      // stackTracesMap.put(lockID, stackTraces);
-      // }
-      // stackTraces.add(getStackTraceElements(lockStatContext.getStackTraceDepth()));
-      // send(lockID, new LinkedList(stackTraces));
-      // stackTraces.clear();
+      Set stackTraces = (Set) stackTracesMap.get(lockID);
+      if (stackTraces == null) {
+        stackTraces = new HashSet();
+        stackTracesMap.put(lockID, stackTraces);
+      }
 
-      List stackTraces = new ArrayList();
-      stackTraces.add(getStackTraceElements(lockStatContext.getStackTraceDepth()));
-      send(lockID, stackTraces);
+      StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatContext.getStackTraceDepth());
+      TCStackTraceElement tcStackTraceElement = new TCStackTraceElement(stackTraceElements);
+
+      if (!stackTraces.contains(tcStackTraceElement)) {
+        stackTraces.add(tcStackTraceElement);
+
+        List stackTracesList = new ArrayList();
+        stackTracesList.add(tcStackTraceElement);
+        send(lockID, stackTracesList);
+      }
     }
     lockStatContext.lockAccessed();
   }
@@ -113,59 +115,11 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
 
   public void disableStat(LockID lockID) {
     statEnabledLocks.remove(lockID);
+    stackTracesMap.remove(lockID);
   }
 
   public boolean isStatEnabled(LockID lockID) {
     return statEnabledLocks.containsKey(lockID);
-  }
-
-  private static class ClientLockStatContext {
-    private final static int DEFAULT_DEPTH             = 0;
-    private final static int DEFAULT_COLLECT_FREQUENCY = 10;
-
-    private int              collectFrequency;
-    private int              stackTraceDepth           = 0;
-    private int              lockAccessedFrequency     = 0;
-
-    public ClientLockStatContext() {
-      TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock.stacktrace");
-      if (tcProperties != null) {
-        this.stackTraceDepth = tcProperties.getInt("defaultDepth", DEFAULT_DEPTH);
-      }
-      tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
-      if (tcProperties != null) {
-        this.collectFrequency = tcProperties.getInt("collectFrequency", DEFAULT_COLLECT_FREQUENCY);
-      }
-    }
-
-    public ClientLockStatContext(int collectFrequency, int stackTraceDepth) {
-      this.collectFrequency = collectFrequency;
-      this.stackTraceDepth = stackTraceDepth;
-    }
-
-    public int getCollectFrequency() {
-      return collectFrequency;
-    }
-
-    public void setCollectFrequency(int collectFrequency) {
-      this.collectFrequency = collectFrequency;
-    }
-
-    public int getStackTraceDepth() {
-      return stackTraceDepth;
-    }
-
-    public void setStackTraceDepth(int stackTraceDepth) {
-      this.stackTraceDepth = stackTraceDepth;
-    }
-
-    public int getLockAccessedFrequency() {
-      return this.lockAccessedFrequency;
-    }
-
-    public void lockAccessed() {
-      this.lockAccessedFrequency = (this.lockAccessedFrequency + 1) % collectFrequency;
-    }
   }
 
   private static class LRUList extends LinkedList {

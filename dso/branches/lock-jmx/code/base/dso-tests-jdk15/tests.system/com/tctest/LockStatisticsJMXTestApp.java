@@ -149,7 +149,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       connect();
       Thread.sleep(2000);
       verifyStackTraces(ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName), 2,
-                        3, depthOfEachStackTrace);
+                        2, depthOfEachStackTrace);
       disconnect();
     } else {
       int clientLockStatCollectFrequency = getClientLockStatCollectionFrequency();

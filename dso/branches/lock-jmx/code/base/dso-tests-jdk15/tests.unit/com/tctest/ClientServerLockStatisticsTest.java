@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.impl;
+package com.tctest;
 
 import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
@@ -31,6 +31,10 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
+import com.tc.object.lockmanager.impl.ClientServerLockManagerGlue;
+import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
+import com.tc.object.lockmanager.impl.TCStackTraceElement;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
@@ -130,7 +134,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
       clientLockManager.lock(lockID1, tx2, LockLevel.READ);
     }
     sleep(2000);
-    assertStackTraces(lockID1, 2, 1);
+    assertStackTraces(lockID1, 1, 1); // all lock() requests have the same stack trace
     for (int i=0; i<clientLockStatCollectFrequency+1; i++) {
       clientLockManager.unlock(lockID1, tx2);
     }
@@ -148,8 +152,8 @@ public class ClientServerLockStatisticsTest extends TestCase {
       List oneStackTraces = s.getStackTraces();
       Assert.assertEquals(numOfStackTraces, oneStackTraces.size());
       for (Iterator j = oneStackTraces.iterator(); j.hasNext();) {
-        StackTraceElement[] stackTracesElement = (StackTraceElement[]) j.next();
-        Assert.assertEquals(depthOfStackTraces, stackTracesElement.length);
+        TCStackTraceElement stackTracesElement = (TCStackTraceElement) j.next();
+        Assert.assertEquals(depthOfStackTraces, stackTracesElement.getStackTraceElements().length);
       }
     }
   }
