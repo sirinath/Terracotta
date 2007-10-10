@@ -29,7 +29,7 @@ public class WebappTest extends TestCase {
 
     WebResponse response2 = conversation.getResponse("http://localhost:8081/tc-maven-webapp");
     int counter2 = getCounter(response2.getText());
-    assertTrue("counter2: " + counter2, counter2 == (counter1 + 2));
+    assertTrue("counter2: " + counter2, counter2 == (counter1 + 1));
     
     WebResponse response3 = conversation.getResponse("http://localhost:8081/tc-maven-webapp");
     int counter3 = getCounter(response3.getText());

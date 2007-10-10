@@ -35,6 +35,7 @@ import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
+
 /**
  * @requiresDependencyResolution runtime
  * @configurator override
@@ -42,14 +43,6 @@ import org.terracotta.maven.plugins.tc.cl.Commandline;
 public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
 
   public static final String CONTEXT_KEY_STARTABLES = AbstractDsoRunMojo.class.getName() + "-Startables";
-
-  /**
-   * Configuration for the DSO-enabled processes
-   * 
-   * @parameter expression="${processes}"
-   * @optional
-   */
-  private ProcessConfiguration[] processes;
 
   /**
    * @parameter expression="${className}"
@@ -132,9 +125,7 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
   }
 
   private List createStartables() throws MojoExecutionException {
-    List startables = new ArrayList();
-
-    List processes = new ArrayList();
+    List processList = new ArrayList();
     if (className != null) {
       ProcessConfiguration process = new ProcessConfiguration();
       process.setNodeName("node");
@@ -142,18 +133,19 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
       process.setArgs(arguments);
       process.setJvmArgs(jvmargs);
       process.setCount(numberOfNodes);
-      processes.add(process);
+      processList.add(process);
     }
 
-    processes.addAll(Arrays.asList(this.processes));
+    processList.addAll(Arrays.asList(processes));
 
     int totalNumberOfNodes = 0;
-    for (Iterator it = processes.iterator(); it.hasNext();) {
+    for (Iterator it = processList.iterator(); it.hasNext();) {
       ProcessConfiguration process = (ProcessConfiguration) it.next();
       totalNumberOfNodes += process.getCount();
     }
 
-    for (Iterator it = processes.iterator(); it.hasNext();) {
+    List startables = new ArrayList();
+    for (Iterator it = processList.iterator(); it.hasNext();) {
       ProcessConfiguration process = (ProcessConfiguration) it.next();
 
       for (int n = 0; n < process.getCount(); n++) {

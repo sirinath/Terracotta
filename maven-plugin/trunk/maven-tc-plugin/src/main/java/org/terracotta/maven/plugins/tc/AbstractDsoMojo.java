@@ -10,6 +10,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -124,6 +126,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * @optional
    */
   protected String modules;
+  
+  /**
+   * Configuration for the DSO-enabled processes
+   * 
+   * @parameter expression="${processes}"
+   * @optional
+   */
+  protected ProcessConfiguration[] processes;
 
   protected int debugPort = 5000;
 
@@ -224,16 +234,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       Artifact artifact = (Artifact) it.next();
       if ("terracotta".equals(artifact.getArtifactId())) {
         String version = artifact.getVersion();
-        VersionRange versionRange = VersionRange.createFromVersion(version);
-        URL url = resolveArtifact(artifact.getGroupId(), "tc-session", versionRange);
+        URL url = resolveArtifact(artifact.getGroupId(), "tc-session", version);
         if(url==null) {
-          throw new RuntimeException("Can't resolve " + artifact.getGroupId() + ":tc-session:" + versionRange);
+          throw new RuntimeException("Can't resolve " + artifact.getGroupId() + ":tc-session:" + version);
         }
         String path = url.getPath();
         if(!new File(path).exists() && path.startsWith("/")) {
           path = path.substring(1);
         }
-        getLog().info("tc-session " + path);
         return path;
       }
     }
@@ -307,7 +315,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     return "service:jmx:jmxmp://" + host + ":" + port;
   }
 
-  protected void resolveModuleArtifacts(boolean addSurefireModule) throws MojoExecutionException {
+  protected void resolveModuleArtifacts() throws MojoExecutionException {
+    resolveModuleArtifacts(Collections.EMPTY_LIST);
+  }
+  
+  protected void resolveModuleArtifacts(List additionalModules) throws MojoExecutionException {
     List modules = new ArrayList();
 
     try {
@@ -326,14 +338,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       throw new MojoExecutionException("Configuration Error", ex);
     }
      
-    if(addSurefireModule) {
-      Module surefireModule = Module.Factory.newInstance();
-      surefireModule.setGroupId("org.terracotta.modules");
-      surefireModule.setName("clustered-surefire-2.3");
-      surefireModule.setVersion("1.0.0");
-      
-      modules.add(surefireModule);
-    }
+    modules.addAll(additionalModules);
 
     try {
       getLog().info("Resolving modules: " + modules);
@@ -350,9 +355,29 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
-  protected URL resolveArtifact(String groupId, String artifactId, VersionRange version) {
+  protected URL resolveArtifact(String groupId, String artifactId, String version) {
+    // TODO why do we need to do this?
+    if(version.startsWith("\"")) {
+      version = version.substring(1, version.length()-1);
+    }
+    // hack to align OSGi version to Maven versions
+    if(version.endsWith(".SNAPSHOT")) {
+      version = version.substring(0, version.indexOf(".SNAPSHOT")) + "-SNAPSHOT";
+    }
+    
+    VersionRange versionRange = null;
+    try {
+      if("(any-version)".equals(version) || version == null) {
+        versionRange = VersionRange.createFromVersion("1.0.0");
+      } else {
+        versionRange = VersionRange.createFromVersionSpec(version);
+      }
+    } catch (InvalidVersionSpecificationException ex) {
+      throw new RuntimeException("Invalid version spec " + version + " for " + groupId + ":" + artifactId, ex);
+    }
+    
     Artifact artifact = artifactFactory.createDependencyArtifact( // 
-        groupId, artifactId, version, "jar", null, Artifact.SCOPE_RUNTIME);
+        groupId, artifactId.replace('_', '-'), versionRange, "jar", null, Artifact.SCOPE_RUNTIME);
     getLog().info("Resolving module " + artifact.toString());
     
     try {
@@ -378,6 +403,39 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   }
 
   /**
+   * Collect additional modules from all processes
+   *  
+   * @return <code>List</code> of <code>Module</code> instances
+   */
+  protected List getAdditionalModules() {
+    HashSet reqs = new HashSet();
+    try {
+      reqs.addAll(Arrays.asList(BundleSpec.getRequirements(this.modules)));
+      if(processes!=null) {
+        for (int i = 0; i < processes.length; i++) {
+          ProcessConfiguration process = processes[i];
+          reqs.addAll(Arrays.asList(BundleSpec.getRequirements(process.getModules())));
+        }
+      }
+    } catch (BundleException ex) {
+      throw new RuntimeException("Unable to resolve additional modules", ex);
+    }
+    
+    ArrayList moduleList = new ArrayList();
+    for (Iterator it = reqs.iterator(); it.hasNext();) {
+      String req = (String) it.next();
+      BundleSpec spec = new BundleSpec(req);
+      Module module = Module.Factory.newInstance();
+      module.setGroupId(spec.getGroupId());
+      module.setName(spec.getName());
+      module.setVersion(spec.getVersion());
+      moduleList.add(module);
+    }
+    return moduleList;
+  }
+
+
+  /**
    * Special Resolver implementation that is using Maven mechanisms to download
    * modules jars to the local Maven repository using remote Maven repositories 
    * listed in the project pom 
@@ -390,36 +448,16 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     
     protected URL resolveLocation(final String name, final String version, final String groupId) {
       getLog().info("Resolving location: " + groupId + ":" + name + ":" + version);
-      return resolveArtifact(groupId, name, VersionRange.createFromVersion(version));
+      return resolveArtifact(groupId, name, version);
     }
     
     protected URL resolveBundle(BundleSpec spec) {
       String version = spec.getVersion();
-      // TODO why do we need to do this?
-      if(version.startsWith("\"")) {
-        version = version.substring(1, version.length()-1);
-      }
-      // hack to align OSGi version to Maven versions
-      if(version.endsWith(".SNAPSHOT")) {
-        version = version.substring(0, version.indexOf(".SNAPSHOT")) + "-SNAPSHOT";
-      }
-      getLog().info("Resolving bundle: " + spec.getGroupId() + ":" + spec.getName() + ":" + version);
-
       String groupId = spec.getGroupId();
-      String name = spec.getName().replace('_', '-');
-      String versionSpec = version;
-      try {
-        VersionRange versionRange;
-        if("(any-version)".equals(versionSpec)) {
-          versionRange = VersionRange.createFromVersion("1.0.0");
-        } else {
-          versionRange = VersionRange.createFromVersionSpec(versionSpec);
-        }
-        return resolveArtifact(groupId, name, versionRange);
-      } catch (InvalidVersionSpecificationException ex) {
-        log("Invalid version spec " + versionSpec + " for " + spec, ex);
-      }
-      return null;
+      String name = spec.getName();
+      getLog().info("Resolving bundle: " + groupId + ":" + name + ":" + version);
+
+      return resolveArtifact(groupId, name, version);
     }
     
   }
