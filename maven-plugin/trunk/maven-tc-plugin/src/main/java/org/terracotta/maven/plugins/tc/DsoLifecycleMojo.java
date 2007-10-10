@@ -55,6 +55,8 @@ public abstract class DsoLifecycleMojo extends AbstractDsoMojo {
       bootjarMojo.setBootJar(bootJar);
       bootjarMojo.setVerbose(verbose);
       bootjarMojo.setOverwriteBootjar(overwriteBootjar);
+      bootjarMojo.setJvmargs(jvmargs);
+      bootjarMojo.setJvm(jvm);
       bootjarMojo.execute();
     }
     
@@ -63,6 +65,8 @@ public abstract class DsoLifecycleMojo extends AbstractDsoMojo {
       dsoStartMojo.setSpawnServer(spawnServer);
       dsoStartMojo.setServerName(serverName);
       dsoStartMojo.setStartServer(startServer);
+      dsoStartMojo.setJvmargs(jvmargs);
+      dsoStartMojo.setJvm(jvm);
       dsoStartMojo.execute();
     }
     
@@ -75,6 +79,8 @@ public abstract class DsoLifecycleMojo extends AbstractDsoMojo {
         dsoStopMojo.setSpawnServer(spawnServer);
         dsoStopMojo.setServerName(serverName);
         dsoStopMojo.setStartServer(startServer);
+        dsoStopMojo.setJvmargs(jvmargs);
+        dsoStopMojo.setJvm(jvm);
         dsoStopMojo.execute();
       }
     }

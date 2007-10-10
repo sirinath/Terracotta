@@ -15,20 +15,19 @@
         <artifactId>tc-maven-plugin</artifactId>
         <version>0.0.5-SNAPSHOT</version>
         <configuration>
+          <!-- shared configuration -->
           <!-- <config>${basedir}/tc-config.xml</config> -->
           <!-- <verbose>true</verbose> -->
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->
           <!-- <startServer>true</startServer> -->
-
-          <!-- used by tc:run need to be moved into execution -->
-          <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
+          <!-- <jvm>path to java command</jvm> -->
           <jvmargs>-Xmx20m</jvmargs>
-          <numberOfNodes>2</numberOfNodes>
 
+          <!-- used by tc:run -->
           <processes>
-            <process nodeName="master" className="org.terracotta.maven.plugins.tc.test.MasterProcess" count="1" jvmargs="-Xmx20m"/>
-            <process nodeName="sample" className="org.terracotta.maven.plugins.tc.test.SampleProcess" count="2" jvmargs="-Xmx20m"/>
+            <process nodeName="master" className="org.terracotta.maven.plugins.tc.test.MasterProcess" count="1" jvmargs="-Xmx30m"/>
+            <process nodeName="sample" className="org.terracotta.maven.plugins.tc.test.SampleProcess" count="2" jvmargs="-Xmx30m"/>
           </processes>
         </configuration>
 
@@ -40,21 +39,6 @@
                  <goal>bootjar</goal>
               </goals>
            </execution>
-           <!--
-           <execution>
-              <id>dso-run</id>
-              <phase>run</phase>
-              <inherited>true</inherited>
-              <goals>
-                 <goal>dso-run</goal>
-              </goals>
-              <configuration>
-                <className>org.terracotta.maven.plugins.tc.test.SampleProcess</className>
-                <arguments>2</arguments>
-                <numberOfNodes>2</numberOfNodes>
-              </configuration>
-           </execution>
-           -->
         </executions>
       </plugin>
 

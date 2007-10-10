@@ -112,6 +112,12 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected String jvm;
 
   /**
+   * @parameter expression="${jvmargs}"
+   * @optional
+   */
+  protected String jvmargs;
+  
+  /**
    * @parameter expression="${workingDirectory}" default-value="${basedir}"
    */
   protected File workingDirectory;
@@ -434,6 +440,15 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     return moduleList;
   }
 
+  // setters for the lifecycle simulation 
+
+  public void setJvmargs(String jvmargs) {
+    this.jvmargs = jvmargs;
+  }
+
+  public void setJvm(String jvm) {
+    this.jvm = jvm;
+  }
 
   /**
    * Special Resolver implementation that is using Maven mechanisms to download
@@ -482,5 +497,5 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
-  
+ 
 }
