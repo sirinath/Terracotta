@@ -115,7 +115,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     this.previousLockHolders = new LRUMap(topN);
     this.lockStackTraces = new LRUMap(topN);
   }
-  
+
   private void clearAllStatistics() {
     this.clientStatEnabledLock.clear();
     this.holderStats.clear();
@@ -133,11 +133,11 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   public synchronized void enableLockStatistics() {
     this.lockStatEnabled = true;
   }
-  
+
   public synchronized void disableLockStatistics() {
     this.lockStatEnabled = false;
-    for (Iterator i=clientStatEnabledLock.keySet().iterator(); i.hasNext(); ) {
-      LockID lockID = (LockID)i.next();
+    for (Iterator i = clientStatEnabledLock.keySet().iterator(); i.hasNext();) {
+      LockID lockID = (LockID) i.next();
       disableClientStat(lockID);
     }
     clearAllStatistics();
@@ -245,23 +245,25 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     LockHolder lockHolder = getLockHolder(lockKey);
 
-    Assert.assertNotNull(lockHolder);
-
-    lockHolder.lockAcquired(lockAwardTimestamp);
-    if (isGreedy) {
-      holderStats.remove(lockKey, lockHolder);
-      lockKey = newLockKey(lockID, nodeID, ThreadID.VM_ID);
-      holderStats.put(lockKey, lockHolder);
+    if (lockHolder != null) { // a lock holder could be null if jmx is enabled during runtime
+      lockHolder.lockAcquired(lockAwardTimestamp);
+      if (isGreedy) {
+        holderStats.remove(lockKey, lockHolder);
+        lockKey = newLockKey(lockID, nodeID, ThreadID.VM_ID);
+        holderStats.put(lockKey, lockHolder);
+      }
     }
 
     LockStat lockStat = (LockStat) lockStats.get(lockID);
     if (lockStat != null) {
       lockStat.lockAwarded();
 
-      List previousLockHolderList = (List) previousLockHolders.get(lockID);
-      if (previousLockHolderList != null) {
-        if (previousLockHolderList.size() > 1 && previousLockHolderList.get(0).equals(lockHolder.getNodeID())) {
-          lockStat.lockHop();
+      if (lockHolder != null) {
+        List previousLockHolderList = (List) previousLockHolders.get(lockID);
+        if (previousLockHolderList != null) {
+          if (previousLockHolderList.size() > 1 && previousLockHolderList.get(0).equals(lockHolder.getNodeID())) {
+            lockStat.lockHop();
+          }
         }
       }
     }
@@ -276,7 +278,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     }
 
     LockHolder lockHolder = lockReleasedInternal(lockID, nodeID, threadID);
-    Assert.assertNotNull(lockHolder);
+    if (lockHolder == null) { return; }
 
     List previousLockHolderList = (List) previousLockHolders.get(lockID);
     if (previousLockHolderList == null) {
@@ -292,7 +294,8 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
   private LockHolder lockReleasedInternal(LockID lockID, NodeID nodeID, ThreadID threadID) {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     LockHolder lockHolder = getLockHolder(lockKey);
-    Assert.assertNotNull(lockHolder);
+    if (lockHolder == null) { return null; }
+    
     lockHolder.lockReleased();
     holderStats.moveToHistory(lockKey, lockHolder);
 
@@ -303,8 +306,9 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
     if (!lockStatEnabled) { return; }
 
     LockStat lockStat = (LockStat) lockStats.get(lockID);
-    Assert.assertNotNull(lockStat);
-    lockStat.lockRejected();
+    if (lockStat != null) {
+      lockStat.lockRejected();
+    }
 
     lockReleasedInternal(lockID, nodeID, threadID);
   }
@@ -349,13 +353,13 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
 
   public synchronized long getNumberOfLockRequested(LockID lockID) {
     if (!lockStatEnabled) { return 0; }
-    
+
     return ((LockStat) lockStats.get(lockID)).getNumOfLockRequested();
   }
 
   public synchronized long getNumberOfLockReleased(LockID lockID) {
     if (!lockStatEnabled) { return 0; }
-    
+
     return ((LockStat) lockStats.get(lockID)).getNumOfLockReleased();
   }
 
@@ -500,7 +504,7 @@ public class L2LockStatsManagerImpl implements L2LockStatsManager {
       historyData = new LinkedList();
       this.maxSize = maxSize;
     }
-    
+
     public void clear() {
       this.pendingData.clear();
       this.historyData.clear();
