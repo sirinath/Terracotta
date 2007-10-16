@@ -56,7 +56,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
     final CommitTransactionMessageImpl ctm = (CommitTransactionMessageImpl) context;
     try {
       final TransactionBatchReader reader = batchReaderFactory.newTransactionBatchReader(ctm);
-      transactionBatchManager.defineBatch(reader.getChannelID(), reader.getBatchID(), reader.getNumTxns());
+      transactionBatchManager.defineBatch(reader.getChannelID(), reader.getNumTxns());
       Collection completedTxnIds = reader.addAcknowledgedTransactionIDsTo(new HashSet());
       ServerTransaction txn;
 
