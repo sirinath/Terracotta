@@ -471,9 +471,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     ChannelStats channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
 
     lockManager = new LockManagerImpl(channelManager);
-    TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager);
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
     TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
+    TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager);
     SampledCounter globalTxnCounter = sampledCounterManager.createCounter(new SampledCounterConfig(1, 300, true, 0L));
 
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
@@ -523,7 +523,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                  new RequestRootHandler(), 1, maxStageSize);
 
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
-                             new BroadcastChangeHandler(transactionBatchManager), 1, maxStageSize);
+                             new BroadcastChangeHandler(), 1, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
