@@ -194,6 +194,10 @@ public class StandardDSOClientConfigHelper implements DSOClientConfigHelper {
         .commonL1Config().modules() : Modules.Factory.newInstance());
 
     permanentExcludesMatcher = new CompoundExpressionMatcher();
+
+ 	 	// CDV-441 -- This exclude should come before any patterns that do matching that might mandate more class loading (e.g. a superclass/interface match (Foo+))
+ 	 	addPermanentExcludePattern("org.jboss.net.protocol..*");
+
     // TODO:: come back and add all possible non-portable/non-adaptable classes here. This is by no means exhaustive !
 
     // XXX:: There is a bug in aspectwerkz com.tc..* matches both com.tc and com.tctest classes. As a work around
