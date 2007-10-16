@@ -48,4 +48,4 @@ if (!bootJar.exists()){
     }   
 }   
 
-command.javaFlags << "-XX:MaxPermSize=256m -Xbootclasspath/p:${bootJar}"
+command.javaFlags << "-Xbootclasspath/p:${bootJar} -XX:MaxPermSize=256m"
