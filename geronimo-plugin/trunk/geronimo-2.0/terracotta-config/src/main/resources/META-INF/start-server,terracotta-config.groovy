@@ -1,5 +1,7 @@
 def installRoot = new File(command.geronimoHome, 'var/terracotta')
 def repoDir = new File(command.geronimoHome, 'repository')
+def sessionJar = new File(repoDir, 'org/terracotta/tc-session/${terracottaVersion}/tc-session-${terracottaVersion}.jar')
+
 def ant = new AntBuilder()
 ant.path(id: "cp"){
     pathelement(location: new File(repoDir, 'org/terracotta/terracotta/${terracottaVersion}/terracotta-${terracottaVersion}.jar'))
@@ -34,3 +36,4 @@ command.properties['tc.config'] = "${installRoot}/tc-config-geronimo.xml"
 command.properties['tc.classpath'] = tcPath
 command.properties['com.tc.l1.modules.repositories'] = repoDir.toURL()
 command.properties['geronimo-terracotta.home'] = installRoot
+command.properties['tc.session.classpath'] = sessionJar
