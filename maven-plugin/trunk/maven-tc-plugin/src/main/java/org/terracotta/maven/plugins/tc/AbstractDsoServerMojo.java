@@ -2,11 +2,12 @@ package org.terracotta.maven.plugins.tc;
 
 import java.io.IOException;
 
+import org.apache.maven.plugin.MojoExecutionException;
+import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
 import com.tc.admin.TCStop;
-import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.server.TCServerMain;
 
 public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
@@ -28,9 +29,8 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
     super(mojo);
   }
 
-  protected void start() {
+  protected void start() throws MojoExecutionException {
     String jmxUrl = null;
- 
 
     try {
       jmxUrl = getJMXUrl(serverName);
@@ -45,9 +45,9 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
         getLog().info("Server already started: " + status);
         return;
       }
-    } catch (ConfigurationSetupException cse) {
-      getLog().error("Failed to verify DSO server status", cse);
-      return;
+//    } catch (ConfigurationSetupException cse) {
+//      getLog().error("Failed to verify DSO server status", cse);
+//      return;
     } catch (IOException ioe) {
       // ok - we expect to not connect
     }
@@ -101,9 +101,20 @@ public abstract class AbstractDsoServerMojo extends AbstractDsoMojo {
         }
         getLog().info("DSO Server status: " + status);
       }
+      
+      if(!isRunning(p)) {
+        int rc = p.exitValue();
+        if(rc!=0) {
+          String msg = "Failed to start DSO server. Process return code " + rc;
+          getLog().error(msg);
+          throw new MojoExecutionException(msg);
+        }
+      }
 
-    } catch (Exception e) {
-      getLog().error("Failed to start DSO server", e);
+    } catch (CommandLineException e) {
+      String msg = "Failed to start DSO server";
+      getLog().error(msg, e);
+      throw new MojoExecutionException(msg, e);
     }
   }
 
