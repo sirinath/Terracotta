@@ -6,6 +6,7 @@ package org.terracotta.maven.plugins.tc;
 import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.terracotta.maven.plugins.tc.cl.CommandLineException;
 import org.terracotta.maven.plugins.tc.cl.CommandLineUtils;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
@@ -90,10 +91,19 @@ public class BootjarMojo extends AbstractDsoMojo {
       getLog().info("Starting bootjar tool");
       getLog().debug("cmd: " + cmd);
       
-      CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, false);
-      getLog().info("OK");
-    } catch (Exception e) {
-      getLog().error("Failed to execute bootjar tool", e);
+      Process process = CommandLineUtils.executeCommandLine(cmd, null, streamConsumer, streamConsumer, false);
+      int rc = process.exitValue();
+      if(rc==0) {
+        getLog().info("OK");
+      } else {
+        String msg = "Failed to execute bootjar tool. Process return code is " + rc;
+        getLog().error(msg);
+        throw new MojoExecutionException(msg);
+      }
+    } catch (CommandLineException e) {
+      String msg = "Failed to execute bootjar tool";
+      getLog().error(msg, e);
+      throw new MojoExecutionException(msg, e);
     }
   }
 

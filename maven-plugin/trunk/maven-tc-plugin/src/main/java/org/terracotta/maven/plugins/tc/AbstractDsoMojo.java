@@ -273,7 +273,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
   }
 
-  public String getServerStatus(String jmxUrl) throws ConfigurationSetupException, MalformedURLException, IOException {
+  public String getServerStatus(String jmxUrl) throws MalformedURLException, IOException {
     getLog().debug("Connecting to DSO server at " + jmxUrl);
     JMXServiceURL url = new JMXServiceURL(jmxUrl);
     JMXConnector jmxc = null;
