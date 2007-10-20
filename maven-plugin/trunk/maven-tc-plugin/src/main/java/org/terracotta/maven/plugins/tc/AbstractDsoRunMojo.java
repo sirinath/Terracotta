@@ -297,7 +297,7 @@ public abstract class AbstractDsoRunMojo extends DsoLifecycleMojo {
       sb.append(" -Dtc.config=" + config.getAbsolutePath());
     }
     sb.append(" -Dtc.classpath=" + createPluginClasspathAsFile());
-    sb.append(" -Dtc.session.classpath=" + createSessionClasspath());
+    sb.append(" -Dtc.session.classpath=" + quoteIfNeeded(createSessionClasspath()));
 
     sb.append(' ').append(super.createJvmArguments());
 
