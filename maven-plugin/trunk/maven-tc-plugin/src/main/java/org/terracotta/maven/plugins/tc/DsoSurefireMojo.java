@@ -52,7 +52,7 @@ public class DsoSurefireMojo extends DsoLifecycleMojo {
   
   private static final String SUREFIRE_MODULE_NAME = "clustered_surefire_2.3";
 
-  private static final String SUREFIRE_MODULE_VERSION = "1.0.0.SNAPSHOT";
+  private static final String SUREFIRE_MODULE_VERSION = "2.5.0.SNAPSHOT";
   
   /**
    * Set this to 'true' to bypass unit tests execution, but still compile them. Its use is NOT RECOMMENDED, but quite
