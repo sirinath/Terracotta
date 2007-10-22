@@ -33,32 +33,32 @@ public class ManifestMojo extends AbstractMojo {
   private File manifestFile;
 
   /**
-   * @parameter expression="${Bundle-Category}"
+   * @parameter expression="${bundleCategory}"
    */
   private String bundleCategory;
 
   /**
-   * @parameter expression="${Bundle-Copyright}"
+   * @parameter expression="${bundleCopyright}"
    */
   private String bundleCopyright;
 
   /**
-   * @parameter expression="${Bundle-Description}" default-value="${project.description}"
+   * @parameter expression="${bundleDescription}" default-value="${project.description}"
    */
   private String bundleDescription;
 
   /**
-   * @parameter expression="${Bundle-Name}" default-value="${project.name}"
+   * @parameter expression="${bundleName}" default-value="${project.name}"
    */
   private String bundleName;
 
   /**
-   * @parameter expression="${Bundle-Vendor}" default-value="${project.organization.name}"
+   * @parameter expression="${bundleVendor}" default-value="${project.organization.name}"
    */
   private String bundleVendor;
 
   /**
-   * @parameter expression="${Bundle-Activator}"
+   * @parameter expression="${bundleActivator}"
    */
   private String bundleActivator;
 
@@ -67,22 +67,22 @@ public class ManifestMojo extends AbstractMojo {
    * org.terracotta.modules.modules_common;bundle-version:="1.0.0.SNAPSHOT",
    * org.terracotta.modules.clustered_cglib_2.1.3;bundle-version:="1.0.0.SNAPSHOT"
    * 
-   * @parameter expression="${Require-Bundle}"
+   * @parameter expression="${requireBundle}"
    */
   private String requireBundle;
 
   /**
-   * @parameter expression="${Import-Package}"
+   * @parameter expression="${importPackage}"
    */
   private String importPackage;
 
   /**
-   * @parameter expression="${Bundle-SymbolicName}"
+   * @parameter expression="${bundleSymbolicName}"
    */
   private String bundleSymbolicName;
 
   /**
-   * @parameter expression="${Bundle-Version}"
+   * @parameter expression="${bundleVersion}"
    */
   private String bundleVersion;
 
@@ -131,7 +131,7 @@ public class ManifestMojo extends AbstractMojo {
     }
 
     if(bundleActivator!=null) {
-      attributes.put("Bundle-Activator", bundleActivator);
+      attributes.putValue("Bundle-Activator", bundleActivator);
     }
     
     if (bundleSymbolicName != null) {

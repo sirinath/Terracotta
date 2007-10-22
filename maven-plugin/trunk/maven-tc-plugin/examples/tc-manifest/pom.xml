@@ -8,6 +8,11 @@
   <version>0.2-SNAPSHOT</version>
   <description>See more details at http://www.terracotta.org/confluence/display/wiki/Terracotta+Maven+Plugin</description>
 
+  <organization>
+    <name>Terracotta, Inc.</name>
+    <url>http://terracotta.org/</url>
+  </organization>
+
   <build>
     <plugins>
       <plugin>
@@ -15,11 +20,23 @@
         <artifactId>tc-maven-plugin</artifactId>
         <version>0.0.6-SNAPSHOT</version>
         <configuration>
+          <!-- 
+            taken from pom.xml
+          <bundleVendor>Terracotta, Inc.</bundleVendor>
+          <bundleDescription>Baz Integration Module</bundleDescription>
+          <bundleName>baz</bundleName>
+          <bundleSymbolicName>foo.bar.baz</bundleSymbolicName>
+          <bundleVersion>1.0.0-SNAPSHOT</bundleVersion>
+          -->
+          <bundleCategory>Terracotta Integrations Module</bundleCategory>
+          <bundleCopyright>Copyright (c) 2007 Terracotta, Inc.</bundleCopyright>
+          <requireBundle>org.terracotta.modules.modules_common;Bundle.version:=2.5.0.SNAPSHOT</requireBundle>
+          <importPackage>org.terracotta.modules.configuration</importPackage>
+          <bundleActivator>org.terracotta.modules.baz.BazConfigurator</bundleActivator>
         </configuration>
-
         <executions>
-           <id>tc-manifest</id>
            <execution>
+              <id>tc-manifest</id>
               <phase>generate-resources</phase>
               <goals>
                  <goal>manifest</goal>
@@ -27,6 +44,7 @@
            </execution>
         </executions>
       </plugin>
+      
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
