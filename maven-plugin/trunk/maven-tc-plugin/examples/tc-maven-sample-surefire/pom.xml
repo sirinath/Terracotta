@@ -13,7 +13,7 @@
       <plugin>
         <groupId>org.terracotta.maven.plugins</groupId>
         <artifactId>tc-maven-plugin</artifactId>
-        <version>0.0.5-SNAPSHOT</version>
+        <version>0.0.6-SNAPSHOT</version>
         <configuration>
           <!-- <overwriteBootjar>true</overwriteBootjar> -->
           <!-- <spawnServer>true</spawnServer> -->
@@ -47,7 +47,7 @@
   <pluginRepositories>
     <pluginRepository>
       <id>terracotta</id>
-      <url>http://download.terracotta.org/maven2</url>
+      <url>http://www.terracotta.org/download/reflector/maven2</url>
       <releases>
         <enabled>true</enabled>
       </releases>
