@@ -35,6 +35,7 @@
                id="refreshall.actions.RefreshAllAction"
                definitionId="refreshall.actions.RefreshAllAction">
          </action>
+         <!--
          <action
                label="Run Test using Java 1.4"
                class="launch.actions.WorkbenchOptionAction"
@@ -43,6 +44,7 @@
                style="toggle"
                id="workbenchOptionAction">
          </action>
+         -->
       </actionSet>
    </extension>
    
