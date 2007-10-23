@@ -149,6 +149,9 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         String key = (String) enumx.nextElement();
         if (key.startsWith(SYS_PROP_PREFIX)) {
           String value = (String) argTypes.getProperty(key);
+          if (value.indexOf(' ') > 0) {
+            value = "\"" + value + "\"";
+          }
           vmArgs.append("-D"
               + key.substring(SYS_PROP_PREFIX.length(), key.length()) + "="
               + value + " ");
