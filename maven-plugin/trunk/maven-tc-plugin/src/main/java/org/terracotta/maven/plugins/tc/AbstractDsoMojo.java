@@ -66,14 +66,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * @readonly
    */
   protected ArtifactRepository localRepository;
-  
+
   /**
    * Creates the artifact
    * 
    * @component
    */
   protected ArtifactFactory artifactFactory;
-  
+
   /**
    * Resolves the artifacts needed.
    * 
@@ -116,7 +116,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * @optional
    */
   protected String jvmargs;
-  
+
   /**
    * @parameter expression="${workingDirectory}" default-value="${basedir}"
    */
@@ -132,7 +132,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    * @optional
    */
   protected String modules;
-  
+
   /**
    * Configuration for the DSO-enabled processes
    * 
@@ -142,7 +142,6 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected ProcessConfiguration[] processes;
 
   protected int debugPort = 5000;
-
 
   public AbstractDsoMojo() {
   }
@@ -157,7 +156,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     jvm = mojo.jvm;
     classpathElements = mojo.classpathElements;
     pluginArtifacts = mojo.pluginArtifacts;
-    
+
     localRepository = mojo.localRepository;
     remoteRepositories = mojo.remoteRepositories;
     artifactFactory = mojo.artifactFactory;
@@ -174,14 +173,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
 
     cmd.createArgument().setLine(createJvmArguments());
-    
+
     return cmd;
   }
 
   protected String createJvmArguments() {
     StringBuffer sb = new StringBuffer();
 
-    String modulesRepository = getModulesRepository(); 
+    String modulesRepository = getModulesRepository();
     sb.append("-Dcom.tc.l1.modules.repositories=" + modulesRepository);
     getLog().debug("com.tc.l1.modules.repositories = " + modulesRepository);
 
@@ -214,7 +213,15 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     String classpath = "";
     for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
       Artifact artifact = (Artifact) it.next();
-      classpath += artifact.getFile().getAbsolutePath() + File.pathSeparator;
+      if (Artifact.SCOPE_COMPILE.equals(artifact.getScope()) || Artifact.SCOPE_RUNTIME.equals(artifact.getScope())) {
+        String groupId = artifact.getGroupId();
+        // XXX workaround to shorten the classpath
+        if (!groupId.startsWith("org.apache.maven") //
+            && !"org.codehaus.cargo".equals(groupId) //
+            && !"org.springframework".equals(groupId)) {
+          classpath += artifact.getFile().getAbsolutePath() + File.pathSeparator;
+        }
+      }
     }
     return classpath;
   }
@@ -234,18 +241,18 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     }
     return tempClasspath.toURI().toString();
   }
-  
+
   protected String createSessionClasspath() {
     for (Iterator it = pluginArtifacts.iterator(); it.hasNext();) {
       Artifact artifact = (Artifact) it.next();
       if ("terracotta".equals(artifact.getArtifactId())) {
         String version = artifact.getVersion();
         URL url = resolveArtifact(artifact.getGroupId(), "tc-session", version);
-        if(url==null) {
+        if (url == null) {
           throw new RuntimeException("Can't resolve " + artifact.getGroupId() + ":tc-session:" + version);
         }
         String path = url.getPath();
-        if(!new File(path).exists() && path.startsWith("/")) {
+        if (!new File(path).exists() && path.startsWith("/")) {
           path = path.substring(1);
         }
         return path;
@@ -259,7 +266,6 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       return "\"" + path + "\"";
     return path;
   }
-  
 
   class ForkedProcessStreamConsumer implements StreamConsumer {
     private String prefix;
@@ -283,7 +289,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       TCServerInfoMBean serverMBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc,
           L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
 
-      return serverMBean.getHealthStatus();      
+      return serverMBean.getHealthStatus();
     } finally {
       if (jmxc != null) {
         try {
@@ -294,7 +300,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
-  
+
   protected String getJMXUrl(String serverName) throws ConfigurationSetupException {
     String host = "localhost";
     int port = 9520;
@@ -324,7 +330,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected void resolveModuleArtifacts() throws MojoExecutionException {
     resolveModuleArtifacts(Collections.EMPTY_LIST);
   }
-  
+
   protected void resolveModuleArtifacts(List additionalModules) throws MojoExecutionException {
     List modules = new ArrayList();
 
@@ -343,7 +349,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     } catch (ConfigurationSetupException ex) {
       throw new MojoExecutionException("Configuration Error", ex);
     }
-     
+
     modules.addAll(additionalModules);
 
     try {
@@ -351,9 +357,9 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       MavenResolver resolver = new MavenResolver();
       resolver.resolve((Module[]) modules.toArray(new Module[modules.size()]));
     } catch (MalformedURLException ex) {
-       String msg = "Failed to create URL for local repository";
-       log(msg, ex);
-       throw new MojoExecutionException(msg, ex);
+      String msg = "Failed to create URL for local repository";
+      log(msg, ex);
+      throw new MojoExecutionException(msg, ex);
     } catch (BundleException ex) {
       String msg = "Can't resolve module artifacts";
       log(msg, ex);
@@ -363,17 +369,17 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   protected URL resolveArtifact(String groupId, String artifactId, String version) {
     // TODO why do we need to do this?
-    if(version.startsWith("\"")) {
-      version = version.substring(1, version.length()-1);
+    if (version.startsWith("\"")) {
+      version = version.substring(1, version.length() - 1);
     }
     // hack to align OSGi version to Maven versions
-    if(version.endsWith(".SNAPSHOT")) {
+    if (version.endsWith(".SNAPSHOT")) {
       version = version.substring(0, version.indexOf(".SNAPSHOT")) + "-SNAPSHOT";
     }
-    
+
     VersionRange versionRange = null;
     try {
-      if("(any-version)".equals(version) || version == null) {
+      if ("(any-version)".equals(version) || version == null) {
         versionRange = VersionRange.createFromVersion("1.0.0");
       } else {
         versionRange = VersionRange.createFromVersionSpec(version);
@@ -381,27 +387,27 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     } catch (InvalidVersionSpecificationException ex) {
       throw new RuntimeException("Invalid version spec " + version + " for " + groupId + ":" + artifactId, ex);
     }
-    
+
     Artifact artifact = artifactFactory.createDependencyArtifact( // 
         groupId, artifactId.replace('_', '-'), versionRange, "jar", null, Artifact.SCOPE_RUNTIME);
     getLog().info("Resolving module " + artifact.toString());
-    
+
     try {
       artifactResolver.resolve(artifact, remoteRepositories, localRepository);
       return artifact.getFile().toURL();
-      
+
     } catch (MalformedURLException ex) {
       log("Malformed URL for " + artifact.toString(), ex);
     } catch (ArtifactResolutionException ex) {
       log("Can't resolve artifact " + artifact.toString(), ex);
     } catch (ArtifactNotFoundException ex) {
       log("Can't find artifact " + artifact.toString(), ex);
-    }    
+    }
     return null;
   }
-  
+
   void log(String msg, Exception ex) {
-    if(getLog().isDebugEnabled()) {
+    if (getLog().isDebugEnabled()) {
       getLog().error(msg, ex);
     } else {
       getLog().error(msg);
@@ -410,14 +416,14 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
   /**
    * Collect additional modules from all processes
-   *  
+   * 
    * @return <code>List</code> of <code>Module</code> instances
    */
   protected List getAdditionalModules() {
     HashSet reqs = new HashSet();
     try {
       reqs.addAll(Arrays.asList(BundleSpec.getRequirements(this.modules)));
-      if(processes!=null) {
+      if (processes != null) {
         for (int i = 0; i < processes.length; i++) {
           ProcessConfiguration process = processes[i];
           reqs.addAll(Arrays.asList(BundleSpec.getRequirements(process.getModules())));
@@ -426,7 +432,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     } catch (BundleException ex) {
       throw new RuntimeException("Unable to resolve additional modules", ex);
     }
-    
+
     ArrayList moduleList = new ArrayList();
     for (Iterator it = reqs.iterator(); it.hasNext();) {
       String req = (String) it.next();
@@ -451,21 +457,20 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   }
 
   /**
-   * Special Resolver implementation that is using Maven mechanisms to download
-   * modules jars to the local Maven repository using remote Maven repositories 
-   * listed in the project pom 
+   * Special Resolver implementation that is using Maven mechanisms to download modules jars to the local Maven
+   * repository using remote Maven repositories listed in the project pom
    */
   private class MavenResolver extends Resolver {
 
     public MavenResolver() throws BundleException, MalformedURLException {
       super(new URL[] { new URL(getModulesRepository()) });
     }
-    
+
     protected URL resolveLocation(final String name, final String version, final String groupId) {
       getLog().info("Resolving location: " + groupId + ":" + name + ":" + version);
       return resolveArtifact(groupId, name, version);
     }
-    
+
     protected URL resolveBundle(BundleSpec spec) {
       String version = spec.getVersion();
       String groupId = spec.getGroupId();
@@ -474,10 +479,9 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
 
       return resolveArtifact(groupId, name, version);
     }
-    
+
   }
 
-  
   private final class MavenIllegalConfigurationChangeHandler implements IllegalConfigurationChangeHandler {
     public void changeFailed(ConfigItem item, Object oldValue, Object newValue) {
       String text = "Inconsistent Terracotta configuration.\n\n"
@@ -497,5 +501,5 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
       }
     }
   }
- 
+
 }
