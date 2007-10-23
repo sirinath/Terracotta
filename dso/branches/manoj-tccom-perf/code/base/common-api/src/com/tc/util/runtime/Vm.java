@@ -4,7 +4,6 @@
  */
 package com.tc.util.runtime;
 
-
 /**
  * Utility class for understanding the current JVM version. Access the VM version information by looking at
  * {@link #VERSION} directly or calling the static helper methods.
@@ -14,10 +13,10 @@ public class Vm {
   /**
    * Version info is parsed from system properties and stored here.
    */
-  public static final VmVersion  VERSION;
+  public static final VmVersion VERSION;
   static {
     try {
-      VERSION = new VmVersion(System.getProperties(), true);
+      VERSION = new VmVersion(System.getProperties());
     } catch (UnknownJvmVersionException mve) {
       throw new RuntimeException(mve);
     } catch (UnknownRuntimeVersionException mve) {
@@ -125,6 +124,11 @@ public class Vm {
    * @return True if IBM JDK
    */
   public static boolean isIBM() {
+    if (VERSION == null) {
+      // Our instrumentation for java.lang.reflect.Field can end up calling here while in <clinit> for
+      // this class -- this avoids the NPE
+      return VmVersion.thisVMisIBM();
+    }
     return VERSION.isIBM();
   }
 
