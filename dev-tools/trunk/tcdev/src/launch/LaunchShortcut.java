@@ -109,7 +109,9 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     String module = parts[1];
     String subtree = parts[2];
     File workingDirectory = new File(basePath);
-    if (!prepProps.exists())
+    File externallyRunTestFolder = new File(basePath, "build/externally-run-tests/" + module);
+    
+    if (!externallyRunTestFolder.exists())
       runCheckPrep(workingDirectory, module, subtree, basePath);
     loadProperties(prepProps, module, subtree, workingDirectory, basePath);
     cleanTempAndDataDirectories();

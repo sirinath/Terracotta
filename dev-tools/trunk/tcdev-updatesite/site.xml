@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
    <description url="http://download.terracotta.org/tcdev-plugin">
-      Private/internal update site for Terracotta, Inc.
+      Terracotta Development Plugin
    </description>
-   <feature url="features/org.terracotta.tcdev_1.4.0.jar" id="org.terracotta.tcdev" version="1.4.0">
-      <category name="Terracotta"/>
+   <feature url="features/org.terracotta.tcdev_1.5.2.jar" id="org.terracotta.tcdev" version="1.5.2">
+      <category name="TCDev"/>
    </feature>
-   <feature url="features/org.terracotta.tcdev_1.5.0.jar" id="org.terracotta.tcdev" version="1.5.0">
-      <category name="Terracotta"/>
-   </feature>
-   <category-def name="Terracotta" label="Terracotta"/>
+   <category-def name="TCDev" label="TCDev">
+      <description>
+         Plugin to run tests in Terracotta repo
+      </description>
+   </category-def>
 </site>
