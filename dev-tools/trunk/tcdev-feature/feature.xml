@@ -2,7 +2,7 @@
 <feature
       id="org.terracotta.tcdev"
       label="Terracotta development"
-      version="1.5.0"
+      version="1.5.2"
       provider-name="Terracotta, Inc.">
 
    <description url="http://intranet.terracotta.lan/xwiki/bin/view/Main/TCDev+Plugin">
@@ -18,7 +18,7 @@
    </license>
 
    <url>
-      <update label="Private/internal update site for Terracotta, Inc." url="http://fileserver.terracotta.lan/ftp/pub/eclipse/update"/>
+      <update label="Update site for Terracotta Development Plugin" url="http://download.terracotta.org/tcdev-plugin"/>
    </url>
 
    <requires>
@@ -41,7 +41,7 @@
          id="org.terracotta.tcdev"
          download-size="0"
          install-size="0"
-         version="1.5.0"
+         version="1.5.2"
          unpack="false"/>
 
 </feature>

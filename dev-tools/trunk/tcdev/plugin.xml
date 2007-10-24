@@ -35,16 +35,6 @@
                id="refreshall.actions.RefreshAllAction"
                definitionId="refreshall.actions.RefreshAllAction">
          </action>
-         <!--
-         <action
-               label="Run Test using Java 1.4"
-               class="launch.actions.WorkbenchOptionAction"
-               menubarPath="TCDev/runTestGroup"
-               enablesFor="*"
-               style="toggle"
-               id="workbenchOptionAction">
-         </action>
-         -->
       </actionSet>
    </extension>
    
@@ -77,15 +67,15 @@
              <with variable="selection">
                <count value="1"/>
                <iterate>
-                 <or>
-                   <test property="org.eclipse.debug.ui.matchesPattern" value="*.java"/>
-                   <test property="org.eclipse.debug.ui.matchesPattern" value="*.class"/>
-                   <instanceof value="org.eclipse.jdt.core.IJavaElement"/>
-                 </or>
+                 <adapt type="org.eclipse.jdt.core.IJavaElement">
+	                <test property="org.eclipse.jdt.core.isInJavaProject"/>
+	                <test property="org.eclipse.jdt.core.hasTypeOnClasspath" value="junit.framework.Test"/>
+	                <test property="org.eclipse.jdt.junit.canLaunchAsJUnit" forcePluginActivation="true"/>
+	             </adapt>
                </iterate>
              </with>
            </enablement>
-  		 </contextualLaunch>
+        </contextualLaunch>
       </shortcut>
    </extension>  
    
