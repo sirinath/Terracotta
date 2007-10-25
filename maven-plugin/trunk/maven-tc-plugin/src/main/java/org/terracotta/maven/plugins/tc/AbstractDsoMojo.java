@@ -422,7 +422,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    */
   protected List getAdditionalModules() {
     HashSet reqs = new HashSet();
-    reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(this.modules)));
+    reqs.addAll(Arrays.asList(BundleSpec.getRequirements(this.modules)));
     if (processes != null) {
       for (int i = 0; i < processes.length; i++) {
         ProcessConfiguration process = processes[i];
