@@ -38,6 +38,7 @@ import org.osgi.framework.BundleException;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
 import com.tc.bundles.BundleSpec;
+import com.tc.bundles.BundleSpecImpl;
 import com.tc.bundles.Resolver;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.NewCommonL2Config;
@@ -422,11 +423,11 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
   protected List getAdditionalModules() {
     HashSet reqs = new HashSet();
     try {
-      reqs.addAll(Arrays.asList(BundleSpec.getRequirements(this.modules)));
+      reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(this.modules)));
       if (processes != null) {
         for (int i = 0; i < processes.length; i++) {
           ProcessConfiguration process = processes[i];
-          reqs.addAll(Arrays.asList(BundleSpec.getRequirements(process.getModules())));
+          reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(process.getModules())));
         }
       }
     } catch (BundleException ex) {
@@ -436,7 +437,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     ArrayList moduleList = new ArrayList();
     for (Iterator it = reqs.iterator(); it.hasNext();) {
       String req = (String) it.next();
-      BundleSpec spec = new BundleSpec(req);
+      BundleSpec spec = new BundleSpecImpl(req);
       Module module = Module.Factory.newInstance();
       module.setGroupId(spec.getGroupId());
       module.setName(spec.getName());
