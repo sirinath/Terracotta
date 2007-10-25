@@ -422,16 +422,12 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
    */
   protected List getAdditionalModules() {
     HashSet reqs = new HashSet();
-    try {
-      reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(this.modules)));
-      if (processes != null) {
-        for (int i = 0; i < processes.length; i++) {
-          ProcessConfiguration process = processes[i];
-          reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(process.getModules())));
-        }
+    reqs.addAll(Arrays.asList(BundleSpecImpl.getRequirements(this.modules)));
+    if (processes != null) {
+      for (int i = 0; i < processes.length; i++) {
+        ProcessConfiguration process = processes[i];
+        reqs.addAll(Arrays.asList(BundleSpec.getRequirements(process.getModules())));
       }
-    } catch (BundleException ex) {
-      throw new RuntimeException("Unable to resolve additional modules", ex);
     }
 
     ArrayList moduleList = new ArrayList();
