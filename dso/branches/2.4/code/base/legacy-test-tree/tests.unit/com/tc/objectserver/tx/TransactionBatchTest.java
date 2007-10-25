@@ -96,7 +96,8 @@ public class TransactionBatchTest extends TestCase {
 
   public void testSend() throws Exception {
     assertTrue(messageFactory.messages.isEmpty());
-
+    
+    writer.setAcknowledgedTransactionIDs(new HashSet());
     writer.send();
 
     assertEquals(1, messageFactory.messages.size());
