@@ -19,6 +19,7 @@ import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockID;
@@ -67,8 +68,11 @@ public class RemoteTransactionManagerTest extends TestCase {
     batchFactory = new TestTransactionBatchFactory();
     batchAccounting = new TransactionBatchAccounting();
     lockAccounting = new LockAccounting();
-    manager = new RemoteTransactionManagerImpl(logger, batchFactory, batchAccounting, lockAccounting,
-                                               new NullSessionManager(), new MockChannel());
+    manager = new RemoteTransactionManagerImpl(logger, batchFactory,
+                                               new ClientTransactionFactoryImpl(new NullRuntimeLogger(),
+                                                                                new TestChannelIDProvider()),
+                                               batchAccounting, lockAccounting, new NullSessionManager(),
+                                               new MockChannel());
     number = new SynchronizedInt(0);
     error = new SynchronizedRef(null);
     threads = new HashMap();
@@ -508,7 +512,7 @@ public class RemoteTransactionManagerTest extends TestCase {
       return null;
     }
 
-    public void addAcknowledgedTransactionIDs(Collection acknowledged) {
+    public void setAcknowledgedTransactionIDs(Set acknowledged) {
       ackedTransactions.addAll(acknowledged);
     }
 

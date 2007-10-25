@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.tx;
 
@@ -19,7 +20,6 @@ import com.tc.util.SequenceID;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 public class TransactionBatchWriter implements ClientTransactionBatch {
 
   private final CommitTransactionMessageFactory commitTransactionMessageFactory;
-  private final Set                             acknowledgedTransactionIDs = new HashSet();
+  private Set                                   acknowledgedTransactionIDs = null;
   private final TxnBatchID                      batchID;
   private final LinkedHashMap                   transactionData            = new LinkedHashMap();
   private final ObjectStringSerializer          serializer;
@@ -135,7 +135,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       TCChangeBuffer buffer = (TCChangeBuffer) i.next();
       buffer.writeTo(out, serializer, encoding);
     }
-    
+
     bytesWritten += out.getBytesWritten();
     transactionData.put(txn.getTransactionID(), new TransactionDescriptor(sequenceID, out.toArray(), txn
         .getReferencesOfObjectsInTxn()));
@@ -179,11 +179,12 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return c;
   }
 
-  public synchronized void addAcknowledgedTransactionIDs(Collection acknowledged) {
-    this.acknowledgedTransactionIDs.addAll(acknowledged);
+  public synchronized void setAcknowledgedTransactionIDs(Set acknowledged) {
+    this.acknowledgedTransactionIDs = acknowledged;
   }
 
-  public Collection getAcknowledgedTransactionIDs() {
+  public synchronized Collection getAcknowledgedTransactionIDs() {
+    if (acknowledgedTransactionIDs == null) { throw new AssertionError("Acknowledged Transaction IDs is not set"); }
     return this.acknowledgedTransactionIDs;
   }
 
