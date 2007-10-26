@@ -4,6 +4,8 @@
  */
 package com.tctest;
 
+import java.util.Date;
+
 public class LowWaterMarkPerfGCTest extends GCTestBase {
   private final int     NODE_COUNT                  = 2;
   private final boolean GC_ENABLED                  = false;
