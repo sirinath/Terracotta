@@ -38,7 +38,6 @@ import org.osgi.framework.BundleException;
 import org.terracotta.maven.plugins.tc.cl.Commandline;
 
 import com.tc.bundles.BundleSpec;
-import com.tc.bundles.BundleSpecImpl;
 import com.tc.bundles.Resolver;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.NewCommonL2Config;
@@ -433,7 +432,7 @@ public abstract class AbstractDsoMojo extends AbstractMojo {
     ArrayList moduleList = new ArrayList();
     for (Iterator it = reqs.iterator(); it.hasNext();) {
       String req = (String) it.next();
-      BundleSpec spec = new BundleSpecImpl(req);
+      BundleSpec spec = BundleSpec.newInstance(req);
       Module module = Module.Factory.newInstance();
       module.setGroupId(spec.getGroupId());
       module.setName(spec.getName());
