@@ -95,6 +95,7 @@ import com.tc.object.bytecode.ReentrantReadWriteLockClassAdapter;
 import com.tc.object.bytecode.StringBufferAdapter;
 import com.tc.object.bytecode.StringGetCharsAdapter;
 import com.tc.object.bytecode.TCMap;
+import com.tc.object.bytecode.TCMapEntry;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.bytecode.VectorAdapter;
@@ -1107,6 +1108,9 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.jrexx.set.StateProSet$Iterator");
     loadTerracottaClass("com.tc.jrexx.set.StateProSet$Wrapper_State");
     loadTerracottaClass("com.tc.jrexx.set.XML");
+    
+    loadTerracottaClass("com.tc.object.applicator.TCURL");
+    loadTerracottaClass("com.tc.object.bytecode.TCMapEntry");
 
     // DEV-116; Some of these probably should'nt be in the boot jar
     loadTerracottaClass("com.tc.exception.ImplementMe");
@@ -1115,7 +1119,6 @@ public class BootJarTool {
     loadTerracottaClass("com.tc.util.Assert");
     loadTerracottaClass("com.tc.util.StringUtil");
     loadTerracottaClass("com.tc.util.TCAssertionError");
-    loadTerracottaClass("com.tc.object.applicator.TCURL");
 
     // this class needed for ibm-jdk-15 branch
     loadTerracottaClass("com.tc.object.bytecode.ClassAdapterFactory");
@@ -1744,7 +1747,8 @@ public class BootJarTool {
     bytes = cw.toByteArray();
 
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$HashEntry");
-    spec.addDoNotInstrument(JavaUtilConcurrentHashMapHashEntryAdapter.TC_RAWSETVALUE_METHOD_NAME);
+    spec.addDoNotInstrument(TCMapEntry.TC_RAWSETVALUE_METHOD_NAME);
+    spec.addDoNotInstrument(TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_NAME);
     spec.setHonorTransient(true);
     spec.markPreInstrumented();
     spec.setCallConstructorOnLoad(true);
@@ -1802,9 +1806,8 @@ public class BootJarTool {
     spec = config.getOrCreateSpec("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper");
     spec.markPreInstrumented();
     bytes = doDSOTransform(spec.getClassName(), bytes);
-    bootJar.loadClassIntoJar("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper", bytes, spec
-        .isPreInstrumented());
-
+    bootJar.loadClassIntoJar("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper", bytes, spec.isPreInstrumented());
+    
     // java.util.concurrent.ConcurrentHashMap$Values
     bytes = getSystemBytes("java.util.concurrent.ConcurrentHashMap$Values");
     spec = config.getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Values");
