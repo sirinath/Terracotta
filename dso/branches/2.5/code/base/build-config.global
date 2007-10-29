@@ -2,7 +2,7 @@
 # the safe way to play around with config is to make a file call build-config.local and
 # put your settings in there
 
-tc.build-control.branch=trunk
+tc.build-control.branch=2.5
 tc.build-control.jvmargs=-Xms64m,-Xmx128m,-Dtc.base-dir=code/base
 
 tc.tests.configuration.transparent-tests.mode=normal
