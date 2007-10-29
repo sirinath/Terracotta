@@ -88,6 +88,7 @@ public class ServerTracker implements IDebugEventSetListener {
           if (serverInfo != null) {
             m_servers.remove(source);
             serverInfo.setStatus(ServerInfo.TERMINATED);
+            displayStatus("Terracotta Server '"+serverInfo.getName()+"' terminated.");
             IJavaProject javaProj = serverInfo.getJavaProject();
             if (!anyRunning(javaProj)) {
               setRunning(javaProj, null);
@@ -193,18 +194,21 @@ public class ServerTracker implements IDebugEventSetListener {
     monitor.done();
 
     if (statusMsg != null) {
-      final String msg = statusMsg;
-      Display.getDefault().syncExec(new Runnable() {
-        public void run() {
-          IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-          if (window instanceof ApplicationWindow) {
-            ((ApplicationWindow) window).setStatus(msg);
-          }
-        }
-      });
+      displayStatus(statusMsg);
     }
   }
 
+  private void displayStatus(final String msg) {
+    Display.getDefault().syncExec(new Runnable() {
+      public void run() {
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+        if (window instanceof ApplicationWindow) {
+          ((ApplicationWindow) window).setStatus(msg);
+        }
+      }
+    });
+  }
+  
   class L2ConnectListener implements ConnectionListener {
     IJavaProject            fJavaProject;
     String                  fName;
