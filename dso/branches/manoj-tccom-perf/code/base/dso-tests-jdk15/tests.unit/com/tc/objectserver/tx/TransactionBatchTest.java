@@ -93,13 +93,14 @@ public class TransactionBatchTest extends TestCase {
       GlobalTransactionID txID = new GlobalTransactionID(i);
       txs.add(txID);
     }
-    writer.addAcknowledgedTransactionIDs(txs);
+    writer.setAcknowledgedTransactionIDs(txs);
     assertEquals(txs, writer.getAcknowledgedTransactionIDs());
   }
 
   public void testSend() throws Exception {
     assertTrue(messageFactory.messages.isEmpty());
 
+    writer.setAcknowledgedTransactionIDs(new HashSet());
     writer.send();
 
     assertEquals(1, messageFactory.messages.size());

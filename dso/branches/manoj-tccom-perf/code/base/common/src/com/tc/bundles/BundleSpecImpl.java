@@ -5,18 +5,11 @@
 package com.tc.bundles;
 
 import org.knopflerfish.framework.VersionRange;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Version;
 
-import com.tc.bundles.exception.InvalidBundleManifestException;
+import com.tc.bundles.Version;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.jar.Manifest;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Specification for the Require-Bundle attribute
@@ -41,43 +34,11 @@ import java.util.regex.Pattern;
  * Require-Bundle: foo.bar.baz.widget;resolution:=optional - bundle is optional (recognized but not supported)
  * </pre>
  */
-public final class BundleSpec {
-  private static final String PROP_KEY_RESOLUTION         = "resolution";
-  private static final String PROP_KEY_BUNDLE_VERSION     = "bundle-version";
-  private static final String REQUIRE_BUNDLE_EXPR_MATCHER = "([A-Za-z0-9._\\-]+(;resolution:=\"?optional\"?)?" + //
-                                                              "(;bundle-version:=(\"?[A-Za-z0-9.]+\"?|" + //
-                                                              "\"?[\\[\\(][A-Za-z0-9.]+,[A-Za-z0-9.]*[\\]\\)]\"?))?)";
+final class BundleSpecImpl extends BundleSpec {
+  private final String symbolicName;
+  private final Map    attributes = new HashMap();
 
-  private final String        symbolicName;
-  private final Map           attributes                  = new HashMap();
-
-  public static final String[] getRequirements(final Manifest manifest) throws BundleException {
-    return getRequirements(manifest.getMainAttributes().getValue("Require-Bundle"));
-  }
-
-  public static final String[] getRequirements(final String source) throws BundleException {
-    if (source == null) return new String[0];
-
-    final List list = new ArrayList();
-    final String spec = source.replaceAll(" ", "");
-    final Pattern pattern = Pattern.compile(REQUIRE_BUNDLE_EXPR_MATCHER);
-    final Matcher matcher = pattern.matcher(spec);
-    final StringBuffer check = new StringBuffer();
-
-    while (matcher.find()) {
-      final String group = matcher.group();
-      check.append("," + group);
-      list.add(group);
-    }
-
-    if (!spec.equals(check.toString().replaceFirst(",", ""))) { //
-      throw new InvalidBundleManifestException("Syntax error specifying Require-Bundle: " + source + " found " + check);
-    }
-
-    return (String[]) list.toArray(new String[list.size()]);
-  }
-
-  public BundleSpec(final String spec) {
+  BundleSpecImpl(final String spec) {
     final String[] data = spec.split(";");
     this.symbolicName = data[0];
     for (int i = 1; i < data.length; i++) {
@@ -86,23 +47,23 @@ public final class BundleSpec {
     }
   }
 
-  public final String getSymbolicName() {
+  public String getSymbolicName() {
     return this.symbolicName;
   }
 
-  public final String getName() {
+  public String getName() {
     return extractInfo("name");
   }
 
-  public final String getGroupId() {
+  public String getGroupId() {
     return extractInfo("group-id");
   }
 
-  private final String extractInfo(final String n) {
+  private String extractInfo(final String n) {
     final String[] pieces = this.symbolicName.split("\\.");
     int k = 0;
     for (int i = pieces.length - 1; i >= 0; i--) {
-      if (pieces[i].matches("^[a-zA-Z][a-zA-Z0-9_]+")) {
+      if (pieces[i].matches("^" + BUNDLE_SYMBOLIC_NAME_REGEX)) {
         k = i;
         break;
       }
@@ -116,31 +77,30 @@ public final class BundleSpec {
     return result.toString().replaceFirst("\\.$", "");
   }
 
-  public final String getVersion() {
+  public String getVersion() {
     final String bundleversion = (String) attributes.get(PROP_KEY_BUNDLE_VERSION);
     return (bundleversion == null) ? "(any-version)" : bundleversion;
   }
 
-  public final boolean isOptional() {
+  public boolean isOptional() {
     final String resolution = (String) attributes.get(PROP_KEY_RESOLUTION);
     return (resolution != null) && resolution.equals("optional");
   }
 
-  public final boolean isCompatible(final String symname, final String version) {
+  public boolean isCompatible(final String symname, final String version) {
     // symbolic-names must match
-    if (!this.symbolicName.equals(symname)) { return false; }
+    if (!BundleSpec.isMatchingSymbolicName(this.symbolicName, symname)) return false;
 
     // if symbolic-names are matching, then check for version compatibility
     String spec = (String) attributes.get(PROP_KEY_BUNDLE_VERSION);
 
     // no specific bundle-version required/specified
     // so it must be compatible with the version
-    if (spec == null) { return true; }
+    if (spec == null) return true;
 
     final Version target = new Version(version);
     VersionRange range = new VersionRange(spec);
 
     return range.withinRange(target);
   }
-
 }
