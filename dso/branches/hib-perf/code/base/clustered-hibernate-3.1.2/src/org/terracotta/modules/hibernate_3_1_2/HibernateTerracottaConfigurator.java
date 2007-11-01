@@ -46,6 +46,13 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     configHelper.addIncludePattern("org.hibernate.property..*", false, false, false);
     
     configHelper.addIncludePattern("org.hibernate.cache.QueryKey", false, false, false);
+
+    configHelper.addExcludePattern("org.hibernate.type.TypeFactory");
+    configHelper.addExcludePattern("org.hibernate.engine.Cascade");
+    configHelper.addExcludePattern("org.hibernate.tuple.entity.AbstractEntityTuplizer");
+    configHelper.addExcludePattern("org.hibernate.engine.TwoPhaseLoad");
+    configHelper.addExcludePattern("org.hibernate.property.BasicPropertyAccessor");
+    configHelper.addExcludePattern("org.hibernate.property.BasicPropertyAccessor$BasicSetter");
     
     /**
      * Second level cache begin
