@@ -725,7 +725,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     transactionManager.goToActiveMode();
     Set existingConnections = Collections.unmodifiableSet(connectionIdFactory.loadConnectionIDs());
     context.getClientHandshakeManager().setStarting(existingConnections);
-    l1Listener.start(existingConnections);
+    l1Listener.start(existingConnections, (l2Properties.getInt("tccom.workerthreads", 0)));
     consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;

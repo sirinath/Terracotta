@@ -41,21 +41,23 @@ import java.util.Set;
  */
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
-  protected static final TCLogger logger = TCLogging.getLogger(TCComm.class);
+  private TCWorkerComms[]         workerComms;
+  static int                      currentWorkerCommThread = 0;
+  protected static final TCLogger logger                  = TCLogging.getLogger(TCComm.class);
 
   TCCommJDK14() {
     // nada
   }
 
-  protected void startImpl() {
-    this.selector = null;
+  protected Selector createSelector() {
+    Selector selector = null;
 
     final int tries = 3;
 
     for (int i = 0; i < tries; i++) {
       try {
-        this.selector = Selector.open();
-        break;
+        selector = Selector.open();
+        return selector;
       } catch (IOException ioe) {
         throw new RuntimeException(ioe);
       } catch (NullPointerException npe) {
@@ -72,10 +74,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
     }
 
-    if (this.selector == null) { throw new RuntimeException("Could not start selector"); }
-
-    commThread = new TCCommThread(this);
-    commThread.start();
+    return selector;
   }
 
   protected void stopImpl() {
@@ -104,6 +103,26 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
     } finally {
       selector.wakeup();
+    }
+    Util.selfInterruptIfNeeded(isInterrupted);
+  }
+
+  void addWorkerSelectorTask(final Runnable task) {
+    Assert.eval(isCommThread());
+    boolean isInterrupted = false;
+
+    try {
+      while (true) {
+        try {
+          workerComms[currentWorkerCommThread].workerSelectorTasks.put(task);
+          break;
+        } catch (InterruptedException e) {
+          logger.warn(e);
+          isInterrupted = true;
+        }
+      }
+    } finally {
+      workerComms[currentWorkerCommThread].workerSelector.wakeup();
     }
     Util.selfInterruptIfNeeded(isInterrupted);
   }
@@ -234,27 +253,48 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
   }
 
   void requestConnectInterest(TCConnectionJDK14 conn, SocketChannel sc) {
+    // workerComm doesn't need to handle this
     handleRequest(InterestRequest.createSetInterestRequest(sc, conn, SelectionKey.OP_CONNECT));
   }
 
   void requestReadInterest(TCJDK14ChannelReader reader, ScatteringByteChannel channel) {
+    // workerComm readInterest is actually taken care by doAccept();
+    // now only the client, connectImpl is using this
     handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, reader, SelectionKey.OP_READ));
   }
 
   void requestWriteInterest(TCJDK14ChannelWriter writer, GatheringByteChannel channel) {
-    handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, writer, SelectionKey.OP_WRITE));
+    if (isWorkerCommThread()) {
+      int commId = ((TCWorkerComms) Thread.currentThread()).getWorkerCommId();
+      handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, writer,
+                                                             SelectionKey.OP_WRITE, commId));
+    } else {
+      handleRequest(InterestRequest
+          .createAddInterestRequest((SelectableChannel) channel, writer, SelectionKey.OP_WRITE));
+    }
   }
 
   void requestAcceptInterest(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
+    // workerComm doesn't handle OP_ACCEPT
     handleRequest(InterestRequest.createSetInterestRequest(ssc, lsnr, SelectionKey.OP_ACCEPT));
   }
 
   void removeWriteInterest(TCConnectionJDK14 conn, SelectableChannel channel) {
-    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_WRITE));
+    if (isWorkerCommThread()) {
+      int commId = ((TCWorkerComms) Thread.currentThread()).getWorkerCommId();
+      handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_WRITE, commId));
+    } else {
+      handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_WRITE));
+    }
   }
 
   void removeReadInterest(TCConnectionJDK14 conn, SelectableChannel channel) {
-    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ));
+    if (isWorkerCommThread()) {
+      int commId = ((TCWorkerComms) Thread.currentThread()).getWorkerCommId();
+      handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ, commId));
+    } else {
+      handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ));
+    }
   }
 
   public void closeEvent(TCListenerEvent event) {
@@ -269,7 +309,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     // ignore the request if we are stopped/stopping
     if (isStopped()) { return; }
 
-    if (isCommThread()) {
+    if (isCommThread() || isWorkerCommThread()) {
       modifyInterest(req);
     } else {
       addSelectorTask(new Runnable() {
@@ -281,14 +321,14 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     }
   }
 
-  void selectLoop() throws IOException {
-    Assert.assertNotNull("selector", selector);
+  void selectLoop(Selector localSelector, LinkedQueue localSelectorTasks) throws IOException {
+    Assert.assertNotNull("selector", localSelector);
     Assert.eval("Not started", isStarted());
 
     while (true) {
       final int numKeys;
       try {
-        numKeys = selector.select();
+        numKeys = localSelector.select();
       } catch (IOException ioe) {
         if (NIOWorkarounds.linuxSelectWorkaround(ioe)) {
           logger.warn("working around Sun bug 4504001");
@@ -310,7 +350,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         Runnable task = null;
         while (true) {
           try {
-            task = (Runnable) selectorTasks.poll(0);
+            task = (Runnable) localSelectorTasks.poll(0);
             break;
           } catch (InterruptedException ie) {
             logger.error("Error getting task from task queue", ie);
@@ -330,7 +370,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
       Util.selfInterruptIfNeeded(isInterrupted);
 
-      final Set selectedKeys = selector.selectedKeys();
+      final Set selectedKeys = localSelector.selectedKeys();
       if ((0 == numKeys) && (0 == selectedKeys.size())) {
         continue;
       }
@@ -369,10 +409,10 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     } // while (true)
   }
 
-  private void dispose() {
-    if (selector != null) {
+  private void dispose(Selector localSelector) {
+    if (localSelector != null) {
 
-      for (Iterator keys = selector.keys().iterator(); keys.hasNext();) {
+      for (Iterator keys = localSelector.keys().iterator(); keys.hasNext();) {
         try {
           SelectionKey key = (SelectionKey) keys.next();
           cleanupChannel(key.channel(), null);
@@ -384,7 +424,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
 
       try {
-        selector.close();
+        localSelector.close();
       } catch (Exception e) {
         if ((Os.isMac()) && (Os.isUnix()) && (e.getMessage().equals("Bad file descriptor"))) {
           // I can't find a specific bug about this, but I also can't seem to prevent the exception on the Mac.
@@ -404,9 +444,21 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     return isCommThread(Thread.currentThread());
   }
 
+  private boolean isWorkerCommThread() {
+    return isWorkerCommThread(Thread.currentThread());
+  }
+
   private boolean isCommThread(Thread thread) {
     if (thread == null) { return false; }
     return thread == commThread;
+  }
+
+  private boolean isWorkerCommThread(Thread thread) {
+    if ((thread == null) || (workerComms == null)) { return false; }
+    for (int i = 0; i < workerComms.length; i++) {
+      if (thread == workerComms[i]) { return true; }
+    }
+    return false;
   }
 
   private void doConnect(SelectionKey key) {
@@ -436,12 +488,23 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
   }
 
   private void modifyInterest(InterestRequest request) {
-    Assert.eval(isCommThread());
+    // Assert.eval(isCommThread() || isWorkerCommThread());
+
+    Selector localSelector = null;
+    if (isCommThread()) {
+      localSelector = selector;
+    } else if (isWorkerCommThread()) {
+      Assert.eval(request.workerCommId >= 0);
+      localSelector = workerComms[(request.workerCommId)].workerSelector;
+    } else {
+      // this shd not happen
+      Assert.eval(false);
+    }
 
     try {
       final int existingOps;
 
-      SelectionKey key = request.channel.keyFor(selector);
+      SelectionKey key = request.channel.keyFor(localSelector);
       if (key != null) {
         existingOps = key.interestOps();
       } else {
@@ -453,11 +516,11 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
 
       if (request.add) {
-        request.channel.register(selector, existingOps | request.interestOps, request.attachment);
+        request.channel.register(localSelector, existingOps | request.interestOps, request.attachment);
       } else if (request.set) {
-        request.channel.register(selector, request.interestOps, request.attachment);
+        request.channel.register(localSelector, request.interestOps, request.attachment);
       } else if (request.remove) {
-        request.channel.register(selector, existingOps ^ request.interestOps, request.attachment);
+        request.channel.register(localSelector, existingOps ^ request.interestOps, request.attachment);
       } else {
         throw new TCInternalError();
       }
@@ -474,7 +537,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
     SocketChannel sc = null;
 
-    TCListenerJDK14 lsnr = (TCListenerJDK14) key.attachment();
+    final TCListenerJDK14 lsnr = (TCListenerJDK14) key.attachment();
 
     try {
       final ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
@@ -494,8 +557,25 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         logger.warn("IOException trying to setTcpNoDelay()", ioe);
       }
 
-      TCConnectionJDK14 conn = lsnr.createConnection(sc);
-      sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
+      final TCConnectionJDK14 conn = lsnr.createConnection(sc);
+      final SocketChannel sc1 = sc;
+
+      addWorkerSelectorTask(new Runnable() {
+        int             tempId    = currentWorkerCommThread;
+        InterestRequest workerReq = InterestRequest
+                                      .createAddInterestRequest(
+                                                                sc1,
+                                                                conn,
+                                                                (SelectionKey.OP_READ /* | SelectionKey.OP_WRITE */),
+                                                                tempId);
+
+        public void run() {
+          TCCommJDK14.this.handleRequest(workerReq);
+        }
+      });
+      // sc.register((workerComms[currentWorkerCommThread].workerSelector), SelectionKey.OP_READ |
+      // SelectionKey.OP_WRITE, conn);
+      currentWorkerCommThread = ((currentWorkerCommThread + 1) % 4);
     } catch (IOException ioe) {
       if (logger.isInfoEnabled()) {
         logger.info("IO Exception accepting new connection", ioe);
@@ -520,7 +600,21 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         logger.debug("Start requested");
       }
 
-      startImpl();
+      // The Main Listener Selector
+      this.selector = createSelector();
+
+      if (this.selector == null) { throw new RuntimeException("Could not start selector"); }
+
+      commThread = new TCCommThread(this);
+      commThread.start();
+    }
+  }
+
+  public void startWorkerComms(int count) {
+    this.workerComms = new TCWorkerComms[count];
+    for (int i = 0; i < count; i++) {
+      this.workerComms[i] = new TCWorkerComms(this);
+      this.workerComms[i].start();
     }
   }
 
@@ -536,9 +630,9 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     }
   }
 
-  private Selector     selector;
-  private TCCommThread commThread    = null;
-  private LinkedQueue  selectorTasks = new LinkedQueue();
+  private static Selector    selector;
+  private TCCommThread       commThread    = null;
+  private static LinkedQueue selectorTasks = new LinkedQueue();
 
   private static class InterestRequest {
     final SelectableChannel channel;
@@ -547,21 +641,37 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     final boolean           add;
     final boolean           remove;
     final int               interestOps;
+    int                     workerCommId = -1;
 
     static InterestRequest createAddInterestRequest(SelectableChannel channel, Object attachment, int interestOps) {
-      return new InterestRequest(channel, attachment, interestOps, false, true, false);
+      return new InterestRequest(channel, attachment, interestOps, false, true, false, -1);
+    }
+
+    static InterestRequest createAddInterestRequest(SelectableChannel channel, Object attachment, int interestOps,
+                                                    int workerCommId) {
+      return new InterestRequest(channel, attachment, interestOps, false, true, false, workerCommId);
     }
 
     static InterestRequest createSetInterestRequest(SelectableChannel channel, Object attachment, int interestOps) {
-      return new InterestRequest(channel, attachment, interestOps, true, false, false);
+      return new InterestRequest(channel, attachment, interestOps, true, false, false, -1);
+    }
+
+    static InterestRequest createSetInterestRequest(SelectableChannel channel, Object attachment, int interestOps,
+                                                    int workerCommId) {
+      return new InterestRequest(channel, attachment, interestOps, true, false, false, workerCommId);
     }
 
     static InterestRequest createRemoveInterestRequest(SelectableChannel channel, Object attachment, int interestOps) {
-      return new InterestRequest(channel, attachment, interestOps, false, false, true);
+      return new InterestRequest(channel, attachment, interestOps, false, false, true, -1);
+    }
+
+    static InterestRequest createRemoveInterestRequest(SelectableChannel channel, Object attachment, int interestOps,
+                                                       int workerCommId) {
+      return new InterestRequest(channel, attachment, interestOps, false, false, true, workerCommId);
     }
 
     private InterestRequest(SelectableChannel channel, Object attachment, int interestOps, boolean set, boolean add,
-                            boolean remove) {
+                            boolean remove, int commId) {
       Assert.eval(remove ^ set ^ add);
       Assert.eval(channel != null);
 
@@ -571,6 +681,9 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       this.add = add;
       this.remove = remove;
       this.interestOps = interestOps;
+
+      // the best hack... sorry
+      this.workerCommId = commId;
     }
 
     public String toString() {
@@ -650,14 +763,58 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
     public void run() {
       try {
-        commInstance.selectLoop();
+        commInstance.selectLoop(selector, selectorTasks);
       } catch (Throwable t) {
         logger.error("Unhandled exception from selectLoop", t);
         t.printStackTrace();
       } finally {
-        commInstance.dispose();
+        commInstance.dispose(selector);
       }
     }
   }
+
+  /*
+   * The whole intention of this class is to manage the workerThreads for Listeners. some docu here ...
+   */
+  static class TCWorkerComms extends Thread {
+    static int          totalWorkers        = -1;
+    private int         workerCommId        = -1;
+    String              workerCommName      = "TCWorker Comm Thread #" + getNextTCWorkerCommNum();
+    private Selector    workerSelector;
+    private LinkedQueue workerSelectorTasks = new LinkedQueue();
+    private TCCommJDK14 comm;
+
+    private synchronized int getNextTCWorkerCommNum() {
+      totalWorkers++;
+      workerCommId = totalWorkers;
+      return workerCommId;
+    }
+
+    public int getWorkerCommId() {
+      return workerCommId;
+    }
+
+    public TCWorkerComms(TCCommJDK14 commInstance) {
+      setDaemon(true);
+      setName(workerCommName);
+
+      comm = commInstance;
+      workerSelector = comm.createSelector();
+
+      if (logger.isDebugEnabled()) {
+        logger.debug("Created TCWorkerComm thread #" + workerCommId);
+      }
+    }
+
+    public void run() {
+      try {
+        comm.selectLoop(workerSelector, workerSelectorTasks);
+      } catch (Throwable t) {
+        t.printStackTrace();
+      } finally {
+        comm.dispose(workerSelector);
+      }
+    }
+  } // end of TCWorkerComms
 
 }

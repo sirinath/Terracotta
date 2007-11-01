@@ -235,6 +235,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    httpSink);
   }
 
+  public void createWorkerComms(int workerCommsCount) {
+    connectionManager.createWorkerCommThreads(workerCommsCount);
+  }
+
   TCListener createCommsListener(TCSocketAddress addr, final ServerMessageChannelFactory channelFactory,
                                  boolean resueAddr, Set initialConnectionIDs, ConnectionIDFactory connectionIdFactory,
                                  Sink httpSink) throws IOException {
