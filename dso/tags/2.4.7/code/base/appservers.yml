@@ -1,0 +1,29 @@
+#
+# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# except as may otherwise be noted in a separate copyright notice.
+# All rights reserved
+#
+
+# This file allows you to specify which JRE should be used for running tests
+# within a certain container.  The name of the JRE must match one of the entries
+# in jre.def.yml
+
+tomcat-5.0.*:
+    min_version: 1.4.2_11
+    max_version: 1.4.999_999
+    
+tomcat-5.5.*: 
+    min_version: 1.5.0
+    max_version: 999.999.999_999    
+
+weblogic-8.1.*: 
+    min_version: 1.4.2_11
+    max_version: 1.4.999_999
+
+weblogic-9.2.*: 
+    min_version: 1.5.0_00
+    max_version: 999.999.999_999
+
+glassfish-v1.*:
+    min_version: 1.5.0
+    max_version: 999.999.999_999
