@@ -110,6 +110,10 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
     return rv;
   }
 
+  public void createWorkerCommThreads(int workerCount) {
+    comm.startWorkerComms(workerCount);
+  }
+
   public final synchronized TCConnection createConnection(TCProtocolAdaptor adaptor) {
     checkShutdown();
 

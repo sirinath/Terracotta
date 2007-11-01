@@ -15,6 +15,8 @@ public interface NetworkListener {
 
   public void start(Set initialConnectionIDs) throws IOException;
 
+  public void start(Set initialConnectionIDs, int worker_comms) throws IOException;
+
   public void stop(long timeout) throws TCTimeoutException;
 
   public void routeMessageType(TCMessageType messageType, TCMessageSink sink);
