@@ -96,18 +96,5 @@ public abstract class EhcacheTerracottaCommonsConfigurator extends TerracottaCon
     configHelper.addAutolock(" * com.tcclient.cache.GlobalKeySet.*(..)", ConfigLockLevel.WRITE);
 	}
   
-  protected Bundle getExportedBundle(final BundleContext context, String targetBundleName) {
-    // find the bundle that contains the replacement classes
-    Bundle[] bundles = context.getBundles();
-    Bundle bundle = null;
-    for (int i = 0; i < bundles.length; i++) {
-      if (targetBundleName.equals(bundles[i].getSymbolicName())) {
-        bundle = bundles[i];
-        break;
-      }
-    }  
-    return bundle;
-  }
-  
   protected abstract String getExportedBundleName();
 }

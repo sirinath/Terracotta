@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
  * <code>TCConnection</code>'s
- * 
+ *
  * @author teck
  */
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
@@ -191,7 +191,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
             sk.cancel();
           }
         } catch (Exception e) {
-          logger.error("Exception trying to clear selection key", e);
+          logger.warn("Exception trying to clear selection key", e);
         }
       }
 
@@ -209,7 +209,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
                   s.shutdownOutput();
                 }
               } catch (Exception e) {
-                logger.error("Exception trying to shutdown socket output: " + e.getMessage());
+                logger.warn("Exception trying to shutdown socket output: " + e.getMessage());
               }
 
               try {
@@ -217,7 +217,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
                   s.close();
                 }
               } catch (Exception e) {
-                logger.error("Exception trying to close() socket: " + e.getMessage());
+                logger.warn("Exception trying to close() socket: " + e.getMessage());
               }
             }
           }
@@ -228,14 +228,14 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         try {
           ssc.close();
         } catch (Exception e) {
-          logger.error("Exception trying to close() server socket" + e.getMessage());
+          logger.warn("Exception trying to close() server socket" + e.getMessage());
         }
       }
 
       try {
         ch.close();
       } catch (Exception e) {
-        logger.error("Exception trying to close channel", e);
+        logger.warn("Exception trying to close channel", e);
       }
     } catch (Exception e) {
       // this is just a catch all to make sure that no exceptions will be thrown by this method, please do not remove
