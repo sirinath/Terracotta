@@ -449,7 +449,7 @@ public class CacheTC implements Ehcache {
       }
       applyDefaultsToElementWithoutLifespanSet(element);
 
-      memoryStore.put(element);
+      memoryStore.putData(element);
       if (elementExists) {
         registeredEventListeners.notifyElementUpdated(element, doNotNotifyCacheReplicators);
       } else {
@@ -492,7 +492,7 @@ public class CacheTC implements Ehcache {
     try {
       applyDefaultsToElementWithoutLifespanSet(element);
 
-      memoryStore.put(element);
+      memoryStore.putData(element);
     } finally {
       ManagerUtil.monitorExit(lock);
     }

@@ -156,7 +156,7 @@ public class CacheDataStore implements Serializable {
     return hashValue % this.concurrency;
   }
 
-  public Object put(final Object key, final Object value) {
+  private CacheData putInternal(final Object key, final Object value) {
     Assert.pre(key != null);
     Assert.pre(value != null);
 
@@ -169,9 +169,17 @@ public class CacheDataStore implements Serializable {
     if (invalidatorSleepSeconds >= 0) {
       dtmStore[storeIndex].put(key, cd.getTimestamp());
     }
+    return rcd;
+  }
+  
+  public Object put(final Object key, final Object value) {
+    CacheData rcd = putInternal(key, value);
 
-    Object rv = (rcd == null) ? null : rcd.getValue();
-    return rv;
+    return ((rcd == null) ? null : rcd.getValue());
+  }
+  
+  public void putData(final Object key, final Object value) {
+    putInternal(key, value);
   }
 
   private void dumpStore() {
@@ -375,6 +383,7 @@ public class CacheDataStore implements Serializable {
     for (Iterator it = allLocalEntires.iterator(); it.hasNext();) {
       Map.Entry e = (Map.Entry) it.next();
       allLocalKeys[i] = e.getKey();
+      i++;
     }
     return allLocalKeys;
   }
