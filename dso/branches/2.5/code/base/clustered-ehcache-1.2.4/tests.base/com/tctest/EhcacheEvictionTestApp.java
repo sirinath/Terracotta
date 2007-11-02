@@ -116,6 +116,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   }
 
   private void runSimplePutTimeToLiveTimeout(int index) throws Throwable {
+    DebugUtil.DEBUG = true;
+    
     if (index == 1) {
       doPut();
     }
@@ -136,6 +138,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
 
     doGetNull(index);
 
+    DebugUtil.DEBUG = false;
     barrier.barrier();
   }
 

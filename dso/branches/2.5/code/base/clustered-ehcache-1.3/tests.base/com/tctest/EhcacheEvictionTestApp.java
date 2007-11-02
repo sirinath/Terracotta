@@ -122,6 +122,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
   }
 
   private void runSimplePutTimeToLiveTimeout(int index) throws Throwable {
+    DebugUtil.DEBUG = true;
+    
     if (index == 1) {
       doPut();
     }
@@ -141,6 +143,8 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     barrier.barrier();
 
     doGetNull(index);
+    
+    DebugUtil.DEBUG = false;
 
     barrier.barrier();
   }
@@ -210,7 +214,7 @@ public class EhcacheEvictionTestApp extends AbstractErrorCatchingTransparentApp 
     Cache cache = cacheManager.getCache("CACHE");
     for (int i = 0; i < NUM_OF_CACHE_ITEMS; i++) {
       Object o = cache.get("key" + i);
-      Assert.assertNull("Object supposed to be Null, but is: " + o, o);
+      Assert.assertNull("Client " + index + " -- Object supposed to be Null, but is: " + o, o);
     }
   }
 
