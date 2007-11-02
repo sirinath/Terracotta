@@ -4,6 +4,10 @@
  */
 package com.tcclient.cache;
 
+import com.tc.logging.TCLogger;
+import com.tc.object.bytecode.ManagerUtil;
+import com.tc.util.DebugUtil;
+
 import java.io.Serializable;
 
 /**
@@ -12,6 +16,8 @@ import java.io.Serializable;
  * used, when it expires, and whether it is still valid.
  */
 public class CacheData implements Serializable {
+  private static final TCLogger              logger = ManagerUtil.getLogger("com.tc.cache.CacheData");
+  
   // Config
   private final CacheConfig    config;
   
@@ -46,11 +52,19 @@ public class CacheData implements Serializable {
   }
 
   private boolean hasNotExpired() {
+    if (DebugUtil.DEBUG) {
+      log("Client " + ManagerUtil.getClientID() + ", value: " + value + ", maxIdleTimeoutMillis: " + config.getMaxIdleTimeoutMillis() + ", lastAccessedTimeInMillis: " + lastAccessedTimeInMillis + ", idleTimeInMillis: " + getIdleMillis());
+    }
+    
     if (config.getMaxIdleTimeoutMillis() <= 0) { return true; }
     return getIdleMillis() < config.getMaxIdleTimeoutMillis();
   }
 
   private boolean isStillAlive() {
+    if (DebugUtil.DEBUG) {
+      log("Client " + ManagerUtil.getClientID() + ", value: " + value + ", maxTTLMillis: " + config.getMaxTTLMillis() + ", createTime: " + createTime + ", timeToDieMillis: " + getTimeToDieMillis() + ", System.currentTimeMillis() <= getTimeToDieMillis(): " + (System.currentTimeMillis() <= getTimeToDieMillis()));
+    }
+
     if (config.getMaxTTLMillis() <= 0) { return true; }
     return System.currentTimeMillis() <= getTimeToDieMillis();
   }
@@ -82,6 +96,10 @@ public class CacheData implements Serializable {
 
   synchronized boolean isInvalidated() {
     return this.invalidated;
+  }
+  
+  private void log(String msg) {
+    logger.info(msg);
   }
 
   public int hashCode() {
