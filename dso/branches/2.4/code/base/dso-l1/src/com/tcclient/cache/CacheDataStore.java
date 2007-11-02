@@ -372,7 +372,7 @@ public class CacheDataStore implements Serializable {
     Collection allLocalEntires = getAllLocalEntries(startEvictionIndex, lastEvictionIndex);
     Object[] allLocalKeys = new Object[allLocalEntires.size()];
     int i = 0;
-    for (Iterator it = allLocalEntires.iterator(); it.hasNext();) {
+    for (Iterator it = allLocalEntires.iterator(); it.hasNext(); i++) {
       Map.Entry e = (Map.Entry) it.next();
       allLocalKeys[i] = e.getKey();
     }
@@ -421,7 +421,7 @@ public class CacheDataStore implements Serializable {
     long numOfObjectsPerChunk = entriesToBeExamined.size();
 
     if (isGlobalInvalidation) {
-      numOfObjectsPerChunk = Math.round(entriesToBeExamined.size() * 1.0 / numOfChunks);
+      numOfObjectsPerChunk = (int)Math.ceil(entriesToBeExamined.size() * 1.0 / numOfChunks);
     }
 
     for (Iterator it = entriesToBeExamined.iterator(); it.hasNext();) {
