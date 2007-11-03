@@ -66,6 +66,9 @@ public class MavenToOSGiTest extends TestCase {
     helpTestVersionString("", "0.0.0");
     helpTestVersionString(null, "0.0.0");
     helpTestVersionString("1.2.3-A B:C-D@E#f$g%", "1.2.3.A_B_C_D_E_f_g_");
+    
+    // test getting passed an already valid OSGI version 
+    helpTestVersionString("1.2.3.SNAPSHOT", "1.2.3.SNAPSHOT");    
   }
 
   private static void helpTestVersionString(String mavenVersion, String expected) {

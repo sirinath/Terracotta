@@ -15,14 +15,22 @@ import java.util.regex.Pattern;
 public class MavenToOSGi {
   private MavenToOSGi() {}
 
-  // Cache defining a valid Maven version: x[.y[.z]][-classifier][-i]
+  // Cache pattern defining a valid Maven version: x[.y[.z]][-classifier][-i]
   // which is done with a regex like  digits(.digits(.digits))-any
   // reminder: \\ is Java string escaping, 
   //           (?:) is a non-capture group, 
   //           ()? is an optional group
   //           \d is a digit
   private static final Pattern MAVEN_VERSION_PATTERN = Pattern.compile("^(\\d+)(?:\\.(\\d+)(?:\\.(\\d+))?)?(?:-(.*))?$");
-  
+
+  // Cache pattern defining a valid OSGi version: x[.y[.z[.qualifier]]]
+  // which is done with a regex like  digits(.digits(.digits))-any
+  // reminder: \\ is Java string escaping, 
+  //           (?:) is a non-capture group, 
+  //           ()? is an optional group
+  //           \d is a digit
+  private static final Pattern OSGI_VERSION_PATTERN = Pattern.compile("^(\\d+)(?:\\.(\\d+)(?:\\.(\\d+)(\\.(.*))?)?)?$");
+
   // Cache pattern defining characters that aren't valid in OSGi symbolic name or version qualifier for speed
   private static final Pattern INVALID_OSGI_CHAR_PATTERN = Pattern.compile("[^a-zA-Z0-9._]");
   
@@ -141,6 +149,10 @@ public class MavenToOSGi {
         micro = Integer.parseInt(microStr);
       }
        
+    } else if(OSGI_VERSION_PATTERN.matcher(mavenVersion).matches()) {
+      // if doesn't match pattern, check if this is already a valid osgi format
+      return mavenVersion;
+
     } else {
       // if doesn't match pattern, use whole thing as classifier
       // some Maven examples show something like "RELEASE" as a version == 0.0.0-RELEASE
