@@ -14,7 +14,6 @@ import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockID;
@@ -55,8 +54,7 @@ public class RemoteTransactionManagerTest extends TestCase {
     batchAccounting = new TransactionBatchAccounting();
     lockAccounting = new LockAccounting();
     manager = new RemoteTransactionManagerImpl(logger, batchFactory,
-                                               new ClientTransactionFactoryImpl(new NullRuntimeLogger(),
-                                                                                new TestChannelIDProvider()),
+                                               new ClientTransactionFactoryImpl(new NullRuntimeLogger()),
                                                batchAccounting, lockAccounting, new NullSessionManager(),
                                                new MockChannel());
     number = new SynchronizedInt(0);
@@ -430,7 +428,7 @@ public class RemoteTransactionManagerTest extends TestCase {
     int num = number.increment();
     LockID lid = new LockID("lock" + num);
     TransactionContext tc = new TransactionContextImpl(lid, TxnType.NORMAL, new LockID[] { lid });
-    ClientTransaction txn = new ClientTransactionImpl(new TransactionID(num), new NullRuntimeLogger(), null);
+    ClientTransaction txn = new ClientTransactionImpl(new TransactionID(num), new NullRuntimeLogger());
     txn.setTransactionContext(tc);
     txn.fieldChanged(new MockTCObject(new ObjectID(num), this), "class", "class.field", new ObjectID(num), -1);
     return txn;

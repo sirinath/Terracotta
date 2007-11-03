@@ -212,7 +212,7 @@ public class DistributedObjectClient extends SEDA {
 
     logger.debug("Created channel.");
 
-    ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger, channel.getChannelIDProvider());
+    ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
         .getCommitTransactionMessageFactory(), new DNAEncodingImpl(classProvider));
@@ -222,7 +222,7 @@ public class DistributedObjectClient extends SEDA {
                                                   new LockAccounting(), sessionManager, channel);
 
     ClientGlobalTransactionManager gtxManager = new ClientGlobalTransactionManagerImpl(rtxManager);
-    
+
     ClientLockStatManager lockStatManager = new ClientLockStatManagerImpl();
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
@@ -295,7 +295,7 @@ public class DistributedObjectClient extends SEDA {
     // more likely an AssertionError
     Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
                                                 new ClientCoordinationHandler(cluster), 1, maxSize);
-    
+
     Stage lockStatisticsStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_RESPONSE_STAGE, new LockStatisticsResponseHandler(), 1, 1);
     lockStatManager.start(channel, lockStatisticsStage.getSink());
 
