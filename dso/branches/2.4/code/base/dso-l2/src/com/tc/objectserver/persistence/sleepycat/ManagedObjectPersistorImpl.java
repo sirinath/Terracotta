@@ -43,7 +43,6 @@ import java.util.TreeSet;
 public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase implements ManagedObjectPersistor {
 
   private static final Comparator              MO_COMPARATOR      = new Comparator() {
-
                                                                     public int compare(Object o1, Object o2) {
                                                                       long oid1 = ((ManagedObject) o1).getID().toLong();
                                                                       long oid2 = ((ManagedObject) o2).getID().toLong();
@@ -55,8 +54,22 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
                                                                         return 0;
                                                                       }
                                                                     }
-
                                                                   };
+
+  private static final Comparator              OID_COMPARATOR     = new Comparator() {
+                                                                    public int compare(Object o1, Object o2) {
+                                                                      long oid1 = ((ObjectID) o1).toLong();
+                                                                      long oid2 = ((ObjectID) o2).toLong();
+                                                                      if (oid1 < oid2) {
+                                                                        return -1;
+                                                                      } else if (oid1 > oid2) {
+                                                                        return 1;
+                                                                      } else {
+                                                                        return 0;
+                                                                      }
+                                                                    }
+                                                                  };
+
   private static final Object                  MO_PERSISTOR_KEY   = ManagedObjectPersistorImpl.class.getName()
                                                                     + ".saveAllObjects";
   private static final Object                  MO_PERSISTOR_VALUE = "Complete";
@@ -346,6 +359,13 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return sorted;
   }
 
+  private SortedSet getSortedObjectIDs(Collection objectIDs) {
+    TreeSet sorted = new TreeSet(OID_COMPARATOR);
+    sorted.addAll(objectIDs);
+    Assert.assertEquals(objectIDs.size(), sorted.size());
+    return sorted;
+  }
+
   private long saveAllCount       = 0;
   private long saveAllObjectCount = 0;
   private long saveAllElapsed     = 0;
@@ -368,7 +388,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   }
 
   public void deleteAllObjectsByID(PersistenceTransaction tx, Collection objectIDs) {
-    for (Iterator i = objectIDs.iterator(); i.hasNext();) {
+    // Sorting to maintain lock ordering - check saveAllObjects
+    SortedSet sortedOids = getSortedObjectIDs(objectIDs);
+    for (Iterator i = sortedOids.iterator(); i.hasNext();) {
       deleteObjectByID(tx, (ObjectID) i.next());
     }
   }
