@@ -2051,7 +2051,6 @@ public class BootJarTool {
 
   private void addInstrumentedReentrantReadWriteLock() {
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-    spec.addTransient("sync");
     spec.setCallConstructorOnLoad(true);
 
     String jClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock";
@@ -2060,10 +2059,8 @@ public class BootJarTool {
     mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext);
 
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-    spec.addTransient("sync");
     spec.markPreInstrumented();
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-    spec.addTransient("sync");
     spec.markPreInstrumented();
 
     String jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock";
@@ -2077,8 +2074,22 @@ public class BootJarTool {
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
                                  "WriteLock", "WriteLock", instrumentedContext);
+    
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
+    spec.setHonorTransient(true);
+    spec.markPreInstrumented();
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
+    spec.markPreInstrumented();
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$NonfairSync");
+    spec.markPreInstrumented();
+    
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
+    spec.setHonorTransient(true);
+    spec.addTransient("state");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.markPreInstrumented();
   }
-
+  
   private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots,
                                             String tcClassNameDots, String jClassNameDots, String srcInnerClassName,
                                             String targetInnerClassName, Map instrumentedContext) {
@@ -2090,6 +2101,8 @@ public class BootJarTool {
     tcCR.accept(tcCN, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
     byte[] jData = getSystemBytes(jInnerClassNameDots);
+    
+    jData = doDSOTransform(jInnerClassNameDots, jData);
 
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
@@ -2117,6 +2130,9 @@ public class BootJarTool {
     tcCR.accept(tcCN, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
     byte[] jData = getSystemBytes(jClassNameDots);
+    
+    jData = doDSOTransform(jClassNameDots, jData);
+    
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
     ClassVisitor cv1 = new ReentrantReadWriteLockClassAdapter(cw);

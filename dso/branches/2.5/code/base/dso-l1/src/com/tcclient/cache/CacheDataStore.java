@@ -10,6 +10,7 @@ import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.util.Assert;
+import com.tc.util.Util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -124,9 +125,7 @@ public class CacheDataStore implements Serializable {
   }
 
   private int getStoreIndex(Object key) {
-    if (config.getConcurrency() == 1) { return 0; }
-    int hashValue = Math.abs(hash(key.hashCode()));
-    return hashValue % config.getConcurrency();
+    return Util.hash(key, config.getConcurrency());
   }
 
 
@@ -378,7 +377,6 @@ public class CacheDataStore implements Serializable {
     for (Iterator it = allLocalEntries.iterator(); it.hasNext(); i++) {
       Map.Entry e = (Map.Entry) it.next();
       allLocalKeys[i] = e.getKey();
-      i++;
     }
     return allLocalKeys;
   }
