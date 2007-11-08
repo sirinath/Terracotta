@@ -870,7 +870,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private void addJDK15InstrumentedSpec() {
     if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
       TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-      spec.addTransient("sync");
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
@@ -878,20 +877,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$DsoLock");
       spec.setHonorTransient(true);
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLockTC");
-      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLockTC");
-      // spec.setHonorTransient(true);
       spec.setCallMethodOnLoad("init");
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-      // spec.setHonorTransient(true);
-      spec.addTransient("sync");
-      spec.setCallMethodOnLoad("init");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      // spec.setHonorTransient(true);
-      spec.addTransient("sync");
-      spec.setCallMethodOnLoad("init");
 
       spec = getOrCreateSpec("com.tcclient.util.concurrent.locks.ConditionObject");
       spec.disableWaitNotifyCodeSpec("signal()V");
@@ -907,6 +898,15 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
+      
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
+      spec.setHonorTransient(true);
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$NonfairSync");
+      spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
+      spec.setHonorTransient(true);
+      spec.addTransient("state");
+      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     }
   }
 
