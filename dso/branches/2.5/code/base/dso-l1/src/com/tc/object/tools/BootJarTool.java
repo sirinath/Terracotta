@@ -2050,13 +2050,15 @@ public class BootJarTool {
   }
 
   private void addInstrumentedReentrantReadWriteLock() {
+    String methodPrefix = "__RWL" + ByteCodeUtil.TC_METHOD_PREFIX;
+      
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
     spec.setCallConstructorOnLoad(true);
 
     String jClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock";
     String tcClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC";
     Map instrumentedContext = new HashMap();
-    mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext);
+    mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext, methodPrefix);
 
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
     spec.markPreInstrumented();
@@ -2067,13 +2069,13 @@ public class BootJarTool {
     String tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$ReadLock";
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
-                                 "ReadLock", "ReadLock", instrumentedContext);
+                                 "ReadLock", "ReadLock", instrumentedContext, methodPrefix);
 
     jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock";
     tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$WriteLock";
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
-                                 "WriteLock", "WriteLock", instrumentedContext);
+                                 "WriteLock", "WriteLock", instrumentedContext, methodPrefix);
     
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
     spec.setHonorTransient(true);
@@ -2092,7 +2094,7 @@ public class BootJarTool {
   
   private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots,
                                             String tcClassNameDots, String jClassNameDots, String srcInnerClassName,
-                                            String targetInnerClassName, Map instrumentedContext) {
+                                            String targetInnerClassName, Map instrumentedContext, String methodPrefix) {
     String tcInnerClassNameSlashes = tcInnerClassNameDots.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
                                                                   ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     byte[] tcData = getSystemBytes(tcInnerClassNameDots);
@@ -2102,7 +2104,7 @@ public class BootJarTool {
 
     byte[] jData = getSystemBytes(jInnerClassNameDots);
     
-    jData = doDSOTransform(jInnerClassNameDots, jData);
+    //jData = doDSOTransform(jInnerClassNameDots, jData);
 
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
@@ -2112,7 +2114,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, false);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jInnerClassNameDots,
                                                                               tcInnerClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, methodPrefix));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
 
@@ -2123,7 +2125,7 @@ public class BootJarTool {
     bootJar.loadClassIntoJar(jInnerClassNameDots, jData, true);
   }
 
-  private void mergeReentrantReadWriteLock(String tcClassNameDots, String jClassNameDots, Map instrumentedContext) {
+  private void mergeReentrantReadWriteLock(String tcClassNameDots, String jClassNameDots, Map instrumentedContext, String methodPrefix) {
     byte[] tcData = getSystemBytes(tcClassNameDots);
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode();
@@ -2131,7 +2133,7 @@ public class BootJarTool {
 
     byte[] jData = getSystemBytes(jClassNameDots);
     
-    jData = doDSOTransform(jClassNameDots, jData);
+    //jData = doDSOTransform(jClassNameDots, jData);
     
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
@@ -2148,7 +2150,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, true);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, methodPrefix));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
     jData = doDSOTransform(jClassNameDots, jData);
