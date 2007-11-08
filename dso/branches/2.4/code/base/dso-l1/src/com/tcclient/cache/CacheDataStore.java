@@ -383,7 +383,6 @@ public class CacheDataStore implements Serializable {
     for (Iterator it = allLocalEntires.iterator(); it.hasNext(); i++) {
       Map.Entry e = (Map.Entry) it.next();
       allLocalKeys[i] = e.getKey();
-      i++;
     }
     return allLocalKeys;
   }
