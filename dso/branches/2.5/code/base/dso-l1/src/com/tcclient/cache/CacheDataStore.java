@@ -128,15 +128,6 @@ public class CacheDataStore implements Serializable {
     return Util.hash(key, config.getConcurrency());
   }
 
-
-  private static int hash(int h) {
-    h += ~(h << 9);
-    h ^= (h >>> 14);
-    h += (h << 4);
-    h ^= (h >>> 10);
-    return h;
-  }
-
   private CacheData putInternal(final Object key, final Object value) {
     logDebug("Put [" + key + ", " + value + "]");
     Assert.pre(key != null);
