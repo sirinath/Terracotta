@@ -14,7 +14,6 @@ import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockID;
@@ -54,11 +53,8 @@ public class RemoteTransactionManagerTest extends TestCase {
     batchFactory = new TestTransactionBatchFactory();
     batchAccounting = new TransactionBatchAccounting();
     lockAccounting = new LockAccounting();
-    manager = new RemoteTransactionManagerImpl(logger, batchFactory,
-                                               new ClientTransactionFactoryImpl(new NullRuntimeLogger(),
-                                                                                new TestChannelIDProvider()),
-                                               batchAccounting, lockAccounting, new NullSessionManager(),
-                                               new MockChannel());
+    manager = new RemoteTransactionManagerImpl(logger, batchFactory, batchAccounting, lockAccounting,
+                                               new NullSessionManager(), new MockChannel());
     number = new SynchronizedInt(0);
     error = new SynchronizedRef(null);
     threads = new HashMap();
@@ -117,7 +113,6 @@ public class RemoteTransactionManagerTest extends TestCase {
 
   public void testSendAckedGlobalTransactionIDs() throws Exception {
     assertTrue(batchSendQueue.isEmpty());
-    Set acknowledged = new HashSet();
     ClientTransaction ctx = makeTransaction();
     CyclicBarrier barrier = new CyclicBarrier(2);
 
@@ -128,8 +123,6 @@ public class RemoteTransactionManagerTest extends TestCase {
     assertNotNull(batch);
     assertSame(batch, batchSendQueue.poll(1));
     assertTrue(batchSendQueue.isEmpty());
-
-    assertEquals(acknowledged, batch.ackedTransactions);
 
     // fill the current batch with a bunch of transactions
     int count = 50;
@@ -150,7 +143,6 @@ public class RemoteTransactionManagerTest extends TestCase {
 
     // acknowledge the first transaction
     manager.receivedAcknowledgement(SessionID.NULL_ID, ctx.getTransactionID());
-    acknowledged.add(ctx.getTransactionID());
 
     manager.receivedBatchAcknowledgement(batch.batchID);
 
@@ -158,12 +150,6 @@ public class RemoteTransactionManagerTest extends TestCase {
     batch = (TestTransactionBatch) batchSendQueue.poll(1);
     assertNotNull(batch);
     assertTrue(batchSendQueue.isEmpty());
-
-    // The set of acked transactions in the batch should be everything we've
-    // acknowledged so far.
-    assertEquals(acknowledged, batch.ackedTransactions);
-
-    acknowledged.clear();
 
     ctx = makeTransaction();
     barrier = new CyclicBarrier(2);
@@ -181,9 +167,6 @@ public class RemoteTransactionManagerTest extends TestCase {
     batch = (TestTransactionBatch) batchSendQueue.poll(1);
     assertNotNull(batch);
     assertTrue(batchSendQueue.isEmpty());
-    // The set of acked transactions should now be empty, since we've already
-    // sent them down to the server
-    assertEquals(acknowledged, batch.ackedTransactions);
   }
 
   public void testResendOutstandingBasics() throws Exception {
@@ -430,15 +413,13 @@ public class RemoteTransactionManagerTest extends TestCase {
     int num = number.increment();
     LockID lid = new LockID("lock" + num);
     TransactionContext tc = new TransactionContextImpl(lid, TxnType.NORMAL, new LockID[] { lid });
-    ClientTransaction txn = new ClientTransactionImpl(new TransactionID(num), new NullRuntimeLogger(), null);
+    ClientTransaction txn = new ClientTransactionImpl(new TransactionID(num), new NullRuntimeLogger());
     txn.setTransactionContext(tc);
     txn.fieldChanged(new MockTCObject(new ObjectID(num), this), "class", "class.field", new ObjectID(num), -1);
     return txn;
   }
 
   private final class TestTransactionBatch implements ClientTransactionBatch {
-
-    public final Set         ackedTransactions = new HashSet();
 
     public final TxnBatchID  batchID;
 
@@ -496,14 +477,6 @@ public class RemoteTransactionManagerTest extends TestCase {
 
     public TCByteBuffer[] getData() {
       return null;
-    }
-
-    public void setAcknowledgedTransactionIDs(Set acknowledged) {
-      ackedTransactions.addAll(acknowledged);
-    }
-
-    public Collection getAcknowledgedTransactionIDs() {
-      throw new ImplementMe();
     }
 
     public TxnBatchID getTransactionBatchID() {
