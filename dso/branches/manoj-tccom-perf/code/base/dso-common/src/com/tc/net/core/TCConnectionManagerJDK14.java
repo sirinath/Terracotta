@@ -41,9 +41,13 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
   private final ListenerEvents          listenerEvents;
 
   public TCConnectionManagerJDK14() {
+    this(0);
+  }
+
+  public TCConnectionManagerJDK14(int workerCommCount) {
     this.connEvents = new ConnectionEvents();
     this.listenerEvents = new ListenerEvents();
-    this.comm = new TCCommJDK14();
+    this.comm = new TCCommJDK14(workerCommCount);
     this.comm.start();
   }
 
@@ -108,10 +112,6 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
     }
 
     return rv;
-  }
-
-  public void createWorkerCommThreads(int workerCount) {
-    comm.startWorkerComms(workerCount);
   }
 
   public final synchronized TCConnection createConnection(TCProtocolAdaptor adaptor) {

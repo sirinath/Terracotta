@@ -45,8 +45,6 @@ public interface TCConnectionManager {
   public TCListener createListener(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog, boolean reuseAddr)
       throws IOException;
 
-  public void createWorkerCommThreads(int count);
-  
   /**
    * Close any open connections created through this connection manager instance
    */

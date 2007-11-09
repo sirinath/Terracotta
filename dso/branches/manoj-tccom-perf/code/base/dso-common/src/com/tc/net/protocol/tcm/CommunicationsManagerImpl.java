@@ -65,7 +65,17 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy);
+    this(monitor, stackHarnessFactory, null, connectionPolicy, 0);
+  }
+
+  public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
+                                   ConnectionPolicy connectionPolicy, int workerCommCount) {
+    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommCount);
+  }
+
+  public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
+    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0);
   }
 
   /**
@@ -76,7 +86,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    * @param serverDescriptors
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
 
     this.monitor = monitor;
     this.transportHandshakeMessageFactory = new TransportHandshakeMessageFactoryImpl();
@@ -85,7 +95,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     privateConnMgr = (connMgr == null);
 
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerJDK14();
+      this.connectionManager = new TCConnectionManagerJDK14(workerCommCount);
     } else {
       this.connectionManager = connMgr;
     }
@@ -124,8 +134,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     final ConnectionAddressProvider provider = addressProvider;
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(new TCMessageFactoryImpl(sessionProvider, monitor),
-                                                               new TCMessageRouterImpl(), 
-                                                               sessionProvider);
+                                                               new TCMessageRouterImpl(), sessionProvider);
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
 
@@ -162,7 +171,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                                                   maxReconnectTries,
                                                                                                   timeout);
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
-                                          transportHandshakeMessageFactory, new WireProtocolAdaptorFactoryImpl());
+                                                                transportHandshakeMessageFactory,
+                                                                new WireProtocolAdaptorFactoryImpl());
         return cmt;
       }
 
@@ -233,10 +243,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
     return new NetworkListenerImpl(addr, this, channelManager, msgFactory, msgRouter, reuseAddr, connectionIdFactory,
                                    httpSink);
-  }
-
-  public void createWorkerComms(int workerCommsCount) {
-    connectionManager.createWorkerCommThreads(workerCommsCount);
   }
 
   TCListener createCommsListener(TCSocketAddress addr, final ServerMessageChannelFactory channelFactory,

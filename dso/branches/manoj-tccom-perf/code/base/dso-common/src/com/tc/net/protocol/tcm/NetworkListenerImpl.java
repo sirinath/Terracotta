@@ -62,16 +62,6 @@ class NetworkListenerImpl implements NetworkListener {
     commsMgr.registerListener(this);
   }
 
-  public synchronized void start(Set initialConnectionIDs, int workerComms) throws IOException {
-
-    commsMgr.createWorkerComms(workerComms);
-
-    this.lsnr = commsMgr.createCommsListener(this.addr, this.channelManager, this.reuseAddr, initialConnectionIDs,
-                                             this.connectionIdFactory, this.httpSink);
-    this.started = true;
-    commsMgr.registerListener(this);
-  }
-
   public synchronized void stop(long timeout) throws TCTimeoutException {
     if (!started) { return; }
 
