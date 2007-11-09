@@ -234,6 +234,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
     this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State());
+    
+    
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -401,7 +403,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy);
+                                                          connectionPolicy, l2Properties.getInt("tccom.workerthreads"));
 
     final DSOApplicationEvents appEvents;
     try {
@@ -725,7 +727,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     transactionManager.goToActiveMode();
     Set existingConnections = Collections.unmodifiableSet(connectionIdFactory.loadConnectionIDs());
     context.getClientHandshakeManager().setStarting(existingConnections);
-    l1Listener.start(existingConnections, (l2Properties.getInt("tccom.workerthreads", 0)));
+    l1Listener.start(existingConnections);
     consoleLogger.info("Terracotta Server has started up as ACTIVE node on port " + l1Listener.getBindPort()
                        + " successfully, and is now ready for work.");
     return true;

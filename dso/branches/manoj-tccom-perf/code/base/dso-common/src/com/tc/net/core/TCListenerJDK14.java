@@ -65,8 +65,12 @@ final class TCListenerJDK14 implements TCListener {
   }
 
   TCConnectionJDK14 createConnection(SocketChannel ch) {
+    return this.createConnection(ch, -1);
+  }
+
+  TCConnectionJDK14 createConnection(SocketChannel ch, int workerCommId) {
     TCProtocolAdaptor adaptor = getProtocolAdaptorFactory().getInstance();
-    TCConnectionJDK14 rv = new TCConnectionJDK14(listener, comm, adaptor, ch, parent);
+    TCConnectionJDK14 rv = new TCConnectionJDK14(listener, comm, adaptor, ch, parent, workerCommId);
     rv.finishConnect();
     parent.newConnection(rv);
     return rv;

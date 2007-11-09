@@ -4,11 +4,13 @@
  */
 package com.tc.bytes;
 
+import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
+
 import com.tc.logging.LossyTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-
-import java.util.LinkedList;
+import com.tc.properties.TCPropertiesImpl;
+import com.tc.util.Assert;
 
 /**
  * TCByteBuffer source that hides JDK dependencies and that can pool instances. Instance pooling is likely to be a good
@@ -21,12 +23,20 @@ public class TCByteBufferFactory {
   // 10485760 == 10MB
   private static final int            WARN_THRESHOLD     = 10485760;
 
-  private static final boolean        disablePooling     = false;
-
-  private static final LinkedList     directFreePool     = new LinkedList();
-
-  private static final LinkedList     nonDirectFreePool  = new LinkedList();
-
+  private static final ThreadLocal    directFreePool     = new ThreadLocal() {
+                                                           protected Object initialValue() {
+                                                             return new BoundedLinkedQueue(TCPropertiesImpl
+                                                                 .getProperties()
+                                                                 .getInt("tc.bytebuffer.threadlocal.pool.maxcount", 2000));
+                                                           }
+                                                         };
+  private static final ThreadLocal    nonDirectFreePool  = new ThreadLocal() {
+                                                           protected Object initialValue() {
+                                                             return new BoundedLinkedQueue(TCPropertiesImpl
+                                                                 .getProperties()
+                                                                 .getInt("tc.bytebuffer.threadlocal.pool.maxcount", 2000));
+                                                           }
+                                                         };
   // 4096 bytes * 2048 * 4 = 32 MB total
   private static final int            DEFAULT_FIXED_SIZE = 4096;
   private static final int            MAX_POOL_SIZE      = 2048 * 4;
@@ -41,6 +51,12 @@ public class TCByteBufferFactory {
 
   private static final TCByteBuffer   ZERO_BYTE_BUFFER   = TCByteBufferImpl.wrap(new byte[0]);
 
+  private static final boolean        disablePooling     = !(TCPropertiesImpl.getProperties()
+                                                             .getBoolean("tc.bytebuffer.pooling.enabled"));
+
+  private static final int            poolMaxBufCount    = (TCPropertiesImpl.getProperties()
+                                                             .getInt("tc.bytebuffer.threadlocal.pool.maxcount"));
+
   private static TCByteBuffer createNewInstance(boolean direct, int capacity, int index, int totalCount) {
     try {
       TCByteBuffer rv = new TCByteBufferImpl(capacity, direct);
@@ -51,7 +67,7 @@ public class TCByteBufferFactory {
     } catch (OutOfMemoryError oome) {
       // try to log some useful context. Most OOMEs don't have stack traces unfortunately
       logger.error("OOME trying to allocate " + (direct ? "direct" : "non-direct") + " buffer of size " + capacity
-          + " (index " + index + " of count " + totalCount + ")");
+                   + " (index " + index + " of count " + totalCount + ")");
       throw oome;
     }
   }
@@ -74,7 +90,8 @@ public class TCByteBufferFactory {
     if (size < 0) { throw new IllegalArgumentException("Requested length cannot be less than zero"); }
     if (size == 0) { return ZERO_BYTE_BUFFER; }
 
-    if (disablePooling || size > fixedBufferSize) {
+    // Don't give 4k ByteBuffer from pool for smaller size requests.
+    if (disablePooling || size < (fixedBufferSize - 500) || size > fixedBufferSize) {
       return createNewInstance(direct, size);
     } else {
       return getFromPoolOrCreate(direct);
@@ -90,6 +107,11 @@ public class TCByteBufferFactory {
     TCByteBuffer buffer = getFromPool(direct);
     if (null == buffer) {
       buffer = createNewInstance(direct, fixedBufferSize, i, numBuffers);
+      if (direct) {
+        buffer.setBufferPool((BoundedLinkedQueue) (directFreePool.get()));
+      } else {
+        buffer.setBufferPool((BoundedLinkedQueue) (nonDirectFreePool.get()));
+      }
     }
     return buffer;
   }
@@ -146,19 +168,28 @@ public class TCByteBufferFactory {
   private static TCByteBuffer getFromPool(boolean direct) {
     if (disablePooling) return null;
     TCByteBuffer buf = null;
+
     if (direct) {
-      synchronized (directFreePool) {
-        if (directFreePool.size() > 0) {
-          buf = (TCByteBuffer) directFreePool.removeFirst();
+      BoundedLinkedQueue dFreePool = (BoundedLinkedQueue) directFreePool.get();
+      try {
+        if ((buf = (TCByteBuffer) dFreePool.poll(0)) != null) {
           buf.checkedOut();
+        } else {
+          lossyLogger.info(Thread.currentThread().getName() + "'s thread local direct buffer pool Empty");
         }
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
       }
     } else {
-      synchronized (nonDirectFreePool) {
-        if(nonDirectFreePool.size() > 0 ) {
-          buf = (TCByteBuffer) nonDirectFreePool.removeFirst();
+      BoundedLinkedQueue nondFreePool = (BoundedLinkedQueue) nonDirectFreePool.get();
+      try {
+        if ((buf = (TCByteBuffer) nondFreePool.poll(0)) != null) {
           buf.checkedOut();
+        } else {
+          lossyLogger.info(Thread.currentThread().getName() + "'s thread local direct buffer pool Empty");
         }
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
       }
     }
     return buf;
@@ -177,25 +208,18 @@ public class TCByteBufferFactory {
     if (disablePooling) { return; }
 
     if (buf.capacity() == fixedBufferSize) {
-      if (buf.isDirect()) {
-        synchronized (directFreePool) {
-          buf.commit();
-          if (directFreePool.size() < MAX_POOL_SIZE) {
-            // buf.clear();
-            directFreePool.addLast(buf);
-          }
-        }
-      } else {
-        synchronized (nonDirectFreePool) {
-          buf.commit();
-          if (nonDirectFreePool.size() < MAX_POOL_SIZE) {
-            // buf.clear();
-            nonDirectFreePool.addLast(buf);
-          } else {
-            lossyLogger.info("MAX POOL Size of " + nonDirectFreePool.size() + " reached !");
-          }
-        }
+
+      // hey buf, which bufferpool you belong to ?
+      BoundedLinkedQueue bufferPool = buf.getBufferPool();
+      Assert.eval(bufferPool != null);
+      buf.commit();
+
+      try {
+        bufferPool.offer(buf, 0);
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
       }
+
     }
   }
 

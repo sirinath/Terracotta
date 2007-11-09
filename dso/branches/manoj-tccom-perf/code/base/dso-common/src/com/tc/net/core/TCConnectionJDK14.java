@@ -50,6 +50,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private static final long              WARN_THRESHOLD      = 0x400000L;                                       // 4MB
 
   private final LinkedList               writeContexts       = new LinkedList();
+  private int                            workerCommID        = -1;
   private final TCCommJDK14              comm;
   private final TCConnectionManagerJDK14 parent;
   private final TCConnectionEventCaller  eventCaller         = new TCConnectionEventCaller(logger);
@@ -67,11 +68,11 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   // for creating unconnected client connections
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor,
                     TCConnectionManagerJDK14 managerJDK14) {
-    this(listener, comm, adaptor, null, managerJDK14);
+    this(listener, comm, adaptor, null, managerJDK14, -1);
   }
 
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor, SocketChannel ch,
-                    TCConnectionManagerJDK14 parent) {
+                    TCConnectionManagerJDK14 parent, int workerCommId) {
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
 
@@ -83,6 +84,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     Assert.assertNotNull(comm);
     this.comm = comm;
     this.channel = ch;
+    this.workerCommID = workerCommId;
   }
 
   private void closeImpl(Runnable callback) {
@@ -98,6 +100,10 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         writeContexts.clear();
       }
     }
+  }
+
+  public int getWorkerCommThread() {
+    return workerCommID;
   }
 
   protected void finishConnect() {
@@ -294,7 +300,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       }
 
       if (writeContexts.isEmpty()) {
-        comm.removeWriteInterest(this, channel);
+        comm.removeWriteInterest(this, channel, workerCommID);
       }
     }
   }
@@ -363,7 +369,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       // after finishConnect(). Only after this selection occurs it is always safe to try
       // to write.
 
-      comm.requestWriteInterest(this, channel);
+      // comm.requestWriteInterest(this, channel);
+      comm.requestWriteInterest(this, channel, workerCommID);
     }
   }
 
