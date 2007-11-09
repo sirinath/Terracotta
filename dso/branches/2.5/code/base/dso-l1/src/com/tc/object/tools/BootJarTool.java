@@ -2093,8 +2093,8 @@ public class BootJarTool {
 
   private void makeAbstractSynchronizerAdaptable() {
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-    //spec.setHonorTransient(true);
-    // spec.addTransient("state");
+    spec.setHonorTransient(true);
+    spec.addTransient("state");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
     spec.markPreInstrumented();
 
@@ -2105,6 +2105,7 @@ public class BootJarTool {
     if (Vm.isJDK16Compliant()) {
       spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
       spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+      spec.setHonorTransient(true);
       spec.markPreInstrumented();
     }
   }
