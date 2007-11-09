@@ -904,8 +904,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private void addAbstractSynchronizerSpec() {
     TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-    // spec.setHonorTransient(true);
-    // spec.addTransient("state");
+    spec.setHonorTransient(true);
+    spec.addTransient("state");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
     spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer$Node");
