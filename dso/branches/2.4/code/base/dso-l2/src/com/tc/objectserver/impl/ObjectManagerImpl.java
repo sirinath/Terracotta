@@ -477,8 +477,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public synchronized void releaseAll(Collection objects) {
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
-      if (config.paranoid()) {
-        Assert.assertFalse(mo.isDirty());
+      if (config.paranoid() && !mo.isNew() && mo.isDirty()) {
+        // It is possible to release new just created objects before it has a chance to get applied because of a recall
+        // due to a GC.
+        throw new AssertionError("ObjectManager.releaseAll() called on dirty old objects : " + mo
+                                 + " total objects size : " + objects.size());
       }
       basicRelease(mo);
     }
