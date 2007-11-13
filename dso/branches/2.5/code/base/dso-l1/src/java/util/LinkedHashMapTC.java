@@ -51,6 +51,8 @@ public abstract class LinkedHashMapTC extends LinkedHashMap implements Manageabl
     if (__tc_isManaged()) {
       synchronized (__tc_managed().getResolveLock()) {
         if (value != null) {
+          // XXX:: This is tied closely to HashMap implementation which calls equals on the passed value rather than the
+          // other way around
           return super.containsValue(new ValueWrapper(value));
         } else {
           return super.containsValue(value);
