@@ -298,6 +298,7 @@ public final class DistributableBeanFactoryMixin implements DistributableBeanFac
 
   private String getDigest(String s) {
     try {
+      s = s.replaceAll(System.getProperty("line.separator"), "\n");
       MessageDigest digest = MessageDigest.getInstance("MD5");
       digest.update(s.getBytes("ASCII"));
       byte[] b = digest.digest();
