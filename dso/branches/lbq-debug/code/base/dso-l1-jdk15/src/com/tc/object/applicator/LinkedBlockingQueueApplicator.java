@@ -186,6 +186,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
+          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue after put in applicator: " + queue.size() + " putting object: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
