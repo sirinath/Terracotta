@@ -207,6 +207,8 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
+        System.err.println("Client " + ManagerUtil.getClientID() + " in REMOVE_FIRST_N at applicator: " + queue.size() + " removing " + count + " objects.");
+
         for (int i = 0; i < count; i++) {
           try {
             TC_TAKE_METHOD.invoke(queue, new Object[0]);
