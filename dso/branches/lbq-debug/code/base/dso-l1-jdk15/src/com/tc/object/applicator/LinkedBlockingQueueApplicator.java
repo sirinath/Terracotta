@@ -14,6 +14,7 @@ import com.tc.object.TCObject;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
@@ -193,7 +194,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
+          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue before take in applicator: " + queue.size());
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
+          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue after take in applicator: " + queue.size() + " taking object: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
