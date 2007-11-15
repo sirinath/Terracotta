@@ -186,7 +186,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
-          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue after put in applicator: " + queue.size() + " putting object: " + params[0]);
+          logger.info("Client " + ManagerUtil.getClientID() + " size of queue after put in applicator: " + queue.size() + " putting object: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -195,9 +195,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
-          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue before take in applicator: " + queue.size());
+          logger.info("Client " + ManagerUtil.getClientID() + " size of queue before take in applicator: " + queue.size());
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
-          System.err.println("Client " + ManagerUtil.getClientID() + " size of queue after take in applicator: " + queue.size() + " taking object: " + o);
+          logger.info("Client " + ManagerUtil.getClientID() + " size of queue after take in applicator: " + queue.size() + " taking object: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -207,7 +207,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
-        System.err.println("Client " + ManagerUtil.getClientID() + " in REMOVE_FIRST_N at applicator: " + queue.size() + " removing " + count + " objects.");
+        logger.info("Client " + ManagerUtil.getClientID() + " in REMOVE_FIRST_N at applicator: " + queue.size() + " removing " + count + " objects.");
 
         for (int i = 0; i < count; i++) {
           try {
