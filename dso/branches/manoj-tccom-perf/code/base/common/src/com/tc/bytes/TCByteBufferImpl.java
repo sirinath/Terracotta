@@ -19,31 +19,34 @@ import java.nio.ByteBuffer;
 // This would make the TCByteBuffer interface consistent w.r.t. exceptions (whilst being blind to JDK13 vs JDK14)
 public class TCByteBufferImpl implements TCByteBuffer {
 
-  private static final State        INIT        = new State("INIT");
-  private static final State        CHECKED_OUT = new State("CHECKED_OUT");
-  private static final State        COMMITTED   = new State("COMMITTED");
-  private static BoundedLinkedQueue bufPool     = null;
+  private static final State       INIT        = new State("INIT");
+  private static final State       CHECKED_OUT = new State("CHECKED_OUT");
+  private static final State       COMMITTED   = new State("COMMITTED");
 
-  private final ByteBuffer          buffer;
-  private final TCByteBuffer        root;
-  private State                     state       = INIT;
+  private final ByteBuffer         buffer;
+  private final TCByteBuffer       root;
+  private final BoundedLinkedQueue bufPool;
+  private State                    state       = INIT;
 
-  TCByteBufferImpl(int capacity, boolean direct) {
+  TCByteBufferImpl(int capacity, boolean direct, BoundedLinkedQueue poolQueue) {
     if (direct) {
       buffer = ByteBuffer.allocateDirect(capacity);
     } else {
       buffer = ByteBuffer.allocate(capacity);
     }
+    bufPool = poolQueue;
     root = this;
   }
 
   private TCByteBufferImpl(ByteBuffer buf) {
     buffer = buf;
+    bufPool = null;
     this.root = null;
   }
 
   private TCByteBufferImpl(ByteBuffer buf, TCByteBuffer root) {
     buffer = buf;
+    bufPool = null;
     this.root = root;
   }
 
@@ -497,11 +500,7 @@ public class TCByteBufferImpl implements TCByteBuffer {
     state = CHECKED_OUT;
   }
 
-  public void setBufferPool(BoundedLinkedQueue linkQueue) {
-    bufPool = linkQueue;
-  }
-  
-  public BoundedLinkedQueue getBufferPool () {
+  public BoundedLinkedQueue getBufferPool() {
     return bufPool;
   }
 
