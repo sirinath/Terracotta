@@ -161,8 +161,6 @@ public interface TCByteBuffer extends Recyclable {
 
   public void checkedOut();
   
-  public void setBufferPool(BoundedLinkedQueue bufPool);
-
   public BoundedLinkedQueue getBufferPool();
   
 }

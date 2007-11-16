@@ -334,6 +334,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
     if (isCommThread()) {
       modifyInterest(req, MODIFY_INTEREST_COMM_THREAD);
     } else if (isWorkerCommThread()) {
+      Assert.eval(req.workerCommId > workerCommMgr.INVALID_WORKER_COMM_ID);
       modifyInterest(req, MODIFY_INTEREST_WORKER_THREAD);
     } else {
       if (req.workerCommId > workerCommMgr.INVALID_WORKER_COMM_ID) {

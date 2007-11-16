@@ -36,7 +36,6 @@ public class TCWorkerCommManager {
   private int                   nextWorkerCommId;
   private Map                   workerCommChannelMap;
 
-  private final int             MAX_WORKER_COMM        = 16;
   private boolean               workerCommStarted      = false;
   private boolean               requestWorkerCommStop  = false;
   String                        workerCommName         = "TCWorkerComm # ";
@@ -58,7 +57,6 @@ public class TCWorkerCommManager {
   private final short           WORKER_ACTIVE          = 0x10;
   private final short           WORKER_DEAD            = 0x20;
   private final short           WORKER_IDLE            = 0x40;
-  private final short           WORKER_STATUS1         = 0x80;
 
   TCWorkerCommManager(TCCommJDK14 comm, int workerCommCount) {
 
@@ -67,9 +65,7 @@ public class TCWorkerCommManager {
       return;
     }
 
-    if (workerCommCount > MAX_WORKER_COMM) {
-      logger.error("Max allowed TC Worker Comm Thread count is " + MAX_WORKER_COMM);
-    }
+    logger.info("Creating " + workerCommCount + " worker comm threads.");
 
     this.nextWorkerCommId = INVALID_WORKER_COMM_ID;
     this.totalWorkerComm = 0;
@@ -90,11 +86,6 @@ public class TCWorkerCommManager {
       if (iter >= 2 * totalWorkerComm) return INVALID_WORKER_COMM_ID;
     } while (workerCommThreads[nextWorkerCommId].status == WORKER_DEAD);
     return nextWorkerCommId;
-  }
-
-  // ???
-  private int getTotalWorkerComms() {
-    return totalWorkerComm;
   }
 
   public void start() {
@@ -302,15 +293,10 @@ public class TCWorkerCommManager {
     private Selector    workerSelector;
     private LinkedQueue workerSelectorTasks = new LinkedQueue();
 
-    private void setWorkerCommId(int workerId) {
-      workerCommId = workerId;
-    }
-
     public TCWorkerComm(int workerId) {
-
-      setWorkerCommId(workerId);
-      setDaemon(true);
+      workerCommId = workerId;
       setName(workerCommName + workerId);
+      setDaemon(true);
       status = WORKER_IDLE;
 
       workerSelector = parentComm.createSelector();
