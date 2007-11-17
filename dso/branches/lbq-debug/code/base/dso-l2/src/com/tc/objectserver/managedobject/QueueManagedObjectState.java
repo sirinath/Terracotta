@@ -17,6 +17,7 @@ import com.tc.util.Assert;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.sql.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,6 +89,7 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
         break;
       case SerializationUtil.REMOVE_FIRST_N:
         int n = ((Integer) params[0]).intValue();
+        System.err.println((new Date(System.currentTimeMillis())).toString() + " REMOVE_FIRST_N in QueueManagedObjectState from " + objectID + " count: " + n);
         for (int i = 0; i < n; i++) {
           references.remove(0);
         }
@@ -124,6 +126,7 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
   }
 
   public void dehydrate(ObjectID objectID, DNAWriter writer) {
+    System.err.println((new Date(System.currentTimeMillis())).toString() + " dehydrating in the QueueManagedObjectState" );
     dehydrateFields(objectID, writer);
     dehydrateMembers(objectID, writer);
   }
