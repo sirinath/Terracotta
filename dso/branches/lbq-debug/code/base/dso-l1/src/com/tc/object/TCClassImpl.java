@@ -10,6 +10,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.applicator.ChangeApplicator;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.impl.ProxyInstance;
@@ -19,6 +20,7 @@ import com.tc.object.loaders.Namespace;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
+import com.tc.util.DebugUtil;
 import com.tc.util.ReflectionUtil;
 import com.tc.util.UnsafeUtil;
 
@@ -150,6 +152,9 @@ public class TCClassImpl implements TCClass {
     final long localVersion = tcObject.getVersion();
     final long dnaVersion = dna.getVersion();
 
+    if (DebugUtil.DEBUG) {
+      logger.debug("Client " + ManagerUtil.getClientID() + " trying to hydrate -- pojo id: " + tcObject.getObjectID() + ", localVersion: " + localVersion + ", dnaVersion: " + dnaVersion);
+    }
     if (force || (localVersion < dnaVersion)) {
       tcObject.setVersion(dnaVersion);
       applicator.hydrate(objectManager, tcObject, dna, pojo);

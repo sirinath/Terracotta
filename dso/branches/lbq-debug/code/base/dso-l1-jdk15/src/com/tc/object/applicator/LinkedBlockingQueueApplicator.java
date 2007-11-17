@@ -37,7 +37,7 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class LinkedBlockingQueueApplicator extends BaseApplicator {
-  private static final TCLogger logger                                  = TCLogging.getLogger(ListApplicator.class);
+  private static final TCLogger logger                                  = TCLogging.getLogger(LinkedBlockingQueueApplicator.class);
   private static final String   LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX = LinkedBlockingQueue.class.getName() + ".";
   private static final String   TAKE_LOCK_FIELD_NAME                    = "takeLock";
   private static final String   PUT_LOCK_FIELD_NAME                     = "putLock";
@@ -130,7 +130,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         // Since LinkedBlockingQueue supports partial collection, params is not inspected for containing object ids
 
         try {
-          apply(queue, method, params);
+          apply(tcObject, queue, method, params);
         } catch (IndexOutOfBoundsException ioobe) {
           logger.error("Error applying update to " + po, ioobe);
         }
@@ -181,12 +181,12 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  private void apply(LinkedBlockingQueue queue, int method, Object[] params) {
+  private void apply(TCObject tcObject, LinkedBlockingQueue queue, int method, Object[] params) {
     switch (method) {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
-          logger.info("Client " + ManagerUtil.getClientID() + " size of queue after put in applicator: " + queue.size() + " putting object: " + params[0]);
+          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " putting object: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -195,9 +195,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
-          logger.info("Client " + ManagerUtil.getClientID() + " size of queue before take in applicator: " + queue.size());
+          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size before take in app: " + queue.size());
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
-          logger.info("Client " + ManagerUtil.getClientID() + " size of queue after take in applicator: " + queue.size() + " taking object: " + o);
+          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " taking object: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -207,7 +207,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
-        logger.info("Client " + ManagerUtil.getClientID() + " in REMOVE_FIRST_N at applicator: " + queue.size() + " removing " + count + " objects.");
+        logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " objects.");
 
         for (int i = 0; i < count; i++) {
           try {

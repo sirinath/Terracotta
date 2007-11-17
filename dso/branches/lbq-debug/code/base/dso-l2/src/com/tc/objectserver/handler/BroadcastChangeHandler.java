@@ -25,6 +25,7 @@ import com.tc.objectserver.tx.ServerTransactionManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
                                    notifiedWaiters, newRoots, dmi);
 
         responseMessage.send();
+        System.err.println((new Date(System.currentTimeMillis())).toString() + " server txn " + bcc.getGlobalTransactionID() + " txn " + txnID + " to client " + clientID);
       }
     }
     transactionManager.broadcasted(committerID, txnID);
