@@ -40,39 +40,37 @@ import java.util.List;
 
 /**
  * JDK14 (nio) implementation of TCConnection
- * 
+ *
  * @author teck
  */
 final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJDK14ChannelWriter {
 
-  private static final long              NO_CONNECT_TIME      = -1L;
-  private static final TCLogger          logger               = TCLogging.getLogger(TCConnection.class);
-  private static final long              WARN_THRESHOLD       = 0x400000L;                                       // 4MB
+  private static final long              NO_CONNECT_TIME     = -1L;
+  private static final TCLogger          logger              = TCLogging.getLogger(TCConnection.class);
+  private static final long              WARN_THRESHOLD      = 0x400000L;                                       // 4MB
 
-  private final LinkedList               writeContexts        = new LinkedList();
-  private CoreNIOServices                commNIOServiceThread = null;
+  private final LinkedList               writeContexts       = new LinkedList();
+  private final CoreNIOServices          commNIOServiceThread;
 
   private final TCConnectionManagerJDK14 parent;
-  private final TCCommJDK14              comm;
-  private final TCConnectionEventCaller  eventCaller          = new TCConnectionEventCaller(logger);
-  private final SynchronizedLong         lastActivityTime     = new SynchronizedLong(System.currentTimeMillis());
-  private final SynchronizedLong         connectTime          = new SynchronizedLong(NO_CONNECT_TIME);
-  private final List                     eventListeners       = new CopyOnWriteArrayList();
+  private final TCConnectionEventCaller  eventCaller         = new TCConnectionEventCaller(logger);
+  private final SynchronizedLong         lastActivityTime    = new SynchronizedLong(System.currentTimeMillis());
+  private final SynchronizedLong         connectTime         = new SynchronizedLong(NO_CONNECT_TIME);
+  private final List                     eventListeners      = new CopyOnWriteArrayList();
   private final TCProtocolAdaptor        protocolAdaptor;
-  private final SynchronizedBoolean      isSocketEndpoint     = new SynchronizedBoolean(false);
-  private final SetOnceFlag              closed               = new SetOnceFlag();
-  private final SynchronizedBoolean      connected            = new SynchronizedBoolean(false);
-  private final SetOnceRef               localSocketAddress   = new SetOnceRef();
-  private final SetOnceRef               remoteSocketAddress  = new SetOnceRef();
+  private final SynchronizedBoolean      isSocketEndpoint    = new SynchronizedBoolean(false);
+  private final SetOnceFlag              closed              = new SetOnceFlag();
+  private final SynchronizedBoolean      connected           = new SynchronizedBoolean(false);
+  private final SetOnceRef               localSocketAddress  = new SetOnceRef();
+  private final SetOnceRef               remoteSocketAddress = new SetOnceRef();
   private volatile SocketChannel         channel;
 
   // for creating unconnected client connections
-  TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor,
-                    TCConnectionManagerJDK14 managerJDK14) {
-    this(listener, comm, adaptor, null, managerJDK14, comm.DEFAULT_COMM_THREAD);
+  TCConnectionJDK14(TCConnectionEventListener listener, TCProtocolAdaptor adaptor, TCConnectionManagerJDK14 managerJDK14, CoreNIOServices nioServiceThread) {
+    this(listener, adaptor, null, managerJDK14, nioServiceThread);
   }
 
-  TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor, SocketChannel ch,
+  TCConnectionJDK14(TCConnectionEventListener listener, TCProtocolAdaptor adaptor, SocketChannel ch,
                     TCConnectionManagerJDK14 parent, CoreNIOServices nioServiceThread) {
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
@@ -82,10 +80,6 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     if (listener != null) addListener(listener);
 
-    Assert.assertNotNull(comm);
-    //XXX this.comm not needed ... remove it
-    this.comm = comm;
-    Assert.eval(this.comm.isStarted() == true);
     this.channel = ch;
     this.commNIOServiceThread = nioServiceThread;
   }

@@ -8,28 +8,25 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.event.TCListenerEvent;
 import com.tc.net.core.event.TCListenerEventListener;
-import com.tc.util.Assert;
-
-import java.nio.channels.ServerSocketChannel;
 
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
  * <code>TCConnection</code>'s
- * 
+ *
  * @author teck
  */
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
-  private TCWorkerCommManager     workerCommMgr       = null;
-  private volatile boolean        started             = false;
-  private CoreNIOServices         commThread          = null;
-  private final String            commThreadName      = "TCComm Main Selector Thread";
-  protected static final TCLogger logger              = TCLogging.getLogger(TCComm.class);
+  protected static final TCLogger   logger         = TCLogging.getLogger(TCComm.class);
 
-  public CoreNIOServices          DEFAULT_COMM_THREAD = null;
+  private final TCWorkerCommManager workerCommMgr;
+  private final CoreNIOServices     commThread;
+  private final String              commThreadName = "TCComm Main Selector Thread";
+  private volatile boolean          started        = false;
 
   public TCCommJDK14() {
     // no worker threads for you ...
+    this(-1);
   }
 
   TCCommJDK14(int workerCommCount) {
@@ -37,27 +34,18 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       workerCommMgr = new TCWorkerCommManager(this, workerCommCount);
     } else {
       logger.info("Comm Worker Threads NOT requested");
+      workerCommMgr = null;
     }
-  }
 
-  void stopListener(final ServerSocketChannel ssc, final Runnable callback) {
-    Assert.assertNotNull(this.DEFAULT_COMM_THREAD);
-    this.DEFAULT_COMM_THREAD.stopListener(ssc, callback);
-  }
-
-  void requestAcceptInterest(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
-    Assert.assertNotNull(this.DEFAULT_COMM_THREAD);
-    this.DEFAULT_COMM_THREAD.requestAcceptInterest(lsnr, ssc);
+    commThread = new CoreNIOServices(commThreadName, this, workerCommMgr);
   }
 
   public void closeEvent(TCListenerEvent event) {
-    Assert.assertNotNull(this.DEFAULT_COMM_THREAD);
-    this.DEFAULT_COMM_THREAD.listenerRemoved();
+    this.commThread.listenerRemoved();
   }
 
   void listenerAdded(TCListener listener) {
-    Assert.assertNotNull(this.DEFAULT_COMM_THREAD);
-    this.DEFAULT_COMM_THREAD.listenerAdded(listener);
+    this.commThread.listenerAdded(listener);
   }
 
   public boolean isStarted() {
@@ -81,10 +69,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       }
 
       // The Main Listener
-      commThread = new CoreNIOServices(commThreadName, this, workerCommMgr);
-      this.DEFAULT_COMM_THREAD = commThread;
       commThread.start();
-
     }
   }
 
@@ -99,6 +84,15 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         workerCommMgr.stop();
       }
     }
+  }
+
+  public CoreNIOServices nioServiceThreadForNewConnection() {
+    // For now we're always assuming that client side comms use the main selector
+    return commThread;
+  }
+
+  public CoreNIOServices nioServiceThreadForNewListener() {
+    return commThread;
   }
 
 }
