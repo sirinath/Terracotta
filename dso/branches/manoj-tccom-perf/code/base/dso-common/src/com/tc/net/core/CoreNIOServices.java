@@ -29,22 +29,19 @@ import java.util.Set;
 /**
  * Some docs here
  */
-public class CoreNIOServices extends Thread {
-  private final Selector      selector;
-  private final LinkedQueue   selectorTasks;
-  private short               status;
+class CoreNIOServices extends Thread {
+  private static final TCLogger     logger              = TCLogging.getLogger(CoreNIOServices.class);
 
-  private TCCommJDK14         parentComm;
-  private String              baseThreadName;
-  private Thread              ownerThread;
-  private TCWorkerCommManager workerCommMgr;
+  private static final short        NIO_THREAD_INIT     = 0x00;
+  private static final short        NIO_THREAD_STARTED  = 0x01;
+  private static final short        NIO_THREAD_STOPPED  = 0x02;
+  private static final short        NIO_THREAD_STOP_REQ = 0x02;
 
-  private final TCLogger      logger              = TCLogging.getLogger(CoreNIOServices.class);
-
-  public final short          NIO_THREAD_INIT     = 0x00;
-  public final short          NIO_THREAD_STARTED  = 0x01;
-  public final short          NIO_THREAD_STOPPED  = 0x02;
-  public final short          NIO_THREAD_STOP_REQ = 0x02;
+  private final Selector            selector;
+  private final LinkedQueue         selectorTasks;
+  private final String              baseThreadName;
+  private final TCWorkerCommManager workerCommMgr;
+  private short                     status;
 
   public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager) {
     this(commThreadName, null, workerCommManager);
@@ -58,13 +55,11 @@ public class CoreNIOServices extends Thread {
     this.selectorTasks = new LinkedQueue();
     this.status = NIO_THREAD_INIT;
 
-    baseThreadName = commThreadName;
-    if (comm != null) this.parentComm = comm;
-    if (workerCommManager != null) this.workerCommMgr = workerCommManager;
+    this.baseThreadName = commThreadName;
+    this.workerCommMgr = workerCommManager;
   }
 
   public void run() {
-    ownerThread = Thread.currentThread();
     status = NIO_THREAD_STARTED;
     try {
       selectLoop();
@@ -87,10 +82,10 @@ public class CoreNIOServices extends Thread {
       try {
         this.selector.wakeup();
       } catch (Exception e) {
-        logger.error("Exception trying to stop " + ownerThread.getName() + ": ", e);
+        logger.error("Exception trying to stop " + getName() + ": ", e);
       }
     } else {
-      logger.error("Stop requested for already stopped thread " + ownerThread.getName());
+      logger.error("Stop requested for already stopped thread " + getName());
     }
   }
 
@@ -158,7 +153,7 @@ public class CoreNIOServices extends Thread {
   }
 
   void addSelectorTask(final Runnable task) {
-    Assert.eval(Thread.currentThread() != ownerThread);
+    Assert.eval(Thread.currentThread() != this);
     boolean isInterrupted = false;
 
     try {
@@ -181,7 +176,7 @@ public class CoreNIOServices extends Thread {
 
   void unregister(SelectableChannel channel) {
     SelectionKey key = null;
-    Assert.eval(Thread.currentThread() == ownerThread);
+    Assert.eval(Thread.currentThread() == this);
     key = channel.keyFor(this.selector);
 
     if (key != null) {
@@ -191,15 +186,13 @@ public class CoreNIOServices extends Thread {
   }
 
   void stopListener(final ServerSocketChannel ssc, final Runnable callback) {
-    if (Thread.currentThread() != ownerThread) {
-      // The default comm thread is always the listener.
-      final CoreNIOServices commThread = parentComm.DEFAULT_COMM_THREAD;
+    if (Thread.currentThread() != this) {
       Runnable task = new Runnable() {
         public void run() {
-          commThread.stopListener(ssc, callback);
+          CoreNIOServices.this.stopListener(ssc, callback);
         }
       };
-      commThread.addSelectorTask(task);
+      addSelectorTask(task);
       return;
     }
 
@@ -225,16 +218,16 @@ public class CoreNIOServices extends Thread {
       return;
     }
 
-    if (Thread.currentThread() != ownerThread) {
+    if (Thread.currentThread() != this) {
       if (logger.isDebugEnabled()) {
         logger.debug("queue'ing channel close operation");
       }
 
-      CoreNIOServices commNIOThread = null;
+      final CoreNIOServices commNIOThread;
       if (workerCommMgr != null && workerCommMgr.isStarted()) {
         commNIOThread = workerCommMgr.getWorkerCommForSocketChannel(ch);
       } else {
-        commNIOThread = parentComm.DEFAULT_COMM_THREAD;
+        commNIOThread = this;
       }
 
       Assert.eval(commNIOThread != null);
@@ -321,7 +314,7 @@ public class CoreNIOServices extends Thread {
   }
 
   void dispose(Selector localSelector, LinkedQueue localSelectorTasks) {
-    Assert.eval(Thread.currentThread() == ownerThread);
+    Assert.eval(Thread.currentThread() == this);
 
     if (localSelector != null) {
 
@@ -354,8 +347,7 @@ public class CoreNIOServices extends Thread {
   }
 
   void selectLoop() throws IOException {
-
-    Assert.eval(Thread.currentThread() == ownerThread);
+    Assert.eval(Thread.currentThread() == this);
 
     Selector localSelector = this.selector;
     LinkedQueue localSelectorTasks = this.selectorTasks;
@@ -490,7 +482,7 @@ public class CoreNIOServices extends Thread {
         });
       } else {
         // Single threaded server model
-        final TCConnectionJDK14 conn = lsnr.createConnection(sc, parentComm.DEFAULT_COMM_THREAD);
+        final TCConnectionJDK14 conn = lsnr.createConnection(sc, this);
         sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
       }
     } catch (IOException ioe) {
@@ -532,7 +524,7 @@ public class CoreNIOServices extends Thread {
     // ignore the request if we are stopped/stopping
     if (isStopped()) { return; }
 
-    if (Thread.currentThread() == ownerThread) {
+    if (Thread.currentThread() == this) {
       modifyInterest(req);
     } else {
       final CoreNIOServices commTh = req.getCommNIOServiceThread();
@@ -546,7 +538,7 @@ public class CoreNIOServices extends Thread {
   }
 
   private void modifyInterest(InterestRequest request) {
-    Assert.eval(Thread.currentThread() == ownerThread);
+    Assert.eval(Thread.currentThread() == this);
 
     Selector localSelector = null;
     localSelector = selector;
@@ -583,33 +575,29 @@ public class CoreNIOServices extends Thread {
   }
 
   void requestConnectInterest(TCConnectionJDK14 conn, SocketChannel sc) {
-    handleRequest(InterestRequest.createSetInterestRequest(sc, conn, SelectionKey.OP_CONNECT,
-                                                           (CoreNIOServices) ownerThread));
+    handleRequest(InterestRequest.createSetInterestRequest(sc, conn, SelectionKey.OP_CONNECT, this));
   }
 
   void requestReadInterest(TCJDK14ChannelReader reader, ScatteringByteChannel channel) {
     handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, reader, SelectionKey.OP_READ,
-                                                           (CoreNIOServices) ownerThread));
+                                                           this));
   }
 
   void requestWriteInterest(TCJDK14ChannelWriter writer, GatheringByteChannel channel) {
     handleRequest(InterestRequest.createAddInterestRequest((SelectableChannel) channel, writer, SelectionKey.OP_WRITE,
-                                                           (CoreNIOServices) ownerThread));
+                                                           this));
   }
 
   void requestAcceptInterest(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
-    handleRequest(InterestRequest.createSetInterestRequest(ssc, lsnr, SelectionKey.OP_ACCEPT,
-                                                           (CoreNIOServices) ownerThread));
+    handleRequest(InterestRequest.createSetInterestRequest(ssc, lsnr, SelectionKey.OP_ACCEPT, this));
   }
 
   void removeWriteInterest(TCConnectionJDK14 conn, SelectableChannel channel) {
-    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_WRITE,
-                                                              (CoreNIOServices) ownerThread));
+    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_WRITE, this));
   }
 
   void removeReadInterest(TCConnectionJDK14 conn, SelectableChannel channel) {
-    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ,
-                                                              (CoreNIOServices) ownerThread));
+    handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ, this));
   }
 
   private static class InterestRequest {

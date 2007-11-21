@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * JDK 1.4 implementation of TCConnectionManager interface
- * 
+ *
  * @author teck
  */
 public class TCConnectionManagerJDK14 implements TCConnectionManager {
@@ -52,7 +52,7 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {
-    return new TCConnectionJDK14(listener, comm, adaptor, this);
+    return new TCConnectionJDK14(listener, adaptor, this, comm.nioServiceThreadForNewConnection());
   }
 
   protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog,
@@ -75,8 +75,10 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
       logger.debug("Bind: " + serverSocket.getLocalSocketAddress());
     }
 
-    TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, comm, getConnectionListener(), this);
-    comm.requestAcceptInterest(rv, ssc);
+    CoreNIOServices commThread = comm.nioServiceThreadForNewListener();
+
+    TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, getConnectionListener(), this, commThread);
+    commThread.requestAcceptInterest(rv, ssc);
 
     return rv;
   }
