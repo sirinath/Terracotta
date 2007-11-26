@@ -29,9 +29,12 @@ class BuildEnvironment < Environment
       @svninfo["URL"] = "unknown-url"            
       svn_info = `svn info '#{root_dir}'`
       if $? == 0 && !svn_info.blank?        
-        @svninfo = YAML::load(svn_info)
-      end
-      
+        begin
+          @svninfo.merge!(YAML::load(svn_info))
+        rescue
+          # ignore
+        end
+      end      
   end
 
   # What's the latest revision on the local source base?
