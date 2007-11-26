@@ -161,6 +161,10 @@ public class TCClassImpl implements TCClass {
     } else if (logger.isDebugEnabled()) {
       logger
           .debug("IGNORING UPDATE, local object at version " + localVersion + ", dna update is version " + dnaVersion);
+      if (DebugUtil.DEBUG) {
+        logger
+        .debug("Client " + ManagerUtil.getClientID() + " IGNORING UPDATE, local object at version " + localVersion + ", dna update is version " + dnaVersion);
+      }
     }
 
   }
