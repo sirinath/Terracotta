@@ -142,7 +142,7 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       Assert.assertEquals(6, cache.getSize());
 
       if (index == 0) {
-        Thread.sleep(10000);
+        Thread.sleep(20000);
 
         Assert.assertTrue(cache.isExpired(new Element("key04", "val04")));
         Assert.assertTrue(cache.isExpired(new Element("key05", "val05")));
