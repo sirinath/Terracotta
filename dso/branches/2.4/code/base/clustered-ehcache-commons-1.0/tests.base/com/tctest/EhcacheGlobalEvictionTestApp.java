@@ -21,6 +21,7 @@ import com.tc.util.DebugUtil;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase {
@@ -32,7 +33,6 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
 
   public void runTest() throws Throwable {
     basicGlobalEvictionTest();
-
   }
 
   private void basicGlobalEvictionTest() throws Exception {
@@ -43,52 +43,44 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
     if (modules_url != null) {
       jvmArgs.add("-D" + EmbeddedOSGiRuntime.MODULES_URL_PROPERTY_NAME + "=" + modules_url);
     }
+
+    final List errorList = Collections.synchronizedList(new ArrayList());
+    final L1ClientWrapper l1Wrapper = new L1ClientWrapper(getHostName(), getPort(), new File(getConfigFilePath()));
+
     Thread t1 = new Thread(new Runnable() {
       public void run() {
-        try {
-          spawnNewClient("0", L1Client.class, new String[] { "0" }, jvmArgs);
+        try {          
+          l1Wrapper.spawn("0", L1Client.class, new String[] { "0" }, jvmArgs);
         } catch (Exception e) {
-          e.printStackTrace(System.err);
+          errorList.add(e);
         }
       }
 
     });
+    
     Thread t2 = new Thread(new Runnable() {
       public void run() {
         try {
-          spawnNewClient("1", L1Client.class, new String[] { "1" }, jvmArgs);
+          l1Wrapper.spawn("1", L1Client.class, new String[] { "1" }, jvmArgs);
         } catch (Exception e) {
-          e.printStackTrace(System.err);
+          errorList.add(e);
         }
       }
-
     });
 
     t1.start();
     t2.start();
+    
+    Thread.sleep(60000L);
+    
+    t1.join();
+    t2.join();
 
-    Thread.sleep(60000);
-
+    if (errorList.size() > 0) {
+      throw (Exception)errorList.get(0);
+    }
+    
     DebugUtil.DEBUG = false;
-  }
-
-  protected ExtraL1ProcessControl spawnNewClient(String clientId, Class clientClass, String[] mainArgs, List jvmArgs)
-      throws Exception {
-    final String hostName = getHostName();
-    final int port = getPort();
-    final File configFile = new File(getConfigFilePath());
-    File workingDir = new File(configFile.getParentFile(), "client-" + clientId);
-    FileUtils.forceMkdir(workingDir);
-
-    addTestTcPropertiesFile(jvmArgs);
-    ExtraL1ProcessControl client = new ExtraL1ProcessControl(hostName, port, clientClass, configFile.getAbsolutePath(),
-                                                             mainArgs, workingDir, jvmArgs);
-    client.start();
-    client.mergeSTDERR();
-    client.mergeSTDOUT();
-    client.waitFor();
-    System.err.println("\n### Started New Client");
-    return client;
   }
 
   public static class L1Client {
@@ -170,6 +162,40 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       cache.put(new Element("key" + index + startValue, "val" + index + startValue));
       cache.put(new Element("key" + index + (startValue + 1), "val" + index + (startValue + 1)));
       cache.put(new Element("key" + index + (startValue + 2), "val" + index + (startValue + 2)));
+    }
+  }
+
+  private static class L1ClientWrapper {
+    private String hostname;
+    private int    port;
+    private File   configFile;
+
+    public L1ClientWrapper(String hostname, int port, File configFile) {
+      this.hostname = hostname;
+      this.port = port;
+      this.configFile = configFile;
+    }
+
+    public void spawn(String clientId, Class clientClass, String[] mainArgs, List jvmArgs) throws Exception {
+      ExtraL1ProcessControl client = spawnNewClient(clientId, clientClass, mainArgs, jvmArgs);
+      if (client.waitFor() != 0) { throw new Exception(clientClass.getName() + " exited with non zero code"); }
+    }
+
+    protected ExtraL1ProcessControl spawnNewClient(String clientId, Class clientClass, String[] mainArgs, List jvmArgs)
+        throws Exception {
+
+      File workingDir = new File(configFile.getParentFile(), "client-" + clientId);
+      FileUtils.forceMkdir(workingDir);
+
+      ExtraL1ProcessControl client = new ExtraL1ProcessControl(hostname, port, clientClass, configFile
+          .getAbsolutePath(), mainArgs, workingDir, jvmArgs);
+      client.start();
+      System.err.println("\n### Started New Client");
+
+      client.mergeSTDERR();
+      client.mergeSTDOUT();
+
+      return client;
     }
   }
 
