@@ -1,21 +1,26 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
 
-import java.io.Serializable;
-
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.objectserver.api.GCStats;
 
-public class GCStatsImpl implements GCStats, Serializable {
-  private static final long NOT_INITIALIZED       = -1L;
+import java.io.Serializable;
 
-  private final int         number;
-  private long              startTime             = NOT_INITIALIZED;
-  private long              elapsedTime           = NOT_INITIALIZED;
-  private long              beginObjectCount      = NOT_INITIALIZED;
-  private long              candidateGarbageCount = NOT_INITIALIZED;
-  private long              actualGarbageCount    = NOT_INITIALIZED;
+public class GCStatsImpl implements GCStats, Serializable {
+  private static final long     serialVersionUID      = -4177683133067698672L;
+  private static final TCLogger logger                = TCLogging.getLogger(GCStatsImpl.class);
+  private static final long     NOT_INITIALIZED       = -1L;
+
+  private final int             number;
+  private long                  startTime             = NOT_INITIALIZED;
+  private long                  elapsedTime           = NOT_INITIALIZED;
+  private long                  beginObjectCount      = NOT_INITIALIZED;
+  private long                  candidateGarbageCount = NOT_INITIALIZED;
+  private long                  actualGarbageCount    = NOT_INITIALIZED;
 
   public GCStatsImpl(int number) {
     this.number = number;
@@ -76,7 +81,11 @@ public class GCStatsImpl implements GCStats, Serializable {
   }
 
   public synchronized void setElapsedTime(long time) {
-    validate(time);
+    if (time < 0L) {
+      // System timer moved backward.
+      logger.warn("Ssyetm timer moved backward, set GC ElapsedTime to 0");
+      time = 0;
+    }
     this.elapsedTime = time;
   }
 
@@ -94,11 +103,8 @@ public class GCStatsImpl implements GCStats, Serializable {
   }
 
   public String toString() {
-    return "iteration="+getIteration()+
-      "; startTime="+getStartTime()+
-      "; elapsedTime="+getElapsedTime()+
-      "; beginObjectCount="+getBeginObjectCount()+
-      "; candidateGarbageCount="+getCandidateGarbageCount()+
-      "; actualGarbageCount="+getActualGarbageCount();
+    return "iteration=" + getIteration() + "; startTime=" + getStartTime() + "; elapsedTime=" + getElapsedTime()
+           + "; beginObjectCount=" + getBeginObjectCount() + "; candidateGarbageCount=" + getCandidateGarbageCount()
+           + "; actualGarbageCount=" + getActualGarbageCount();
   }
 }

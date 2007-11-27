@@ -51,6 +51,7 @@ import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
 import com.tc.object.bytecode.AccessibleObjectAdapter;
+import com.tc.object.bytecode.ArrayListAdapter;
 import com.tc.object.bytecode.AtomicIntegerAdapter;
 import com.tc.object.bytecode.AtomicLongAdapter;
 import com.tc.object.bytecode.BufferedWriterAdapter;
@@ -61,7 +62,6 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.DataOutputStreamAdapter;
 import com.tc.object.bytecode.DuplicateMethodAdapter;
-import com.tc.object.bytecode.SetRemoveMethodAdapter;
 import com.tc.object.bytecode.HashtableClassAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
@@ -94,6 +94,7 @@ import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.NullTCObject;
 import com.tc.object.bytecode.ReentrantLockClassAdapter;
 import com.tc.object.bytecode.ReentrantReadWriteLockClassAdapter;
+import com.tc.object.bytecode.SetRemoveMethodAdapter;
 import com.tc.object.bytecode.StringBufferAdapter;
 import com.tc.object.bytecode.StringGetCharsAdapter;
 import com.tc.object.bytecode.TCMap;
@@ -1973,10 +1974,11 @@ public class BootJarTool {
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_FIRST_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_LAST_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_AT_SIGNATURE);
-    spec.addIfTrueLogSpec(SerializationUtil.REMOVE_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_RANGE_SIGNATURE);
     spec.addMethodAdapter("listIterator(I)Ljava/util/ListIterator;", new LinkedListAdapter.ListIteratorAdapter());
+    spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE, new LinkedListAdapter.RemoveAdapter());
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
+    spec.addSupportMethodCreator(new LinkedListAdapter.RemoveMethodCreator());
     addSerializationInstrumentedCode(spec);
 
     spec = config.getOrCreateSpec("java.util.Vector", "com.tc.object.applicator.ListApplicator");
@@ -2013,10 +2015,13 @@ public class BootJarTool {
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_AT_SIGNATURE);
-    spec.addIfTrueLogSpec(SerializationUtil.REMOVE_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_RANGE_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.SET_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
+    if (Vm.isJDK15Compliant()) {
+      spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE, new ArrayListAdapter.RemoveAdaptor());
+      spec.addSupportMethodCreator(new ArrayListAdapter.FastRemoveMethodCreator());
+    }
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
     addSerializationInstrumentedCode(spec);
   }
@@ -2040,48 +2045,79 @@ public class BootJarTool {
     String jMapClassNameDots = "java.util.Hashtable";
     String tcMapClassNameDots = "java.util.HashtableTC";
     Map instrumentedContext = new HashMap();
-    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, HashtableClassAdapter.createMethod());
+    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, HashtableClassAdapter.getMethods());
   }
 
   private final void addInstrumentedLinkedHashMap(Map instrumentedContext) {
     String jMapClassNameDots = "java.util.LinkedHashMap";
     String tcMapClassNameDots = "java.util.LinkedHashMapTC";
-    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, null);
+    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext);
   }
 
   private void addInstrumentedReentrantReadWriteLock() {
+    String methodPrefix = "__RWL" + ByteCodeUtil.TC_METHOD_PREFIX;
+
     TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-    spec.addTransient("sync");
     spec.setCallConstructorOnLoad(true);
 
     String jClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock";
     String tcClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC";
     Map instrumentedContext = new HashMap();
-    mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext);
+    mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext, methodPrefix);
 
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-    spec.addTransient("sync");
     spec.markPreInstrumented();
     spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-    spec.addTransient("sync");
     spec.markPreInstrumented();
 
     String jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock";
     String tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$ReadLock";
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
-                                 "ReadLock", "ReadLock", instrumentedContext);
+                                 "ReadLock", "ReadLock", instrumentedContext, methodPrefix);
 
     jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock";
     tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$WriteLock";
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
-                                 "WriteLock", "WriteLock", instrumentedContext);
+                                 "WriteLock", "WriteLock", instrumentedContext, methodPrefix);
+
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
+    spec.setHonorTransient(true);
+    spec.setCallConstructorOnLoad(true);
+    spec.markPreInstrumented();
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
+    spec.setCallConstructorOnLoad(true);
+    spec.markPreInstrumented();
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$NonfairSync");
+    spec.setCallConstructorOnLoad(true);
+    spec.markPreInstrumented();
+
+    makeAbstractSynchronizerAdaptable();
+  }
+
+  private void makeAbstractSynchronizerAdaptable() {
+    TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
+    spec.setHonorTransient(true);
+    spec.addTransient("state");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.markPreInstrumented();
+
+    spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer$Node");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.markPreInstrumented();
+
+    if (Vm.isJDK16Compliant()) {
+      spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
+      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+      spec.setHonorTransient(true);
+      spec.markPreInstrumented();
+    }
   }
 
   private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots,
                                             String tcClassNameDots, String jClassNameDots, String srcInnerClassName,
-                                            String targetInnerClassName, Map instrumentedContext) {
+                                            String targetInnerClassName, Map instrumentedContext, String methodPrefix) {
     String tcInnerClassNameSlashes = tcInnerClassNameDots.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
                                                                   ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     byte[] tcData = getSystemBytes(tcInnerClassNameDots);
@@ -2091,6 +2127,8 @@ public class BootJarTool {
 
     byte[] jData = getSystemBytes(jInnerClassNameDots);
 
+    // jData = doDSOTransform(jInnerClassNameDots, jData);
+
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
 
@@ -2099,7 +2137,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, false);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jInnerClassNameDots,
                                                                               tcInnerClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, methodPrefix));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
 
@@ -2110,13 +2148,17 @@ public class BootJarTool {
     bootJar.loadClassIntoJar(jInnerClassNameDots, jData, true);
   }
 
-  private void mergeReentrantReadWriteLock(String tcClassNameDots, String jClassNameDots, Map instrumentedContext) {
+  private void mergeReentrantReadWriteLock(String tcClassNameDots, String jClassNameDots, Map instrumentedContext,
+                                           String methodPrefix) {
     byte[] tcData = getSystemBytes(tcClassNameDots);
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode();
     tcCR.accept(tcCN, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
     byte[] jData = getSystemBytes(jClassNameDots);
+
+    // jData = doDSOTransform(jClassNameDots, jData);
+
     ClassReader jCR = new ClassReader(jData);
     ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
     ClassVisitor cv1 = new ReentrantReadWriteLockClassAdapter(cw);
@@ -2132,7 +2174,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, true);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, methodPrefix));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
     jData = doDSOTransform(jClassNameDots, jData);
@@ -2147,21 +2189,30 @@ public class BootJarTool {
     String jMapClassNameDots = "java.util.HashMap";
     String tcMapClassNameDots = "java.util.HashMapTC";
     Map instrumentedContext = new HashMap();
-    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, null);
+    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext);
 
     addInstrumentedLinkedHashMap(instrumentedContext);
   }
 
+  private final void mergeClass(String tcClassNameDots, String jClassNameDots, Map instrumentedContext) {
+    mergeClass(tcClassNameDots, jClassNameDots, instrumentedContext, null);
+  }
+
   private final void mergeClass(String tcClassNameDots, String jClassNameDots, Map instrumentedContext,
-                                final MethodNode replacedMethod) {
+                                final MethodNode[] replacedMethods) {
     byte[] tcData = getSystemBytes(tcClassNameDots);
 
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode() {
       public MethodVisitor visitMethod(int maccess, String mname, String mdesc, String msignature, String[] mexceptions) {
-        if (replacedMethod != null && mname.equals(replacedMethod.name) && mdesc.equals(replacedMethod.desc)) {
-          methods.add(replacedMethod);
-          return null;
+        if (replacedMethods != null) {
+          for (int i = 0; i < replacedMethods.length; i++) {
+            MethodNode replacedMethod = replacedMethods[i];
+            if (mname.equals(replacedMethod.name) && mdesc.equals(replacedMethod.desc)) {
+              methods.add(replacedMethod);
+              return null;
+            }
+          }
         }
         return super.visitMethod(maccess, mname, mdesc, msignature, mexceptions);
       }
