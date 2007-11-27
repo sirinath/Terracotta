@@ -20,7 +20,6 @@ import com.tc.object.loaders.Namespace;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
-import com.tc.util.DebugUtil;
 import com.tc.util.ReflectionUtil;
 import com.tc.util.UnsafeUtil;
 
@@ -29,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.sql.Date;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -152,19 +152,14 @@ public class TCClassImpl implements TCClass {
     final long localVersion = tcObject.getVersion();
     final long dnaVersion = dna.getVersion();
 
-    if (DebugUtil.DEBUG) {
-      logger.debug("Client " + ManagerUtil.getClientID() + " trying to hydrate -- pojo id: " + tcObject.getObjectID() + ", localVersion: " + localVersion + ", dnaVersion: " + dnaVersion);
-    }
+    System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " trying to hydrate -- pojo id: " + tcObject.getObjectID() + ", localVersion: " + localVersion + ", dnaVersion: " + dnaVersion);
     if (force || (localVersion < dnaVersion)) {
       tcObject.setVersion(dnaVersion);
       applicator.hydrate(objectManager, tcObject, dna, pojo);
     } else if (logger.isDebugEnabled()) {
       logger
           .debug("IGNORING UPDATE, local object at version " + localVersion + ", dna update is version " + dnaVersion);
-      if (DebugUtil.DEBUG) {
-        logger
-        .debug("Client " + ManagerUtil.getClientID() + " IGNORING UPDATE, local object at version " + localVersion + ", dna update is version " + dnaVersion);
-      }
+      System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " IGNORING UPDATE, local object at version " + localVersion + ", dna update is version " + dnaVersion);
     }
 
   }

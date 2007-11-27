@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Date;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -186,7 +187,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
-          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " putting object: " + params[0]);
+          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " putting object: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -195,9 +196,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
-          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size before take in app: " + queue.size());
+          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size before take in app: " + queue.size());
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
-          logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " taking object: " + o);
+          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " taking object: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -207,7 +208,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
-        logger.debug("Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " objects.");
+        System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " objects.");
 
         for (int i = 0; i < count; i++) {
           try {
