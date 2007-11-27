@@ -43,7 +43,9 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
     if (modules_url != null) {
       jvmArgs.add("-D" + EmbeddedOSGiRuntime.MODULES_URL_PROPERTY_NAME + "=" + modules_url);
     }
-
+    // important: props for ehcache is stored in tests.properties
+    addTestTcPropertiesFile(jvmArgs);
+    
     final List errorList = Collections.synchronizedList(new ArrayList());
     final L1ClientWrapper l1Wrapper = new L1ClientWrapper(getHostName(), getPort(), new File(getConfigFilePath()));
 
