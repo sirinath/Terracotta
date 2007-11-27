@@ -27,7 +27,6 @@ import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
-import com.tc.util.DebugUtil;
 
 import gnu.trove.TLinkable;
 
@@ -156,9 +155,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
                                  + " dna_version : " + dna_version);
       }
     }
-    if (DebugUtil.DEBUG) {
-      System.err.println((new Date(System.currentTimeMillis())).toString() + " received dna version at ManagedObjectImpl: " + dna_version + " current version: " + version);
-    }
+    System.err.println((new Date(System.currentTimeMillis())).toString() + " received dna version at ManagedObjectImpl: " + dna_version + " current version: " + version);
 
     if (dna.isDelta() && isNew) {
       throw new AssertionError("Newly created Object is applied with a delta DNA ! ManagedObjectImpl = "
