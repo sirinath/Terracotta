@@ -6,6 +6,8 @@ import com.tc.exception.TCInternalError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
+import com.tc.net.core.event.TCListenerEvent;
+import com.tc.net.core.event.TCListenerEventListener;
 import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.runtime.Os;
@@ -22,14 +24,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-/**
- * Some docs here
- */
-class CoreNIOServices extends Thread {
+class CoreNIOServices extends Thread implements TCListenerEventListener {
   private static final TCLogger     logger              = TCLogging.getLogger(CoreNIOServices.class);
 
   private static final short        NIO_THREAD_INIT     = 0x00;
@@ -41,6 +42,7 @@ class CoreNIOServices extends Thread {
   private final LinkedQueue         selectorTasks;
   private final String              baseThreadName;
   private final TCWorkerCommManager workerCommMgr;
+  private final List                listeners           = new ArrayList();
   private short                     status;
 
   public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager) {
@@ -99,32 +101,51 @@ class CoreNIOServices extends Thread {
     return false;
   }
 
-  String makeListenString(TCListener listener) {
+  public boolean isStoppedOrStopping() {
+    if ((status == NIO_THREAD_STOPPED) || (status == NIO_THREAD_STOP_REQ)) { return true; }
+    return false;
+  }
+
+  private String makeListenerString() {
+    if (listeners.isEmpty()) { return ""; }
+
     StringBuffer buf = new StringBuffer();
-    buf.append("(listen ");
-    buf.append(listener.getBindAddress().getHostAddress());
-    buf.append(':');
-    buf.append(listener.getBindPort());
+    buf.append(" (listen ");
+
+    for (int i = 0, n = listeners.size(); i < n; i++) {
+      TCListener listener = (TCListener) listeners.get(i);
+      buf.append(listener.getBindAddress().getHostAddress());
+      buf.append(':');
+      buf.append(listener.getBindPort());
+
+      if (i < (n - 1)) {
+        buf.append(',');
+      }
+    }
+
     buf.append(')');
+
     return buf.toString();
   }
 
-  synchronized void listenerRemoved() {
-    updateThreadName("");
+  private synchronized void listenerRemoved(TCListener listener) {
+    boolean removed = listeners.remove(listener);
+    Assert.eval(removed);
+    updateThreadName();
   }
 
-  synchronized void listenerAdded(TCListener listener) {
-    updateThreadName(makeListenString(listener));
+  private synchronized void listenerAdded(TCListener listener) {
+    listeners.add(listener);
+    updateThreadName();
   }
 
-  private void updateThreadName(String appendStr) {
+  private void updateThreadName() {
     StringBuffer buf = new StringBuffer(baseThreadName);
-    buf.append(' ');
-    buf.append(appendStr);
+    buf.append(makeListenerString());
     setName(buf.toString());
   }
 
-  protected Selector createSelector() {
+  private Selector createSelector() {
     Selector selector1 = null;
 
     final int tries = 3;
@@ -210,7 +231,6 @@ class CoreNIOServices extends Thread {
   }
 
   void cleanupChannel(final Channel ch, final Runnable callback) {
-    Selector localSelector = null;
 
     if (null == ch) {
       // not expected
@@ -223,23 +243,12 @@ class CoreNIOServices extends Thread {
         logger.debug("queue'ing channel close operation");
       }
 
-      final CoreNIOServices commNIOThread;
-      if (workerCommMgr != null && workerCommMgr.isStarted()) {
-        commNIOThread = workerCommMgr.getWorkerCommForSocketChannel(ch);
-      } else {
-        commNIOThread = this;
-      }
-
-      Assert.eval(commNIOThread != null);
-      final CoreNIOServices commThread = commNIOThread;
-      commNIOThread.addSelectorTask(new Runnable() {
+      addSelectorTask(new Runnable() {
         public void run() {
-          commThread.cleanupChannel(ch, callback);
+          CoreNIOServices.this.cleanupChannel(ch, callback);
         }
       });
       return;
-    } else {
-      localSelector = selector;
     }
 
     try {
@@ -247,7 +256,7 @@ class CoreNIOServices extends Thread {
         SelectableChannel sc = (SelectableChannel) ch;
 
         try {
-          SelectionKey sk = sc.keyFor(localSelector);
+          SelectionKey sk = sc.keyFor(selector);
           if (sk != null) {
             sk.attach(null);
             sk.cancel();
@@ -313,7 +322,7 @@ class CoreNIOServices extends Thread {
     }
   }
 
-  void dispose(Selector localSelector, LinkedQueue localSelectorTasks) {
+  private void dispose(Selector localSelector, LinkedQueue localSelectorTasks) {
     Assert.eval(Thread.currentThread() == this);
 
     if (localSelector != null) {
@@ -346,7 +355,7 @@ class CoreNIOServices extends Thread {
     localSelectorTasks = new LinkedQueue();
   }
 
-  void selectLoop() throws IOException {
+  private void selectLoop() throws IOException {
     Assert.eval(Thread.currentThread() == this);
 
     Selector localSelector = this.selector;
@@ -439,7 +448,6 @@ class CoreNIOServices extends Thread {
   }
 
   private void doAccept(final SelectionKey key) {
-
     SocketChannel sc = null;
 
     final TCListenerJDK14 lsnr = (TCListenerJDK14) key.attachment();
@@ -462,28 +470,12 @@ class CoreNIOServices extends Thread {
         logger.warn("IOException trying to setTcpNoDelay()", ioe);
       }
 
-      if (workerCommMgr != null && workerCommMgr.isStarted()) {
-        // Multi threaded server model
-
-        final CoreNIOServices workerCommThread = workerCommMgr.getNextFreeWorkerComm();
-        final TCConnectionJDK14 conn = lsnr.createConnection(sc, workerCommThread);
-        final SocketChannel sc1 = sc;
-
-        workerCommMgr.setWorkerCommChannelMap(sc, workerCommThread);
-        workerCommThread.addSelectorTask(new Runnable() {
-          InterestRequest workerReq = InterestRequest
-                                        .createAddInterestRequest(sc1, conn,
-                                                                  (SelectionKey.OP_READ | SelectionKey.OP_WRITE),
-                                                                  workerCommThread);
-
-          public void run() {
-            workerCommThread.handleRequest(workerReq);
-          }
-        });
-      } else {
+      if (workerCommMgr == null || !workerCommMgr.isStarted()) {
         // Single threaded server model
         final TCConnectionJDK14 conn = lsnr.createConnection(sc, this);
         sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
+
+        return;
       }
     } catch (IOException ioe) {
       if (logger.isInfoEnabled()) {
@@ -492,6 +484,12 @@ class CoreNIOServices extends Thread {
 
       cleanupChannel(sc, null);
     }
+
+    // Multi threaded server model
+    final CoreNIOServices workerCommThread = workerCommMgr.getNextFreeWorkerComm();
+    final TCConnectionJDK14 conn = lsnr.createConnection(sc, workerCommThread);
+
+    workerCommThread.requestReadWriteInterest(conn, sc);
   }
 
   private void doConnect(SelectionKey key) {
@@ -520,9 +518,9 @@ class CoreNIOServices extends Thread {
     }
   }
 
-  public void handleRequest(final InterestRequest req) {
+  private void handleRequest(final InterestRequest req) {
     // ignore the request if we are stopped/stopping
-    if (isStopped()) { return; }
+    if (isStoppedOrStopping()) { return; }
 
     if (Thread.currentThread() == this) {
       modifyInterest(req);
@@ -588,7 +586,7 @@ class CoreNIOServices extends Thread {
                                                            this));
   }
 
-  void requestAcceptInterest(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
+  private void requestAcceptInterest(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
     handleRequest(InterestRequest.createSetInterestRequest(ssc, lsnr, SelectionKey.OP_ACCEPT, this));
   }
 
@@ -598,6 +596,11 @@ class CoreNIOServices extends Thread {
 
   void removeReadInterest(TCConnectionJDK14 conn, SelectableChannel channel) {
     handleRequest(InterestRequest.createRemoveInterestRequest(channel, conn, SelectionKey.OP_READ, this));
+  }
+
+  private void requestReadWriteInterest(TCConnectionJDK14 conn, SocketChannel sc) {
+    handleRequest(InterestRequest
+        .createAddInterestRequest(sc, conn, SelectionKey.OP_READ | SelectionKey.OP_WRITE, this));
   }
 
   private static class InterestRequest {
@@ -661,6 +664,16 @@ class CoreNIOServices extends Thread {
       return buf.toString();
     }
 
+  }
+
+  public void closeEvent(TCListenerEvent event) {
+    listenerRemoved(event.getSource());
+  }
+
+  public void registerListener(TCListenerJDK14 lsnr, ServerSocketChannel ssc) {
+    requestAcceptInterest(lsnr, ssc);
+    listenerAdded(lsnr);
+    lsnr.addEventListener(this);
   }
 
 }

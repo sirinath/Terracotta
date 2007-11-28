@@ -6,8 +6,6 @@ package com.tc.net.core;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.core.event.TCListenerEvent;
-import com.tc.net.core.event.TCListenerEventListener;
 
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
@@ -15,7 +13,7 @@ import com.tc.net.core.event.TCListenerEventListener;
  *
  * @author teck
  */
-class TCCommJDK14 implements TCComm, TCListenerEventListener {
+class TCCommJDK14 implements TCComm {
 
   protected static final TCLogger   logger         = TCLogging.getLogger(TCComm.class);
 
@@ -31,21 +29,13 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
   TCCommJDK14(int workerCommCount) {
     if (workerCommCount > 0) {
-      workerCommMgr = new TCWorkerCommManager(this, workerCommCount);
+      workerCommMgr = new TCWorkerCommManager(workerCommCount);
     } else {
       logger.info("Comm Worker Threads NOT requested");
       workerCommMgr = null;
     }
 
     commThread = new CoreNIOServices(commThreadName, this, workerCommMgr);
-  }
-
-  public void closeEvent(TCListenerEvent event) {
-    this.commThread.listenerRemoved();
-  }
-
-  void listenerAdded(TCListener listener) {
-    this.commThread.listenerAdded(listener);
   }
 
   public boolean isStarted() {
@@ -80,7 +70,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         logger.debug("Stop requested");
       }
       commThread.requestStop();
-      if (workerCommMgr != null && workerCommMgr.isStarted() == true) {
+      if (workerCommMgr != null && workerCommMgr.isStarted()) {
         workerCommMgr.stop();
       }
     }

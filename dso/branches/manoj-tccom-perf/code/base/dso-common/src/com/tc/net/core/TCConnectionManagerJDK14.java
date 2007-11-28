@@ -78,7 +78,10 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
     CoreNIOServices commThread = comm.nioServiceThreadForNewListener();
 
     TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, getConnectionListener(), this, commThread);
-    commThread.requestAcceptInterest(rv, ssc);
+
+    commThread.registerListener(rv, ssc);
+
+
 
     return rv;
   }
@@ -106,8 +109,6 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
 
     TCListener rv = createListenerImpl(addr, factory, backlog, reuseAddr);
     rv.addEventListener(listenerEvents);
-    rv.addEventListener(comm);
-    comm.listenerAdded(rv);
 
     synchronized (listeners) {
       listeners.add(rv);
