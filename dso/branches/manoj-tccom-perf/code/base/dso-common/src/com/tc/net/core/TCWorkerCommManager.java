@@ -8,48 +8,32 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
 
-import java.nio.channels.Channel;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * The whole intention of this class is to manage the workerThreads for each Listener. While creating a ... some docs
- * here.
+ * The whole intention of this class is to manage the workerThreads for each Listener
  * 
  * @author Manoj G
  */
 public class TCWorkerCommManager {
-  private int                   totalWorkerComm;
-  private int                   nextWorkerCommId;
-  private Map                   workerCommChannelMap;
+  private static final TCLogger   logger                 = TCLogging.getLogger(TCWorkerCommManager.class);
 
-  private boolean               workerCommStarted      = false;
-  String                        workerCommName         = "TCWorkerComm # ";
+  private static final String     WORKER_NAME_PREFIX     = "TCWorkerComm # ";
+  private static final short      INVALID_WORKER_COMM_ID = -1;
 
-  private TCCommJDK14           parentComm;
-  private CoreNIOServices[]     workerCommThreads;
-  private static final TCLogger logger                 = TCLogging.getLogger(TCWorkerCommManager.class);
+  private final int               totalWorkerComm;
+  private final CoreNIOServices[] workerCommThreads;
 
-  public final short            INVALID_WORKER_COMM_ID = -1;
+  private int                     nextWorkerCommId;
+  private boolean                 workerCommStarted      = false;
 
-  TCWorkerCommManager(TCCommJDK14 comm, int workerCommCount) {
-
-    if (workerCommCount <= 0) {
-      workerCommStarted = false;
-      return;
-    }
+  TCWorkerCommManager(int workerCommCount) {
+    if (workerCommCount <= 0) { throw new IllegalArgumentException("invalid worker count: " + workerCommCount); }
 
     logger.info("Creating " + workerCommCount + " worker comm threads.");
 
     this.nextWorkerCommId = INVALID_WORKER_COMM_ID;
-    this.totalWorkerComm = 0;
-    this.parentComm = comm;
+    this.totalWorkerComm = workerCommCount;
 
-    // workerCommThreads = new TCWorkerComm[workerCommCount];
     workerCommThreads = new CoreNIOServices[workerCommCount];
-    totalWorkerComm = workerCommCount;
-    workerCommChannelMap = new HashMap(); // only for cleanup purposes
   }
 
   public synchronized CoreNIOServices getNextFreeWorkerComm() {
@@ -59,23 +43,17 @@ public class TCWorkerCommManager {
       nextWorkerCommId = nextWorkerCommId % totalWorkerComm;
 
       iter += 1;
-      if (iter >= 2 * totalWorkerComm) return null;
+      if (iter >= 2 * totalWorkerComm) return null; // XXX: bug
     } while (workerCommThreads[nextWorkerCommId].isStarted() != true);
     return workerCommThreads[nextWorkerCommId];
   }
 
   public void start() {
 
-    // don't start the threads if they don't need it .. eg: L1 clients
-    if ((parentComm == null) || (workerCommThreads.length == 0)) {
-      workerCommStarted = false;
-      return;
-    }
-
     workerCommStarted = true;
 
     for (int i = 0; i < workerCommThreads.length; i++) {
-      workerCommThreads[i] = new CoreNIOServices(workerCommName + i, this);
+      workerCommThreads[i] = new CoreNIOServices(WORKER_NAME_PREFIX + i, this);
       workerCommThreads[i].start();
     }
   }
@@ -93,16 +71,6 @@ public class TCWorkerCommManager {
         workerCommThreads[i].requestStop();
       }
     }
-  }
-
-  public CoreNIOServices getWorkerCommForSocketChannel(Channel ch) {
-    return (CoreNIOServices) (workerCommChannelMap.get(ch));
-  }
-
-  public void setWorkerCommChannelMap(SocketChannel sc, CoreNIOServices nioServiceThread) {
-    Assert.eval(sc != null);
-    Assert.eval(nioServiceThread != null);
-    workerCommChannelMap.put(sc, nioServiceThread);
   }
 
 }
