@@ -263,6 +263,9 @@ public class Lock {
 
     if (waiters.containsKey(txn)) throw new AssertionError("Attempt to request a lock in a Thread "
                                                            + "that is already part of the wait set. lock = " + this);
+    
+    enableClientStatIfNeeded(lockResponseSink, txn);
+    recordLockRequestStat(txn.getId().getNodeID(), txn.getId().getClientThreadID(), requestedLockLevel);
 
     // debug("requestLock - BEGIN -", txn, ",", LockLevel.toString(requestedLockLevel));
     // it is an error (probably originating from the client side) to
@@ -280,8 +283,6 @@ public class Lock {
       }
     }
 
-    enableClientStatIfNeeded(lockResponseSink, txn);
-    recordLockRequestStat(txn.getId().getNodeID(), txn.getId().getClientThreadID(), requestedLockLevel);
     if (isPolicyGreedy()) {
       if (canAwardGreedilyOnTheClient(txn, requestedLockLevel)) {
         // These requests are the ones in the wire when the greedy lock was given out to the client.
