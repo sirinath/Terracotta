@@ -80,18 +80,24 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.PUT:
         addChangeToCollector(objectID, params[0], includeIDs);
         references.add(params[0]);
+        System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after put in server: " + references.size() + " put obj: " + params[0]);
+
         break;
       case SerializationUtil.TAKE:
-        references.remove(0);
+        Object o = references.remove(0);
+        System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after take in server: " + references.size() + " take obj: " + o);
+        
         break;
       case SerializationUtil.CLEAR:
         references.clear();
         break;
       case SerializationUtil.REMOVE_FIRST_N:
         int n = ((Integer) params[0]).intValue();
-        System.err.println((new Date(System.currentTimeMillis())).toString() + " REMOVE_FIRST_N in QueueManagedObjectState from " + objectID + " count: " + n);
+        System.err.println((new Date(System.currentTimeMillis())).toString() + " queue id: " + objectID + " REMOVE_FIRST_N in server" + " count: " + n);
         for (int i = 0; i < n; i++) {
           references.remove(0);
+          //System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " rem first n: " + references.size() + " rem object: " + o1);
+
         }
         break;
       case SerializationUtil.REMOVE_AT:
