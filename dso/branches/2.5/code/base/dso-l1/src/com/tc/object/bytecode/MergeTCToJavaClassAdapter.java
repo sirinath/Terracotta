@@ -34,10 +34,9 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
   private final Map                instrumentedContext;
   private final Set                visitedMethods;
   private final String             methodPrefix;
+  private final boolean            insertTCinit;
   private String                   superName;
   private TransparencyClassAdapter dsoAdapter;
-
-  private final boolean            insertTCinit;
 
   public MergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapter dsoAdapter, String jFullClassDots,
                                    String tcFullClassDots, ClassNode tcClassNode, Map instrumentedContext,
