@@ -1166,9 +1166,8 @@ public class BootJarTool {
           }
 
           if (!specs.containsKey(clazz.getName()) && ((bootJar == null) || !bootJar.classLoaded(clazz.getName()))) {
-            if (tcSpecs) {
-              throw new AssertionError("Missing super class " + clazz.getName() + " for type " + spec.getClassName());
-            }
+            if (tcSpecs) { throw new AssertionError("Missing super class " + clazz.getName() + " for type "
+                                                    + spec.getClassName()); }
             supers.add(clazz.getName());
           }
 
@@ -1885,7 +1884,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, false);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jInnerClassNameDots,
                                                                               tcInnerClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, false));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
 
@@ -1918,7 +1917,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, true);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, true));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
     jData = doDSOTransform(jClassNameDots, jData);
@@ -1972,7 +1971,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, false);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, true));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     bootJar.loadClassIntoJar(jClassNameDots, cw.toByteArray(), true);
 
