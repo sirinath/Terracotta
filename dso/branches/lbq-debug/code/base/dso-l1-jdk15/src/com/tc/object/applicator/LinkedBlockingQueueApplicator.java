@@ -187,7 +187,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
-          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " putting object: " + params[0]);
+          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " put obj: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -196,9 +196,8 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         break;
       case SerializationUtil.TAKE:
         try {
-          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size before take in app: " + queue.size());
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
-          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " taking object: " + o);
+          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " take obj: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -208,7 +207,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
-        System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " objects.");
+        System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " obj.");
 
         for (int i = 0; i < count; i++) {
           try {
