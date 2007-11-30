@@ -1,5 +1,6 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
@@ -105,7 +106,7 @@ public class Assert {
   public static void assertNotEmpty(Object what, String s) {
     assertNotNull(what, s);
     if ((s.length() == 0) && isEnabled()) throw new IllegalArgumentException(StringUtil.safeToString(what)
-                                                                             + " is empty");
+        + " is empty");
   }
 
   public static void assertNotEmpty(String s) {
@@ -115,7 +116,7 @@ public class Assert {
   public static void assertNotBlank(Object what, String s) {
     assertNotEmpty(what, s);
     if ((s.trim().length() == 0) && isEnabled()) throw new IllegalArgumentException(StringUtil.safeToString(what)
-                                                                                    + " is blank");
+        + " is blank");
   }
 
   public static void assertNotBlank(String s) {
@@ -131,6 +132,10 @@ public class Assert {
     }
   }
 
+  public static void assertEquals(Object msg, int expected, int actual) {
+    if (expected != actual) { throw new TCAssertionError(msg + ": Expected <" + expected + "> but got <" + actual + ">"); }
+  }
+
   public static void assertEquals(int expected, int actual) {
     if (expected != actual) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
@@ -138,9 +143,10 @@ public class Assert {
   public static void assertEquals(double expected, double actual) {
     if (expected != actual) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
-  
+
   public static void assertEquals(double expected, double actual, double epsilon) {
-    if (Math.abs(actual - expected) > Math.abs(epsilon)) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
+    if (Math.abs(actual - expected) > Math.abs(epsilon)) { throw new TCAssertionError("Expected <" + expected
+        + "> but got <" + actual + ">"); }
   }
 
   public static void assertEquals(boolean expected, boolean actual) {
@@ -182,21 +188,22 @@ public class Assert {
       if (objectArray[pos] == requiredElement) return;
     }
     throw failure("Element<" + requiredElement + "> not found in array "
-                  + StringUtil.toString(objectArray, ",", "<", ">"));
+        + StringUtil.toString(objectArray, ",", "<", ">"));
   }
 
   public static void fail() {
     throw failure("generic failure");
   }
-  
-  public static void pre(boolean v){
+
+  public static void pre(boolean v) {
     if (!v) throw new TCAssertionError("Precondition failed");
   }
 
-  public static void post(boolean v){
+  public static void post(boolean v) {
     if (!v) throw new TCAssertionError("Postcondition failed");
   }
-  public static void inv(boolean v){
+
+  public static void inv(boolean v) {
     if (!v) throw new TCAssertionError("Invariant failed");
   }
 }
