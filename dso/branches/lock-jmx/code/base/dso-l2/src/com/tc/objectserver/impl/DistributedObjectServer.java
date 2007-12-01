@@ -27,13 +27,14 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
-import com.tc.management.L2LockStatsManagerImpl;
 import com.tc.management.L2Management;
 import com.tc.management.beans.L2State;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
+import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.management.remote.connect.ClientConnectEventHandler;
 import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
@@ -73,7 +74,6 @@ import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
-import com.tc.object.msg.LockStatisticsResponseMessage;
 import com.tc.object.msg.MessageRecycler;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
@@ -274,7 +274,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException,
       FileNotCreatedException {
 
-    L2LockStatsManager lockStatsManager = new L2LockStatsManagerImpl();
+    L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
 
     try {

@@ -76,9 +76,25 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   }
 
   private void recordStatIfEnabled() {
-    if (lockStatManager.isStatEnabled(lockID)) {
+    if (lockStatManager.isStatEnabled()) {
       lockStatManager.recordStackTrace(lockID);
     }
+  }
+  
+  private void recordLockRequested(ThreadID threadID) {
+    lockStatManager.recordLockRequested(lockID, threadID);
+  }
+  
+  private void recordLockAwarded(ThreadID threadID) {
+    lockStatManager.recordLockAwarded(lockID, threadID);
+  }
+  
+  private void recordLockReleased(ThreadID threadID) {
+    lockStatManager.recordLockReleased(lockID, threadID);
+  }
+  
+  private void recordLockHoppedStat(ThreadID threadID) {
+    lockStatManager.recordLockHopped(lockID, threadID);
   }
 
   boolean tryLock(ThreadID threadID, WaitInvocation timeout, int type) {
@@ -110,7 +126,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     synchronized (this) {
       waitUntillRunning();
 
-      recordStatIfEnabled();
+      recordLockRequested(requesterID);
       // if it is tryLock and is already being held by other thread of the same node, return
       // immediately.
       if (noBlock && isHeld() && !isHeldBy(requesterID) && !timeout.needsToWait()) { return; }
@@ -156,12 +172,14 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
       // All other cases have to wait for some reason or the other
       waitLock = addToPendingLockRequest(requesterID, type, timeout, noBlock);
       if (greediness.isNotGreedy()) {
-        // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
-        if (noBlock) {
-          remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type);
-        } else {
-          remoteLockManager.requestLock(lockID, requesterID, type);
-        }
+        remoteLockRequest(requesterID, type, timeout, noBlock);
+//        recordLockHoppedStat(requesterID);
+//        // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
+//        if (noBlock) {
+//          remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type);
+//        } else {
+//          remoteLockManager.requestLock(lockID, requesterID, type);
+//        }
       } else {
         // If the lock already granted to another thread greedily within the same JVM and if
         // it is a tryLock request with a timeout, schedule a local timer.
@@ -195,6 +213,16 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     Util.selfInterruptIfNeeded(isInterrupted);
     // debug("lock - GOT IT - ", requesterID, LockLevel.toString(type));
   }
+  
+  private void remoteLockRequest(ThreadID requesterID, int type, WaitInvocation timeout, boolean noBlock) {
+    recordLockHoppedStat(requesterID);
+    // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
+    if (noBlock) {
+      remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type);
+    } else {
+      remoteLockManager.requestLock(lockID, requesterID, type);
+    }
+  }
 
   /*
    * @returns true if the greedy lock should be let go.
@@ -217,7 +245,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
       synchronized (this) {
         waitUntillRunning();
         // debug("unlock - BEGIN - ", id);
-        recordStatIfEnabled();
+        recordLockReleased(threadID);
         action = unlockAction(threadID);
       }
 
@@ -833,6 +861,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
           throw er;
         }
       }
+      recordLockAwarded(threadID);
     }
   }
 

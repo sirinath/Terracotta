@@ -17,9 +17,10 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.ClientLockStatManager;
-import com.tc.management.ClientLockStatManagerImpl;
 import com.tc.management.L1Management;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
+import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
+import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
@@ -79,7 +80,6 @@ import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
-import com.tc.object.msg.LockStatisticsResponseMessage;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
 import com.tc.object.msg.ObjectsNotFoundMessage;
@@ -223,7 +223,7 @@ public class DistributedObjectClient extends SEDA {
 
     ClientGlobalTransactionManager gtxManager = new ClientGlobalTransactionManagerImpl(rtxManager);
     
-    ClientLockStatManager lockStatManager = new ClientLockStatManagerImpl();
+    ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(ClientLockManager.class)), new RemoteLockManagerImpl(channel.getLockRequestMessageFactory(),

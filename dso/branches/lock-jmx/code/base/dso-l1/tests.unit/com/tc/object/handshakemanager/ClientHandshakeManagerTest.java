@@ -384,7 +384,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void enableStat(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency) {
+    public void setLockStatisticsConfig(int lockStackTraceDepth, int lockStatCollectFrequency) {
       throw new ImplementMe();
     }
 

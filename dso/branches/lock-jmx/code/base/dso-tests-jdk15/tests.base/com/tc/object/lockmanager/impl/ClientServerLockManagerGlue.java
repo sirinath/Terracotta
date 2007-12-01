@@ -40,19 +40,24 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   private static final Sink     NULL_SINK = new NullSink();
 
   private LockManagerImpl       serverLockManager;
-  private ClientLockManager     clientLockManager;
+  protected ClientLockManager     clientLockManager;
 
-  private TestSink              sink      = new TestSink();
+  protected TestSink              sink;
   private ClientID              clientID  = new ClientID(new ChannelID(1));
-  private boolean               stop      = false;
-  private Thread                eventNotifier;
+  protected boolean               stop      = false;
+  protected Thread                eventNotifier;
 
-  private final SessionProvider sessionProvider;
+  protected final SessionProvider sessionProvider;
 
   public ClientServerLockManagerGlue(SessionProvider sessionProvider) {
+    this(sessionProvider, new TestSink(), "ClientServerLockManagerGlue");
+  }
+  
+  protected ClientServerLockManagerGlue(SessionProvider sessionProvider, TestSink sink, String threadName) {
     super();
     this.sessionProvider = sessionProvider;
-    eventNotifier = new Thread(this, "ClientServerLockManagerGlue");
+    this.sink = sink;
+    eventNotifier = new Thread(this, threadName);
     eventNotifier.setDaemon(true);
     eventNotifier.start();
   }

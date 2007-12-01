@@ -10,8 +10,8 @@ import javax.swing.Icon;
 import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.XTreeNode;
 
+import com.tc.object.lockmanager.impl.LockHolder;
 import com.tc.objectserver.lockmanager.api.LockMBean;
-import com.tc.objectserver.lockmanager.api.LockHolder;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
 import com.tc.objectserver.lockmanager.api.Waiter;
 

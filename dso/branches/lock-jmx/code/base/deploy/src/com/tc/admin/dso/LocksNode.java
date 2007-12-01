@@ -36,7 +36,7 @@ public class LocksNode extends ComponentNode implements PopupMenuListener {
     m_cc = cc;
 
     setLabel(AdminClient.getContext().getMessage("dso.locks"));
-    setComponent(new LocksPanel(m_cc));
+    //setComponent(new LocksPanel(m_cc));
 
     initMenu();
   }
@@ -64,7 +64,7 @@ public class LocksNode extends ComponentNode implements PopupMenuListener {
   }
 
   public void refresh() {
-    ((LocksPanel) getComponent()).refresh();
+    //((LocksPanel) getComponent()).refresh();
   }
 
   public class StatsEnabledAction extends XAbstractAction {
@@ -127,15 +127,16 @@ public class LocksNode extends ComponentNode implements PopupMenuListener {
   }
 
   private boolean isLockStatisticsEnabled() {
-    return ((LocksPanel) getComponent()).isLockStatisticsEnabled();
+   // return ((LocksPanel) getComponent()).isLockStatisticsEnabled();
+    return false;
   }
 
   private void setLockStatisticsEnabled(boolean lockStatsEnabled) {
-    ((LocksPanel) getComponent()).setLockStatisticsEnabled(lockStatsEnabled);
+    //((LocksPanel) getComponent()).setLockStatisticsEnabled(lockStatsEnabled);
   }
 
   private void setAllStatsEnabled(boolean allStatsEnabled) {
-    ((LocksPanel) getComponent()).setAllClientTracesEnabled(allStatsEnabled);
+    //((LocksPanel) getComponent()).setAllClientTracesEnabled(allStatsEnabled);
   }
 
   public void tearDown() {

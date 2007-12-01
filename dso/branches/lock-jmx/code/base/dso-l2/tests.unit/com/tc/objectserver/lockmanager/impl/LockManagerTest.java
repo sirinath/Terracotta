@@ -10,7 +10,7 @@ import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.management.L2LockStatsManager;
-import com.tc.management.L2LockStatsManagerImpl;
+import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.net.groups.ClientID;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -18,12 +18,12 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.impl.LockHolder;
 import com.tc.object.tx.WaitInvocation;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.context.LockResponseContext;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
-import com.tc.objectserver.lockmanager.api.LockHolder;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
@@ -100,7 +100,7 @@ public class LockManagerTest extends TestCase {
     ThreadID tid1 = new ThreadID(1);
     WaitInvocation wait = new WaitInvocation(Integer.MAX_VALUE);
 
-    L2LockStatsManager lockStatsManager = new L2LockStatsManagerImpl();
+    L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
     lockManager = new LockManagerImpl(new NullChannelManager() {
       public String getChannelAddress(NodeID nid) {
         if (cid1.equals(nid)) { return "127.0.0.1:6969"; }

@@ -4,35 +4,21 @@
  */
 package com.tc.management.beans;
 
+import com.tc.management.lock.stats.LockSpec;
+
 import java.util.Collection;
 
 public interface LockStatisticsMonitorMBean {
 
-  public Collection getTopHeld(int n);
+  public Collection<LockSpec> getLockSpecs();
   
-  public Collection getTopAggregateLockHolderStats(int n);
-
-  public Collection getTopRequested(int n);
-  
-  public Collection getTopWaitingLocks(int n);
-  
-  public Collection getTopAggregateWaitingLocks(int n);
-
-  public Collection getTopContendedLocks(int n);
-  
-  public Collection getTopLockHops(int n);
-  
-  public Collection getStackTraces(String lockID);
-  
-  public void enableClientStackTrace(String lockID);
-  
-  public void enableClientStackTrace(String lockID, int stackTraceDepth, int statCollectFrequency);
-  
-  public void disableClientStackTrace(String lockID);
-  
-  public boolean isClientStackTraceEnabled(String lockID);
+  public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
   public void setLockStatisticsEnabled(boolean lockStatsEnabled);
 
   public boolean isLockStatisticsEnabled();
+  
+  public int getTraceDepth();
+  
+  public int getGatherInterval();
 }

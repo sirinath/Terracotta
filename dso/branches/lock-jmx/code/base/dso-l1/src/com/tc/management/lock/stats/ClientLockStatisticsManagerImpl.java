@@ -2,20 +2,26 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.management;
+package com.tc.management.lock.stats;
 
 import com.tc.async.api.Sink;
 import com.tc.exception.TCRuntimeException;
+import com.tc.management.ClientLockStatContext;
+import com.tc.management.ClientLockStatManager;
+import com.tc.net.groups.NodeID;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.TCStackTraceElement;
-import com.tc.object.msg.LockStatisticsResponseMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,8 +31,9 @@ import java.util.Map;
 import java.util.Set;
 
 // Methods in this class are not synchronized. They should be called from a proper synchronized
-// context.
-public class ClientLockStatManagerImpl implements ClientLockStatManager {
+// context, which is from the ClientLockManager context.
+public class ClientLockStatisticsManagerImpl extends LockStatisticsManager implements ClientLockStatManager {
+  private final static NodeID     NULL_NODE_ID                = NodeIDImpl.NULL_ID;
   private final static Set        IGNORE_STACK_TRACES_PACKAGE = new HashSet();
 
   private final Map               stackTracesMap              = new HashMap();
@@ -40,10 +47,11 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
   }
 
   private static LockStatisticsResponseMessage createLockStatisticsResponseMessage(ClientMessageChannel channel,
-                                                                                   LockID lockID, List stackTraces) {
+                                                                                   LockID lockID,
+                                                                                   Collection lockStatElements) {
     LockStatisticsResponseMessage message = (LockStatisticsResponseMessage) channel
         .createMessage(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE);
-    message.initialize(lockID, stackTraces);
+    message.initialize(lockID, lockStatElements);
     return message;
   }
 
@@ -52,7 +60,49 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
     this.sink = sink;
   }
 
+  public void recordLockRequested(LockID lockID, ThreadID threadID) {
+    if (!isStatEnabled()) { return; }
+    boolean shouldSendClientStat = shouldSendClientStat(lockID);
+
+    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
+    super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements);
+
+    sendIfNeeded(lockID, shouldSendClientStat);
+  }
+
+  public void recordLockAwarded(LockID lockID, ThreadID threadID) {
+    if (!isStatEnabled()) { return; }
+    boolean shouldSendClientStat = shouldSendClientStat(lockID);
+
+    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
+    boolean isLockAwardRecorded = super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), stackTraceElements);
+
+    sendIfNeeded(lockID, shouldSendClientStat && isLockAwardRecorded);
+  }
+  
+  public void recordLockReleased(LockID lockID, ThreadID threadID) {
+    if (!isStatEnabled()) { return; }
+    boolean shouldSendClientStat = shouldSendClientStat(lockID);
+
+    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
+    boolean isLockReleaseRecorded = super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
+
+    sendIfNeeded(lockID, shouldSendClientStat && isLockReleaseRecorded);
+  }
+  
+  public void recordLockHopped(LockID lockID, ThreadID threadID) {
+    if (!isStatEnabled()) { return; }
+    boolean shouldSendClientStat = shouldSendClientStat(lockID);
+
+    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
+    super.recordLockHopRequested(lockID, stackTraceElements);
+
+    sendIfNeeded(lockID, shouldSendClientStat);
+  }
+
   public void recordStackTrace(LockID lockID) {
+    if (true) { return; }
+
     ClientLockStatContext lockStatContext = (ClientLockStatContext) statEnabledLocks.get(lockID);
     if (lockStatContext.shouldRecordStackTrace()) {
 
@@ -70,10 +120,47 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
       if (added) {
         List stackTracesList = new ArrayList();
         stackTracesList.add(tcStackTraceElement);
-        send(lockID, stackTracesList);
       }
     }
     lockStatContext.updateCollectTimer();
+  }
+
+  public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
+    disableLockStatistics();
+    super.setLockStatisticsEnabled(true);
+    super.setLockStatisticsConfig(traceDepth, gatherInterval);
+  }
+
+  // TODO: We do not need to disable on a per lock basis
+  public void disableStat(LockID lockID) {
+    disableLockStatistics();
+  }
+
+  public boolean isStatEnabled() {
+    return super.isClientStatEnabled();
+  }
+
+  protected LockStatisticsInfo newLockStatisticsContext(LockID lockID) {
+    return new ClientLockStatisticsInfoImpl(lockID, lockStatConfig.getGatherInterval());
+  }
+
+  protected void disableLockStatistics() {
+    super.clear();
+  }
+
+  private Collection getLockStatElements(LockID lockID) {
+    LockStatisticsInfo lsc = getLockStatInfo(lockID);
+    if (lsc == null) { return Collections.EMPTY_LIST; }
+
+    lsc.aggregateLockHoldersData();
+    return lsc.children();
+  }
+
+  private boolean shouldSendClientStat(LockID lockID) {
+    if (!lockStatisticsEnabled) { return false; }
+
+    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl) getOrCreateLockStatInfo(lockID);
+    return (lsc != null && lsc.getRecordedFrequency() == 0);
   }
 
   private StackTraceElement[] getStackTraceElements(int stackTraceDepth) {
@@ -148,24 +235,17 @@ public class ClientLockStatManagerImpl implements ClientLockStatManager {
     return false;
   }
 
-  private void send(LockID lockID, List stackTraces) {
-    sink.add(createLockStatisticsResponseMessage(channel.channel(), lockID, stackTraces));
-  }
-
-  public void enableStackTrace(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency) {
-    statEnabledLocks.remove(lockID);
-    stackTracesMap.remove(lockID);
-
-    ClientLockStatContext lockStatContext = new ClientLockStatContext(lockStatCollectFrequency, lockStackTraceDepth);
-    statEnabledLocks.put(lockID, lockStatContext);
-  }
-
-  public void disableStackTrace(LockID lockID) {
-    statEnabledLocks.remove(lockID);
-    stackTracesMap.remove(lockID);
-  }
-
-  public boolean isStatEnabled(LockID lockID) {
-    return statEnabledLocks.containsKey(lockID);
+  private void sendIfNeeded(LockID lockID, boolean shouldSend) {
+    if (shouldSend) {
+      Collection lockStatElements = getLockStatElements(lockID);
+      
+//      System.err.println("==========================");
+//      System.err.println(lockStatElements);
+//      System.err.println("==========================");
+      
+      if (lockStatElements.size() > 0) {
+        sink.add(createLockStatisticsResponseMessage(channel.channel(), lockID, lockStatElements));
+      }
+    }
   }
 }
