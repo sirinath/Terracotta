@@ -51,7 +51,7 @@ public class RespondToRequestLockHandler extends AbstractEventHandler {
             .getGlobalLockInfo());
       } else if (lrc.isLockStatEnabled()) {
         responseMessage = (LockResponseMessage) channel.createMessage(TCMessageType.LOCK_STAT_MESSAGE);
-        responseMessage.initializeLockStatEnable(lrc.getLockID(), lrc.getThreadID(), lrc.getLockLevel(), lrc.getStackTraceDepth(), lrc.getStatCollectFrequency());
+        responseMessage.initializeLockStatEnable(lrc.getLockID(), lrc.getThreadID(), lrc.getLockLevel(), lrc.getStatTraceDepth(), lrc.getStatGatherInterval());
       } else if (lrc.isLockStatDisabled()) {
         responseMessage = (LockResponseMessage) channel.createMessage(TCMessageType.LOCK_STAT_MESSAGE);
         responseMessage.initializeLockStatDisable(lrc.getLockID(), lrc.getThreadID(), lrc.getLockLevel());

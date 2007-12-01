@@ -40,8 +40,8 @@ public class LockResponseMessage extends DSOMessageBase {
   private LockID            lockID;
   private int               lockLevel;
   private GlobalLockInfo    globalLockInfo;
-  private int               stackTraceDepth;
-  private int               statCollectFrequency;
+  private int               traceDepth;
+  private int               gatherInterval;
 
   public LockResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
                              MessageChannel channel, TCMessageType type) {
@@ -62,8 +62,8 @@ public class LockResponseMessage extends DSOMessageBase {
       putNVPair(GLOBAL_LOCK_INFO, globalLockInfo);
     }
     if (isLockStatEnabled()) {
-      putNVPair(LOCK_STACK_TRACE_DEPTH, this.stackTraceDepth);
-      putNVPair(LOCK_STAT_COLLECT_FREQUENCY, this.statCollectFrequency);
+      putNVPair(LOCK_STACK_TRACE_DEPTH, this.traceDepth);
+      putNVPair(LOCK_STAT_COLLECT_FREQUENCY, this.gatherInterval);
     }
   }
 
@@ -118,10 +118,10 @@ public class LockResponseMessage extends DSOMessageBase {
         getObject(globalLockInfo);
         return true;
       case LOCK_STACK_TRACE_DEPTH:
-        this.stackTraceDepth = getIntValue();
+        this.traceDepth = getIntValue();
         return true;
       case LOCK_STAT_COLLECT_FREQUENCY:
-        this.statCollectFrequency = getIntValue();
+        this.gatherInterval = getIntValue();
         return true;
       default:
         return false;
@@ -168,12 +168,12 @@ public class LockResponseMessage extends DSOMessageBase {
     return this.lockLevel;
   }
 
-  public int getStackTraceDepth() {
-    return stackTraceDepth;
+  public int getTraceDepth() {
+    return traceDepth;
   }
 
-  public int getStatCollectFrequency() {
-    return statCollectFrequency;
+  public int getGatherInterval() {
+    return gatherInterval;
   }
 
   public GlobalLockInfo getGlobalLockInfo() {
@@ -205,12 +205,12 @@ public class LockResponseMessage extends DSOMessageBase {
     initialize(lid, sid, level, info);
   }
 
-  public void initializeLockStatEnable(LockID lid, ThreadID sid, int level, int stackTraceDepth,
-                                       int statCollectFrequency) {
+  public void initializeLockStatEnable(LockID lid, ThreadID sid, int level, int traceDepth,
+                                       int gatherInterval) {
     this.type = LOCK_STAT_ENABLED;
     initialize(lid, sid, level);
-    this.stackTraceDepth = stackTraceDepth;
-    this.statCollectFrequency = statCollectFrequency;
+    this.traceDepth = traceDepth;
+    this.gatherInterval = gatherInterval;
   }
 
   public void initializeLockStatDisable(LockID lid, ThreadID sid, int level) {

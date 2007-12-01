@@ -4,7 +4,7 @@
 package com.tc.management.beans;
 
 import com.tc.management.L2LockStatsManager;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.management.lock.stats.LockSpec;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -16,59 +16,27 @@ public class LockStatisticsMonitor implements LockStatisticsMonitorMBean, Serial
     this.lockStatsManager = lockStatsManager;
   }
 
-  public Collection getTopHeld(int n) {
-    return this.lockStatsManager.getTopLockHoldersStats(n);
+  public Collection<LockSpec> getLockSpecs() {
+    return this.lockStatsManager.getLockSpecs();
   }
   
-  public Collection getTopAggregateLockHolderStats(int n) {
-    return this.lockStatsManager.getTopAggregateLockHolderStats(n);
-  }
-
-  public Collection getTopRequested(int n) {
-    return this.lockStatsManager.getTopLockStats(n);
+  public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
+    this.lockStatsManager.setLockStatisticsConfig(traceDepth, gatherInterval);
   }
   
-  public Collection getTopWaitingLocks(int n) {
-    return this.lockStatsManager.getTopWaitingLocks(n);
-  }
-  
-  public Collection getTopAggregateWaitingLocks(int n) {
-    return this.lockStatsManager.getTopAggregateWaitingLocks(n);
-  }
-  
-  public Collection getTopContendedLocks(int n) {
-    return this.lockStatsManager.getTopContendedLocks(n);
-  }
-  
-  public Collection getTopLockHops(int n) {
-    return this.lockStatsManager.getTopLockHops(n);
-  }
-  
-  public Collection getStackTraces(String lockID) {
-    return this.lockStatsManager.getStackTraces(new LockID(lockID));
-  }
-  
-  public void enableClientStackTrace(String lockID) {
-    this.lockStatsManager.enableClientStackTrace(new LockID(lockID));
-  }
-  
-  public void enableClientStackTrace(String lockID, int stackTraceDepth, int statCollectFrequency) {
-    this.lockStatsManager.enableClientStackTrace(new LockID(lockID), stackTraceDepth, statCollectFrequency);
-  }
-  
-  public void disableClientStackTrace(String lockID) {
-    this.lockStatsManager.disableClientStackTrace(new LockID(lockID));
-  }
-
-  public boolean isClientStackTraceEnabled(String lockID) {
-    return this.lockStatsManager.isClientLockStackTraceEnable(new LockID(lockID));
-  }
-
   public void setLockStatisticsEnabled(boolean lockStatsEnabled) {
     this.lockStatsManager.setLockStatisticsEnabled(lockStatsEnabled);
   }
 
   public boolean isLockStatisticsEnabled() {
     return this.lockStatsManager.isLockStatisticsEnabled();
+  }
+  
+  public int getTraceDepth() {
+    return this.lockStatsManager.getTraceDepth();
+  }
+  
+  public int getGatherInterval() {
+    return this.lockStatsManager.getGatherInterval();
   }
 }

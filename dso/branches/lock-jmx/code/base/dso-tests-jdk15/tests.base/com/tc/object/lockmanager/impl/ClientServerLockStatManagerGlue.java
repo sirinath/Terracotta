@@ -7,29 +7,23 @@ package com.tc.object.lockmanager.impl;
 import com.tc.async.api.EventContext;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
-import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.object.msg.LockStatisticsResponseMessage;
+import com.tc.management.lock.stats.LockStatisticsResponseMessage;
+import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.context.LockResponseContext;
+import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 
-public class ClientServerLockStatManagerGlue implements Runnable {
+public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue {
   private ClientLockStatManager clientLockStatManager;
   private L2LockStatsManager    serverLockStatManager;
 
-  private TestSink              sink;
-  private ChannelID             channelID = new ChannelID(1);
-  private boolean               stop      = false;
-  private Thread                eventNotifier;
-
-  public ClientServerLockStatManagerGlue(TestSink sink) {
-    super();
-    this.sink = sink;
-    eventNotifier = new Thread(this, "ClientServerLockStatManagerGlue");
-    eventNotifier.setDaemon(true);
-    eventNotifier.start();
+  public ClientServerLockStatManagerGlue(SessionProvider sessionProvider, TestSink sink) {
+    super(sessionProvider, sink, "ClientServerLockStatManagerGlue");
   }
 
-  public void set(ClientLockStatManager clientLockStatManager, L2LockStatsManager serverLockStatManager) {
+  public void set(ClientLockManager clmgr, LockManagerImpl slmgr, ClientLockStatManager clientLockStatManager, L2LockStatsManager serverLockStatManager) {
+    super.set(clmgr, slmgr);
     this.clientLockStatManager = clientLockStatManager;
     this.serverLockStatManager = serverLockStatManager;
   }
@@ -44,19 +38,17 @@ public class ClientServerLockStatManagerGlue implements Runnable {
       }
       if (ec instanceof LockResponseContext) {
         LockResponseContext lrc = (LockResponseContext) ec;
-        if (lrc.isLockStatEnabled()) {
-          clientLockStatManager.enableStackTrace(lrc.getLockID(), lrc.getStackTraceDepth(), lrc.getStatCollectFrequency());
+        if (lrc.isLockAward()) {
+          clientLockManager.awardLock(sessionProvider.getSessionID(), lrc.getLockID(), lrc.getThreadID(), lrc
+              .getLockLevel());
+        } else if (lrc.isLockStatEnabled()) {
+          clientLockStatManager.setLockStatisticsConfig(lrc.getStatTraceDepth(), lrc.getStatGatherInterval());
         }
       } else if (ec instanceof LockStatisticsResponseMessage) {
         LockStatisticsResponseMessage lsrm = (LockStatisticsResponseMessage)ec;
-        serverLockStatManager.recordStackTraces(lsrm.getLockID(), lsrm.getClientID(), lsrm.getStackTraces());
+        serverLockStatManager.recordClientStat(lsrm.getLockID(), lsrm.getClientID(), lsrm.getLockStatElements());
       }
-      // ToDO :: implment WaitContext etc..
     }
   }
 
-  public void stop() {
-    stop = true;
-    eventNotifier.interrupt();
-  }
 }

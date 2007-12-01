@@ -10,12 +10,13 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.NullTCLogger;
 import com.tc.management.ClientLockStatManager;
-import com.tc.management.ClientLockStatManagerImpl;
 import com.tc.management.L2LockStatsManager;
-import com.tc.management.L2LockStatsManagerImpl;
-import com.tc.management.L2LockStatsManagerImpl.LockStackTracesStat;
+import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
+import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
+import com.tc.management.lock.stats.LockSpec;
+import com.tc.management.lock.stats.LockStatElement;
+import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.net.MaxConnectionsExceededException;
-import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
@@ -32,15 +33,12 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
-import com.tc.object.lockmanager.impl.ClientServerLockManagerGlue;
 import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
-import com.tc.object.lockmanager.impl.TCStackTraceElement;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
-import com.tc.object.msg.LockStatisticsResponseMessage;
 import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessageFactory;
@@ -51,8 +49,6 @@ import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 
@@ -61,7 +57,6 @@ import java.lang.reflect.Constructor;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -69,94 +64,93 @@ public class ClientServerLockStatisticsTest extends TestCase {
 
   private ClientLockManagerImpl           clientLockManager;
   private LockManagerImpl                 serverLockManager;
-  private ClientServerLockManagerGlue     glue1;
+  private ClientServerLockStatManagerGlue clientServerGlue;
   private TestSessionManager              sessionManager;
   private ClientLockStatManager           clientLockStatManager;
   private L2LockStatsManager              serverLockStatManager;
-  private ClientServerLockStatManagerGlue statGlue;
   private ChannelID                       channelId1 = new ChannelID(1);
 
   protected void setUp() throws Exception {
     super.setUp();
-    sessionManager = new TestSessionManager();
-    glue1 = new ClientServerLockManagerGlue(sessionManager);
-    clientLockStatManager = new ClientLockStatManagerImpl();
-    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), glue1, sessionManager, clientLockStatManager);
-
-    DSOChannelManager nullChannelManager = new NullChannelManager();
-    serverLockStatManager = new L2LockStatsManagerImpl();
-    serverLockManager = new LockManagerImpl(nullChannelManager, serverLockStatManager);
-    serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
-    glue1.set(clientLockManager, serverLockManager);
 
     TestSink sink = new TestSink();
+    sessionManager = new TestSessionManager();
+    clientServerGlue = new ClientServerLockStatManagerGlue(sessionManager, sink);
+    clientLockStatManager = new ClientLockStatisticsManagerImpl();
+    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), clientServerGlue, sessionManager,
+                                                  clientLockStatManager);
+
+    DSOChannelManager nullChannelManager = new NullChannelManager();
+    serverLockStatManager = new L2LockStatisticsManagerImpl();
+    serverLockManager = new LockManagerImpl(nullChannelManager, serverLockStatManager);
+    serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
+
     serverLockStatManager.start(nullChannelManager, serverLockManager, sink);
 
     ClientMessageChannel channel1 = new TestClientMessageChannel(channelId1);
 
     clientLockStatManager.start(new TestClientChannel(channel1), sink);
-    statGlue = new ClientServerLockStatManagerGlue(sink);
-    statGlue.set(clientLockStatManager, serverLockStatManager);
-  }
-  
-  private int getClientLockStatCollectionFrequency() {
-    TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
-    return tcProperties.getInt("collectFrequency");
+    clientServerGlue.set(clientLockManager, serverLockManager, clientLockStatManager, serverLockStatManager);
   }
 
   public void testCollectLockStackTraces() {
     final LockID lockID1 = new LockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(1);
+
+    serverLockStatManager.setLockStatisticsConfig(1, 1);
     clientLockManager.lock(lockID1, tx1, LockLevel.READ);
-
-    serverLockStatManager.enableClientStackTrace(lockID1, 1, 1);
     sleep(1000);
-    clientLockManager.lock(lockID1, tx2, LockLevel.READ);
-    sleep(2000);
-    assertStackTraces(lockID1, 1, 1);
 
-    clientLockManager.unlock(lockID1, tx2);
+    clientLockManager.lock(lockID1, tx2, LockLevel.READ);
     sleep(2000);
     assertStackTraces(lockID1, 2, 1);
-    
-    serverLockStatManager.enableClientStackTrace(lockID1, 2, 1);
-    sleep(1000);
-    clientLockManager.lock(lockID1, tx2, LockLevel.READ);
-    sleep(2000);
-    assertStackTraces(lockID1, 1, 2);
+    assertStackTraces(lockID1, 2, 1);
+
     clientLockManager.unlock(lockID1, tx2);
-    
-    sleep(1000);
-    serverLockStatManager.enableClientStackTrace(lockID1);
-    sleep(1000);
-    int clientLockStatCollectFrequency = getClientLockStatCollectionFrequency();
-    for (int i=0; i<clientLockStatCollectFrequency+1; i++) {
-      clientLockManager.lock(lockID1, tx2, LockLevel.READ);
-    }
     sleep(2000);
-    assertStackTraces(lockID1, 1, 1); // all lock() requests have the same stack trace
-    for (int i=0; i<clientLockStatCollectFrequency+1; i++) {
-      clientLockManager.unlock(lockID1, tx2);
-    }
+    assertStackTraces(lockID1, 3, 1);
+    assertStackTraces(lockID1, 3, 1);
     
+    clientLockManager.unlock(lockID1, tx1);
+    sleep(1000);
+    assertStackTraces(lockID1, 4, 1);
+    assertStackTraces(lockID1, 4, 1);
+
+    serverLockStatManager.setLockStatisticsConfig(2, 1);
+    sleep(1000);
+    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE);
+    sleep(1000);
+    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE);
+    sleep(2000);
+    assertStackTraces(lockID1, 2, 2);
+    assertStackTraces(lockID1, 2, 2);
+    clientLockManager.unlock(lockID1, tx2);
+    assertStackTraces(lockID1, 3, 2);
+    assertStackTraces(lockID1, 3, 2);
     clientLockManager.unlock(lockID1, tx2);
   }
 
   private void assertStackTraces(LockID lockID, int numOfStackTraces, int depthOfStackTraces) {
-    Collection stackTraces = serverLockStatManager.getStackTraces(lockID);
+    Collection lockSpecs = serverLockStatManager.getLockSpecs();
 
-    Assert.assertEquals(1, stackTraces.size()); // only one client in this test
-    for (Iterator i = stackTraces.iterator(); i.hasNext();) {
-      LockStackTracesStat s = (LockStackTracesStat) i.next();
-      Assert.assertEquals(channelId1, ((ClientID) s.getNodeID()).getChannelID());
-      List oneStackTraces = s.getStackTraces();
-      for (Iterator j = oneStackTraces.iterator(); j.hasNext();) {
-        TCStackTraceElement stackTracesElement = (TCStackTraceElement) j.next();
-        Assert.assertEquals(depthOfStackTraces, stackTracesElement.getStackTraceElements().length);
-      }
-      Assert.assertEquals(numOfStackTraces, oneStackTraces.size());
+    Assert.assertEquals(1, lockSpecs.size()); // only one client in this test
+    for (Iterator i = lockSpecs.iterator(); i.hasNext();) {
+      LockSpec s = (LockSpec) i.next();
+      System.err.println("lockSpec: " + s);
+      Collection children = s.children();
+      System.err.println("children: " + children);
+      // Assert.assertEquals(numOfStackTraces, children.size());
+      Assert.assertTrue(assertStackTracesDepth(children, depthOfStackTraces));
     }
+  }
+
+  private boolean assertStackTracesDepth(Collection traces, int expectedDepthOfStackTraces) {
+    if (traces.size() == 0 && expectedDepthOfStackTraces == 0) { return true; }
+    if (traces.size() == 0 || expectedDepthOfStackTraces == 0) { return false; }
+
+    LockStatElement lse = (LockStatElement) traces.iterator().next();
+    return assertStackTracesDepth(lse.children(), expectedDepthOfStackTraces - 1);
   }
 
   private void sleep(long l) {
@@ -168,7 +162,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
   }
 
   protected void tearDown() throws Exception {
-    glue1.stop();
+    clientServerGlue.stop();
     super.tearDown();
   }
 

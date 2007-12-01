@@ -16,7 +16,6 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.session.TestSessionManager;
 import com.tc.object.tx.WaitInvocation;
-import com.tc.objectserver.lockmanager.api.LockHolder;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;

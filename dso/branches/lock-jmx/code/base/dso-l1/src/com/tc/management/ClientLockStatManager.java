@@ -5,6 +5,7 @@ package com.tc.management;
 
 import com.tc.async.api.Sink;
 import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.net.DSOClientMessageChannel;
 
 public interface ClientLockStatManager {
@@ -14,30 +15,54 @@ public interface ClientLockStatManager {
       // do nothing
     }
 
-    public void enableStackTrace(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency) {
+    public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
       // do nothing
     }
 
-    public boolean isStatEnabled(LockID lockID) {
+    public boolean isStatEnabled() {
       return false;
     }
 
-    public void disableStackTrace(LockID lockID) {
+    public void disableStat(LockID lockID) {
       // do nothing
     }
 
     public void start(DSOClientMessageChannel channel, Sink sink) {
       // do nothing
     }
+
+    public void recordLockRequested(LockID lockID, ThreadID threadID) {
+      // do nothing
+    }
+
+    public void recordLockAwarded(LockID lockID, ThreadID threadID) {
+      // do nothing
+    }
+    
+    public void recordLockReleased(LockID lockID, ThreadID threadID) {
+      // do nothing
+    }
+    
+    public void recordLockHopped(LockID lockID, ThreadID threadID) {
+      // do nothing
+    }
   };
   
   public void start(DSOClientMessageChannel channel, Sink sink);
   
+  public void recordLockRequested(LockID lockID, ThreadID threadID);
+  
+  public void recordLockAwarded(LockID lockID, ThreadID threadID);
+  
+  public void recordLockReleased(LockID lockID, ThreadID threadID);
+  
+  public void recordLockHopped(LockID lockID, ThreadID threadID);
+  
   public void recordStackTrace(LockID lockID);
   
-  public void enableStackTrace(LockID lockID, int lockStackTraceDepth, int lockStatCollectFrequency);
+  public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
-  public void disableStackTrace(LockID lockID);
+  public void disableStat(LockID lockID);
   
-  public boolean isStatEnabled(LockID lockID);
+  public boolean isStatEnabled();
 }
