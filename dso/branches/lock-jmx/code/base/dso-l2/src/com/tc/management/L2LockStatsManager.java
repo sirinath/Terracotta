@@ -65,14 +65,6 @@ public interface L2LockStatsManager {
       // do nothing
     }
     
-    public boolean isClientStatEnabled(NodeID nodeID) {
-      return false;
-    }
-
-    public void recordClientStatEnabled(NodeID nodeID) {
-      // do nothing
-    }
-
     public int getTraceDepth() {
       return 0;
     }
@@ -92,6 +84,10 @@ public interface L2LockStatsManager {
     public void clearAllStatsFor(NodeID nodeID) {
       //
     }
+    
+    public void enableStatsForNodeIfNeeded(NodeID nodeID) {
+      //
+    }
 
     public void recordLockHopRequested(LockID lockID) {
       //
@@ -108,10 +104,6 @@ public interface L2LockStatsManager {
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
   public boolean isClientStatEnabled();
-  
-  public boolean isClientStatEnabled(NodeID nodeID);
-  
-  public void recordClientStatEnabled(NodeID nodeID);
   
   public void recordLockHopRequested(LockID lockID);
   
@@ -144,4 +136,6 @@ public interface L2LockStatsManager {
   public boolean isLockStatisticsEnabled();
   
   public void clearAllStatsFor(NodeID nodeID);
+  
+  public void enableStatsForNodeIfNeeded(NodeID nodeID);
 }

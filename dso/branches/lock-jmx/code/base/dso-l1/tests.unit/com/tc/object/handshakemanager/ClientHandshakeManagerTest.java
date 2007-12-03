@@ -388,7 +388,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void disableStat(LockID lockID) {
+    public void disableStat() {
       throw new ImplementMe();
     }
   }

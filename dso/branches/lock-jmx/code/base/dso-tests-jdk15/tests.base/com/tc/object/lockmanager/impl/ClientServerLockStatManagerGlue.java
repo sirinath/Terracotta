@@ -7,6 +7,7 @@ package com.tc.object.lockmanager.impl;
 import com.tc.async.api.EventContext;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
+import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.session.SessionProvider;
@@ -41,9 +42,12 @@ public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue
         if (lrc.isLockAward()) {
           clientLockManager.awardLock(sessionProvider.getSessionID(), lrc.getLockID(), lrc.getThreadID(), lrc
               .getLockLevel());
-        } else if (lrc.isLockStatEnabled()) {
-          clientLockStatManager.setLockStatisticsConfig(lrc.getStatTraceDepth(), lrc.getStatGatherInterval());
+//        } else if (lrc.isLockStatEnabled()) {
+//          clientLockStatManager.setLockStatisticsConfig(lrc.getStatTraceDepth(), lrc.getStatGatherInterval());
         }
+      } else if (ec instanceof LockStatisticsMessage) {
+        LockStatisticsMessage lsm = (LockStatisticsMessage)ec;
+        clientLockStatManager.setLockStatisticsConfig(lsm.getTraceDepth(), lsm.getGatherInterval());
       } else if (ec instanceof LockStatisticsResponseMessage) {
         LockStatisticsResponseMessage lsrm = (LockStatisticsResponseMessage)ec;
         serverLockStatManager.recordClientStat(lsrm.getLockID(), lsrm.getClientID(), lsrm.getLockStatElements());

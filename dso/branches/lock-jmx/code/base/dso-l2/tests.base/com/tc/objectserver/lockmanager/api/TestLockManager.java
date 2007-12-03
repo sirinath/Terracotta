@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class TestLockManager implements LockManager {
 
@@ -131,11 +130,7 @@ public class TestLockManager implements LockManager {
     throw new ImplementMe();
   }
 
-  public void disableClientStat(LockID lockID, Set statEnabledClients, Sink sink) {
-    throw new ImplementMe();
-  }
-
-  public void enableClientStat(LockID lockID, Sink sink, int lockStackTraceDepth, int lockStatCollectFrequency) {
+  public void enableLockStatsForNodeIfNeeded(NodeID nid) {
     throw new ImplementMe();
   }
 }

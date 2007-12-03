@@ -15,8 +15,10 @@ import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.LockStatElement;
+import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
@@ -85,9 +87,8 @@ public class ClientServerLockStatisticsTest extends TestCase {
     serverLockManager = new LockManagerImpl(nullChannelManager, serverLockStatManager);
     serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
 
-    serverLockStatManager.start(nullChannelManager, serverLockManager, sink);
-
-    ClientMessageChannel channel1 = new TestClientMessageChannel(channelId1);
+    ClientMessageChannel channel1 = new TestClientMessageChannel(channelId1, sink);
+    serverLockStatManager.start(new TestChannelManager(channel1), serverLockManager, sink);
 
     clientLockStatManager.start(new TestClientChannel(channel1), sink);
     clientServerGlue.set(clientLockManager, serverLockManager, clientLockStatManager, serverLockStatManager);
@@ -165,11 +166,27 @@ public class ClientServerLockStatisticsTest extends TestCase {
     clientServerGlue.stop();
     super.tearDown();
   }
-
+  
+  private static class TestChannelManager extends NullChannelManager {
+    private MessageChannel channel;
+    
+    public TestChannelManager(MessageChannel channel) {
+      this.channel = channel;
+    }
+    
+    public MessageChannel[] getActiveChannels() {
+      return new MessageChannel[] {channel};
+    }
+  }
+  
   private static class TestClientMessageChannel extends MockMessageChannel implements ClientMessageChannel {
-    public TestClientMessageChannel(ChannelID channelId) {
+    private Sink sink;
+    
+    public TestClientMessageChannel(ChannelID channelId, Sink sink) {
       super(channelId);
       super.registerType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessage.class);
+      super.registerType(TCMessageType. LOCK_STAT_MESSAGE, LockStatisticsMessage.class);
+      this.sink = sink;
     }
 
     public TCMessage createMessage(TCMessageType type) {
@@ -182,11 +199,16 @@ public class ClientServerLockStatisticsTest extends TestCase {
             TCByteBufferOutput.class, MessageChannel.class, TCMessageType.class });
         TCMessageImpl message = (TCMessageImpl) constructor.newInstance(new Object[] { SessionID.NULL_ID,
             new NullMessageMonitor(), new TCByteBufferOutputStream(4, 4096, false), this, type });
-        message.seal();
+        //message.seal();
         return message;
       } catch (Exception e) {
         throw new ImplementMe("Failed", e);
       }
+    }
+    
+    public void send(TCNetworkMessage message) {
+      super.send(message);
+      sink.add(message);
     }
 
     public void addClassMapping(TCMessageType type, Class msgClass) {

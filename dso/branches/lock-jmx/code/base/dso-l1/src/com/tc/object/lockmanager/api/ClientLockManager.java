@@ -102,5 +102,5 @@ public interface ClientLockManager {
   
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
-  public void disableStat(LockID lockID);
+  public void disableStat();
 }

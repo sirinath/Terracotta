@@ -75,12 +75,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     this.lockStatManager = lockStatManager;
   }
 
-  private void recordStatIfEnabled() {
-    if (lockStatManager.isStatEnabled()) {
-      lockStatManager.recordStackTrace(lockID);
-    }
-  }
-  
   private void recordLockRequested(ThreadID threadID) {
     lockStatManager.recordLockRequested(lockID, threadID);
   }
@@ -310,7 +304,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
       // Examine
       synchronized (this) {
         waitUntillRunning();
-        recordStatIfEnabled();
         checkValidWaitNotifyState(threadID);
         action = waitAction(threadID);
       }
@@ -379,7 +372,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   public synchronized Notify notify(ThreadID threadID, boolean all) {
     boolean isRemote;
     waitUntillRunning();
-    recordStatIfEnabled();
 
     checkValidWaitNotifyState(threadID);
     if (!greediness.isNotGreedy()) {

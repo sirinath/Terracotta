@@ -103,4 +103,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
     throw new ImplementMe();
   }
+
+  public void nodeConnected(NodeID nodeID) {
+    throw new ImplementMe();
+  }
 }

@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Server representation of lock management. We will need to keep track of what locks are checkedout, who has the lock
@@ -120,26 +119,6 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
     return this.threadContextFactory.getCount();
   }
   
-  public synchronized void enableClientStat(LockID lockID, Sink sink, int stackTraceDepth, int statCollectFrequency) {
-    assertNotStarting();
-    assertNotStopped();
-    
-    Lock lock = getLockFor(lockID);
-    if (lock != Lock.NULL_LOCK) {
-      lock.enableClientStat(sink, stackTraceDepth, statCollectFrequency);
-    }
-  }
-  
-  public synchronized void disableClientStat(LockID lockID, Set statEnabledClients, Sink sink) {
-    assertNotStarting();
-    assertNotStopped();
-    
-    Lock lock = getLockFor(lockID);
-    if (lock != Lock.NULL_LOCK) {
-      lock.disableClientStat(statEnabledClients, sink);
-    }
-  }
-
   public synchronized void verify(NodeID nodeID, LockID[] lockIDs) {
     if (!isStarted()) { return; }
     for (int i = 0; i < lockIDs.length; i++) {
@@ -403,6 +382,10 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
     }
     threadContextFactory.clear(nid);
     lockStatsManager.clearAllStatsFor(nid);
+  }
+  
+  public synchronized void enableLockStatsForNodeIfNeeded(NodeID nid) {
+    lockStatsManager.enableStatsForNodeIfNeeded(nid);
   }
 
   private Lock getLockFor(LockID id) {
