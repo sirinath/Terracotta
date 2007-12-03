@@ -155,6 +155,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       fireClientDisconnectedEvent(deadNodeID);
     }
   }
+  
+  public void nodeConnected(NodeID nodeID) {
+    lockManager.enableLockStatsForNodeIfNeeded(nodeID);
+  }
 
   public void start(Set cids) {
     synchronized (transactionAccounts) {

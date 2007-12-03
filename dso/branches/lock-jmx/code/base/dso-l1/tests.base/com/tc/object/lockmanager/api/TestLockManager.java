@@ -139,7 +139,7 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public void disableStat(LockID lockID) {
+  public void disableStat() {
     throw new ImplementMe();
   }
 

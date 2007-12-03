@@ -11,10 +11,6 @@ import com.tc.object.net.DSOClientMessageChannel;
 public interface ClientLockStatManager {
   public final static ClientLockStatManager NULL_CLIENT_LOCK_STAT_MANAGER = new ClientLockStatManager() {
 
-    public void recordStackTrace(LockID lockID) {
-      // do nothing
-    }
-
     public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
       // do nothing
     }
@@ -23,7 +19,7 @@ public interface ClientLockStatManager {
       return false;
     }
 
-    public void disableStat(LockID lockID) {
+    public void disableStat() {
       // do nothing
     }
 
@@ -58,11 +54,9 @@ public interface ClientLockStatManager {
   
   public void recordLockHopped(LockID lockID, ThreadID threadID);
   
-  public void recordStackTrace(LockID lockID);
-  
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
-  public void disableStat(LockID lockID);
+  public void disableStat();
   
   public boolean isStatEnabled();
 }

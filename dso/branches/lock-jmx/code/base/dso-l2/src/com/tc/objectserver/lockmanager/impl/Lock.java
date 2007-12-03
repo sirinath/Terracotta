@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimerTask;
 
 public class Lock {
@@ -130,17 +129,6 @@ public class Lock {
                                    LockResponseContext.LOCK_INFO);
   }
 
-  static LockResponseContext createLockStatEnableResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID,
-                                                                 int level, int traceDepth, int gatherFrequency) {
-    return new LockResponseContext(lockID, nodeID, threadID, level, LockResponseContext.LOCK_STAT_ENABLED, traceDepth,
-                                   gatherFrequency);
-  }
-
-  static LockResponseContext createLockStatDisableResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID,
-                                                                  int level) {
-    return new LockResponseContext(lockID, nodeID, threadID, level, LockResponseContext.LOCK_STAT_DISABLED);
-  }
-
   private static Request createRequest(ServerThreadContext txn, int lockLevel, Sink lockResponseSink,
                                        WaitInvocation timeout, boolean isBlock) {
     Request request = null;
@@ -184,57 +172,6 @@ public class Lock {
     }
 
     return new LockMBeanImpl(lockID, holds, reqs, waits);
-  }
-
-  synchronized void enableClientStat(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
-    enableClientStatInHolders(lockResponseSink, stackTraceDepth, statCollectFrequency);
-    enableClientStatInPendings(lockResponseSink, stackTraceDepth, statCollectFrequency);
-    enableClientStatInWaiters(lockResponseSink, stackTraceDepth, statCollectFrequency);
-  }
-
-  synchronized void disableClientStat(Set statEnabledClients, Sink lockResponseSink) {
-    for (Iterator i = statEnabledClients.iterator(); i.hasNext();) {
-      NodeID nodeID = (NodeID) i.next();
-      lockResponseSink.add(createLockStatDisableResponseContext(lockID, nodeID, ThreadID.VM_ID, level));
-    }
-  }
-
-  private void enableClientStatInHolders(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
-    for (Iterator i = holders.values().iterator(); i.hasNext();) {
-      Holder holder = (Holder) i.next();
-      remoteEnableClientStat(lockResponseSink, holder.getNodeID(), stackTraceDepth, statCollectFrequency);
-    }
-  }
-
-  private void enableClientStatInPendings(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
-    for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
-      Request request = (Request) i.next();
-      remoteEnableClientStat(lockResponseSink, request.getThreadContext().getId().getNodeID(), stackTraceDepth,
-                             statCollectFrequency);
-    }
-  }
-
-  private void enableClientStatInWaiters(Sink lockResponseSink, int stackTraceDepth, int statCollectFrequency) {
-    for (Iterator i = waiters.values().iterator(); i.hasNext();) {
-      LockWaitContext ctxt = (LockWaitContext) i.next();
-      remoteEnableClientStat(lockResponseSink, ctxt.getNodeID(), stackTraceDepth, statCollectFrequency);
-    }
-  }
-
-  private void remoteEnableClientStat(Sink lockResponseSink, NodeID nodeID, int stackTraceDepth,
-                                      int statCollectFrequency) {
-    if (!lockStatsManager.isClientStatEnabled(nodeID)) {
-      lockResponseSink.add(createLockStatEnableResponseContext(lockID, nodeID, ThreadID.VM_ID, level, stackTraceDepth,
-                                                               statCollectFrequency));
-      lockStatsManager.recordClientStatEnabled(nodeID);
-    }
-  }
-
-  private void enableClientStatIfNeeded(Sink lockResponseSink, ServerThreadContext txn) {
-    if (lockStatsManager.isClientStatEnabled()) {
-      remoteEnableClientStat(lockResponseSink, txn.getId().getNodeID(), lockStatsManager.getTraceDepth(),
-                             lockStatsManager.getGatherInterval());
-    }
   }
 
   synchronized void queryLock(ServerThreadContext txn, Sink lockResponseSink) {
@@ -282,7 +219,6 @@ public class Lock {
       }
     }
 
-    enableClientStatIfNeeded(lockResponseSink, txn);
     recordLockRequestStat(txn.getId().getNodeID(), txn.getId().getClientThreadID());
     if (isPolicyGreedy()) {
       if (canAwardGreedilyOnTheClient(txn, requestedLockLevel)) {

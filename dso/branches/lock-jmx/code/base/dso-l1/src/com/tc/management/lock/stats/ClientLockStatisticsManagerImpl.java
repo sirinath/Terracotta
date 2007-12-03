@@ -6,7 +6,6 @@ package com.tc.management.lock.stats;
 
 import com.tc.async.api.Sink;
 import com.tc.exception.TCRuntimeException;
-import com.tc.management.ClientLockStatContext;
 import com.tc.management.ClientLockStatManager;
 import com.tc.net.groups.NodeID;
 import com.tc.net.groups.NodeIDImpl;
@@ -15,7 +14,6 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.TCStackTraceElement;
 import com.tc.object.net.DSOClientMessageChannel;
 
 import java.lang.reflect.Field;
@@ -100,39 +98,13 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     sendIfNeeded(lockID, shouldSendClientStat);
   }
 
-  public void recordStackTrace(LockID lockID) {
-    if (true) { return; }
-
-    ClientLockStatContext lockStatContext = (ClientLockStatContext) statEnabledLocks.get(lockID);
-    if (lockStatContext.shouldRecordStackTrace()) {
-
-      Set stackTraces = (Set) stackTracesMap.get(lockID);
-      if (stackTraces == null) {
-        stackTraces = new HashSet();
-        stackTracesMap.put(lockID, stackTraces);
-      }
-
-      StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatContext.getStackTraceDepth());
-      TCStackTraceElement tcStackTraceElement = new TCStackTraceElement(stackTraceElements);
-
-      boolean added = stackTraces.add(tcStackTraceElement);
-
-      if (added) {
-        List stackTracesList = new ArrayList();
-        stackTracesList.add(tcStackTraceElement);
-      }
-    }
-    lockStatContext.updateCollectTimer();
-  }
-
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     disableLockStatistics();
     super.setLockStatisticsEnabled(true);
     super.setLockStatisticsConfig(traceDepth, gatherInterval);
   }
 
-  // TODO: We do not need to disable on a per lock basis
-  public void disableStat(LockID lockID) {
+  public void disableStat() {
     disableLockStatistics();
   }
 

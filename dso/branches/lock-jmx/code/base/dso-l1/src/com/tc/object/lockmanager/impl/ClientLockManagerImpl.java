@@ -124,12 +124,10 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
   
-  public void disableStat(LockID lockID) {
-    final ClientLock lock;
-
+  public void disableStat() {
     synchronized (this) {
       waitUntilRunning();
-      lockStatManager.disableStat(lockID);
+      lockStatManager.disableStat();
     }
   }
 
