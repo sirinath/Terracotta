@@ -17,13 +17,14 @@ import java.io.IOException;
 
 public class LockStatisticsMessage extends DSOMessageBase {
 
-  private final static byte TYPE                                 = 1;
-  private final static byte TRACE_DEPTH                          = 2;
-  private final static byte GATHER_INTERVAL                      = 3;
+  private final static byte TYPE                                   = 1;
+  private final static byte TRACE_DEPTH                            = 2;
+  private final static byte GATHER_INTERVAL                        = 3;
 
   // message types
-  private final static byte LOCK_STATISTICS_ENABLE_MESSAGE_TYPE  = 1;
-  private final static byte LOCK_STATISTICS_DISABLE_MESSAGE_TYPE = 2;
+  private final static byte LOCK_STATISTICS_ENABLE_MESSAGE_TYPE    = 1;
+  private final static byte LOCK_STATISTICS_DISABLE_MESSAGE_TYPE   = 2;
+  private final static byte LOCK_STATISTICS_GATHERING_MESSAGE_TYPE = 3;
 
   private int               type;
   private int               traceDepth;
@@ -41,16 +42,26 @@ public class LockStatisticsMessage extends DSOMessageBase {
 
   protected void dehydrateValues() {
     putNVPair(TYPE, this.type);
-    putNVPair(TRACE_DEPTH, traceDepth);
-    putNVPair(GATHER_INTERVAL, gatherInterval);
+    if (isLockStatsEnableDisable()) {
+      putNVPair(TRACE_DEPTH, traceDepth);
+      putNVPair(GATHER_INTERVAL, gatherInterval);
+    }
   }
 
   public boolean isEnableLockStats() {
     return type == LOCK_STATISTICS_ENABLE_MESSAGE_TYPE;
   }
-  
+
   public boolean isDisableLockStats() {
     return type == LOCK_STATISTICS_DISABLE_MESSAGE_TYPE;
+  }
+  
+  public boolean isLockStatsEnableDisable() {
+    return type == LOCK_STATISTICS_ENABLE_MESSAGE_TYPE || type == LOCK_STATISTICS_DISABLE_MESSAGE_TYPE;
+  }
+  
+  public boolean isGatherLockStatistics() {
+    return type == LOCK_STATISTICS_GATHERING_MESSAGE_TYPE;
   }
 
   protected String describePayload() {
@@ -61,6 +72,8 @@ public class LockStatisticsMessage extends DSOMessageBase {
       rv.append("LOCK STATISTICS ENABLED \n");
     } else if (isDisableLockStats()) {
       rv.append("LOCK STATISTICS DISABLED \n");
+    } else if (isGatherLockStatistics()) {
+      rv.append("LOCK STATISTICS GATHERING \n");
     } else {
       rv.append("UNKNOWN \n");
     }
@@ -89,7 +102,7 @@ public class LockStatisticsMessage extends DSOMessageBase {
   public int getTraceDepth() {
     return this.traceDepth;
   }
-  
+
   public int getGatherInterval() {
     return this.gatherInterval;
   }
@@ -99,11 +112,15 @@ public class LockStatisticsMessage extends DSOMessageBase {
     this.gatherInterval = gatherInterval;
     this.type = LOCK_STATISTICS_ENABLE_MESSAGE_TYPE;
   }
-  
+
   public void initializeDisableStat() {
     this.traceDepth = 0;
     this.gatherInterval = 0;
     this.type = LOCK_STATISTICS_DISABLE_MESSAGE_TYPE;
+  }
+  
+  public void initializeLockStatisticsGathering() {
+    this.type = LOCK_STATISTICS_GATHERING_MESSAGE_TYPE;
   }
 
 }

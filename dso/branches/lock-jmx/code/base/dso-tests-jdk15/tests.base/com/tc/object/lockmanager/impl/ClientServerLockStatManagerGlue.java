@@ -47,10 +47,14 @@ public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue
         }
       } else if (ec instanceof LockStatisticsMessage) {
         LockStatisticsMessage lsm = (LockStatisticsMessage)ec;
-        clientLockStatManager.setLockStatisticsConfig(lsm.getTraceDepth(), lsm.getGatherInterval());
+        if (lsm.isLockStatsEnableDisable()) {
+          clientLockStatManager.setLockStatisticsConfig(lsm.getTraceDepth(), lsm.getGatherInterval());
+        } else if (lsm.isGatherLockStatistics()) {
+          clientLockStatManager.getLockSpecs();
+        }
       } else if (ec instanceof LockStatisticsResponseMessage) {
         LockStatisticsResponseMessage lsrm = (LockStatisticsResponseMessage)ec;
-        serverLockStatManager.recordClientStat(lsrm.getLockID(), lsrm.getClientID(), lsrm.getLockStatElements());
+        serverLockStatManager.recordClientStat(lsrm.getClientID(), lsrm.getStackTraceElements());
       }
     }
   }

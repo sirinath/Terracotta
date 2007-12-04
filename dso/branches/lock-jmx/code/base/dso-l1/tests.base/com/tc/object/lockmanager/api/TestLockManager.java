@@ -134,13 +134,12 @@ public class TestLockManager implements ClientLockManager {
   public void cannotAwardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
     throw new ImplementMe();
   }
-
-  public void setLockStatisticsConfig(int lockStackTraceDepth, int lockStatCollectFrequency) {
+  
+  public void getLockSpecs() {
     throw new ImplementMe();
   }
 
-  public void disableStat() {
+  public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     throw new ImplementMe();
   }
-
 }

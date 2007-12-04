@@ -42,6 +42,10 @@ public interface ClientLockStatManager {
     public void recordLockHopped(LockID lockID, ThreadID threadID) {
       // do nothing
     }
+    
+    public void getLockSpecs() {
+      // do nothing
+    }
   };
   
   public void start(DSOClientMessageChannel channel, Sink sink);
@@ -59,4 +63,6 @@ public interface ClientLockStatManager {
   public void disableStat();
   
   public boolean isStatEnabled();
+  
+  public void getLockSpecs();
 }

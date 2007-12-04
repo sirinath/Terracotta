@@ -45,11 +45,10 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   }
 
   private static LockStatisticsResponseMessage createLockStatisticsResponseMessage(ClientMessageChannel channel,
-                                                                                   LockID lockID,
-                                                                                   Collection lockStatElements) {
+                                                                                   Collection allTCLockStatElements) {
     LockStatisticsResponseMessage message = (LockStatisticsResponseMessage) channel
         .createMessage(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE);
-    message.initialize(lockID, lockStatElements);
+    message.initialize(allTCLockStatElements);
     return message;
   }
 
@@ -65,7 +64,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements);
 
-    sendIfNeeded(lockID, shouldSendClientStat);
+    //sendIfNeeded(lockID, shouldSendClientStat);
   }
 
   public void recordLockAwarded(LockID lockID, ThreadID threadID) {
@@ -76,7 +75,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     int nestedDepth = super.incrementNestedDepth(threadID);
     boolean isLockAwardRecorded = super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth, stackTraceElements);
 
-    sendIfNeeded(lockID, shouldSendClientStat && isLockAwardRecorded);
+    //sendIfNeeded(lockID, shouldSendClientStat && isLockAwardRecorded);
   }
   
   public void recordLockReleased(LockID lockID, ThreadID threadID) {
@@ -87,7 +86,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     super.decrementNestedDepth(threadID);
     boolean isLockReleaseRecorded = super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
 
-    sendIfNeeded(lockID, shouldSendClientStat && isLockReleaseRecorded);
+    //sendIfNeeded(lockID, shouldSendClientStat && isLockReleaseRecorded);
   }
   
   public void recordLockHopped(LockID lockID, ThreadID threadID) {
@@ -97,7 +96,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.recordLockHopRequested(lockID, stackTraceElements);
 
-    sendIfNeeded(lockID, shouldSendClientStat);
+    //sendIfNeeded(lockID, shouldSendClientStat);
   }
 
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
@@ -209,17 +208,15 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     return false;
   }
 
-  private void sendIfNeeded(LockID lockID, boolean shouldSend) {
-    if (shouldSend) {
+  public void getLockSpecs() {
+    Set allLockIDs = lockStats.keySet();
+    Collection allTCLockStatElements = new ArrayList();
+    for (Iterator i=allLockIDs.iterator(); i.hasNext(); ) {
+      LockID lockID = (LockID)i.next();
       Collection lockStatElements = getLockStatElements(lockID);
       
-//      System.err.println("==========================");
-//      System.err.println(lockStatElements);
-//      System.err.println("==========================");
-      
-      if (lockStatElements.size() > 0) {
-        sink.add(createLockStatisticsResponseMessage(channel.channel(), lockID, lockStatElements));
-      }
+      allTCLockStatElements.add(new TCStackTraceElement(lockID, lockStatElements));
     }
+    sink.add(createLockStatisticsResponseMessage(channel.channel(), allTCLockStatElements));
   }
 }

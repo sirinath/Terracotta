@@ -10,28 +10,25 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.msg.DSOMessageBase;
 import com.tc.object.session.SessionID;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 public class LockStatisticsResponseMessage extends DSOMessageBase {
 
   private final static byte TYPE                                  = 1;
-  private final static byte LOCK_ID                               = 2;
-  private final static byte NUMBER_OF_LOCK_STAT_ELEMENTS          = 3;
-  private final static byte LOCK_STAT_ELEMENT                     = 4;
+  private final static byte NUMBER_OF_LOCK_STAT_ELEMENTS          = 2;
+  private final static byte TC_STACK_TRACE_ELEMENT                = 3;
 
   // message types
   private final static byte LOCK_STATISTICS_RESPONSE_MESSAGE_TYPE = 1;
 
   private int               type;
-  private LockID            lockID;
-  private Collection        lockStatElements;
+  private Collection        allTCStackTraceElements;
 
   public LockStatisticsResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
                                        MessageChannel channel, TCMessageType type) {
@@ -45,15 +42,14 @@ public class LockStatisticsResponseMessage extends DSOMessageBase {
 
   protected void dehydrateValues() {
     putNVPair(TYPE, this.type);
-    putNVPair(LOCK_ID, lockID.asString());
-    put(lockStatElements);
+    put(allTCStackTraceElements);
   }
 
-  private void put(Collection lockStatElements) {
-    super.putNVPair(NUMBER_OF_LOCK_STAT_ELEMENTS, lockStatElements.size());
-    for (Iterator i = lockStatElements.iterator(); i.hasNext();) {
-      LockStatElement lse = (LockStatElement)i.next();
-      putNVPair(LOCK_STAT_ELEMENT, lse);
+  private void put(Collection allTCStackTraceElements) {
+    super.putNVPair(NUMBER_OF_LOCK_STAT_ELEMENTS, allTCStackTraceElements.size());
+    for (Iterator i = allTCStackTraceElements.iterator(); i.hasNext();) {
+      TCStackTraceElement lse = (TCStackTraceElement) i.next();
+      putNVPair(TC_STACK_TRACE_ELEMENT, lse);
     }
   }
 
@@ -71,8 +67,6 @@ public class LockStatisticsResponseMessage extends DSOMessageBase {
       rv.append("UNKNOWN \n");
     }
 
-    rv.append(lockID).append(' ').append("Lock Type: ").append('\n');
-
     return rv.toString();
   }
 
@@ -81,34 +75,26 @@ public class LockStatisticsResponseMessage extends DSOMessageBase {
       case TYPE:
         this.type = getIntValue();
         return true;
-      case LOCK_ID:
-        this.lockID = new LockID(getStringValue());
-        return true;
       case NUMBER_OF_LOCK_STAT_ELEMENTS:
         int numOfStackTraces = getIntValue();
-        this.lockStatElements = new LinkedList();
+        this.allTCStackTraceElements = new ArrayList(numOfStackTraces);
         return true;
-      case LOCK_STAT_ELEMENT:
-        LockStatElement lse = new LockStatElement();
+      case TC_STACK_TRACE_ELEMENT:
+        TCStackTraceElement lse = new TCStackTraceElement();
         getObject(lse);
-        this.lockStatElements.add(lse);
+        this.allTCStackTraceElements.add(lse);
         return true;
       default:
         return false;
     }
   }
 
-  public LockID getLockID() {
-    return this.lockID;
+  public Collection getStackTraceElements() {
+    return this.allTCStackTraceElements;
   }
 
-  public Collection getLockStatElements() {
-    return this.lockStatElements;
-  }
-
-  public void initialize(LockID lid, Collection lockStatElements) {
-    this.lockID = lid;
-    this.lockStatElements = lockStatElements;
+  public void initialize(Collection allTCStackTraceElements) {
+    this.allTCStackTraceElements = allTCStackTraceElements;
     this.type = LOCK_STATISTICS_RESPONSE_MESSAGE_TYPE;
   }
 

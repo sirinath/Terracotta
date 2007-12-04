@@ -117,20 +117,6 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
   
-  public void setLockStatisticsConfig(int lockStackTraceDepth, int lockStatCollectFrequency) {
-    synchronized (this) {
-      waitUntilRunning();
-      lockStatManager.setLockStatisticsConfig(lockStackTraceDepth, lockStatCollectFrequency);
-    }
-  }
-  
-  public void disableStat() {
-    synchronized (this) {
-      waitUntilRunning();
-      lockStatManager.disableStat();
-    }
-  }
-
   private GlobalLockInfo getLockInfo(LockID lockID, ThreadID threadID) {
     Object waitLock = addToPendingQueryLockRequest(lockID, threadID);
     remoteLockManager.queryLock(lockID, threadID);
@@ -457,6 +443,16 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       lock.addAllPendingTryLockRequestsTo(c);
     }
     return c;
+  }
+  
+  public synchronized void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
+    waitUntilRunning();
+    lockStatManager.setLockStatisticsConfig(traceDepth, gatherInterval);
+  }
+  
+  public synchronized void getLockSpecs() {
+    waitUntilRunning();
+    lockStatManager.getLockSpecs();
   }
 
   synchronized boolean haveLock(LockID lockID, ThreadID threadID, int lockType) {

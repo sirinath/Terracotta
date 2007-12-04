@@ -14,17 +14,22 @@ import com.tc.object.lockmanager.api.ClientLockManager;
 
 public class LockStatisticsEnableDisableHandler extends AbstractEventHandler {
   private static final TCLogger logger = TCLogging.getLogger(LockStatisticsEnableDisableHandler.class);
-  private ClientLockManager     lockManager;
+  
+  private ClientLockManager clientLockManager;
 
   public void handleEvent(EventContext context) {
     LockStatisticsMessage msg = (LockStatisticsMessage) context;
-    lockManager.setLockStatisticsConfig(msg.getTraceDepth(), msg.getGatherInterval());
+    if (msg.isLockStatsEnableDisable()) {
+      clientLockManager.setLockStatisticsConfig(msg.getTraceDepth(), msg.getGatherInterval());
+    } else if (msg.isGatherLockStatistics()) {
+      clientLockManager.getLockSpecs();
+    }
   }
   
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;
-    this.lockManager = ccc.getLockManager();
+    this.clientLockManager = ccc.getLockManager();
   }
 
 }
