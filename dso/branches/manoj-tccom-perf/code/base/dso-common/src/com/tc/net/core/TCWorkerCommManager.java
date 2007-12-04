@@ -21,6 +21,7 @@ public class TCWorkerCommManager {
 
   private final int               totalWorkerComm;
   private final CoreNIOServices[] workerCommThreads;
+  private final int[]             workerCommClientCount;
 
   private int                     nextWorkerCommId;
   private boolean                 workerCommStarted      = false;
@@ -34,6 +35,7 @@ public class TCWorkerCommManager {
     this.totalWorkerComm = workerCommCount;
 
     workerCommThreads = new CoreNIOServices[workerCommCount];
+    workerCommClientCount = new int[workerCommCount];
   }
 
   public synchronized CoreNIOServices getNextFreeWorkerComm() {
@@ -45,6 +47,7 @@ public class TCWorkerCommManager {
       iter += 1;
       if (iter >= 2 * totalWorkerComm) return null; // XXX: bug
     } while (workerCommThreads[nextWorkerCommId].isStarted() != true);
+    workerCommClientCount[nextWorkerCommId]++;
     return workerCommThreads[nextWorkerCommId];
   }
 
@@ -71,6 +74,31 @@ public class TCWorkerCommManager {
         workerCommThreads[i].requestStop();
       }
     }
+  }
+
+  public int getActiveWorkerCommsCount(boolean employedCommsOnly) {
+    int count = 0;
+    for (int i = 0; i < totalWorkerComm; i++) {
+      if (workerCommThreads[i].isStarted()) {
+        if (employedCommsOnly) {
+          if (workerCommClientCount[i] > 0) count += 1;
+        } else {
+          count += 1;
+        }
+      }
+    }
+    return count;
+  }
+
+  public int getClientCountForWorkerComm(int workerCommId) {
+    if (workerCommId >= 0 && workerCommId < totalWorkerComm) { return workerCommClientCount[workerCommId]; }
+    return 0;
+  }
+
+  public long getBytesReadByWorkerComm(int workerCommId) {
+    if (workerCommId >= 0 && workerCommId < totalWorkerComm) { return workerCommThreads[workerCommId]
+        .getTotalBytesRead(); }
+    return 0;
   }
 
 }
