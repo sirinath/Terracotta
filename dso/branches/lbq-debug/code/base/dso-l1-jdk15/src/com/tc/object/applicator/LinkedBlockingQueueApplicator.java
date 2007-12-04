@@ -197,7 +197,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.TAKE:
         try {
           Object o = TC_TAKE_METHOD.invoke(queue, new Object[0]);
-          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " take obj: " + o);
+          //System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after take in app: " + queue.size() + " take obj: " + o);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
