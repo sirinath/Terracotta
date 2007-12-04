@@ -24,6 +24,8 @@ public class LockStats implements TCSerializable, Serializable {
   private long             totalRecordedReleases;
   private long             avgHeldTimeInMillis;
   private long             avgWaitTimeToAwardInMillis;
+  private long             totalNestedDepth;
+  private long             avgNestedDepth;
 
   public LockStats() {
     this.avgHeldTimeInMillis = NON_SET_TIME_MILLIS;

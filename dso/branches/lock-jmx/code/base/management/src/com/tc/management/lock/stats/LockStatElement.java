@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,7 +64,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
    * @return Collection<LockStatElement>
    */
   public Collection children() {
-    return nextStat.values();
+    return new ArrayList(nextStat.values());
   }
 
   public StackTraceElement getStackFrame() {
