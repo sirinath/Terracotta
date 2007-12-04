@@ -119,7 +119,8 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
                                              long awardedTimeInMillis) {
     if (!lockStatisticsEnabled) { return; }
 
-    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, null);
+    int nestedDepth = super.incrementNestedDepth(nodeID);
+    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, nestedDepth, null);
   }
 
   public synchronized void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {

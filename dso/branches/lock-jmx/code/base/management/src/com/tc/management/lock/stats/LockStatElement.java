@@ -84,7 +84,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
-                                   StackTraceElement[] stackTraces, int startIndex) {
+                                   int nestedLockDepth, StackTraceElement[] stackTraces, int startIndex) {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     LockHolder lockHolder = holderStats.getLockHolder(lockKey);
     if (lockHolder == null) { return false; } // a lock holder could be null if jmx is enabled during runtime
@@ -98,10 +98,10 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     }
     holderStats.moveToPendingHeld(lockKey, lockHolder, stackTraces);
 
-    this.lockStat.recordLockAwarded(lockHolder.getWaitTimeInMillis());
+    this.lockStat.recordLockAwarded(lockHolder.getWaitTimeInMillis(), nestedLockDepth);
     if (stackTraces != null && startIndex < stackTraces.length) {
       LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
-      child.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, stackTraces, startIndex + 1);
+      child.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, startIndex + 1);
     }
 
     return true;

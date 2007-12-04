@@ -73,7 +73,8 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
-    boolean isLockAwardRecorded = super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), stackTraceElements);
+    int nestedDepth = super.incrementNestedDepth(threadID);
+    boolean isLockAwardRecorded = super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth, stackTraceElements);
 
     sendIfNeeded(lockID, shouldSendClientStat && isLockAwardRecorded);
   }

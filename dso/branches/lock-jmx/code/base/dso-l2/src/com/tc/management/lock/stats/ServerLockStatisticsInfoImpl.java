@@ -66,8 +66,8 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                long awardedTimeInMillis, StackTraceElement[] stackTraces) {
-    return statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, stackTraces, 0);
+                                long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces) {
+    return statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, 0);
   }
 
   public boolean recordLockReleased(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
