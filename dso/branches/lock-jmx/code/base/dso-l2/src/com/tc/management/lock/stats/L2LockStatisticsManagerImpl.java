@@ -126,6 +126,7 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   public synchronized void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {
     if (!lockStatisticsEnabled) { return; }
 
+    super.decrementNestedDepth(nodeID);
     super.recordLockReleased(lockID, nodeID, threadID, null);
   }
 

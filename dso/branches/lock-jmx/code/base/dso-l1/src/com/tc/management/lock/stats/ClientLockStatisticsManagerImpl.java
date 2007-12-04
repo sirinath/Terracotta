@@ -84,6 +84,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
+    super.decrementNestedDepth(threadID);
     boolean isLockReleaseRecorded = super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
 
     sendIfNeeded(lockID, shouldSendClientStat && isLockReleaseRecorded);
