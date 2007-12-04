@@ -10,6 +10,7 @@ import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
 import com.tc.util.Util;
 
 import java.io.Serializable;
@@ -162,11 +163,11 @@ public class CacheDataStore implements Serializable {
   // }
 
   public Object get(final Object key) {
-    logDebug("Get [" + key + "]");
     Assert.pre(key != null);
 
     CacheData cd = null;
     cd = findCacheDataUnlocked(key);
+    logDebug("Client " + ManagerUtil.getClientID() + " get [" + key + "] " + cd);
     if (cd != null) {
       if (!cd.isValid()) {
         missCountExpired++;
@@ -197,6 +198,7 @@ public class CacheDataStore implements Serializable {
 
   public boolean isExpired(final Object key) {
     CacheData rv = findCacheDataUnlocked(key);
+    logDebug("Checking isExpired for key: " + key + " " + rv);
     return rv == null || !rv.isValid();
   }
 
@@ -342,6 +344,9 @@ public class CacheDataStore implements Serializable {
 
   private void logDebug(String msg) {
     if (config.isLoggingEnabled()) {
+      if (DebugUtil.DEBUG) {
+        System.err.println(msg);
+      }
       logger.debug(msg);
     }
   }
@@ -423,6 +428,7 @@ public class CacheDataStore implements Serializable {
         totalCnt++;
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
+          logDebug("expiring .... key: " + timestampEntry.getKey());
           expire(timestampEntry.getKey());
         } else {
           notEvaled++;
