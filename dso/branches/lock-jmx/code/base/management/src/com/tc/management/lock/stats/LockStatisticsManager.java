@@ -7,9 +7,9 @@ package com.tc.management.lock.stats;
 import com.tc.net.groups.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.LockHolder;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.util.Counter;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -23,6 +23,7 @@ public abstract class LockStatisticsManager implements Serializable {
 
   protected final Map            lockStats              = new HashMap();       // map<lockID, LockStatisticsInfo>
   protected final LockStatConfig lockStatConfig         = new LockStatConfig();
+  protected final Map            nestedDepth            = new HashMap(); // map<ThreadID/NodeID, int>
 
   protected boolean              lockStatisticsEnabled;
 
@@ -41,11 +42,11 @@ public abstract class LockStatisticsManager implements Serializable {
   }
 
   public boolean recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                   long awardedTimeInMillis, StackTraceElement[] stackTraces) {
+                                   long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces) {
     if (!lockStatisticsEnabled) { return false; }
 
     LockStatisticsInfo lsc = getLockStatInfo(lockID);
-    if (lsc != null) { return lsc.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, stackTraces); }
+    if (lsc != null) { return lsc.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces); }
     return false;
   }
 
@@ -134,10 +135,24 @@ public abstract class LockStatisticsManager implements Serializable {
     return lsc;
   }
 
-  protected LockHolder newLockHolder(LockID lockID, NodeID nodeID, ThreadID threadID, long timeStamp) {
-    return new LockHolder(lockID, nodeID, threadID, timeStamp);
+  protected int incrementNestedDepth(Object depthTrackingKey) {
+    Counter depth = (Counter) nestedDepth.get(depthTrackingKey);
+    if (depth == null) {
+      depth = new Counter(1);
+      nestedDepth.put(depthTrackingKey, depth);
+    } else {
+      depth.increment();
+    }
+    return depth.get();
   }
+  
+  protected void decrementNestedDepth(Object depthTrackingKey) {
+    Counter depth = (Counter) nestedDepth.get(depthTrackingKey);
+    if (depth == null) { return; }
 
+    depth.decrement();
+  }
+  
   protected static class LockStatConfig {
     private final static int DEFAULT_GATHER_INTERVAL = 1;
     private final static int DEFAULT_TRACE_DEPTH     = MIN_CLIENT_TRACE_DEPTH;

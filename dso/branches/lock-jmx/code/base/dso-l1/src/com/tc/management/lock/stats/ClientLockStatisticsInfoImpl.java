@@ -39,8 +39,8 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                long awardedTimeInMillis, StackTraceElement[] stackTraces) {
-    boolean rv = statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, stackTraces, 0);
+                                long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces) {
+    boolean rv = statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, 0);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }

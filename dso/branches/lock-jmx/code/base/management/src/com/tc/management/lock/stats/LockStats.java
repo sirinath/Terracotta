@@ -56,10 +56,11 @@ public class LockStats implements TCSerializable, Serializable {
     this.numOfLockHopRequests++;
   }
 
-  public void recordLockAwarded(long waitTimeInMillis) {
+  public void recordLockAwarded(long waitTimeInMillis, int nestedLockDepth) {
     this.numOfLockAwarded++;
     this.numOfPendingRequests--;
     this.totalWaitTimeToAwardedInMillis += waitTimeInMillis;
+    this.totalNestedDepth += nestedLockDepth;
     getAvgWaitTimeToAwardInMillis();
   }
 
@@ -134,6 +135,11 @@ public class LockStats implements TCSerializable, Serializable {
     aggregateAvgWaitTimeInMillis(0, 0);
     // }
     return avgWaitTimeToAwardInMillis;
+  }
+  
+  public long getAvgNestedLockDepth() {
+    if (numOfLockAwarded == 0) { return 0; }
+    return totalNestedDepth/numOfLockAwarded;
   }
 
   public void aggregateAvgWaitTimeInMillis(long totalWaitTimeInMillis, long numOfAwarded) {
