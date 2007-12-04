@@ -22,7 +22,6 @@ import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
 
@@ -43,8 +42,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
   private final int                    initialNodeCount = getParticipantCount();
   private final CyclicBarrier          barrier          = new CyclicBarrier(initialNodeCount);
   private final CyclicBarrier          barrier2         = new CyclicBarrier(2);
-  private final HashMap<Integer, Long> indexToNodeMap   = new HashMap();
-
+  
   private MBeanServerConnection        mbsc             = null;
   private JMXConnector                 jmxc;
   private LockStatisticsMonitorMBean   statMBean;
@@ -61,20 +59,20 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     config.addWriteAutolock(methodExpression);
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     config.addIncludePattern(testClass + "$*");
+    methodExpression = "* " + testClass + "$*.*(..)";
+    config.addWriteAutolock(methodExpression);
 
     // roots
     spec.addRoot("barrier", "barrier");
     spec.addRoot("barrier2", "barrier2");
-    spec.addRoot("indexToNodeMap", "indexToNodeMap");
   }
 
   public void run() {
     try {
       int index = barrier.await();
 
-      synchronized (indexToNodeMap) {
-        indexToNodeMap.put(new Integer(index), new Long(ManagerUtil.getClientID()));
-      }
+      enableStackTraces(index, 0, 1);
+      
       String lockName = "lock0";
       testLockAggregateWaitTime(lockName, index);
 
@@ -83,7 +81,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
       lockName = "lock2";
 
-      enableStackTraces(lockName, index, 2, 1);
+      enableStackTraces(index, 2, 1);
 
       testCollectClientStatistics(lockName, index, 1);
 
@@ -107,7 +105,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     }
   }
 
-  private void enableStackTraces(String lockName, int index, int traceDepth, int gatherInterval) throws Throwable {
+  private void enableStackTraces(int index, int traceDepth, int gatherInterval) throws Throwable {
     if (index == 0) {
       connect();
       statMBean.setLockStatisticsConfig(traceDepth, gatherInterval);
@@ -116,7 +114,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
-
+  
   private void testCollectClientStatistics(String lockName, int index, int traceDepth) throws Throwable {
     if (index == 0) {
       waitForAllToMoveOn();
@@ -321,10 +319,11 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
         Assert.assertEquals(numOfClientsStackTraces, lsi.children().size());
         assertStackTracesDepth(lsi.children(), traceDepth);
+        return;
       }
     }
   }
-
+  
   private boolean assertStackTracesDepth(Collection traces, int expectedDepthOfStackTraces) {
     if (traces.size() == 0 && expectedDepthOfStackTraces == 0) { return true; }
     if (traces.size() == 0 || expectedDepthOfStackTraces == 0) { return false; }
@@ -336,5 +335,5 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
   private static void echo(String msg) {
     System.err.println(msg);
   }
-
+  
 }

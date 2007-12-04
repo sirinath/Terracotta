@@ -8,7 +8,6 @@ import com.tc.async.api.EventContext;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.net.groups.NodeID;
-import com.tc.object.lockmanager.api.LockID;
 
 import java.util.Collection;
 
@@ -23,9 +22,8 @@ public class ClientLockStatisticsHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) {
     LockStatisticsResponseMessage lsrm = (LockStatisticsResponseMessage)context;
     NodeID nodeID = lsrm.getClientID();
-    LockID lockID = lsrm.getLockID();
-    Collection lockStatElements = lsrm.getLockStatElements();
-    lockStatsManager.recordClientStat(lockID, nodeID, lockStatElements);
+    Collection lockStatElements = lsrm.getStackTraceElements();
+    lockStatsManager.recordClientStat(nodeID, lockStatElements);
   }
 
 }

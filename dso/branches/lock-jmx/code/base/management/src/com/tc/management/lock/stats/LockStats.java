@@ -7,6 +7,7 @@ package com.tc.management.lock.stats;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
+import com.tc.object.lockmanager.api.LockID;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -14,6 +15,8 @@ import java.io.Serializable;
 public class LockStats implements TCSerializable, Serializable {
   private final static int NON_SET_TIME_MILLIS = -1;
 
+  private final LockID lockID;
+  
   private long             numOfPendingRequests;
   private long             numOfPendingWaiters;
   private long             numOfLockRequested;
@@ -27,7 +30,8 @@ public class LockStats implements TCSerializable, Serializable {
   private long             totalNestedDepth;
   private long             avgNestedDepth;
 
-  public LockStats() {
+  public LockStats(LockID lockID) {
+    this.lockID = lockID;
     this.avgHeldTimeInMillis = NON_SET_TIME_MILLIS;
     this.avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
   }
@@ -124,16 +128,12 @@ public class LockStats implements TCSerializable, Serializable {
   }
 
   public long getAvgHeldTimeInMillis() {
-    // if (avgHeldTimeInMillis == NON_SET_TIME_MILLIS) {
     aggregateAvgHeldTimeInMillis(0, 0);
-    // }
     return avgHeldTimeInMillis;
   }
 
   public long getAvgWaitTimeToAwardInMillis() {
-    // if (avgWaitTimeToAwardInMillis == NON_SET_TIME_MILLIS) {
     aggregateAvgWaitTimeInMillis(0, 0);
-    // }
     return avgWaitTimeToAwardInMillis;
   }
   
@@ -162,6 +162,7 @@ public class LockStats implements TCSerializable, Serializable {
     totalRecordedReleases = serialInput.readLong();
     avgHeldTimeInMillis = serialInput.readLong();
     avgWaitTimeToAwardInMillis = serialInput.readLong();
+    totalNestedDepth = serialInput.readLong();
     return this;
   }
 
@@ -176,6 +177,7 @@ public class LockStats implements TCSerializable, Serializable {
     serialOutput.writeLong(totalRecordedReleases);
     serialOutput.writeLong(avgHeldTimeInMillis);
     serialOutput.writeLong(avgWaitTimeToAwardInMillis);
+    serialOutput.writeLong(totalNestedDepth);
   }
 
   public String toString() {
@@ -196,6 +198,8 @@ public class LockStats implements TCSerializable, Serializable {
     sb.append(avgHeldTimeInMillis);
     sb.append(", avgWaitTimeToAwardInMillis: ");
     sb.append(avgWaitTimeToAwardInMillis);
+    sb.append(", avgNestedDepth: ");
+    sb.append(getAvgNestedLockDepth());
     return sb.toString();
   }
 }

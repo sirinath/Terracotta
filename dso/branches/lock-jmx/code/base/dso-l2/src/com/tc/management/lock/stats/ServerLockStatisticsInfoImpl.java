@@ -113,8 +113,10 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   private void mergeLockStatElements() {
     statElement.clearChild();
 
+    logDebug("*******Getting from clientLockStatElement: " + clientLockStatElements.size());
     for (Iterator<Collection<LockStatElement>> i = clientLockStatElements.values().iterator(); i.hasNext();) {
       Collection<LockStatElement> lockStatElements = i.next();
+      logDebug("*******Getting from clientLockStatElement: " + lockStatElements);
       for (Iterator<LockStatElement> it = lockStatElements.iterator(); it.hasNext();) {
         LockStatElement lse = it.next();
         statElement.mergeChild(lse);

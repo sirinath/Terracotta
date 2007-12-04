@@ -146,11 +146,12 @@ public abstract class LockStatisticsManager implements Serializable {
     return depth.get();
   }
   
-  protected void decrementNestedDepth(Object depthTrackingKey) {
+  protected int decrementNestedDepth(Object depthTrackingKey) {
     Counter depth = (Counter) nestedDepth.get(depthTrackingKey);
-    if (depth == null) { return; }
+    if (depth == null) { return 0; }
 
     depth.decrement();
+    return depth.get();
   }
   
   protected static class LockStatConfig {

@@ -6,6 +6,7 @@ package com.tc.management;
 
 import com.tc.async.api.Sink;
 import com.tc.management.lock.stats.LockSpec;
+import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.groups.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
@@ -61,7 +62,7 @@ public interface L2LockStatsManager {
       return 0;
     }
     
-    public void recordClientStat(LockID lockID, NodeID nodeID, Collection lockStatElements) {
+    public void recordClientStat(NodeID nodeID, Collection<TCStackTraceElement> lockStatElements) {
       // do nothing
     }
     
@@ -115,7 +116,7 @@ public interface L2LockStatsManager {
   
   public void recordLockRejected(LockID lockID, NodeID nodeID, ThreadID threadID);
   
-  public void recordClientStat(LockID lockID, NodeID nodeID, Collection lockStatElements);
+  public void recordClientStat(NodeID nodeID, Collection<TCStackTraceElement> lockStatElements);
   
   public long getNumberOfLockRequested(LockID lockID);
   

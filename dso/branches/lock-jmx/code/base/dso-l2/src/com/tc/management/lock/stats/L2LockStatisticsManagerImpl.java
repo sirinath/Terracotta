@@ -8,6 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
+import com.tc.net.groups.ClientID;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -27,14 +28,15 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class L2LockStatisticsManagerImpl extends LockStatisticsManager implements L2LockStatsManager, Serializable {
-  private static final TCLogger logger = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
+  private static final TCLogger logger                   = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
 
   private LockManager           lockManager;
   private DSOChannelManager     channelManager;
   private Sink                  sink;
+  private final Set<NodeID>     lockSpecRequestedNodeIDs = new HashSet();
 
-  private final static void sendLockStatisticsMessage(MessageChannel channel, boolean statsEnable, int traceDepth,
-                                                      int gatherInterval) {
+  private final static void sendLockStatisticsEnableDisableMessage(MessageChannel channel, boolean statsEnable,
+                                                                   int traceDepth, int gatherInterval) {
     LockStatisticsMessage lockStatsMessage = (LockStatisticsMessage) channel
         .createMessage(TCMessageType.LOCK_STAT_MESSAGE);
     if (statsEnable) {
@@ -42,6 +44,13 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     } else {
       lockStatsMessage.initializeDisableStat();
     }
+    lockStatsMessage.send();
+  }
+
+  private final static void sendLockStatisticsGatheringMessage(MessageChannel channel) {
+    LockStatisticsMessage lockStatsMessage = (LockStatisticsMessage) channel
+        .createMessage(TCMessageType.LOCK_STAT_MESSAGE);
+    lockStatsMessage.initializeLockStatisticsGathering();
     lockStatsMessage.send();
   }
 
@@ -91,7 +100,7 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
 
     MessageChannel[] channels = channelManager.getActiveChannels();
     for (int i = 0; i < channels.length; i++) {
-      sendLockStatisticsMessage(channels[i], traceDepth > 0, traceDepth, gatherInterval);
+      sendLockStatisticsEnableDisableMessage(channels[i], traceDepth > 0, traceDepth, gatherInterval);
     }
   }
 
@@ -136,12 +145,26 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     super.recordLockRejected(lockID, nodeID, threadID, null);
   }
 
-  public synchronized void recordClientStat(LockID lockID, NodeID nodeID, Collection lockStatElements) {
-    logDebug("============== recordClientStat ================");
-    logDebug(lockStatElements.toString());
+  public synchronized void recordClientStat(NodeID nodeID, Collection<TCStackTraceElement> stackTraceElements) {
+    logDebug("============== recordClientStat ================" + nodeID);
+    logDebug(stackTraceElements.toString());
     logDebug("================================================");
-    ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl) getOrCreateLockStatInfo(lockID);
-    lsc.setLockStatElements(nodeID, lockStatElements);
+    if (stackTraceElements.size() > 0) {
+      for (Iterator<TCStackTraceElement> i = stackTraceElements.iterator(); i.hasNext();) {
+        TCStackTraceElement tcStackTraceElement = i.next();
+        LockID lockID = tcStackTraceElement.getLockID();
+        Collection lockStatElements = tcStackTraceElement.getLockStatElements();
+
+        ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl) getOrCreateLockStatInfo(lockID);
+        logDebug("recordClientStat " + lockID + " " + nodeID + " " + (lsc == null));
+        lsc.setLockStatElements(nodeID, lockStatElements);
+      }
+    }
+
+    lockSpecRequestedNodeIDs.remove(nodeID);
+    if (lockSpecRequestedNodeIDs.isEmpty()) {
+      notifyAll();
+    }
   }
 
   public synchronized long getNumberOfLockRequested(LockID lockID) {
@@ -175,6 +198,25 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   public synchronized Collection<LockSpec> getLockSpecs() {
     if (!lockStatisticsEnabled) { return Collections.EMPTY_LIST; }
 
+    logDebug("getLockSpecs lockSpecRequestedNodeIDs: " + lockSpecRequestedNodeIDs.isEmpty());
+    if (lockSpecRequestedNodeIDs.isEmpty()) {
+      MessageChannel[] channels = channelManager.getActiveChannels();
+      for (int i = 0; i < channels.length; i++) {
+        sendLockStatisticsGatheringMessage(channels[i]);
+        lockSpecRequestedNodeIDs.add(new ClientID(channels[i].getChannelID()));
+      }
+    }
+
+    try {
+      while (!lockSpecRequestedNodeIDs.isEmpty()) {
+        wait();
+        logDebug("getLockSpecs lockSpecRequestedNodeIDs: " + lockSpecRequestedNodeIDs.isEmpty());
+      }
+    } catch (InterruptedException e) {
+      // ignore interrupt and return;
+    }
+
+    logDebug("getLockSpecs -- lockStats.size: " + lockStats.size());
     for (Iterator<LockStatisticsInfo> i = lockStats.values().iterator(); i.hasNext();) {
       LockStatisticsInfo lsc = i.next();
       lsc.aggregateLockHoldersData();
@@ -193,7 +235,7 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
       int traceDepth = getTraceDepth();
       int gatherInterval = getGatherInterval();
       if (traceDepth > 0) {
-        sendLockStatisticsMessage(channel, traceDepth > 0, traceDepth, gatherInterval);
+        sendLockStatisticsEnableDisableMessage(channel, traceDepth > 0, traceDepth, gatherInterval);
       }
     } catch (NoSuchChannelException e) {
       logger.warn(e);
