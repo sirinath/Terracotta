@@ -44,6 +44,7 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
   private final TCWorkerCommManager workerCommMgr;
   private final List                listeners           = new ArrayList();
   private short                     status;
+  private long                      bytesRead;
 
   public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager) {
     this(commThreadName, null, workerCommManager);
@@ -516,6 +517,14 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
 
       conn.fireErrorEvent(ioe, null);
     }
+  }
+
+  public void incrBytesRead(int readBytes) {
+    this.bytesRead += readBytes;
+  }
+
+  public long getTotalBytesRead() {
+    return this.bytesRead;
   }
 
   private void handleRequest(final InterestRequest req) {

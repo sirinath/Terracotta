@@ -108,4 +108,8 @@ public class MockConnectionManager implements TCConnectionManager {
     
   }
 
+  public TCComm getTcComm() {
+    throw new ImplementMe();
+  }
+
 }

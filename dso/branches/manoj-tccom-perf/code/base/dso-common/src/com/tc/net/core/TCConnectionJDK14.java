@@ -215,6 +215,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     if (readEOF) {
       if (bytesRead > 0) {
+        this.commNIOServiceThread.incrBytesRead(bytesRead);
         addNetworkData(readBuffers, bytesRead);
       }
 
@@ -225,6 +226,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
 
     Assert.eval(bytesRead >= 0);
+    this.commNIOServiceThread.incrBytesRead(bytesRead);
 
     if (debug) logger.debug("Read " + bytesRead + " bytes on connection " + channel.toString());
 

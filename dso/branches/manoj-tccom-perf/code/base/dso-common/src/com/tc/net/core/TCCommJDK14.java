@@ -10,7 +10,7 @@ import com.tc.logging.TCLogging;
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
  * <code>TCConnection</code>'s
- *
+ * 
  * @author teck
  */
 class TCCommJDK14 implements TCComm {
@@ -36,6 +36,21 @@ class TCCommJDK14 implements TCComm {
     }
 
     commThread = new CoreNIOServices(commThreadName, this, workerCommMgr);
+  }
+
+  public int getWorkerCommsCount() {
+    if (workerCommMgr != null) { return workerCommMgr.getActiveWorkerCommsCount(false); }
+    return 0;
+  }
+
+  public int getClientCountForWorkerComm(int workerCommId) {
+    if (workerCommMgr != null) { return workerCommMgr.getClientCountForWorkerComm(workerCommId); }
+    return 0;
+  }
+  
+  public long getTotalbytesReadByWorkerComm(int workerCommId) {
+    if (workerCommMgr != null) { return workerCommMgr.getBytesReadByWorkerComm(workerCommId); }
+    return 0;
   }
 
   public boolean isStarted() {

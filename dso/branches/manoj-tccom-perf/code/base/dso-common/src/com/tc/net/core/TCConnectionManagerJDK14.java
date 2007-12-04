@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * JDK 1.4 implementation of TCConnectionManager interface
- *
+ * 
  * @author teck
  */
 public class TCConnectionManagerJDK14 implements TCConnectionManager {
@@ -80,8 +80,6 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
     TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, getConnectionListener(), this, commThread);
 
     commThread.registerListener(rv, ssc);
-
-
 
     return rv;
   }
@@ -172,6 +170,10 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
         logger.error("Exception trying to close " + lsnr, e);
       }
     }
+  }
+  
+  public TCComm getTcComm() {
+    return this.comm;
   }
 
   public final synchronized void shutdown() {
