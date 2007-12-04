@@ -464,6 +464,13 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
       } catch (IOException ioe) {
         logger.warn("IOException trying to setSendBufferSize()");
       }
+      
+      // DEV-1141
+      try {
+        s.setKeepAlive(true);
+      } catch (IOException ioe) {
+        logger.warn("IOException trying to setKeepAlive()", ioe);
+      }
 
       try {
         s.setTcpNoDelay(true);
