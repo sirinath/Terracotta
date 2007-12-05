@@ -158,7 +158,6 @@ public class ModulesLoader {
 
     if (additionalModuleList != null) {
       final String[] additionalModules = additionalModuleList.split(";");
-
       Pattern pattern = Pattern.compile("(.+?)-([0-9\\.]+)-([0-9\\.\\-]+)");
       for (int i = 0; i < additionalModules.length; i++) {
         if (additionalModules[i].length() == 0) {
