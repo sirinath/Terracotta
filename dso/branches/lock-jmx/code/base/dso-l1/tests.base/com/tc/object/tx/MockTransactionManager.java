@@ -39,7 +39,7 @@ public class MockTransactionManager implements ClientTransactionManager {
     return rv;
   }
 
-  public boolean begin(String lock, int type) {
+  public boolean begin(String lock, int type, String contextInfo) {
     // System.err.println(this + ".begin(" + lock + ")");
 
     begins.add(new Begin(lock, type));

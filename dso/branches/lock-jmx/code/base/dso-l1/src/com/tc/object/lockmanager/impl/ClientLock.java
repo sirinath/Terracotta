@@ -75,8 +75,8 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     this.lockStatManager = lockStatManager;
   }
 
-  private void recordLockRequested(ThreadID threadID) {
-    lockStatManager.recordLockRequested(lockID, threadID);
+  private void recordLockRequested(ThreadID threadID, String contextInfo) {
+    lockStatManager.recordLockRequested(lockID, threadID, contextInfo);
   }
   
   private void recordLockAwarded(ThreadID threadID) {
@@ -92,35 +92,35 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   }
 
   boolean tryLock(ThreadID threadID, WaitInvocation timeout, int type) {
-    lock(threadID, type, timeout, true);
+    lock(threadID, type, timeout, true, "");
     return isHeldBy(threadID, type);
   }
 
-  public void lock(ThreadID threadID, int type) {
-    lock(threadID, type, null, false);
+  public void lock(ThreadID threadID, int type, String contextInfo) {
+    lock(threadID, type, null, false, contextInfo);
   }
 
-  private void lock(ThreadID threadID, int type, WaitInvocation timeout, boolean noBlock) {
+  private void lock(ThreadID threadID, int type, WaitInvocation timeout, boolean noBlock, String contextInfo) {
     int lockType = type;
     if (LockLevel.isSynchronous(type)) {
       if (!LockLevel.isSynchronousWrite(type)) { throw new AssertionError(
                                                                           "Only Synchronous WRITE lock is supported now"); }
       lockType = LockLevel.WRITE;
     }
-    basicLock(threadID, lockType, timeout, noBlock);
+    basicLock(threadID, lockType, timeout, noBlock, contextInfo);
     if (lockType != type) {
       awardSynchronous(threadID, lockType);
     }
   }
 
-  private void basicLock(ThreadID requesterID, int type, WaitInvocation timeout, boolean noBlock) {
+  private void basicLock(ThreadID requesterID, int type, WaitInvocation timeout, boolean noBlock, String contextInfo) {
     final Object waitLock;
     final Action action = new Action();
 
     synchronized (this) {
       waitUntillRunning();
 
-      recordLockRequested(requesterID);
+      recordLockRequested(requesterID, contextInfo);
       // if it is tryLock and is already being held by other thread of the same node, return
       // immediately.
       if (noBlock && isHeld() && !isHeldBy(requesterID) && !timeout.needsToWait()) { return; }

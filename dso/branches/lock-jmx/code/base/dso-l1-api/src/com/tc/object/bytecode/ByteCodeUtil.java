@@ -54,6 +54,8 @@ public class ByteCodeUtil implements Opcodes {
 
   public static final String  WEBAPPCONFIG_CLASS                = "com/terracotta/session/WebAppConfig";
   public static final String  WEBAPPCONFIG_TYPE                 = "L" + WEBAPPCONFIG_CLASS + ";";
+  
+  public static final String  NULL_LOCK_CONTEXT_INFO            = "";
 
   /**
    * Given a set of existing interfaces, add some more (without duplicates)

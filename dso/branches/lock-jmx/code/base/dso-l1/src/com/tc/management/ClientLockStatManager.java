@@ -27,7 +27,7 @@ public interface ClientLockStatManager {
       // do nothing
     }
 
-    public void recordLockRequested(LockID lockID, ThreadID threadID) {
+    public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo) {
       // do nothing
     }
 
@@ -50,7 +50,7 @@ public interface ClientLockStatManager {
   
   public void start(DSOClientMessageChannel channel, Sink sink);
   
-  public void recordLockRequested(LockID lockID, ThreadID threadID);
+  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo);
   
   public void recordLockAwarded(LockID lockID, ThreadID threadID);
   

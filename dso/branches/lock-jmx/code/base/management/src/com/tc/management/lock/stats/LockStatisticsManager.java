@@ -27,11 +27,15 @@ public abstract class LockStatisticsManager implements Serializable {
 
   protected boolean              lockStatisticsEnabled;
 
-  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
+  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces, String contextInfo) {
     if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getOrCreateLockStatInfo(lockID);
-    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), stackTraces);
+    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), stackTraces, contextInfo);
+  }
+  
+  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
+    recordLockRequested(lockID, nodeID, threadID, stackTraces, "");
   }
 
   public void recordLockHopRequested(LockID lockID, StackTraceElement[] stackTraces) {

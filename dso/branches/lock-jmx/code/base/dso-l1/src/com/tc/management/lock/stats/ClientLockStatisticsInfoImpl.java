@@ -27,8 +27,9 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     stat = statElement.getStats();
   }
 
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis, StackTraceElement[] stackTraces) {
-    statElement.recordLockRequested(nodeID, threadID, requestTimeInMillis, stackTraces, 0);
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis, StackTraceElement[] stackTraces,
+                                  String contextInfo) {
+    statElement.recordLockRequested(nodeID, threadID, requestTimeInMillis, contextInfo, stackTraces, 0);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }

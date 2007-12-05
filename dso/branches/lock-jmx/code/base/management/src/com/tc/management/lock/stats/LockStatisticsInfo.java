@@ -11,7 +11,7 @@ import java.util.Collection;
 
 public interface LockStatisticsInfo {
   public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis,
-                                  StackTraceElement[] stackTraces);
+                                  StackTraceElement[] stackTraces, String contextInfo);
 
   public void recordLockHopRequested(StackTraceElement[] stackTraces);
 

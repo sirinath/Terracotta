@@ -120,7 +120,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
   public void lock(String lockName, int lockLevel) {
     final LockID lockID = lockManager.lockIDFor(lockName);
-    lockManager.lock(lockID, lockLevel);
+    lockManager.lock(lockID, lockLevel, "");
   }
 
   public void unlock(String lockName) {
@@ -159,7 +159,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return isLocked;
   }
 
-  public boolean begin(String lockName, int lockLevel) {
+  public boolean begin(String lockName, int lockLevel, String contextInfo) {
     logBegin0(lockName, lockLevel);
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return false; }
@@ -178,7 +178,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
 
     try {
-      lockManager.lock(lockID, lockLevel);
+      lockManager.lock(lockID, lockLevel, contextInfo);
       return true;
     } catch (TCLockUpgradeNotSupportedError e) {
       popTransaction(lockID);

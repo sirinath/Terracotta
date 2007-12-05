@@ -9,7 +9,7 @@ public interface ThreadLockManager {
 
   public LockID lockIDFor(String lockName);
 
-  public void lock(LockID lockID, int lockLevel);
+  public void lock(LockID lockID, int lockLevel, String contextInfo);
   
   public boolean tryLock(LockID lockID, WaitInvocation timeout, int lockLevel);
 

@@ -57,14 +57,12 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     this.sink = sink;
   }
 
-  public void recordLockRequested(LockID lockID, ThreadID threadID) {
+  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo) {
     if (!isStatEnabled()) { return; }
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
-    super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements);
-
-    //sendIfNeeded(lockID, shouldSendClientStat);
+    super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements, contextInfo);
   }
 
   public void recordLockAwarded(LockID lockID, ThreadID threadID) {
@@ -73,9 +71,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     int nestedDepth = super.incrementNestedDepth(threadID);
-    boolean isLockAwardRecorded = super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth, stackTraceElements);
-
-    //sendIfNeeded(lockID, shouldSendClientStat && isLockAwardRecorded);
+    super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth, stackTraceElements);
   }
   
   public void recordLockReleased(LockID lockID, ThreadID threadID) {
@@ -84,9 +80,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.decrementNestedDepth(threadID);
-    boolean isLockReleaseRecorded = super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
-
-    //sendIfNeeded(lockID, shouldSendClientStat && isLockReleaseRecorded);
+    super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
   }
   
   public void recordLockHopped(LockID lockID, ThreadID threadID) {
@@ -95,8 +89,6 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.recordLockHopRequested(lockID, stackTraceElements);
-
-    //sendIfNeeded(lockID, shouldSendClientStat);
   }
 
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {

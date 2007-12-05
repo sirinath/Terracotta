@@ -213,7 +213,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
 
-  public void lock(LockID lockID, ThreadID threadID, int type) {
+  public void lock(LockID lockID, ThreadID threadID, int type, String contextInfo) {
     Assert.assertNotNull("threadID", threadID);
     final ClientLock lock;
 
@@ -222,7 +222,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       lock = getOrCreateLock(lockID);
       lock.incUseCount();
     }
-    lock.lock(threadID, type);
+    lock.lock(threadID, type, contextInfo);
   }
 
   public boolean tryLock(LockID lockID, ThreadID threadID, WaitInvocation timeout, int type) {

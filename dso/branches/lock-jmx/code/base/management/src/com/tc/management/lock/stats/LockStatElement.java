@@ -38,6 +38,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   // transient
 
   private StackTraceElement               stackTraceElement;
+  private String                          lockConfigElement = "";
 
   public LockStatElement(LockID lockID, StackTraceElement stackTraceElement) {
     this.lockID = lockID;
@@ -53,7 +54,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
   // TODO: return empty string for now ...
   public String getConfigElement() {
-    return "";
+    return lockConfigElement;
   }
 
   public LockStats getStats() {
@@ -72,15 +73,16 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   }
 
   public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis,
-                                  StackTraceElement[] stackTraces, int startIndex) {
+                                  String contextInfo, StackTraceElement[] stackTraces, int startIndex) {
     this.lockStat.recordLockRequested();
+    this.lockConfigElement = contextInfo;
     LockHolder lockHolder = newLockHolder(lockID, nodeID, threadID, requestedTimeInMillis);
     holderStats.addLockHolder(newLockKey(lockID, nodeID, threadID), lockHolder, stackTraces);
 
     if (stackTraces == null || startIndex >= stackTraces.length) { return; }
 
     LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
-    child.recordLockRequested(nodeID, threadID, requestedTimeInMillis, stackTraces, startIndex + 1);
+    child.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, startIndex + 1);
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
@@ -216,6 +218,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.lockID = new LockID(serialInput.readString());
+    this.lockConfigElement = serialInput.readString();
     this.lockStat = new LockStats(lockID);
     lockStat.deserializeFrom(serialInput);
     int numBytes = serialInput.readInt();
@@ -243,6 +246,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
     serialOutput.writeString(lockID.asString());
+    serialOutput.writeString(lockConfigElement);
     lockStat.serializeTo(serialOutput);
     try {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -270,7 +274,9 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     } else {
       sb.append(stackTraceElement);
     }
-    sb.append(" ");
+    sb.append(" locking context: ");
+    sb.append(lockConfigElement);
+    sb.append(" -- stats: ");
     sb.append(lockStat);
     sb.append("\n");
     Collection lockStatElements = nextStat.values();
