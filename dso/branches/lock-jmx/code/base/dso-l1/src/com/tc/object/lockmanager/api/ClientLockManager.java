@@ -29,7 +29,7 @@ public interface ClientLockManager {
    *
    * @param obj
    */
-  public void lock(LockID id, ThreadID threadID, int type);
+  public void lock(LockID id, ThreadID threadID, int type, String contextInfo);
 
   public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int type);
 

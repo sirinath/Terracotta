@@ -10,6 +10,7 @@ import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.TestClientObjectManager;
+import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.TestLockManager;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
@@ -53,7 +54,7 @@ public class ClientTransactionManagerTest extends TestCase {
     }
 
     // Test that we get an exception when checking while only holding a read lock
-    clientTxnMgr.begin("lock", LockLevel.READ);
+    clientTxnMgr.begin("lock", LockLevel.READ, ByteCodeUtil.NULL_LOCK_CONTEXT_INFO);
     try {
       clientTxnMgr.checkWriteAccess(new Object());
       fail();
@@ -62,21 +63,21 @@ public class ClientTransactionManagerTest extends TestCase {
     }
     clientTxnMgr.commit("lock");
 
-    clientTxnMgr.begin("lock", LockLevel.WRITE);
+    clientTxnMgr.begin("lock", LockLevel.WRITE, ByteCodeUtil.NULL_LOCK_CONTEXT_INFO);
     clientTxnMgr.checkWriteAccess(new Object());
     clientTxnMgr.commit("lock");
     
-    clientTxnMgr.begin("lock", LockLevel.SYNCHRONOUS_WRITE);
+    clientTxnMgr.begin("lock", LockLevel.SYNCHRONOUS_WRITE, ByteCodeUtil.NULL_LOCK_CONTEXT_INFO);
     clientTxnMgr.checkWriteAccess(new Object());
     clientTxnMgr.commit("lock");
 
-    clientTxnMgr.begin("lock", LockLevel.CONCURRENT);
+    clientTxnMgr.begin("lock", LockLevel.CONCURRENT, ByteCodeUtil.NULL_LOCK_CONTEXT_INFO);
     clientTxnMgr.checkWriteAccess(new Object());
     clientTxnMgr.commit("lock");
   }
 
   public void testDoIllegalReadChange() {
-    clientTxnMgr.begin("lock", LockLevel.READ);
+    clientTxnMgr.begin("lock", LockLevel.READ, ByteCodeUtil.NULL_LOCK_CONTEXT_INFO);
 
     try {
       clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);

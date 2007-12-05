@@ -274,7 +274,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public NoExceptionLinkedQueue pauseContexts                      = new NoExceptionLinkedQueue();
     public NoExceptionLinkedQueue unpauseContexts                    = new NoExceptionLinkedQueue();
 
-    public void lock(LockID id, ThreadID threadID, int type) {
+    public void lock(LockID id, ThreadID threadID, int type, String contextInfo) {
       return;
     }
 

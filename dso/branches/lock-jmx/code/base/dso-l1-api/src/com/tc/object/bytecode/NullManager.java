@@ -247,4 +247,8 @@ public final class NullManager implements Manager {
     return false;
   }
 
+  public void monitorEnter(Object obj, int type, String contextInfo) {
+    //
+  }
+
 }

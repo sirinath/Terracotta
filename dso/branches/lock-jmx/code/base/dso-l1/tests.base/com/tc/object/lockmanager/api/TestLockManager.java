@@ -37,7 +37,7 @@ public class TestLockManager implements ClientLockManager {
     return;
   }
 
-  public void lock(LockID id, ThreadID threadID, int type) {
+  public void lock(LockID id, ThreadID threadID, int type, String contextInfo) {
     locks.add(new Object[] { id, threadID, new Integer(type) });
   }
 

@@ -202,7 +202,7 @@ public interface Manager {
    * @param nonas More wait time
    */
   public void objectWait2(Object obj, long millis, int nanos) throws InterruptedException;
-
+  
   /**
    * Enter synchronized monitor
    * 
@@ -210,6 +210,15 @@ public interface Manager {
    * @param type Lock type
    */
   public void monitorEnter(Object obj, int type);
+
+  /**
+   * Enter synchronized monitor
+   * 
+   * @param obj Object
+   * @param type Lock type
+   * @contextInfo contextInfo
+   */
+  public void monitorEnter(Object obj, int type, String contextInfo);
 
   /**
    * Exit synchronized monitor

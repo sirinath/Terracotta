@@ -49,7 +49,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
   private static class TxnMgr implements ClientTransactionManager {
 
-    public boolean begin(String lock, int lockLevel) {
+    public boolean begin(String lock, int lockLevel, String contextInfo) {
       throw new AssertionError("should not be called");
     }
 

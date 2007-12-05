@@ -220,21 +220,21 @@ public class ConfigLoader {
         : ConfigLockLevel.SYNCHRONOUS_WRITE; }
     throw Assert.failure("Unknown lock level " + lockLevel);
   }
-
+  
   private void loadLocks(Locks lockList) {
     if (lockList == null) return;
 
     Autolock[] autolocks = lockList.getAutolockArray();
     for (int i = 0; autolocks != null && i < autolocks.length; i++) {
       config.addAutolock(autolocks[i].getMethodExpression(), getLockLevel(autolocks[i].getLockLevel(), autolocks[i]
-          .getAutoSynchronized()));
+          .getAutoSynchronized()), autolocks[i].toString());
     }
 
     NamedLock[] namedLocks = lockList.getNamedLockArray();
     for (int i = 0; namedLocks != null && i < namedLocks.length; i++) {
       NamedLock namedLock = namedLocks[i];
       LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(),
-                                                         getLockLevel(namedLock.getLockLevel(), false));
+                                                         getLockLevel(namedLock.getLockLevel(), false), namedLock.toString());
       lockDefinition.commit();
       config.addLock(namedLock.getMethodExpression(), lockDefinition);
     }
