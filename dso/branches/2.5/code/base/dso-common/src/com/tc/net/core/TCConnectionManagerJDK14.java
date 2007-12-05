@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * JDK 1.4 implementation of TCConnectionManager interface
- * 
+ *
  * @author teck
  */
 public class TCConnectionManagerJDK14 implements TCConnectionManager {
@@ -39,16 +39,18 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
   private final SetOnceFlag             shutdown               = new SetOnceFlag();
   private final ConnectionEvents        connEvents;
   private final ListenerEvents          listenerEvents;
+  private final SocketParams socketParams;
 
   public TCConnectionManagerJDK14() {
     this.connEvents = new ConnectionEvents();
     this.listenerEvents = new ListenerEvents();
-    this.comm = new TCCommJDK14();
+    this.socketParams = new SocketParams();
+    this.comm = new TCCommJDK14(socketParams);
     this.comm.start();
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {
-    return new TCConnectionJDK14(listener, comm, adaptor, this);
+    return new TCConnectionJDK14(listener, comm, adaptor, this, socketParams);
   }
 
   protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog,
