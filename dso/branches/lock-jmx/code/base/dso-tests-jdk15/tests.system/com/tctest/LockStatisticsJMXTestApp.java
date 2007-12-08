@@ -13,8 +13,11 @@ import com.tc.object.LiteralValues;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.config.LockDefinition;
+import com.tc.object.config.LockDefinitionImpl;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.simulator.app.ApplicationConfig;
@@ -32,6 +35,7 @@ import javax.management.remote.JMXConnector;
 
 public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
   private static final LiteralValues LITERAL_VALUES   = new LiteralValues();
+  private static final String NAMED_LOCK_NAME = "nameLock";
 
   public static final String         CONFIG_FILE      = "config-file";
   public static final String         PORT_NUMBER      = "port-number";
@@ -61,8 +65,14 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     config.addWriteAutolock(methodExpression, methodExpression);
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     config.addIncludePattern(testClass + "$*");
-    methodExpression = "* " + testClass + "$*.*(..)";
+    methodExpression = "* " + testClass + "$*.syncMethod(..)";
     config.addWriteAutolock(methodExpression, methodExpression);
+    methodExpression = "* " + testClass + "$*.syncBlock(..)";
+    config.addWriteAutolock(methodExpression, methodExpression);
+    methodExpression = "* " + testClass + "$*.nameLockMethod(..)";
+    LockDefinition ld = new LockDefinitionImpl(NAMED_LOCK_NAME, ConfigLockLevel.WRITE, methodExpression);
+    ld.commit();
+    config.addLock(methodExpression, ld);
 
     // roots
     spec.addRoot("barrier", "barrier");
@@ -76,6 +86,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
       enableStackTraces(index, 2, 1);
       testAutoLock(index, 2);
+      testNameLock(index, 2);
 
       enableStackTraces(index, 0, 1);
 
@@ -120,6 +131,22 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
+  
+  private void testNameLock(int index, int traceDepth) throws Throwable {
+    if (index == 0) {
+      waitForAllToMoveOn();
+      connect();
+      Thread.sleep(2000);
+      verifyClientStat(NAMED_LOCK_NAME, 1, traceDepth);
+      disconnect();
+    } else {
+      TestClass tc = (TestClass)sharedRoot;
+      tc.nameLockMethod(1000);
+      waitForAllToMoveOn();
+    }
+    
+    waitForAllToMoveOn();
+  }
 
   private void testAutoLock(int index, int traceDepth) throws Throwable {
     if (index == 0) {
@@ -127,7 +154,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       connect();
       Thread.sleep(2000);
       String lockID = ByteCodeUtil.generateAutolockName(((Manageable)sharedRoot).__tc_managed().getObjectID());
-      verifyClientStat(lockID, 2, traceDepth);
+      verifyClientStat(lockID, TestClass.class.getName(), 2, traceDepth);
       disconnect();
     } else {
       TestClass tc = (TestClass)sharedRoot;
@@ -336,8 +363,27 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     Collection c = statMBean.getLockSpecs();
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
-      if (lsi.getLockID().asString().equals(lockName)) {
+      if (lsi.getLockID().asString().indexOf(lockName) != -1) {
         echo("lockID: " + lsi.getLockID());
+        echo(" " + lsi.toString());
+        echo("" + lsi.children().size());
+        echo("" + lsi.children());
+
+        Assert.assertEquals(numOfClientsStackTraces, lsi.children().size());
+        assertStackTracesDepth(lsi.children(), traceDepth);
+        return;
+      }
+    }
+  }
+  
+  private void verifyClientStat(String lockName, String lockType, int numOfClientsStackTraces, int traceDepth) {
+    Collection c = statMBean.getLockSpecs();
+    for (Iterator i = c.iterator(); i.hasNext();) {
+      LockSpec lsi = (LockSpec) i.next();
+      if (lsi.getLockID().asString().indexOf(lockName) != -1) {
+        Assert.assertEquals(lockType, lsi.getObjectType());
+        echo("lockID: " + lsi.getLockID());
+        echo(" " + lsi.toString());
         echo("" + lsi.children().size());
         echo("" + lsi.children());
 
@@ -376,6 +422,14 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
         } catch (InterruptedException e) {
           throw new AssertionError(e);
         }
+      }
+    }
+    
+    public void nameLockMethod(long time) {
+      try {
+        Thread.sleep(time);
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
       }
     }
   }

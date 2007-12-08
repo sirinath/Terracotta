@@ -29,9 +29,9 @@ public interface ClientLockManager {
    *
    * @param obj
    */
-  public void lock(LockID id, ThreadID threadID, int type, String contextInfo);
+  public void lock(LockID id, ThreadID threadID, int type, String lockType, String contextInfo);
 
-  public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int type);
+  public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int type, String lockType);
 
   /**
    * releases the lock so that others can have at it

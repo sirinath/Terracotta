@@ -65,11 +65,13 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private volatile State              state                    = RUNNING;
   private long                        timeUsed                 = System.currentTimeMillis();
   private final ClientLockStatManager lockStatManager;
+  private final String                lockType;
 
-  ClientLock(LockID lockID, RemoteLockManager remoteLockManager, WaitTimer waitTimer,
+  ClientLock(LockID lockID, String lockType, RemoteLockManager remoteLockManager, WaitTimer waitTimer,
              ClientLockStatManager lockStatManager) {
     Assert.assertNotNull(lockID);
     this.lockID = lockID;
+    this.lockType = lockType;
     this.remoteLockManager = remoteLockManager;
     this.waitTimer = waitTimer;
     this.lockStatManager = lockStatManager;
@@ -212,9 +214,9 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     recordLockHoppedStat(requesterID);
     // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
     if (noBlock) {
-      remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type);
+      remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type, this.lockType);
     } else {
-      remoteLockManager.requestLock(lockID, requesterID, type);
+      remoteLockManager.requestLock(lockID, requesterID, type, this.lockType);
     }
   }
 
@@ -325,7 +327,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
           Object prev = waitLocksByRequesterID.put(threadID, waitLock);
           Assert.eval(prev == null);
 
-          WaitLockRequest waitLockRequest = new WaitLockRequest(lockID, threadID, server_level, call);
+          WaitLockRequest waitLockRequest = new WaitLockRequest(lockID, threadID, server_level, lockType, call);
 
           if (this.pendingLockRequests.put(threadID, waitLockRequest) != null) {
             // formatting
@@ -402,7 +404,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     LockHold holder = (LockHold) this.holders.get(threadID);
     Assert.assertNotNull(holder);
     int server_level = holder.goToPending();
-    LockRequest pending = new LockRequest(lockID, threadID, server_level);
+    LockRequest pending = new LockRequest(lockID, threadID, server_level, lockType);
     LockRequest waiter = (LockRequest) this.pendingLockRequests.remove(threadID);
     if (waiter == null) {
       logger.warn("Pending request " + pending + " is not present");
@@ -523,9 +525,9 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     // Add Lock Request
     LockRequest lockRequest = null;
     if (noBlock) {
-      lockRequest = new TryLockRequest(lockID, threadID, lockLevel, timeout);
+      lockRequest = new TryLockRequest(lockID, threadID, lockLevel, lockType, timeout);
     } else {
-      lockRequest = new LockRequest(lockID, threadID, lockLevel);
+      lockRequest = new LockRequest(lockID, threadID, lockLevel, lockType);
     }
     Object old = pendingLockRequests.put(threadID, lockRequest);
     if (old != null) {
@@ -735,12 +737,12 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
         ThreadID threadID = (ThreadID) i.next();
         LockHold hold = (LockHold) holders.get(threadID);
         if (hold.isHolding() && hold.getServerLevel() != LockLevel.NIL_LOCK_LEVEL) {
-          c.add(new LockRequest(this.lockID, threadID, hold.getServerLevel()));
+          c.add(new LockRequest(this.lockID, threadID, hold.getServerLevel(), lockType));
         }
       }
     } else {
       // All other states -- GREEDY, RECALLED, RECALL-COMMIT-INPROGRESS
-      c.add(new LockRequest(this.lockID, ThreadID.VM_ID, greediness.getLevel()));
+      c.add(new LockRequest(this.lockID, ThreadID.VM_ID, greediness.getLevel(), lockType));
     }
     return c;
   }

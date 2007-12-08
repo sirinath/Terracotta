@@ -99,6 +99,15 @@ public interface Manager {
    * @param type Lock type
    */
   public void beginLock(String lockID, int type);
+  
+  /**
+   * Begin lock
+   * 
+   * @param lockID Lock identifier
+   * @param type Lock type
+   * @param contextInfo
+   */
+  public void beginLock(String lockID, int type, String contextInfo);
 
   /**
    * Try to begin lock

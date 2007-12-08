@@ -199,6 +199,17 @@ public class ManagerUtil {
   public static void beginLock(String lockID, int type) {
     getManager().beginLock(lockID, type);
   }
+  
+  /**
+   * Begin lock
+   * 
+   * @param lockID Lock identifier
+   * @param type Lock type
+   * @param contextInfo
+   */
+  public static void beginLockWithContextInfo(String lockID, int type, String contextInfo) {
+    getManager().beginLock(lockID, type, contextInfo);
+  }
 
   /**
    * Try to begin lock

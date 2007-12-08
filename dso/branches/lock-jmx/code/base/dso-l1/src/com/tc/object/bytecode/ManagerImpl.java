@@ -10,6 +10,7 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventListener;
+import com.tc.config.lock.LockContextInfo;
 import com.tc.lang.StartupHelper;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
@@ -53,8 +54,6 @@ public class ManagerImpl implements Manager {
   private static final TCLogger                    logger                 = TCLogging.getLogger(Manager.class);
 
   private static final LiteralValues               literals               = new LiteralValues();
-
-  private static final String                      NULL_LOCK_CONTEXT_INFO = "";
 
   private final SetOnceFlag                        clientStarted          = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
@@ -296,7 +295,15 @@ public class ManagerImpl implements Manager {
 
   public void beginLock(String lockID, int type) {
     try {
-      begin(lockID, type, null, null, NULL_LOCK_CONTEXT_INFO);
+      begin(lockID, type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    } catch (Throwable t) {
+      Util.printLogAndRethrowError(t, logger);
+    }
+  }
+  
+  public void beginLock(String lockID, int type, String contextInfo) {
+    try {
+      begin(lockID, type, null, null, contextInfo);
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
     }
@@ -305,18 +312,22 @@ public class ManagerImpl implements Manager {
   public void beginVolatile(TCObject tcObject, String fieldName, int type) {
     if (tcObject == null) { throw new NullPointerException("beginVolatile called on a null TCObject"); }
 
-    begin(generateVolatileLockName(tcObject, fieldName), type, null, null, NULL_LOCK_CONTEXT_INFO);
+    begin(generateVolatileLockName(tcObject, fieldName), type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) {
-    boolean locked = this.txManager.begin(lockID, type, contextInfo);
+    String lockType = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+    
+    boolean locked = this.txManager.begin(lockID, type, lockType, contextInfo);
     if (locked && runtimeLogger.lockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
   }
 
   private boolean tryBegin(String lockID, int type, Object instance, WaitInvocation timeout, TCObject tcobj) {
-    boolean locked = this.txManager.tryBegin(lockID, timeout, type);
+    String lockType = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+    
+    boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockType);
     if (locked && runtimeLogger.lockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
@@ -465,7 +476,7 @@ public class ManagerImpl implements Manager {
   }
 
   public void monitorEnter(Object obj, int type) {
-    monitorEnter(obj, type, NULL_LOCK_CONTEXT_INFO);
+    monitorEnter(obj, type, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 
   public void monitorEnter(Object obj, int type, String contextInfo) {
