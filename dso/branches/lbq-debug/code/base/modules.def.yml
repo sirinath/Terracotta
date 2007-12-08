@@ -409,6 +409,7 @@ modules:
         - dso-l2-common
         - dso-l2
         - management
+        - dso-system-tests
   - dso-crash-tests:
       options:
         jdk: J2SE-1.5
