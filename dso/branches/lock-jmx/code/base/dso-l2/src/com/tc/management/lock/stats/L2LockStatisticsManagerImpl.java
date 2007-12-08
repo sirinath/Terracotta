@@ -118,10 +118,10 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     super.recordLockHopRequested(lockID, null);
   }
 
-  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID) {
+  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType) {
     if (!lockStatisticsEnabled) { return; }
 
-    super.recordLockRequested(lockID, nodeID, threadID, null);
+    super.recordLockRequested(lockID, nodeID, threadID, null, lockType);
   }
 
   public synchronized void recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,

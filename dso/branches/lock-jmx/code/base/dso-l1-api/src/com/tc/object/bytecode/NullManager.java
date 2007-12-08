@@ -60,6 +60,10 @@ public final class NullManager implements Manager {
   public final void beginLock(String lockID, int type) {
     //
   }
+  
+  public final void beginLock(String lockID, int type, String lockType) {
+    //
+  }
 
   public final TCObject lookupExistingOrNull(Object obj) {
     return null;

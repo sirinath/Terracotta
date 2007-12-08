@@ -100,10 +100,10 @@ public class ClientServerLockStatisticsTest extends TestCase {
     final ThreadID tx2 = new ThreadID(1);
 
     serverLockStatManager.setLockStatisticsConfig(1, 1);
-    clientLockManager.lock(lockID1, tx1, LockLevel.READ, "lock manually");
+    clientLockManager.lock(lockID1, tx1, LockLevel.READ, null, "lock manually");
     sleep(1000);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.READ, "lock manually");
+    clientLockManager.lock(lockID1, tx2, LockLevel.READ, null, "lock manually");
     sleep(2000);
     assertStackTraces(lockID1, 2, 1);
     assertStackTraces(lockID1, 2, 1);
@@ -120,9 +120,9 @@ public class ClientServerLockStatisticsTest extends TestCase {
 
     serverLockStatManager.setLockStatisticsConfig(2, 1);
     sleep(1000);
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, "lock manually");
+    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, null, "lock manually");
     sleep(1000);
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, "lock manually");
+    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, null, "lock manually");
     sleep(2000);
     assertStackTraces(lockID1, 2, 2);
     assertStackTraces(lockID1, 2, 2);

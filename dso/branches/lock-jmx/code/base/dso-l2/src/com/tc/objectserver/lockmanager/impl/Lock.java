@@ -67,12 +67,14 @@ public class Lock {
   private int                              lockPolicy;
   private final ServerThreadContextFactory threadContextFactory;
   private final L2LockStatsManager         lockStatsManager;
+  private String lockType;
 
   // real constructor used by lock manager
-  Lock(LockID lockID, ServerThreadContext txn, int lockLevel, Sink lockResponseSink, long timeout,
+  Lock(LockID lockID, ServerThreadContext txn, int lockLevel, String lockType, Sink lockResponseSink, long timeout,
        LockEventListener[] listeners, int lockPolicy, ServerThreadContextFactory threadContextFactory,
        L2LockStatsManager lockStatsManager) {
     this(lockID, timeout, listeners, false, lockPolicy, threadContextFactory, lockStatsManager);
+    this.lockType = lockType;
     requestLock(txn, lockLevel, lockResponseSink);
   }
 
@@ -421,7 +423,7 @@ public class Lock {
         recordLockRequestStat(wait.getNodeID(), wait.getThreadID());
         createPendingFromWaiter(wait);
         addNotifiedWaitersTo.addNotification(new LockContext(lockID, wait.getNodeID(), wait.getThreadID(), wait
-            .lockLevel()));
+            .lockLevel(), lockType));
       }
     }
   }
@@ -1032,7 +1034,7 @@ public class Lock {
   }
 
   private void recordLockRequestStat(NodeID nodeID, ThreadID threadID) {
-    lockStatsManager.recordLockRequested(lockID, nodeID, threadID);
+    lockStatsManager.recordLockRequested(lockID, nodeID, threadID, lockType);
   }
 
   private void recordLockAwardStat(NodeID nodeID, ThreadID threadID, boolean isGreedyRequest, long awardTimestamp) {

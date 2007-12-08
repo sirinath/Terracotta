@@ -30,7 +30,7 @@ public interface L2LockStatsManager {
       return false;
     }
     
-    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID) {
+    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType) {
       // do nothing
     }
     
@@ -108,7 +108,7 @@ public interface L2LockStatsManager {
   
   public void recordLockHopRequested(LockID lockID);
   
-  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID);
+  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType);
   
   public void recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy, long lockAwardTimestamp);
   

@@ -149,28 +149,28 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
   }
 
   public synchronized boolean tryRequestLock(LockID lockID, NodeID nodeID, ThreadID sourceID, int requestedLevel,
-                                             WaitInvocation timeout, Sink lockResponseSink) {
-    return requestLock(lockID, nodeID, sourceID, requestedLevel, timeout, lockResponseSink, true);
+                                             String lockType, WaitInvocation timeout, Sink lockResponseSink) {
+    return requestLock(lockID, nodeID, sourceID, requestedLevel, lockType, timeout, lockResponseSink, true);
   }
 
   private synchronized boolean requestLock(LockID lockID, NodeID nodeID, ThreadID threadID, int requestedLevel,
-                                           WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
+                                           String lockType, WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
     if (!channelManager.isActiveID(nodeID)) return false;
     if (isStarting()) {
-      queueRequestLock(lockID, nodeID, threadID, requestedLevel, timeout, lockResponseSink, noBlock);
+      queueRequestLock(lockID, nodeID, threadID, requestedLevel, lockType, timeout, lockResponseSink, noBlock);
       return false;
     }
     if (!isStarted()) return false;
-    return basicRequestLock(lockID, nodeID, threadID, requestedLevel, timeout, lockResponseSink, noBlock);
+    return basicRequestLock(lockID, nodeID, threadID, requestedLevel, lockType, timeout, lockResponseSink, noBlock);
   }
 
   public synchronized boolean requestLock(LockID lockID, NodeID nodeID, ThreadID sourceID, int requestedLevel,
-                                          Sink lockResponseSink) {
-    return requestLock(lockID, nodeID, sourceID, requestedLevel, null, lockResponseSink, false);
+                                          String lockType, Sink lockResponseSink) {
+    return requestLock(lockID, nodeID, sourceID, requestedLevel, lockType, null, lockResponseSink, false);
   }
 
   private boolean basicRequestLock(LockID lockID, NodeID nodeID, ThreadID threadID, int requestedLevel,
-                                   WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
+                                   String lockType, WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
     ServerThreadContext threadContext = threadContextFactory.getOrCreate(nodeID, threadID);
     Lock lock = (Lock) this.locks.get(lockID);
 
@@ -182,7 +182,7 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
         lockAwarded = lock.requestLock(threadContext, requestedLevel, lockResponseSink);
       }
     } else {
-      lock = new Lock(lockID, threadContext, requestedLevel, lockResponseSink, this.lockTimeout, this.lockListeners,
+      lock = new Lock(lockID, threadContext, requestedLevel, lockType, lockResponseSink, this.lockTimeout, this.lockListeners,
                       this.lockPolicy, threadContextFactory, lockStatsManager);
       locks.put(lockID, lock);
       lockAwarded = true;
@@ -192,12 +192,12 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
   }
   
   private void queueRequestLock(LockID lockID, NodeID nodeID, ThreadID threadID, int requestedLevel,
-                                WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
+                                String lockType, WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
     if (timeout == null) {
-      lockRequestQueue.add(new RequestLockContext(lockID, nodeID, threadID, requestedLevel, lockResponseSink,
+      lockRequestQueue.add(new RequestLockContext(lockID, nodeID, threadID, requestedLevel, lockType, lockResponseSink,
                                                   noBlock));
     } else {
-      lockRequestQueue.add(new RequestLockContext(lockID, nodeID, threadID, requestedLevel, timeout,
+      lockRequestQueue.add(new RequestLockContext(lockID, nodeID, threadID, requestedLevel, lockType, timeout,
                                                   lockResponseSink, noBlock));
     }
   }
@@ -445,7 +445,7 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
 
       for (Iterator i = lockRequestQueue.iterator(); i.hasNext();) {
         RequestLockContext ctxt = (RequestLockContext) i.next();
-        requestLock(ctxt.lockID, ctxt.nodeID, ctxt.threadID, ctxt.requestedLockLevel, ctxt.timeout,
+        requestLock(ctxt.lockID, ctxt.nodeID, ctxt.threadID, ctxt.requestedLockLevel, ctxt.lockType, ctxt.timeout,
                     ctxt.lockResponseSink, ctxt.noBlock);
       }
       lockRequestQueue.clear();
@@ -555,27 +555,30 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, WaitTimer
     final NodeID      nodeID;
     final ThreadID       threadID;
     final int            requestedLockLevel;
+    final String         lockType;
     final boolean        noBlock;
     final Sink           lockResponseSink;
     final WaitInvocation timeout;
 
     private RequestLockContext(LockID lockID, NodeID nodeID, ThreadID threadID, int requestedLockLevel,
-                               Sink lockResponseSink, boolean noBlock) {
+                               String lockType, Sink lockResponseSink, boolean noBlock) {
       this.lockID = lockID;
       this.nodeID = nodeID;
       this.threadID = threadID;
       this.requestedLockLevel = requestedLockLevel;
+      this.lockType = lockType;
       this.lockResponseSink = lockResponseSink;
       this.noBlock = noBlock;
       this.timeout = null;
     }
 
     private RequestLockContext(LockID lockID, NodeID nodeID, ThreadID threadID, int requestedLockLevel,
-                               WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
+                               String lockType, WaitInvocation timeout, Sink lockResponseSink, boolean noBlock) {
       this.lockID = lockID;
       this.nodeID = nodeID;
       this.threadID = threadID;
       this.requestedLockLevel = requestedLockLevel;
+      this.lockType = lockType;
       this.lockResponseSink = lockResponseSink;
       this.noBlock = noBlock;
       this.timeout = timeout;

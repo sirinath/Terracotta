@@ -571,7 +571,8 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
   private void callTCBeginWithLock(LockDefinition lock, MethodVisitor c) {
     c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(lock.getLockName()));
     c.visitLdcInsn(new Integer(lock.getLockLevelAsInt()));
-    spec.getManagerHelper().callManagerMethod("beginLock", c);
+    c.visitLdcInsn(lock.getLockContextInfo());
+    spec.getManagerHelper().callManagerMethod("beginLockWithContextInfo", c);
   }
 
   private void callTCBeginWithLockName(String lockName, int lockLevel, MethodVisitor mv) {

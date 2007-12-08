@@ -5,6 +5,7 @@
 package com.tc.objectserver.lockmanager.api;
 
 import com.tc.async.api.Sink;
+import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.ImplementMe;
 import com.tc.net.groups.NodeID;
 import com.tc.object.lockmanager.api.LockContext;
@@ -49,7 +50,7 @@ public class TestLockManager implements LockManager {
     }
   }
 
-  public boolean requestLock(LockID lockID, NodeID channelID, ThreadID source, int level, Sink awardLockSink) {
+  public boolean requestLock(LockID lockID, NodeID channelID, ThreadID source, int level, String lockType, Sink awardLockSink) {
     throw new ImplementMe();
   }
 
@@ -95,7 +96,7 @@ public class TestLockManager implements LockManager {
   }
 
   public void reestablishLock(LockID lid, NodeID cid, ThreadID tid, int level, Sink lockResponseSink) {
-    reestablishLockCalls.add(new ReestablishLockContext(new LockContext(lid, cid, tid, level), lockResponseSink));
+    reestablishLockCalls.add(new ReestablishLockContext(new LockContext(lid, cid, tid, level, LockContextInfo.NULL_LOCK_OBJECT_TYPE), lockResponseSink));
   }
 
   public static class ReestablishLockContext {
@@ -120,7 +121,7 @@ public class TestLockManager implements LockManager {
     throw new ImplementMe();
   }
 
-  public boolean tryRequestLock(LockID lockID, NodeID channelID, ThreadID threadID, int level, WaitInvocation timeout,
+  public boolean tryRequestLock(LockID lockID, NodeID channelID, ThreadID threadID, int level, String lockType, WaitInvocation timeout,
                                 Sink awardLockSink) {
     throw new ImplementMe();
   }

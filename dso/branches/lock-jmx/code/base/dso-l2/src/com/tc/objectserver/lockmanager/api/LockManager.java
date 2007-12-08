@@ -25,9 +25,9 @@ public interface LockManager {
   public void reestablishWait(LockID lid, NodeID cid, ThreadID tid, int level, WaitInvocation waitInvocation,
                               Sink lockResponseSink);
 
-  public boolean requestLock(LockID lockID, NodeID cid, ThreadID source, int level, Sink awardLockSink);
+  public boolean requestLock(LockID lockID, NodeID cid, ThreadID source, int level, String lockType, Sink awardLockSink);
 
-  public boolean tryRequestLock(LockID lockID, NodeID cid, ThreadID threadID, int level, WaitInvocation timeout, Sink awardLockSink);
+  public boolean tryRequestLock(LockID lockID, NodeID cid, ThreadID threadID, int level, String lockType, WaitInvocation timeout, Sink awardLockSink);
 
   public void unlock(LockID id, NodeID receiverID, ThreadID threadID);
 
