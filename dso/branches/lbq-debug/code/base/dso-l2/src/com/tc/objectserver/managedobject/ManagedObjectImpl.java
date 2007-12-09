@@ -224,6 +224,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   public void toDNA(TCByteBufferOutputStream out, ObjectStringSerializer serializer) {
     DNAWriterImpl writer = new ObjectDNAWriterImpl(out, id, getClassname(), serializer, DNA_STORAGE_ENCODING,
                                                    getLoaderDescription(), version);
+    System.err.println((new Date(System.currentTimeMillis())).toString() + " ManagedObjectImpl dehydrating at verion: " + version);
     state.dehydrate(id, writer);
     writer.finalizeDNA(false);
   }
