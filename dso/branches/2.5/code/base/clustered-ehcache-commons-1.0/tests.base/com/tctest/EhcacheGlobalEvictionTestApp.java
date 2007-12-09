@@ -126,7 +126,7 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       Assert.assertEquals(new Element("key13", "val13"), cache.get("key13"));
       Assert.assertEquals(6, cache.getSize());
 
-      Thread.sleep(20000);
+      Thread.sleep(30000);
       Assert.assertTrue(cache.isExpired(new Element("key01", "val01")));
       Assert.assertTrue(cache.isExpired(new Element("key02", "val02")));
       Assert.assertTrue(cache.isExpired(new Element("key03", "val03")));
@@ -138,7 +138,8 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       barrier.barrier();
 
       populateCache(cache, index, 4);
-      Thread.sleep(1000);
+      barrier.barrier();
+      
       Assert.assertEquals(new Element("key04", "val04"), cache.get("key04"));
       Assert.assertEquals(new Element("key05", "val05"), cache.get("key05"));
       Assert.assertEquals(new Element("key06", "val06"), cache.get("key06"));
