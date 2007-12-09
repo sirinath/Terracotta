@@ -80,12 +80,12 @@ public class QueueManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.PUT:
         addChangeToCollector(objectID, params[0], includeIDs);
         references.add(params[0]);
-        System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after put in server: " + references.size() + " put obj: " + params[0]);
+        //System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after put in server: " + references.size() + " put obj: " + params[0]);
 
         break;
       case SerializationUtil.TAKE:
         Object o = references.remove(0);
-        System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after take in server: " + references.size() + " take obj: " + o);
+        //System.err.println(new Date(System.currentTimeMillis()).toString() + " queue id: " + objectID + " size after take in server: " + references.size() + " take obj: " + o);
         
         break;
       case SerializationUtil.CLEAR:

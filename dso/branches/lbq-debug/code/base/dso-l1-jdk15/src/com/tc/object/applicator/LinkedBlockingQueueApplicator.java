@@ -14,11 +14,10 @@ import com.tc.object.TCObject;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.Manageable;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
-import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Date;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -187,7 +185,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.PUT:
         try {
           TC_PUT_METHOD.invoke(queue, new Object[] { params[0] });
-          System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " put obj: " + params[0]);
+          //System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue: " + tcObject.getObjectID() + " size after put in app: " + queue.size() + " put obj: " + params[0]);
         } catch (InvocationTargetException e) {
           throw new TCRuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -207,7 +205,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
       case SerializationUtil.REMOVE_FIRST_N:
         // This is caused by drainTo(), which requires a full lock.
         int count = ((Integer) params[0]).intValue();
-        System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " obj.");
+        //System.err.println(new Date(System.currentTimeMillis()).toString() + " Client " + ManagerUtil.getClientID() + " queue id: " + tcObject.getObjectID() + " in REMOVE_FIRST_N at app: " + queue.size() + " removing " + count + " obj.");
 
         for (int i = 0; i < count; i++) {
           try {
