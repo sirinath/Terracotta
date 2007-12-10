@@ -9,6 +9,9 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
@@ -90,11 +93,16 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       if (index == 0) {
         cacheManager = getCacheManager();
       }
-
-      System.err.println("Client: " + ManagerUtil.getClientID() + ", index: " + index);
     }
 
     public static void main(String args[]) throws Exception {
+      Logger rootLogger = Logger.getRootLogger();
+      if (!rootLogger.getAllAppenders().hasMoreElements()) {
+          rootLogger.setLevel(org.apache.log4j.Level.DEBUG);
+          rootLogger.addAppender(new ConsoleAppender(
+                 new PatternLayout("%-5p [%t]: %m%n")));
+      }
+      
       DebugUtil.DEBUG = true;
 
       int index = Integer.parseInt(args[0]);
@@ -110,40 +118,40 @@ public abstract class EhcacheGlobalEvictionTestApp extends ServerCrashingAppBase
       populateCache(cache, index, 1);
       barrier.barrier();
 
-      Thread.sleep(1000);
-      Assert.assertEquals(new Element("key01", "val01"), cache.get("key01"));
-      Assert.assertEquals(new Element("key02", "val02"), cache.get("key02"));
-      Assert.assertEquals(new Element("key03", "val03"), cache.get("key03"));
-      Assert.assertEquals(new Element("key11", "val11"), cache.get("key11"));
-      Assert.assertEquals(new Element("key12", "val12"), cache.get("key12"));
-      Assert.assertEquals(new Element("key13", "val13"), cache.get("key13"));
-      Assert.assertEquals(6, cache.getSize());
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key01", "val01"), cache.get("key01"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key02", "val02"), cache.get("key02"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key03", "val03"), cache.get("key03"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key11", "val11"), cache.get("key11"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key12", "val12"), cache.get("key12"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key13", "val13"), cache.get("key13"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), 6, cache.getSize());
 
-      Thread.sleep(20000);
-      Assert.assertTrue(cache.isExpired(new Element("key01", "val01")));
-      Assert.assertTrue(cache.isExpired(new Element("key02", "val02")));
-      Assert.assertTrue(cache.isExpired(new Element("key03", "val03")));
-      Assert.assertTrue(cache.isExpired(new Element("key11", "val11")));
-      Assert.assertTrue(cache.isExpired(new Element("key12", "val12")));
-      Assert.assertTrue(cache.isExpired(new Element("key13", "val13")));
-      Assert.assertEquals(0, cache.getSize());
+      Thread.sleep(30000);
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key01", "val01")));
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key02", "val02")));
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key03", "val03")));
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key11", "val11")));
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key12", "val12")));
+      Assert.assertTrue("Client " + ManagerUtil.getClientID(), cache.isExpired(new Element("key13", "val13")));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), 0, cache.getSize());
 
       barrier.barrier();
 
       populateCache(cache, index, 4);
-      Thread.sleep(1000);
-      Assert.assertEquals(new Element("key04", "val04"), cache.get("key04"));
-      Assert.assertEquals(new Element("key05", "val05"), cache.get("key05"));
-      Assert.assertEquals(new Element("key06", "val06"), cache.get("key06"));
-      Assert.assertEquals(new Element("key14", "val14"), cache.get("key14"));
-      Assert.assertEquals(new Element("key15", "val15"), cache.get("key15"));
-      Assert.assertEquals(new Element("key16", "val16"), cache.get("key16"));
-      Assert.assertEquals(6, cache.getSize());
+      barrier.barrier();
+      
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key04", "val04"), cache.get("key04"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key05", "val05"), cache.get("key05"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key06", "val06"), cache.get("key06"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key14", "val14"), cache.get("key14"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key15", "val15"), cache.get("key15"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), new Element("key16", "val16"), cache.get("key16"));
+      Assert.assertEquals("Client " + ManagerUtil.getClientID(), 6, cache.getSize());
 
       barrier.barrier();
       
       if (index == 0) {
-        Thread.sleep(20000);
+        Thread.sleep(30000);
 
         Assert.assertTrue(cache.isExpired(new Element("key04", "val04")));
         Assert.assertTrue(cache.isExpired(new Element("key05", "val05")));

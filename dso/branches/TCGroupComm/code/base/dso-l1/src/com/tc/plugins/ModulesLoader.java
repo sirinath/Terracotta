@@ -98,7 +98,7 @@ public class ModulesLoader {
         }
       } catch (Exception e) {
         System.err.println("Unable to initialize modules runtime; " + e.getMessage());
-        //e.printStackTrace();
+        logger.error(e); // at least log this exception, it's very frustrating if it is completely swallowed
         System.exit(-9);
       } finally {
         if (forBootJar) {
@@ -158,7 +158,6 @@ public class ModulesLoader {
 
     if (additionalModuleList != null) {
       final String[] additionalModules = additionalModuleList.split(";");
-
       Pattern pattern = Pattern.compile("(.+?)-([0-9\\.]+)-([0-9\\.\\-]+)");
       for (int i = 0; i < additionalModules.length; i++) {
         if (additionalModules[i].length() == 0) {
