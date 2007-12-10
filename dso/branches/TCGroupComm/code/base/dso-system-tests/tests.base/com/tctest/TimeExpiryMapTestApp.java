@@ -44,7 +44,7 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
     DebugUtil.DEBUG = true;
     if (index == 0) {
       dataRoot = new DataRoot();
-      dataRoot.setMap(new MockTimeExpiryMap(3, 50, 5));
+      dataRoot.setMap(new MockTimeExpiryMap(3, 50, 8));
     }
 
     barrier.barrier();
@@ -60,27 +60,27 @@ public class TimeExpiryMapTestApp extends AbstractTransparentApp {
 
     long en = System.currentTimeMillis();
     if (DebugUtil.DEBUG) {
-      System.err.println("Client " + ManagerUtil.getClientID() + ", index: " + index + " time for sleep: " + (en - st));
+      System.err.println("Client " + ManagerUtil.getClientID() + ", index: " + index + " time spent: " + (en - st));
     }
     Assert.assertEquals(3, dataRoot.size());
-    Assert.assertFalse(dataRoot.isExpired("key1"));
-    Assert.assertFalse(dataRoot.isExpired("key2"));
-    Assert.assertFalse(dataRoot.isExpired("key3"));
-    Assert.assertEquals("val1", dataRoot.get("key1"));
-    Assert.assertEquals("val2", dataRoot.get("key2"));
-    Assert.assertEquals("val3", dataRoot.get("key3"));
+    Assert.assertFalse("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key1"));
+    Assert.assertFalse("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key2"));
+    Assert.assertFalse("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key3"));
+    Assert.assertEquals("Client " + ManagerUtil.getClientID(), "val1", dataRoot.get("key1"));
+    Assert.assertEquals("Client " + ManagerUtil.getClientID(), "val2", dataRoot.get("key2"));
+    Assert.assertEquals("Client " + ManagerUtil.getClientID(), "val3", dataRoot.get("key3"));
 
     barrier.barrier();
 
-    Thread.sleep(10000);
+    Thread.sleep(15000);
 
     barrier.barrier();
 
-    Assert.assertTrue(dataRoot.isExpired("key1"));
-    Assert.assertTrue(dataRoot.isExpired("key2"));
-    Assert.assertTrue(dataRoot.isExpired("key3"));
-    Assert.assertEquals(0, dataRoot.size());
-    Assert.assertEquals(3, dataRoot.getNumOfExpired());
+    Assert.assertTrue("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key1"));
+    Assert.assertTrue("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key2"));
+    Assert.assertTrue("Client " + ManagerUtil.getClientID(), dataRoot.isExpired("key3"));
+    Assert.assertEquals("Client " + ManagerUtil.getClientID(), 0, dataRoot.size());
+    Assert.assertEquals("Client " + ManagerUtil.getClientID(), 3, dataRoot.getNumOfExpired());
 
     barrier.barrier();
     DebugUtil.DEBUG = false;
