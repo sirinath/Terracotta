@@ -116,11 +116,8 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
     if (index == 0) {
       lock.lock();
       barrier2.await();
-      try {
-        Thread.sleep(10000);
-      } finally {
-        lock.unlock();
-      }
+      barrier2.await();
+      lock.unlock();
       barrier2.await();
     } else if (index == 1) {
       barrier2.await();
@@ -131,6 +128,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
         }
       }
       Assert.assertEquals(100, count);
+      barrier2.await();
       barrier2.await();
       count = 0;
       for (int i=0; i<100; i++) {
@@ -1231,6 +1229,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       try {
         try {
           lock.lock();
+          System.err.println(Thread.currentThread().interrupted());
         } catch (TCRuntimeException e) {
           Assert.assertFalse(isCausedByInterruptedException(e));
         }
