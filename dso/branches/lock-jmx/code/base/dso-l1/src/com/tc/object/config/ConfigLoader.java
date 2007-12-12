@@ -5,6 +5,7 @@
 package com.tc.object.config;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.TCLogger;
@@ -223,18 +224,21 @@ public class ConfigLoader {
   
   private void loadLocks(Locks lockList) {
     if (lockList == null) return;
+    
+    XmlOptions options = new XmlOptions();
+    options.setSaveOuter();
 
     Autolock[] autolocks = lockList.getAutolockArray();
     for (int i = 0; autolocks != null && i < autolocks.length; i++) {
       config.addAutolock(autolocks[i].getMethodExpression(), getLockLevel(autolocks[i].getLockLevel(), autolocks[i]
-          .getAutoSynchronized()), autolocks[i].toString());
+          .getAutoSynchronized()), autolocks[i].xmlText(options));
     }
 
     NamedLock[] namedLocks = lockList.getNamedLockArray();
     for (int i = 0; namedLocks != null && i < namedLocks.length; i++) {
       NamedLock namedLock = namedLocks[i];
       LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(),
-                                                         getLockLevel(namedLock.getLockLevel(), false), namedLock.toString());
+                                                         getLockLevel(namedLock.getLockLevel(), false), namedLock.xmlText(options));
       lockDefinition.commit();
       config.addLock(namedLock.getMethodExpression(), lockDefinition);
     }

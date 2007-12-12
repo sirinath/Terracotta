@@ -34,39 +34,31 @@ public abstract class LockStatisticsManager implements Serializable {
     lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), stackTraces, contextInfo);
   }
   
-  public void recordLockHopRequested(LockID lockID, StackTraceElement[] stackTraces) {
-    if (!lockStatisticsEnabled) { return; }
-
-    LockStatisticsInfo lsc = getOrCreateLockStatInfo(lockID);
-    lsc.recordLockHopRequested(stackTraces);
-  }
-
   public boolean recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                   long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces) {
+                                   long awardedTimeInMillis, int nestedLockDepth) {
     if (!lockStatisticsEnabled) { return false; }
 
     LockStatisticsInfo lsc = getLockStatInfo(lockID);
-    if (lsc != null) { return lsc.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces); }
+    if (lsc != null) { return lsc.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth); }
     return false;
   }
 
-  public void recordLockRejected(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
+  public void recordLockRejected(LockID lockID, NodeID nodeID, ThreadID threadID) {
     if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getLockStatInfo(lockID);
     if (lsc != null) {
-      lsc.recordLockRejected(nodeID, threadID, stackTraces);
+      lsc.recordLockRejected(nodeID, threadID);
     }
   }
 
-  public boolean recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
-    if (!lockStatisticsEnabled) { return false; }
+  public void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {
+    if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getLockStatInfo(lockID);
-    if (lsc != null) { return lsc.recordLockReleased(nodeID, threadID, stackTraces); }
-    return false;
+    if (lsc != null) { lsc.recordLockReleased(nodeID, threadID); }
   }
-
+  
   public void setTraceDepth(int traceDepth) {
     if (!lockStatisticsEnabled) { return; }
 

@@ -114,8 +114,9 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
 
   public synchronized void recordLockHopRequested(LockID lockID) {
     if (!lockStatisticsEnabled) { return; }
-
-    super.recordLockHopRequested(lockID, null);
+    
+      ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl)getOrCreateLockStatInfo(lockID);
+      lsc.recordLockHopRequested();
   }
 
   public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType) {
@@ -129,20 +130,20 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     if (!lockStatisticsEnabled) { return; }
 
     int nestedDepth = super.incrementNestedDepth(nodeID);
-    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, nestedDepth, null);
+    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, nestedDepth);
   }
 
   public synchronized void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {
     if (!lockStatisticsEnabled) { return; }
 
     super.decrementNestedDepth(nodeID);
-    super.recordLockReleased(lockID, nodeID, threadID, null);
+    super.recordLockReleased(lockID, nodeID, threadID);
   }
 
   public synchronized void recordLockRejected(LockID lockID, NodeID nodeID, ThreadID threadID) {
     if (!lockStatisticsEnabled) { return; }
 
-    super.recordLockRejected(lockID, nodeID, threadID, null);
+    super.recordLockRejected(lockID, nodeID, threadID);
   }
 
   public synchronized void recordClientStat(NodeID nodeID, Collection<TCStackTraceElement> stackTraceElements) {

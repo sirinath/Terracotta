@@ -76,6 +76,10 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     this.waitTimer = waitTimer;
     this.lockStatManager = lockStatManager;
   }
+  
+  private void recordLockRejected(ThreadID threadID) {
+    lockStatManager.recordLockRejected(lockID, threadID);
+  }
 
   private void recordLockRequested(ThreadID threadID, String contextInfo) {
     lockStatManager.recordLockRequested(lockID, threadID, contextInfo);
@@ -464,6 +468,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
                                  + ", level: " + level + ", requesterID: " + threadID);
       }
       cancelTryLockWaitTimerIfNeeded(lockRequest);
+      recordLockRejected(threadID);
     }
     synchronized (waitLock) {
       reject(threadID);

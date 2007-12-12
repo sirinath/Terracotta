@@ -69,18 +69,16 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     if (!isStatEnabled()) { return; }
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
-    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     int nestedDepth = super.incrementNestedDepth(threadID);
-    super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth, stackTraceElements);
+    super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), nestedDepth);
   }
   
   public void recordLockReleased(LockID lockID, ThreadID threadID) {
     if (!isStatEnabled()) { return; }
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
-    StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.decrementNestedDepth(threadID);
-    super.recordLockReleased(lockID, NULL_NODE_ID, threadID, stackTraceElements);
+    super.recordLockReleased(lockID, NULL_NODE_ID, threadID);
   }
   
   public void recordLockHopped(LockID lockID, ThreadID threadID) {
@@ -88,7 +86,17 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
-    super.recordLockHopRequested(lockID, stackTraceElements);
+    
+    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl)getOrCreateLockStatInfo(lockID);
+    lsc.recordLockHopRequested(NULL_NODE_ID, threadID, stackTraceElements);
+  }
+
+
+  
+  public void recordLockRejected(LockID lockID, ThreadID threadID) {
+    if (!isStatEnabled()) { return; }
+    
+    super.recordLockRejected(lockID, NULL_NODE_ID, threadID);
   }
 
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
