@@ -13,15 +13,13 @@ public interface LockStatisticsInfo {
   public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis,
                                   StackTraceElement[] stackTraces, String contextInfo);
 
-  public void recordLockHopRequested(StackTraceElement[] stackTraces);
-
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
-                                   int nestedLockDepth, StackTraceElement[] stackTraces);
+                                   int nestedLockDepth);
 
-  public void recordLockRejected(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces);
+  public void recordLockRejected(NodeID nodeID, ThreadID threadID);
 
-  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces);
-
+  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID);
+  
   public long getNumberOfLockRequested();
 
   public long getNumberOfLockReleased();

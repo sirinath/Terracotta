@@ -40,31 +40,34 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces) {
-    boolean rv = statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, 0);
+                                long awardedTimeInMillis, int nestedLockDepth) {
+    boolean rv = statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
     return rv;
   }
 
-  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
-    boolean rv = statElement.recordLockReleased(nodeID, threadID, stackTraces, 0);
+  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID) {
+    boolean rv = statElement.recordLockReleased(nodeID, threadID);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
     return rv;
   }
 
-  public void recordLockHopRequested(StackTraceElement[] stackTraces) {
-    statElement.recordLockHopped(stackTraces, 0);
+  public void recordLockHopRequested(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
+    statElement.recordLockHopped(nodeID, threadID, stackTraces, 0);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
   }
   
-  public void recordLockRejected(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
-    throw new ImplementMe();
+  public void recordLockRejected(NodeID nodeID, ThreadID threadID) {
+    statElement.recordLockRejected(nodeID, threadID);
+    if (gatherInterval > 0) {
+      this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
+    }
   }
   
   public void aggregateLockHoldersData() {

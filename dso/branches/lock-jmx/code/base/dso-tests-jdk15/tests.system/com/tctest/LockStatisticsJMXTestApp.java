@@ -28,6 +28,7 @@ import com.tctest.runner.AbstractTransparentApp;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -85,6 +86,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       int index = barrier.await();
 
       enableStackTraces(index, 2, 1);
+      testTryAutoLock(index, 2);
       testAutoLock(index, 2);
       testNameLock(index, 2);
 
@@ -160,6 +162,24 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       TestClass tc = (TestClass)sharedRoot;
       tc.syncMethod(1000);
       tc.syncBlock(2000);
+      waitForAllToMoveOn();
+    }
+    
+    waitForAllToMoveOn();
+  }
+  
+  private void testTryAutoLock(int index, int traceDepth) throws Throwable {
+    if (index == 0) {
+      waitForAllToMoveOn();
+      connect();
+      Thread.sleep(2000);
+      TestClass tc = (TestClass)sharedRoot;
+      String lockID = ByteCodeUtil.generateAutolockName(((Manageable)tc.getTryLock()).__tc_managed().getObjectID());
+      verifyClientStat(lockID, ReentrantLock.class.getName(), 1, traceDepth);
+      disconnect();
+    } else {
+      TestClass tc = (TestClass)sharedRoot;
+      tc.tryLockBlock(1000);
       waitForAllToMoveOn();
     }
     
@@ -407,6 +427,8 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
   }
 
   private static class TestClass {
+    private ReentrantLock rLock = new ReentrantLock();
+    
     public synchronized void syncMethod(long time) {
       try {
         Thread.sleep(time);
@@ -431,6 +453,23 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       } catch (InterruptedException e) {
         throw new AssertionError(e);
       }
+    }
+    
+    public void tryLockBlock(long time) {
+      boolean isLocked = rLock.tryLock();
+      if (isLocked) {
+        try {
+          Thread.sleep(time);
+        } catch (InterruptedException e) {
+          throw new AssertionError(e);
+        } finally {
+          rLock.unlock();
+        }
+      }
+    }
+    
+    public Object getTryLock() {
+      return rLock;
     }
   }
 

@@ -43,6 +43,10 @@ public interface ClientLockStatManager {
       // do nothing
     }
     
+    public void recordLockRejected(LockID lockID, ThreadID threadID) {
+      // do nothing
+    }
+    
     public void getLockSpecs() {
       // do nothing
     }
@@ -57,6 +61,8 @@ public interface ClientLockStatManager {
   public void recordLockReleased(LockID lockID, ThreadID threadID);
   
   public void recordLockHopped(LockID lockID, ThreadID threadID);
+  
+  public void recordLockRejected(LockID lockID, ThreadID threadID);
   
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   

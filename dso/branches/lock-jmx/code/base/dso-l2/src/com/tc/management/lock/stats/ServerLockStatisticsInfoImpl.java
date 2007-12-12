@@ -60,22 +60,21 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     statElement.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, 0);
   }
 
-  public void recordLockRejected(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
-    statElement.recordLockRejected(nodeID, threadID, stackTraces, 0);
+  public void recordLockRejected(NodeID nodeID, ThreadID threadID) {
+    statElement.recordLockRejected(nodeID, threadID);
   }
 
-  public void recordLockHopRequested(StackTraceElement[] stackTraces) {
-    statElement.recordLockHopped(stackTraces, 0);
+  public void recordLockHopRequested() {
+    statElement.recordLockHopped();
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
-                                   int nestedLockDepth, StackTraceElement[] stackTraces) {
-    return statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces,
-                                         0);
+                                   int nestedLockDepth) {
+    return statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth);
   }
 
-  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces) {
-    return statElement.recordLockReleased(nodeID, threadID, stackTraces, 0);
+  public boolean recordLockReleased(NodeID nodeID, ThreadID threadID) {
+    return statElement.recordLockReleased(nodeID, threadID);
   }
 
   public void addClient(NodeID nodeID) {
