@@ -153,9 +153,9 @@
               <left>
                 <container>
                   <children>
-                    <label name="ConfigLabel"/>
+                    <label text="Trace"/>
                     <scrollpane>
-                      <textarea name="ConfigText" line-wrap="true" editable="false"/>
+                      <textarea name="TraceText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
                     </scrollpane>
                   </children>
 		          <connections>
@@ -165,27 +165,38 @@
 		        </container>
               </left>
               <right>
-                <scrollpane>
-                  <table name="TraceTable" class="com.tc.admin.common.XObjectTable"/>
-                </scrollpane>
+                <container>
+                  <children>
+                    <label name="ConfigLabel"/>
+                    <scrollpane>
+                      <textarea name="ConfigText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
+                    </scrollpane>
+                  </children>
+		          <connections>
+			        <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:sn" top="-1,top:n" width="n"/>
+			        <item bottom="-1,bottom:n" height="s" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="s"/>
+		          </connections>
+		        </container>
               </right>
             </splitpane>
           </right>
         </splitpane>
         <container>
           <children>
-            <button text="Enable Lock Tracing" name="EnableButton"/>
+            <label text="Enable Lock Tracing:"/>
+            <togglebutton text="Off" name="DisableButton"/>
+            <togglebutton text="On" name="EnableButton"/>
             <label text="Trace depth:"/>
             <spinner name="TraceDepthSpinner"/>
-            <button name="TraceDepthButton" text="Set"/>
             <button text="Refresh" name="RefreshButton"/>
           </children>
           <connections>
-            <item bottom="-1,bottom:s" height="n" left="-1,left:n" right="1,left:ns" top="-1,top:s" width="n"/>
-            <item bottom="-1,bottom:s" height="n" left="0,right:ns" right="2,left:n" top="-1,top:s" width="n"/>
-            <item bottom="-1,bottom:sn" height="n" left="1,right:n" right="3,left:n" top="-1,top:sn" width="59"/>
-            <item bottom="-1,bottom:sn" height="n" left="2,right:n" right="4,left:15" top="-1,top:sn" width="n"/>
-            <item bottom="-1,bottom:sn" height="n" left="3,right:n" right="-1,right:n" top="-1,top:sn" width="n"/>
+            <item bottom="-1,bottom:sn" height="n" left="-1,left:n" right="1,left:n" top="-1,top:sn" width="n"/>
+            <item bottom="-1,bottom:sn" height="n" left="0,right:n" right="2,left:n" top="-1,top:sn" width="n"/>
+            <item bottom="-1,bottom:sn" height="n" left="1,right:n" right="3,left:ns" top="-1,top:sn" width="n"/>
+            <item bottom="-1,bottom:sn" height="n" left="2,right:ns" right="4,left:n" top="-1,top:sn" width="n"/>
+            <item bottom="-1,bottom:sn" height="n" left="3,right:n" right="5,left:ns" top="-1,top:sn" width="50"/>
+            <item bottom="-1,bottom:sn" height="n" left="4,right:ns" right="-1,right:n" top="-1,top:sn" width="n"/>
           </connections>
         </container>
       </children>
