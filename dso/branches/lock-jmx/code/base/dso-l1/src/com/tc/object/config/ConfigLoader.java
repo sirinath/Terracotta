@@ -5,6 +5,8 @@
 package com.tc.object.config;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -41,8 +43,10 @@ import com.terracottatech.config.DistributedMethods.MethodExpression;
 
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public class ConfigLoader {
@@ -67,15 +71,14 @@ public class ConfigLoader {
             String fieldExpression = root.getFieldExpression();
 
             // XXX: It would be nice to enforce this constraint in XML Schema
-            if (fieldName == null && fieldExpression == null) {
-              throw new ConfigurationSetupException("must specify either field-name or field-expression");
-            }
+            if (fieldName == null && fieldExpression == null) { throw new ConfigurationSetupException(
+                                                                                                      "must specify either field-name or field-expression"); }
 
-            if (fieldName != null && fieldExpression != null) {
-              throw new ConfigurationSetupException("cannot specify both field-name and field-expression");
-            }
+            if (fieldName != null && fieldExpression != null) { throw new ConfigurationSetupException(
+                                                                                                      "cannot specify both field-name and field-expression"); }
 
-            Assert.assertTrue((fieldName != null && fieldExpression == null) || (fieldName == null && fieldExpression != null));
+            Assert.assertTrue((fieldName != null && fieldExpression == null)
+                              || (fieldName == null && fieldExpression != null));
 
             if (fieldName != null) {
               ClassSpec classSpec = ClassUtils.parseFullyQualifiedFieldName(fieldName);
@@ -221,24 +224,42 @@ public class ConfigLoader {
         : ConfigLockLevel.SYNCHRONOUS_WRITE; }
     throw Assert.failure("Unknown lock level " + lockLevel);
   }
-  
+
+  private static void gatherNamespaces(XmlObject x, Map nsMap) {
+    XmlCursor c = x.newCursor();
+    while(!c.isContainer()) c.toNextToken();
+    c.getAllNamespaces(nsMap);
+    System.err.println(nsMap.toString());
+    c.dispose();
+  }
+
+  private static String xmlObject2Text(XmlObject xmlObject, XmlOptions options) {
+    return xmlObject.xmlText(options);
+  }
+
   private void loadLocks(Locks lockList) {
     if (lockList == null) return;
-    
+
     XmlOptions options = new XmlOptions();
     options.setSaveOuter();
-
+    options.setSavePrettyPrint();
+    options.setSavePrettyPrintIndent(2);
+    Map nsMap = new HashMap();
+    gatherNamespaces(lockList, nsMap);
+    options.setSaveImplicitNamespaces(nsMap);
+    
     Autolock[] autolocks = lockList.getAutolockArray();
     for (int i = 0; autolocks != null && i < autolocks.length; i++) {
-      config.addAutolock(autolocks[i].getMethodExpression(), getLockLevel(autolocks[i].getLockLevel(), autolocks[i]
-          .getAutoSynchronized()), autolocks[i].xmlText(options));
+      Autolock autolock = autolocks[i];
+      config.addAutolock(autolock.getMethodExpression(), getLockLevel(autolock.getLockLevel(), autolock
+          .getAutoSynchronized()), xmlObject2Text(autolock, options));
     }
 
     NamedLock[] namedLocks = lockList.getNamedLockArray();
     for (int i = 0; namedLocks != null && i < namedLocks.length; i++) {
       NamedLock namedLock = namedLocks[i];
-      LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(),
-                                                         getLockLevel(namedLock.getLockLevel(), false), namedLock.xmlText(options));
+      LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(), getLockLevel(namedLock
+          .getLockLevel(), false), xmlObject2Text(namedLock, options));
       lockDefinition.commit();
       config.addLock(namedLock.getMethodExpression(), lockDefinition);
     }
