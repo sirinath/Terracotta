@@ -14,7 +14,7 @@ import java.util.Iterator;
 
 public class RootLockNode extends BasicLockNode {
   LockStatisticsMonitorMBean fLockStats;
-  LockStats                  fStats = new LockStats(null);
+  LockStats                  fStats = new LockStats();
   LockNode[]                 fChildren;
 
   RootLockNode(LockStatisticsMonitorMBean lockStats) {

@@ -7,7 +7,6 @@ package com.tc.management.lock.stats;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
-import com.tc.object.lockmanager.api.LockID;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -15,8 +14,6 @@ import java.io.Serializable;
 public class LockStats implements TCSerializable, Serializable {
   private final static int NON_SET_TIME_MILLIS = -1;
 
-  private final LockID lockID;
-  
   private long             numOfPendingRequests;
   private long             numOfPendingWaiters;
   private long             numOfLockRequested;
@@ -30,8 +27,7 @@ public class LockStats implements TCSerializable, Serializable {
   private long             totalNestedDepth;
   private long             avgNestedDepth;
 
-  public LockStats(LockID lockID) {
-    this.lockID = lockID;
+  public LockStats() {
     this.avgHeldTimeInMillis = NON_SET_TIME_MILLIS;
     this.avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
   }

@@ -87,8 +87,10 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     
-    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl)getOrCreateLockStatInfo(lockID);
-    lsc.recordLockHopRequested(NULL_NODE_ID, threadID, stackTraceElements);
+    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl)getLockStatInfo(lockID);
+    if (lsc != null) {
+      lsc.recordLockHopRequested(NULL_NODE_ID, threadID, stackTraceElements);
+    }
   }
 
 
@@ -132,7 +134,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   private boolean shouldSendClientStat(LockID lockID) {
     if (!lockStatisticsEnabled) { return false; }
 
-    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl) getOrCreateLockStatInfo(lockID);
+    ClientLockStatisticsInfoImpl lsc = (ClientLockStatisticsInfoImpl) getLockStatInfo(lockID);
     return (lsc != null && lsc.getRecordedFrequency() == 0);
   }
 
