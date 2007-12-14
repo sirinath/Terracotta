@@ -43,7 +43,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   public LockStatElement(LockID lockID, StackTraceElement stackTraceElement) {
     this.lockID = lockID;
     this.stackTraceElement = stackTraceElement;
-    this.lockStat = new LockStats(lockID);
+    this.lockStat = new LockStats();
 
     computeHashCode();
   }
@@ -252,7 +252,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.lockID = new LockID(serialInput.readString());
     this.lockConfigElement = serialInput.readString();
-    this.lockStat = new LockStats(lockID);
+    this.lockStat = new LockStats();
     lockStat.deserializeFrom(serialInput);
     int numBytes = serialInput.readInt();
     byte[] bytes = new byte[numBytes];

@@ -24,6 +24,13 @@ public class LockKey {
     this.subKey = null;
     this.hashCode = new HashCodeBuilder(5503, 6737).append(lockID).append(nodeID).toHashCode();
   }
+  
+  public LockKey(NodeID nodeID, ThreadID threadID) {
+    this.lockID = null;
+    this.nodeID = nodeID;
+    this.threadID = threadID;
+    this.hashCode = new HashCodeBuilder(5503, 6737).append(nodeID).append(threadID).toHashCode();
+  }
 
   public LockKey(LockID lockID, NodeID nodeID, ThreadID threadID) {
     this.lockID = lockID;
@@ -57,7 +64,9 @@ public class LockKey {
     if (o == this) return true;
     if (!(o instanceof LockKey)) return false;
     LockKey cmp = (LockKey) o;
-    if (threadID != null) {
+    if (lockID == null) {
+      return nodeID.equals(cmp.nodeID) && threadID.equals(cmp.threadID);
+    } else if (threadID != null) {
       return lockID.equals(cmp.lockID) && nodeID.equals(cmp.nodeID) && threadID.equals(cmp.threadID);
     } else {
       return lockID.equals(cmp.lockID) && nodeID.equals(cmp.nodeID);

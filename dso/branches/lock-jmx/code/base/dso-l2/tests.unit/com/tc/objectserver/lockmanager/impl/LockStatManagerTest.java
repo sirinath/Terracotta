@@ -85,6 +85,29 @@ public class LockStatManagerTest extends TestCase {
       resetLockManager();
     }
   }
+  
+  public void testNestedDepth() {
+    try {
+      LockID l1 = new LockID("1");
+      LockID l2 = new LockID("2");
+      final ClientID cid1 = new ClientID(new ChannelID(1));
+      ThreadID s1 = new ThreadID(0);
+
+      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.requestLock(l2, cid1, s1, LockLevel.READ, String.class.getName(), sink);
+      lockManager.unlock(l2, cid1, ThreadID.VM_ID);
+      lockManager.unlock(l1, cid1, ThreadID.VM_ID);
+      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.unlock(l1, cid1, ThreadID.VM_ID);
+      Collection c = lockStatManager.getLockSpecs();
+      Iterator i = c.iterator();
+      LockSpec lockStatisticsInfo = (LockSpec) i.next();
+      long avgNestedLockDepth = lockStatisticsInfo.getStats().getAvgNestedLockDepth();
+      Assert.assertEquals(2, avgNestedLockDepth);
+    } finally {
+      resetLockManager();
+    }
+  }
 
   public void testLockHeldAggregateDuration() {
     try {

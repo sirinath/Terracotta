@@ -115,8 +115,10 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   public synchronized void recordLockHopRequested(LockID lockID) {
     if (!lockStatisticsEnabled) { return; }
     
-      ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl)getOrCreateLockStatInfo(lockID);
-      lsc.recordLockHopRequested();
+      ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl)getLockStatInfo(lockID);
+      if (lsc != null) {
+        lsc.recordLockHopRequested();
+      }
   }
 
   public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType) {
@@ -129,14 +131,14 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
                                              long awardedTimeInMillis) {
     if (!lockStatisticsEnabled) { return; }
 
-    int nestedDepth = super.incrementNestedDepth(nodeID);
+    int nestedDepth = super.incrementNestedDepth(new LockKey(nodeID, threadID));
     super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, nestedDepth);
   }
 
   public synchronized void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {
     if (!lockStatisticsEnabled) { return; }
 
-    super.decrementNestedDepth(nodeID);
+    super.decrementNestedDepth(new LockKey(nodeID, threadID));
     super.recordLockReleased(lockID, nodeID, threadID);
   }
 
