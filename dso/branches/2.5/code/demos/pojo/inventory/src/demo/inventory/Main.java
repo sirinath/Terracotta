@@ -177,7 +177,7 @@ public class Main {
 		out.println("+------+");
 		out.println();
 		out
-				.println("Press the key that correspond the action that you wish to perform");
+				.println("Press the key that corresponds the action that you wish to perform.");
 		out.println("Here is what each of the actions will do:");
 		out.println();
 		out.println("[I]nventory:");
