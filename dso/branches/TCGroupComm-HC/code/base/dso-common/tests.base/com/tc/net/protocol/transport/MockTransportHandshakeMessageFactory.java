@@ -76,4 +76,12 @@ public class MockTransportHandshakeMessageFactory implements TransportHandshakeM
     }
   }
 
+  public TransportHandshakeMessage createPing(ConnectionID connectionId, TCConnection source) {
+    return null;
+  }
+
+  public TransportHandshakeMessage createPingReply(ConnectionID connectionId, TCConnection source) {
+    return null;
+  }
+
 }

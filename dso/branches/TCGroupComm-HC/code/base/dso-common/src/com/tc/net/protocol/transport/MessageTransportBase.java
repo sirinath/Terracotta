@@ -36,6 +36,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected final MessageTransportStatus           status;
   protected final SynchronizedBoolean              isOpen;
   protected final TransportHandshakeMessageFactory messageFactory;
+  private final ConnectionHealthChecker            connHlthChkr;
   private final TransportHandshakeErrorHandler     handshakeErrorHandler;
   private NetworkLayer                             receiveLayer;
 
@@ -56,6 +57,11 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     this.messageFactory = messageFactory;
     this.isOpen = new SynchronizedBoolean(isOpen);
     this.status = new MessageTransportStatus(initialState, logger);
+    this.connHlthChkr = new ConnectionHealthChecker(this);
+  }
+
+  public void activateConnHC() {
+    this.connHlthChkr.activate();
   }
 
   public void setAllowConnectionReplace(boolean allow) {
@@ -90,9 +96,19 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
 
   protected final void receiveToReceiveLayer(WireProtocolMessage message) {
     Assert.assertNotNull(receiveLayer);
-    if (message instanceof TransportHandshakeMessage) { throw new AssertionError("Wrong handshake message from: "
-                                                                                 + message.getSource()); }
-
+    if (message instanceof TransportHandshakeMessage) {
+      // top layers dont want to know my layer specific language.
+      if (((TransportHandshakeMessage) message).isPing()) {
+        send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection()));
+        this.connHlthChkr.pingSent(System.currentTimeMillis());
+        return;
+      } else if (((TransportHandshakeMessage) message).isPingReply()) {
+        this.connHlthChkr.pingReplyRcvd(System.currentTimeMillis());
+        return;
+      } else {
+        throw new AssertionError("Wrong handshake message from: " + message.getSource());
+      }
+    }
     this.receiveLayer.receive(message.getPayload());
     message.getWireProtocolHeader().recycle();
   }

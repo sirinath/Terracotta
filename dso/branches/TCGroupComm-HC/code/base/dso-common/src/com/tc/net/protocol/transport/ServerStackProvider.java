@@ -142,6 +142,8 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
    * A client disconnected.
    */
   public void notifyTransportDisconnected(MessageTransport transport) {
+    //transport.close(); --- shouldn't the Tx Close be here too ???
+    
     // Currenly we dont care about this event here. In AbstractMessageChannel in the server, this event closes the
     // channel
     // so effectively a disconnected transport means a closed channel in the server. When we later implement clients

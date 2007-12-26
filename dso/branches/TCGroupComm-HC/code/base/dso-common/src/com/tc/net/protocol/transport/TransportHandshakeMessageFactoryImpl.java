@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -10,6 +11,14 @@ import com.tc.net.protocol.TCProtocolException;
 
 public class TransportHandshakeMessageFactoryImpl implements TransportHandshakeMessageFactory {
   public static final ConnectionID DEFAULT_ID = ConnectionID.NULL_ID;
+
+  public TransportHandshakeMessage createPing(ConnectionID connectionId, TCConnection source) {
+    return createNewMessage(TransportHandshakeMessageImpl.PING, connectionId, null, source, false, 0);
+  }
+  
+  public TransportHandshakeMessage createPingReply(ConnectionID connectionId, TCConnection source) {
+    return createNewMessage(TransportHandshakeMessageImpl.PING_REPLY, connectionId, null, source, false, 0);
+  }
 
   public TransportHandshakeMessage createSyn(ConnectionID connectionId, TCConnection source) {
     return createNewMessage(TransportHandshakeMessageImpl.SYN, connectionId, null, source, false, 0);
