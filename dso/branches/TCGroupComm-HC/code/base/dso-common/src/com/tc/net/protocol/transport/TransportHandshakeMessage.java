@@ -15,4 +15,6 @@ public interface TransportHandshakeMessage extends WireProtocolMessage {
   public boolean isSyn();
   public boolean isSynAck();
   public boolean isAck();
+  public boolean isPing();
+  public boolean isPingReply();
 }

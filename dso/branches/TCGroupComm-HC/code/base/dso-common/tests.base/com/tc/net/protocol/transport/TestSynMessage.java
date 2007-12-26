@@ -16,4 +16,12 @@ public class TestSynMessage extends TestTransportHandshakeMessage implements Syn
   public boolean isAck() {
     return false;
   }
+
+  public boolean isPing() {
+    return false;
+  }
+
+  public boolean isPingReply() {
+    return false;
+  }
 }

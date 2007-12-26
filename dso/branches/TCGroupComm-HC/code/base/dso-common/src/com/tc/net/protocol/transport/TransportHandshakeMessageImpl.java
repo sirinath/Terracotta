@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
@@ -13,11 +14,13 @@ import com.tc.util.Assert;
 import java.io.IOException;
 
 class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage {
-  static final byte          VERSION_1 = 1;
+  static final byte          VERSION_1  = 1;
 
-  static final byte          SYN       = 1;
-  static final byte          ACK       = 2;
-  static final byte          SYN_ACK   = 3;
+  static final byte          SYN        = 1;
+  static final byte          ACK        = 2;
+  static final byte          SYN_ACK    = 3;
+  static final byte          PING       = 4;
+  static final byte          PING_REPLY = 5;
 
   private final byte         version;
   private final byte         type;
@@ -76,6 +79,10 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
         return "ACK";
       case SYN_ACK:
         return "SYN_ACK";
+      case PING:
+        return "PING";
+      case PING_REPLY:
+        return "PING_REPLY";
       default:
         return "UNKNOWN";
     }
@@ -92,6 +99,14 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   public String getErrorContext() {
     Assert.eval(hasErrorContext());
     return this.errorContext;
+  }
+
+  public boolean isPing() {
+    return type == PING;
+  }
+
+  public boolean isPingReply() {
+    return type == PING_REPLY;
   }
 
   public boolean isSynAck() {

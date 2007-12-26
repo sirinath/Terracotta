@@ -27,6 +27,14 @@ public class TestSynAckMessage extends TestTransportHandshakeMessage implements 
     return false;
   }
 
+  public boolean isPing() {
+    return false;
+  }
+
+  public boolean isPingReply() {
+    return false;
+  }
+
   public void recycle() {
     return;
   }
