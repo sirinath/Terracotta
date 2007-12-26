@@ -130,6 +130,7 @@ import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.util.OverrideCheck;
+import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
 import com.tc.session.SessionSupport;
@@ -442,6 +443,7 @@ public class BootJarTool {
       loadTerracottaClass(ManagerUtil.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
+      loadTerracottaClass(ToggleableStrongReference.class.getName());
       loadTerracottaClass(TCClass.class.getName());
       loadTerracottaClass(TCField.class.getName());
       loadTerracottaClass(NullTCObject.class.getName());
@@ -520,7 +522,12 @@ public class BootJarTool {
       addInstrumentedProxy();
       addTreeMap();
       addInstrumentedAtomicInteger();
-      addInstrumentedAtomicLong();
+
+      if (!Vm.isAzul()) {
+        addInstrumentedAtomicLong();
+      } else {
+        Banner.warnBanner("Not including AtomicLong for Terracotta instrumentation");
+      }
 
       addIBMSpecific();
 
@@ -1332,7 +1339,7 @@ public class BootJarTool {
 
   public final byte[] getBytesForClass(String className, ClassLoader loader) throws ClassNotFoundException {
     String resource = BootJar.classNameToFileName(className);
-    InputStream is = loader.getResourceAsStream(resource);
+    final InputStream is = loader.getResourceAsStream(resource);
     if (is == null) { throw new ClassNotFoundException("No resource found for class: " + className); }
     final int size = 4096;
     byte[] buffer = new byte[size];
@@ -1346,12 +1353,10 @@ public class BootJarTool {
     } catch (IOException ioe) {
       throw new ClassNotFoundException("Error reading bytes for " + resource, ioe);
     } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ioe) {
-          // ignore
-        }
+      try {
+        is.close();
+      } catch (IOException ioe) {
+        // ignore
       }
     }
 
@@ -2057,21 +2062,16 @@ public class BootJarTool {
   private void addInstrumentedReentrantReadWriteLock() {
     String methodPrefix = "__RWL" + ByteCodeUtil.TC_METHOD_PREFIX;
 
-    TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-    spec.setCallConstructorOnLoad(true);
-
     String jClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock";
     String tcClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC";
     Map instrumentedContext = new HashMap();
     mergeReentrantReadWriteLock(tcClassNameDots, jClassNameDots, instrumentedContext, methodPrefix);
 
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-    spec.markPreInstrumented();
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-    spec.markPreInstrumented();
+    String jInnerClassNameDots;
+    String tcInnerClassNameDots;
 
-    String jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock";
-    String tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$ReadLock";
+    jInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock";
+    tcInnerClassNameDots = "java.util.concurrent.locks.ReentrantReadWriteLockTC$ReadLock";
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
                                  "ReadLock", "ReadLock", instrumentedContext, methodPrefix);
@@ -2081,38 +2081,6 @@ public class BootJarTool {
     instrumentedContext = new HashMap();
     mergeReadWriteLockInnerClass(tcInnerClassNameDots, jInnerClassNameDots, tcClassNameDots, jClassNameDots,
                                  "WriteLock", "WriteLock", instrumentedContext, methodPrefix);
-
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
-    spec.setHonorTransient(true);
-    spec.setCallConstructorOnLoad(true);
-    spec.markPreInstrumented();
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
-    spec.setCallConstructorOnLoad(true);
-    spec.markPreInstrumented();
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$NonfairSync");
-    spec.setCallConstructorOnLoad(true);
-    spec.markPreInstrumented();
-
-    makeAbstractSynchronizerAdaptable();
-  }
-
-  private void makeAbstractSynchronizerAdaptable() {
-    TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-    spec.setHonorTransient(true);
-    spec.addTransient("state");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec.markPreInstrumented();
-
-    spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer$Node");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec.markPreInstrumented();
-
-    if (Vm.isJDK16Compliant()) {
-      spec = config.getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec.setHonorTransient(true);
-      spec.markPreInstrumented();
-    }
   }
 
   private void mergeReadWriteLockInnerClass(String tcInnerClassNameDots, String jInnerClassNameDots,
@@ -2341,10 +2309,6 @@ public class BootJarTool {
   }
 
   private void addInstrumentedReentrantLock() {
-    TransparencyClassSpec spec = config.getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
-    spec.addTransient("sync");
-    spec.setCallConstructorOnLoad(true);
-
     String jClassNameDots = "java.util.concurrent.locks.ReentrantLock";
     String tcClassNameDots = "java.util.concurrent.locks.ReentrantLockTC";
     Map instrumentedContext = new HashMap();
@@ -2352,6 +2316,8 @@ public class BootJarTool {
   }
 
   private void mergeReentrantLock(String tcClassNameDots, String jClassNameDots, Map instrumentedContext) {
+    String methodPrefix = "__RL" + ByteCodeUtil.TC_METHOD_PREFIX;
+
     byte[] tcData = getSystemBytes(tcClassNameDots);
     ClassReader tcCR = new ClassReader(tcData);
     ClassNode tcCN = new ClassNode();
@@ -2373,7 +2339,7 @@ public class BootJarTool {
                                                                           getClass().getClassLoader(), true, true);
     ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter, jClassNameDots,
                                                                               tcClassNameDots, tcCN,
-                                                                              instrumentedContext));
+                                                                              instrumentedContext, methodPrefix, true));
     jCR.accept(cv, ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
     jData = doDSOTransform(jClassNameDots, jData);
