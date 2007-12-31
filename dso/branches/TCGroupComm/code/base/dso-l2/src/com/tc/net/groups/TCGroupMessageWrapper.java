@@ -17,7 +17,7 @@ import com.tc.object.session.SessionID;
 import java.io.IOException;
 
 /**
- * @author steve
+ * @author EY
  */
 public class TCGroupMessageWrapper extends DSOMessageBase {
   private final static byte GROUP_MESSAGE_ID = 1;

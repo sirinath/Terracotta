@@ -4,46 +4,32 @@
  */
 package com.tc.net.groups;
 
-import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
+import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.util.UUID;
 
 /*
- * Each TCGroupMember sit on top of a channel. 
+ * Each TCGroupMember sits on top of a channel.
  */
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
-  private MessageChannel channel;
-  private NodeID nodeID;
-  private UUID uuid;
-  private boolean alive;
-  
+  private final MessageChannel channel;
+  private boolean              alive;
+
   /*
-   * Member can be created in two ways
-   * By making a connection from this node.
-   * By listen port of this node.
+   * Member can be created in two ways By making a connection from this node. By listen port of this node.
    */
   public TCGroupMemberImpl(MessageChannel channel) {
     this.channel = channel;
-    this.nodeID = channel.getChannelID().getNodeID();
   }
 
-  public void openChannel() {
-    throw new ImplementMe();
-  }
-
-  public void closeChannel() {
-    throw new ImplementMe();
-  }
-  
   public MessageChannel getChannel() {
     return channel;
   }
 
   public NodeID getNodeID() {
-    throw new ImplementMe();
+    return channel.getChannelID().getNodeID();
   }
 
   /*
@@ -56,11 +42,26 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   public void notifyChannelEvent(ChannelEvent event) {
-    throw new ImplementMe();
+    if (event.getChannel() == channel) {
+      if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
+        activate();
+      } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT
+                 || event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
+        deactivate();
+      }
+    }
   }
 
-  public boolean isActive() {
+  synchronized public boolean isActive() {
     return alive;
   }
-  
+
+  synchronized public void activate() {
+    alive = true;
+  }
+
+  synchronized public void deactivate() {
+    alive = false;
+  }
+
 }
