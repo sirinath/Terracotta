@@ -7,10 +7,13 @@ package com.tc.net.protocol.transport;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.MockTCConnection;
 import com.tc.net.core.TestTCConnection;
+import com.tc.net.groups.NodeID;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.IllegalReconnectException;
 import com.tc.net.protocol.StackNotFoundException;
 import com.tc.net.protocol.transport.MockTransportHandshakeMessageFactory.CallContext;
 import com.tc.test.TCTestCase;
+import com.tc.util.UUID;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -109,6 +112,8 @@ public class ServerStackProviderTest extends TCTestCase {
   public void testRebuildStack() throws Exception {
     ConnectionID connectionID1 = connectionIDProvider.nextConnectionId();
     ConnectionID connectionID2 = connectionIDProvider.nextConnectionId();
+    NodeID nodeID1 = new NodeIDImpl("node1", UUID.getUUID().toString().getBytes());
+    NodeID nodeID2 = new NodeIDImpl("node2", UUID.getUUID().toString().getBytes());
     Set rebuild = new HashSet();
     rebuild.add(connectionID1);
 
@@ -117,11 +122,11 @@ public class ServerStackProviderTest extends TCTestCase {
                                        new WireProtocolAdaptorFactoryImpl());
 
     MockTCConnection conn = new MockTCConnection();
-    provider.attachNewConnection(connectionID1, conn);
+    provider.attachNewConnection(connectionID1, nodeID1, conn);
 
     // trying to attach a stack that wasn't rebuilt at startup should fail.
     try {
-      provider.attachNewConnection(connectionID2, new MockTCConnection());
+      provider.attachNewConnection(connectionID2, nodeID2, new MockTCConnection());
       fail("Expected StackNotFoundException");
     } catch (StackNotFoundException e) {
       // expected.
@@ -130,7 +135,8 @@ public class ServerStackProviderTest extends TCTestCase {
 
   public void testNotifyTransportDisconnected() throws Exception {
     TestTCConnection conn = new TestTCConnection();
-    provider.attachNewConnection(ConnectionID.NULL_ID, conn);
+    NodeID nodeID = new NodeIDImpl("node", UUID.getUUID().toString().getBytes());
+    provider.attachNewConnection(ConnectionID.NULL_ID, nodeID, conn);
 
     // send a transport disconnected event
     MockMessageTransport transport = new MockMessageTransport();
@@ -151,10 +157,11 @@ public class ServerStackProviderTest extends TCTestCase {
 
   public void testNotifyTransportClose() throws Exception {
     TestTCConnection conn = new TestTCConnection();
-    provider.attachNewConnection(ConnectionID.NULL_ID, conn);
+    NodeID nodeID = new NodeIDImpl("node", UUID.getUUID().toString().getBytes());
+    provider.attachNewConnection(ConnectionID.NULL_ID, nodeID, conn);
 
     // try looking it up again. Make sure it found what it was looking for.
-    provider.attachNewConnection(connId, conn);
+    provider.attachNewConnection(connId, nodeID, conn);
 
     // send it a transport closed event.
     MockMessageTransport transport = new MockMessageTransport();
@@ -163,7 +170,7 @@ public class ServerStackProviderTest extends TCTestCase {
 
     // make sure that a future lookup throws a StackNotFoundException
     try {
-      provider.attachNewConnection(this.connId, conn);
+      provider.attachNewConnection(this.connId, nodeID, conn);
       fail("Expected StackNotFoundException.");
     } catch (StackNotFoundException e) {
       // expected
@@ -175,14 +182,15 @@ public class ServerStackProviderTest extends TCTestCase {
    */
   public void testRemoveNetworkStack() throws Exception {
     MockTCConnection conn = new MockTCConnection();
-    provider.attachNewConnection(ConnectionID.NULL_ID, conn);
+    NodeID nodeID = new NodeIDImpl("node", UUID.getUUID().toString().getBytes());
+    provider.attachNewConnection(ConnectionID.NULL_ID, nodeID, conn);
 
     assertEquals(harness, provider.removeNetworkStack(this.connId));
     assertTrue(provider.removeNetworkStack(this.connId) == null);
 
     try {
       // try looking it up again. Make sure it throws an exception
-      provider.attachNewConnection(this.connId, conn);
+      provider.attachNewConnection(this.connId, nodeID, conn);
       fail("Should have thrown an exception.");
     } catch (StackNotFoundException e) {
       // expected
@@ -193,12 +201,13 @@ public class ServerStackProviderTest extends TCTestCase {
   }
 
   public void testAttachNewConnection() {
+    NodeID nodeID = new NodeIDImpl("node", UUID.getUUID().toString().getBytes());
     assertFalse(harness.wasAttachNewConnectionCalled);
     assertFalse(harness.wasFinalizeStackCalled);
 
     MockTCConnection conn = new MockTCConnection();
     try {
-      provider.attachNewConnection(ConnectionID.NULL_ID, conn);
+      provider.attachNewConnection(ConnectionID.NULL_ID, nodeID, conn);
     } catch (StackNotFoundException e) {
       fail("was virgin, should not throw exception");
     } catch (IllegalReconnectException e) {
@@ -213,7 +222,7 @@ public class ServerStackProviderTest extends TCTestCase {
     harness.wasFinalizeStackCalled = false;
 
     try {
-      provider.attachNewConnection(this.connId, conn);
+      provider.attachNewConnection(this.connId, nodeID, conn);
     } catch (StackNotFoundException e) {
       fail("was virgin, should not throw exception");
     } catch (IllegalReconnectException e) {
@@ -229,7 +238,7 @@ public class ServerStackProviderTest extends TCTestCase {
     harness.wasFinalizeStackCalled = false;
 
     try {
-      provider.attachNewConnection(differentConnId, conn);
+      provider.attachNewConnection(differentConnId, nodeID, conn);
       fail("was not virgin and had connId, but should not exist in provider");
     } catch (StackNotFoundException e) {
       // expected

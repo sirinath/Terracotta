@@ -5,6 +5,7 @@
 package com.tc.net.protocol.transport;
 
 import com.tc.net.core.TCConnection;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.IllegalReconnectException;
 import com.tc.net.protocol.StackNotFoundException;
 
@@ -16,7 +17,7 @@ public interface NetworkStackProvider {
   /**
    * Takes a new connection and a connectionId. Returns the MessageTransport associated with that id.
    */
-  public MessageTransport attachNewConnection(ConnectionID connectionId, TCConnection connection)
+  public MessageTransport attachNewConnection(ConnectionID connectionId, NodeID nodeID, TCConnection connection)
       throws StackNotFoundException, IllegalReconnectException;
 
 }

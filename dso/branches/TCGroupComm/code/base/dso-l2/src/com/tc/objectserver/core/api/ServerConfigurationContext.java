@@ -56,6 +56,8 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String GC_RESULT_PROCESSING_STAGE                         = "gc_result_processing_stage";
   public static final String CLIENT_LOCK_STATISTICS_STAGE                       = "client_lock_statistics_stage";
   public static final String TRANSACTION_LOWWATERMARK_STAGE                     = "transaction_lowwatermark_stage";
+  public final static String GROUP_HANDSHAKE_STAGE                              = "group_handshake_stage";
+  public static final String RECEIVE_GROUP_MESSAGE_STAGE                        = "receive_group_message_stage";
 
   public L2Coordinator getL2Coordinator();
 

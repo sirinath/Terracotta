@@ -1,14 +1,19 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.net.groups.NodeID;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.tcm.ChannelID;
 
 public class ConnectionID {
 
   private final long               channelID;
   private final String             serverID;
+  // for TC-Group-Comm, TODO: refactor needed
+  private NodeID                   nodeID;
 
   public static final ConnectionID NULL_ID = new ConnectionID(ChannelID.NULL_ID.toLong(),
                                                               "ffffffffffffffffffffffffffffffff");
@@ -46,6 +51,7 @@ public class ConnectionID {
   public ConnectionID(long channelID, String serverID) {
     this.channelID = channelID;
     this.serverID = serverID;
+    this.nodeID = NodeIDImpl.NULL_ID;
   }
 
   public String toString() {
@@ -83,7 +89,15 @@ public class ConnectionID {
   }
 
   public String getID() {
-    return channelID + SEP + serverID ;
+    return channelID + SEP + serverID;
+  }
+  
+  public void setNodeID(NodeID nodeID) {
+    this.nodeID = nodeID;
+  }
+  
+  public NodeID getNodeID() {
+    return this.nodeID;
   }
 
 }

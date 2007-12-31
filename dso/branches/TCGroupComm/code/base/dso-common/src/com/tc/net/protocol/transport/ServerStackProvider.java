@@ -9,6 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.TCConnection;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.IllegalReconnectException;
 import com.tc.net.protocol.NetworkStackHarness;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
@@ -80,7 +81,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
     }
   }
 
-  public MessageTransport attachNewConnection(ConnectionID connectionId, TCConnection connection)
+  public MessageTransport attachNewConnection(ConnectionID connectionId, NodeID nodeID, TCConnection connection)
       throws StackNotFoundException, IllegalReconnectException {
     Assert.assertNotNull(connection);
 
@@ -88,11 +89,16 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
     final MessageTransport rv;
     if (connectionId.isNull()) {
       connectionId = connectionIdFactory.nextConnectionId();
+      
+      // TC-Group-Comm: embed NodeID in ConnectionID
+      connectionId.setNodeID(nodeID);
 
       rv = messageTransportFactory.createNewTransport(connectionId, connection, createHandshakeErrorHandler(),
                                                       handshakeMessageFactory, transportListeners);
       newStackHarness(connectionId, rv);
     } else {
+      // TODO: verify NodeID
+
       harness = (NetworkStackHarness) harnesses.get(connectionId);
 
       if (harness == null) {
@@ -245,7 +251,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
       }
 
       try {
-        this.transport = attachNewConnection(connectionId, syn.getSource());
+        this.transport = attachNewConnection(connectionId, syn.getNodeID(), syn.getSource());
       } catch (IllegalReconnectException e) {
         logger.warn("Client attempting an illegal reconnect for id " + connectionId + ", " + syn.getSource());
         return;

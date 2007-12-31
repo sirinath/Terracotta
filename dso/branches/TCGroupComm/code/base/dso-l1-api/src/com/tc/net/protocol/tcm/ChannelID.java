@@ -4,6 +4,7 @@
  */
 package com.tc.net.protocol.tcm;
 
+import com.tc.net.groups.NodeID;
 import com.tc.util.AbstractIdentifier;
 
 /**
@@ -15,10 +16,12 @@ public class ChannelID extends AbstractIdentifier {
   /**
    * Indicates no ID
    */
-  public static final ChannelID NULL_ID      = new ChannelID();
-  
+  public static final ChannelID NULL_ID = new ChannelID();
+  private NodeID                nodeID;
+
   /**
    * Construct with specific id value
+   * 
    * @param id ID value
    */
   public ChannelID(long id) {
@@ -31,5 +34,13 @@ public class ChannelID extends AbstractIdentifier {
 
   public String getIdentifierType() {
     return "ChannelID";
+  }
+  
+  public void setNodeID(NodeID nodeID) {
+    this.nodeID = nodeID;
+  }
+  
+  public NodeID getNodeID() {
+    return this.nodeID;
   }
 }
