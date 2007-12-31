@@ -10,16 +10,13 @@ import com.tc.net.protocol.tcm.MessageChannel;
 public interface TCGroupMember {
   public NodeID getNodeID();
   
-  /*
-   * Establish connection with this node.
-   */
-  public void openChannel();
-  
-  public void closeChannel();
-  
   public MessageChannel getChannel();
   
   public void send(GroupMessage msg);
   
-  boolean isActive();
+  public boolean isActive();
+  
+  public void activate();
+  
+  public void deactivate();
 }
