@@ -232,7 +232,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   /**
    * Creates a network listener with a default network stack.
    */
-  private NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
+  protected NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                          boolean transportDisconnectRemovesChannel,
                                          ConnectionIDFactory connectionIdFactory, boolean reuseAddr, Sink httpSink,
                                          WireProtocolMessageSink wireProtoMsgSnk) {

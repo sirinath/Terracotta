@@ -3,6 +3,9 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.exception.ImplementMe;
+import com.tc.net.groups.NodeID;
+
 public class TestSynMessage extends TestTransportHandshakeMessage implements SynMessage {
 
   public boolean isSyn() {
@@ -15,5 +18,9 @@ public class TestSynMessage extends TestTransportHandshakeMessage implements Syn
 
   public boolean isAck() {
     return false;
+  }
+
+  public NodeID getNodeID() {
+    throw new ImplementMe();
   }
 }

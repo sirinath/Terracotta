@@ -13,6 +13,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
@@ -47,7 +48,8 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false,  TCLogging.getLogger(ClientMessageTransport.class));
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, TCLogging
+        .getLogger(ClientMessageTransport.class));
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }
@@ -88,7 +90,10 @@ public class ClientMessageTransport extends MessageTransportBase {
         sendAck();
         NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
-        return(nid);
+        // TC-Group-Comm to pass NodeID
+        nid.setNodeID(result.getNodeID());
+        connectionId.setNodeID(result.getNodeID());
+        return (nid);
       } catch (TCTimeoutException e) {
         status.reset();
         throw e;
@@ -171,7 +176,7 @@ public class ClientMessageTransport extends MessageTransportBase {
   HandshakeResult handShake() throws TCTimeoutException {
     sendSyn();
     SynAckMessage synAck = waitForSynAck();
-    return new HandshakeResult(synAck.isMaxConnectionsExceeded(), synAck.getMaxConnections());
+    return new HandshakeResult(synAck.isMaxConnectionsExceeded(), synAck.getMaxConnections(), synAck.getNodeID());
   }
 
   private SynAckMessage waitForSynAck() throws TCTimeoutException {
@@ -208,10 +213,10 @@ public class ClientMessageTransport extends MessageTransportBase {
   }
 
   void reconnect(TCConnection connection) throws Exception {
-    
+
     // don't do reconnect if open is still going on
     if(!wasOpened) return;
-    
+
     Assert.eval(!isConnected());
     wireNewConnection(connection);
     try {
@@ -250,10 +255,12 @@ public class ClientMessageTransport extends MessageTransportBase {
   private static final class HandshakeResult {
     private final boolean maxConnectionsExceeded;
     private final int     maxConnections;
+    private NodeID        nodeID;
 
-    private HandshakeResult(boolean maxConnectionsExceeded, int maxConnections) {
+    private HandshakeResult(boolean maxConnectionsExceeded, int maxConnections, NodeID nodeID) {
       this.maxConnectionsExceeded = maxConnectionsExceeded;
       this.maxConnections = maxConnections;
+      this.nodeID = nodeID;
     }
 
     public int maxConnections() {
@@ -262,6 +269,10 @@ public class ClientMessageTransport extends MessageTransportBase {
 
     public boolean isMaxConnectionsExceeded() {
       return this.maxConnectionsExceeded;
+    }
+    
+    public NodeID getNodeID() {
+      return nodeID;
     }
   }
 

@@ -7,6 +7,7 @@ import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.core.TCConnection;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.NetworkStackProvider;
@@ -36,7 +37,7 @@ public class MockNetworkStackProvider implements NetworkStackProvider {
     throw new ImplementMe();
   }
 
-  public MessageTransport attachNewConnection(ConnectionID connectionId, TCConnection connection) {
+  public MessageTransport attachNewConnection(ConnectionID connectionId, NodeID nodeID, TCConnection connection) {
     throw new ImplementMe();
   }
 

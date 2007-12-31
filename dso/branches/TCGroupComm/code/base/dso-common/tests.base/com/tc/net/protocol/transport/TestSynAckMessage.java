@@ -4,6 +4,7 @@
 package com.tc.net.protocol.transport;
 
 import com.tc.exception.ImplementMe;
+import com.tc.net.groups.NodeID;
 
 public class TestSynAckMessage extends TestTransportHandshakeMessage implements SynAckMessage {
 
@@ -29,6 +30,10 @@ public class TestSynAckMessage extends TestTransportHandshakeMessage implements 
 
   public void recycle() {
     return;
+  }
+
+  public NodeID getNodeID() {
+    throw new ImplementMe();
   }
 
 }

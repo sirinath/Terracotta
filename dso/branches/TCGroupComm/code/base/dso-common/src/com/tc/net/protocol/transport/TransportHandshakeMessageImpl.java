@@ -1,11 +1,14 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.net.core.TCConnection;
+import com.tc.net.groups.NodeID;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.TCNetworkHeader;
 import com.tc.net.protocol.TCProtocolException;
 import com.tc.util.Assert;
@@ -14,6 +17,7 @@ import java.io.IOException;
 
 class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage {
   static final byte          VERSION_1 = 1;
+  static final byte          VERSION_2 = 2;
 
   static final byte          SYN       = 1;
   static final byte          ACK       = 2;
@@ -26,6 +30,7 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   private final boolean      hasErrorContext;
   private final int          maxConnections;
   private final boolean      isMaxConnectionsExceeded;
+  private NodeID             nodeID    = NodeIDImpl.NULL_ID;
 
   TransportHandshakeMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
       throws TCProtocolException {
@@ -35,7 +40,7 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
       TCByteBufferInputStream in = new TCByteBufferInputStream(payload);
       this.version = in.readByte();
 
-      if (version != VERSION_1) { throw new TCProtocolException("Bad Version: " + version + " != " + VERSION_1); }
+      if (version != VERSION_1 && version != VERSION_2) { throw new TCProtocolException("Bad Version: " + version + " != " + VERSION_1); }
 
       this.type = in.readByte();
 
@@ -53,6 +58,11 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
         this.errorContext = in.readString();
       } else {
         this.errorContext = null;
+      }
+      // pass NodeID in VERSION_2 for TC-Group-Comm
+      if (version == VERSION_2) {
+        NodeIDImpl node = new NodeIDImpl();
+        node.deserializeFrom(in);
       }
 
     } catch (IOException e) {
@@ -119,4 +129,7 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
     return this.maxConnections;
   }
 
+  public NodeID getNodeID() {
+    return nodeID;
+  }
 }

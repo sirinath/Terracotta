@@ -1,15 +1,26 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
 
 import com.tc.exception.TCInternalError;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.core.TCConnection;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.TCProtocolException;
 
 public class TransportHandshakeMessageFactoryImpl implements TransportHandshakeMessageFactory {
   public static final ConnectionID DEFAULT_ID = ConnectionID.NULL_ID;
+  private final NodeID             nodeID;
+
+  public TransportHandshakeMessageFactoryImpl() {
+    this.nodeID = null;
+  }
+
+  public TransportHandshakeMessageFactoryImpl(NodeID nodeID) {
+    this.nodeID = nodeID;
+  }
 
   public TransportHandshakeMessage createSyn(ConnectionID connectionId, TCConnection source) {
     return createNewMessage(TransportHandshakeMessageImpl.SYN, connectionId, null, source, false, 0);
@@ -36,13 +47,17 @@ public class TransportHandshakeMessageFactoryImpl implements TransportHandshakeM
                                                      boolean isMaxConnectionsExceeded, int maxConnections) {
     TCByteBufferOutputStream bbos = new TCByteBufferOutputStream();
 
-    bbos.write(TransportHandshakeMessageImpl.VERSION_1);
+    bbos.write((nodeID == null) ? TransportHandshakeMessageImpl.VERSION_1 : TransportHandshakeMessageImpl.VERSION_2);
     bbos.write(type);
     bbos.writeString(connectionId.getID());
     bbos.writeBoolean(isMaxConnectionsExceeded);
     bbos.writeInt(maxConnections);
     bbos.writeBoolean(errorContext != null);
     if (errorContext != null) bbos.writeString(errorContext.toString());
+    // include NodeID for VERSION_2
+    if (nodeID != null) {
+      nodeID.serializeTo(bbos);
+    }
 
     final WireProtocolHeader header = new WireProtocolHeader();
     header.setProtocol(WireProtocolHeader.PROTOCOL_TRANSPORT_HANDSHAKE);
