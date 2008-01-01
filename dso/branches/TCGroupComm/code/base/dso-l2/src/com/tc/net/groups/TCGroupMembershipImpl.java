@@ -37,7 +37,6 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
-import com.tc.util.UUID;
 import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
@@ -73,7 +72,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
     String nodeName = l2DSOConfig.host().getString() + ":" + groupPort;
-    nodeID = new NodeIDImpl(nodeName, UUID.getUUID().toString().getBytes());
+    nodeID = new NodeIdUuidImpl(nodeName);
 
     final NetworkStackHarnessFactory networkStackHarnessFactory = new TCGroupNetworkStackHarnessFactory();
     communicationsManager = new TCGroupCommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
