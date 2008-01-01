@@ -6,7 +6,7 @@ package com.tc.net.protocol.transport;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.net.groups.NodeIDImpl;
-import com.tc.util.UUID;
+import com.tc.net.groups.NodeIdUuidImpl;
 
 import junit.framework.TestCase;
 
@@ -18,7 +18,7 @@ public class TransportHandshakeMessageForTCGroupTest extends TestCase {
 
   public void setUp() throws Exception {
 
-    nodeID = new NodeIDImpl("node", UUID.getUUID().toString().getBytes());
+    nodeID = new NodeIdUuidImpl("node");
     factory = new TransportHandshakeMessageFactoryImpl(nodeID);
 
   }
