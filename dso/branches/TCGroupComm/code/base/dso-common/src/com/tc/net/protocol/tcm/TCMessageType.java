@@ -59,7 +59,7 @@ public final class TCMessageType {
   public static final int           TYPE_LOCK_STATISTICS_RESPONSE_MESSAGE           = 44;
   public static final int           TYPE_COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE = 45;
   public static final int           TYPE_GROUP_HANDSHAKE_MESSAGE                    = 46;
-  public static final int           TYPE_GROUP_MESSAGE_WRAPPER                      = 47;
+  public static final int           TYPE_GROUP_WRAPPER_MESSAGE                      = 47;
 
   public static final TCMessageType PING_MESSAGE                                    = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                    = new TCMessageType();

@@ -3,7 +3,6 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.exception.ImplementMe;
 import com.tc.net.groups.NodeID;
 
 public class TestSynMessage extends TestTransportHandshakeMessage implements SynMessage {
@@ -21,6 +20,6 @@ public class TestSynMessage extends TestTransportHandshakeMessage implements Syn
   }
 
   public NodeID getNodeID() {
-    throw new ImplementMe();
+    return null;
   }
 }
