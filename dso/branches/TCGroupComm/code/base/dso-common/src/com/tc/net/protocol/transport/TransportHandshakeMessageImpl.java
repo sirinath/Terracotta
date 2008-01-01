@@ -61,8 +61,8 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
       }
       // pass NodeID in VERSION_2 for TC-Group-Comm
       if (version == VERSION_2) {
-        NodeIDImpl node = new NodeIDImpl();
-        node.deserializeFrom(in);
+        nodeID = new NodeIDImpl();
+        nodeID.deserializeFrom(in);
       }
 
     } catch (IOException e) {
