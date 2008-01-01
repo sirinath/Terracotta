@@ -52,8 +52,10 @@ public class TCGroupNetworkStackHarnessFactory implements NetworkStackHarnessFac
 
     protected void connectStack() {
       // for TC-Group-Comm, embed NodeID to ChannelID
-      channel.getChannelID().setNodeID(transport.getConnectionId().getNodeID());
-      
+      if (channel.isOpen()) {
+        channel.getChannelID().setNodeID(transport.getConnectionId().getNodeID());
+      }
+
       channel.setSendLayer(transport);
       transport.setReceiveLayer(channel);
       transport.setAllowConnectionReplace(allowConnectionReplace);

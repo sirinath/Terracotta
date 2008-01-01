@@ -14,6 +14,7 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.groups.NodeID;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
@@ -36,6 +37,8 @@ public class ClientMessageTransport extends MessageTransportBase {
   private TCFuture                          waitForSynAckResult;
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
+  private NodeID                            serverNodeID    = NodeIDImpl.NULL_ID;
+  private NodeID                            clientNodeID    = NodeIDImpl.NULL_ID;
 
   /**
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
@@ -91,8 +94,7 @@ public class ClientMessageTransport extends MessageTransportBase {
         NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
         // TC-Group-Comm to pass NodeID
-        nid.setNodeID(result.getNodeID());
-        connectionId.setNodeID(result.getNodeID());
+        nid.setNodeID(clientNodeID);
         return (nid);
       } catch (TCTimeoutException e) {
         status.reset();
@@ -176,7 +178,8 @@ public class ClientMessageTransport extends MessageTransportBase {
   HandshakeResult handShake() throws TCTimeoutException {
     sendSyn();
     SynAckMessage synAck = waitForSynAck();
-    return new HandshakeResult(synAck.isMaxConnectionsExceeded(), synAck.getMaxConnections(), synAck.getNodeID());
+    serverNodeID = synAck.getNodeID();
+    return new HandshakeResult(synAck.isMaxConnectionsExceeded(), synAck.getMaxConnections());
   }
 
   private SynAckMessage waitForSynAck() throws TCTimeoutException {
@@ -198,6 +201,7 @@ public class ClientMessageTransport extends MessageTransportBase {
       // send syn message
       this.sendToConnection(syn);
       this.status.synSent();
+      clientNodeID = syn.getNodeID();
     }
   }
 
@@ -255,12 +259,10 @@ public class ClientMessageTransport extends MessageTransportBase {
   private static final class HandshakeResult {
     private final boolean maxConnectionsExceeded;
     private final int     maxConnections;
-    private NodeID        nodeID;
 
-    private HandshakeResult(boolean maxConnectionsExceeded, int maxConnections, NodeID nodeID) {
+    private HandshakeResult(boolean maxConnectionsExceeded, int maxConnections) {
       this.maxConnectionsExceeded = maxConnectionsExceeded;
       this.maxConnections = maxConnections;
-      this.nodeID = nodeID;
     }
 
     public int maxConnections() {
@@ -271,9 +273,6 @@ public class ClientMessageTransport extends MessageTransportBase {
       return this.maxConnectionsExceeded;
     }
     
-    public NodeID getNodeID() {
-      return nodeID;
-    }
   }
 
   public ClientConnectionEstablisher getConnectionEstablisher() {
