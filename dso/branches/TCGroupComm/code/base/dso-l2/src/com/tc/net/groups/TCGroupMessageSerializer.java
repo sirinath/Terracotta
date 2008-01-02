@@ -32,13 +32,13 @@ public class TCGroupMessageSerializer implements TCSerializable {
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     String classname = serialInput.readString();
     try {
-      message = (GroupMessage)Class.forName(classname).newInstance();
+      message = (GroupMessage) Class.forName(classname).newInstance();
     } catch (ClassNotFoundException e) {
-      
+      throw new RuntimeException(e);
     } catch (InstantiationException e) {
-      
+      throw new RuntimeException(e);
     } catch (IllegalAccessException e) {
-      
+      throw new RuntimeException(e);
     }
     message.deserializeFrom(serialInput);
     return message;
