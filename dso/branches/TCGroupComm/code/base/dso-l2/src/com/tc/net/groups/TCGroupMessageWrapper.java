@@ -48,7 +48,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case GROUP_MESSAGE_ID:
-        message = ((TCGroupMessageSerializer) getObject(new TCGroupMessageSerializer())).getGroupMessage();
+        message = (GroupMessage) getObject(new TCGroupMessageSerializer());
         return true;
       default:
         return false;
