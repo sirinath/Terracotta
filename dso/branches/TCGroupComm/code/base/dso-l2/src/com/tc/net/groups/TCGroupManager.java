@@ -22,11 +22,13 @@ public class TCGroupManager implements GroupManager {
   private final TCGroupMembership                 membership;
   private final Map<String, GroupMessageListener> messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
 
-  public TCGroupManager(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy) {
+  public TCGroupManager(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy) throws Exception {
     
     final TCThreadGroup threadGroup = new TCThreadGroup(new ThrowableHandler(logger));
 
     membership = new TCGroupMembershipImpl(configSetupManager, connectionPolicy, threadGroup);
+    membership.setMembers(new TCGroupMemberDiscoveryStatic(configSetupManager));
+    membership.start();
   }
 
   public NodeID getLocalNodeID() throws GroupException {

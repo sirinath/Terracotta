@@ -66,14 +66,14 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
                                                                                                            .getBindPort()) }));
       channel.open();
       assertTrue(channel.isConnected());
-      assertTrue(channel.getChannelID().getNodeID().equals(nodeID1));
+      assertTrue(channel.getChannelID().getNodeID().equals(nodeID2));
 
       assertEquals(1, channelManager.getChannels().length);
 
       MessageChannel serverChannel = channelManager.getChannels()[0];
       System.out.println("Group server node name:" + ((NodeIDImpl) serverChannel.getChannelID().getNodeID()).getName());
       System.out.println("Group client node name:" + ((NodeIDImpl) channel.getChannelID().getNodeID()).getName());
-      assertTrue(channel.getChannelID().getNodeID().equals(serverChannel.getChannelID().getNodeID()));
+      assertTrue(nodeID1.equals(serverChannel.getChannelID().getNodeID()));
 
       clientComms.getConnectionManager().closeAllConnections(5000);
       assertFalse(channel.isConnected());
@@ -151,12 +151,12 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
 
       channel1.open();
       assertTrue(channel1.isConnected());
-      assertTrue(channel1.getChannelID().getNodeID().equals(nodeID1));
+      assertTrue(channel1.getChannelID().getNodeID().equals(nodeID2));
       assertEquals(1, channelManager2.getChannels().length);
 
       channel2.open();
       assertTrue(channel2.isConnected());
-      assertTrue(channel2.getChannelID().getNodeID().equals(nodeID2));
+      assertTrue(channel2.getChannelID().getNodeID().equals(nodeID1));
       assertEquals(1, channelManager1.getChannels().length);
 
       MessageChannel serverChannel1 = channelManager1.getChannels()[0];
@@ -165,12 +165,12 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
       System.out
           .println("Group server node name:" + ((NodeIDImpl) serverChannel1.getChannelID().getNodeID()).getName());
       System.out.println("Group client node name:" + ((NodeIDImpl) channel1.getChannelID().getNodeID()).getName());
-      assertTrue(channel1.getChannelID().getNodeID().equals(serverChannel2.getChannelID().getNodeID()));
+      assertTrue(nodeID1.equals(serverChannel2.getChannelID().getNodeID()));
 
       System.out
           .println("Group server node name:" + ((NodeIDImpl) serverChannel2.getChannelID().getNodeID()).getName());
       System.out.println("Group client node name:" + ((NodeIDImpl) channel2.getChannelID().getNodeID()).getName());
-      assertTrue(channel2.getChannelID().getNodeID().equals(serverChannel1.getChannelID().getNodeID()));
+      assertTrue(nodeID2.equals(serverChannel1.getChannelID().getNodeID()));
 
       clientComms1.getConnectionManager().closeAllConnections(5000);
       assertFalse(channel1.isConnected());

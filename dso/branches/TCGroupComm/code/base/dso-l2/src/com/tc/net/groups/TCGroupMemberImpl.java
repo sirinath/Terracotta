@@ -16,24 +16,33 @@ import com.tc.net.protocol.tcm.TCMessageType;
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private final MessageChannel channel;
   private boolean              alive;
+  private NodeID               srcNodeID;
+  private NodeID               dstNodeID;
 
   /*
-   * Member can be created in two ways By making a connection from this node. By listen port of this node.
+   * Member established by this node, srcNodeID.
    */
-  public TCGroupMemberImpl(MessageChannel channel) {
+  public TCGroupMemberImpl(NodeID srcNodeID, MessageChannel channel) {
     this.channel = channel;
+    this.srcNodeID = srcNodeID;
+    this.dstNodeID = channel.getChannelID().getNodeID();
+  }
+  
+  /*
+   * Member established by dstNodeID.
+   */
+  public TCGroupMemberImpl(MessageChannel channel, NodeID dstNodeID) {
+    this.channel = channel;
+    this.srcNodeID = channel.getChannelID().getNodeID();
+    this.dstNodeID = dstNodeID;
   }
 
   public MessageChannel getChannel() {
     return channel;
   }
 
-  public NodeID getNodeID() {
-    return channel.getChannelID().getNodeID();
-  }
-
   /*
-   * Use a wrapper to send old tribe GroupMessage out through channel's TCMessage
+   * Use a wrapper to send old tribes GroupMessage out through channel's TCMessage
    */
   public void send(GroupMessage msg) {
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) channel.createMessage(TCMessageType.GROUP_WRAPPER_MESSAGE);
@@ -62,6 +71,18 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   synchronized public void deactivate() {
     alive = false;
+  }
+  
+  public NodeID getSrcNodeID() {
+    return srcNodeID;
+  }
+  
+  public NodeID getDstNodeID() {
+    return dstNodeID;
+  }
+  
+  public void close() {
+    getChannel().close();
   }
 
 }

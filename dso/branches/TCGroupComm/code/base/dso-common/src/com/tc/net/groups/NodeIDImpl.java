@@ -118,4 +118,17 @@ public class NodeIDImpl implements NodeID {
     out.writeInt(length);
     out.write(this.uid);
   }
+
+  public int compareTo(Object arg0) {
+    NodeIDImpl target = (NodeIDImpl)arg0;
+    byte[] targetUid = target.getUID();
+    if (uid.length > targetUid.length) return(1);
+    if (uid.length < targetUid.length) return(-1);
+    for(int i = 0; i < uid.length; ++i) {
+      if (uid[i] > targetUid[i]) return (1);
+      if (uid[i] < targetUid[i]) return (-1);
+    }
+    return 0;
+  }
+  
 }

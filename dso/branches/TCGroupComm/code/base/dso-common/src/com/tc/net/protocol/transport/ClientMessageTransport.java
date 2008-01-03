@@ -38,7 +38,6 @@ public class ClientMessageTransport extends MessageTransportBase {
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
   private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
   private NodeID                            serverNodeID    = NodeIDImpl.NULL_ID;
-  private NodeID                            clientNodeID    = NodeIDImpl.NULL_ID;
 
   /**
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
@@ -94,7 +93,7 @@ public class ClientMessageTransport extends MessageTransportBase {
         NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
         // TC-Group-Comm to pass NodeID
-        nid.setNodeID(clientNodeID);
+        nid.setNodeID(serverNodeID);
         return (nid);
       } catch (TCTimeoutException e) {
         status.reset();
@@ -201,7 +200,6 @@ public class ClientMessageTransport extends MessageTransportBase {
       // send syn message
       this.sendToConnection(syn);
       this.status.synSent();
-      clientNodeID = syn.getNodeID();
     }
   }
 

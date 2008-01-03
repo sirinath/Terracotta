@@ -4,35 +4,53 @@
  */
 package com.tc.net.groups;
 
+import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.util.TCTimeoutException;
+
+import java.io.IOException;
+import java.net.UnknownHostException;
 
 public interface TCGroupMembership {
   /*
-   * Whenever a new member joins, need to resolve two way connections into one.
-   * A resolve policy shall be provided.
+   * Whenever a new member joins, need to resolve two way connections into one. A resolve policy shall be provided.
    */
   public void add(TCGroupMember member);
-  
+
   public void remove(TCGroupMember member);
-  
+
   public boolean isExist(TCGroupMember member);
-  
+
   public void clean();
-  
+
   public NodeID join(Node thisNode, Node[] allNodes);
-  
+
   public void sendTo(NodeID node, GroupMessage msg);
-  
+
   public void sendAll(GroupMessage msg);
-  
+
   /*
    * Proactively open a channel to other node
    */
-  public void openChannel(ConnectionAddressProvider addrProvider);
-  
+  public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException, UnknownHostException,
+      MaxConnectionsExceededException, IOException;
+
+  public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
+      MaxConnectionsExceededException, IOException;
+
   public void closeChannel(TCGroupMember member);
-  
+
   public void closeChannel(MessageChannel channel);
+  
+  public void start() throws IOException ;
+  
+  public NodeID getNodeID();
+  
+  public TCGroupMemberDiscovery getMembers();
+  
+  public void setMembers(TCGroupMemberDiscovery members);
+  
+  public void shutdown();
 
 }

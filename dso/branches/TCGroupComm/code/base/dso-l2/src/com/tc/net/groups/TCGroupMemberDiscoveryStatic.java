@@ -9,10 +9,12 @@ import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.tcm.MessageChannel;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-
+  private ArrayList<TCGroupMember> members = new ArrayList<TCGroupMember>();
+  
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
     //
   }
@@ -22,11 +24,11 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     
   }
   
-  public ArrayList<TCGroupMember> getAllMembers() {
+  public List<TCGroupMember> getAllMembers() {
     throw new ImplementMe();
   }
 
-  public ArrayList<TCGroupMember> getInactiveMembers() {
+  public List<TCGroupMember> getInactiveMembers() {
     throw new ImplementMe();
   }
 
@@ -52,21 +54,50 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public TCGroupMember getMember(MessageChannel channel) {
-    throw new ImplementMe();
+    TCGroupMember member = null;
+    for(int i = 0; i < members.size(); ++i) {
+      TCGroupMember m = members.get(i);
+      if (m.getChannel() == channel ) {
+        member = m;
+        break;
+      }
+    }
+    return (member);
   }
 
-  public void memberAdded(NodeID nodeID) {
-    throw new ImplementMe();
-    
+  public void memberAdded(TCGroupMember member) {
+    // Keep only one connection between two nodes. Close the redundant one.
+    for (int i = 0; i < members.size(); ++i) {
+      TCGroupMember m = members.get(i);
+      if (member.getSrcNodeID().equals(m.getDstNodeID()) && member.getDstNodeID().equals(m.getSrcNodeID())) {
+        // already one connection established, choose one to keep
+        int order = member.getSrcNodeID().compareTo(member.getDstNodeID());
+        if (order > 0) {
+          // choose new connection
+          m.close();
+          members.remove(m);
+        } else if (order < 0) {
+          // keep original one
+          member.close();
+          return;
+        } else {
+          throw new RuntimeException("SrcNodeID equals DstNodeID");
+        }
+      }
+    }
+    members.add(member);
   }
 
-  public void memberDisappeared(NodeID nodeID) {
-    throw new ImplementMe();
-    
+  public void memberDisappeared(TCGroupMember member) {
+    members.remove(member);
   }
 
-  public ArrayList<TCGroupMember> getCurrentMembers() {
+  public List<TCGroupMember> getCurrentMembers() {
     throw new ImplementMe();
+  }
+  
+  public int size() {
+    return members.size();
   }
 
 }

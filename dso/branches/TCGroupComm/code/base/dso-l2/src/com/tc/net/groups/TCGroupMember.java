@@ -8,7 +8,9 @@ import com.tc.net.protocol.tcm.MessageChannel;
 
 
 public interface TCGroupMember {
-  public NodeID getNodeID();
+  public NodeID getSrcNodeID();
+  
+  public NodeID getDstNodeID();
   
   public MessageChannel getChannel();
   
@@ -19,4 +21,6 @@ public interface TCGroupMember {
   public void activate();
   
   public void deactivate();
+  
+  public void close();
 }

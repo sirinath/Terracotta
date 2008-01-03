@@ -6,7 +6,7 @@ package com.tc.net.groups;
 
 import com.tc.net.protocol.tcm.MessageChannel;
 
-import java.util.ArrayList;
+import java.util.List;
 
 
 public interface TCGroupMemberDiscovery {
@@ -16,9 +16,9 @@ public interface TCGroupMemberDiscovery {
    */
   public void setupMembers(Node thisNode, Node[] allNodes);
   
-  public ArrayList<TCGroupMember> getAllMembers();
+  public List<TCGroupMember> getAllMembers();
   
-  public ArrayList<TCGroupMember> getInactiveMembers();
+  public List<TCGroupMember> getInactiveMembers();
   
   public void memberActivated(TCGroupMember member);
   
@@ -30,12 +30,17 @@ public interface TCGroupMemberDiscovery {
   
   public TCGroupMember getMember(NodeID nodeID);
   
+  /*
+   * Find member by MessageChannel
+   */
   public TCGroupMember getMember(MessageChannel channel);
   
-  public void memberAdded(NodeID nodeID);
+  public void memberAdded(TCGroupMember member);
   
-  public void memberDisappeared(NodeID nodeID);
+  public void memberDisappeared(TCGroupMember member);
   
-  public ArrayList<TCGroupMember> getCurrentMembers();
+  public List<TCGroupMember> getCurrentMembers();
+  
+  public int size();
 
 }

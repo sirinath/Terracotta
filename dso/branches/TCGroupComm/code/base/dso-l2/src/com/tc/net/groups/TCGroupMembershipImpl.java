@@ -10,9 +10,12 @@ import com.tc.async.api.StageManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.exception.ImplementMe;
 import com.tc.lang.TCThreadGroup;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
+import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.TCGroupNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
@@ -41,29 +44,33 @@ import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, ChannelManagerEventListener {
+  private static final TCLogger                logger  = TCLogging.getLogger(TCGroupMembershipImpl.class);
+
   private final L2TVSConfigurationSetupManager configSetupManager;
   private TCProperties                         l2Properties;
   private CommunicationsManager                communicationsManager;
   private NetworkListener                      groupListener;
   private final ConnectionPolicy               connectionPolicy;
-  //private HashMap<NodeID, TCGroupMember>       members;
+  // private HashMap<NodeID, TCGroupMember> members;
   private final NodeID                         nodeID;
-  private TCGroupMemberDiscovery               members;
+  private TCGroupMemberDiscovery               members = null;
 
   /*
    * Setup a communication manager which can establish channel from either sides.
    */
   public TCGroupMembershipImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
-                               TCThreadGroup threadGroup) {
+                               TCThreadGroup threadGroup) throws IOException {
     super(threadGroup);
     this.configSetupManager = configSetupManager;
     this.connectionPolicy = connectionPolicy;
+
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
-    
-    members = new TCGroupMemberDiscoveryStatic(configSetupManager);
+
+    // members = new TCGroupMemberDiscoveryStatic(configSetupManager);
 
     this.configSetupManager.commonl2Config().changesInItemIgnored(configSetupManager.commonl2Config().dataPath());
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
@@ -71,19 +78,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.l2GroupPort());
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
-    String nodeName = l2DSOConfig.host().getString() + ":" + groupPort;
-    nodeID = new NodeIdUuidImpl(nodeName);
-
-    final NetworkStackHarnessFactory networkStackHarnessFactory = new TCGroupNetworkStackHarnessFactory();
-    communicationsManager = new TCGroupCommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                                 null, this.connectionPolicy, l2Properties
-                                                                     .getInt("tccom.workerthreads"), nodeID);
-
-    groupListener = communicationsManager.createListener(new NullSessionManager(),
-                                                         new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort),
-                                                         true, new DefaultConnectionIdFactory());
-    // Listen to channel creation/removal
-    groupListener.getChannelManager().addEventListener(this);
+    nodeID = init(l2DSOConfig.host().getString(), groupPort, l2Properties.getInt("tccom.workerthreads"));
 
     int maxStageSize = 5000;
     StageManager stageManager = getStageManager();
@@ -103,8 +98,41 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
                                    hydrateStage.getSink());
   }
 
+  /*
+   * for testing purpose only
+   */
+  public TCGroupMembershipImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
+                               TCThreadGroup threadGroup) throws IOException {
+    super(threadGroup);
+    this.configSetupManager = null;
+    this.connectionPolicy = connectionPolicy;
+    nodeID = init(hostname, groupPort, workerThreads);
+  }
+
+  public NodeID init(String hostname, int groupPort, int workerThreads) throws IOException {
+
+    String nodeName = hostname + ":" + groupPort;
+    NodeID aNodeID = new NodeIdUuidImpl(nodeName);
+
+    final NetworkStackHarnessFactory networkStackHarnessFactory = new TCGroupNetworkStackHarnessFactory();
+    communicationsManager = new TCGroupCommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                                 null, this.connectionPolicy, workerThreads, aNodeID);
+
+    groupListener = communicationsManager.createListener(new NullSessionManager(),
+                                                         new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort),
+                                                         true, new DefaultConnectionIdFactory());
+    // Listen to channel creation/removal
+    groupListener.getChannelManager().addEventListener(this);
+
+    return (aNodeID);
+  }
+
+  public void start() throws IOException {
+    groupListener.start(new HashSet());
+  }
+
   public void add(TCGroupMember member) {
-    members.memberActivated(member);
+    members.memberAdded(member);
   }
 
   public void clean() {
@@ -125,13 +153,13 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void remove(MessageChannel channel) {
-    members.memberDeactivated(members.getMember(channel));
+    members.memberDisappeared(members.getMember(channel));
   }
 
   public void sendAll(GroupMessage msg) {
-    ArrayList<TCGroupMember> nodes = members.getCurrentMembers();
-    
-    for(int i = 0; i < nodes.size(); ++i) {
+    List<TCGroupMember> nodes = members.getCurrentMembers();
+
+    for (int i = 0; i < nodes.size(); ++i) {
       TCGroupMember member = nodes.get(i);
       member.send(msg);
     }
@@ -144,19 +172,21 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     member.send(msg);
   }
 
-  public void openChannel(ConnectionAddressProvider addrProvider) {
+  public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException,
+      UnknownHostException, MaxConnectionsExceededException, IOException {
     ClientMessageChannel channel = communicationsManager
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), -1, null, -1, 10000, addrProvider);
 
-    try {
-      channel.open();
-    } catch (TCTimeoutException e) {
-    } catch (UnknownHostException e) {
-    } catch (MaxConnectionsExceededException e) {
-    } catch (IOException e) {
-    }
+    channel.open();
+    logger.debug("Channel setup to "+channel.getChannelID().getNodeID());
+    TCGroupMember member = new TCGroupMemberImpl(getNodeID(), channel);
+    add(member);
+    return member;
+  }
 
-    add(new TCGroupMemberImpl(channel));
+  public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
+      MaxConnectionsExceededException, IOException {
+    return openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, groupPort) }));
   }
 
   public void closeChannel(TCGroupMember member) {
@@ -171,13 +201,32 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
    * Event notification when a new connection setup by channelManager
    */
   public void channelCreated(MessageChannel channel) {
-    add(new TCGroupMemberImpl(channel));
+    logger.debug("Channel established from "+channel.getChannelID().getNodeID());
+    add(new TCGroupMemberImpl(channel, getNodeID()));
   }
 
   /*
    * Event notification when a connection removed by DSOChannelManager
    */
   public void channelRemoved(MessageChannel channel) {
+    logger.debug("Channel removed from "+channel.getChannelID().getNodeID());
     remove(channel);
   }
+
+  public NodeID getNodeID() {
+    return nodeID;
+  }
+
+  public TCGroupMemberDiscovery getMembers() {
+    return members;
+  }
+
+  public void setMembers(TCGroupMemberDiscovery members) {
+    this.members = members;
+  }
+
+  public void shutdown() {
+    communicationsManager.shutdown();
+  }
+
 }

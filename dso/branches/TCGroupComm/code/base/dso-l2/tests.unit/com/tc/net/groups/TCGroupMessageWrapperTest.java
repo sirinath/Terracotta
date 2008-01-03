@@ -7,14 +7,12 @@ package com.tc.net.groups;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.ClusterStateMessage;
-import com.tc.l2.msg.L2StateMessage;
 import com.tc.l2.msg.ObjectListSyncMessage;
 import com.tc.l2.msg.ObjectSyncCompleteMessage;
 import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.ObjectSyncResetMessage;
 import com.tc.l2.msg.RelayedCommitTransactionMessage;
 import com.tc.l2.msg.ServerTxnAckMessage;
-import com.tc.l2.state.Enrollment;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
@@ -132,7 +130,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
 
     assertTrue(channel.isConnected());
-    assertTrue(channel.getChannelID().getNodeID().equals(nodeID1));
+    assertTrue(channel.getChannelID().getNodeID().equals(nodeID2));
 
     assertEquals(1, channelManager.getChannels().length);
     return (channel);
@@ -152,10 +150,9 @@ public class TCGroupMessageWrapperTest extends TestCase {
     assertEquals(0, channelManager.getChannels().length);
 
     ClientMessageChannel channel = openChannel(lsnr);
-    ;
 
     MessageChannel serverChannel = channelManager.getChannels()[0];
-    assertTrue(channel.getChannelID().getNodeID().equals(serverChannel.getChannelID().getNodeID()));
+    assertTrue(nodeID1.equals(serverChannel.getChannelID().getNodeID()));
 
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) channel.createMessage(TCMessageType.GROUP_WRAPPER_MESSAGE);
     wrapper.setGroupMessage(sendMesg);
