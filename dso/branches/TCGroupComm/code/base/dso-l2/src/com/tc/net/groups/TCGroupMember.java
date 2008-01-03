@@ -16,11 +16,11 @@ public interface TCGroupMember {
   
   public void send(GroupMessage msg);
   
-  public boolean isActive();
+  public void setTCGroupMembership(TCGroupMembership membership);
   
-  public void activate();
+  public TCGroupMembership getTCGroupMembership();
   
-  public void deactivate();
+  public boolean isConnected();
   
   public void close();
 }

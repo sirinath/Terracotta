@@ -4,100 +4,139 @@
  */
 package com.tc.net.groups;
 
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
-import com.tc.exception.ImplementMe;
-import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.TCSocketAddress;
+import com.tc.object.config.schema.NewL2DSOConfig;
+import com.tc.util.TCTimeoutException;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.Iterator;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private ArrayList<TCGroupMember> members = new ArrayList<TCGroupMember>();
-  
+  private static final TCLogger logger  = TCLogging.getLogger(TCGroupMemberDiscoveryStatic.class);
+
+  private Node                  local;
+  private Node[]                nodes;
+  private TCGroupMembership     membership;
+  private boolean               running = false;
+
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
-    //
-  }
-  
-  public void setupMembers(Node thisNode, Node[] allNodes) {
-    throw new ImplementMe();
-    
-  }
-  
-  public List<TCGroupMember> getAllMembers() {
-    throw new ImplementMe();
+    nodes = makeAllNodes(configSetupManager);
   }
 
-  public List<TCGroupMember> getInactiveMembers() {
-    throw new ImplementMe();
+  /*
+   * for testing purpose
+   */
+  public TCGroupMemberDiscoveryStatic(Node[] nodes) {
+    this.nodes = nodes;
   }
 
-  public void memberActivated(TCGroupMember member) {
-    throw new ImplementMe();
+  private Node[] makeAllNodes(L2TVSConfigurationSetupManager configSetupManager) {
+    String[] l2s = configSetupManager.allCurrentlyKnownServers();
+    Node[] rv = new Node[l2s.length];
+    for (int i = 0; i < l2s.length; i++) {
+      NewL2DSOConfig l2;
+      try {
+        l2 = configSetupManager.dsoL2ConfigFor(l2s[i]);
+      } catch (ConfigurationSetupException e) {
+        throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
+      }
+      rv[i] = makeNode(l2);
+    }
+    return rv;
   }
 
-  public void memberDeactivated(TCGroupMember member) {
-    throw new ImplementMe();
+  private static Node makeNode(NewL2DSOConfig l2) {
+    int dsoPort = l2.listenPort().getInt();
+    return new Node(l2.host().getString(), l2.l2GroupPort().getInt());
   }
 
-  public boolean isMemberActivated(TCGroupMember member) {
-    throw new ImplementMe();
+  public Node[] getAllNodes() {
+    return nodes;
   }
 
-  
-  public TCGroupMember getMember(NodeID nodeID) {
-    throw new ImplementMe();
+  public void setTCGroupMembership(TCGroupMembership membership) {
+    this.membership = membership;
   }
 
-  public boolean isMemberExist(TCGroupMember member) {
-    throw new ImplementMe();
+  public void start() {
+    running = true;
+    Thread discover = new Thread(new Runnable() {
+      public void run() {
+        while (running) {
+          openChannels();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+          }
+        }
+      }
+    }, "Member discovery");
+    discover.start();
   }
 
-  public TCGroupMember getMember(MessageChannel channel) {
+  /*
+   * Open channel to each unconnected Node
+   */
+  protected void openChannels() {
+    for (int i = 0; i < nodes.length; ++i) {
+      Node n = nodes[i];
+      
+      // skip local one
+      if (local.equals(n)) continue;
+      
+      TCSocketAddress remote;
+      try {
+        remote = new TCSocketAddress(n.getHost(), n.getPort());
+      } catch (UnknownHostException e) {
+        logger.warn("Bad node:" + n + " " + e);
+        continue;
+      }
+
+      if (getMember(remote) == null) {
+        try {
+          membership.openChannel(n.getHost(), n.getPort());
+        } catch (TCTimeoutException e) {
+          logger.warn("Node:" + n + " " + e);
+        } catch (UnknownHostException e) {
+          logger.warn("Node:" + n + " " + e);
+        } catch (MaxConnectionsExceededException e) {
+          logger.warn("Node:" + n + " " + e);
+        } catch (IOException e) {
+          logger.warn("Node:" + n + " " + e);
+        }
+      }
+    }
+  }
+
+  private TCGroupMember getMember(TCSocketAddress remote) {
     TCGroupMember member = null;
-    for(int i = 0; i < members.size(); ++i) {
-      TCGroupMember m = members.get(i);
-      if (m.getChannel() == channel ) {
+    Iterator it = membership.getMembers().iterator();
+    while (it.hasNext()) {
+      TCGroupMember m = (TCGroupMember) it.next();
+      if (remote.equals(m.getChannel().getRemoteAddress())) {
         member = m;
         break;
       }
     }
-    return (member);
+    return member;
   }
 
-  public void memberAdded(TCGroupMember member) {
-    // Keep only one connection between two nodes. Close the redundant one.
-    for (int i = 0; i < members.size(); ++i) {
-      TCGroupMember m = members.get(i);
-      if (member.getSrcNodeID().equals(m.getDstNodeID()) && member.getDstNodeID().equals(m.getSrcNodeID())) {
-        // already one connection established, choose one to keep
-        int order = member.getSrcNodeID().compareTo(member.getDstNodeID());
-        if (order > 0) {
-          // choose new connection
-          m.close();
-          members.remove(m);
-        } else if (order < 0) {
-          // keep original one
-          member.close();
-          return;
-        } else {
-          throw new RuntimeException("SrcNodeID equals DstNodeID");
-        }
-      }
-    }
-    members.add(member);
+  public void stop() {
+    running = false;
   }
 
-  public void memberDisappeared(TCGroupMember member) {
-    members.remove(member);
-  }
-
-  public List<TCGroupMember> getCurrentMembers() {
-    throw new ImplementMe();
+  public void setLocalNode(Node local) {
+    this.local = local;
   }
   
-  public int size() {
-    return members.size();
+  public Node getLocalNode() {
+    return local;
   }
 
 }

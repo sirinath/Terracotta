@@ -27,7 +27,7 @@ public class TCGroupManager implements GroupManager {
     final TCThreadGroup threadGroup = new TCThreadGroup(new ThrowableHandler(logger));
 
     membership = new TCGroupMembershipImpl(configSetupManager, connectionPolicy, threadGroup);
-    membership.setMembers(new TCGroupMemberDiscoveryStatic(configSetupManager));
+    membership.setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
     membership.start();
   }
 
