@@ -12,7 +12,7 @@ import java.io.Externalizable;
  * This interface represents a Node be it an L2 or and L1 and is mostly used an an unified way of identifying an
  * external entity.
  */
-public interface NodeID extends Externalizable, TCSerializable {
+public interface NodeID extends Externalizable, TCSerializable, Comparable {
   // /////////////////////////////////////////////////////////////////////////////////////////////////////
   // XXX:: NOTE::
   // 1) Any new implemention of this interface should also implement the serialization methods
