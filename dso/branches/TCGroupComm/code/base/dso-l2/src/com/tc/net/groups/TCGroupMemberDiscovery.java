@@ -4,43 +4,18 @@
  */
 package com.tc.net.groups;
 
-import com.tc.net.protocol.tcm.MessageChannel;
-
-import java.util.List;
-
-
 public interface TCGroupMemberDiscovery {
   
-  /*
-   * Import members, allow redundant calls
-   */
-  public void setupMembers(Node thisNode, Node[] allNodes);
+  public Node[] getAllNodes();
   
-  public List<TCGroupMember> getAllMembers();
+  public void setTCGroupMembership(TCGroupMembership membership);
   
-  public List<TCGroupMember> getInactiveMembers();
+  public void start();
   
-  public void memberActivated(TCGroupMember member);
+  public void stop();
   
-  public void memberDeactivated(TCGroupMember member);
+  public void setLocalNode(Node local);
   
-  public boolean isMemberActivated(TCGroupMember member);
-  
-  public boolean isMemberExist(TCGroupMember member);
-  
-  public TCGroupMember getMember(NodeID nodeID);
-  
-  /*
-   * Find member by MessageChannel
-   */
-  public TCGroupMember getMember(MessageChannel channel);
-  
-  public void memberAdded(TCGroupMember member);
-  
-  public void memberDisappeared(TCGroupMember member);
-  
-  public List<TCGroupMember> getCurrentMembers();
-  
-  public int size();
+  public Node getLocalNode();
 
 }

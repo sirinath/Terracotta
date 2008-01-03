@@ -44,6 +44,7 @@ import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -57,7 +58,8 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   private final ConnectionPolicy               connectionPolicy;
   // private HashMap<NodeID, TCGroupMember> members;
   private final NodeID                         nodeID;
-  private TCGroupMemberDiscovery               members = null;
+  private TCGroupMemberDiscovery               discover;
+  private ArrayList<TCGroupMember>             members = new ArrayList<TCGroupMember>();
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -132,7 +134,27 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void add(TCGroupMember member) {
-    members.memberAdded(member);
+    // Keep only one connection between two nodes. Close the redundant one.
+    for (int i = 0; i < members.size(); ++i) {
+      TCGroupMember m = members.get(i);
+      if (member.getSrcNodeID().equals(m.getDstNodeID()) && member.getDstNodeID().equals(m.getSrcNodeID())) {
+        // already one connection established, choose one to keep
+        int order = member.getSrcNodeID().compareTo(member.getDstNodeID());
+        if (order > 0) {
+          // choose new connection
+          m.close();
+          // members.remove(m);
+        } else if (order < 0) {
+          // keep original one
+          member.close();
+          return;
+        } else {
+          throw new RuntimeException("SrcNodeID equals DstNodeID");
+        }
+      }
+    }
+    member.setTCGroupMembership(this);
+    members.add(member);
   }
 
   public void clean() {
@@ -140,34 +162,34 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public boolean isExist(TCGroupMember member) {
-    return (members.isMemberExist(member));
+    return (members.contains(member));
   }
 
-  public NodeID join(Node thisNode, Node[] allNodes) {
-    members.setupMembers(thisNode, allNodes);
-    throw new ImplementMe();
+  public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
+    discover.setLocalNode(thisNode);
+    discover.start();
+    
+    return (getNodeID());
   }
 
   public void remove(TCGroupMember member) {
-    throw new ImplementMe();
+    members.remove(member);
   }
 
   public void remove(MessageChannel channel) {
-    members.memberDisappeared(members.getMember(channel));
+    members.remove(getMember(channel));
   }
 
   public void sendAll(GroupMessage msg) {
-    List<TCGroupMember> nodes = members.getCurrentMembers();
-
-    for (int i = 0; i < nodes.size(); ++i) {
-      TCGroupMember member = nodes.get(i);
+    for (int i = 0; i < members.size(); ++i) {
+      TCGroupMember member = members.get(i);
       member.send(msg);
     }
   }
 
   public void sendTo(NodeID node, GroupMessage msg) {
-    // find thye member
-    TCGroupMember member = members.getMember(node);
+    // find the member
+    TCGroupMember member = getMember(node);
     Assert.assertTrue(member != null);
     member.send(msg);
   }
@@ -178,7 +200,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), -1, null, -1, 10000, addrProvider);
 
     channel.open();
-    logger.debug("Channel setup to "+channel.getChannelID().getNodeID());
+    logger.debug("Channel setup to " + channel.getChannelID().getNodeID());
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), channel);
     add(member);
     return member;
@@ -190,18 +212,18 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void closeChannel(TCGroupMember member) {
-
+    member.close();
   }
 
   public void closeChannel(MessageChannel channel) {
-
+    closeChannel(getMember(channel));
   }
 
   /*
    * Event notification when a new connection setup by channelManager
    */
   public void channelCreated(MessageChannel channel) {
-    logger.debug("Channel established from "+channel.getChannelID().getNodeID());
+    logger.debug("Channel established from " + channel.getChannelID().getNodeID());
     add(new TCGroupMemberImpl(channel, getNodeID()));
   }
 
@@ -209,7 +231,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
    * Event notification when a connection removed by DSOChannelManager
    */
   public void channelRemoved(MessageChannel channel) {
-    logger.debug("Channel removed from "+channel.getChannelID().getNodeID());
+    logger.debug("Channel removed from " + channel.getChannelID().getNodeID());
     remove(channel);
   }
 
@@ -217,16 +239,56 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     return nodeID;
   }
 
-  public TCGroupMemberDiscovery getMembers() {
+  public TCGroupMember getMember(MessageChannel channel) {
+    TCGroupMember member = null;
+    for (int i = 0; i < members.size(); ++i) {
+      TCGroupMember m = members.get(i);
+      if (m.getChannel() == channel) {
+        member = m;
+        break;
+      }
+    }
+    return (member);
+  }
+
+  public TCGroupMember getMember(NodeID aNodeID) {
+    TCGroupMember member = null;
+    for (int i = 0; i < members.size(); ++i) {
+      TCGroupMember m = members.get(i);
+      if (m.getSrcNodeID() == getNodeID()) {
+        if (m.getDstNodeID().equals(aNodeID)) {
+          member = m;
+          break;
+        }
+      } else {
+        if (m.getSrcNodeID().equals(aNodeID)) {
+          member = m;
+          break;
+        }
+      }
+    }
+    return (member);
+  }
+
+  public List<TCGroupMember> getMembers() {
     return members;
   }
 
-  public void setMembers(TCGroupMemberDiscovery members) {
-    this.members = members;
+  public void setDiscover(TCGroupMemberDiscovery discover) {
+    this.discover = discover;
+    this.discover.setTCGroupMembership(this);
+  }
+
+  public TCGroupMemberDiscovery getDiscover() {
+    return discover;
   }
 
   public void shutdown() {
     communicationsManager.shutdown();
+  }
+
+  public int size() {
+    return members.size();
   }
 
 }

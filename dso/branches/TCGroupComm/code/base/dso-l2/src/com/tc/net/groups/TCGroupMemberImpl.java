@@ -14,10 +14,11 @@ import com.tc.net.protocol.tcm.TCMessageType;
  * Each TCGroupMember sits on top of a channel.
  */
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
+  private TCGroupMembership    membership;
   private final MessageChannel channel;
-  private boolean              alive;
-  private NodeID               srcNodeID;
-  private NodeID               dstNodeID;
+  private final NodeID         srcNodeID;
+  private final NodeID         dstNodeID;
+  private boolean              connected = true;
 
   /*
    * Member established by this node, srcNodeID.
@@ -26,8 +27,9 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = channel.getChannelID().getNodeID();
+    this.channel.addListener(this);
   }
-  
+
   /*
    * Member established by dstNodeID.
    */
@@ -35,6 +37,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     this.channel = channel;
     this.srcNodeID = channel.getChannelID().getNodeID();
     this.dstNodeID = dstNodeID;
+    this.channel.addListener(this);
   }
 
   public MessageChannel getChannel() {
@@ -53,34 +56,36 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public void notifyChannelEvent(ChannelEvent event) {
     if (event.getChannel() == channel) {
       if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
-        activate();
-      } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT
-                 || event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
-        deactivate();
+        connected = true;
+      } else if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
+        connected = false;
+      } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
+        connected = false;
+        if (membership != null) membership.remove(this);
       }
     }
   }
 
-  synchronized public boolean isActive() {
-    return alive;
-  }
-
-  synchronized public void activate() {
-    alive = true;
-  }
-
-  synchronized public void deactivate() {
-    alive = false;
-  }
-  
   public NodeID getSrcNodeID() {
     return srcNodeID;
   }
-  
+
   public NodeID getDstNodeID() {
     return dstNodeID;
   }
-  
+
+  public void setTCGroupMembership(TCGroupMembership membership) {
+    this.membership = membership;
+  }
+
+  public TCGroupMembership getTCGroupMembership() {
+    return membership;
+  }
+
+  public boolean isConnected() {
+    return connected;
+  }
+
   public void close() {
     getChannel().close();
   }

@@ -11,6 +11,7 @@ import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public interface TCGroupMembership {
   /*
@@ -24,7 +25,7 @@ public interface TCGroupMembership {
 
   public void clean();
 
-  public NodeID join(Node thisNode, Node[] allNodes);
+  public NodeID join(Node thisNode, Node[] allNodes) throws GroupException;
 
   public void sendTo(NodeID node, GroupMessage msg);
 
@@ -47,10 +48,18 @@ public interface TCGroupMembership {
   
   public NodeID getNodeID();
   
-  public TCGroupMemberDiscovery getMembers();
+  public TCGroupMember getMember(MessageChannel channel);
   
-  public void setMembers(TCGroupMemberDiscovery members);
+  public TCGroupMember getMember(NodeID nodeID);
+
+  public List<TCGroupMember> getMembers();
+  
+  public void setDiscover(TCGroupMemberDiscovery dicover);
+  
+  public TCGroupMemberDiscovery getDiscover();
   
   public void shutdown();
+  
+  public int size();
 
 }
