@@ -15,12 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface TCGroupMembership {
-  /*
-   * Whenever a new member joins, need to resolve two way connections into one. A resolve policy shall be provided.
-   */
-  public void add(TCGroupMember member);
-
-  public void remove(TCGroupMember member);
 
   public boolean isExist(TCGroupMember member);
 
@@ -30,6 +24,10 @@ public interface TCGroupMembership {
 
   public void sendAll(GroupMessage msg);
 
+  public GroupResponse sendAllAndWaitForResponse (GroupMessage msg) throws GroupException;
+  
+  public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) throws GroupException;
+  
   /*
    * Proactively open a channel to other node
    */
@@ -52,7 +50,7 @@ public interface TCGroupMembership {
   public TCGroupMember getMember(MessageChannel channel);
   
   public TCGroupMember getMember(NodeID nodeID);
-
+  
   public List<TCGroupMember> getMembers();
   
   public void setDiscover(TCGroupMemberDiscovery dicover);
@@ -62,5 +60,18 @@ public interface TCGroupMembership {
   public void shutdown();
   
   public int size();
+  
+  public void registerForGroupEvents(GroupEventsListener listener);
+  
+  public void memberAdded(TCGroupMember member);
+  
+  public void memberDisappeared(TCGroupMember member);
+  
+  public void registerForMessages(Class msgClass, GroupMessageListener listener);
+  
+  public void messageReceived(GroupMessage message, MessageChannel channel);
 
+  public void setZapNodeRequestProcessor(ZapNodeRequestProcessor processor);
+  
+  public void zapNode(NodeID nodeID, int type, String reason);
 }
