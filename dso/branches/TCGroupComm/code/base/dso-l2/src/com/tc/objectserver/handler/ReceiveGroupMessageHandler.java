@@ -7,24 +7,23 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.net.groups.TCGroupMembership;
+import com.tc.net.groups.TCGroupMessageWrapper;
 
 public class ReceiveGroupMessageHandler extends AbstractEventHandler {
-  private ServerTransactionManager transactionManager;
-
+  private final TCGroupMembership membership;
+  
+  public ReceiveGroupMessageHandler(TCGroupMembership membership) {
+    this.membership = membership;
+  }
+  
   public void handleEvent(EventContext context) {
-    /*
-    AcknowledgeTransactionMessage atm = (AcknowledgeTransactionMessage) context;
-    transactionManager.acknowledgement(atm.getRequesterID(), atm.getRequestID(), atm.getClientID());
-    */
+    TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) context;
+    membership.messageReceived(wrapper.getGroupMessage(), wrapper.getChannel());
   }
 
   public void initialize(ConfigurationContext context) {
-    /*
     super.initialize(context);
-    ServerConfigurationContext scc = (ServerConfigurationContext) context;
-    this.transactionManager = scc.getTransactionManager();
-    */
   }
 
 }

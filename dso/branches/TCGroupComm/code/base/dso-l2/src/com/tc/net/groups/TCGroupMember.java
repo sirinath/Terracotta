@@ -12,6 +12,8 @@ public interface TCGroupMember {
   
   public NodeID getDstNodeID();
   
+  public NodeID getNodeID();
+  
   public MessageChannel getChannel();
   
   public void send(GroupMessage msg);

@@ -61,7 +61,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
         connected = false;
       } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
         connected = false;
-        if (membership != null) membership.remove(this);
+        if (membership != null) membership.memberDisappeared(this);
       }
     }
   }
@@ -72,6 +72,17 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   public NodeID getDstNodeID() {
     return dstNodeID;
+  }
+  
+  /*
+   * return the remote one 
+   */
+  public NodeID getNodeID() {
+    if (getSrcNodeID().equals(membership.getNodeID())) {
+      return (getDstNodeID());
+    } else {
+      return (getSrcNodeID());
+    }
   }
 
   public void setTCGroupMembership(TCGroupMembership membership) {
