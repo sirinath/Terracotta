@@ -8,7 +8,6 @@ import com.tc.async.api.SEDA;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
-import com.tc.exception.ImplementMe;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -45,8 +44,8 @@ import com.tc.util.sequence.SimpleSequence;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, ChannelManagerEventListener {
   private static final TCLogger                logger  = TCLogging.getLogger(TCGroupMembershipImpl.class);
@@ -129,8 +128,13 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     return (aNodeID);
   }
 
-  public void start() throws IOException {
-    groupListener.start(new HashSet());
+  public void start(Set initialConnectionIDs) throws IOException {
+    groupListener.start(initialConnectionIDs);
+  }
+  
+  public void stop(long timeout) throws TCTimeoutException {
+    discover.stop();
+    groupListener.stop(timeout);
   }
 
   public void add(TCGroupMember member) {
@@ -155,10 +159,6 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     }
     member.setTCGroupMembership(this);
     members.add(member);
-  }
-
-  public void clean() {
-    throw new ImplementMe();
   }
 
   public boolean isExist(TCGroupMember member) {

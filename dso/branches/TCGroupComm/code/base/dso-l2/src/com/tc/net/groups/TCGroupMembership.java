@@ -12,6 +12,7 @@ import com.tc.util.TCTimeoutException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Set;
 
 public interface TCGroupMembership {
   /*
@@ -22,8 +23,6 @@ public interface TCGroupMembership {
   public void remove(TCGroupMember member);
 
   public boolean isExist(TCGroupMember member);
-
-  public void clean();
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException;
 
@@ -44,7 +43,9 @@ public interface TCGroupMembership {
 
   public void closeChannel(MessageChannel channel);
   
-  public void start() throws IOException ;
+  public void start(Set initialConnectionIDs) throws IOException ;
+  
+  public void stop(long timeout) throws TCTimeoutException;
   
   public NodeID getNodeID();
   

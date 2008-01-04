@@ -13,6 +13,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,7 +29,7 @@ public class TCGroupManager implements GroupManager {
 
     membership = new TCGroupMembershipImpl(configSetupManager, connectionPolicy, threadGroup);
     membership.setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
-    membership.start();
+    membership.start(new HashSet());
   }
 
   public NodeID getLocalNodeID() throws GroupException {

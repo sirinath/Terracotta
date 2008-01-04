@@ -17,6 +17,8 @@ import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.session.NullSessionManager;
 import com.tc.util.PortChooser;
 
+import java.util.HashSet;
+
 import junit.framework.TestCase;
 
 public class TCGroupMembershipImplTest extends TestCase {
@@ -38,12 +40,12 @@ public class TCGroupMembershipImplTest extends TestCase {
                                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                                              .getLogger(TCGroupMembershipImplTest.class))));
     group1.setDiscover(discover1);
-    group1.start();
+    group1.start(new HashSet());
     TCGroupMembership group2 = new TCGroupMembershipImpl(new NullConnectionPolicy(), "localhost", groupPort2, 0,
                                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                                              .getLogger(TCGroupMembershipImplTest.class))));
     group2.setDiscover(discover2);
-    group2.start();
+    group2.start(new HashSet());
 
     // open test
     TCGroupMember member1 = group1.openChannel("localhost", groupPort2);
@@ -88,12 +90,12 @@ public class TCGroupMembershipImplTest extends TestCase {
                                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                                              .getLogger(TCGroupMembershipImplTest.class))));
     group1.setDiscover(discover1);
-    group1.start();
+    group1.start(new HashSet());
     TCGroupMembership group2 = new TCGroupMembershipImpl(new NullConnectionPolicy(), "localhost", groupPort2, 0,
                                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                                              .getLogger(TCGroupMembershipImplTest.class))));
     group2.setDiscover(discover2);
-    group2.start();
+    group2.start(new HashSet());
 
     TCGroupMember member1 = group1.openChannel("localhost", groupPort2);
     TCGroupMember member2 = group2.openChannel("localhost", groupPort1);
