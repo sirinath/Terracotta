@@ -31,12 +31,10 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
 import com.tc.object.config.schema.NewL2DSOConfig;
-import com.tc.object.msg.TCGroupHandshakeMessageImpl;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionManagerImpl;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handler.ReceiveGroupMessageHandler;
-import com.tc.objectserver.handler.TCGroupHandshakeHandler;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
@@ -77,6 +75,9 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   private final Map<MessageID, GroupResponse>             pendingRequests         = new Hashtable<MessageID, GroupResponse>();
   private ZapNodeRequestProcessor                         zapNodeRequestProcessor = new DefaultZapNodeRequestProcessor(
                                                                                                                        logger);
+  private boolean                                         isStopped               = false;
+  private Stage                                           hydrateStage;
+  private Stage                                           receiveGroupMessageStage;
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -99,27 +100,6 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
 
     nodeID = init(l2DSOConfig.host().getString(), groupPort, l2Properties.getInt("tccom.workerthreads"));
 
-    int maxStageSize = 5000;
-    StageManager stageManager = getStageManager();
-    Stage hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK,
-                                                  new HydrateHandler(), 1, maxStageSize);
-    Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.GROUP_HANDSHAKE_STAGE,
-                                                     new TCGroupHandshakeHandler(), 1, maxStageSize);
-    Stage receiveGroupMessageStage = stageManager.createStage(ServerConfigurationContext.RECEIVE_GROUP_MESSAGE_STAGE,
-                                                              new ReceiveGroupMessageHandler(this), 1, maxStageSize);
-
-    groupListener.addClassMapping(TCMessageType.GROUP_HANDSHAKE_MESSAGE, TCGroupHandshakeMessageImpl.class);
-    groupListener.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
-
-    groupListener.routeMessageType(TCMessageType.GROUP_HANDSHAKE_MESSAGE, clientHandshake.getSink(), hydrateStage
-        .getSink());
-    groupListener.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(),
-                                   hydrateStage.getSink());
-
-    ConfigurationContext context = new ConfigurationContextImpl(stageManager);
-
-    stageManager.startAll(context);
-
   }
 
   /*
@@ -136,6 +116,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   public NodeID init(String hostname, int groupPort, int workerThreads) throws IOException {
 
     String nodeName = hostname + ":" + groupPort;
+    logger.info("Creating group node: " + nodeName);
     NodeID aNodeID = new NodeIdUuidImpl(nodeName);
 
     final NetworkStackHarnessFactory networkStackHarnessFactory = new TCGroupNetworkStackHarnessFactory();
@@ -148,14 +129,37 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     // Listen to channel creation/removal
     groupListener.getChannelManager().addEventListener(this);
 
+    int maxStageSize = 5000;
+    StageManager stageManager = getStageManager();
+    hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK, new HydrateHandler(), 1,
+                                            maxStageSize);
+    // Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.GROUP_HANDSHAKE_STAGE,
+    // new TCGroupHandshakeHandler(), 1, maxStageSize);
+    receiveGroupMessageStage = stageManager.createStage(ServerConfigurationContext.RECEIVE_GROUP_MESSAGE_STAGE,
+                                                              new ReceiveGroupMessageHandler(this), 1, maxStageSize);
+
+    // groupListener.addClassMapping(TCMessageType.GROUP_HANDSHAKE_MESSAGE, TCGroupHandshakeMessageImpl.class);
+    groupListener.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
+
+    // groupListener.routeMessageType(TCMessageType.GROUP_HANDSHAKE_MESSAGE, clientHandshake.getSink(), hydrateStage
+    // .getSink());
+    groupListener.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(),
+                                   hydrateStage.getSink());
+
+    ConfigurationContext context = new ConfigurationContextImpl(stageManager);
+
+    stageManager.startAll(context);
+
     return (aNodeID);
   }
 
   public void start(Set initialConnectionIDs) throws IOException {
     groupListener.start(initialConnectionIDs);
+    isStopped = false;
   }
 
   public void stop(long timeout) throws TCTimeoutException {
+    isStopped = true;
     getStageManager().stopAll();
     discover.stop();
     groupListener.stop(timeout);
@@ -181,6 +185,8 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void memberAdded(TCGroupMember member) {
+    if (isStopped) return;
+
     // Keep only one connection between two nodes. Close the redundant one.
     for (int i = 0; i < members.size(); ++i) {
       TCGroupMember m = members.get(i);
@@ -217,6 +223,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void memberDisappeared(TCGroupMember member) {
+    if (isStopped || (member == null)) return;
     members.remove(member);
     fireNodeEvent(member.getNodeID(), false);
   }
@@ -281,6 +288,10 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), -1, null, -1, 10000, addrProvider);
 
     channel.open();
+    channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
+    channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage
+        .getSink());
+
     logger.debug("Channel setup to " + channel.getChannelID().getNodeID());
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), channel);
     memberAdded(member);
@@ -304,6 +315,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
    * Event notification when a new connection setup by channelManager
    */
   public void channelCreated(MessageChannel channel) {
+    if (isStopped) return;
     logger.debug("Channel established from " + channel.getChannelID().getNodeID());
     memberAdded(new TCGroupMemberImpl(channel, getNodeID()));
   }
@@ -312,6 +324,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
    * Event notification when a connection removed by DSOChannelManager
    */
   public void channelRemoved(MessageChannel channel) {
+    if (isStopped) return;
     logger.debug("Channel removed from " + channel.getChannelID().getNodeID());
     memberDisappeared(getMember(channel));
   }
