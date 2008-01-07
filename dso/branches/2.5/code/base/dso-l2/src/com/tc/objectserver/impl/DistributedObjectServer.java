@@ -181,6 +181,8 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
@@ -188,6 +190,7 @@ import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
+import javax.management.remote.JMXConnectorServer;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -469,8 +472,24 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
-    l1Listener = communicationsManager.createListener(sessionProvider,
-                                                      new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, serverPort),
+
+    // DEV-1060
+    InetAddress serverHost;
+    String l2Host = l2DSOConfig.host().getString();
+    Assert.assertNotNull(l2Host);
+    try {
+      if (l2Host.equalsIgnoreCase(TCSocketAddress.WILDCARD_IP)) {
+        serverHost = TCSocketAddress.WILDCARD_ADDR;
+      } else {
+        serverHost = InetAddress.getByName(l2Host);
+      }
+    } catch (UnknownHostException uhe) {
+      throw new TCRuntimeException("Unable to Resolve Address for the host " + l2Host);
+    }
+
+    logger.info("Server Bind Address: " + serverHost.getHostAddress() + ":" + serverPort);
+
+    l1Listener = communicationsManager.createListener(sessionProvider, new TCSocketAddress(serverHost, serverPort),
                                                       true, connectionIdFactory, httpSink);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
@@ -773,6 +792,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public int getListenPort() {
     return this.l1Listener.getBindPort();
   }
+  
+  public InetAddress getListenAddr() {
+    return this.l1Listener.getBindAddress();
+  }
 
   public synchronized void stop() {
     try {
@@ -873,9 +896,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public MBeanServer getMBeanServer() {
     return l2Management.getMBeanServer();
   }
+  
+  public JMXConnectorServer getJMXConnServer() {
+    return l2Management.getJMXConnServer();
+  }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
