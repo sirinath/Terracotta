@@ -33,24 +33,28 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
   protected static final TCListener[]   EMPTY_LISTENER_ARRAY   = new TCListener[] {};
   protected static final TCLogger       logger                 = TCLogging.getLogger(TCConnectionManager.class);
 
-  protected final TCCommJDK14           comm;
+  private final TCCommJDK14             comm;
   private final Set                     connections            = new HashSet();
   private final Set                     listeners              = new HashSet();
   private final SetOnceFlag             shutdown               = new SetOnceFlag();
   private final ConnectionEvents        connEvents;
   private final ListenerEvents          listenerEvents;
-  private final SocketParams socketParams;
+  private final SocketParams            socketParams;
 
   public TCConnectionManagerJDK14() {
+    this(0);
+  }
+
+  public TCConnectionManagerJDK14(int workerCommCount) {
     this.connEvents = new ConnectionEvents();
     this.listenerEvents = new ListenerEvents();
     this.socketParams = new SocketParams();
-    this.comm = new TCCommJDK14(socketParams);
+    this.comm = new TCCommJDK14(workerCommCount, socketParams);
     this.comm.start();
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {
-    return new TCConnectionJDK14(listener, comm, adaptor, this, socketParams);
+    return new TCConnectionJDK14(listener, adaptor, this, comm.nioServiceThreadForNewConnection(), socketParams);
   }
 
   protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog,
@@ -73,8 +77,11 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
       logger.debug("Bind: " + serverSocket.getLocalSocketAddress());
     }
 
-    TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, comm, getConnectionListener(), this);
-    comm.requestAcceptInterest(rv, ssc);
+    CoreNIOServices commThread = comm.nioServiceThreadForNewListener();
+
+    TCListenerJDK14 rv = new TCListenerJDK14(ssc, factory, getConnectionListener(), this, commThread);
+
+    commThread.registerListener(rv, ssc);
 
     return rv;
   }
@@ -102,8 +109,6 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
 
     TCListener rv = createListenerImpl(addr, factory, backlog, reuseAddr);
     rv.addEventListener(listenerEvents);
-    rv.addEventListener(comm);
-    comm.listenerAdded(rv);
 
     synchronized (listeners) {
       listeners.add(rv);
@@ -167,6 +172,10 @@ public class TCConnectionManagerJDK14 implements TCConnectionManager {
         logger.error("Exception trying to close " + lsnr, e);
       }
     }
+  }
+
+  public TCComm getTcComm() {
+    return this.comm;
   }
 
   public final synchronized void shutdown() {
