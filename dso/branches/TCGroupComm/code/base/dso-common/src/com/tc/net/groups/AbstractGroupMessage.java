@@ -6,17 +6,11 @@ package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
-import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.io.serializer.TCObjectInputStream;
-import com.tc.io.serializer.TCObjectOutputStream;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -70,42 +64,6 @@ public abstract class AbstractGroupMessage implements GroupMessage {
     return messageOrginator;
   }
   
-  /*
-   * Bridge the tribe serialization to TCMessage
-   * For TCMessage to serialize out
-   */
-  public void serializeTo(TCByteBufferOutput serialOutput) {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    TCObjectOutputStream stream = new TCObjectOutputStream(out);
-    try {
-      writeExternal(stream);
-    } catch (IOException e) {
-      
-    }
-    byte[] data = out.toByteArray();
-    serialOutput.writeInt(data.length);
-    serialOutput.write(data);
-  }
-
-  /*
-   * Bridge the tribe serialization to TCMessage
-   * For TCMessage to serialize in
-   */
-  public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    int length = serialInput.readInt();
-    byte[] data = new byte[length];
-    serialInput.read(data);
-    
-    ByteArrayInputStream in = new ByteArrayInputStream(data);
-    TCObjectInputStream stream = new TCObjectInputStream(in);
-    try {
-      readExternal(stream);
-    } catch (ClassNotFoundException e) {
-      
-    }
-  
-    return this;
-  }
 
   public final void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     type = in.readInt();
@@ -142,7 +100,6 @@ public abstract class AbstractGroupMessage implements GroupMessage {
       out.write(buffer.array(), buffer.arrayOffset(), length);
     }
   }
-
 
   protected ObjectStringSerializer readObjectStringSerializer(ObjectInput in) throws IOException {
     TCByteBuffer buffers[] = readByteBuffers(in);

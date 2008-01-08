@@ -8,7 +8,11 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * This is a helper class to bridge the GroupMessage to TCMessage for TC's serialization.
@@ -30,23 +34,36 @@ public class TCGroupMessageSerializer implements TCSerializable {
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    String classname = serialInput.readString();
+    int length = serialInput.readInt();
+    byte[] data = new byte[length];
+    serialInput.read(data);
+    
+    ByteArrayInputStream in = new ByteArrayInputStream(data);
+    ObjectInputStream stream = new ObjectInputStream(in);
     try {
-      message = (GroupMessage) Class.forName(classname).newInstance();
+      this.message = (GroupMessage) stream.readObject();
     } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    } catch (InstantiationException e) {
-      throw new RuntimeException(e);
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException();
     }
-    message.deserializeFrom(serialInput);
+
     return message;
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeString(message.getClass().getName());
-    this.message.serializeTo(serialOutput);
+    //serialOutput.writeString(message.getClass().getName());
+    //this.message.serializeTo(serialOutput);
+    
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      ObjectOutputStream stream = new ObjectOutputStream(out);
+      stream.writeObject(this.message);
+    } catch (IOException e) {
+      throw new RuntimeException();
+    }
+    byte[] data = out.toByteArray();
+    serialOutput.writeInt(data.length);
+    serialOutput.write(data);
+
   }
 
 }
