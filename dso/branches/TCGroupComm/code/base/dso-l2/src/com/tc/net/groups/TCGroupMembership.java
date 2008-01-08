@@ -41,6 +41,8 @@ public interface TCGroupMembership {
 
   public void closeChannel(MessageChannel channel);
   
+  public void closeAllChannels();
+  
   public void start(Set initialConnectionIDs) throws IOException ;
   
   public void stop(long timeout) throws TCTimeoutException;

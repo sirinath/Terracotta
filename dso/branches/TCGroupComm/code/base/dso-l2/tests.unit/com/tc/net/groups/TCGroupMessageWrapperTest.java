@@ -7,6 +7,7 @@ package com.tc.net.groups;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.ClusterStateMessage;
+import com.tc.l2.msg.GCResultMessage;
 import com.tc.l2.msg.ObjectListSyncMessage;
 import com.tc.l2.msg.ObjectSyncCompleteMessage;
 import com.tc.l2.msg.ObjectSyncMessage;
@@ -168,14 +169,14 @@ public class TCGroupMessageWrapperTest extends TestCase {
     GroupMessage received = sendGroupMessage(sendMesg);
   }
 
-//   public void testGCResultMessage() throws Exception {
-//   ObjectIDSet2 oidSet = new ObjectIDSet2();
-//   for (long i = 1; i <= 100; ++i) {
-//     oidSet.add(new ObjectID(i));
-//   }
-//   GroupMessage sendMesg = new GCResultMessage(GCResultMessage.GC_RESULT, oidSet);
-//   GroupMessage received = sendGroupMessage(sendMesg);
-//   }
+  public void testGCResultMessage() throws Exception {
+    ObjectIDSet2 oidSet = new ObjectIDSet2();
+    for (long i = 1; i <= 100; ++i) {
+      oidSet.add(new ObjectID(i));
+    }
+    GroupMessage sendMesg = new GCResultMessage(GCResultMessage.GC_RESULT, oidSet);
+    GroupMessage received = sendGroupMessage(sendMesg);
+  }
 
   public void testGroupZapNodeMessage() throws Exception {
     long weights[] = new long[] { 1, 23, 44, 78 };
@@ -184,17 +185,18 @@ public class TCGroupMessageWrapperTest extends TestCase {
     GroupMessage received = sendGroupMessage(sendMesg);
   }
 
-//  public void testL2StateMessage() throws Exception {
-//    long weights[] = new long[] { 1, 23, 44, 78 };
-//    Enrollment enroll = new Enrollment(new NodeIdUuidImpl("test"), true, weights);
-//    GroupMessage sendMesg = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
-//    GroupMessage received = sendGroupMessage(sendMesg);
-//  }
+  // public void testL2StateMessage() throws Exception {
+  // long weights[] = new long[] { 1, 23, 44, 78 };
+  // Enrollment enroll = new Enrollment(new NodeIdUuidImpl("test"), true, weights);
+  // GroupMessage sendMesg = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
+  // GroupMessage received = sendGroupMessage(sendMesg);
+  // }
 
   public void testObjectListSyncMessage() throws Exception {
     GroupMessage sendMesg = new ObjectListSyncMessage(new MessageID(10), ObjectListSyncMessage.REQUEST);
     GroupMessage received = sendGroupMessage(sendMesg);
   }
+
   public void testObjectSyncCompleteMessage() throws Exception {
     GroupMessage sendMesg = new ObjectSyncCompleteMessage(ObjectSyncCompleteMessage.OBJECT_SYNC_COMPLETE, 100);
     GroupMessage received = sendGroupMessage(sendMesg);
@@ -228,8 +230,9 @@ public class TCGroupMessageWrapperTest extends TestCase {
     Map sid2gid = new HashMap();
     long seqID = 100;
     GlobalTransactionID lowWaterMark = new GlobalTransactionID(200);
-    
-    GroupMessage sendMesg = new RelayedCommitTransactionMessage(nodeID, buffer, serializer, sid2gid, seqID, lowWaterMark);
+
+    GroupMessage sendMesg = new RelayedCommitTransactionMessage(nodeID, buffer, serializer, sid2gid, seqID,
+                                                                lowWaterMark);
     GroupMessage received = sendGroupMessage(sendMesg);
   }
 
@@ -240,6 +243,5 @@ public class TCGroupMessageWrapperTest extends TestCase {
     GroupMessage sendMesg = new ServerTxnAckMessage(nodeID, messageID, serverTxnIDs);
     GroupMessage received = sendGroupMessage(sendMesg);
   }
-
 
 }
