@@ -74,8 +74,8 @@ public class LockStatManagerTest extends TestCase {
       Assert.assertEquals(1, c.size());
       Iterator i = c.iterator();
       LockSpec lockStatisticsInfo = (LockSpec) i.next();
-      long avgHeldTimeInMillis = lockStatisticsInfo.getStats().getAvgHeldTimeInMillis();
-      long avgWaitTimeInMillis = lockStatisticsInfo.getStats().getAvgWaitTimeToAwardInMillis();
+      long avgHeldTimeInMillis = lockStatisticsInfo.getServerStats().getAvgHeldTimeInMillis();
+      long avgWaitTimeInMillis = lockStatisticsInfo.getServerStats().getAvgWaitTimeToAwardInMillis();
       System.out.println("Average held time in millis: " + avgHeldTimeInMillis);
       System.out.println("Average wait time in millis: " + avgWaitTimeInMillis);
       Assert.assertTrue(avgHeldTimeInMillis >= 4000);
@@ -102,7 +102,7 @@ public class LockStatManagerTest extends TestCase {
       Collection c = lockStatManager.getLockSpecs();
       Iterator i = c.iterator();
       LockSpec lockStatisticsInfo = (LockSpec) i.next();
-      long avgNestedLockDepth = lockStatisticsInfo.getStats().getAvgNestedLockDepth();
+      long avgNestedLockDepth = lockStatisticsInfo.getServerStats().getAvgNestedLockDepth();
       Assert.assertEquals(2, avgNestedLockDepth);
     } finally {
       resetLockManager();
@@ -127,8 +127,8 @@ public class LockStatManagerTest extends TestCase {
       Assert.assertEquals(1, c.size());
       Iterator i = c.iterator();
       LockSpec lockStatisticsInfo = (LockSpec) i.next();
-      long avgHeldTimeInMillis = lockStatisticsInfo.getStats().getAvgHeldTimeInMillis();
-      long avgWaitTimeInMillis = lockStatisticsInfo.getStats().getAvgWaitTimeToAwardInMillis();
+      long avgHeldTimeInMillis = lockStatisticsInfo.getServerStats().getAvgHeldTimeInMillis();
+      long avgWaitTimeInMillis = lockStatisticsInfo.getServerStats().getAvgWaitTimeToAwardInMillis();
       System.out.println("Average held time in millis: " + avgHeldTimeInMillis);
       System.out.println("Average wait time in millis: " + avgWaitTimeInMillis);
       Assert.assertTrue(avgHeldTimeInMillis >= 3990);

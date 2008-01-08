@@ -111,6 +111,7 @@ public abstract class LockStatisticsManager implements Serializable {
   protected void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     if (!lockStatisticsEnabled) { return; }
 
+    clear();
     lockStatConfig.setConfig(traceDepth, gatherInterval);
   }
 

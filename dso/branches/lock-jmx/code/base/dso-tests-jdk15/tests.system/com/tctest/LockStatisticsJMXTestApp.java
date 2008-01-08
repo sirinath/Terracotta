@@ -89,16 +89,21 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       testTryAutoLock(index, 2);
       testAutoLock(index, 2);
       testNameLock(index, 2);
-
+      
       enableStackTraces(index, 0, 1);
 
       String lockName = "lock0";
-      testLockAggregateWaitTime(lockName, index);
+      testServerLockAggregateWaitTime(lockName, index);
+
+      enableStackTraces(index, 1, 1);
 
       lockName = "lock1";
-      testBasicStatistics(lockName, index);
+      testLockAggregateWaitTime(lockName, index);
 
       lockName = "lock2";
+      testBasicStatistics(lockName, index);
+
+      lockName = "lock3";
 
       enableStackTraces(index, 2, 1);
 
@@ -206,6 +211,39 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     }
     waitForAllToMoveOn();
   }
+  
+  private void testServerLockAggregateWaitTime(String lockName, int index) throws Throwable {
+    if (index == 0) {
+      connect();
+      waitForAllToMoveOn();
+      String lockID = ByteCodeUtil.generateLiteralLockName(LITERAL_VALUES.valueFor(lockName), lockName);
+      long avgWaitTimeInMillis = getServerAggregateAverageWaitTime(lockID);
+      long avgHeldTimeInMillis = getServerAggregateAverageHeldTime(lockID);
+
+      System.out.println("avgHeldTimeInMillis: " + avgHeldTimeInMillis);
+      System.out.println("avgWaitTimeInMillis: " + avgWaitTimeInMillis);
+      Assert.assertTrue(avgWaitTimeInMillis > 1000);
+      Assert.assertTrue(avgHeldTimeInMillis > 2000);
+    } else if (index == 1) {
+      ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
+      waitForTwoToMoveOn();
+      Thread.sleep(2000);
+      ManagerUtil.monitorExit(lockName);
+      waitForTwoToMoveOn();
+      ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
+      Thread.sleep(3000);
+      ManagerUtil.monitorExit(lockName);
+      waitForAllToMoveOn();
+    } else if (index == 2) {
+      waitForTwoToMoveOn();
+      ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
+      waitForTwoToMoveOn();
+      Thread.sleep(2000);
+      ManagerUtil.monitorExit(lockName);
+      waitForAllToMoveOn();
+    }
+    waitForAllToMoveOn();
+  }
 
   private void testLockAggregateWaitTime(String lockName, int index) throws Throwable {
     if (index == 0) {
@@ -262,7 +300,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
 
       waitForAllToMoveOn();
 
-      verifyLockHop(lockID, 3);
+      verifyLockHop(lockID, 4);
       waitForAllToMoveOn();
       disconnect();
 
@@ -320,7 +358,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        Assert.assertEquals(expectedValue, lsi.getStats().getNumOfLockRequested());
+        Assert.assertEquals(expectedValue, lsi.getClientStats().getNumOfLockRequested());
         return;
       }
     }
@@ -332,11 +370,25 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        Assert.assertEquals(expectedValue, lsi.getStats().getNumOfLockAwarded());
+        Assert.assertEquals(expectedValue, lsi.getClientStats().getNumOfLockAwarded());
         return;
       }
     }
     throw new AssertionError(lockName + " cannot be found in the statistics.");
+  }
+  
+  private long getServerAggregateAverageHeldTime(String lockName) {
+    Collection c = statMBean.getLockSpecs();
+    for (Iterator i = c.iterator(); i.hasNext();) {
+      LockSpec lsi = (LockSpec) i.next();
+      if (lsi.getLockID().asString().equals(lockName)) {
+        echo("lockID: " + lsi.getLockID());
+
+        echo("Average wait time: " + lsi.getServerStats().getAvgHeldTimeInMillis());
+        return lsi.getServerStats().getAvgHeldTimeInMillis();
+      }
+    }
+    return -1;
   }
 
   private long getAggregateAverageHeldTime(String lockName) {
@@ -346,8 +398,22 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       if (lsi.getLockID().asString().equals(lockName)) {
         echo("lockID: " + lsi.getLockID());
 
-        echo("Average wait time: " + lsi.getStats().getAvgHeldTimeInMillis());
-        return lsi.getStats().getAvgHeldTimeInMillis();
+        echo("Average wait time: " + lsi.getClientStats().getAvgHeldTimeInMillis());
+        return lsi.getClientStats().getAvgHeldTimeInMillis();
+      }
+    }
+    return -1;
+  }
+  
+  private long getServerAggregateAverageWaitTime(String lockName) {
+    Collection c = statMBean.getLockSpecs();
+    for (Iterator i = c.iterator(); i.hasNext();) {
+      LockSpec lsi = (LockSpec) i.next();
+      if (lsi.getLockID().asString().equals(lockName)) {
+        echo("lockID: " + lsi.getLockID());
+
+        echo("Average wait time: " + lsi.getServerStats().getAvgWaitTimeToAwardInMillis());
+        return lsi.getServerStats().getAvgWaitTimeToAwardInMillis();
       }
     }
     return -1;
@@ -360,8 +426,8 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       if (lsi.getLockID().asString().equals(lockName)) {
         echo("lockID: " + lsi.getLockID());
 
-        echo("Average wait time: " + lsi.getStats().getAvgWaitTimeToAwardInMillis());
-        return lsi.getStats().getAvgWaitTimeToAwardInMillis();
+        echo("Average wait time: " + lsi.getClientStats().getAvgWaitTimeToAwardInMillis());
+        return lsi.getClientStats().getAvgWaitTimeToAwardInMillis();
       }
     }
     return -1;
@@ -372,7 +438,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        Assert.assertEquals(expectedValue, lsi.getStats().getNumOfLockHopRequests());
+        Assert.assertEquals(expectedValue, lsi.getClientStats().getNumOfLockHopRequests());
         return;
       }
     }

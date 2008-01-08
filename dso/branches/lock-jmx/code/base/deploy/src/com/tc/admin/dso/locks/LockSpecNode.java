@@ -42,7 +42,7 @@ public class LockSpecNode extends BasicLockNode {
   }
 
   public LockStats getStats() {
-    return fLockSpec.getStats();
+    return fLockSpec.getClientStats();
   }
 
   public LockNode[] children() {
