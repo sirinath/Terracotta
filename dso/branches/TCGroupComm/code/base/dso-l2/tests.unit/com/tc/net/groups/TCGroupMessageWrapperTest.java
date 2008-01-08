@@ -8,12 +8,14 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.ClusterStateMessage;
 import com.tc.l2.msg.GCResultMessage;
+import com.tc.l2.msg.L2StateMessage;
 import com.tc.l2.msg.ObjectListSyncMessage;
 import com.tc.l2.msg.ObjectSyncCompleteMessage;
 import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.ObjectSyncResetMessage;
 import com.tc.l2.msg.RelayedCommitTransactionMessage;
 import com.tc.l2.msg.ServerTxnAckMessage;
+import com.tc.l2.state.Enrollment;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
@@ -185,12 +187,12 @@ public class TCGroupMessageWrapperTest extends TestCase {
     GroupMessage received = sendGroupMessage(sendMesg);
   }
 
-  // public void testL2StateMessage() throws Exception {
-  // long weights[] = new long[] { 1, 23, 44, 78 };
-  // Enrollment enroll = new Enrollment(new NodeIdUuidImpl("test"), true, weights);
-  // GroupMessage sendMesg = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
-  // GroupMessage received = sendGroupMessage(sendMesg);
-  // }
+  public void testL2StateMessage() throws Exception {
+    long weights[] = new long[] { 1, 23, 44, 78 };
+    Enrollment enroll = new Enrollment(new NodeIdUuidImpl("test"), true, weights);
+    GroupMessage sendMesg = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
+    GroupMessage received = sendGroupMessage(sendMesg);
+  }
 
   public void testObjectListSyncMessage() throws Exception {
     GroupMessage sendMesg = new ObjectListSyncMessage(new MessageID(10), ObjectListSyncMessage.REQUEST);
