@@ -19,9 +19,7 @@ import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.CounterServlet;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import javax.management.MBeanServerConnection;
@@ -32,9 +30,6 @@ import junit.framework.Test;
 
 public final class RequestCountTest extends AbstractDeploymentTest {
   private static final TCLogger logger             = TCLogging.getTestingLogger(RequestCountTest.class);
-
-  // XXX: remove me when done debugging RequestCountTest
-  private static final String   TMC_DEBUG          = "-Dcom.tc.management.remote.protocol.terracotta.TunnelingMessageConnection.DEBUG=true";
 
   private static final int      SESSIONS_PER_NODE  = 10;
   private static final long     TEST_DURATION      = 30 * 1000;
@@ -51,12 +46,7 @@ public final class RequestCountTest extends AbstractDeploymentTest {
   }
 
   public static Test suite() {
-    List args = new ArrayList();
-
-    // XXX: remove me when done debugging RequestCountTest
-    args.add(TMC_DEBUG);
-
-    return new ServerTestSetup(RequestCountTest.class, false, args);
+    return new ServerTestSetup(RequestCountTest.class);
   }
 
   public void setUp() throws Exception {
@@ -83,10 +73,6 @@ public final class RequestCountTest extends AbstractDeploymentTest {
     WebApplicationServer server = makeWebApplicationServer(configBuilder);
     server.addWarDeployment(deployment, CONTEXT);
     server.getServerParameters().appendJvmArgs(extraJvmArg);
-
-    // XXX: remove me when done debugging RequestCountTest
-    server.getServerParameters().appendJvmArgs(TMC_DEBUG);
-
     server.start();
     return server.getPort();
   }

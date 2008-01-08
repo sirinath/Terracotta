@@ -4,6 +4,10 @@
  */
 package com.tc.management.remote.protocol.terracotta;
 
+import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.util.concurrent.SetOnceFlag;
+
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
@@ -11,19 +15,7 @@ import java.util.Map;
 import javax.management.remote.generic.MessageConnection;
 import javax.management.remote.message.Message;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.util.concurrent.SetOnceFlag;
-
 public final class TunnelingMessageConnection implements MessageConnection {
-
-  private static final boolean  DEBUG     = Boolean.getBoolean(TunnelingMessageConnection.class.getName().replace('/',
-                                                                                                                  '.')
-                                                               + ".DEBUG");
-
-  private static final TCLogger logger    = TCLogging.getLogger(TunnelingMessageConnection.class);
 
   private final LinkedList      inbox;
   private final MessageChannel  channel;
@@ -43,16 +35,9 @@ public final class TunnelingMessageConnection implements MessageConnection {
 
   public synchronized void close() {
     if (closed.attemptSet()) {
-      DEBUG("closing with queue " + inbox);
       inbox.clear();
       notifyAll();
-    } else {
-      DEBUG("already closed");
     }
-  }
-
-  private void DEBUG(String msg) {
-    if (DEBUG) logger.warn(channel.getChannelID() + " " + msg, new Throwable());
   }
 
   public synchronized void connect(final Map environment) {
@@ -73,7 +58,6 @@ public final class TunnelingMessageConnection implements MessageConnection {
   public synchronized Message readMessage() throws IOException {
     while (inbox.isEmpty()) {
       if (closed.isSet()) {
-        DEBUG("connection closed while reading");
         throw new IOException("connection closed");
       }
       try {
@@ -83,20 +67,14 @@ public final class TunnelingMessageConnection implements MessageConnection {
       }
     }
 
-    Message rv = (Message) inbox.removeFirst();
-
-    DEBUG("returning message " + rv.getClass());
-
-    return rv;
+    return (Message) inbox.removeFirst();
   }
 
   public synchronized void writeMessage(final Message outboundMessage) throws IOException {
     if (closed.isSet()) {
-      DEBUG("not sending message of " + outboundMessage.getClass());
       throw new IOException("connection closed");
     }
 
-    DEBUG("sent message of " + outboundMessage.getClass());
 
     JmxRemoteTunnelMessage messageEnvelope = (JmxRemoteTunnelMessage) channel
         .createMessage(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE);
@@ -109,11 +87,9 @@ public final class TunnelingMessageConnection implements MessageConnection {
    */
   synchronized void incomingNetworkMessage(final Message inboundMessage) {
     if (closed.isSet()) {
-      DEBUG("dropping incoming message of " + inboundMessage.getClass());
       return;
     }
 
-    DEBUG("received message of " + inboundMessage.getClass());
     inbox.addLast(inboundMessage);
     notifyAll();
   }
