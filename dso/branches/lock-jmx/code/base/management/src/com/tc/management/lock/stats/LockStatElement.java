@@ -33,8 +33,9 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   private LockID                          lockID;
   private LockStats                       lockStat;
   private int                             hashCode;
-  private Map                             nextStat    = new HashMap();        // Map<LockStatElement, LockStatElement>
-  private final transient LockHolderStats holderStats = new LockHolderStats(); // TCSerializable and Serializable
+  private Map                             nextStat          = new HashMap();        // Map<LockStatElement,
+                                                                                    // LockStatElement>
+  public final transient LockHolderStats holderStats       = new LockHolderStats(); // TCSerializable and Serializable
   // transient
 
   private StackTraceElement               stackTraceElement;
@@ -52,7 +53,6 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     //
   }
 
-  // TODO: return empty string for now ...
   public String getConfigElement() {
     return lockConfigElement;
   }
@@ -72,8 +72,8 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     return stackTraceElement;
   }
 
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis,
-                                  String contextInfo, StackTraceElement[] stackTraces, int startIndex) {
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis, String contextInfo,
+                                  StackTraceElement[] stackTraces, int startIndex) {
     this.lockStat.recordLockRequested();
     this.lockConfigElement = contextInfo;
     LockHolder lockHolder = newLockHolder(lockID, nodeID, threadID, requestedTimeInMillis);
@@ -84,7 +84,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
     child.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, startIndex + 1);
   }
-  
+
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
                                    int nestedLockDepth) {
     LockKey nonGreedyLockKey = newLockKey(lockID, nodeID, threadID);
@@ -94,11 +94,13 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     }
 
     StackTraceElement[] stackTraces = holderStats.getTraces(nonGreedyLockKey);
-    return recordLockAwarded(nonGreedyLockKey, greedyLockKey, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, 0);
+    return recordLockAwarded(nonGreedyLockKey, greedyLockKey, isGreedy, awardedTimeInMillis, nestedLockDepth,
+                             stackTraces, 0);
   }
 
-  private boolean recordLockAwarded(LockKey nonGreedyLockKey, LockKey greedyLockKey, boolean isGreedy, long awardedTimeInMillis,
-                                   int nestedLockDepth, StackTraceElement[] stackTraces, int startIndex) {
+  private boolean recordLockAwarded(LockKey nonGreedyLockKey, LockKey greedyLockKey, boolean isGreedy,
+                                    long awardedTimeInMillis, int nestedLockDepth, StackTraceElement[] stackTraces,
+                                    int startIndex) {
     LockKey lockKey = nonGreedyLockKey;
     LockHolder lockHolder = holderStats.getLockHolder(lockKey);
     if (lockHolder == null) { return false; } // a lock holder could be null if jmx is enabled during runtime
@@ -114,17 +116,18 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     this.lockStat.recordLockAwarded(lockHolder.getWaitTimeInMillis(), nestedLockDepth);
     if (stackTraces != null && startIndex < stackTraces.length) {
       LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
-      child.recordLockAwarded(nonGreedyLockKey, greedyLockKey, isGreedy, awardedTimeInMillis, nestedLockDepth, stackTraces, startIndex + 1);
+      child.recordLockAwarded(nonGreedyLockKey, greedyLockKey, isGreedy, awardedTimeInMillis, nestedLockDepth,
+                              stackTraces, startIndex + 1);
     }
 
     return true;
   }
-  
+
   public boolean recordLockReleased(NodeID nodeID, ThreadID threadID) {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
-    
+
     StackTraceElement[] stackTraces = holderStats.getPendingHeldTraces(lockKey);
-    
+
     return recordLockReleased(lockKey, stackTraces, 0);
   }
 
@@ -145,38 +148,37 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
     return true;
   }
-  
+
   public void recordLockHopped(NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces, int startIndex) {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     stackTraces = holderStats.peekTraces(lockKey);
-    
+
     LockHolder lockHolder = holderStats.getLockHolder(lockKey);
     if (lockHolder == null) { return; }
-    
+
     this.lockStat.recordLockHopRequested();
-    
+
     if (stackTraces != null && startIndex < stackTraces.length) {
       LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
       child.recordLockHopped(nodeID, threadID, stackTraces, startIndex + 1);
     }
   }
-  
-  
+
   public void recordLockHopped() {
     this.lockStat.recordLockHopRequested();
   }
-  
+
   public void recordLockRejected(NodeID nodeID, ThreadID threadID) {
     LockKey lockKey = newLockKey(lockID, nodeID, threadID);
     StackTraceElement[] stackTraces = holderStats.getTraces(lockKey);
-    
+
     recordLockRejected(lockKey, stackTraces, 0);
   }
-  
+
   private void recordLockRejected(LockKey lockKey, StackTraceElement[] stackTraces, int startIndex) {
     LockHolder lockHolder = holderStats.remove(lockKey);
     if (lockHolder == null) { return; }
-    
+
     this.lockStat.recordLockRejected();
     if (stackTraces == null || startIndex >= stackTraces.length) { return; }
 
@@ -185,13 +187,32 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   }
 
   public void aggregateLockHoldersData(LockStats stat, int startIndex) {
+    System.err.println("@@@@@@@@@lockID: " + lockID + " in aggregateLockHoldersData: " + holderStats);
     holderStats.aggregateLockHoldersData(stat);
-    
+
     System.err.println("@@@@@@@@@@@@@@lockID: " + lockID + ", stat: " + stat);
 
     for (Iterator i = nextStat.keySet().iterator(); i.hasNext();) {
       LockStatElement child = (LockStatElement) i.next();
       child.aggregateLockHoldersData(child.getStats(), startIndex + 1);
+    }
+  }
+
+  public void aggregateLockStat() {
+    lockStat.clear();
+    for (Iterator i = nextStat.keySet().iterator(); i.hasNext();) {
+      LockStatElement lockStatElement = (LockStatElement) i.next();
+      System.err.println("================>In aggregateLockStat: lockID: " + lockID + ", " + lockStatElement + ", lockStat: " + lockStat);
+      long pendingRequests = lockStatElement.lockStat.getNumOfLockPendingRequested();
+      long pendingWaiters = lockStatElement.lockStat.getNumOfPendingWaiters();
+      long lockRequested = lockStatElement.lockStat.getNumOfLockRequested();
+      long lockHopRequests = lockStatElement.lockStat.getNumOfLockHopRequests();
+      long lockAwarded = lockStatElement.lockStat.getNumOfLockAwarded();
+      long timeToAwardedInMillis = lockStatElement.lockStat.getTotalWaitTimeToAwardedInMillis();
+      long heldTimeInMillis = lockStatElement.lockStat.getTotalRecordedHeldTimeInMillis();
+      long numOfReleases = lockStatElement.lockStat.getNumOfLockReleased();
+      lockStat.aggregateStatistics(pendingRequests, pendingWaiters, lockRequested, lockHopRequests, lockAwarded,
+                                   timeToAwardedInMillis, heldTimeInMillis, numOfReleases);
     }
   }
 
@@ -217,7 +238,8 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
       long timeToAwardedInMillis = lockStatElement.lockStat.getTotalWaitTimeToAwardedInMillis();
       long heldTimeInMillis = lockStatElement.lockStat.getTotalRecordedHeldTimeInMillis();
       long numOfReleases = lockStatElement.lockStat.getNumOfLockReleased();
-      logDebug("@@@@@@@@In merge child -- lockID: " + lockID + " existLSE is not null, timeToAward: " + timeToAwardedInMillis + ", heldTimeInMillis: " + heldTimeInMillis);
+      logDebug("@@@@@@@@In merge child -- lockID: " + lockID + " existLSE is not null, timeToAward: "
+               + timeToAwardedInMillis + ", heldTimeInMillis: " + heldTimeInMillis);
       existLSE.lockStat.aggregateStatistics(pendingRequests, pendingWaiters, lockRequested, lockHopRequests,
                                             lockAwarded, timeToAwardedInMillis, heldTimeInMillis, numOfReleases);
 
@@ -321,7 +343,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     }
     return sb.toString();
   }
-  
+
   private void logDebug(String msg) {
     System.err.println(msg);
   }
@@ -374,13 +396,13 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
         return (StackTraceElement[]) traces.pop();
       }
-      
+
       StackTraceElement[] peekTraces() {
         if (traces.isEmpty()) { return null; }
 
         return (StackTraceElement[]) traces.peek();
       }
-      
+
       boolean isTracesEmpty() {
         return traces.isEmpty();
       }
@@ -431,10 +453,8 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
       LockKey subKey = key.subKey();
       Map lockHolders = (Map) pendingData.get(subKey);
       if (lockHolders != null) {
-        LockHolderContext lhc = (LockHolderContext)lockHolders.remove(key);
-        if (lhc != null) {
-          return lhc.getLockHolder();
-        }
+        LockHolderContext lhc = (LockHolderContext) lockHolders.remove(key);
+        if (lhc != null) { return lhc.getLockHolder(); }
       }
       return null;
     }
@@ -515,7 +535,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
       return lhc.popTraces();
     }
-    
+
     public StackTraceElement[] peekTraces(LockKey key) {
       LockHolderContext lhc = get(pendingData, key);
       if (lhc == null) { return null; }

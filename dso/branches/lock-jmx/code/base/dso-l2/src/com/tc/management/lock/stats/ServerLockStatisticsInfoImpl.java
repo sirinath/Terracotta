@@ -21,8 +21,8 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   private final Set<NodeID>                              statEnabledClients     = new HashSet<NodeID>();
   private final Map<NodeID, Collection<LockStatElement>> clientLockStatElements = new HashMap<NodeID, Collection<LockStatElement>>();
 
-  private LockStatElement                                statElement;
-  private LockStats                                      stat;
+  private LockStatElement                                clientStatElement, serverStatElement;
+  private LockStats                                      clientStat, serverStat;
   private String                                         lockType;
 
   public ServerLockStatisticsInfoImpl(LockID lockID) {
@@ -33,16 +33,25 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   public void init() {
     statEnabledClients.clear();
     clientLockStatElements.clear();
-    statElement = new LockStatElement(lockID, null);
-    stat = statElement.getStats();
+    clientStatElement = new LockStatElement(lockID, null);
+    clientStat = clientStatElement.getStats();
+    serverStatElement = new LockStatElement(lockID, null);
+    serverStat = serverStatElement.getStats();
+    System.err.println("&&&&&&&&&&&&&&&&&& holdersDataStat after serverStatElement: " + serverStatElement.holderStats + " " + System.identityHashCode(serverStatElement));
   }
 
   public LockID getLockID() {
     return lockID;
   }
+  
+  public LockStats getServerStats() {
+    System.err.println("serverStatElement: " + System.identityHashCode(serverStatElement));
+    serverStatElement.aggregateLockHoldersData(serverStat, 0);
+    return serverStat;
+  }
 
-  public LockStats getStats() {
-    return stat;
+  public LockStats getClientStats() {
+    return clientStat;
   }
 
   // TODO: return empty string for now
@@ -51,30 +60,30 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   public Collection children() {
-    return statElement.children();
+    return clientStatElement.children();
   }
 
   public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis,
                                   StackTraceElement[] stackTraces, String contextInfo) {
     this.lockType = contextInfo;
-    statElement.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, 0);
+    serverStatElement.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, 0);
   }
 
   public void recordLockRejected(NodeID nodeID, ThreadID threadID) {
-    statElement.recordLockRejected(nodeID, threadID);
+    serverStatElement.recordLockRejected(nodeID, threadID);
   }
 
   public void recordLockHopRequested() {
-    statElement.recordLockHopped();
+    serverStatElement.recordLockHopped();
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
                                    int nestedLockDepth) {
-    return statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth);
+    return serverStatElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth);
   }
 
   public boolean recordLockReleased(NodeID nodeID, ThreadID threadID) {
-    return statElement.recordLockReleased(nodeID, threadID);
+    return serverStatElement.recordLockReleased(nodeID, threadID);
   }
 
   public void addClient(NodeID nodeID) {
@@ -90,23 +99,23 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   public long getNumberOfLockRequested() {
-    return stat.getNumOfLockRequested();
+    return serverStat.getNumOfLockRequested();
   }
 
   public long getNumberOfLockReleased() {
-    return stat.getNumOfLockReleased();
+    return serverStat.getNumOfLockReleased();
   }
 
   public long getNumberOfLockHopRequested() {
-    return stat.getNumOfLockHopRequests();
+    return serverStat.getNumOfLockHopRequests();
   }
 
   public long getNumberOfPendingRequests() {
-    return stat.getNumOfLockPendingRequested();
+    return serverStat.getNumOfLockPendingRequested();
   }
 
   public LockStatElement getLockStatElement() {
-    return statElement;
+    return serverStatElement;
   }
 
   public void setLockStatElements(NodeID nodeID, Collection lockStatElements) {
@@ -114,7 +123,7 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
 
   private void mergeLockStatElements() {
-    statElement.clearChild();
+    clientStatElement.clearChild();
 
     logDebug("*******Getting from clientLockStatElement: " + clientLockStatElements.size());
     for (Iterator<Collection<LockStatElement>> i = clientLockStatElements.values().iterator(); i.hasNext();) {
@@ -122,22 +131,22 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
       logDebug("*******Getting from clientLockStatElement: " + lockStatElements);
       for (Iterator<LockStatElement> it = lockStatElements.iterator(); it.hasNext();) {
         LockStatElement lse = it.next();
-        statElement.mergeChild(lse);
-        logDebug("=====>statElement after merge: " + statElement);
+        clientStatElement.mergeChild(lse);
+        logDebug("=====>statElement after merge: " + clientStatElement);
       }
     }
   }
 
   public void aggregateLockHoldersData() {
-    statElement.aggregateLockHoldersData(stat, 0);
     mergeLockStatElements();
+    clientStatElement.aggregateLockStat();
   }
 
   public String toString() {
     StringBuffer sb = new StringBuffer("lockType: " );
     sb.append(lockType);
     sb.append(" ");
-    sb.append(statElement.toString());
+    sb.append(serverStatElement.toString());
     sb.append("\n");
     return sb.toString();
   }

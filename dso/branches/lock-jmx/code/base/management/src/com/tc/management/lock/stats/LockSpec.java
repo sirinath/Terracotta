@@ -13,7 +13,9 @@ public interface LockSpec {
   
   public String getObjectType();
   
-  public LockStats getStats();
+  public LockStats getServerStats();
+  
+  public LockStats getClientStats();
   
   public Collection children();
   

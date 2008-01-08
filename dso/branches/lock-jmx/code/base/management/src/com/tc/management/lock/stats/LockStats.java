@@ -46,6 +46,19 @@ public class LockStats implements TCSerializable, Serializable {
     this.avgHeldTimeInMillis = getAvgHeldTimeInMillis();
     this.avgWaitTimeToAwardInMillis = getAvgWaitTimeToAwardInMillis();
   }
+  
+  public void clear() {
+    this.numOfPendingRequests = 0;
+    this.numOfPendingWaiters = 0;
+    this.numOfLockRequested = 0;
+    this.numOfLockHopRequests = 0;
+    this.numOfLockAwarded = 0;
+    this.totalWaitTimeToAwardedInMillis = 0;
+    this.totalRecordedHeldTimeInMillis = 0;
+    this.totalRecordedReleases = 0;
+    this.avgHeldTimeInMillis = NON_SET_TIME_MILLIS;
+    this.avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
+  }
 
   public void recordLockRequested() {
     this.numOfLockRequested++;

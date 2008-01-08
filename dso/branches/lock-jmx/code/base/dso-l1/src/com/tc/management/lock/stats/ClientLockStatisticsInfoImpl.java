@@ -5,6 +5,7 @@
 package com.tc.management.lock.stats;
 
 import com.tc.exception.ImplementMe;
+import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.net.groups.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
@@ -77,8 +78,12 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   public LockID getLockID() {
     return lockID;
   }
+  
+  public LockStats getServerStats() {
+    throw new TCNotSupportedMethodException();
+  }
 
-  public LockStats getStats() {
+  public LockStats getClientStats() {
     return stat;
   }
   
