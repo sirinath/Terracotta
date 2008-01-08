@@ -328,6 +328,13 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     logger.debug("Channel removed from " + channel.getChannelID().getNodeID());
     memberDisappeared(getMember(channel));
   }
+  
+  public void closeAllChannels() {
+    ArrayList<TCGroupMember> tmpList = new ArrayList<TCGroupMember> (members);
+    for(int i = 0; i < tmpList.size(); ++i) {
+      closeChannel(tmpList.get(i));
+    }
+  }
 
   public NodeID getNodeID() {
     return nodeID;
@@ -380,7 +387,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   public void shutdown() {
     try {
       stop(1000);
-      communicationsManager.shutdown();
+      closeAllChannels();
     } catch (TCTimeoutException e) {
       logger.warn("Timeout at shutting down " + e);
     }
@@ -399,7 +406,6 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     try {
       Constructor<AbstractGroupMessage> cons = clazz.getDeclaredConstructor(new Class[0]);
       if ((cons.getModifiers() & Modifier.PUBLIC) == 0) {
-        //
         throw new AssertionError(name + " : public no arg constructor not found");
       }
     } catch (NoSuchMethodException ex) {
