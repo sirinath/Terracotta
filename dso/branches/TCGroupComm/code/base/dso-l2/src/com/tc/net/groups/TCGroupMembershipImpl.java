@@ -398,8 +398,36 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void messageReceived(GroupMessage message, MessageChannel channel) {
-    fireMessageReceivedEvent(getMember(channel).getNodeID(), message);
+    
+    if (debug) {
+      logger.info(getNodeID() + " recd msg " + message.getMessageID() + " From " + channel + " Msg : " + message);
+    }
+    
+    TCGroupMember m = getMember(channel);
+    if (m == null) {
+      logger.warn("Message from non-existing member with channel: " + channel);
+      // XXX? drop message
+      return;
+    }
+    
+    MessageID requestID = message.inResponseTo();
+    NodeID from = m.getNodeID();
+    
+    message.setMessageOrginator(from);
+    if (requestID.isNull() || !notifyPendingRequests(requestID, message, m)) {
+      fireMessageReceivedEvent(from, message);
+    }
   }
+  
+  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, TCGroupMember sender) {
+    GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
+    if (response != null) {
+      response.addResponseFrom(sender, gmsg);
+      return true;
+    }
+    return false;
+  }
+
 
   private static void validateExternalizableClass(Class<AbstractGroupMessage> clazz) {
     String name = clazz.getName();

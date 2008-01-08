@@ -50,9 +50,6 @@ public class TCGroupMessageSerializer implements TCSerializable {
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    //serialOutput.writeString(message.getClass().getName());
-    //this.message.serializeTo(serialOutput);
-    
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {
       ObjectOutputStream stream = new ObjectOutputStream(out);
