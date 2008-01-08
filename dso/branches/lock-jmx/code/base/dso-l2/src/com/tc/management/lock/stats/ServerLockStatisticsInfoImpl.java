@@ -45,8 +45,6 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   }
   
   public LockStats getServerStats() {
-    System.err.println("serverStatElement: " + System.identityHashCode(serverStatElement));
-    serverStatElement.aggregateLockHoldersData(serverStat, 0);
     return serverStat;
   }
 
@@ -140,6 +138,7 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   public void aggregateLockHoldersData() {
     mergeLockStatElements();
     clientStatElement.aggregateLockStat();
+    serverStatElement.aggregateLockHoldersData(serverStat, 0);
   }
 
   public String toString() {
