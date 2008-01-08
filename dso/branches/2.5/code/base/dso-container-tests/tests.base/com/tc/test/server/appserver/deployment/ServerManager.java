@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -42,8 +43,9 @@ public class ServerManager {
   private File                   installDir;
   private File                   warDir;
   private TcConfigBuilder        serverTcConfig = new TcConfigBuilder();
+  private final Collection       jvmArgs;
 
-  public ServerManager(final Class testClass) throws Exception {
+  public ServerManager(final Class testClass, Collection extraJvmArgs) throws Exception {
     PropertiesHackForRunningInEclipse.initializePropertiesWhenRunningInEclipse();
     config = TestConfigObject.getInstance();
     factory = AppServerFactory.createFactoryFromProperties(config);
@@ -51,6 +53,7 @@ public class ServerManager {
     tempDir = TempDirectoryUtil.getTempDirectory(testClass);
     sandbox = AppServerUtil.createSandbox(tempDir);
     warDir = new File(sandbox, "war");
+    jvmArgs = extraJvmArgs;
     installation = AppServerUtil.createAppServerInstallation(factory, installDir, sandbox);
 
     if (DEBUG_MODE) {
@@ -103,6 +106,11 @@ public class ServerManager {
       dsoServer.getJvmArgs().add("-XX:+HeapDumpOnOutOfMemoryError");
     }
     dsoServer.getJvmArgs().add("-Xmx128m");
+
+    for (Iterator iterator = jvmArgs.iterator(); iterator.hasNext();) {
+      dsoServer.getJvmArgs().add(iterator.next());
+    }
+
     logger.debug("Starting DSO server with sandbox: " + sandbox.getAbsolutePath());
     dsoServer.start();
     addServerToStop(dsoServer);
