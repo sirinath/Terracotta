@@ -50,7 +50,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private static final long              WARN_THRESHOLD      = 0x400000L;                                       // 4MB
 
   private final LinkedList               writeContexts       = new LinkedList();
-  private final TCCommJDK14              comm;
+  private final CoreNIOServices          commNIOServiceThread;
+
   private final TCConnectionManagerJDK14 parent;
   private final TCConnectionEventCaller  eventCaller         = new TCConnectionEventCaller(logger);
   private final SynchronizedLong         lastActivityTime    = new SynchronizedLong(System.currentTimeMillis());
@@ -62,17 +63,18 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private final SynchronizedBoolean      connected           = new SynchronizedBoolean(false);
   private final SetOnceRef               localSocketAddress  = new SetOnceRef();
   private final SetOnceRef               remoteSocketAddress = new SetOnceRef();
-  private volatile SocketChannel         channel;
   private final SocketParams             socketParams;
+  private volatile SocketChannel         channel;
 
   // for creating unconnected client connections
-  TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor,
-                    TCConnectionManagerJDK14 managerJDK14, SocketParams socketParams) {
-    this(listener, comm, adaptor, null, managerJDK14, socketParams);
+  TCConnectionJDK14(TCConnectionEventListener listener, TCProtocolAdaptor adaptor,
+                    TCConnectionManagerJDK14 managerJDK14, CoreNIOServices nioServiceThread, SocketParams socketParams) {
+    this(listener, adaptor, null, managerJDK14, nioServiceThread, socketParams);
   }
 
-  TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor, SocketChannel ch,
-                    TCConnectionManagerJDK14 parent, SocketParams socketParams) {
+  TCConnectionJDK14(TCConnectionEventListener listener, TCProtocolAdaptor adaptor, SocketChannel ch,
+                    TCConnectionManagerJDK14 parent, CoreNIOServices nioServiceThread, SocketParams socketParams) {
+
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
 
@@ -81,8 +83,6 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     if (listener != null) addListener(listener);
 
-    Assert.assertNotNull(comm);
-    this.comm = comm;
     this.channel = ch;
 
     if (ch != null) {
@@ -90,13 +90,14 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
 
     this.socketParams = socketParams;
+    this.commNIOServiceThread = nioServiceThread;
   }
 
   private void closeImpl(Runnable callback) {
     Assert.assertTrue(closed.isSet());
     try {
       if (channel != null) {
-        comm.cleanupChannel(channel, callback);
+        commNIOServiceThread.cleanupChannel(channel, callback);
       } else {
         callback.run();
       }
@@ -124,7 +125,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         newSocket.socket().connect(inetAddr, timeout);
         break;
       } catch (SocketTimeoutException ste) {
-        comm.cleanupChannel(newSocket, null);
+        Assert.eval(commNIOServiceThread != null);
+        commNIOServiceThread.cleanupChannel(newSocket, null);
         throw new TCTimeoutException("Timeout of " + timeout + "ms occured connecting to " + addr, ste);
       } catch (ClosedSelectorException cse) {
         if (NIOWorkarounds.windowsConnectWorkaround(cse)) {
@@ -138,7 +140,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     channel = newSocket;
     newSocket.configureBlocking(false);
-    comm.requestReadInterest(this, newSocket);
+    Assert.eval(commNIOServiceThread != null);
+    commNIOServiceThread.requestReadInterest(this, newSocket);
   }
 
   private SocketChannel createChannel() throws IOException, SocketException {
@@ -149,7 +152,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   }
 
   private Socket detachImpl() throws IOException {
-    comm.unregister(channel);
+    commNIOServiceThread.unregister(channel);
     channel.configureBlocking(true);
     return channel.socket();
   }
@@ -165,13 +168,13 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     channel = newSocket;
 
     if (!rv) {
-      comm.requestConnectInterest(this, newSocket);
+      commNIOServiceThread.requestConnectInterest(this, newSocket);
     }
 
     return rv;
   }
 
-  public void doRead(ScatteringByteChannel sbc) {
+  public int doRead(ScatteringByteChannel sbc) {
     final boolean debug = logger.isDebugEnabled();
     final TCByteBuffer[] readBuffers = getReadBuffers();
 
@@ -210,7 +213,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       }
 
       eventCaller.fireErrorEvent(eventListeners, this, ioe, null);
-      return;
+      return bytesRead;
     }
 
     if (readEOF) {
@@ -221,7 +224,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       if (debug) logger.debug("EOF read on connection " + channel.toString());
 
       eventCaller.fireEndOfFileEvent(eventListeners, this);
-      return;
+      return bytesRead;
     }
 
     Assert.eval(bytesRead >= 0);
@@ -229,6 +232,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     if (debug) logger.debug("Read " + bytesRead + " bytes on connection " + channel.toString());
 
     addNetworkData(readBuffers, bytesRead);
+
+    return bytesRead;
   }
 
   public void doWrite(GatheringByteChannel gbc) {
@@ -295,7 +300,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       }
 
       if (writeContexts.isEmpty()) {
-        comm.removeWriteInterest(this, channel);
+        commNIOServiceThread.removeWriteInterest(this, channel);
       }
     }
   }
@@ -364,7 +369,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       // after finishConnect(). Only after this selection occurs it is always safe to try
       // to write.
 
-      comm.requestWriteInterest(this, channel);
+      commNIOServiceThread.requestWriteInterest(this, channel);
     }
   }
 
