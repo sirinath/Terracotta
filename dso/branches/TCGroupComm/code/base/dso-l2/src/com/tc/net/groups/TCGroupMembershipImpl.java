@@ -149,6 +149,8 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     ConfigurationContext context = new ConfigurationContextImpl(stageManager);
 
     stageManager.startAll(context);
+    
+    registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
 
     return (aNodeID);
   }
@@ -476,11 +478,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
       logger.warn("Zapping node : " + nodeID + " type = " + type + " reason = " + reason + " my weight = "
                   + Arrays.toString(weights));
       GroupMessage msg = GroupZapNodeMessageFactory.createGroupZapNodeMessage(type, reason, weights);
-      // try {
       sendTo(nodeID, msg);
-      // } catch (GroupException e) {
-      // logger.error("Error sending ZapNode Request to " + nodeID + " msg = " + msg);
-      // }
       logger.warn("Removing member " + m + " from group");
       memberDisappeared(m);
     }
@@ -511,16 +509,11 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     }
 
     public void sendAll(TCGroupMembership membership, GroupMessage msg) {
-      // try {
       List<TCGroupMember> m = membership.getMembers();
       if (m.size() > 0) {
         setUpWaitFor(m);
         membership.sendAll(msg);
       }
-      // } catch (ChannelException e) {
-      // logger.error("Error sending msg : " + msg, e);
-      // reconsileWaitFor(e);
-      // }
     }
 
     private synchronized void setUpWaitFor(List<TCGroupMember> members) {
@@ -560,15 +553,14 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
         }
       }
     }
-
-    // private synchronized void reconsileWaitFor(ChannelException e) {
-    // FaultyMember fm[] = e.getFaultyMembers();
-    // for (int i = 0; i < fm.length; i++) {
-    // logger.warn("Removing faulty Member " + fm[i] + " from list");
-    // waitFor.remove(makeNodeIDFrom(fm[i].getMember()));
-    // }
-    // logger.info("Current waiting members = " + waitFor);
-    // }
   }
 
+  private final class ZapNodeRequestRouter implements GroupMessageListener {
+
+    public void messageReceived(NodeID fromNode, GroupMessage msg) {
+      GroupZapNodeMessage zapMsg = (GroupZapNodeMessage) msg;
+      zapNodeRequestProcessor.incomingZapNodeRequest(msg.messageFrom(), zapMsg.getZapNodeType(), zapMsg.getReason(),
+                                                     zapMsg.getWeights());
+    }
+  }
 }
