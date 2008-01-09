@@ -12,18 +12,23 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private static final TCLogger logger  = TCLogging.getLogger(TCGroupMemberDiscoveryStatic.class);
+  private static final TCLogger logger            = TCLogging.getLogger(TCGroupMemberDiscoveryStatic.class);
 
   private Node                  local;
   private Node[]                nodes;
   private TCGroupManager        manager;
-  private boolean               running = false;
+  private AtomicBoolean         running           = new AtomicBoolean(false);
+  private AtomicBoolean         stopAttempt       = new AtomicBoolean(false);
+  private boolean               debug             = true;
+  private long                  connectIntervalms = 1000;
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
     nodes = makeAllNodes(configSetupManager);
@@ -52,7 +57,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   private static Node makeNode(NewL2DSOConfig l2) {
-    int dsoPort = l2.listenPort().getInt();
     return new Node(l2.host().getString(), l2.l2GroupPort().getInt());
   }
 
@@ -64,17 +68,22 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     this.manager = manager;
   }
 
-  public void start() {
-    running = true;
+  public void start() throws GroupException {
+    if (nodes == null || nodes.length == 0) {
+      throw new GroupException("Wrong nodes");
+    }
+    
+    if (running.get()) return;
+    stopAttempt.set(false);
+    running.set(true);
     Thread discover = new Thread(new Runnable() {
       public void run() {
-        while (running) {
+        while (!stopAttempt.get()) {
           openChannels();
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-          }
+          ThreadUtil.reallySleep(connectIntervalms);
         }
+        stopAttempt.set(false);
+        running.set(false);
       }
     }, "Member discovery");
     discover.start();
@@ -88,18 +97,22 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       Node n = nodes[i];
 
       // skip local one
-      if (local.equals(n)) continue;
+      if (local.equals(n) || (n == null)) continue;
 
       TCSocketAddress remote;
       try {
         remote = new TCSocketAddress(n.getHost(), n.getPort());
       } catch (UnknownHostException e) {
-        logger.warn("Bad node:" + n + " " + e);
+        nodes[i] = null;
+        logger.error("Removed bad node:" + n + " " + e);
         continue;
       }
 
       if (getMember(remote) == null) {
         try {
+          if (debug) {
+            logger.debug(manager.getNodeID().toString() + " opens channel to " + remote);
+          }
           manager.openChannel(n.getHost(), n.getPort());
         } catch (TCTimeoutException e) {
           logger.warn("Node:" + n + " " + e);
@@ -128,7 +141,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public void stop() {
-    running = false;
+    if (!running.get()) return;
+    stopAttempt.set(false);
   }
 
   public void setLocalNode(Node local) {

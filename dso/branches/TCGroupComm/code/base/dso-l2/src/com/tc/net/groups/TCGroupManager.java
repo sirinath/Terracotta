@@ -50,17 +50,10 @@ public interface TCGroupManager extends GroupManager {
   
   public int size();
   
-  public void registerForGroupEvents(GroupEventsListener listener);
-  
   public void memberAdded(TCGroupMember member);
   
   public void memberDisappeared(TCGroupMember member);
   
-  public void registerForMessages(Class msgClass, GroupMessageListener listener);
-  
   public void messageReceived(GroupMessage message, MessageChannel channel);
 
-  public void setZapNodeRequestProcessor(ZapNodeRequestProcessor processor);
-  
-  public void zapNode(NodeID nodeID, int type, String reason);
 }
