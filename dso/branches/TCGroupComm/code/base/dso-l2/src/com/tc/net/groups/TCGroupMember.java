@@ -8,6 +8,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 
 
 public interface TCGroupMember {
+  
   public NodeID getSrcNodeID();
   
   public NodeID getDstNodeID();
@@ -18,9 +19,9 @@ public interface TCGroupMember {
   
   public void send(GroupMessage msg);
   
-  public void setTCGroupMembership(TCGroupMembership membership);
+  public void setTCGroupManager(TCGroupManager manager);
   
-  public TCGroupMembership getTCGroupMembership();
+  public TCGroupManager getTCGroupManager();
   
   public boolean isConnected();
   
