@@ -144,43 +144,52 @@
 	</container>
     <container class="com.tc.admin.common.XContainer" tag="LocksPanel">
       <children>
-        <splitpane divider-location="-1" focus-index="0">
-          <left>
-            <scrollpane name="TableScroller"/>
-          </left>
-          <right>
-            <splitpane divider-location="-1" focus-index="0" orientation="horizontal" resize-weight="0.5">
-              <left>
-                <container>
-                  <children>
-                    <label text="Trace"/>
-                    <scrollpane>
-                      <textarea name="TraceText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
-                    </scrollpane>
-                  </children>
-		          <connections>
-			        <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:sn" top="-1,top:n" width="n"/>
-			        <item bottom="-1,bottom:n" height="s" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="s"/>
-		          </connections>
-		        </container>
-              </left>
-              <right>
-                <container>
-                  <children>
-                    <label name="ConfigLabel"/>
-                    <scrollpane>
-                      <textarea name="ConfigText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
-                    </scrollpane>
-                  </children>
-		          <connections>
-			        <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:sn" top="-1,top:n" width="n"/>
-			        <item bottom="-1,bottom:n" height="s" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="s"/>
-		          </connections>
-		        </container>
-              </right>
-            </splitpane>
-          </right>
-        </splitpane>
+        <tabbedpane class="com.tc.admin.common.XTabbedPane" name="LocksTabbedPane" selected-index="0">
+        <tab title="Clients">
+          <splitpane divider-location="-1" focus-index="0">
+            <left>
+              <scrollpane name="TableScroller"/>
+            </left>
+            <right>
+              <splitpane divider-location="-1" focus-index="0" orientation="horizontal" resize-weight="0.5">
+                <left>
+                  <container>
+                    <children>
+                      <label text="Trace"/>
+                      <scrollpane>
+                        <textarea name="TraceText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
+                      </scrollpane>
+                    </children>
+		            <connections>
+			          <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:sn" top="-1,top:n" width="n"/>
+			          <item bottom="-1,bottom:n" height="s" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="s"/>
+		            </connections>
+		          </container>
+                </left>
+                <right>
+                  <container>
+                    <children>
+                      <label name="ConfigLabel"/>
+                      <scrollpane>
+                        <textarea name="ConfigText" line-wrap="false" editable="false" class="com.tc.admin.common.XTextArea"/>
+                      </scrollpane>
+                    </children>
+		            <connections>
+			          <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:sn" top="-1,top:n" width="n"/>
+			          <item bottom="-1,bottom:n" height="s" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="s"/>
+		            </connections>
+		          </container>
+                </right>
+              </splitpane>
+            </right>
+          </splitpane>
+        </tab>
+        <tab title="Server">
+          <scrollpane>
+            <table class="com.tc.admin.common.XObjectTable" name="ServerLocksTable"/>
+          </scrollpane>
+        </tab>
+        </tabbedpane>
         <container>
           <children>
             <label text="Enable Lock Tracing:"/>
