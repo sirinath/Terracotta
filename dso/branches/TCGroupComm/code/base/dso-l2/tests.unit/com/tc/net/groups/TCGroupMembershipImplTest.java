@@ -26,7 +26,11 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.session.NullSessionManager;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.PortChooser;
+import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -313,6 +317,9 @@ public class TCGroupMembershipImplTest extends TestCase {
       rMesg = listener.getNextMessageFrom(groups[1].getNodeID());
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
     }
+    
+    Thread.sleep(200);
+    tearGroups();
   }
   
   public void testSendAllAndWait() throws Exception {
@@ -344,8 +351,63 @@ public class TCGroupMembershipImplTest extends TestCase {
         assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
       }
     }
+    
+    Thread.sleep(200);
+    tearGroups();
   }
+  
+  public void testZapNode() throws Exception {
+    int nGrp = 2;
+    MyGroupEventListener eventListeners[] = new MyGroupEventListener[nGrp];
+    MyZapNodeRequestProcessor zaps[] = new MyZapNodeRequestProcessor[nGrp];
+    NodeID nodeIDs[] = new NodeID[nGrp];
+    setupGroups(nGrp);
+    HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
+    for (int i = 0; i < nGrp; ++i) {
+      eventListeners[i] = new MyGroupEventListener();
+      groups[i].registerForGroupEvents(eventListeners[i]);
+      zaps[i] = new MyZapNodeRequestProcessor();
+      groups[i].setZapNodeRequestProcessor(zaps[i]);
+      groups[i].registerForMessages(TestMessage.class, listeners[i]);
+      listenerMap.put(groups[i].getNodeID(), listeners[i]);
+    }
+    for (int i = 0; i < nGrp; ++i) {
+      nodeIDs[i] = groups[i].join(nodes[i], nodes);
+    }
+    Thread.sleep(500);
+    for (int i = 0; i < nGrp; ++i) {
+      assertEquals(nGrp - 1, groups[i].size());
+    }
+    
+    TestMessage msg1 = new TestMessage("Hello there");
+    TCGroupMember member = groups[0].getMembers().get(0);
+    groups[0].sendAll(msg1);
+    TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
+    TestMessage msg2 = (TestMessage)listener.getNextMessageFrom(groups[0].getNodeID());
+    assertEquals(msg1, msg2);
+
+    TestMessage msg3 = new TestMessage("Hello back");
+    member = groups[1].getMembers().get(0);
+    groups[1].sendAll(msg3);
+    listener = listenerMap.get(member.getNodeID());
+    TestMessage msg4 = (TestMessage)listener.getNextMessageFrom(groups[1].getNodeID());
+    assertEquals(msg3, msg4);
+
+    System.err.println("ZAPPING NODE : " + nodeIDs[1]);
+    groups[0].zapNode(nodeIDs[1], 01, "test : Zap the other node " + nodeIDs[1] + " from " + nodeIDs[0]);
+
+    Object r1 = zaps[0].outgoing.take();
+    Object r2 = zaps[1].incoming.take();
+    assertEquals(r1, r2);
+
+    r1 = zaps[0].outgoing.poll(500);
+    assertNull(r1);
+    r2 = zaps[1].incoming.poll(500);
+    assertNull(r2);
+
+    tearGroups();
+  }
 
   private class MessagePackage {
     private final GroupMessage message;
@@ -401,6 +463,96 @@ public class TCGroupMembershipImplTest extends TestCase {
       GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(message, message.getEnrollment());
       membership.sendTo(message.messageFrom(), resultAgreed);
       super.messageReceived(fromNode, msg);
+    }
+  }
+
+  private static final class MyZapNodeRequestProcessor implements ZapNodeRequestProcessor {
+
+    public NoExceptionLinkedQueue outgoing = new NoExceptionLinkedQueue();
+    public NoExceptionLinkedQueue incoming = new NoExceptionLinkedQueue();
+
+    public boolean acceptOutgoingZapNodeRequest(NodeID nodeID, int type, String reason) {
+      outgoing.put(reason);
+      return true;
+    }
+
+    public void incomingZapNodeRequest(NodeID nodeID, int zapNodeType, String reason, long[] weights) {
+      incoming.put(reason);
+    }
+
+    public long[] getCurrentNodeWeights() {
+      return new long[0];
+    }
+  }
+
+  private static final class MyGroupEventListener implements GroupEventsListener {
+
+    private NodeID lastNodeJoined;
+    private NodeID lastNodeLeft;
+
+    public void nodeJoined(NodeID nodeID) {
+      System.err.println("\n### nodeJoined -> " + nodeID);
+      lastNodeJoined = nodeID;
+    }
+
+    public void nodeLeft(NodeID nodeID) {
+      System.err.println("\n### nodeLeft -> " + nodeID);
+      lastNodeLeft = nodeID;
+    }
+
+    public NodeID getLastNodeJoined() {
+      return lastNodeJoined;
+    }
+
+    public NodeID getLastNodeLeft() {
+      return lastNodeLeft;
+    }
+
+    public void reset() {
+      lastNodeJoined = lastNodeLeft = null;
+    }
+  }
+
+  private static final class TestMessage extends AbstractGroupMessage {
+
+    // to make serialization sane
+    public TestMessage() {
+      super(0);
+    }
+
+    public TestMessage(String message) {
+      super(0);
+      this.msg = message;
+    }
+
+    String msg;
+
+    @Override
+    protected void basicReadExternal(int msgType, ObjectInput in) throws IOException {
+      msg = in.readUTF();
+
+    }
+
+    @Override
+    protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
+      out.writeUTF(msg);
+
+    }
+
+    public int hashCode() {
+      return msg.hashCode();
+    }
+
+    public boolean equals(Object o) {
+      if (o instanceof TestMessage) {
+        TestMessage other = (TestMessage) o;
+        return this.msg.equals(other.msg);
+      }
+      return false;
+    }
+
+    public String toString() {
+      return "TestMessage [ " + msg + "]";
     }
   }
 
