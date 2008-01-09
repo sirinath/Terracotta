@@ -10,7 +10,7 @@ public interface TCGroupMemberDiscovery {
   
   public void setTCGroupManager(TCGroupManager manager);
   
-  public void start();
+  public void start() throws GroupException;
   
   public void stop();
   
