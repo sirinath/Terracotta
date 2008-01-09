@@ -14,7 +14,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
  * Each TCGroupMember sits on top of a channel.
  */
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
-  private TCGroupMembership    membership;
+  private TCGroupManager       manager;
   private final MessageChannel channel;
   private final NodeID         srcNodeID;
   private final NodeID         dstNodeID;
@@ -61,7 +61,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
         connected = false;
       } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
         connected = false;
-        if (membership != null) membership.memberDisappeared(this);
+        if (manager != null) manager.memberDisappeared(this);
       }
     }
   }
@@ -73,24 +73,24 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public NodeID getDstNodeID() {
     return dstNodeID;
   }
-  
+
   /*
-   * return the remote one 
+   * return the remote one
    */
   public NodeID getNodeID() {
-    if (getSrcNodeID().equals(membership.getNodeID())) {
+    if (getSrcNodeID().equals(manager.getNodeID())) {
       return (getDstNodeID());
     } else {
       return (getSrcNodeID());
     }
   }
 
-  public void setTCGroupMembership(TCGroupMembership membership) {
-    this.membership = membership;
+  public void setTCGroupManager(TCGroupManager manager) {
+    this.manager = manager;
   }
 
-  public TCGroupMembership getTCGroupMembership() {
-    return membership;
+  public TCGroupManager getTCGroupManager() {
+    return manager;
   }
 
   public boolean isConnected() {

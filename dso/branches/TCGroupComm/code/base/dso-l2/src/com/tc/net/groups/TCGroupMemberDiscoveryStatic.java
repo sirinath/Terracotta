@@ -22,7 +22,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   private Node                  local;
   private Node[]                nodes;
-  private TCGroupMembership     membership;
+  private TCGroupManager        manager;
   private boolean               running = false;
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
@@ -60,8 +60,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return nodes;
   }
 
-  public void setTCGroupMembership(TCGroupMembership membership) {
-    this.membership = membership;
+  public void setTCGroupManager(TCGroupManager manager) {
+    this.manager = manager;
   }
 
   public void start() {
@@ -86,10 +86,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   protected void openChannels() {
     for (int i = 0; i < nodes.length; ++i) {
       Node n = nodes[i];
-      
+
       // skip local one
       if (local.equals(n)) continue;
-      
+
       TCSocketAddress remote;
       try {
         remote = new TCSocketAddress(n.getHost(), n.getPort());
@@ -100,7 +100,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
       if (getMember(remote) == null) {
         try {
-          membership.openChannel(n.getHost(), n.getPort());
+          manager.openChannel(n.getHost(), n.getPort());
         } catch (TCTimeoutException e) {
           logger.warn("Node:" + n + " " + e);
         } catch (UnknownHostException e) {
@@ -116,7 +116,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   private TCGroupMember getMember(TCSocketAddress remote) {
     TCGroupMember member = null;
-    Iterator it = membership.getMembers().iterator();
+    Iterator it = manager.getMembers().iterator();
     while (it.hasNext()) {
       TCGroupMember m = (TCGroupMember) it.next();
       if (remote.equals(m.getChannel().getRemoteAddress())) {
@@ -134,7 +134,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   public void setLocalNode(Node local) {
     this.local = local;
   }
-  
+
   public Node getLocalNode() {
     return local;
   }

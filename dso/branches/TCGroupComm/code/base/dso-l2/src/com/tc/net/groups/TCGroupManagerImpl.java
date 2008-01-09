@@ -6,6 +6,7 @@ package com.tc.net.groups;
 
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.SEDA;
+import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.ConfigurationContextImpl;
@@ -56,22 +57,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, ChannelManagerEventListener,
+public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelManagerEventListener,
     TCGroupMemberListener {
+  private boolean                                         debug                   = false;
   private static final TCLogger                           logger                  = TCLogging
-                                                                                      .getLogger(TCGroupMembershipImpl.class);
+                                                                                      .getLogger(TCGroupManagerImpl.class);
+  private final NodeID                                    thisNodeID;
 
   private final L2TVSConfigurationSetupManager            configSetupManager;
   private TCProperties                                    l2Properties;
   private CommunicationsManager                           communicationsManager;
   private NetworkListener                                 groupListener;
   private final ConnectionPolicy                          connectionPolicy;
-  private final NodeID                                    nodeID;
   private TCGroupMemberDiscovery                          discover;
   private ArrayList<TCGroupMember>                        members                 = new ArrayList<TCGroupMember>();
   private final CopyOnWriteArrayList<GroupEventsListener> groupListeners          = new CopyOnWriteArrayList<GroupEventsListener>();
   private final Map<String, GroupMessageListener>         messageListeners        = new ConcurrentHashMap<String, GroupMessageListener>();
-  private boolean                                         debug                   = false;
   private final Map<MessageID, GroupResponse>             pendingRequests         = new Hashtable<MessageID, GroupResponse>();
   private ZapNodeRequestProcessor                         zapNodeRequestProcessor = new DefaultZapNodeRequestProcessor(
                                                                                                                        logger);
@@ -82,8 +83,8 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   /*
    * Setup a communication manager which can establish channel from either sides.
    */
-  public TCGroupMembershipImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
-                               TCThreadGroup threadGroup) throws IOException {
+  public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
+                            TCThreadGroup threadGroup) throws IOException {
     super(threadGroup);
     this.configSetupManager = configSetupManager;
     this.connectionPolicy = connectionPolicy;
@@ -98,22 +99,24 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.l2GroupPort());
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
-    nodeID = init(l2DSOConfig.host().getString(), groupPort, l2Properties.getInt("tccom.workerthreads"));
+    thisNodeID = init(l2DSOConfig.host().getString(), groupPort, l2Properties.getInt("tccom.workerthreads"));
 
+    setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
+    start(new HashSet());
   }
 
   /*
    * for testing purpose only
    */
-  public TCGroupMembershipImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
-                               TCThreadGroup threadGroup) throws IOException {
+  public TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
+                            TCThreadGroup threadGroup) throws IOException {
     super(threadGroup);
     this.configSetupManager = null;
     this.connectionPolicy = connectionPolicy;
-    nodeID = init(hostname, groupPort, workerThreads);
+    thisNodeID = init(hostname, groupPort, workerThreads);
   }
 
-  public NodeID init(String hostname, int groupPort, int workerThreads) throws IOException {
+  private NodeID init(String hostname, int groupPort, int workerThreads) throws IOException {
 
     String nodeName = hostname + ":" + groupPort;
     logger.info("Creating group node: " + nodeName);
@@ -133,26 +136,26 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     StageManager stageManager = getStageManager();
     hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK, new HydrateHandler(), 1,
                                             maxStageSize);
-    // Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.GROUP_HANDSHAKE_STAGE,
-    // new TCGroupHandshakeHandler(), 1, maxStageSize);
     receiveGroupMessageStage = stageManager.createStage(ServerConfigurationContext.RECEIVE_GROUP_MESSAGE_STAGE,
-                                                              new ReceiveGroupMessageHandler(this), 1, maxStageSize);
+                                                        new ReceiveGroupMessageHandler(this), 1, maxStageSize);
 
-    // groupListener.addClassMapping(TCMessageType.GROUP_HANDSHAKE_MESSAGE, TCGroupHandshakeMessageImpl.class);
     groupListener.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
 
-    // groupListener.routeMessageType(TCMessageType.GROUP_HANDSHAKE_MESSAGE, clientHandshake.getSink(), hydrateStage
-    // .getSink());
     groupListener.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(),
                                    hydrateStage.getSink());
 
     ConfigurationContext context = new ConfigurationContextImpl(stageManager);
 
     stageManager.startAll(context);
-    
+
     registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
 
     return (aNodeID);
+  }
+
+  public NodeID getLocalNodeID() throws GroupException {
+    if (this.thisNodeID == null) { throw new GroupException("Node hasnt joined the group yet !"); }
+    return this.thisNodeID;
   }
 
   public void start(Set initialConnectionIDs) throws IOException {
@@ -208,7 +211,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
         }
       }
     }
-    member.setTCGroupMembership(this);
+    member.setTCGroupManager(this);
     members.add(member);
     fireNodeEvent(member.getNodeID(), true);
   }
@@ -330,16 +333,16 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     logger.debug("Channel removed from " + channel.getChannelID().getNodeID());
     memberDisappeared(getMember(channel));
   }
-  
+
   public void closeAllChannels() {
-    ArrayList<TCGroupMember> tmpList = new ArrayList<TCGroupMember> (members);
-    for(int i = 0; i < tmpList.size(); ++i) {
+    ArrayList<TCGroupMember> tmpList = new ArrayList<TCGroupMember>(members);
+    for (int i = 0; i < tmpList.size(); ++i) {
       closeChannel(tmpList.get(i));
     }
   }
 
   public NodeID getNodeID() {
-    return nodeID;
+    return thisNodeID;
   }
 
   public TCGroupMember getMember(MessageChannel channel) {
@@ -379,7 +382,7 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
 
   public void setDiscover(TCGroupMemberDiscovery discover) {
     this.discover = discover;
-    this.discover.setTCGroupMembership(this);
+    this.discover.setTCGroupManager(this);
   }
 
   public TCGroupMemberDiscovery getDiscover() {
@@ -400,27 +403,27 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
   }
 
   public void messageReceived(GroupMessage message, MessageChannel channel) {
-    
+
     if (debug) {
       logger.info(getNodeID() + " recd msg " + message.getMessageID() + " From " + channel + " Msg : " + message);
     }
-    
+
     TCGroupMember m = getMember(channel);
     if (m == null) {
       logger.warn("Message from non-existing member with channel: " + channel);
       // XXX? drop message
       return;
     }
-    
+
     MessageID requestID = message.inResponseTo();
     NodeID from = m.getNodeID();
-    
+
     message.setMessageOrginator(from);
     if (requestID.isNull() || !notifyPendingRequests(requestID, message, m)) {
       fireMessageReceivedEvent(from, message);
     }
   }
-  
+
   private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, TCGroupMember sender) {
     GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
     if (response != null) {
@@ -430,14 +433,13 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     return false;
   }
 
-
   private static void validateExternalizableClass(Class<AbstractGroupMessage> clazz) {
     String name = clazz.getName();
     try {
       Constructor<AbstractGroupMessage> cons = clazz.getDeclaredConstructor(new Class[0]);
-      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) {
-        throw new AssertionError(name + " : public no arg constructor not found");
-      }
+      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) { throw new AssertionError(
+                                                                                   name
+                                                                                       + " : public no arg constructor not found"); }
     } catch (NoSuchMethodException ex) {
       throw new AssertionError(name + " : public no arg constructor not found");
     }
@@ -449,6 +451,10 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
     if (prev != null) {
       logger.warn("Previous listener removed : " + prev);
     }
+  }
+
+  public void routeMessages(Class msgClass, Sink sink) {
+    registerForMessages(msgClass, new RouteGroupMessagesToSink(msgClass.getName(), sink));
   }
 
   private void fireMessageReceivedEvent(NodeID from, GroupMessage msg) {
@@ -508,11 +514,11 @@ public class TCGroupMembershipImpl extends SEDA implements TCGroupMembership, Ch
       member.send(msg);
     }
 
-    public void sendAll(TCGroupMembership membership, GroupMessage msg) {
-      List<TCGroupMember> m = membership.getMembers();
+    public void sendAll(TCGroupManager manager, GroupMessage msg) throws GroupException {
+      List<TCGroupMember> m = manager.getMembers();
       if (m.size() > 0) {
         setUpWaitFor(m);
-        membership.sendAll(msg);
+        manager.sendAll(msg);
       }
     }
 

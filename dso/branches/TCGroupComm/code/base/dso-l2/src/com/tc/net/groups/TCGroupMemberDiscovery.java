@@ -8,7 +8,7 @@ public interface TCGroupMemberDiscovery {
   
   public Node[] getAllNodes();
   
-  public void setTCGroupMembership(TCGroupMembership membership);
+  public void setTCGroupManager(TCGroupManager manager);
   
   public void start();
   

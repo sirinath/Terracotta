@@ -7,19 +7,19 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.net.groups.TCGroupMembership;
+import com.tc.net.groups.TCGroupManager;
 import com.tc.net.groups.TCGroupMessageWrapper;
 
 public class ReceiveGroupMessageHandler extends AbstractEventHandler {
-  private final TCGroupMembership membership;
+  private final TCGroupManager manager;
   
-  public ReceiveGroupMessageHandler(TCGroupMembership membership) {
-    this.membership = membership;
+  public ReceiveGroupMessageHandler(TCGroupManager manager) {
+    this.manager = manager;
   }
   
   public void handleEvent(EventContext context) {
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) context;
-    membership.messageReceived(wrapper.getGroupMessage(), wrapper.getChannel());
+    manager.messageReceived(wrapper.getGroupMessage(), wrapper.getChannel());
   }
 
   public void initialize(ConfigurationContext context) {

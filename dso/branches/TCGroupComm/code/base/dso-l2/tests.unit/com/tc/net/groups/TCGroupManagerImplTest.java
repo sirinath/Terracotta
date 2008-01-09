@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
-public class TCGroupMembershipImplTest extends TestCase {
+public class TCGroupManagerImplTest extends TestCase {
 
   MessageMonitor                   monitor        = new NullMessageMonitor();
   final NullSessionManager         sessionManager = new NullSessionManager();
@@ -49,14 +49,14 @@ public class TCGroupMembershipImplTest extends TestCase {
 
   private int                      groupPorts[];
   private TCGroupMemberDiscovery   discovers[];
-  private TCGroupMembership        groups[];
+  private TCGroupManager           groups[];
   private TestGroupMessageListener listeners[];
   private Node                     nodes[];
 
   private void setupGroups(int n) throws Exception {
     groupPorts = new int[n];
     discovers = new TCGroupMemberDiscoveryStatic[n];
-    groups = new TCGroupMembershipImpl[n];
+    groups = new TCGroupManagerImpl[n];
     listeners = new TestGroupMessageListener[n];
     nodes = new Node[n];
 
@@ -67,9 +67,9 @@ public class TCGroupMembershipImplTest extends TestCase {
     }
     for (int i = 0; i < n; ++i) {
       discovers[i] = new TCGroupMemberDiscoveryStatic(nodes);
-      groups[i] = new TCGroupMembershipImpl(new NullConnectionPolicy(), "localhost", groupPorts[i], 0,
-                                            new TCThreadGroup(new ThrowableHandler(TCLogging
-                                                .getLogger(TCGroupMembershipImplTest.class))));
+      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), "localhost", groupPorts[i], 0,
+                                         new TCThreadGroup(new ThrowableHandler(TCLogging
+                                             .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
       groups[i].start(new HashSet());
       listeners[i] = new TestGroupMessageListener(100);
@@ -317,11 +317,11 @@ public class TCGroupMembershipImplTest extends TestCase {
       rMesg = listener.getNextMessageFrom(groups[1].getNodeID());
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
     }
-    
+
     Thread.sleep(200);
     tearGroups();
   }
-  
+
   public void testSendAllAndWait() throws Exception {
     int nGrp = 5;
     setupGroups(nGrp);
@@ -340,8 +340,8 @@ public class TCGroupMembershipImplTest extends TestCase {
       assertEquals(nGrp - 1, groups[i].size());
     }
 
-    for(int m = 0; m < nGrp; ++m) {
-      TCGroupMembership ms = groups[m];
+    for (int m = 0; m < nGrp; ++m) {
+      TCGroupManager ms = groups[m];
       GroupMessage sMesg = createL2StateMessage();
       ms.sendAllAndWaitForResponse(sMesg);
       for (int i = 0; i < ms.getMembers().size(); ++i) {
@@ -351,11 +351,11 @@ public class TCGroupMembershipImplTest extends TestCase {
         assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
       }
     }
-    
+
     Thread.sleep(200);
     tearGroups();
   }
-  
+
   public void testZapNode() throws Exception {
     int nGrp = 2;
     MyGroupEventListener eventListeners[] = new MyGroupEventListener[nGrp];
@@ -379,19 +379,19 @@ public class TCGroupMembershipImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
-    
+
     TestMessage msg1 = new TestMessage("Hello there");
     TCGroupMember member = groups[0].getMembers().get(0);
     groups[0].sendAll(msg1);
     TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
-    TestMessage msg2 = (TestMessage)listener.getNextMessageFrom(groups[0].getNodeID());
+    TestMessage msg2 = (TestMessage) listener.getNextMessageFrom(groups[0].getNodeID());
     assertEquals(msg1, msg2);
 
     TestMessage msg3 = new TestMessage("Hello back");
     member = groups[1].getMembers().get(0);
     groups[1].sendAll(msg3);
     listener = listenerMap.get(member.getNodeID());
-    TestMessage msg4 = (TestMessage)listener.getNextMessageFrom(groups[1].getNodeID());
+    TestMessage msg4 = (TestMessage) listener.getNextMessageFrom(groups[1].getNodeID());
     assertEquals(msg3, msg4);
 
     System.err.println("ZAPPING NODE : " + nodeIDs[1]);
@@ -450,18 +450,23 @@ public class TCGroupMembershipImplTest extends TestCase {
       return (pkg.getMessage());
     }
   }
-  
+
   private class responseL2StateMessageListener extends TestGroupMessageListener {
-    TCGroupMembership membership;
-    responseL2StateMessageListener(TCGroupMembership membership, long timeout) {
+    TCGroupManager manager;
+
+    responseL2StateMessageListener(TCGroupManager manager, long timeout) {
       super(timeout);
-      this.membership = membership;
+      this.manager = manager;
     }
-    
+
     public void messageReceived(NodeID fromNode, GroupMessage msg) {
       L2StateMessage message = (L2StateMessage) msg;
       GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(message, message.getEnrollment());
-      membership.sendTo(message.messageFrom(), resultAgreed);
+      try {
+        manager.sendTo(message.messageFrom(), resultAgreed);
+      } catch (GroupException e) {
+        throw new RuntimeException(e);
+      }
       super.messageReceived(fromNode, msg);
     }
   }
