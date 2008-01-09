@@ -16,6 +16,7 @@ import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
 import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.XContainer;
+import com.tc.admin.common.XObjectTable;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 
@@ -27,10 +28,13 @@ import java.awt.event.FocusEvent;
 import java.text.ParseException;
 
 import javax.management.MBeanServerInvocationHandler;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -38,7 +42,8 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 
-public class LocksPanel extends XContainer {
+public class LocksPanel extends XContainer implements NotificationListener {
+  private ConnectionContext          fConnectionContext;
   private LockStatisticsMonitorMBean fLockStats;
   private ToggleButton               fEnableButton;
   private ToggleButton               fDisableButton;
@@ -51,6 +56,8 @@ public class LocksPanel extends XContainer {
   private LockTreeTable              fTreeTable;
   private LockTreeTableModel         fTreeTableModel;
   private LockTreeTableModel         fEmptyTreeTableModel;
+  private XObjectTable               fServerLocksTable;
+  private ServerLockTableModel       fServerLockTableModel;
   private TextArea                   fTraceText;
   private Label                      fConfigLabel;
   private TextArea                   fConfigText;
@@ -101,6 +108,9 @@ public class LocksPanel extends XContainer {
       public void actionPerformed(ActionEvent ae) {
         fTreeTableModel.init();
         fTreeTable.sort();
+        
+        fServerLockTableModel.init();
+        fServerLocksTable.sort();
       }
     });
     fTreeTableModel = createLocksTreeTableModel();
@@ -127,11 +137,20 @@ public class LocksPanel extends XContainer {
       }
     });
 
+    fServerLocksTable = (XObjectTable) findComponent("ServerLocksTable");
+    
     fTraceText = (TextArea) findComponent("TraceText");
     fConfigLabel = (Label) findComponent("ConfigLabel");
     fConfigText = (TextArea) findComponent("ConfigText");
 
     setLocksPanelEnabled(fLockStats.isLockStatisticsEnabled());
+    
+    fConnectionContext = cc;
+    try {
+      cc.addNotificationListener(L2MBeanNames.LOCK_STATISTICS, this);
+    } catch(Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   class TraceDepthSpinnerChangeListener implements ChangeListener {
@@ -162,17 +181,24 @@ public class LocksPanel extends XContainer {
     fConfigText.setEnabled(enabled);
     fRefreshButton.setEnabled(enabled);
     fLockStats.setLockStatisticsEnabled(enabled);
+    setTraceDepth(fLastTraceDepth);
 
     if ((fLocksPanelEnabled = enabled) == true) {
       fTreeTable.setTreeTableModel(fTreeTableModel = createLocksTreeTableModel());
+      fServerLocksTable.setModel(fServerLockTableModel = new ServerLockTableModel(fLockStats));
       fEnableButton.setSelected(true);
       fDisableButton.setSelected(false);
     } else {
       fTreeTable.setTreeTableModel(fEmptyTreeTableModel);
+      fServerLocksTable.setModel(ServerLockTableModel.EMPTY_MODEL);
       fConfigText.setText("");
       fEnableButton.setSelected(false);
       fDisableButton.setSelected(true);
     }
+    fTraceDepthSpinner.setEnabled(enabled);
+    fTraceDepthSpinner.getEditor().setEnabled(enabled);
+    
+    fTraceText.setText("");
     fConfigLabel.setText("");
   }
 
@@ -209,5 +235,38 @@ public class LocksPanel extends XContainer {
 
   private LockTreeTableModel createLocksTreeTableModel() {
     return new LockTreeTableModel(fLockStats);
+  }
+
+  public void handleNotification(Notification notification, Object handback) {
+    String type = notification.getType();
+    if(type.equals(LockStatisticsMonitorMBean.TRACE_DEPTH)) {
+      int newTraceDepth = fLockStats.getTraceDepth();
+      if(fLastTraceDepth != newTraceDepth) {
+        fLastTraceDepth = newTraceDepth;
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            ((SpinnerNumberModel) fTraceDepthSpinner.getModel()).setValue(Integer.valueOf(fLastTraceDepth));
+          }
+        });
+      }
+    } else if(type.equals(LockStatisticsMonitorMBean.TRACES_ENABLED)) {
+      final boolean enabled = fLockStats.isLockStatisticsEnabled();
+      if(enabled != fRefreshButton.isEnabled()) {
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            setLocksPanelEnabled(enabled);
+          }
+        });
+      }
+    }
+  }
+  
+  public void tearDown() {
+    super.tearDown();
+    try {
+      fConnectionContext.addNotificationListener(L2MBeanNames.LOCK_STATISTICS, this);
+    } catch(Exception e) {
+      // ignore
+    }
   }
 }

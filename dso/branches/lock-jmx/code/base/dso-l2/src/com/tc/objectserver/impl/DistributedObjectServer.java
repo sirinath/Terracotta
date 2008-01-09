@@ -273,7 +273,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException,
-      FileNotCreatedException {
+      FileNotCreatedException, NotCompliantMBeanException {
 
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);

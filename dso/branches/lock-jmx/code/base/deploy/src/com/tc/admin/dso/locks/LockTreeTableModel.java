@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin.dso.locks;
 
@@ -11,8 +12,9 @@ import javax.swing.SwingConstants;
 import javax.swing.tree.TreePath;
 
 public class LockTreeTableModel extends AbstractTreeTableModel {
-  static protected String[] cNames = { "Lock", "Times Requested", "Times Hopped", "Avg Contenders", "Avg Acquire Time",
-      "Avg Held Time", "Avg Nested Lock Depth" };
+  static protected String[] cNames = { "Lock", "<html>Times<br>Requested</html>", "<html>Times<br>Hopped</html>",
+      "<html>Average<br>Contenders</html>", "<html>Average<br>Acquire Time</html>",
+      "<html>Average<br>Held Time</html>", "<html>Average Nested<br>Lock Depth</html>" };
   static protected Class[]  cTypes = { TreeTableModel.class, Long.class, Long.class, Long.class, Long.class,
       Long.class, Long.class      };
 
