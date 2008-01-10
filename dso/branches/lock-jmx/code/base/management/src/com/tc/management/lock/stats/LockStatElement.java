@@ -72,9 +72,9 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     return stackTraceElement;
   }
 
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis, String contextInfo,
-                                  StackTraceElement[] stackTraces, int startIndex) {
-    this.lockStat.recordLockRequested();
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis, 
+                                  int numberOfPendingRequests, String contextInfo, StackTraceElement[] stackTraces, int startIndex) {
+    this.lockStat.recordLockRequested(numberOfPendingRequests);
     this.lockConfigElement = contextInfo;
     LockHolder lockHolder = newLockHolder(lockID, nodeID, threadID, requestedTimeInMillis);
     holderStats.addLockHolder(newLockKey(lockID, nodeID, threadID), lockHolder, stackTraces);
@@ -82,7 +82,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     if (stackTraces == null || startIndex >= stackTraces.length) { return; }
 
     LockStatElement child = getOrCreateChild(stackTraces[startIndex]);
-    child.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, startIndex + 1);
+    child.recordLockRequested(nodeID, threadID, requestedTimeInMillis, numberOfPendingRequests, contextInfo, stackTraces, startIndex + 1);
   }
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
@@ -200,14 +200,13 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     for (Iterator i = nextStat.keySet().iterator(); i.hasNext();) {
       LockStatElement lockStatElement = (LockStatElement) i.next();
       long pendingRequests = lockStatElement.lockStat.getNumOfLockPendingRequested();
-      long pendingWaiters = lockStatElement.lockStat.getNumOfPendingWaiters();
       long lockRequested = lockStatElement.lockStat.getNumOfLockRequested();
       long lockHopRequests = lockStatElement.lockStat.getNumOfLockHopRequests();
       long lockAwarded = lockStatElement.lockStat.getNumOfLockAwarded();
       long timeToAwardedInMillis = lockStatElement.lockStat.getTotalWaitTimeToAwardedInMillis();
       long heldTimeInMillis = lockStatElement.lockStat.getTotalRecordedHeldTimeInMillis();
       long numOfReleases = lockStatElement.lockStat.getNumOfLockReleased();
-      lockStat.aggregateStatistics(pendingRequests, pendingWaiters, lockRequested, lockHopRequests, lockAwarded,
+      lockStat.aggregateStatistics(pendingRequests, lockRequested, lockHopRequests, lockAwarded,
                                    timeToAwardedInMillis, heldTimeInMillis, numOfReleases);
     }
   }
@@ -225,14 +224,13 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
       nextStat.put(lockStatElement, lockStatElement);
     } else {
       long pendingRequests = lockStatElement.lockStat.getNumOfLockPendingRequested();
-      long pendingWaiters = lockStatElement.lockStat.getNumOfPendingWaiters();
       long lockRequested = lockStatElement.lockStat.getNumOfLockRequested();
       long lockHopRequests = lockStatElement.lockStat.getNumOfLockHopRequests();
       long lockAwarded = lockStatElement.lockStat.getNumOfLockAwarded();
       long timeToAwardedInMillis = lockStatElement.lockStat.getTotalWaitTimeToAwardedInMillis();
       long heldTimeInMillis = lockStatElement.lockStat.getTotalRecordedHeldTimeInMillis();
       long numOfReleases = lockStatElement.lockStat.getNumOfLockReleased();
-      existLSE.lockStat.aggregateStatistics(pendingRequests, pendingWaiters, lockRequested, lockHopRequests,
+      existLSE.lockStat.aggregateStatistics(pendingRequests, lockRequested, lockHopRequests,
                                             lockAwarded, timeToAwardedInMillis, heldTimeInMillis, numOfReleases);
 
       for (Iterator i = lockStatElement.nextStat.values().iterator(); i.hasNext();) {

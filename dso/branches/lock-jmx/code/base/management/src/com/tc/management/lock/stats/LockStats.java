@@ -14,8 +14,7 @@ import java.io.Serializable;
 public class LockStats implements TCSerializable, Serializable {
   private final static int NON_SET_TIME_MILLIS = -1;
 
-  private long             numOfPendingRequests;
-  private long             numOfPendingWaiters;
+  private long             totalRecordedNumberOfPendingRequests;
   private long             numOfLockRequested;
   private long             numOfLockHopRequests;
   private long             totalWaitTimeToAwardedInMillis;
@@ -25,18 +24,16 @@ public class LockStats implements TCSerializable, Serializable {
   private long             avgHeldTimeInMillis;
   private long             avgWaitTimeToAwardInMillis;
   private long             totalNestedDepth;
-  private long             avgNestedDepth;
 
   public LockStats() {
     this.avgHeldTimeInMillis = NON_SET_TIME_MILLIS;
     this.avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
   }
 
-  public void aggregateStatistics(long pendingRequests, long pendingWaiters, long lockRequested, long lockHopRequests,
+  public void aggregateStatistics(long pendingRequests, long lockRequested, long lockHopRequests,
                                   long lockAwarded, long timeToAwardedInMillis, long heldTimeInMillis,
                                   long numOfReleases) {
-    this.numOfPendingRequests += pendingRequests;
-    this.numOfPendingWaiters += pendingWaiters;
+    this.totalRecordedNumberOfPendingRequests += pendingRequests;
     this.numOfLockRequested += lockRequested;
     this.numOfLockHopRequests += lockHopRequests;
     this.numOfLockAwarded += lockAwarded;
@@ -48,8 +45,7 @@ public class LockStats implements TCSerializable, Serializable {
   }
   
   public void clear() {
-    this.numOfPendingRequests = 0;
-    this.numOfPendingWaiters = 0;
+    this.totalRecordedNumberOfPendingRequests = 0;
     this.numOfLockRequested = 0;
     this.numOfLockHopRequests = 0;
     this.numOfLockAwarded = 0;
@@ -60,9 +56,9 @@ public class LockStats implements TCSerializable, Serializable {
     this.avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
   }
 
-  public void recordLockRequested() {
+  public void recordLockRequested(int numberOfPendingRequests) {
     this.numOfLockRequested++;
-    this.numOfPendingRequests++;
+    this.totalRecordedNumberOfPendingRequests += numberOfPendingRequests;
   }
 
   public void recordLockHopRequested() {
@@ -71,7 +67,6 @@ public class LockStats implements TCSerializable, Serializable {
 
   public void recordLockAwarded(long waitTimeInMillis, int nestedLockDepth) {
     this.numOfLockAwarded++;
-    this.numOfPendingRequests--;
     this.totalWaitTimeToAwardedInMillis += waitTimeInMillis;
     this.totalNestedDepth += nestedLockDepth;
     getAvgWaitTimeToAwardInMillis();
@@ -82,7 +77,7 @@ public class LockStats implements TCSerializable, Serializable {
   }
 
   public void recordLockRejected() {
-    this.numOfPendingRequests--;
+    //this.totalRecordedNumberOfPendingRequests--;
   }
 
   public void recordLockReleased(long heldTimeInMillis) {
@@ -103,16 +98,12 @@ public class LockStats implements TCSerializable, Serializable {
     return numOfLockRequested;
   }
 
-  public long getNumOfPendingWaiters() {
-    return numOfPendingWaiters;
-  }
-
   public long getNumOfLockReleased() {
     return totalRecordedReleases;
   }
 
   public long getNumOfLockPendingRequested() {
-    return numOfPendingRequests;
+    return totalRecordedNumberOfPendingRequests;
   }
 
   public long getTotalRecordedHeldTimeInMillis() {
@@ -150,6 +141,11 @@ public class LockStats implements TCSerializable, Serializable {
     if (numOfLockAwarded == 0) { return 0; }
     return totalNestedDepth/numOfLockAwarded;
   }
+  
+  public long getAvgNumberOfPendingRequests() {
+    if (numOfLockRequested == 0) { return 0; }
+    return totalRecordedNumberOfPendingRequests/numOfLockRequested;
+  }
 
   public void aggregateAvgWaitTimeInMillis(long totalWaitTimeInMillis, long numOfAwarded) {
     avgWaitTimeToAwardInMillis = NON_SET_TIME_MILLIS;
@@ -161,8 +157,7 @@ public class LockStats implements TCSerializable, Serializable {
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    numOfPendingRequests = serialInput.readLong();
-    numOfPendingWaiters = serialInput.readLong();
+    totalRecordedNumberOfPendingRequests = serialInput.readLong();
     numOfLockRequested = serialInput.readLong();
     numOfLockHopRequests = serialInput.readLong();
     totalWaitTimeToAwardedInMillis = serialInput.readLong();
@@ -176,8 +171,7 @@ public class LockStats implements TCSerializable, Serializable {
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeLong(numOfPendingRequests);
-    serialOutput.writeLong(numOfPendingWaiters);
+    serialOutput.writeLong(totalRecordedNumberOfPendingRequests);
     serialOutput.writeLong(numOfLockRequested);
     serialOutput.writeLong(numOfLockHopRequests);
     serialOutput.writeLong(totalWaitTimeToAwardedInMillis);
@@ -192,9 +186,7 @@ public class LockStats implements TCSerializable, Serializable {
   public String toString() {
     StringBuffer sb = new StringBuffer();
     sb.append("numOfPendingRequests: ");
-    sb.append(numOfPendingRequests);
-    sb.append(", numOfPendingWaiters: ");
-    sb.append(numOfPendingWaiters);
+    sb.append(totalRecordedNumberOfPendingRequests);
     sb.append(", numOfLockRequested: ");
     sb.append(numOfLockRequested);
     sb.append(", numOfLockHopRequests: ");

@@ -1034,7 +1034,7 @@ public class Lock {
   }
 
   private void recordLockRequestStat(NodeID nodeID, ThreadID threadID) {
-    lockStatsManager.recordLockRequested(lockID, nodeID, threadID, lockType);
+    lockStatsManager.recordLockRequested(lockID, nodeID, threadID, lockType, pendingLockRequests.size());
   }
 
   private void recordLockAwardStat(NodeID nodeID, ThreadID threadID, boolean isGreedyRequest, long awardTimestamp) {

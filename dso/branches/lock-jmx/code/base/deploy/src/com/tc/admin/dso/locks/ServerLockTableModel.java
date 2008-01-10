@@ -79,7 +79,7 @@ public class ServerLockTableModel extends XObjectTableModel {
     }
 
     public long getWaiters() {
-      return fLockSpec.getServerStats().getNumOfPendingWaiters();
+      return fLockSpec.getServerStats().getAvgNumberOfPendingRequests();
     }
 
     public long getAcquireTime() {

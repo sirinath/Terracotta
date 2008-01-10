@@ -82,7 +82,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   }
 
   private void recordLockRequested(ThreadID threadID, String contextInfo) {
-    lockStatManager.recordLockRequested(lockID, threadID, contextInfo);
+    lockStatManager.recordLockRequested(lockID, threadID, contextInfo, pendingLockRequests.size());
   }
   
   private void recordLockAwarded(ThreadID threadID) {
