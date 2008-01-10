@@ -682,7 +682,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     if (l2Properties.getBoolean("beanshell.enabled")) startBeanShell(l2Properties.getInt("beanshell.port"));
 
-    lockStatsManager.start(channelManager, lockManager, respondToLockRequestStage.getSink());
+    lockStatsManager.start(channelManager);
 
     if (networkedHA) {
       final Node thisNode = makeThisNode();

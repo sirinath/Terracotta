@@ -32,7 +32,8 @@ public abstract class LockStatisticsManager implements Serializable {
     if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getOrCreateLockStatInfo(lockID);
-    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), numberOfPendingRequests, stackTraces, contextInfo);
+    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), numberOfPendingRequests, stackTraces,
+                            contextInfo);
   }
 
   public boolean recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,
@@ -62,32 +63,15 @@ public abstract class LockStatisticsManager implements Serializable {
     }
   }
 
-  public void setTraceDepth(int traceDepth) {
-    if (!lockStatisticsEnabled) { return; }
-
-    lockStatConfig.setTraceDepth(traceDepth);
-  }
-
-  public void setGatherInterval(int gatherInterval) {
-    if (!lockStatisticsEnabled) { return; }
-
-    lockStatConfig.setGatherInterval(gatherInterval);
-  }
-
   public void clear() {
     this.lockStats.clear();
-    // this.lockStatConfig.reset();
   }
 
   public synchronized int getTraceDepth() {
-    if (!lockStatisticsEnabled) { return 0; }
-
     return lockStatConfig.getTraceDepth();
   }
 
   public synchronized int getGatherInterval() {
-    if (!lockStatisticsEnabled) { return 0; }
-
     return lockStatConfig.getGatherInterval();
   }
 
@@ -112,8 +96,6 @@ public abstract class LockStatisticsManager implements Serializable {
   protected abstract LockStatisticsInfo newLockStatisticsContext(LockID lockID);
 
   protected void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
-    if (!lockStatisticsEnabled) { return; }
-
     clear();
     lockStatConfig.setConfig(traceDepth, gatherInterval);
   }
@@ -152,9 +134,9 @@ public abstract class LockStatisticsManager implements Serializable {
 
   protected static class LockStatConfig {
     private final static int DEFAULT_GATHER_INTERVAL = 1;
-    private final static int DEFAULT_TRACE_DEPTH     = MIN_CLIENT_TRACE_DEPTH;
+    private final static int DEFAULT_TRACE_DEPTH     = 1;
 
-    private int              traceDepth;
+    private int              traceDepth              = DEFAULT_TRACE_DEPTH;
     private int              gatherInterval          = DEFAULT_GATHER_INTERVAL;
 
     public LockStatConfig() {
@@ -190,8 +172,9 @@ public abstract class LockStatisticsManager implements Serializable {
     public void reset() {
       this.traceDepth = DEFAULT_TRACE_DEPTH;
       this.gatherInterval = DEFAULT_GATHER_INTERVAL;
-      TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock");
+      TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("l1.lock.statistics");
       if (tcProperties != null) {
+        this.traceDepth = tcProperties.getInt("traceDepth", DEFAULT_TRACE_DEPTH);
         this.gatherInterval = tcProperties.getInt("gatherInterval", DEFAULT_GATHER_INTERVAL);
       }
     }

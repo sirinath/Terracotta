@@ -46,7 +46,7 @@ public class LockStatManagerTest extends TestCase {
     lockManager = new LockManagerImpl(new NullChannelManager(), lockStatManager);
     lockManager.setLockPolicy(LockManagerImpl.GREEDY_LOCK_POLICY);
     lockManager.start();
-    lockStatManager.start(new NullChannelManager(), lockManager, sink);
+    lockStatManager.start(new NullChannelManager());
   }
 
   protected void tearDown() throws Exception {
