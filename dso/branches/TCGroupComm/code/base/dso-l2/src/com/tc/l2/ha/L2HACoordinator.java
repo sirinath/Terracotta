@@ -8,6 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.OrderedSink;
 import com.tc.config.schema.NewHaConfig;
+import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.api.ReplicatedClusterStateManager;
 import com.tc.l2.context.StateChangedEvent;
@@ -39,6 +40,7 @@ import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
 import com.tc.l2.state.StateManagerConfigImpl;
 import com.tc.l2.state.StateManagerImpl;
+import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupEventsListener;
@@ -63,27 +65,32 @@ import java.io.IOException;
 public class L2HACoordinator implements L2Coordinator, StateChangeListener, GroupEventsListener,
     SequenceGeneratorListener {
 
-  private static final TCLogger         logger = TCLogging.getLogger(L2HACoordinator.class);
+  private static final TCLogger                logger = TCLogging.getLogger(L2HACoordinator.class);
 
-  private final TCLogger                consoleLogger;
-  private final DistributedObjectServer server;
+  private final TCLogger                       consoleLogger;
+  private final DistributedObjectServer        server;
 
-  private GroupManager                  groupManager;
-  private StateManager                  stateManager;
-  private ReplicatedObjectManager       rObjectManager;
-  private ReplicatedTransactionManager  rTxnManager;
-  private L2ObjectStateManager          l2ObjectStateManager;
-  private ReplicatedClusterStateManager rClusterStateMgr;
+  private GroupManager                         groupManager;
+  private StateManager                         stateManager;
+  private ReplicatedObjectManager              rObjectManager;
+  private ReplicatedTransactionManager         rTxnManager;
+  private L2ObjectStateManager                 l2ObjectStateManager;
+  private ReplicatedClusterStateManager        rClusterStateMgr;
 
-  private ClusterState                  clusterState;
-  private SequenceGenerator             sequenceGenerator;
+  private ClusterState                         clusterState;
+  private SequenceGenerator                    sequenceGenerator;
 
-  private NewHaConfig                   haConfig;
+  private NewHaConfig                          haConfig;
+  private final L2TVSConfigurationSetupManager configSetupManager;
+  private final TCThreadGroup                  threadGroup;
 
-  public L2HACoordinator(TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
+  public L2HACoordinator(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
+                         TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
                          PersistentMapStore clusterStateStore, ObjectManager objectManager,
                          ServerTransactionManager transactionManager, ServerGlobalTransactionManager gtxm,
                          DSOChannelManager channelManager, NewHaConfig haConfig) {
+    this.configSetupManager = configSetupManager;
+    this.threadGroup = threadGroup;
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.haConfig = haConfig;
@@ -111,7 +118,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
-    this.groupManager = GroupManagerFactory.createGroupManager();
+    this.groupManager = GroupManagerFactory.createGroupManager(configSetupManager, threadGroup);
 
     this.stateManager = new StateManagerImpl(consoleLogger, groupManager, stateChangeSink,
                                              new StateManagerConfigImpl(haConfig),
@@ -153,7 +160,8 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
         .getConnectionIdFactory(), stageManager.getStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE).getSink());
 
     OrderedSink orderedObjectsSyncSink = new OrderedSink(logger, objectsSyncSink);
-    this.rTxnManager = new ReplicatedTransactionManagerImpl(groupManager, orderedObjectsSyncSink, transactionManager, gtxm);
+    this.rTxnManager = new ReplicatedTransactionManagerImpl(groupManager, orderedObjectsSyncSink, transactionManager,
+                                                            gtxm);
 
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
                                                           rTxnManager, objectManager, transactionManager,
