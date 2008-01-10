@@ -16,6 +16,11 @@ import javax.swing.table.TableModel;
 public class ServerLocksTable extends XObjectTable {
   private TableCellRenderer fTableColumnHeaderRenderer = new LockTableHeaderRenderer();
 
+  public ServerLocksTable() {
+    super();
+    setDefaultRenderer(Long.class, new StatValueRenderer());
+  }
+  
   class LockTableHeaderRenderer extends TableColumnRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {

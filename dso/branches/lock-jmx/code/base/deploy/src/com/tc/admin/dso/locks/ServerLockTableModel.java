@@ -4,6 +4,7 @@
  */
 package com.tc.admin.dso.locks;
 
+import com.tc.admin.AdminClient;
 import com.tc.admin.common.XObjectTableModel;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.lock.stats.LockSpec;
@@ -14,18 +15,12 @@ import java.util.Iterator;
 public class ServerLockTableModel extends XObjectTableModel {
   LockStatisticsMonitorMBean               fLockStats;
 
-  static protected String[]                cNames      = { "Lock", "<html>Times<br>Requested</html>",
-      "<html>Times<br>Hopped</html>", "<html>Average<br>Contenders</html>", "<html>Average<br>Acquire Time</html>",
-      "<html>Average<br>Held Time</html>"             };
+  static protected String[]                cNames      = (String[]) AdminClient.getContext()
+                                                           .getObject("dso.locks.column.headings");
   static protected String[]                cFields     = { "Name", "Requested", "Hops", "Waiters", "AcquireTime",
       "HeldTime"                                      };
-  static protected String[]                cTips       = { "Lock identifier",
-      "<html>Number of times this lock<br>was requested</html>",
-      "<html>Times an acquired greedy lock was<br>retracted from holding client and<br>granted to another</html>",
-      "<html>Average number of threads wishing<br>to acquire this lock at the time<br>it was granted</html>",
-      "<html>Average time between lock<br>request and grant</html>",
-      "<html>Average time grantee held<br>this lock</html>",
-      "<html>Average number of outstanding<br>locks held by acquiring thread<br>at grant time</html>" };
+  static protected String[]                cTips       = (String[]) AdminClient.getContext()
+                                                           .getObject("dso.locks.column.tips");
 
   public static final ServerLockTableModel EMPTY_MODEL = new ServerLockTableModel();
 
@@ -46,6 +41,7 @@ public class ServerLockTableModel extends XObjectTableModel {
     while (iter.hasNext()) {
       add(new LockSpecWrapper(iter.next()));
     }
+    fireTableDataChanged();
   }
 
   public static String columnTip(int column) {

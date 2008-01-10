@@ -293,7 +293,6 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fLockStats.setLockStatisticsEnabled(enabled);
     
     if ((fLocksPanelEnabled = enabled) == true) {
-      setTraceDepth(fLastTraceDepth);
       fTreeTable.setTreeTableModel(fTreeTableModel = createLocksTreeTableModel());
       fServerLocksTable.setModel(fServerLockTableModel = new ServerLockTableModel(fLockStats));
       fEnableButton.setSelected(true);
@@ -305,8 +304,6 @@ public class LocksPanel extends XContainer implements NotificationListener {
       fEnableButton.setSelected(false);
       fDisableButton.setSelected(true);
     }
-    fTraceDepthSpinner.setEnabled(enabled);
-    fTraceDepthSpinner.getEditor().setEnabled(enabled);
 
     fTraceText.setText("");
     fConfigLabel.setText("");
