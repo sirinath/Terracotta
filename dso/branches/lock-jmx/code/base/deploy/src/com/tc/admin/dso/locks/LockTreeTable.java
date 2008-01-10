@@ -61,6 +61,7 @@ public class LockTreeTable extends JTreeTable {
       }
     });
     getTableHeader().setDefaultRenderer(fColumnRenderer = new TableColumnRenderer());
+    setDefaultRenderer(Long.class, new StatValueRenderer());
   }
 
   public void setTreeTableModel(TreeTableModel model) {
