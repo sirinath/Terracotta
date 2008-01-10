@@ -61,6 +61,10 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
   public final String getInterfaceClassName() {
     return getMBeanInterface().getName();
   }
+  
+  public final boolean hasListeners() {
+    return !notificationListeners.isEmpty();
+  }
 
   public final void addNotificationListener(final NotificationListener listener, final NotificationFilter filter,
                                             final Object obj) {
@@ -133,7 +137,14 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
     if (this.isActive && !isActive) {
       reset();
     }
+    final boolean previous = this.isActive;
     this.isActive = isActive;
+    if (previous != isActive) {
+      enabledStateChanged();
+    }
+  }
+  
+  protected synchronized void enabledStateChanged() {
   }
 
   public final synchronized boolean isEnabled() {

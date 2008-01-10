@@ -20,24 +20,22 @@ public class L2MBeanNames {
   public static final ObjectName OBJECT_MANAGEMENT;
   public static final ObjectName DUMPER;
   public static final ObjectName LOCK_STATISTICS;
+  public static final ObjectName STATISTICS_EMITTER;
 
   static {
     try {
-      TC_SERVER_INFO = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Server",
-                                                             false);
+      TC_SERVER_INFO = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Server", false);
       LOGGER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Logger", false);
       DSO = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "DSO", false);
-      DSO_APP_EVENTS = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Application Events",
-                                                             false);
-      OBJECT_MANAGEMENT = TerracottaManagement.createObjectName(Type.Server, Subsystem.ObjectManagement, null,
-                                                                "ObjectManagement", true);
+      DSO_APP_EVENTS = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Application Events", false);
+      OBJECT_MANAGEMENT = TerracottaManagement.createObjectName(Type.Server, Subsystem.ObjectManagement, null, "ObjectManagement", true);
       DUMPER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "L2Dumper", false);
       LOCK_STATISTICS = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Lock Statistics", false);
+      STATISTICS_EMITTER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Statistics Emitter", true);
     } catch (MalformedObjectNameException mone) {
       throw new RuntimeException(mone);
     } catch (NullPointerException npe) {
       throw new RuntimeException(npe);
     }
   }
-
 }

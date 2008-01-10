@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.impl;
 
+import org.apache.commons.io.FileUtils;
+
 import bsh.EvalError;
 import bsh.Interpreter;
 
@@ -162,6 +164,17 @@ import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.statistics.beans.StatisticsEmitter;
+import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.buffer.StatisticsBuffer;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
+import com.tc.statistics.retrieval.StatisticsRetriever;
+import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsageFree;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsageUsed;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterManager;
@@ -184,6 +197,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -233,6 +247,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   private ConnectionIDFactoryImpl              connectionIdFactory;
 
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
+  
+  private StatisticsBuffer                     statisticsBuffer;
+  private StatisticsEmitterMBean               statisticsEmitterMBean;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -276,11 +293,29 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
   }
 
-  public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException,
-      FileNotCreatedException {
+  public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException, FileNotCreatedException {
 
     L2LockStatsManager lockStatsManager = new L2LockStatsManagerImpl();
+    
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
+
+    long sessionId; // HACK: ugly capture session hack hack for now
+    File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
+    FileUtils.forceMkdir(statPath);
+    statisticsBuffer = new H2StatisticsBufferImpl(statPath);
+    try {
+      statisticsBuffer.open();
+      sessionId = statisticsBuffer.createCaptureSession(new Date());
+    } catch (TCStatisticsBufferException sbe) {
+      throw new TCRuntimeException("Unable to open the statistics buffer", sbe);
+    }
+    
+    try {
+      statisticsEmitterMBean = new StatisticsEmitter(statisticsBuffer, sessionId); // HACK: session ID is ugly hack for now
+    } catch (NotCompliantMBeanException ncmbe) {
+      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
+                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
+    }
 
     try {
       startJMXServer();
@@ -711,6 +746,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     lockStatsManager.start(channelManager, lockManager, respondToLockRequestStage.getSink());
 
+    StatisticsRetriever retriever = new StatisticsRetrieverImpl(statisticsBuffer, sessionId); // HACK: sessionId is a hack for now
+    retriever.registerAction(new SRAL2ToL1FaultRate(managementContext.getServerStats())); // HACK: actions should be configurable per session
+    retriever.registerAction(new SRAMemoryUsageFree());
+    retriever.registerAction(new SRAMemoryUsageUsed());
+    retriever.registerAction(new SRASystemProperties());
+    retriever.startup();
+
     if (networkedHA) {
       final Node thisNode = makeThisNode();
       final Node[] allNodes = makeAllNodes();
@@ -723,7 +765,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
   public boolean isBlocking() {
     return startupLock != null && startupLock.isBlocking();
-
   }
 
   private Node[] makeAllNodes() {
@@ -798,7 +839,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     return this.l1Listener.getBindAddress();
   }
 
-  public synchronized void stop() {
+  public synchronized void stop(){
     try {
       if (lockManager != null) lockManager.stop();
     } catch (InterruptedException e) {
@@ -854,6 +895,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     } catch (Throwable t) {
       logger.error("Error shutting down jmx server", t);
     }
+    
+    try {
+      statisticsBuffer.close();
+    } catch (TCStatisticsBufferException e) {
+      logger.warn(e);
+    }
 
     basicStop();
   }
@@ -903,7 +950,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsEmitterMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
@@ -915,6 +962,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void stopJMXServer() throws Exception {
+    if (statisticsEmitterMBean != null) {
+      statisticsEmitterMBean.disable();
+    }
+
     try {
       if (l2Management != null) {
         l2Management.stop();

@@ -22,8 +22,8 @@ public class Assert {
   // NOTE: We need to be VERY careful about casually turning off assertions. It's one thing to make the assertions not
   // throw errors (which the current disable/enable mechanism does). It's entirely something different to remove the
   // calls to assertions. At the time of this writing, there are state modifying method calls in the code base that are
-  // paremeters to these assert method. Removing the call altogher would most certainly change the logic of the system
-  // in potentially silent and catastropic ways
+  // parameters to these assert method. Removing the call altogether would most certainly change the logic of the system
+  // in potentially silent and catastrophic ways
   private static final boolean enabled              = Boolean.valueOf(System.getProperty(ASSERT_PROPERTY_NAME, "true"))
                                                         .booleanValue();
 
@@ -249,7 +249,7 @@ public class Assert {
    * @param actual Actual value
    */
   public static void assertEquals(int expected, int actual) {
-    if (expected != actual) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
+    if (expected != actual && isEnabled()) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
 
   /**
@@ -260,7 +260,7 @@ public class Assert {
    * @param msg Message, should be non-null
    */
   public static void assertEquals(Object msg, int expected, int actual) {
-    if (expected != actual) { throw new TCAssertionError(msg + ": Expected <" + expected + "> but got <"
+    if (expected != actual && isEnabled()) { throw new TCAssertionError(msg + ": Expected <" + expected + "> but got <"
         + actual + ">"); }
   }
 
@@ -271,7 +271,7 @@ public class Assert {
    * @param actual Actual value
    */
   public static void assertEquals(double expected, double actual) {
-    if (expected != actual) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
+    if (expected != actual && isEnabled()) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
 
   /**
@@ -282,7 +282,7 @@ public class Assert {
    * @param epsilon Maximum allowed difference between expected and actual
    */
   public static void assertEquals(double expected, double actual, double epsilon) {
-    if (Math.abs(actual - expected) > Math.abs(epsilon)) { throw new TCAssertionError("Expected <" + expected
+    if (Math.abs(actual - expected) > Math.abs(epsilon) && isEnabled()) { throw new TCAssertionError("Expected <" + expected
         + "> but got <" + actual + ">"); }
   }
 
@@ -293,7 +293,7 @@ public class Assert {
    * @param actual Actual value
    */
   public static void assertEquals(boolean expected, boolean actual) {
-    if (expected != actual) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
+    if (expected != actual && isEnabled()) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
 
   /**
@@ -304,7 +304,7 @@ public class Assert {
    */
   public static void assertEquals(byte[] expected, byte[] actual) {
     boolean expr = (expected == null) ? actual == null : Arrays.equals(expected, actual);
-    if (!expr) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
+    if (!expr && isEnabled()) { throw new TCAssertionError("Expected <" + expected + "> but got <" + actual + ">"); }
   }
 
   /**
@@ -319,8 +319,8 @@ public class Assert {
 
   public static void assertEquals(Object msg, Object expected, Object actual) {
     boolean expr = (expected == null) ? actual == null : expected.equals(actual);
-    if (!expr) { throw new TCAssertionError((msg != null ? (msg + ": ") : "") + "Expected <" + expected + "> but got <"
-        + actual + ">"); }
+    if (!expr && isEnabled()) { throw new TCAssertionError((msg != null ? (msg + ": ") : "") + "Expected <"
+                                                           + expected + "> but got <" + actual + ">"); }
   }
 
   /**
@@ -358,15 +358,19 @@ public class Assert {
     for (int pos = 0; pos < objectArray.length; pos++) {
       if (objectArray[pos] == requiredElement) return;
     }
-    throw failure("Element<" + requiredElement + "> not found in array "
-        + StringUtil.toString(objectArray, ",", "<", ">"));
+    if (isEnabled()) {
+      throw failure("Element<" + requiredElement + "> not found in array "
+          + StringUtil.toString(objectArray, ",", "<", ">"));
+    }
   }
 
   /**
    * Throw assertion error with generic message
    */
   public static void fail() {
-    throw failure("generic failure");
+    if (isEnabled()) {
+      throw failure("generic failure");
+    }
   }
 
   /**
@@ -375,7 +379,9 @@ public class Assert {
    * @param message Message
    */
   public static void fail(String message) {
-    throw failure(message);
+    if (isEnabled()) {
+      throw failure(message);
+    }
   }
 
   /**
@@ -384,7 +390,7 @@ public class Assert {
    * @param v Precondition
    */
   public static void pre(boolean v) {
-    if (!v) throw new TCAssertionError("Precondition failed");
+    if (!v && isEnabled()) throw new TCAssertionError("Precondition failed");
   }
 
   /**
@@ -393,7 +399,7 @@ public class Assert {
    * @param v Postcondition
    */
   public static void post(boolean v) {
-    if (!v) throw new TCAssertionError("Postcondition failed");
+    if (!v && isEnabled()) throw new TCAssertionError("Postcondition failed");
   }
 
   /**
@@ -402,6 +408,6 @@ public class Assert {
    * @param v Invariant
    */
   public static void inv(boolean v) {
-    if (!v) throw new TCAssertionError("Invariant failed");
+    if (!v && isEnabled()) throw new TCAssertionError("Invariant failed");
   }
 }

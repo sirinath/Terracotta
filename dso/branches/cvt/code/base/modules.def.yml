@@ -214,6 +214,13 @@ modules:
         - thirdparty
         - management
         - dso-memory-datastore
+  - dso-statistics:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common-api
+        - common
+        - dso-common
   - dso-l2:
       options:
         jdk: J2SE-1.5
@@ -224,6 +231,7 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l2-common
+        - dso-statistics
         - thirdparty-api
         - thirdparty
         - management

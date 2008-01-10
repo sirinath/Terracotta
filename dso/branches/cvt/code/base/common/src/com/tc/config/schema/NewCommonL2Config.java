@@ -16,6 +16,8 @@ public interface NewCommonL2Config extends NewConfig {
   FileConfigItem dataPath();
 
   FileConfigItem logsPath();
+  
+  FileConfigItem statisticsPath();
 
   IntConfigItem jmxPort();
 
