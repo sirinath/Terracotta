@@ -88,7 +88,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
     serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
 
     ClientMessageChannel channel1 = new TestClientMessageChannel(channelId1, sink);
-    serverLockStatManager.start(new TestChannelManager(channel1), serverLockManager, sink);
+    serverLockStatManager.start(new TestChannelManager(channel1));
 
     clientLockStatManager.start(new TestClientChannel(channel1), sink);
     clientServerGlue.set(clientLockManager, serverLockManager, clientLockStatManager, serverLockStatManager);

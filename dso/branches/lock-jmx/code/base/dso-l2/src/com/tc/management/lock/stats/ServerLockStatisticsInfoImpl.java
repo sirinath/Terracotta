@@ -38,6 +38,11 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     serverStatElement = new LockStatElement(lockID, null);
     serverStat = serverStatElement.getStats();
   }
+  
+  public void clearAllStatsFor(NodeID nodeID) {
+    statEnabledClients.remove(nodeID);
+    clientLockStatElements.remove(nodeID);
+  }
 
   public LockID getLockID() {
     return lockID;

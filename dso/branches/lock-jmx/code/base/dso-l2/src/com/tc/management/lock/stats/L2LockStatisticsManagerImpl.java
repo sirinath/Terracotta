@@ -4,7 +4,6 @@
  */
 package com.tc.management.lock.stats;
 
-import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
@@ -16,7 +15,6 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
-import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 
@@ -30,10 +28,8 @@ import java.util.Set;
 public class L2LockStatisticsManagerImpl extends LockStatisticsManager implements L2LockStatsManager, Serializable {
   private static final TCLogger logger                   = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
 
-  private LockManager           lockManager;
   private DSOChannelManager     channelManager;
-  private Sink                  sink;
-  private final Set<NodeID>     lockSpecRequestedNodeIDs = new HashSet();
+  private final Set<NodeID>     lockSpecRequestedNodeIDs = new HashSet<NodeID>();
 
   private final static void sendLockStatisticsEnableDisableMessage(MessageChannel channel, boolean statsEnable,
                                                                    int traceDepth, int gatherInterval) {
@@ -67,10 +63,8 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     }
   }
 
-  public synchronized void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink) {
+  public synchronized void start(DSOChannelManager channelManager) {
     this.channelManager = channelManager;
-    this.lockManager = lockManager;
-    this.sink = sink;
   }
 
   /**
@@ -85,7 +79,8 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
 
     MessageChannel[] channels = channelManager.getActiveChannels();
     for (int i = 0; i < channels.length; i++) {
-      sendLockStatisticsEnableDisableMessage(channels[i], false, lockStatConfig.getTraceDepth(), lockStatConfig.getGatherInterval());
+      sendLockStatisticsEnableDisableMessage(channels[i], false, lockStatConfig.getTraceDepth(), lockStatConfig
+          .getGatherInterval());
     }
     clear();
   }
@@ -97,14 +92,16 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   // We cannot synchronized on the whole method in order to prevent deadlock.
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     synchronized (this) {
-      if (!lockStatisticsEnabled) { return; }
       super.setLockStatisticsConfig(traceDepth, gatherInterval);
     }
 
-    MessageChannel[] channels = channelManager.getActiveChannels();
-    for (int i = 0; i < channels.length; i++) {
-      sendLockStatisticsEnableDisableMessage(channels[i], traceDepth > 0, traceDepth, gatherInterval);
-    }
+    sendLockStatisticsEnableDisableMessageIfNeeded(traceDepth, gatherInterval);
+  }
+  
+  public void setLockStatisticsEnabled(boolean statEnable) {
+    super.setLockStatisticsEnabled(statEnable);
+    
+    sendLockStatisticsEnableDisableMessageIfNeeded(lockStatConfig.getTraceDepth(), lockStatConfig.getGatherInterval());
   }
 
   public synchronized boolean isLockStatisticsEnabled() {
@@ -117,14 +114,15 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
 
   public synchronized void recordLockHopRequested(LockID lockID) {
     if (!lockStatisticsEnabled) { return; }
-    
-      ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl)getLockStatInfo(lockID);
-      if (lsc != null) {
-        lsc.recordLockHopRequested();
-      }
+
+    ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl) getLockStatInfo(lockID);
+    if (lsc != null) {
+      lsc.recordLockHopRequested();
+    }
   }
 
-  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType, int numberOfPendingRequests) {
+  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType,
+                                               int numberOfPendingRequests) {
     if (!lockStatisticsEnabled) { return; }
 
     super.recordLockRequested(lockID, nodeID, threadID, null, lockType, numberOfPendingRequests);
@@ -224,8 +222,12 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     return returnSet;
   }
 
-  public void clearAllStatsFor(NodeID nodeID) {
-    //
+  public synchronized void clearAllStatsFor(NodeID nodeID) {
+    lockSpecRequestedNodeIDs.remove(nodeID);
+    for (Iterator<ServerLockStatisticsInfoImpl> i = lockStats.values().iterator(); i.hasNext();) {
+      ServerLockStatisticsInfoImpl lsc = i.next();
+      lsc.clearAllStatsFor(nodeID);
+    }
   }
 
   public void enableStatsForNodeIfNeeded(NodeID nodeID) {
@@ -240,7 +242,16 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
       logger.warn(e);
     }
   }
-
+  
+  private void sendLockStatisticsEnableDisableMessageIfNeeded(int traceDepth, int gatherInterval) {
+    if (isLockStatisticsEnabled()) {
+      MessageChannel[] channels = channelManager.getActiveChannels();
+      for (int i = 0; i < channels.length; i++) {
+        sendLockStatisticsEnableDisableMessage(channels[i], traceDepth > 0, traceDepth, gatherInterval);
+      }
+    }
+  }
+  
   private void logDebug(String msg) {
     System.err.println(msg);
   }

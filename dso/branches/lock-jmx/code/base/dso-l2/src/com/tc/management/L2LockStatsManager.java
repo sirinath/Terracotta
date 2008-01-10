@@ -4,21 +4,19 @@
  */
 package com.tc.management;
 
-import com.tc.async.api.Sink;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.groups.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.LockManager;
 
 import java.util.Collection;
 import java.util.Collections;
 
 public interface L2LockStatsManager {
   public final static L2LockStatsManager NULL_LOCK_STATS_MANAGER = new L2LockStatsManager() {
-    public void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink) {
+    public void start(DSOChannelManager channelManager) {
       // do nothing
     }
     
@@ -100,7 +98,7 @@ public interface L2LockStatsManager {
     
   };
   
-  public void start(DSOChannelManager channelManager, LockManager lockManager, Sink sink);
+  public void start(DSOChannelManager channelManager);
   
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
