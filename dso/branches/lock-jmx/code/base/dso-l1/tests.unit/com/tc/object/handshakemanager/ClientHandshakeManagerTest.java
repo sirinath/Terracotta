@@ -391,6 +391,10 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
       throw new ImplementMe();
     }
+
+    public void setLockStatisticsEnabled(boolean statEnable) {
+      throw new ImplementMe();
+    }
   }
 
   public class TestSequenceProvider implements BatchSequenceProvider {

@@ -187,10 +187,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
   }
 
   public void aggregateLockHoldersData(LockStats stat, int startIndex) {
-    System.err.println("@@@@@@@@@lockID: " + lockID + " in aggregateLockHoldersData: " + holderStats);
     holderStats.aggregateLockHoldersData(stat);
-
-    System.err.println("@@@@@@@@@@@@@@lockID: " + lockID + ", stat: " + stat);
 
     for (Iterator i = nextStat.keySet().iterator(); i.hasNext();) {
       LockStatElement child = (LockStatElement) i.next();
@@ -202,7 +199,6 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     lockStat.clear();
     for (Iterator i = nextStat.keySet().iterator(); i.hasNext();) {
       LockStatElement lockStatElement = (LockStatElement) i.next();
-      System.err.println("================>In aggregateLockStat: lockID: " + lockID + ", " + lockStatElement + ", lockStat: " + lockStat);
       long pendingRequests = lockStatElement.lockStat.getNumOfLockPendingRequested();
       long pendingWaiters = lockStatElement.lockStat.getNumOfPendingWaiters();
       long lockRequested = lockStatElement.lockStat.getNumOfLockRequested();
@@ -225,9 +221,7 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
 
   public void mergeChild(LockStatElement lockStatElement) {
     LockStatElement existLSE = (LockStatElement) nextStat.get(lockStatElement);
-    logDebug("@@@@In mergeChild -- lockID: " + lockID + " existLSE: " + existLSE);
     if (existLSE == null) {
-      logDebug("@@@@In mergeChild -- lockID: " + lockID + " existLSE is null, lockStatElement: " + lockStatElement);
       nextStat.put(lockStatElement, lockStatElement);
     } else {
       long pendingRequests = lockStatElement.lockStat.getNumOfLockPendingRequested();
@@ -238,8 +232,6 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
       long timeToAwardedInMillis = lockStatElement.lockStat.getTotalWaitTimeToAwardedInMillis();
       long heldTimeInMillis = lockStatElement.lockStat.getTotalRecordedHeldTimeInMillis();
       long numOfReleases = lockStatElement.lockStat.getNumOfLockReleased();
-      logDebug("@@@@@@@@In merge child -- lockID: " + lockID + " existLSE is not null, timeToAward: "
-               + timeToAwardedInMillis + ", heldTimeInMillis: " + heldTimeInMillis);
       existLSE.lockStat.aggregateStatistics(pendingRequests, pendingWaiters, lockRequested, lockHopRequests,
                                             lockAwarded, timeToAwardedInMillis, heldTimeInMillis, numOfReleases);
 

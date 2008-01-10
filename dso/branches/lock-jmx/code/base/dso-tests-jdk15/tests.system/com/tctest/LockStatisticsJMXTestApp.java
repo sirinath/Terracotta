@@ -382,9 +382,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        echo("lockID: " + lsi.getLockID());
-
-        echo("Average wait time: " + lsi.getServerStats().getAvgHeldTimeInMillis());
         return lsi.getServerStats().getAvgHeldTimeInMillis();
       }
     }
@@ -396,9 +393,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        echo("lockID: " + lsi.getLockID());
-
-        echo("Average wait time: " + lsi.getClientStats().getAvgHeldTimeInMillis());
         return lsi.getClientStats().getAvgHeldTimeInMillis();
       }
     }
@@ -410,9 +404,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        echo("lockID: " + lsi.getLockID());
-
-        echo("Average wait time: " + lsi.getServerStats().getAvgWaitTimeToAwardInMillis());
         return lsi.getServerStats().getAvgWaitTimeToAwardInMillis();
       }
     }
@@ -424,9 +415,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().equals(lockName)) {
-        echo("lockID: " + lsi.getLockID());
-
-        echo("Average wait time: " + lsi.getClientStats().getAvgWaitTimeToAwardInMillis());
         return lsi.getClientStats().getAvgWaitTimeToAwardInMillis();
       }
     }
@@ -450,11 +438,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
     for (Iterator i = c.iterator(); i.hasNext();) {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().indexOf(lockName) != -1) {
-        echo("lockID: " + lsi.getLockID());
-        echo(" " + lsi.toString());
-        echo("" + lsi.children().size());
-        echo("" + lsi.children());
-
         Assert.assertEquals(numOfClientsStackTraces, lsi.children().size());
         assertStackTracesDepth(lsi.children(), traceDepth);
         return;
@@ -468,10 +451,6 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       LockSpec lsi = (LockSpec) i.next();
       if (lsi.getLockID().asString().indexOf(lockName) != -1) {
         Assert.assertEquals(lockType, lsi.getObjectType());
-        echo("lockID: " + lsi.getLockID());
-        echo(" " + lsi.toString());
-        echo("" + lsi.children().size());
-        echo("" + lsi.children());
 
         Assert.assertEquals(numOfClientsStackTraces, lsi.children().size());
         assertStackTracesDepth(lsi.children(), traceDepth);

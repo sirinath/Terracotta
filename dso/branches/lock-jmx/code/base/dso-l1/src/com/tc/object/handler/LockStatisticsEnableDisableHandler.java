@@ -19,8 +19,10 @@ public class LockStatisticsEnableDisableHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     LockStatisticsMessage msg = (LockStatisticsMessage) context;
-    if (msg.isLockStatsEnableDisable()) {
+    if (msg.isLockStatsEnable()) {
       clientLockManager.setLockStatisticsConfig(msg.getTraceDepth(), msg.getGatherInterval());
+    } else if (msg.isLockStatsDisable()) {
+      clientLockManager.setLockStatisticsEnabled(false);
     } else if (msg.isGatherLockStatistics()) {
       clientLockManager.getLockSpecs();
     }

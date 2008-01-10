@@ -276,7 +276,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       FileNotCreatedException, NotCompliantMBeanException {
 
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
-    this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
+    try {
+      this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
+    } catch (NotCompliantMBeanException ncmbe) {
+      throw new TCRuntimeException("Unable to construct the " + LockStatisticsMonitor.class.getName()
+                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
+    }
 
     try {
       startJMXServer();
@@ -534,8 +539,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
-    stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
-                             new BroadcastChangeHandler(), 1, maxStageSize);
+    stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, new BroadcastChangeHandler(), 1,
+                             maxStageSize);
     Stage respondToLockRequestStage = stageManager
         .createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE, new RespondToRequestLockHandler(), 1,
                      maxStageSize);
@@ -577,8 +582,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     cteh.setConnectStageSink(jmxRemoteConnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,
                                                                 cteh, 1, maxStageSize);
-    
-    final Stage clientLockStatisticsRespondStage = stageManager.createStage(ServerConfigurationContext.CLIENT_LOCK_STATISTICS_RESPOND_STAGE, new ClientLockStatisticsHandler(lockStatsManager), 1, 1);
+
+    final Stage clientLockStatisticsRespondStage = stageManager
+        .createStage(ServerConfigurationContext.CLIENT_LOCK_STATISTICS_RESPOND_STAGE,
+                     new ClientLockStatisticsHandler(lockStatsManager), 1, 1);
 
     l1Listener.addClassMapping(TCMessageType.BATCH_TRANSACTION_ACK_MESSAGE,
                                BatchTransactionAcknowledgeMessageImpl.class);
@@ -619,7 +626,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     l1Listener.routeMessageType(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, jmxRemoteTunnelStage.getSink(),
                                 hydrateSink);
     l1Listener.routeMessageType(TCMessageType.CLIENT_JMX_READY_MESSAGE, jmxRemoteTunnelStage.getSink(), hydrateSink);
-    l1Listener.routeMessageType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, clientLockStatisticsRespondStage.getSink(), hydrateSink);
+    l1Listener.routeMessageType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, clientLockStatisticsRespondStage
+        .getSink(), hydrateSink);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.clientReconnectWindow());
     long reconnectTimeout = l2DSOConfig.clientReconnectWindow().getInt();

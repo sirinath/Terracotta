@@ -450,6 +450,11 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     lockStatManager.setLockStatisticsConfig(traceDepth, gatherInterval);
   }
   
+  public synchronized void setLockStatisticsEnabled(boolean statEnable) {
+    waitUntilRunning();
+    lockStatManager.setLockStatisticsEnabled(statEnable);
+  }
+  
   public synchronized void getLockSpecs() {
     waitUntilRunning();
     lockStatManager.getLockSpecs();

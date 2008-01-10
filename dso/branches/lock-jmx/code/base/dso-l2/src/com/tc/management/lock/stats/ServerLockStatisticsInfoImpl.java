@@ -37,7 +37,6 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     clientStat = clientStatElement.getStats();
     serverStatElement = new LockStatElement(lockID, null);
     serverStat = serverStatElement.getStats();
-    System.err.println("&&&&&&&&&&&&&&&&&& holdersDataStat after serverStatElement: " + serverStatElement.holderStats + " " + System.identityHashCode(serverStatElement));
   }
 
   public LockID getLockID() {
@@ -123,14 +122,11 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   private void mergeLockStatElements() {
     clientStatElement.clearChild();
 
-    logDebug("*******Getting from clientLockStatElement: " + clientLockStatElements.size());
     for (Iterator<Collection<LockStatElement>> i = clientLockStatElements.values().iterator(); i.hasNext();) {
       Collection<LockStatElement> lockStatElements = i.next();
-      logDebug("*******Getting from clientLockStatElement: " + lockStatElements);
       for (Iterator<LockStatElement> it = lockStatElements.iterator(); it.hasNext();) {
         LockStatElement lse = it.next();
         clientStatElement.mergeChild(lse);
-        logDebug("=====>statElement after merge: " + clientStatElement);
       }
     }
   }

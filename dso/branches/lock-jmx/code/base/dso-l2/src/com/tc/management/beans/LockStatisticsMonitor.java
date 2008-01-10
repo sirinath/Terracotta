@@ -4,11 +4,9 @@
  */
 package com.tc.management.beans;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
-
-import com.tc.management.AbstractTerracottaMBean;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockSpec;
+import com.tc.stats.AbstractNotifyingMBean;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -16,18 +14,12 @@ import java.util.Collection;
 import javax.management.AttributeChangeNotification;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
-import javax.management.Notification;
 
-public class LockStatisticsMonitor extends AbstractTerracottaMBean implements LockStatisticsMonitorMBean, Serializable {
+public class LockStatisticsMonitor extends AbstractNotifyingMBean implements LockStatisticsMonitorMBean, Serializable {
   private final L2LockStatsManager lockStatsManager;
-
-  private static final String[]    ALL_EVENTS           = new String[] { TRACE_DEPTH, TRACES_ENABLED };
-  private static final String      DESCRIPTION          = "Terracotta Lock Statistics Event Notification";
-
-  private final SynchronizedLong   notificationSequence = new SynchronizedLong(0L);
-
+  
   public LockStatisticsMonitor(L2LockStatsManager lockStatsManager) throws NotCompliantMBeanException {
-    super(LockStatisticsMonitorMBean.class, true);
+    super(LockStatisticsMonitorMBean.class);
     this.lockStatsManager = lockStatsManager;
   }
 
@@ -37,12 +29,13 @@ public class LockStatisticsMonitor extends AbstractTerracottaMBean implements Lo
 
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     this.lockStatsManager.setLockStatisticsConfig(traceDepth, gatherInterval);
-    sendNotification(new Notification(TRACE_DEPTH, this, notificationSequence.increment()));
+    sendNotification(TRACE_DEPTH, this);
+    sendNotification(GATHER_INTERVAL, this);
   }
 
   public void setLockStatisticsEnabled(boolean lockStatsEnabled) {
     this.lockStatsManager.setLockStatisticsEnabled(lockStatsEnabled);
-    sendNotification(new Notification(TRACES_ENABLED, this, notificationSequence.increment()));
+    sendNotification(TRACES_ENABLED, this);
   }
 
   public boolean isLockStatisticsEnabled() {

@@ -138,10 +138,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
     Assert.assertEquals(1, lockSpecs.size()); // only one client in this test
     for (Iterator i = lockSpecs.iterator(); i.hasNext();) {
       LockSpec s = (LockSpec) i.next();
-      System.err.println("lockSpec: " + s);
       Collection children = s.children();
-      System.err.println("children: " + children);
-      // Assert.assertEquals(numOfStackTraces, children.size());
       Assert.assertTrue(assertStackTracesDepth(children, depthOfStackTraces));
     }
   }

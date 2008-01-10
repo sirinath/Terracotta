@@ -291,9 +291,9 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fConfigText.setEnabled(enabled);
     fRefreshButton.setEnabled(enabled);
     fLockStats.setLockStatisticsEnabled(enabled);
-    setTraceDepth(fLastTraceDepth);
-
+    
     if ((fLocksPanelEnabled = enabled) == true) {
+      setTraceDepth(fLastTraceDepth);
       fTreeTable.setTreeTableModel(fTreeTableModel = createLocksTreeTableModel());
       fServerLocksTable.setModel(fServerLockTableModel = new ServerLockTableModel(fLockStats));
       fEnableButton.setSelected(true);
