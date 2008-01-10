@@ -10,7 +10,7 @@ import com.tc.object.lockmanager.api.ThreadID;
 import java.util.Collection;
 
 public interface LockStatisticsInfo {
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis,
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis, int numberOfPendingRequests,
                                   StackTraceElement[] stackTraces, String contextInfo);
 
   public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,

@@ -57,12 +57,12 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     this.sink = sink;
   }
 
-  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo) {
+  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo, int numberOfPendingLockRequests) {
     if (!isStatEnabled()) { return; }
     boolean shouldSendClientStat = shouldSendClientStat(lockID);
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
-    super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements, contextInfo);
+    super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements, contextInfo, numberOfPendingLockRequests);
   }
 
   public void recordLockAwarded(LockID lockID, ThreadID threadID) {

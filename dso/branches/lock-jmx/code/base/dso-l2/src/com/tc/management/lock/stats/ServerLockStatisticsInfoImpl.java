@@ -60,10 +60,10 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     return clientStatElement.children();
   }
 
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis,
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestedTimeInMillis, int numberOfPendingRequests,
                                   StackTraceElement[] stackTraces, String contextInfo) {
     this.lockType = contextInfo;
-    serverStatElement.recordLockRequested(nodeID, threadID, requestedTimeInMillis, contextInfo, stackTraces, 0);
+    serverStatElement.recordLockRequested(nodeID, threadID, requestedTimeInMillis, numberOfPendingRequests, contextInfo, stackTraces, 0);
   }
 
   public void recordLockRejected(NodeID nodeID, ThreadID threadID) {

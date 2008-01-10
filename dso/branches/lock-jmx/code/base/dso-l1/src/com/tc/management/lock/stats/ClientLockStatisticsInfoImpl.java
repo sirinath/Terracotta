@@ -28,9 +28,9 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     stat = statElement.getStats();
   }
 
-  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis, StackTraceElement[] stackTraces,
-                                  String contextInfo) {
-    statElement.recordLockRequested(nodeID, threadID, requestTimeInMillis, contextInfo, stackTraces, 0);
+  public void recordLockRequested(NodeID nodeID, ThreadID threadID, long requestTimeInMillis,
+                                  int numberOfPendingRequests, StackTraceElement[] stackTraces, String contextInfo) {
+    statElement.recordLockRequested(nodeID, threadID, requestTimeInMillis, numberOfPendingRequests, contextInfo, stackTraces, 0);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
@@ -40,8 +40,8 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     return recordedFrequency;
   }
 
-  public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy,
-                                long awardedTimeInMillis, int nestedLockDepth) {
+  public boolean recordLockAwarded(NodeID nodeID, ThreadID threadID, boolean isGreedy, long awardedTimeInMillis,
+                                   int nestedLockDepth) {
     boolean rv = statElement.recordLockAwarded(nodeID, threadID, isGreedy, awardedTimeInMillis, nestedLockDepth);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
@@ -63,14 +63,14 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
   }
-  
+
   public void recordLockRejected(NodeID nodeID, ThreadID threadID) {
     statElement.recordLockRejected(nodeID, threadID);
     if (gatherInterval > 0) {
       this.recordedFrequency = (this.recordedFrequency + 1) % gatherInterval;
     }
   }
-  
+
   public void aggregateLockHoldersData() {
     statElement.aggregateLockHoldersData(stat, 0);
   }
@@ -78,7 +78,7 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   public LockID getLockID() {
     return lockID;
   }
-  
+
   public LockStats getServerStats() {
     throw new TCNotSupportedMethodException();
   }
@@ -86,7 +86,7 @@ public class ClientLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
   public LockStats getClientStats() {
     return stat;
   }
-  
+
   public long getNumberOfLockRequested() {
     return -1;
   }

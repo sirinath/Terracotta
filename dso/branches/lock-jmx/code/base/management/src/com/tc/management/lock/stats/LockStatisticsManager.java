@@ -23,17 +23,18 @@ public abstract class LockStatisticsManager implements Serializable {
 
   protected final Map            lockStats              = new HashMap();       // map<lockID, LockStatisticsInfo>
   protected final LockStatConfig lockStatConfig         = new LockStatConfig();
-  protected final Map            nestedDepth            = new HashMap(); // map<ThreadID/NodeID, int>
+  protected final Map            nestedDepth            = new HashMap();       // map<ThreadID/NodeID, int>
 
   protected boolean              lockStatisticsEnabled;
 
-  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces, String contextInfo) {
+  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces,
+                                  String contextInfo, int numberOfPendingRequests) {
     if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getOrCreateLockStatInfo(lockID);
-    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), stackTraces, contextInfo);
+    lsc.recordLockRequested(nodeID, threadID, System.currentTimeMillis(), numberOfPendingRequests, stackTraces, contextInfo);
   }
-  
+
   public boolean recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy,
                                    long awardedTimeInMillis, int nestedLockDepth) {
     if (!lockStatisticsEnabled) { return false; }
@@ -56,9 +57,11 @@ public abstract class LockStatisticsManager implements Serializable {
     if (!lockStatisticsEnabled) { return; }
 
     LockStatisticsInfo lsc = getLockStatInfo(lockID);
-    if (lsc != null) { lsc.recordLockReleased(nodeID, threadID); }
+    if (lsc != null) {
+      lsc.recordLockReleased(nodeID, threadID);
+    }
   }
-  
+
   public void setTraceDepth(int traceDepth) {
     if (!lockStatisticsEnabled) { return; }
 
@@ -73,7 +76,7 @@ public abstract class LockStatisticsManager implements Serializable {
 
   public void clear() {
     this.lockStats.clear();
-    //this.lockStatConfig.reset();
+    // this.lockStatConfig.reset();
   }
 
   public synchronized int getTraceDepth() {
@@ -138,7 +141,7 @@ public abstract class LockStatisticsManager implements Serializable {
     }
     return depth.get();
   }
-  
+
   protected int decrementNestedDepth(Object depthTrackingKey) {
     Counter depth = (Counter) nestedDepth.get(depthTrackingKey);
     if (depth == null) { return 0; }
@@ -146,13 +149,13 @@ public abstract class LockStatisticsManager implements Serializable {
     depth.decrement();
     return depth.get();
   }
-  
+
   protected static class LockStatConfig {
     private final static int DEFAULT_GATHER_INTERVAL = 1;
     private final static int DEFAULT_TRACE_DEPTH     = MIN_CLIENT_TRACE_DEPTH;
 
     private int              traceDepth;
-    private int              gatherInterval = DEFAULT_GATHER_INTERVAL;
+    private int              gatherInterval          = DEFAULT_GATHER_INTERVAL;
 
     public LockStatConfig() {
       reset();
