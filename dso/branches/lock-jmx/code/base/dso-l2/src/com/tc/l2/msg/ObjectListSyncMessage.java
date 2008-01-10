@@ -7,7 +7,6 @@ package com.tc.l2.msg;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.MessageID;
 import com.tc.util.Assert;
-import com.tc.util.ObjectIDSet2;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -16,8 +15,9 @@ import java.util.Set;
 
 public class ObjectListSyncMessage extends AbstractGroupMessage {
 
-  public static final int REQUEST  = 0;
-  public static final int RESPONSE = 1;
+  public static final int REQUEST         = 0;
+  public static final int RESPONSE        = 1;
+  public static final int FAILED_RESPONSE = 2;
 
   private Set             oids;
 
@@ -35,13 +35,18 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
     this.oids = oids;
   }
 
-  protected void basicReadExternal(int msgType, ObjectInput in) throws IOException {
+  public ObjectListSyncMessage(MessageID messageID, int type) {
+    super(type, messageID);
+  }
+
+  protected void basicReadExternal(int msgType, ObjectInput in) throws IOException, ClassNotFoundException {
     switch (msgType) {
       case REQUEST:
+      case FAILED_RESPONSE:
         // Nothing to read
         break;
       case RESPONSE:
-        oids = readObjectIDS(in, new ObjectIDSet2());
+        oids = (Set) in.readObject();
         break;
       default:
         throw new AssertionError("Unknown Message Type : " + msgType);
@@ -51,11 +56,15 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
   protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
     switch (msgType) {
       case REQUEST:
+      case FAILED_RESPONSE:
         // Nothing to write
         break;
       case RESPONSE:
         Assert.assertNotNull(oids);
-        writeObjectIDS(out, oids);
+        // XXX::Directly serializing instead of using writeObjectIDs() to avoid HUGE messages. Since the (wrapped) set
+        // is ObjectIDSet2 and since it has optimized externalization methods, this should result in far less data
+        // written out.
+        out.writeObject(oids);
         break;
       default:
         throw new AssertionError("Unknown Message Type : " + msgType);
@@ -75,6 +84,8 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
     switch (getType()) {
       case REQUEST:
         return "REQUEST";
+      case FAILED_RESPONSE:
+        return "FAILED_RESPONSE";
       case RESPONSE:
         return "RESPONSE";
       default:

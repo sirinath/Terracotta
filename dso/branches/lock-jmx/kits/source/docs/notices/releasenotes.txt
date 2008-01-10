@@ -1,7 +1,4 @@
-
-Nightly Build from Trunk
-
-
+Release Notes: http://www.terracotta.org/confluence/display/docs1/Release+Notes+2.5
 Documentation: http://www.terracotta.org/confluence/display/docs1/Terracotta+Product+Documentation
 Forums:        http://forums.terracotta.org/forums/forums/list.page
 Mailing Lists: http://lists.terracotta.org

@@ -68,7 +68,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     List txns = new ArrayList();
     txns.add(stxn1);
 
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     LookupEventContext loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -77,11 +77,11 @@ public class TransactionalObjectManagerTest extends TCTestCase {
 
     txObjectManager.lookupObjectsForTransactions();
 
-    // for txn1 - ObjectID 1, 2/home/ssubbiah/2.2.1/code/base/tcbuild check_prep dso-l2 unit
+    // for txn1 - ObjectID 1, 2
     Object args[] = (Object[]) objectManager.lookupObjectForCreateIfNecessaryContexts.take();
     assertNotNull(args);
 
-    // Apply should not have been called as we dont have Obejct 1, 2
+    // Apply should have been called as we have Object 1, 2
     ApplyTransactionContext aoc = (ApplyTransactionContext) coordinator.applySink.queue.remove(0);
     assertTrue(stxn1 == aoc.getTxn());
     assertNotNull(aoc);
@@ -100,7 +100,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     txns.clear();
     txns.add(stxn2);
 
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -213,7 +213,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     List txns = new ArrayList();
     txns.add(stxn1);
 
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     LookupEventContext loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -245,7 +245,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
     txns.clear();
     txns.add(stxn2);
 
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -322,7 +322,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
 
     txns.clear();
     txns.add(stxn3);
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -352,7 +352,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
 
     txns.clear();
     txns.add(stxn4);
-    txObjectManager.addTransactions(txns, Collections.EMPTY_LIST);
+    txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);

@@ -36,7 +36,7 @@ public abstract class BundleSpec {
   public abstract boolean isCompatible(final String symname, final String version);
 
   public final static boolean isMatchingSymbolicName(final String arg0, final String arg1) {
-    return arg0.replace('-', '_').equalsIgnoreCase(arg1.replace('-', '_'));
+    return (arg0 != null) && (arg1 != null) && arg0.replace('-', '_').equalsIgnoreCase(arg1.replace('-', '_'));
   }
 
   public static final String[] getRequirements(final Manifest manifest) {
@@ -59,7 +59,7 @@ public abstract class BundleSpec {
     }
 
     if (!spec.equals(check.toString().replaceFirst(",", ""))) {
-      final String arg0 = "Syntax error specifying the required bundle list in the manifest: ''{1}'' found ''{2}''";
+      final String arg0 = "Syntax error specifying the required bundle list in the manifest: ''{0}'' found ''{1}''";
       final Object[] arg1 = { requiredBundles, check };
       throw new RuntimeException(MessageFormat.format(arg0, arg1));
     }

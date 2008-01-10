@@ -33,11 +33,13 @@ import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
+import com.tc.object.bytecode.AQSSubclassStrongReferenceAdapter;
 import com.tc.object.bytecode.AbstractListMethodCreator;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DelegateMethodAdapter;
+import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
@@ -68,6 +70,7 @@ import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
 import com.tc.util.runtime.Vm;
+import com.tc.weblogic.WeblogicHelper;
 import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
 import com.tc.weblogic.transform.EventsManagerAdapter;
 import com.tc.weblogic.transform.FilterManagerAdapter;
@@ -296,7 +299,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    * addPermanentExcludePattern("java.util.concurrent.Semaphore*");
    * addPermanentExcludePattern("java.util.concurrent.SynchronousQueue*");
    * addPermanentExcludePattern("java.util.concurrent.ThreadPoolExecutor*");
-   *
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicBoolean*");
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicIntegerArray*");
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicIntegerFieldUpdater*");
@@ -307,7 +309,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicReferenceArray*");
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicReferenceFieldUpdater*");
    * addPermanentExcludePattern("java.util.concurrent.atomic.AtomicStampedReference*");
-   *
    * addPermanentExcludePattern("java.util.concurrent.locks.AbstractQueuedLongSynchronizer*");
    * addPermanentExcludePattern("java.util.concurrent.locks.AbstractQueuedSynchronizer*");
    * addPermanentExcludePattern("java.util.concurrent.locks.LockSupport*"); }
@@ -479,7 +480,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     /**
      * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- spec =
      * getOrCreateSpec("java.util.Arrays"); spec.addDoNotInstrument("copyOfRange"); spec.addDoNotInstrument("copyOf");
-     *
      * spec = getOrCreateSpec("java.util.Arrays$ArrayList");
      */
 
@@ -720,6 +720,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addTHashSetAddLogSpec(SerializationUtil.ADD_SIGNATURE);
     spec.addTHashSetRemoveAtLogSpec(SerializationUtil.REMOVE_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
+    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
 
     spec = getOrCreateSpec("gnu.trove.ToObjectArrayProcedure");
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
@@ -728,10 +729,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
-    // BEGIN: weblogic stuff
-    addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
-    addWeblogicCustomAdapters();
-    // END: weblogic stuff
+    addWeblogicInstrumentation();
 
     // BEGIN: tomcat stuff
     // don't install tomcat-specific adaptors if this sys prop is defined
@@ -793,11 +791,31 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
+  private void addWeblogicInstrumentation() {
+    if (WeblogicHelper.isWeblogicPresent()) {
+      if (WeblogicHelper.isSupportedVersion()) {
+        addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
+        
+        addCustomAdapter("weblogic.Server", new ServerAdapter());
+        addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
+        addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
+        addCustomAdapter("weblogic.ejb.container.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
+        addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
+        addCustomAdapter("weblogic.servlet.internal.EventsManager", new EventsManagerAdapter());
+        addCustomAdapter("weblogic.servlet.internal.FilterManager", new FilterManagerAdapter());
+        addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
+        addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
+                         new DelegateMethodAdapter("weblogic.servlet.internal.ServletResponseImpl", "nativeResponse"));
+      } else {
+        logger.warn("weblogic instrumentation NOT being added since this appears to be an unsupported version");
+      }
+    }
+  }
+
   /**
    * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- private void
    * doAutoconfigForSpring() { addIncludePattern("org.springframework.context.ApplicationEvent", false, false, false);
    * addIncludePattern("com.tcspring.ApplicationContextEventProtocol", true, true, true);
-   *
    * addIncludePattern("com.tcspring.ComplexBeanId", true, true, true); //
    * addIncludePattern("com.tcspring.BeanContainer", true, true, true);
    * getOrCreateSpec("com.tcspring.BeanContainer").addTransient("isInitialized"); // .setHonorTransient(true); // scoped
@@ -816,12 +834,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.LinkedBlockingQueue", false, false, false);
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.LinkedBlockingQueue$Node", false, false, false);
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.FutureTask", false, false, false);
-   *
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.ConcurrentLinkedQueue", false, false, false);
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.PriorityBlockingQueue", false, false, false);
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.ArrayBlockingQueue", false, false, false);
    * addIncludePattern("edu.emory.mathcs.backport.java.util.concurrent.CopyOnWriteArrayList", false, false, false);
-   *
    * LockDefinition ld = new LockDefinitionImpl("addApplicationListener", ConfigLockLevel.WRITE); ld.commit();
    * addLock("* org.springframework.context.event.AbstractApplicationEventMulticaster.addApplicationListener(..)", ld); //
    * used by WebFlow addIncludePattern("org.springframework.core.enums.*", false, false, false);
@@ -833,10 +849,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- private void
    * doAutoconfigForSpringWebFlow() { addAspectModule("org.springframework.webflow",
    * "com.tc.object.config.SpringWebFlowAspectModule"); addIncludePattern("com.tcspring.DSOConversationLock", false,
-   * false, false);
-   *
-   * addIncludePattern("org.springframework.webflow..*", true, false, false);
-   *
+   * false, false); addIncludePattern("org.springframework.webflow..*", true, false, false);
    * addIncludePattern("org.springframework.webflow.conversation.impl.ConversationEntry", false, false, false);
    * addIncludePattern("org.springframework.webflow.core.collection.LocalAttributeMap", false, false, false);
    * addIncludePattern("org.springframework.webflow.conversation.impl.*", false, false, false); //
@@ -868,30 +881,30 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    */
 
   private void addJDK15InstrumentedSpec() {
-    if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
+    if (Vm.isJDK15Compliant()) {
+
       TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-      spec.addTransient("sync");
+      spec.markPreInstrumented();
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
       spec.setHonorTransient(true);
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$DsoLock");
       spec.setHonorTransient(true);
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLockTC");
-      // spec.setHonorTransient(true);
-      spec.setCallMethodOnLoad("init");
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLockTC");
-      // spec.setHonorTransient(true);
-      spec.setCallMethodOnLoad("init");
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-      // spec.setHonorTransient(true);
-      spec.addTransient("sync");
-      spec.setCallMethodOnLoad("init");
+      spec.markPreInstrumented();
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      // spec.setHonorTransient(true);
-      spec.addTransient("sync");
-      spec.setCallMethodOnLoad("init");
+      spec.markPreInstrumented();
+
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
+      spec.setHonorTransient(true);
+      spec.setCustomClassAdapter(new AQSSubclassStrongReferenceAdapter());
+      spec.markPreInstrumented();
+
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
+      spec.setCallConstructorOnLoad(true);
+      spec.markPreInstrumented();
 
       spec = getOrCreateSpec("com.tcclient.util.concurrent.locks.ConditionObject");
       spec.disableWaitNotifyCodeSpec("signal()V");
@@ -902,11 +915,36 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       spec = getOrCreateSpec("com.tcclient.util.concurrent.locks.ConditionObject$SyncCondition");
       spec.setCallConstructorOnLoad(true);
 
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$Sync");
+      spec.setHonorTransient(true);
+      spec.setCustomClassAdapter(new AQSSubclassStrongReferenceAdapter());
+      spec.markPreInstrumented();
+
+      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$FairSync");
+      spec.setCallConstructorOnLoad(true);
+      spec.markPreInstrumented();
+
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
-      spec.addTransient("sync");
       spec.setPreCreateMethod("validateInUnLockState");
       spec.setCallConstructorOnLoad(true);
-      spec.setHonorTransient(true);
+      spec.markPreInstrumented();
+
+      addAbstractSynchronizerSpec();
+    }
+  }
+
+  private void addAbstractSynchronizerSpec() {
+    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
+    spec.setHonorTransient(true);
+    spec.addTransient("state");
+    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+    spec.setCustomClassAdapter(new JavaUtilConcurrentLocksAQSAdapter());
+    spec.markPreInstrumented();
+
+    if (Vm.isJDK16Compliant()) {
+      spec = getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
+      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+      spec.markPreInstrumented();
     }
   }
 
@@ -940,36 +978,25 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
    * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- private void
    * addJDK15PreInstrumentedSpec() { if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) { //TransparencyClassSpec
    * spec = getOrCreateSpec("sun.misc.Unsafe"); //addCustomAdapter("sun.misc.Unsafe", new UnsafeAdapter()); //spec =
-   * getOrCreateSpec(DSOUnsafe.CLASS_DOTS); //addCustomAdapter(DSOUnsafe.CLASS_DOTS, new DSOUnsafeAdapter());
-   *
-   * //spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier");
-   *
-   * //spec = getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation");
-   * //spec.setHonorJDKSubVersionSpecific(true);
-   *
+   * getOrCreateSpec(DSOUnsafe.CLASS_DOTS); //addCustomAdapter(DSOUnsafe.CLASS_DOTS, new DSOUnsafeAdapter()); //spec =
+   * getOrCreateSpec("java.util.concurrent.CyclicBarrier"); //spec =
+   * getOrCreateSpec("java.util.concurrent.CyclicBarrier$Generation"); //spec.setHonorJDKSubVersionSpecific(true);
    * //spec = getOrCreateSpec("java.util.concurrent.TimeUnit"); // This section of spec are specified in the BootJarTool
    * also. They are placed again so that the honorTransient * // flag will be honored during runtime. *
-   *
    * addJavaUtilConcurrentHashMapSpec(); addLogicalAdaptedLinkedBlockingQueueSpec();
-   *
-   * addJavaUtilConcurrentFutureTaskSpec();
-   *
-   * //spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock"); //spec.setHonorTransient(true);
-   * //spec.setCallConstructorOnLoad(true); // This section of spec are specified in the BootJarTool also. They are
-   * placed again so that the honorTransient * // flag will be honored during runtime. * } }
+   * addJavaUtilConcurrentFutureTaskSpec(); //spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
+   * //spec.setHonorTransient(true); //spec.setCallConstructorOnLoad(true); // This section of spec are specified in the
+   * BootJarTool also. They are placed again so that the honorTransient * // flag will be honored during runtime. * } }
    */
 
   /**
    * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- private void
    * addJavaUtilConcurrentFutureTaskSpec() { if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() >= 6) {
-   * getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer"); }
-   *
-   * TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.FutureTask$Sync"); addWriteAutolock("*
+   * getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer"); } TransparencyClassSpec spec =
+   * getOrCreateSpec("java.util.concurrent.FutureTask$Sync"); addWriteAutolock("*
    * java.util.concurrent.FutureTask$Sync.*(..)"); spec.setHonorTransient(true);
    * spec.addDistributedMethodCall("managedInnerCancel", "()V", false);
-   *
    * getOrCreateSpec("java.util.concurrent.FutureTask");
-   *
    * getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter"); }
    */
 
@@ -989,6 +1016,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Values");
     spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$KeySet");
     spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$HashIterator");
+    if (Vm.isJDK16Compliant()) {
+      spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$WriteThroughEntry");
+      spec = getOrCreateSpec("java.util.AbstractMap$SimpleEntry");
+    }
   }
 
   private void addLogicalAdaptedLinkedBlockingQueueSpec() {
@@ -1016,19 +1047,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (applicationNames.isEmpty()) {
       removeCustomAdapter("org.apache.catalina.core.ContainerBase");
     }
-  }
-
-  private void addWeblogicCustomAdapters() {
-    addCustomAdapter("weblogic.Server", new ServerAdapter());
-    addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
-    addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-    addCustomAdapter("weblogic.ejb.container.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-    addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
-    addCustomAdapter("weblogic.servlet.internal.EventsManager", new EventsManagerAdapter());
-    addCustomAdapter("weblogic.servlet.internal.FilterManager", new FilterManagerAdapter());
-    addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
-    addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
-                     new DelegateMethodAdapter("weblogic.servlet.internal.ServletResponseImpl", "nativeResponse"));
   }
 
   public boolean removeCustomAdapter(String name) {
@@ -1071,8 +1089,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public void addClassResource(final String className, final URL resource) {
-    Object prev = this.classResources.put(className, resource);
-    Assert.assertNull(prev);
+    URL prev = (URL) this.classResources.put(className, resource);
+    if ((prev != null) && (!prev.equals(resource))) {
+      // we want to know if modules more than one module is trying to export the same class
+      throw new AssertionError("Attempting to replace mapping for " + className + ", from " + prev + " to " + resource);
+    }
   }
 
   public URL getClassResource(String className) {
@@ -1236,7 +1257,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
       }
     }
-    return (String[])missingRoots.toArray(new String[0]);
+    return (String[]) missingRoots.toArray(new String[0]);
   }
 
   private void rewriteHashtableAutoLockSpecIfNecessary() {
@@ -1660,7 +1681,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public boolean hasSpec(String className) {
     return getSpec(className) != null;
   }
-  
+
   private boolean hasSpec(ClassInfo classInfo) {
     return getSpec(classInfo.getName()) != null;
   }

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -41,8 +42,11 @@ public class TerracottaSessionManager implements SessionManager {
   private final RequestTracker         tracker;
   private final boolean                debugServerHops;
   private final int                    debugServerHopsInterval;
-  private int                          serverHopsDetected = 0;
   private final boolean                debugInvalidate;
+  private final boolean                debugSessions;
+  private final String                 sessionCookieName;
+  private final String                 sessionUrlPathParamTag;
+  private int                          serverHopsDetected = 0;
 
   private static final Set             excludedVHosts     = loadExcludedVHosts();
 
@@ -68,8 +72,8 @@ public class TerracottaSessionManager implements SessionManager {
     // XXX: If reasonable, we should move this out of the constructor -- leaking a reference to "this" to another thread
     // within a constructor is a bad practice (note: although "this" isn't explicitly based as arg, it is available and
     // accessed by the non-static inner class)
-    Thread invalidator = new Thread(new SessionInvalidator(store, cp.getInvalidatorSleepSeconds(), cp
-        .getSessionTimeoutSeconds()), "SessionInvalidator - " + contextMgr.getAppName());
+    Thread invalidator = new Thread(new SessionInvalidator(cp.getInvalidatorSleepSeconds()), "SessionInvalidator - "
+                                                                                             + contextMgr.getAppName());
     invalidator.setDaemon(true);
     invalidator.start();
     Assert.post(invalidator.isAlive());
@@ -101,6 +105,10 @@ public class TerracottaSessionManager implements SessionManager {
     this.debugServerHops = cp.isDebugServerHops();
     this.debugServerHopsInterval = cp.getDebugServerHopsInterval();
     this.debugInvalidate = cp.isDebugSessionInvalidate();
+    this.debugSessions = cp.isDebugSessions();
+    this.sessionCookieName = this.cookieWriter.getCookieName();
+    this.sessionUrlPathParamTag = this.cookieWriter.getPathParameterTag();
+
   }
 
   private static Set loadExcludedVHosts() {
@@ -134,7 +142,34 @@ public class TerracottaSessionManager implements SessionManager {
     Assert.pre(req != null);
     Assert.pre(res != null);
 
-    SessionId sessionId = findSessionId(req);
+    SessionIDSource source = SessionIDSource.NONE;
+
+    String requestedSessionId = findSessionCookie(req);
+
+    // cookies take precedence over URLs
+    if (requestedSessionId == null) {
+      requestedSessionId = findSessionInURL(req);
+      if (requestedSessionId != null) {
+        source = SessionIDSource.URL;
+      }
+    } else {
+      source = SessionIDSource.COOKIE;
+    }
+
+    if (requestedSessionId == null) {
+      if (debugSessions) {
+        logger.info("no requested session id found in request");
+      }
+    } else {
+      if (debugSessions) {
+        logger.info("requested session ID from http request (" + source + "): " + requestedSessionId);
+      }
+    }
+
+    SessionId sessionId = requestedSessionId == null ? null : idGenerator.makeInstanceFromBrowserId(requestedSessionId);
+    if (debugSessions) {
+      logger.info("session ID generator returned " + sessionId);
+    }
 
     if (debugServerHops) {
       if (sessionId != null && sessionId.isServerHop()) {
@@ -147,10 +182,55 @@ public class TerracottaSessionManager implements SessionManager {
       }
     }
 
-    TerracottaRequest rw = wrapRequest(sessionId, req, res);
+    TerracottaRequest rw = wrapRequest(sessionId, req, res, requestedSessionId, source);
 
     Assert.post(rw != null);
     return rw;
+  }
+
+  private String findSessionInURL(HttpServletRequest req) {
+    String rv = null;
+
+    String requestURI = req.getRequestURI();
+    int start = requestURI.indexOf(sessionUrlPathParamTag);
+    if (start >= 0) {
+      int nextSemi = requestURI.indexOf(";", start + 1);
+      if (nextSemi < 0) {
+        rv = requestURI.substring(start);
+      } else {
+        rv = requestURI.substring(start, nextSemi);
+      }
+
+      rv = rv.substring(sessionUrlPathParamTag.length());
+
+      if (debugSessions) {
+        logger.info("requested session id (from URL): " + rv);
+      }
+    }
+
+    return rv;
+  }
+
+  private String findSessionCookie(HttpServletRequest req) {
+    String rv = null;
+
+    Cookie[] cookies = req.getCookies();
+    if (cookies != null) {
+      for (int i = 0, count = 1; i < cookies.length; i++) {
+        Cookie cookie = cookies[i];
+        if (sessionCookieName.equals(cookie.getName())) {
+          rv = cookie.getValue();
+          // NOTE: we do not "break" here, the least specific cookie (by path) should be last
+          // and is the one that should be obeyed
+
+          if (debugSessions) {
+            logger.info("found a sessionID cookie (" + count++ + ") in request: " + rv);
+          }
+        }
+      }
+    }
+
+    return rv;
   }
 
   public TerracottaResponse createResponse(TerracottaRequest req, HttpServletResponse res) {
@@ -200,8 +280,8 @@ public class TerracottaSessionManager implements SessionManager {
     Assert.pre(!req.isForwarded());
     Assert.pre(req.isSessionOwner());
     final Session session = req.getTerracottaSession(false);
-    session.clearRequest();
     Assert.inv(session != null);
+    session.clearRequest();
     final SessionId id = session.getSessionId();
     final SessionData sd = session.getSessionData();
     try {
@@ -239,13 +319,14 @@ public class TerracottaSessionManager implements SessionManager {
     sd.startRequest();
   }
 
-  private TerracottaRequest wrapRequest(SessionId sessionId, HttpServletRequest req, HttpServletResponse res) {
-    return factory.createRequest(sessionId, req, res, this);
+  private TerracottaRequest wrapRequest(SessionId sessionId, HttpServletRequest req, HttpServletResponse res,
+                                        String requestedSessionId, SessionIDSource source) {
+    return factory.createRequest(sessionId, req, res, this, requestedSessionId, source);
   }
 
   /**
    * This method always returns a valid session. If data for the requestedSessionId found and is valid, it is returned.
-   * Otherwise, we must create a new session id, a new session data, a new sessiono, and cookie the response.
+   * Otherwise, we must create a new session id, a new session data, a new session, and cookie the response.
    */
   public Session getSession(final SessionId requestedSessionId, final HttpServletRequest req,
                             final HttpServletResponse res) {
@@ -257,12 +338,46 @@ public class TerracottaSessionManager implements SessionManager {
   }
 
   public Session getSessionIfExists(SessionId requestedSessionId, HttpServletRequest req, HttpServletResponse res) {
+    if (debugSessions) {
+      logger.info("getSessionIfExists called for " + requestedSessionId);
+    }
+
     if (requestedSessionId == null) return null;
     SessionData sd = store.find(requestedSessionId);
-    if (sd == null) return null;
+    if (sd == null) {
+      if (debugSessions) {
+        logger.info("No session found in store for " + requestedSessionId);
+      }
+      return null;
+    }
+
     Assert.inv(sd.isValid());
-    if (requestedSessionId.isServerHop()) cookieWriter.writeCookie(req, res, requestedSessionId);
+    writeCookieIfHop(req, res, requestedSessionId);
+
     return sd;
+  }
+
+  private void writeCookieIfHop(HttpServletRequest req, HttpServletResponse res, SessionId id) {
+    if (id.isServerHop()) {
+      Cookie cookie = cookieWriter.writeCookie(req, res, id);
+      if (debugSessions) {
+        logger.info("writing new cookie for hopped request: " + getCookieDetails(cookie));
+      }
+    }
+  }
+
+  private String getCookieDetails(Cookie c) {
+    if (c == null) { return "<null cookie>"; }
+
+    StringBuffer buf = new StringBuffer("Cookie(");
+    buf.append(c.getName()).append("=").append(c.getValue());
+    buf.append(", path=").append(c.getPath()).append(", maxAge=").append(c.getMaxAge()).append(", domain=")
+        .append(c.getDomain());
+    buf.append(", secure=").append(c.getSecure()).append(", comment=").append(c.getComment()).append(", version=")
+        .append(c.getVersion());
+
+    buf.append(")");
+    return buf.toString();
   }
 
   public SessionCookieWriter getCookieWriter() {
@@ -307,11 +422,28 @@ public class TerracottaSessionManager implements SessionManager {
     Assert.pre(req != null);
     Assert.pre(res != null);
 
-    if (requestedSessionId == null) { return createNewSession(req, res); }
+    if (requestedSessionId == null) {
+      if (debugSessions) {
+        logger.info("creating new session since requested id is null");
+      }
+      return createNewSession(req, res);
+    }
     final SessionData sd = store.find(requestedSessionId);
-    if (sd == null) { return createNewSession(req, res); }
+
+    if (sd == null) {
+      if (debugSessions) {
+        logger.info("creating new session since requested id is not in store: " + requestedSessionId);
+      }
+      return createNewSession(req, res);
+    }
+
+    if (debugSessions) {
+      logger.info("requested id found in store: " + requestedSessionId);
+    }
+
     Assert.inv(sd.isValid());
-    if (requestedSessionId.isServerHop()) cookieWriter.writeCookie(req, res, requestedSessionId);
+
+    writeCookieIfHop(req, res, requestedSessionId);
 
     return sd;
   }
@@ -322,28 +454,24 @@ public class TerracottaSessionManager implements SessionManager {
 
     SessionId id = idGenerator.generateNewId();
     SessionData sd = store.createSessionData(id);
-    cookieWriter.writeCookie(req, res, id);
+    Cookie cookie = cookieWriter.writeCookie(req, res, id);
     eventMgr.fireSessionCreatedEvent(sd);
     mBean.sessionCreated();
     Assert.post(sd != null);
+
+    if (debugSessions) {
+      logger.info("new session created: " + id + " with cookie " + getCookieDetails(cookie));
+    }
+
     return sd;
-  }
-
-  private SessionId findSessionId(HttpServletRequest httpRequest) {
-    Assert.pre(httpRequest != null);
-
-    String requestedSessionId = httpRequest.getRequestedSessionId();
-    if (requestedSessionId == null) return null;
-    else return idGenerator.makeInstanceFromBrowserId(requestedSessionId);
   }
 
   private class SessionInvalidator implements Runnable {
 
     private final long sleepMillis;
 
-    public SessionInvalidator(final SessionDataStore store, final long sleepSeconds,
-                              final long defaultSessionIdleSeconds) {
-      this.sleepMillis = sleepSeconds * 1000;
+    public SessionInvalidator(final long sleepSeconds) {
+      this.sleepMillis = sleepSeconds * 1000L;
     }
 
     public void run() {
@@ -356,8 +484,7 @@ public class TerracottaSessionManager implements SessionManager {
         } else {
           try {
             final Lock lock = new Lock(invalidatorLock);
-            lock.tryWriteLock();
-            if (!lock.isLocked()) continue;
+            if (!lock.tryWriteLock()) continue;
             try {
               invalidateSessions();
             } finally {

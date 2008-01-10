@@ -7,6 +7,7 @@ package com.tc.management.beans;
 import com.tc.config.schema.L2Info;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.state.StateChangeListener;
+import com.tc.l2.state.StateManager;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.server.TCServer;
 import com.tc.util.ProductInfo;
@@ -81,6 +82,10 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     _sendNotification("TCServer stopped", "Started", "jmx.terracotta.L2.stopped", Boolean.TRUE, Boolean.FALSE);
   }
 
+  public boolean isShutdownable() {
+    return server.canShutdown();
+  }
+  
   /**
    * This schedules the shutdown to occur one second after we return from this call because otherwise JMX will be
    * shutdown and we'll get all sorts of other errors trying to return from this call.
@@ -154,6 +159,10 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public void l2StateChanged(StateChangedEvent sce) {
     State state = sce.getCurrentState();
 
+    if(l2State.getState().equals(StateManager.ACTIVE_COORDINATOR)) {
+      server.updateActivateTime();
+    }
+    
     debugPrintln("*****  msg=[" + stateChangeNotificationInfo.getMsg(state) + "] attrName=["
                  + stateChangeNotificationInfo.getAttributeName(state) + "] attrType=["
                  + stateChangeNotificationInfo.getAttributeType(state) + "] stateName=[" + state.getName() + "]");

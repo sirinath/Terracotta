@@ -11,7 +11,8 @@ public class TimeExpiryMapTest extends TransparentTestBase {
   private final static int NODE_COUNT = 3;
   
   public TimeExpiryMapTest() {
-    //disableAllUntil("2007-08-31");
+    // MNK-341
+    disableAllUntil("2008-06-30");
   }
 
   public void setUp() throws Exception {

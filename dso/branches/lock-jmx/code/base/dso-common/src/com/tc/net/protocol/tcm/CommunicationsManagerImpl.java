@@ -34,6 +34,7 @@ import com.tc.net.protocol.transport.TransportHandshakeMessage;
 import com.tc.net.protocol.transport.TransportHandshakeMessageFactory;
 import com.tc.net.protocol.transport.TransportHandshakeMessageFactoryImpl;
 import com.tc.net.protocol.transport.WireProtocolAdaptorFactoryImpl;
+import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
 import com.tc.util.concurrent.SetOnceFlag;
 
@@ -44,7 +45,7 @@ import java.util.Set;
 
 /**
  * Communications manager for setting up listners and creating client connections
- * 
+ *
  * @author teck
  */
 public class CommunicationsManagerImpl implements CommunicationsManager {
@@ -65,18 +66,28 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy);
+    this(monitor, stackHarnessFactory, null, connectionPolicy, 0);
+  }
+
+  public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
+                                   ConnectionPolicy connectionPolicy, int workerCommCount) {
+    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommCount);
+  }
+
+  public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
+    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0);
   }
 
   /**
    * Create a comms manager with the given connection manager. This cstr is mostly for testing, or in the event that you
    * actually want to use an explicit connection manager
-   * 
+   *
    * @param connMgr the connection manager to use
    * @param serverDescriptors
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
 
     this.monitor = monitor;
     this.transportHandshakeMessageFactory = new TransportHandshakeMessageFactoryImpl();
@@ -85,7 +96,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     privateConnMgr = (connMgr == null);
 
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerJDK14();
+      this.connectionManager = new TCConnectionManagerJDK14(workerCommCount);
     } else {
       this.connectionManager = connMgr;
     }
@@ -124,8 +135,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     final ConnectionAddressProvider provider = addressProvider;
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(new TCMessageFactoryImpl(sessionProvider, monitor),
-                                                               new TCMessageRouterImpl(), 
-                                                               sessionProvider);
+                                                               new TCMessageRouterImpl(), sessionProvider);
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
 
@@ -162,7 +172,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                                                   maxReconnectTries,
                                                                                                   timeout);
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
-                                          transportHandshakeMessageFactory, new WireProtocolAdaptorFactoryImpl());
+                                                                transportHandshakeMessageFactory,
+                                                                new WireProtocolAdaptorFactoryImpl());
         return cmt;
       }
 
@@ -201,14 +212,21 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                         boolean transportDisconnectRemovesChannel,
                                         ConnectionIDFactory connectionIDFactory, Sink httpSink) {
     return createListener(sessionProvider, address, transportDisconnectRemovesChannel, connectionIDFactory, true,
-                          httpSink);
+                          httpSink, null);
   }
 
   public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                         boolean transportDisconnectRemovesChannel,
                                         ConnectionIDFactory connectionIdFactory, boolean reuseAddr) {
     return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, connectionIdFactory, reuseAddr,
-                          new NullSink());
+                          new NullSink(), null);
+  }
+
+  public NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
+                                        boolean transportDisconnectRemovesChannel,
+                                        ConnectionIDFactory connectionIdFactory, WireProtocolMessageSink wireProtoMsgSnk) {
+    return createListener(sessionProvider, addr, transportDisconnectRemovesChannel, connectionIdFactory, true,
+                          new NullSink(), wireProtoMsgSnk);
   }
 
   /**
@@ -216,7 +234,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   private NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                          boolean transportDisconnectRemovesChannel,
-                                         ConnectionIDFactory connectionIdFactory, boolean reuseAddr, Sink httpSink) {
+                                         ConnectionIDFactory connectionIdFactory, boolean reuseAddr, Sink httpSink,
+                                         WireProtocolMessageSink wireProtoMsgSnk) {
     if (shutdown.isSet()) { throw new IllegalStateException("Comms manger shut down"); }
 
     // The idea here is that someday we might want to pass in a custom channel factory. The reason you might want to do
@@ -232,12 +251,12 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     final ChannelManagerImpl channelManager = new ChannelManagerImpl(transportDisconnectRemovesChannel, channelFactory);
 
     return new NetworkListenerImpl(addr, this, channelManager, msgFactory, msgRouter, reuseAddr, connectionIdFactory,
-                                   httpSink);
+                                   httpSink, wireProtoMsgSnk);
   }
 
   TCListener createCommsListener(TCSocketAddress addr, final ServerMessageChannelFactory channelFactory,
                                  boolean resueAddr, Set initialConnectionIDs, ConnectionIDFactory connectionIdFactory,
-                                 Sink httpSink) throws IOException {
+                                 Sink httpSink, WireProtocolMessageSink wireProtocolMessageSink) throws IOException {
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
 
@@ -269,7 +288,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                 channelFactory, transportFactory,
                                                                 this.transportHandshakeMessageFactory,
                                                                 connectionIdFactory, this.connectionPolicy,
-                                                                new WireProtocolAdaptorFactoryImpl(httpSink));
+                                                                new WireProtocolAdaptorFactoryImpl(httpSink),
+                                                                wireProtocolMessageSink);
     return connectionManager.createListener(addr, stackProvider, Constants.DEFAULT_ACCEPT_QUEUE_DEPTH, resueAddr);
   }
 

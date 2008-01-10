@@ -30,12 +30,11 @@ public class PortabilityImpl implements Portability {
     nonInstrumentedClass.add("java.util.AbstractList");
     nonInstrumentedClass.add("java.util.AbstractCollection");
     nonInstrumentedClass.add("java.util.AbstractQueue");
+    nonInstrumentedClass.add("java.util.Dictionary");
     nonInstrumentedClass.add("java.lang.Enum");
     nonInstrumentedClass.add("java.lang.reflect.AccessibleObject");
     nonInstrumentedClass.add("java.util.concurrent.atomic.AtomicInteger");
     nonInstrumentedClass.add("java.util.concurrent.atomic.AtomicLong");
-    nonInstrumentedClass.add("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-    nonInstrumentedClass.add("java.util.concurrent.locks.AbstractQueuedSynchronizer$Node");
   }
 
   private final LiteralValues         literalValues        = new LiteralValues();
@@ -104,7 +103,7 @@ public class PortabilityImpl implements Portability {
       }
       return reason;
     }
-    
+
     // Now check if it is a subclass of logically managed class
     for (Iterator i = classes.iterator(); i.hasNext();) {
       Class class2Inspect = (Class) i.next();

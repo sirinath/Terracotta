@@ -93,10 +93,16 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   private void validateResponse(NodeID nodeID, ClusterStateMessage msg) {
     if (msg == null || msg.getType() != ClusterStateMessage.OPERATION_SUCCESS) {
       logger.error("Recd wrong response from : " + nodeID + " : msg = " + msg
-                   + " while publishing Next Available ObjectID: Killing the node");
-      groupManager.zapNode(nodeID, L2HAZapNodeRequestProcessor.PROGRAM_ERROR,
-                           "Recd wrong response from : " + nodeID + " while publishing Next available ObjectID"
-                               + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+                   + " while publishing Cluster State: Killing the node");
+      groupManager
+          .zapNode(
+                   nodeID,
+                   (msg != null && msg.getType() == ClusterStateMessage.OPERATION_FAILED_SPLIT_BRAIN ? L2HAZapNodeRequestProcessor.SPLIT_BRAIN
+                       : L2HAZapNodeRequestProcessor.PROGRAM_ERROR), "Recd wrong response from : "
+                                                                     + nodeID
+                                                                     + " while publishing Cluster State"
+                                                                     + L2HAZapNodeRequestProcessor
+                                                                         .getErrorString(new Throwable()));
     }
   }
 
@@ -150,12 +156,18 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   private void handleClusterStateMessage(NodeID fromNode, ClusterStateMessage msg) {
     if (stateManager.isActiveCoordinator()) {
       logger.warn("Recd ClusterStateMessage from " + fromNode
-                  + " while I am the cluster co-ordinator. This is bad. Ignoring the message");
-      return;
+                  + " while I am the cluster co-ordinator. This is bad. Sending NG response. ");
+      sendNGSplitBrainResponse(fromNode, msg);
+      groupManager.zapNode(fromNode, L2HAZapNodeRequestProcessor.SPLIT_BRAIN, "Recd ClusterStateMessage from : "
+                                                                              + fromNode
+                                                                              + " while in ACTIVE-COORDINATOR state"
+                                                                              + L2HAZapNodeRequestProcessor
+                                                                                  .getErrorString(new Throwable()));
+    } else {
+      msg.initState(state);
+      sendChannelLifeCycleEventsIfNecessary(msg);
+      sendOKResponse(fromNode, msg);
     }
-    msg.initState(state);
-    sendChannelLifeCycleEventsIfNecessary(msg);
-    sendOKResponse(fromNode, msg);
   }
 
   private void sendChannelLifeCycleEventsIfNecessary(ClusterStateMessage msg) {
@@ -165,6 +177,11 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
           .getConnectionID().getChannelID()))));
     } else if (msg.getType() == ClusterStateMessage.CONNECTION_DESTROYED) {
       // this is needed to clean up some data structures internally
+      // NOTE :: It is ok to add this event context directly to the channel life cycle handler (and not wrap around a
+      // InBandMoveToNextSink like in active) because there are no stages before the transactions are added to
+      // server transaction manager.
+      // XXX::FIXME:: The above statement is true only when this event is fixed to be fired from active after all txns
+      // are acked in the active.
       channelLifeCycleSink.add(new NodeStateEventContext(NodeStateEventContext.REMOVE, new ClientID(new ChannelID(msg
           .getConnectionID().getChannelID()))));
     }
@@ -173,6 +190,14 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   private void sendOKResponse(NodeID fromNode, ClusterStateMessage msg) {
     try {
       groupManager.sendTo(fromNode, ClusterStateMessageFactory.createOKResponse(msg));
+    } catch (GroupException e) {
+      logger.error("Error handling message : " + msg, e);
+    }
+  }
+
+  private void sendNGSplitBrainResponse(NodeID fromNode, ClusterStateMessage msg) {
+    try {
+      groupManager.sendTo(fromNode, ClusterStateMessageFactory.createNGSplitBrainResponse(msg));
     } catch (GroupException e) {
       logger.error("Error handling message : " + msg, e);
     }

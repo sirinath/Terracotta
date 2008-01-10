@@ -29,7 +29,7 @@ public class ClientTransactionManagerTest extends TestCase {
   SynchronizedRef              error = new SynchronizedRef(null);
 
   public void setUp() throws Exception {
-    clientTxnFactory = new ClientTransactionFactoryImpl(new NullRuntimeLogger(), new TestChannelIDProvider());
+    clientTxnFactory = new ClientTransactionFactoryImpl(new NullRuntimeLogger());
     rmtTxnMgr = new TestRemoteTransactionManager();
     objMgr = new TestClientObjectManager();
     lockMgr = new TestLockManager();
@@ -66,7 +66,7 @@ public class ClientTransactionManagerTest extends TestCase {
     clientTxnMgr.begin("lock", LockLevel.WRITE, LockContextInfo.NULL_LOCK_OBJECT_TYPE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     clientTxnMgr.checkWriteAccess(new Object());
     clientTxnMgr.commit("lock");
-    
+
     clientTxnMgr.begin("lock", LockLevel.SYNCHRONOUS_WRITE, LockContextInfo.NULL_LOCK_OBJECT_TYPE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     clientTxnMgr.checkWriteAccess(new Object());
     clientTxnMgr.commit("lock");

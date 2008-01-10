@@ -1,78 +1,83 @@
 /*
- @COPYRIGHT@
+ * @COPYRIGHT@
  */
 package demo.chatter;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
-import javax.swing.DefaultListModel;
+import java.util.TreeMap;
 
 /**
- *  Description of the Class
+ * Description of the Class
  *
- *@author    Terracotta, Inc.
+ * @author Terracotta, Inc.
  */
 class ChatManager {
-	private transient ChatListener listener;
 
-	private List messages;
+  private final Map<String, User>         users;
+  private volatile transient ChatListener listener;
 
-	private DefaultListModel listModel;
+  public ChatManager() {
+    this.users = new TreeMap<String, User>();
+    init();
+  }
 
-	private Map map;
+  private void init() {
+    this.listener = new NullChatListener();
+  }
 
-	public ChatManager() {
-		listModel = new DefaultListModel();
-		messages = new Vector();
-		map = new HashMap();
-	}
+  public User[] getCurrentUsers() {
+    synchronized (users) {
+      return users.values().toArray(new User[] {});
+    }
+  }
 
-	public Message[] getMessages() {
-		return (Message[]) messages.toArray(new Message[0]);
-	}
+  public void send(Message msg) {
+    sendNewMessageEvent(msg);
+  }
 
-	public Object[] getCurrentUsers() {
-		synchronized (listModel) {
-			return listModel.toArray();
-		}
-	}
+  public void registerUser(User user) {
+    synchronized (users) {
+      users.put(user.getNodeId(), user);
+    }
+    sendNewUserEvent(user.getName());
+  }
 
-	public void send(User user, String message) {
-		Message msg = new Message(user, message);
-		synchronized (messages) {
-			messages.add(msg);
-		}
-		sendNewMessageEvent(msg);
-	}
+  public void removeUser(String nodeId) {
+    synchronized (users) {
+      users.remove(nodeId);
+    }
+  }
 
-	public void registerUser(User user) {
-		this.listener = user;
-		synchronized (listModel) {
-			listModel.addElement(user);
-			map.put(user.getNodeId(), user);
-		}
-		sendNewUserEvent(user.getName());
-	}
+  /**
+   * Normally the user list is maintained via JMX notifications received in each node. This method will ensure that the
+   * list is consistent even if all clients crash simultaneously
+   */
+  public void retainNodes(NodeListProvider listProvider) {
+    synchronized (users) {
+      users.keySet().retainAll(listProvider.getNodeList());
+    }
+  }
 
-	public String removeUser(String nodeId) {
-		synchronized (listModel) {
-			if (map.containsKey(nodeId)) {
-				User removedUser = (User) map.get(nodeId);
-				listModel.removeElement(removedUser);
-				return removedUser.getName();
-			} else {
-				return "";
-			}
-		}
-	}
+  private void sendNewUserEvent(String username) {
+    this.listener.newUser(username);
+  }
 
-	private synchronized void sendNewUserEvent(String username) {
-		this.listener.newUser(username);
-	}
+  private void sendNewMessageEvent(Message message) {
+    this.listener.newMessage(message);
+  }
 
-	private synchronized void sendNewMessageEvent(Message message) {
-		this.listener.newMessage(message);
-	}
+  public void setLocalListener(ChatListener listener) {
+    this.listener = listener;
+  }
+
+  private static class NullChatListener implements ChatListener {
+    public void newMessage(Message message) {
+      //
+    }
+
+    public void newUser(String username) {
+      //
+    }
+  }
+
 }

@@ -13,7 +13,6 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.DefaultGlobalTransactionIDGenerator;
-import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionIDGenerator;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.Notify;
@@ -32,11 +31,9 @@ import com.tc.util.SequenceID;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -87,22 +84,10 @@ public class TransactionBatchTest extends TestCase {
     }
   }
 
-  public void testAddAcknowledgedTransactionIDs() throws Exception {
-    Set txs = new HashSet();
-    for (int i = 0; i < 100; i++) {
-      GlobalTransactionID txID = new GlobalTransactionID(i);
-      txs.add(txID);
-    }
-    writer.setAcknowledgedTransactionIDs(txs);
-    assertEquals(txs, writer.getAcknowledgedTransactionIDs());
-  }
-
   public void testSend() throws Exception {
     assertTrue(messageFactory.messages.isEmpty());
 
-    writer.setAcknowledgedTransactionIDs(new HashSet());
     writer.send();
-
     assertEquals(1, messageFactory.messages.size());
     TestCommitTransactionMessage message = (TestCommitTransactionMessage) messageFactory.messages.get(0);
     assertEquals(1, message.setBatchCalls.size());
@@ -121,11 +106,11 @@ public class TransactionBatchTest extends TestCase {
     // A nested transaction (all this buys us is more than 1 lock in a txn)
     LockID lid1 = new LockID("1");
     TransactionContext tc = new TransactionContextImpl(lid1, TxnType.NORMAL, new LockID[] { lid1 });
-    ClientTransaction tmp = new ClientTransactionImpl(new TransactionID(101), new NullRuntimeLogger(), null);
+    ClientTransaction tmp = new ClientTransactionImpl(new TransactionID(101), new NullRuntimeLogger());
     tmp.setTransactionContext(tc);
     LockID lid2 = new LockID("2");
     tc = new TransactionContextImpl(lid2, TxnType.NORMAL, new LockID[] { lid1, lid2 });
-    ClientTransaction txn1 = new ClientTransactionImpl(new TransactionID(1), new NullRuntimeLogger(), null);
+    ClientTransaction txn1 = new ClientTransactionImpl(new TransactionID(1), new NullRuntimeLogger());
     txn1.setTransactionContext(tc);
 
     txn1.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
@@ -138,7 +123,7 @@ public class TransactionBatchTest extends TestCase {
     }
 
     tc = new TransactionContextImpl(new LockID("3"), TxnType.CONCURRENT, new LockID[] { new LockID("3") });
-    ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(2), new NullRuntimeLogger(), null);
+    ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(2), new NullRuntimeLogger());
     txn2.setTransactionContext(tc);
 
     writer = new TransactionBatchWriter(batchID, serializer, encoding, mf);
@@ -150,8 +135,7 @@ public class TransactionBatchTest extends TestCase {
     writer.wait4AllTxns2Serialize();
 
     TransactionBatchReaderImpl reader = new TransactionBatchReaderImpl(gidGenerator, writer.getData(), clientID,
-                                                                       new HashSet(), serializer,
-                                                                       new ActiveServerTransactionFactory());
+                                                                       serializer, new ActiveServerTransactionFactory());
     assertEquals(2, reader.getNumTxns());
     assertEquals(batchID, reader.getBatchID());
 

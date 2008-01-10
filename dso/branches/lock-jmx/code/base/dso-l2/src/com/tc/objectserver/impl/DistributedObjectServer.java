@@ -72,6 +72,7 @@ import com.tc.object.msg.ClientHandshakeAckMessageImpl;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
+import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
@@ -83,7 +84,6 @@ import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessage;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
-import com.tc.object.net.ChannelStats;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerImpl;
@@ -123,6 +123,7 @@ import com.tc.objectserver.handler.RespondToObjectRequestHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
 import com.tc.objectserver.handler.TransactionAcknowledgementHandler;
 import com.tc.objectserver.handler.TransactionLookupHandler;
+import com.tc.objectserver.handler.TransactionLowWaterMarkHandler;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
@@ -181,6 +182,8 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
@@ -188,10 +191,11 @@ import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
+import javax.management.remote.JMXConnectorServer;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- * 
+ *
  * @author steve
  */
 public class DistributedObjectServer extends SEDA implements TCDumper {
@@ -235,6 +239,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
     this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State());
+    
+    
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -407,7 +413,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy);
+                                                          connectionPolicy, l2Properties.getInt("tccom.workerthreads"));
 
     final DSOApplicationEvents appEvents;
     try {
@@ -474,8 +480,24 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
-    l1Listener = communicationsManager.createListener(sessionProvider,
-                                                      new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, serverPort),
+
+    // DEV-1060
+    InetAddress serverHost;
+    String l2Host = l2DSOConfig.host().getString();
+    Assert.assertNotNull(l2Host);
+    try {
+      if (l2Host.equalsIgnoreCase(TCSocketAddress.WILDCARD_IP)) {
+        serverHost = TCSocketAddress.WILDCARD_ADDR;
+      } else {
+        serverHost = InetAddress.getByName(l2Host);
+      }
+    } catch (UnknownHostException uhe) {
+      throw new TCRuntimeException("Unable to Resolve Address for the host " + l2Host);
+    }
+
+    logger.info("Server Bind Address: " + serverHost.getHostAddress() + ":" + serverPort);
+
+    l1Listener = communicationsManager.createListener(sessionProvider, new TCSocketAddress(serverHost, serverPort),
                                                       true, connectionIdFactory, httpSink);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
@@ -485,7 +507,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     channelManager.addEventListener(cteh);
     channelManager.addEventListener(connectionIdFactory);
 
-    ChannelStats channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
+    ChannelStatsImpl channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
+    channelManager.addEventListener(channelStats);
 
     lockManager = new LockManagerImpl(channelManager, lockStatsManager);
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
@@ -573,13 +596,20 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                      new ClientHandshakeHandler(), 1, maxStageSize);
     Stage hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK,
                                                   new HydrateHandler(), 1, maxStageSize);
+    final Stage txnLwmStage = stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOWWATERMARK_STAGE,
+                                                       new TransactionLowWaterMarkHandler(gtxm), 1, maxStageSize);
 
     Stage jmxEventsStage = stageManager.createStage(ServerConfigurationContext.JMX_EVENTS_STAGE,
                                                     new JMXEventsHandler(appEvents), 1, maxStageSize);
 
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
                                                                  new ClientConnectEventHandler(), 1, maxStageSize);
-    cteh.setConnectStageSink(jmxRemoteConnectStage.getSink());
+
+    final Stage jmxRemoteDisconnectStage = stageManager
+        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(), 1,
+                     maxStageSize);
+
+    cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,
                                                                 cteh, 1, maxStageSize);
 
@@ -613,6 +643,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     l1Listener.addClassMapping(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, JmxRemoteTunnelMessage.class);
     l1Listener.addClassMapping(TCMessageType.CLUSTER_MEMBERSHIP_EVENT_MESSAGE, ClusterMembershipMessage.class);
     l1Listener.addClassMapping(TCMessageType.CLIENT_JMX_READY_MESSAGE, L1JmxReady.class);
+    l1Listener.addClassMapping(TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE,
+                               CompletedTransactionLowWaterMarkMessage.class);
 
     Sink hydrateSink = hydrateStage.getSink();
     l1Listener.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
@@ -628,6 +660,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     l1Listener.routeMessageType(TCMessageType.CLIENT_JMX_READY_MESSAGE, jmxRemoteTunnelStage.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, clientLockStatisticsRespondStage
         .getSink(), hydrateSink);
+    l1Listener.routeMessageType(TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE, txnLwmStage.getSink(),
+                                hydrateSink);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.clientReconnectWindow());
     long reconnectTimeout = l2DSOConfig.clientReconnectWindow().getInt();
@@ -766,6 +800,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public int getListenPort() {
     return this.l1Listener.getBindPort();
   }
+  
+  public InetAddress getListenAddr() {
+    return this.l1Listener.getBindAddress();
+  }
 
   public synchronized void stop() {
     try {
@@ -866,9 +904,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public MBeanServer getMBeanServer() {
     return l2Management.getMBeanServer();
   }
+  
+  public JMXConnectorServer getJMXConnServer() {
+    return l2Management.getJMXConnServer();
+  }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no

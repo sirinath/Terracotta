@@ -71,7 +71,6 @@ public class ClientsNode extends ComponentNode implements NotificationListener {
 
     if (DSOMBean.CLIENT_ATTACHED.equals(type)) {
       AdminClientContext acc = AdminClient.getContext();
-
       acc.setStatus(acc.getMessage("dso.client.retrieving"));
 
       ObjectName clientObjectName = (ObjectName) notice.getSource();
