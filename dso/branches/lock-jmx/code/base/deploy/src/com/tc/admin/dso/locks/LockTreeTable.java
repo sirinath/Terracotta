@@ -164,6 +164,8 @@ public class LockTreeTable extends JTreeTable {
 
       String text = (value == null) ? "" : value.toString();
       setText(text);
+      String tip = ServerLockTableModel.columnTip(column);
+      setToolTipText(tip);
 
       if (fSortColumn != -1) {
         if (column == fSortColumn) {
@@ -179,11 +181,13 @@ public class LockTreeTable extends JTreeTable {
           sortView.add(this, BorderLayout.WEST);
           sortView.add(fArrowLabel, BorderLayout.EAST);
           sortView.setBorder(border);
+          sortView.setToolTipText(tip);
           return sortView;
         }
       }
 
       setBorder(border);
+      
       return this;
     }
   }

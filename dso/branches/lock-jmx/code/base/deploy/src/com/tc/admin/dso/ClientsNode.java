@@ -38,7 +38,7 @@ public class ClientsNode extends ComponentNode implements NotificationListener {
     ClientsPanel panel = new ClientsPanel(m_clients);
 
     panel.setNode(this);
-    setLabel(AdminClient.getContext().getMessage("clients"));
+    updateLabel();
     setComponent(panel);
 
     m_cc.addNotificationListener(dso, this);
@@ -55,11 +55,17 @@ public class ClientsNode extends ComponentNode implements NotificationListener {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           internalHandleNotification(notice, handback);
+          updateLabel();
         }
       });
     }
   }
 
+  private void updateLabel() {
+    setLabel(AdminClient.getContext().getMessage("clients") + " (" + getChildCount() + ")");
+    nodeChanged();
+  }
+  
   private void internalHandleNotification(Notification notice, Object handback) {
     String type = notice.getType();
 

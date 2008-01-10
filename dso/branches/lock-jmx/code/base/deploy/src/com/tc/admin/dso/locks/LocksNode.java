@@ -12,18 +12,27 @@ import javax.swing.Icon;
 
 public class LocksNode extends ComponentNode {
   private ConnectionContext m_cc;
+  private String m_baseLabel;
 
   public LocksNode(ConnectionContext cc) {
     super();
 
     m_cc = cc;
 
-    setLabel(AdminClient.getContext().getMessage("dso.locks"));
-    setComponent(new LocksPanel(m_cc));
+    setLabel(m_baseLabel = AdminClient.getContext().getMessage("dso.locks"));
+    setComponent(new LocksPanel(m_cc, this));
   }
 
   public Icon getIcon() {
     return LocksHelper.getHelper().getLocksIcon();
+  }
+  
+  public String getBaseLabel() {
+    return m_baseLabel;
+  }
+  
+  void notifyChanged() {
+    nodeChanged();
   }
   
   public void tearDown() {

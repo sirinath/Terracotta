@@ -63,7 +63,7 @@ public class AdminClientBundle extends ListResourceBundle {
      "Roots"},
 
     {"dso.locks",
-     "Locks"},
+     "Lock stats"},
 
     {"refresh.name",
      "Refresh"},
