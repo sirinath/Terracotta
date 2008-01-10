@@ -73,7 +73,7 @@ public abstract class LockStatisticsManager implements Serializable {
 
   public void clear() {
     this.lockStats.clear();
-    this.lockStatConfig.reset();
+    //this.lockStatConfig.reset();
   }
 
   public synchronized int getTraceDepth() {
@@ -152,7 +152,7 @@ public abstract class LockStatisticsManager implements Serializable {
     private final static int DEFAULT_TRACE_DEPTH     = MIN_CLIENT_TRACE_DEPTH;
 
     private int              traceDepth;
-    private int              gatherInterval;
+    private int              gatherInterval = DEFAULT_GATHER_INTERVAL;
 
     public LockStatConfig() {
       reset();

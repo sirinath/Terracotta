@@ -107,10 +107,6 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     super.setLockStatisticsConfig(traceDepth, gatherInterval);
   }
 
-  public void disableStat() {
-    disableLockStatistics();
-  }
-
   public boolean isStatEnabled() {
     return super.isClientStatEnabled();
   }

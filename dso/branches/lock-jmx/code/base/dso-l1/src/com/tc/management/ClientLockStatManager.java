@@ -19,7 +19,7 @@ public interface ClientLockStatManager {
       return false;
     }
 
-    public void disableStat() {
+    public void setLockStatisticsEnabled(boolean statEnable) {
       // do nothing
     }
 
@@ -66,7 +66,7 @@ public interface ClientLockStatManager {
   
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
-  public void disableStat();
+  public void setLockStatisticsEnabled(boolean statEnable);
   
   public boolean isStatEnabled();
   

@@ -83,7 +83,10 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   protected void disableLockStatistics() {
     this.lockStatisticsEnabled = false;
 
-    setLockStatisticsConfig(0, lockStatConfig.getGatherInterval());
+    MessageChannel[] channels = channelManager.getActiveChannels();
+    for (int i = 0; i < channels.length; i++) {
+      sendLockStatisticsEnableDisableMessage(channels[i], false, lockStatConfig.getTraceDepth(), lockStatConfig.getGatherInterval());
+    }
     clear();
   }
 
@@ -149,9 +152,6 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   }
 
   public synchronized void recordClientStat(NodeID nodeID, Collection<TCStackTraceElement> stackTraceElements) {
-    logDebug("============== recordClientStat ================" + nodeID);
-    logDebug(stackTraceElements.toString());
-    logDebug("================================================");
     if (stackTraceElements.size() > 0) {
       for (Iterator<TCStackTraceElement> i = stackTraceElements.iterator(); i.hasNext();) {
         TCStackTraceElement tcStackTraceElement = i.next();
@@ -159,7 +159,6 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
         Collection lockStatElements = tcStackTraceElement.getLockStatElements();
 
         ServerLockStatisticsInfoImpl lsc = (ServerLockStatisticsInfoImpl) getOrCreateLockStatInfo(lockID);
-        logDebug("recordClientStat " + lockID + " " + nodeID + " " + (lsc == null));
         lsc.setLockStatElements(nodeID, lockStatElements);
       }
     }
@@ -201,7 +200,6 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   public synchronized Collection<LockSpec> getLockSpecs() {
     if (!lockStatisticsEnabled) { return Collections.EMPTY_LIST; }
 
-    logDebug("getLockSpecs lockSpecRequestedNodeIDs: " + lockSpecRequestedNodeIDs.isEmpty());
     if (lockSpecRequestedNodeIDs.isEmpty()) {
       MessageChannel[] channels = channelManager.getActiveChannels();
       for (int i = 0; i < channels.length; i++) {
@@ -213,13 +211,11 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     try {
       while (!lockSpecRequestedNodeIDs.isEmpty()) {
         wait();
-        logDebug("getLockSpecs lockSpecRequestedNodeIDs: " + lockSpecRequestedNodeIDs.isEmpty());
       }
     } catch (InterruptedException e) {
       // ignore interrupt and return;
     }
 
-    logDebug("getLockSpecs -- lockStats.size: " + lockStats.size());
     for (Iterator<LockStatisticsInfo> i = lockStats.values().iterator(); i.hasNext();) {
       LockStatisticsInfo lsc = i.next();
       lsc.aggregateLockHoldersData();

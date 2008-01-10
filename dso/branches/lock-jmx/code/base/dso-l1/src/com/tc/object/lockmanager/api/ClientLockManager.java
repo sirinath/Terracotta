@@ -102,5 +102,7 @@ public interface ClientLockManager {
   
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval);
   
+  public void setLockStatisticsEnabled(boolean statEnable);
+  
   public void getLockSpecs();
 }

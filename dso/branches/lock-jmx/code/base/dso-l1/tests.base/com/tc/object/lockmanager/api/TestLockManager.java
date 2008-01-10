@@ -142,4 +142,8 @@ public class TestLockManager implements ClientLockManager {
   public void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
     throw new ImplementMe();
   }
+
+  public void setLockStatisticsEnabled(boolean statEnable) {
+    throw new ImplementMe();
+  }
 }

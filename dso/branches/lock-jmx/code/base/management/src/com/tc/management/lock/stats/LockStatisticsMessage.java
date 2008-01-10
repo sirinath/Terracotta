@@ -60,6 +60,14 @@ public class LockStatisticsMessage extends DSOMessageBase {
     return type == LOCK_STATISTICS_ENABLE_MESSAGE_TYPE || type == LOCK_STATISTICS_DISABLE_MESSAGE_TYPE;
   }
   
+  public boolean isLockStatsEnable() {
+    return type == LOCK_STATISTICS_ENABLE_MESSAGE_TYPE;
+  }
+  
+  public boolean isLockStatsDisable() {
+    return type == LOCK_STATISTICS_DISABLE_MESSAGE_TYPE;
+  }
+  
   public boolean isGatherLockStatistics() {
     return type == LOCK_STATISTICS_GATHERING_MESSAGE_TYPE;
   }

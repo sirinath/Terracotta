@@ -10,8 +10,11 @@ import com.tc.management.lock.stats.LockSpec;
 import java.util.Collection;
 
 public interface LockStatisticsMonitorMBean extends TerracottaMBean {
-  public static final String TRACE_DEPTH    = "com.tc.management.lock.traceDepth";
-  public static final String TRACES_ENABLED = "com.tc.management.lock.tracesEnabled";
+  public static final String   TRACE_DEPTH     = "com.tc.management.lock.traceDepth";
+  public static final String   GATHER_INTERVAL = "com.tc.management.lock.gatherInterval";
+  public static final String   TRACES_ENABLED  = "com.tc.management.lock.tracesEnabled";
+  public static final String[] ALL_EVENTS      = new String[] { TRACE_DEPTH, GATHER_INTERVAL, TRACES_ENABLED };
+  public static final String   DESCRIPTION     = "Terracotta Lock Statistics Event Notification";
 
   public Collection<LockSpec> getLockSpecs();
 
