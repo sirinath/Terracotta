@@ -4,6 +4,9 @@
  */
 package com.tc.net.groups;
 
+import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.lang.TCThreadGroup;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Vm;
 
@@ -13,6 +16,21 @@ import java.lang.reflect.Constructor;
 import java.util.logging.LogManager;
 
 public class GroupManagerFactory {
+
+  public static GroupManager createGroupManager(L2TVSConfigurationSetupManager configSetupManager,
+                                                TCThreadGroup threadGroup) throws GroupException {
+    // Using reflection to avoid weird 1.4 / 1.5 project dependency issues !!
+    if (Vm.isJDK15Compliant()) {
+      final boolean useTCGroup = TCPropertiesImpl.getProperties().getBoolean("l2.nha.TcGroupComm.enabled");
+      if (useTCGroup) {
+        return createTCGroupManager(configSetupManager, threadGroup);
+      } else {
+        return createTribesGroupManager();
+      }
+    } else {
+      return new SingleNodeGroupManager();
+    }
+  }
 
   public static GroupManager createGroupManager() throws GroupException {
     // Using reflection to avoid weird 1.4 / 1.5 project dependency issues !!
@@ -29,6 +47,20 @@ public class GroupManagerFactory {
       Class clazz = Class.forName("com.tc.net.groups.TribesGroupManager");
       Constructor constructor = clazz.getConstructor(new Class[0]);
       return (GroupManager) constructor.newInstance(new Object[0]);
+    } catch (Exception e) {
+      throw new GroupException(e);
+    }
+  }
+
+  private static GroupManager createTCGroupManager(L2TVSConfigurationSetupManager configSetupManager,
+                                                   TCThreadGroup threadGroup) throws GroupException {
+    initLoggerForJuli();
+    try {
+      Class clazz = Class.forName("com.tc.net.groups.TCGroupManagerImpl");
+      Class classArgs[] = new Class[] { L2TVSConfigurationSetupManager.class, TCThreadGroup.class };
+      Constructor constructor = clazz.getConstructor(classArgs);
+      Object objArgs[] = new Object[] { configSetupManager, threadGroup };
+      return (GroupManager) constructor.newInstance(objArgs);
     } catch (Exception e) {
       throw new GroupException(e);
     }

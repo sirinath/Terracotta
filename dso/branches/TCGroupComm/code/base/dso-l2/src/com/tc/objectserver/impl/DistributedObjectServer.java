@@ -193,7 +193,7 @@ import javax.management.NotCompliantMBeanException;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- *
+ * 
  * @author steve
  */
 public class DistributedObjectServer extends SEDA implements TCDumper {
@@ -233,6 +233,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
 
+  private final TCThreadGroup                  threadGroup;
+
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -251,6 +253,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
     this.configSetupManager = configSetupManager;
+    this.threadGroup = threadGroup;
     this.connectionPolicy = connectionPolicy;
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
@@ -681,9 +684,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     boolean networkedHA = configSetupManager.haConfig().isNetworkedActivePassive();
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
-      l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, gtxm, channelManager, configSetupManager
-                                              .haConfig());
+      l2Coordinator = new L2HACoordinator(configSetupManager, threadGroup, consoleLogger, this, stageManager, persistor
+          .getClusterStateStore(), objectManager, transactionManager, gtxm, channelManager, configSetupManager
+          .haConfig());
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
@@ -894,7 +897,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, configSetupManager, this,
+                                    TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no

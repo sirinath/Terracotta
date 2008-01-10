@@ -31,6 +31,7 @@ import com.tc.net.protocol.tcm.TCGroupCommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
+import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionManagerImpl;
@@ -83,6 +84,11 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   /*
    * Setup a communication manager which can establish channel from either sides.
    */
+  public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup)
+      throws IOException {
+    this(configSetupManager, new NullConnectionPolicy(), threadGroup);
+  }
+
   public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
                             TCThreadGroup threadGroup) throws IOException {
     super(threadGroup);
