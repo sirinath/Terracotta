@@ -190,7 +190,10 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   }
 
   public void memberAdded(TCGroupMember member) {
-    if (isStopped) return;
+    if (isStopped) {
+      member.close();
+      return;
+    }
 
     synchronized (members) {
       // Keep only one connection between two nodes. Close the redundant one.
@@ -199,9 +202,11 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
         TCGroupMember m = (TCGroupMember) it.next();
 
         // sanity check
-        if (member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID())) { throw new RuntimeException(
-                                                                                                                                           "Making duplicate channels to same node "
-                                                                                                                                               + member); }
+        if (member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID())) {
+          logger.warn("Drop duplicate channel to the same node " + member);
+          member.close();
+          return;
+        }
 
         if (member.getNodeID().equals(m.getNodeID())) {
           // already one connection established, choose one to keep

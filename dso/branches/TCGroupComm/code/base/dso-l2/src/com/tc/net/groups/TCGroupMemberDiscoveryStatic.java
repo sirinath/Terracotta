@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.groups;
@@ -16,6 +16,7 @@ import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -69,10 +70,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public void start() throws GroupException {
-    if (nodes == null || nodes.length == 0) {
-      throw new GroupException("Wrong nodes");
-    }
-    
+    if (nodes == null || nodes.length == 0) { throw new GroupException("Wrong nodes"); }
+
     if (running.get()) return;
     stopAttempt.set(false);
     running.set(true);
@@ -93,6 +92,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
    * Open channel to each unconnected Node
    */
   protected void openChannels() {
+    
+    ArrayList<Node> toConnectList = new ArrayList<Node>();
     for (int i = 0; i < nodes.length; ++i) {
       Node n = nodes[i];
 
@@ -107,22 +108,48 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         logger.error("Removed bad node:" + n + " " + e);
         continue;
       }
-
       if (getMember(remote) == null) {
-        try {
-          if (debug) {
-            logger.debug(manager.getNodeID().toString() + " opens channel to " + remote);
-          }
-          manager.openChannel(n.getHost(), n.getPort());
-        } catch (TCTimeoutException e) {
-          logger.warn("Node:" + n + " " + e);
-        } catch (UnknownHostException e) {
-          logger.warn("Node:" + n + " " + e);
-        } catch (MaxConnectionsExceededException e) {
-          logger.warn("Node:" + n + " " + e);
-        } catch (IOException e) {
-          logger.warn("Node:" + n + " " + e);
+        toConnectList.add(n);
+      }
+    }
+
+    ChannelOpener chOpeners[] = new ChannelOpener[toConnectList.size()];
+    for (int i = 0; i < toConnectList.size(); ++i) {
+      chOpeners[i] = new ChannelOpener(toConnectList.get(i));
+      chOpeners[i].start();
+      ThreadUtil.reallySleep(100);
+    }
+    for (int i = 0; i < toConnectList.size(); ++i) {
+      try {
+        chOpeners[i].join();
+      } catch (InterruptedException e) {
+        logger.warn("Connect to " + toConnectList.get(i) + " " + e);
+      }
+    }
+  }
+
+  private class ChannelOpener extends Thread {
+    private Node node;
+
+    ChannelOpener(Node node) {
+      super("Open channel " + node);
+      this.node = node;
+    }
+
+    public void run() {
+      try {
+        if (debug) {
+          logger.debug(manager.getNodeID().toString() + " opens channel to " + node);
         }
+        manager.openChannel(node.getHost(), node.getPort());
+      } catch (TCTimeoutException e) {
+        logger.warn("Node:" + node + " " + e);
+      } catch (UnknownHostException e) {
+        logger.warn("Node:" + node + " " + e);
+      } catch (MaxConnectionsExceededException e) {
+        logger.warn("Node:" + node + " " + e);
+      } catch (IOException e) {
+        logger.warn("Node:" + node + " " + e);
       }
     }
   }
