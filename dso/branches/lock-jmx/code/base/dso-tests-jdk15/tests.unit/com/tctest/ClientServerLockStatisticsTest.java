@@ -17,7 +17,6 @@ import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.LockStatElement;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
-import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -39,6 +38,7 @@ import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
+import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
@@ -52,11 +52,8 @@ import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.util.Assert;
-import com.tc.util.TCTimeoutException;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -112,7 +109,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
     sleep(2000);
     assertStackTraces(lockID1, 3, 1);
     assertStackTraces(lockID1, 3, 1);
-    
+
     clientLockManager.unlock(lockID1, tx1);
     sleep(1000);
     assertStackTraces(lockID1, 4, 1);
@@ -307,7 +304,7 @@ public class ClientServerLockStatisticsTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public void open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException, IOException {
+    public void open() {
       throw new ImplementMe();
 
     }
@@ -315,6 +312,10 @@ public class ClientServerLockStatisticsTest extends TestCase {
     public void routeMessageType(TCMessageType messageType, Sink destSink, Sink hydrateSink) {
       throw new ImplementMe();
 
+    }
+
+    public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory() {
+      throw new ImplementMe();
     }
   }
 }

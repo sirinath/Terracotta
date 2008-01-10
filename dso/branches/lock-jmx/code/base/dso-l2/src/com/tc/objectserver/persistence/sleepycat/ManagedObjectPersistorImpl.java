@@ -4,8 +4,6 @@
  */
 package com.tc.objectserver.persistence.sleepycat;
 
-import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
-
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
@@ -47,7 +45,6 @@ import java.util.TreeSet;
 public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase implements ManagedObjectPersistor {
 
   private static final Comparator              MO_COMPARATOR      = new Comparator() {
-
                                                                     public int compare(Object o1, Object o2) {
                                                                       long oid1 = ((ManagedObject) o1).getID().toLong();
                                                                       long oid2 = ((ManagedObject) o2).getID().toLong();
@@ -59,8 +56,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
                                                                         return 0;
                                                                       }
                                                                     }
-
                                                                   };
+
   private static final Object                  MO_PERSISTOR_KEY   = ManagedObjectPersistorImpl.class.getName()
                                                                     + ".saveAllObjects";
   private static final Object                  MO_PERSISTOR_VALUE = "Complete";
@@ -68,7 +65,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private final Database                       objectDB;
   private final Database                       oidDB;
   private final SerializationAdapterFactory    saf;
-  private final CursorConfig                   oidDBCursorConfig;
+  private final CursorConfig                   dBCursorConfig;
   private final MutableSequence                objectIDSequence;
   private final Database                       rootDB;
   private final CursorConfig                   rootDBCursorConfig;
@@ -78,34 +75,36 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private final ClassCatalog                   classCatalog;
   SerializationAdapter                         serializationAdapter;
   private final SleepycatCollectionsPersistor  collectionsPersistor;
-  private final String OID_FAST_LOAD = "l2.objectmanager.loadObjectID.fastLoad";
-  private final boolean oidFastLoad;
-  private final boolean paranoid;
-  private final OidBitsArrayMapManager oidManager;
-
+  private final String                         OID_FAST_LOAD      = "l2.objectmanager.loadObjectID.fastLoad";
+  private final boolean                        oidFastLoad;
+  private final boolean                        paranoid;
+  private final OidBitsArrayMapManager         oidManager;
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, Database objectDB,
-                                    Database oidDB, CursorConfig oidDBCursorConfig, MutableSequence objectIDSequence,
+                                    Database oidDB, CursorConfig dBCursorConfig, MutableSequence objectIDSequence,
                                     Database rootDB, CursorConfig rootDBCursorConfig,
                                     PersistenceTransactionProvider ptp,
-                                    SleepycatCollectionsPersistor collectionsPersistor,
-                                    boolean paranoid) {
+                                    SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid) {
     this.logger = logger;
     this.classCatalog = classCatalog;
     this.saf = serializationAdapterFactory;
     this.objectDB = objectDB;
     this.oidDB = oidDB;
-    this.oidDBCursorConfig = oidDBCursorConfig;
+    this.dBCursorConfig = dBCursorConfig;
     this.objectIDSequence = objectIDSequence;
     this.rootDB = rootDB;
     this.rootDBCursorConfig = rootDBCursorConfig;
     this.ptp = ptp;
     this.collectionsPersistor = collectionsPersistor;
     this.paranoid = paranoid;
-    
+
     this.oidFastLoad = TCPropertiesImpl.getProperties().getBoolean(OID_FAST_LOAD);
-    this.oidManager = new OidBitsArrayMapManagerImpl(logger, paranoid, oidDB, ptp, oidDBCursorConfig);
+    if (this.oidFastLoad) {
+      this.oidManager = new OidBitsArrayMapManagerImpl(logger, paranoid, oidDB, ptp, dBCursorConfig);
+    } else {
+      this.oidManager = null;
+    }
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -175,12 +174,12 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
 
   public SyncObjectIdSet getAllObjectIDs() {
     SyncObjectIdSet rv = new SyncObjectIdSetImpl();
-    if(paranoid) {
+    if (paranoid) {
       rv.startPopulating();
       Thread t;
       if (this.oidFastLoad) {
         t = new Thread(oidManager.createObjectIdReader(rv), "OidObjectIdReaderThread");
-      } else  {
+      } else {
         t = new Thread(new ObjectIdReader(rv), "ObjectIdReaderThread");
       }
       t.setDaemon(true);
@@ -349,17 +348,16 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
           };
           break;
         }
-        
+
         // record new object-IDs to be written to persistent store later.
-        if(oidFastLoad && paranoid) {
-          oidManager.oidKeepInSet(oidSet, managedObject.getID());
+        if (oidFastLoad && paranoid) {
+          oidSet.add(managedObject.getID());
         }
       }
       // write all new Object-IDs to persistor
       if (oidFastLoad && paranoid) {
-        if(!OperationStatus.SUCCESS.equals(oidManager.oidPutAll(persistenceTransaction, oidSet))) {
-          throw new DBException("Failed to save Object-IDs");
-        }
+        if (!OperationStatus.SUCCESS.equals(oidManager.oidPutAll(persistenceTransaction, oidSet))) { throw new DBException(
+                                                                                                                           "Failed to save Object-IDs"); }
       }
     } catch (Throwable t) {
       throw new DBException(t);
@@ -376,11 +374,21 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       logger.debug("save time: " + delta + ", " + managedObjects.size() + " objects; avg: " + avg + "/sec");
     }
   }
-  
+
   private SortedSet getSortedManagedObjectsSet(Collection managedObjects) {
     TreeSet sorted = new TreeSet(MO_COMPARATOR);
     sorted.addAll(managedObjects);
     Assert.assertEquals(managedObjects.size(), sorted.size());
+    return sorted;
+  }
+
+  /**
+   * ObjectIDs extend AbstractIdentifiers which are Sortable
+   */
+  private SortedSet getSortedObjectIDs(Collection objectIDs) {
+    TreeSet sorted = new TreeSet();
+    sorted.addAll(objectIDs);
+    Assert.assertEquals(objectIDs.size(), sorted.size());
     return sorted;
   }
 
@@ -406,20 +414,17 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   }
 
   public void deleteAllObjectsByID(PersistenceTransaction tx, Collection objectIDs) {
-    Set oidSet = new HashSet();
-    for (Iterator i = objectIDs.iterator(); i.hasNext();) {
+    // Sorting to maintain lock ordering - check saveAllObjects
+    SortedSet sortedOids = getSortedObjectIDs(objectIDs);
+    for (Iterator i = sortedOids.iterator(); i.hasNext();) {
       ObjectID objectId = (ObjectID) i.next();
       deleteObjectByID(tx, objectId);
-      // record deleted object-IDs to be written to persistent store later.
-      if(oidFastLoad && paranoid) {
-        oidManager.oidKeepInSet(oidSet, objectId);
-      }
     }
-    
+
     if (oidFastLoad && paranoid) {
       try {
-        oidManager.oidDeleteAll(tx, oidSet);
-      } catch (TCDatabaseException de){
+        oidManager.oidDeleteAll(tx, sortedOids);
+      } catch (TCDatabaseException de) {
         throw new TCRuntimeException(de);
       }
     }
@@ -485,15 +490,13 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
 
     public void run() {
       Assert.assertTrue("Shall be in persistent mode to refresh Object IDs at startup", paranoid);
-      
+
       ObjectIDSet2 tmp = new ObjectIDSet2();
       PersistenceTransaction tx = null;
       Cursor cursor = null;
       try {
-        BoundedLinkedQueue queue;
-        queue = new BoundedLinkedQueue(1000);
         tx = ptp.newTransaction();
-        cursor = oidDB.openCursor(pt2nt(tx), oidDBCursorConfig);
+        cursor = objectDB.openCursor(pt2nt(tx), dBCursorConfig);
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
@@ -528,9 +531,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       }
     }
   }
-  
+
   // for testing purpose only
   public OidBitsArrayMapManagerImpl getOidManager() {
-    return (OidBitsArrayMapManagerImpl)oidManager;
+    return (OidBitsArrayMapManagerImpl) oidManager;
   }
 }

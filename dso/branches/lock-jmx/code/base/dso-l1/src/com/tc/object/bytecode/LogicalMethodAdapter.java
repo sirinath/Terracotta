@@ -100,9 +100,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
       case MethodSpec.IF_TRUE_LOG:
         createIfTrueLogWrapperMethod(classVisitor);
         break;
-      case MethodSpec.LIST_REMOVE_LOG:
-        createListRemoveWrapperMethod(classVisitor);
-        break;
       case MethodSpec.SET_ITERATOR_WRAPPER_LOG:
         createSetIteratorWrapper(classVisitor);
         break;
@@ -253,33 +250,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
     mv.visitMaxs(5, 1);
   }
 
-  private void createListRemoveWrapperMethod(ClassVisitor classVisitor) {
-    MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
-    Type[] params = Type.getArgumentTypes("(Ljava/lang/Object;)");
-    Type returnType = Type.getReturnType(description);
-    // get the index of what is getting removed
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(GETFIELD, "java/util/LinkedList$Entry", "element", "Ljava/lang/Object;");
-    Label l2 = new Label();
-    mv.visitJumpInsn(IFNULL, l2);
-    ByteCodeUtil.pushThis(mv);
-    mv.visitLdcInsn(methodName + description);
-    mv.visitLdcInsn(new Integer(params.length));
-    mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-    mv.visitInsn(DUP);
-    mv.visitLdcInsn(new Integer(0));
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(GETFIELD, "java/util/LinkedList$Entry", "element", "Ljava/lang/Object;");
-    mv.visitInsn(AASTORE);
-    managerHelper.callManagerMethod("logicalInvoke", mv);
-    mv.visitLabel(l2);
-    ByteCodeUtil.pushThis(mv);
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, getNewName(), description);
-    mv.visitInsn(returnType.getOpcode(IRETURN));
-    mv.visitMaxs(0, 0);
-  }
-
   private void createTHashSetAddWrapperMethod(ClassVisitor classVisitor) {
     createTHashSetRemoveMethod(classVisitor);
     MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
@@ -334,8 +304,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
   private void createTHashSetRemoveMethod(ClassVisitor classVisitor) {
     MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, "removeAt", "(I)V", null, null);
     addCheckWriteAccessInstrumentedCode(mv, true);
-    mv.visitInsn(ACONST_NULL);
-    mv.visitVarInsn(ASTORE, 2);
     ByteCodeUtil.pushThis(mv);
     mv.visitFieldInsn(GETFIELD, ownerSlashes, "_set", "[Ljava/lang/Object;");
     mv.visitVarInsn(ILOAD, 1);
@@ -587,7 +555,7 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
   protected int getWrapperAccess() {
     return wrapperAccess;
   }
-  
+
   protected String getOriginalMethodName() {
     return originalMethodName;
   }

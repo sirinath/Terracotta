@@ -7,6 +7,10 @@ package com.tctest;
 
 public class EhcacheGlobalEviction124Test extends EhcacheGlobalEvictionTestBase {
 
+  public EhcacheGlobalEviction124Test() {
+    //disableAllUntil("2008-01-15");
+  }
+  
   protected Class getApplicationClass() {
     return EhcacheGlobalEviction124TestApp.class;
   }

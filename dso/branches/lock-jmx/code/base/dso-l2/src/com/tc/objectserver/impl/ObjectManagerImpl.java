@@ -342,9 +342,13 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     for (Iterator i = removalCandidates.iterator(); i.hasNext();) {
       ManagedObjectReference removalCandidate = (ManagedObjectReference) i.next();
-      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isNew()) {
+      // It is possible that before the cache evictor has a chance to mark the reference, the GC could come and remove
+      // the reference, hence we check in references map again
+      if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isNew()
+          && references.containsKey(removalCandidate.getObjectID())) {
         evictionPolicy.remove(removalCandidate);
         if (removalCandidate.getObject().isDirty()) {
+          Assert.assertFalse(config.paranoid());
           markReferenced(removalCandidate);
           toFlush.add(removalCandidate.getObject());
         } else {
@@ -435,7 +439,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       traverser.traverse(lookedUpObjects);
       lookedUpObjects = new HashSet();
       Set lookupObjectIDs = traverser.getObjectsToLookup();
-      if(lookupObjectIDs.isEmpty()) break;
+      if (lookupObjectIDs.isEmpty()) break;
       stateManager.removeReferencedFrom(nodeID, lookupObjectIDs);
       for (Iterator j = lookupObjectIDs.iterator(); j.hasNext();) {
         ObjectID id = (ObjectID) j.next();
@@ -451,14 +455,15 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return traverser.getPendingObjectsToLookup(lookedUpObjects);
   }
 
-  // TODO:: Multiple readonly checkouts, now that there are more than 1 thread faulting objects to the
+  // TODO:: Multiple read only checkouts, now that there are more than 1 thread faulting objects to the
   // client
   public void releaseReadOnly(ManagedObject object) {
+    if (config.paranoid() && object.isDirty()) { throw new AssertionError("Object is dirty after a read-only checkout"
+                                                                          + object); }
     synchronized (this) {
       basicRelease(object);
       postRelease();
     }
-
   }
 
   public void release(PersistenceTransaction persistenceTransaction, ManagedObject object) {
@@ -473,8 +478,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public synchronized void releaseAll(Collection objects) {
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
-      if (config.paranoid()) {
-        Assert.assertFalse(mo.isDirty());
+      if (config.paranoid() && !mo.isNew() && mo.isDirty()) {
+        // It is possible to release new just created objects before it has a chance to get applied because of a recall
+        // due to a GC. Check out ObjectManagerTest.testRecallNewObjects()
+        throw new AssertionError("ObjectManager.releaseAll() called on dirty old objects : " + mo
+                                 + " total objects size : " + objects.size());
       }
       basicRelease(mo);
     }
@@ -497,7 +505,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       ManagedObjectReference ref = (ManagedObjectReference) references.remove(id);
       if (ref != null) {
         Assert.assertFalse(ref.isNew());
-        while (ref.isReferenced()) {
+        while (ref != null && ref.isReferenced()) {
           // This is possible if the cache manager is evicting this *unreachable* object or somehow the admin console is
           // looking up this object.
           logger.warn("Reference : " + ref + " was referenced. So waiting to remove !");
@@ -510,7 +518,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
           }
           ref = (ManagedObjectReference) references.remove(id);
         }
-        evictionPolicy.remove(ref);
+        if (ref != null) evictionPolicy.remove(ref);
       }
     }
   }

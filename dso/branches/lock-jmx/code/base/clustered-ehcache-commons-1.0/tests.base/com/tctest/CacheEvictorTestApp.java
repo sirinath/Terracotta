@@ -23,7 +23,7 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
   }
 
   protected void runTest() throws Throwable {
-    System.out.println(Arrays.asList(getCacheManger().getCacheNames()));
+    System.out.println("Cache names: " + Arrays.asList(getCacheManger().getCacheNames()));
 
     try {
       testIsElementInMemory();
@@ -122,10 +122,10 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     }
 
     // k3,v3 should expire due to timeToIdleSeconds=15
-    System.out.println(cache);
-    System.out.println(cache.get("k1"));
-    System.out.println(cache.get("k2"));
-    System.out.println(cache.get("k3"));
+    System.out.println("cache: " + cache);
+    System.out.println("get k1: " + cache.get("k1"));
+    System.out.println("get k2: " + cache.get("k2"));
+    System.out.println("get k3: " + cache.get("k3"));
 
     assertExpired(cache, e3);
     assertInCache(cache, e1);
@@ -137,9 +137,9 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
       Thread.sleep(100);
     }
 
-    System.out.println(cache.get("k1"));
-    System.out.println(cache.get("k2"));
-    System.out.println(cache.get("k3"));
+    System.out.println("get k1: " + cache.get("k1"));
+    System.out.println("get k2: " + cache.get("k2"));
+    System.out.println("get k3: " + cache.get("k3"));
 
     // both (k1,v2) and (k2,v2) should expired due to timeToLiveSeconds=60
     assertExpired(cache, e1);
@@ -153,7 +153,7 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
       Cache newCache = new Cache(cacheName, 3, MemoryStoreEvictionPolicy.LFU, false, ".", false, ttl, idle, false, 120,
                                  null, null, 100);
       getCacheManger().addCache(newCache);
-      System.out.println(newCache);
+      System.out.println("newCache: " + newCache);
     }
 
     barrier();
@@ -162,9 +162,9 @@ public abstract class CacheEvictorTestApp extends AbstractErrorCatchingTranspare
     populateCache(cache);
     barrier();
 
-    System.out.println(cache.get("k1"));
-    System.out.println(cache.get("k2"));
-    System.out.println(cache.get("k3"));
+    System.out.println("get k1: " + cache.get("k1"));
+    System.out.println("get k2: " + cache.get("k2"));
+    System.out.println("get k3: " + cache.get("k3"));
 
     Element e1 = cache.get("k1");
     Element e2 = cache.get("k2");

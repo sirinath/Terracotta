@@ -10,6 +10,8 @@ import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.util.Assert;
+import com.tc.util.DebugUtil;
+import com.tc.util.Util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -124,20 +126,10 @@ public class CacheDataStore implements Serializable {
   }
 
   private int getStoreIndex(Object key) {
-    if (config.getConcurrency() == 1) { return 0; }
-    int hashValue = Math.abs(hash(key.hashCode()));
-    return hashValue % config.getConcurrency();
+    return Util.hash(key, config.getConcurrency());
   }
 
-  private static int hash(int h) {
-    h += ~(h << 9);
-    h ^= (h >>> 14);
-    h += (h << 4);
-    h ^= (h >>> 10);
-    return h;
-  }
-
-  public Object put(final Object key, final Object value) {
+  private CacheData putInternal(final Object key, final Object value) {
     logDebug("Put [" + key + ", " + value + "]");
     Assert.pre(key != null);
     Assert.pre(value != null);
@@ -151,9 +143,17 @@ public class CacheDataStore implements Serializable {
     if (config.getInvalidatorSleepSeconds() >= 0) {
       dtmStore[storeIndex].put(key, cd.getTimestamp());
     }
+    return rcd;
+  }
+  
+  public Object put(final Object key, final Object value) {
+    CacheData rcd = putInternal(key, value);
 
-    Object rv = (rcd == null) ? null : rcd.getValue();
-    return rv;
+    return ((rcd == null) ? null : rcd.getValue());
+  }
+  
+  public void putData(final Object key, final Object value) {
+    putInternal(key, value);
   }
 
   // private void dumpStore() {
@@ -343,6 +343,9 @@ public class CacheDataStore implements Serializable {
 
   private void logDebug(String msg) {
     if (config.isLoggingEnabled()) {
+      if (DebugUtil.DEBUG) {
+        System.err.println(msg);
+      }
       logger.debug(msg);
     }
   }
@@ -424,6 +427,7 @@ public class CacheDataStore implements Serializable {
         totalCnt++;
         if (dtm.getInvalidatedTimeMillis() < System.currentTimeMillis()) {
           evaled++;
+          logDebug("expiring .... key: " + timestampEntry.getKey());
           expire(timestampEntry.getKey());
         } else {
           notEvaled++;

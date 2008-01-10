@@ -169,9 +169,14 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     end
   end
 
-  # Um. Duh.
+  # clean all under build and depedencies/lib
   def clean
-    FileUtils.rm_rf(File.join(@basedir.to_s, "build"))
+    begin
+      FileUtils.rm_rf(File.join(@basedir.to_s, "build"))
+      FileUtils.rm(File.join(@basedir.to_s, "dependencies", "lib", "*"))
+    rescue Errno::ENOENT => e       
+      # ignore file not found error
+    end
   end
 
   def clean_cache
@@ -348,9 +353,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   def check_prep(module_name = 'all', test_type = 'all')    
     depends :init, :compile
     
-    @internal_config_source['tests-jdk']='1.5'
-    Registry[:jvm_set].add_config_jvm("tests-jdk")
-    loud_message "check_prep always uses JDK 1.5 for the tests."
+    loud_message "You might need to pass tests-jdk=1.5 if the test is 1.5 compatible and you want L2 to run in process"
     
     if module_name.downcase == 'all'
       @module_set.each do |mod|
@@ -900,11 +903,6 @@ END
               @jvm_set.alias(jvm_alias, name)
             end
           end
-        else
-          msg = "You must specify a valid #{name} JRE using one of the " +
-                  "following configuration properties: " +
-          search_names.join(', ')
-          raise(msg)
         end
       end
 

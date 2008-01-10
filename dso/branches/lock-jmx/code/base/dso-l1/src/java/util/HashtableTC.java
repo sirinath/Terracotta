@@ -19,29 +19,13 @@ import java.util.Map.Entry;
 /*
  * This class will be merged with java.lang.Hashtable in the bootjar. This hashtable can store ObjectIDs instead of
  * Objects to save memory and transparently fault Objects as needed. It can also clear references. For General rules
- * 
+ *
  * @see HashMapTC class
  */
 public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearable {
 
   private volatile transient TCObject $__tc_MANAGED;
   private boolean                     evictionEnabled = true;
-
-  public HashtableTC() {
-    super();
-  }
-
-  public HashtableTC(int initialCapacity, float loadFactor) {
-    super(initialCapacity, loadFactor);
-  }
-
-  public HashtableTC(int initialCapacity) {
-    super(initialCapacity);
-  }
-
-  public HashtableTC(Map arg0) {
-    super(arg0);
-  }
 
   public synchronized void clear() {
     if (__tc_isManaged()) {
@@ -179,11 +163,15 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   public synchronized Object remove(Object key) {
     if (__tc_isManaged()) {
       ManagerUtil.checkWriteAccess(this);
-      Object removed = unwrapValueIfNecessary(super.remove(key));
-      if (removed != null) {
-        ManagerUtil.logicalInvoke(this, "remove(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { key });
-      }
-      return removed;
+
+      Entry entry = __tc_removeEntryForKey(key);
+      if (entry == null) { return null; }
+
+      Object rv = unwrapValueIfNecessary(entry.getValue());
+
+      ManagerUtil.logicalInvoke(this, "remove(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { entry.getKey() });
+
+      return rv;
     } else {
       return super.remove(key);
     }
@@ -202,10 +190,12 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   public synchronized void __tc_remove_logical(Object key) {
     if (__tc_isManaged()) {
       ManagerUtil.checkWriteAccess(this);
-      Object removed = super.remove(key);
-      if (removed != null) {
-        ManagerUtil.logicalInvoke(this, "remove(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { key });
-      }
+
+      Entry entry = __tc_removeEntryForKey(key);
+      if (entry == null) { return; }
+
+      ManagerUtil.logicalInvoke(this, "remove(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { entry.getKey() });
+
     } else {
       super.remove(key);
     }
@@ -225,7 +215,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     int index = -1;
     for (Iterator i = entrySet.iterator(); i.hasNext();) {
       Map.Entry e = (Map.Entry) i.next();
-      if (!(e.getValue() instanceof ObjectID)) {
+      if (!(e.getValue() instanceof ValuesWrapper)) {
         index++;
         tmp[index] = e;
       }
@@ -317,6 +307,11 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   protected Map.Entry __tc_getEntry(Object key) {
     // This method is instrumented during bootjar creation into the vanilla (which gets tainted) java.util.Hashtable.
     // This is needed so that we can easily get access to the Original Key on put without a traversal or proxy Keys.
+    throw new RuntimeException("This should never execute! Check BootJarTool");
+  }
+
+  protected Map.Entry __tc_removeEntryForKey(Object key) {
+    // This method is instrumented during bootjar creation into the vanilla (which gets tainted) java.util.Hashtable.
     throw new RuntimeException("This should never execute! Check BootJarTool");
   }
 
@@ -417,7 +412,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       if (__tc_isManaged()) {
         synchronized (HashtableTC.this) {
           // This check is done to solve the chicken and egg problem. Should I modify the local copy or the remote copy
-          // ? (both has error checks that we want to take place before any modification is probagated
+          // ? (both has error checks that we want to take place before any modification is propagated
           if (value == null) throw new NullPointerException();
           ManagerUtil.checkWriteAccess(HashtableTC.this);
           ManagerUtil.logicalInvoke(HashtableTC.this, "put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
@@ -456,15 +451,21 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
 
     public boolean remove(Object o) {
+
       if (__tc_isManaged()) {
         synchronized (HashtableTC.this) {
           ManagerUtil.checkWriteAccess(HashtableTC.this);
-          if (entrySet.remove(o)) {
-            ManagerUtil.logicalInvoke(HashtableTC.this, "remove(Ljava/lang/Object;)Ljava/lang/Object;",
-                                      new Object[] { ((Map.Entry) o).getKey() });
-            return true;
-          }
-          return false;
+
+          if (!(o instanceof Map.Entry)) { return false; }
+
+          Entry entryToRemove = (Entry) o;
+
+          Entry entry = __tc_removeEntryForKey(entryToRemove.getKey());
+          if (entry == null) { return false; }
+
+          ManagerUtil.logicalInvoke(HashtableTC.this, "remove(Ljava/lang/Object;)Ljava/lang/Object;",
+                                    new Object[] { entry.getKey() });
+          return true;
         }
       } else {
         return entrySet.remove(o);

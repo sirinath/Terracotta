@@ -97,7 +97,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     roots.put("root", new ObjectID(1));
 
     // first test w/o any listeners attached
-    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST, Collections.EMPTY_SET);
+    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST);
 
     // add a listener
     Listener listener = new Listener();
@@ -105,7 +105,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     roots.clear();
     roots.put("root2", new ObjectID(2));
 
-    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST, Collections.EMPTY_SET);
+    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST);
     assertEquals(1, listener.rootsCreated.size());
     Root root = (Root) listener.rootsCreated.remove(0);
     assertEquals("root2", root.name);
@@ -117,7 +117,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     roots.clear();
     roots.put("root3", new ObjectID(3));
 
-    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST, Collections.EMPTY_SET);
+    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST);
     assertEquals(1, listener.rootsCreated.size());
     root = (Root) listener.rootsCreated.remove(0);
     assertEquals("root3", root.name);
@@ -132,7 +132,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
         throw new RuntimeException("This exception is supposed to be here");
       }
     });
-    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST, Collections.EMPTY_SET);
+    this.transactionManager.commit(ptxp, Collections.EMPTY_SET, roots, Collections.EMPTY_LIST);
   }
 
   public void testAddAndRemoveTransactionListeners() throws Exception {
@@ -231,6 +231,96 @@ public class ServerTransactionManagerImplTest extends TestCase {
     }
   }
 
+  /**
+   * A transaction is broadcasted to another client, the orginating client disconnects and then the broadcasted client
+   * disconnects. This test was written to illustrate a scenario where when multiple clients were disconnecting, were
+   * acks are being waited for, a concurrent modification exception was thrown.
+   */
+  public void test2ClientsDisconnectAtTheSameTime() throws Exception {
+    ClientID cid1 = new ClientID(new ChannelID(1));
+    TransactionID tid1 = new TransactionID(1);
+    TransactionID tid2 = new TransactionID(2);
+    TransactionID tid3 = new TransactionID(3);
+    ClientID cid2 = new ClientID(new ChannelID(2));
+    ClientID cid3 = new ClientID(new ChannelID(3));
+    ClientID cid4 = new ClientID(new ChannelID(4));
+    ClientID cid5 = new ClientID(new ChannelID(5));
+
+    LockID[] lockIDs = new LockID[0];
+    List dnas = Collections.unmodifiableList(new LinkedList());
+    ObjectStringSerializer serializer = null;
+    Map newRoots = Collections.unmodifiableMap(new HashMap());
+    TxnType txnType = TxnType.NORMAL;
+    SequenceID sequenceID = new SequenceID(1);
+    ServerTransaction tx1 = new ServerTransactionImpl(gtxm, new TxnBatchID(1), tid1, sequenceID, lockIDs, cid1, dnas,
+                                                      serializer, newRoots, txnType, new LinkedList(),
+                                                      DmiDescriptor.EMPTY_ARRAY);
+
+    Set txns = new HashSet();
+    txns.add(tx1);
+    Set txnIDs = new HashSet();
+    txnIDs.add(new ServerTransactionID(cid1, tid1));
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
+    transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid2);
+    transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid3);
+    transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid4);
+    transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid5);
+    doStages(cid1, txns, true);
+
+    // Adding a few more transactions to that Transaction Records are created for everybody
+    txns.clear();
+    txnIDs.clear();
+    ServerTransaction tx2 = new ServerTransactionImpl(gtxm, new TxnBatchID(2), tid2, sequenceID, lockIDs, cid2, dnas,
+                                                      serializer, newRoots, txnType, new LinkedList(),
+                                                      DmiDescriptor.EMPTY_ARRAY);
+    txns.add(tx2);
+    txnIDs.add(new ServerTransactionID(cid2, tid2));
+    transactionManager.incomingTransactions(cid2, txnIDs, txns, false);
+
+    transactionManager.acknowledgement(cid2, tid2, cid3);
+    doStages(cid2, txns, true);
+
+    txns.clear();
+    txnIDs.clear();
+    ServerTransaction tx3 = new ServerTransactionImpl(gtxm, new TxnBatchID(2), tid3, sequenceID, lockIDs, cid3, dnas,
+                                                      serializer, newRoots, txnType, new LinkedList(),
+                                                      DmiDescriptor.EMPTY_ARRAY);
+    txns.add(tx3);
+    txnIDs.add(new ServerTransactionID(cid3, tid3));
+    transactionManager.incomingTransactions(cid3, txnIDs, txns, false);
+
+    transactionManager.acknowledgement(cid3, tid3, cid4);
+    transactionManager.acknowledgement(cid3, tid3, cid2);
+    doStages(cid2, txns, true);
+
+    assertTrue(transactionManager.isWaiting(cid1, tid1));
+
+    transactionManager.acknowledgement(cid1, tid1, cid3);
+    assertTrue(transactionManager.isWaiting(cid1, tid1));
+    transactionManager.acknowledgement(cid1, tid1, cid4);
+    assertTrue(transactionManager.isWaiting(cid1, tid1));
+    transactionManager.acknowledgement(cid1, tid1, cid5);
+    assertTrue(transactionManager.isWaiting(cid1, tid1));
+
+    // Client 1 disconnects
+    transactionManager.shutdownNode(cid1);
+
+    // Still waiting for tx1
+    assertTrue(transactionManager.isWaiting(cid1, tid1));
+
+    // Client 2 disconnects now
+    // Concurrent Modification exception used to be thrown here.
+    transactionManager.shutdownNode(cid2);
+
+    // Not waiting for tx1 anymore
+    assertFalse(transactionManager.isWaiting(cid1, tid1));
+
+    // Client 3 disconnects now
+    // Concurrent Modification exception used to be thrown here.
+    transactionManager.shutdownNode(cid2);
+
+  }
+
   public void tests() throws Exception {
     ClientID cid1 = new ClientID(new ChannelID(1));
     TransactionID tid1 = new TransactionID(1);
@@ -258,7 +348,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     txns.add(tx1);
     Set txnIDs = new HashSet();
     txnIDs.add(new ServerTransactionID(cid1, tid1));
-    transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
     transactionManager.addWaitingForAcknowledgement(cid1, tid1, cid2);
     assertTrue(transactionManager.isWaiting(cid1, tid1));
     assertTrue(action.clientID == null && action.txID == null);
@@ -279,7 +369,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                       DmiDescriptor.EMPTY_ARRAY);
     txns.add(tx2);
     txnIDs.add(new ServerTransactionID(cid1, tid2));
-    transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
 
     transactionManager.addWaitingForAcknowledgement(cid1, tid2, cid2);
     transactionManager.addWaitingForAcknowledgement(cid1, tid2, cid3);
@@ -305,7 +395,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                       DmiDescriptor.EMPTY_ARRAY);
     txns.add(tx3);
     txnIDs.add(new ServerTransactionID(cid1, tid3));
-    transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
     transactionManager.addWaitingForAcknowledgement(cid1, tid3, cid2);
     transactionManager.addWaitingForAcknowledgement(cid1, tid3, cid3);
     assertTrue(action.clientID == null && action.txID == null);
@@ -331,7 +421,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                       DmiDescriptor.EMPTY_ARRAY);
     txns.add(tx4);
     txnIDs.add(new ServerTransactionID(cid1, tid4));
-    transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
     transactionManager.addWaitingForAcknowledgement(cid1, tid4, cid2);
     transactionManager.addWaitingForAcknowledgement(cid1, tid4, cid3);
     transactionManager.shutdownNode(cid1);
@@ -343,7 +433,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     // adding new transactions should throw an error
     boolean failed = false;
     try {
-      transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+      transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
       failed = true;
     } catch (Throwable t) {
       // failed as expected.
@@ -361,7 +451,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     assertNull(clientStateManager.shutdownClient);
     List serverTids = new ArrayList();
     serverTids.add(new ServerTransactionID(cid1, tid4));
-    transactionManager.commit(ptxp, Collections.EMPTY_SET, Collections.EMPTY_MAP, serverTids, Collections.EMPTY_SET);
+    transactionManager.commit(ptxp, Collections.EMPTY_SET, Collections.EMPTY_MAP, serverTids);
     assertNull(clientStateManager.shutdownClient);
     transactionManager.broadcasted(cid1, tid4);
     assertEquals(cid1, clientStateManager.shutdownClient);
@@ -384,7 +474,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     txnIDs.add(new ServerTransactionID(cid1, tid5));
     txnIDs.add(new ServerTransactionID(cid1, tid6));
 
-    transactionManager.incomingTransactions(cid1, txnIDs, txns, false, Collections.EMPTY_LIST);
+    transactionManager.incomingTransactions(cid1, txnIDs, txns, false);
     transactionManager.addWaitingForAcknowledgement(cid1, tid5, cid2);
     transactionManager.addWaitingForAcknowledgement(cid1, tid6, cid2);
 
@@ -407,8 +497,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
   private void doStages(ClientID cid1, Set txns, boolean skipIncoming) {
 
     // process stage
-    if (!skipIncoming) transactionManager.incomingTransactions(cid1, getServerTransactionIDs(txns), txns, false,
-                                                               Collections.EMPTY_LIST);
+    if (!skipIncoming) transactionManager.incomingTransactions(cid1, getServerTransactionIDs(txns), txns, false);
 
     for (Iterator iter = txns.iterator(); iter.hasNext();) {
       ServerTransaction tx = (ServerTransaction) iter.next();
@@ -419,8 +508,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
       // commit stage
       Set committedIDs = new HashSet();
       committedIDs.add(tx.getServerTransactionID());
-      this.transactionManager.commit(ptxp, Collections.EMPTY_SET, Collections.EMPTY_MAP, committedIDs,
-                                     Collections.EMPTY_SET);
+      this.transactionManager.commit(ptxp, Collections.EMPTY_SET, Collections.EMPTY_MAP, committedIDs);
 
       // broadcast stage
       transactionManager.broadcasted(tx.getSourceID(), tx.getTransactionID());
@@ -450,6 +538,14 @@ public class ServerTransactionManagerImplTest extends TestCase {
       } catch (InterruptedException e) {
         throw new TCRuntimeException(e);
       }
+    }
+
+    public void notifyObjectRemove(MessageChannel channel, int numObjectsRemoved) {
+      throw new ImplementMe();
+    }
+
+    public void notifyObjectRequest(MessageChannel channel, int numObjectsRequested) {
+      throw new ImplementMe();
     }
 
   }
@@ -505,7 +601,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
   }
 
   public class TestTransactionAcknowledgeAction implements TransactionAcknowledgeAction {
-    public NodeID     clientID;
+    public NodeID        clientID;
     public TransactionID txID;
 
     public void acknowledgeTransaction(ServerTransactionID stxID) {

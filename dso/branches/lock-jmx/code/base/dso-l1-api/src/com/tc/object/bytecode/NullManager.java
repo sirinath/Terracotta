@@ -243,12 +243,12 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public boolean isDsoMonitorExitRequired() {
+  public boolean isDsoMonitorEntered(Object obj) {
     return false;
   }
 
-  public boolean isDsoMonitorEntered(Object obj) {
-    return false;
+  public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
+    throw new UnsupportedOperationException();
   }
 
   public void monitorEnter(Object obj, int type, String contextInfo) {

@@ -79,6 +79,7 @@ import com.tc.object.msg.ClientHandshakeAckMessageImpl;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
+import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
@@ -108,6 +109,7 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.Sequence;
@@ -214,17 +216,17 @@ public class DistributedObjectClient extends SEDA {
 
     logger.debug("Created channel.");
 
-    ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger, channel.getChannelIDProvider());
+    ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
         .getCommitTransactionMessageFactory(), new DNAEncodingImpl(classProvider));
 
     rtxManager = new RemoteTransactionManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
-        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, txFactory, new TransactionBatchAccounting(),
+        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
                                                   new LockAccounting(), sessionManager, channel);
 
     ClientGlobalTransactionManager gtxManager = new ClientGlobalTransactionManagerImpl(rtxManager);
-    
+
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
@@ -245,9 +247,13 @@ public class DistributedObjectClient extends SEDA {
     TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider);
     TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
+    ToggleableReferenceManager toggleRefMgr = new ToggleableReferenceManager();
+    toggleRefMgr.start();
+
     objectManager = new ClientObjectManagerImpl(remoteObjectManager, config, idProvider, new ClockEvictionPolicy(-1),
                                                 runtimeLogger, channel.getChannelIDProvider(), classProvider,
-                                                classFactory, objectFactory, config.getPortability(), channel);
+                                                classFactory, objectFactory, config.getPortability(), channel,
+                                                toggleRefMgr);
 
     TCProperties cacheManagerProperties = l1Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
@@ -297,8 +303,9 @@ public class DistributedObjectClient extends SEDA {
     // more likely an AssertionError
     Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
                                                 new ClientCoordinationHandler(cluster), 1, maxSize);
-    
-    Stage lockStatisticsStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_RESPONSE_STAGE, new LockStatisticsResponseHandler(), 1, 1);
+
+    Stage lockStatisticsStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_RESPONSE_STAGE,
+                                                         new LockStatisticsResponseHandler(), 1, 1);
     final Stage lockStatisticsEnableDisableStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_ENABLE_DISABLE_STAGE, new LockStatisticsEnableDisableHandler(), 1, 1);
     lockStatManager.start(channel, lockStatisticsStage.getSink());
 
@@ -347,6 +354,8 @@ public class DistributedObjectClient extends SEDA {
     channel.addClassMapping(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, JmxRemoteTunnelMessage.class);
     channel.addClassMapping(TCMessageType.CLUSTER_MEMBERSHIP_EVENT_MESSAGE, ClusterMembershipMessage.class);
     channel.addClassMapping(TCMessageType.CLIENT_JMX_READY_MESSAGE, L1JmxReady.class);
+    channel.addClassMapping(TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE,
+                            CompletedTransactionLowWaterMarkMessage.class);
 
     logger.debug("Added class mappings.");
 

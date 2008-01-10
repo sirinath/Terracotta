@@ -34,6 +34,7 @@ import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
+import javax.management.remote.generic.ConnectionClosedException;
 import javax.naming.CommunicationException;
 import javax.naming.ServiceUnavailableException;
 import javax.swing.Icon;
@@ -473,7 +474,9 @@ public class ServerNode extends ComponentNode
       ConnectionContext cntx = getConnectionContext();
       ObjectName serverInfo = getServerInfo(cntx);
 
-      cntx.invoke(serverInfo, "stop", new Object[] {}, new String[] {});
+      cntx.invoke(serverInfo, "shutdown", new Object[] {}, new String[] {});
+    } catch (ConnectionClosedException ignore) {
+      /* expected */
     } catch (Exception e) {
       m_acc.log(e);
     }
@@ -636,6 +639,8 @@ public class ServerNode extends ComponentNode
         }
       }
       m_acc.controller.nodeChanged(ServerNode.this);
+    } catch(Exception e) {
+      m_acc.log(e);
     } finally {
       m_tryAddingDSONode.set(false);
     }

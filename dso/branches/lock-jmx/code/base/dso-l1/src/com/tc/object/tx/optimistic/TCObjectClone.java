@@ -16,6 +16,7 @@ import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.util.ToggleableStrongReference;
 
 import gnu.trove.TLinkable;
 
@@ -229,6 +230,14 @@ public class TCObjectClone implements TCObject {
     if (arrayLength < 0) { throw new AssertionError(); }
     if (index < 0 || index >= arrayLength) { return new ArrayIndexOutOfBoundsException(index); }
     return null;
+  }
+
+  public boolean isFieldPortableByOffset(long fieldOffset) {
+    throw new ImplementMe();
+  }
+
+  public ToggleableStrongReference getOrCreateToggleRef() {
+    throw new ImplementMe();
   }
 
 }

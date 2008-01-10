@@ -56,14 +56,20 @@ public class DefaultCookieWriter implements SessionCookieWriter {
     this.idTag = ";" + this.cookieName.toLowerCase() + "=";
   }
 
-  public void writeCookie(HttpServletRequest req, HttpServletResponse res, SessionId id) {
+  public Cookie writeCookie(HttpServletRequest req, HttpServletResponse res, SessionId id) {
     Assert.pre(req != null);
     Assert.pre(res != null);
     Assert.pre(id != null);
 
     if (res.isCommitted()) { throw new IllegalStateException("response is already committed"); }
 
-    if (isTrackingEnabled && isCookieEnabled) res.addCookie(createCookie(req, id));
+    if (isTrackingEnabled && isCookieEnabled) {
+      Cookie rv = createCookie(req, id);
+      res.addCookie(rv);
+      return rv;
+    }
+
+    return null;
   }
 
   public String encodeRedirectURL(String url, HttpServletRequest req) {
@@ -133,6 +139,7 @@ public class DefaultCookieWriter implements SessionCookieWriter {
 
     final HttpSession session = hreq.getSession(false);
     if (session == null) return false;
+
     if (hreq.isRequestedSessionIdFromCookie()) return false;
 
     return isEncodeable(hreq, session, location);
@@ -259,5 +266,13 @@ public class DefaultCookieWriter implements SessionCookieWriter {
     // if nothing is specified, use request context path
     String rv = req.getContextPath();
     return rv == null || rv.trim().length() == 0 ? ConfigProperties.defaultCookiePath : rv.trim();
+  }
+
+  public String getCookieName() {
+    return this.cookieName;
+  }
+
+  public String getPathParameterTag() {
+    return this.idTag;
   }
 }

@@ -14,6 +14,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.impl.ObjectStringSerializer;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -53,7 +54,7 @@ public class ReplicatedTransactionManagerTest extends TestCase {
     txnMgr = new TestServerTransactionManager();
     gtxm = new TestGlobalTransactionManager();
     rtm = new ReplicatedTransactionManagerImpl(grpMgr, new OrderedSink(TCLogging
-        .getLogger(ReplicatedTransactionManagerTest.class), new MockSink()), txnMgr);
+        .getLogger(ReplicatedTransactionManagerTest.class), new MockSink()), txnMgr, gtxm);
   }
 
   /**
@@ -69,37 +70,37 @@ public class ReplicatedTransactionManagerTest extends TestCase {
     rtm.init(knownIds);
 
     LinkedHashMap txns = createTxns(1, 1, 2, false);
-    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values());
 
     // Since both are know oids, transactions should pass thru
     assertAndClear(txns.values());
 
     // create a txn containing a new Object (OID 3)
     txns = createTxns(1, 3, 1, true);
-    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values());
 
     // Should go thru too
     assertAndClear(txns.values());
 
     // Now create a txn with all three objects
     txns = createTxns(1, 1, 3, false);
-    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values());
 
     // Since all are known oids, transactions should pass thru
     assertAndClear(txns.values());
 
     // Now create a txn with all unknown ObjectIDs (4,5,6)
     txns = createTxns(1, 4, 3, false);
-    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values());
 
     // None should be sent thru
     assertTrue(txnMgr.incomingTxns.isEmpty());
 
     // Create more txns with all unknown ObjectIDs (7,8,9)
     LinkedHashMap txns1 = createTxns(1, 7, 1, false);
-    rtm.addCommitedTransactions(clientID, txns1.keySet(), txns1.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns1.keySet(), txns1.values());
     LinkedHashMap txns2 = createTxns(1, 8, 2, false);
-    rtm.addCommitedTransactions(clientID, txns2.keySet(), txns2.values(), Collections.EMPTY_LIST);
+    rtm.addCommitedTransactions(clientID, txns2.keySet(), txns2.values());
 
     // None should be sent thru
     assertTrue(txnMgr.incomingTxns.isEmpty());
@@ -116,34 +117,48 @@ public class ReplicatedTransactionManagerTest extends TestCase {
     assertContainsAllVersionizedAndRemove((ServerTransaction) txns.values().iterator().next(), gotTxn);
     assertTrue(gotTxn.getChanges().isEmpty());
 
-    // Now send transaction complete for txn2, with new Objects (10), this should clear pending changes for 8,9
+    // Now send transaction complete for txn1, with new Objects (10), this should clear pending changes for 7
     txns = createTxns(1, 10, 1, true);
-    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values(), txns2.keySet());
-    assertAndClear(txns.values(), txns2.keySet());
+    rtm.addCommitedTransactions(clientID, txns.keySet(), txns.values());
+    rtm.clearTransactionsBelowLowWaterMark(getNextLowWaterMark(txns1.values()));
+    assertAndClear(txns.values());
 
     // Now create Object Sync txn for 7,8,9
     syncTxns = createTxns(1, 7, 3, true);
     rtm.addObjectSyncTransaction((ServerTransaction) syncTxns.values().iterator().next());
 
-    // One Compound Transaction containing the object DNA for 7 and the delta DNA should be sent to the
-    // transactionalObjectManager
+    // One Compound Transaction containing the object DNA for 7 and object DNA and the delta DNA for 8,9 should be sent
+    // to the transactionalObjectManager
     assertTrue(txnMgr.incomingTxns.size() == 1);
     gotTxn = (ServerTransaction) txnMgr.incomingTxns.remove(0);
     List changes = gotTxn.getChanges();
-    assertEquals(4, changes.size());
+    assertEquals(5, changes.size());
     DNA dna = (DNA) changes.get(0);
     assertEquals(new ObjectID(7), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
     dna = (DNA) changes.get(1);
-    assertEquals(new ObjectID(7), dna.getObjectID());
-    assertTrue(dna.isDelta()); // Change to that object
-    dna = (DNA) changes.get(2);
     assertEquals(new ObjectID(8), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
+    dna = (DNA) changes.get(2);
+    assertEquals(new ObjectID(8), dna.getObjectID());
+    assertTrue(dna.isDelta()); // Change to that object
     dna = (DNA) changes.get(3);
     assertEquals(new ObjectID(9), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
+    dna = (DNA) changes.get(4);
+    assertEquals(new ObjectID(9), dna.getObjectID());
+    assertTrue(dna.isDelta()); // Change to that object
+  }
 
+  private GlobalTransactionID getNextLowWaterMark(Collection txns) {
+    GlobalTransactionID lwm = GlobalTransactionID.NULL_ID;
+    for (Iterator i = txns.iterator(); i.hasNext();) {
+      ServerTransaction txn = (ServerTransaction) i.next();
+      if (lwm.toLong() < txn.getGlobalTransactionID().toLong()) {
+        lwm = txn.getGlobalTransactionID();
+      }
+    }
+    return lwm.next();
   }
 
   private void assertContainsAllVersionizedAndRemove(ServerTransaction expected, ServerTransaction got) {
@@ -180,12 +195,6 @@ public class ReplicatedTransactionManagerTest extends TestCase {
   private void assertAndClear(Collection txns) {
     assertEquals(new ArrayList(txns), txnMgr.incomingTxns);
     txnMgr.incomingTxns.clear();
-  }
-
-  private void assertAndClear(Collection txns, Set completedTxnIDs) {
-    assertAndClear(txns);
-    assertEquals(completedTxnIDs, txnMgr.completedTxns);
-    txnMgr.completedTxns.clear();
   }
 
   long bid = 0;

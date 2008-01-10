@@ -37,14 +37,16 @@ public class SessionData implements Session, SessionSupport {
   private transient ContextMgr        contextMgr;
   private transient SessionManager    sessionManager;
   private transient boolean           invalidated        = false;
+  private transient boolean           invalidating       = false;
 
   private static final ThreadLocal    request            = new ThreadLocal();
+  private static final long           NEVER_EXPIRE       = -1;
 
   protected SessionData(int maxIdleSeconds) {
     this.createTime = System.currentTimeMillis();
     this.lastAccessedTime = 0;
-    setMaxInactiveMillis(maxIdleSeconds * 1000);
-    this.timestamp = new Timestamp(this.createTime + maxIdleMillis);
+    this.timestamp = new Timestamp(System.currentTimeMillis());
+    setMaxInactiveSeconds(maxIdleSeconds);
   }
 
   void associate(SessionId sid, LifecycleEventMgr lifecycleEventMgr, ContextMgr ctxMgr, SessionManager sessionMgr) {
@@ -80,7 +82,11 @@ public class SessionData implements Session, SessionSupport {
   }
 
   public synchronized boolean isValid() {
+    if (invalidating) { return true; }
     if (invalidated) { return false; }
+
+    if (getMaxInactiveMillis() == NEVER_EXPIRE) { return true; }
+
     final boolean isValid = getIdleMillis() < getMaxInactiveMillis();
     return isValid;
   }
@@ -101,6 +107,9 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized void invalidate(boolean unlock) {
     if (invalidated) { throw new IllegalStateException("session already invalidated"); }
+    if (invalidating) { return; }
+
+    invalidating = true;
 
     try {
       eventMgr.fireSessionDestroyedEvent(this);
@@ -120,6 +129,7 @@ public class SessionData implements Session, SessionSupport {
         sessionManager.remove(this, unlock);
       } finally {
         invalidated = true;
+        invalidating = false;
       }
     }
   }
@@ -133,7 +143,7 @@ public class SessionData implements Session, SessionSupport {
   }
 
   public void setMaxInactiveInterval(int v) {
-    setMaxInactiveMillis(v * 1000);
+    setMaxInactiveSeconds(v);
     if (isValid() && v == 0) {
       invalidate();
     }
@@ -216,12 +226,25 @@ public class SessionData implements Session, SessionSupport {
     return maxIdleMillis;
   }
 
-  public int getMaxInactiveInterval() {
-    return (int) getMaxInactiveMillis() / 1000;
+  boolean neverExpires() {
+    return getMaxInactiveMillis() == NEVER_EXPIRE;
   }
 
-  private void setMaxInactiveMillis(long v) {
-    maxIdleMillis = v;
+  public int getMaxInactiveInterval() {
+    if (getMaxInactiveMillis() == NEVER_EXPIRE) { return (int) NEVER_EXPIRE; }
+
+    return (int) (getMaxInactiveMillis() / 1000L);
+  }
+
+  private synchronized void setMaxInactiveSeconds(int secs) {
+    if (secs < 0) {
+      maxIdleMillis = NEVER_EXPIRE;
+      this.timestamp.setMillis(Long.MAX_VALUE);
+      return;
+    }
+
+    maxIdleMillis = secs * 1000L;
+    this.timestamp.setMillis(System.currentTimeMillis() + maxIdleMillis);
   }
 
   public synchronized Object getInternalAttribute(String name) {

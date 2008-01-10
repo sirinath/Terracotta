@@ -434,7 +434,7 @@ public class CacheTC implements Ehcache {
       }
       applyDefaultsToElementWithoutLifespanSet(element);
 
-      memoryStore.put(element);
+      memoryStore.putData(element);
       if (elementExists) {
         registeredEventListeners.notifyElementUpdated(element, doNotNotifyCacheReplicators);
       } else {
@@ -476,7 +476,7 @@ public class CacheTC implements Ehcache {
     try {
       applyDefaultsToElementWithoutLifespanSet(element);
 
-      memoryStore.put(element);
+      memoryStore.putData(element);
     } finally {
       ManagerUtil.monitorExit(lock);
     }
@@ -1413,9 +1413,7 @@ public class CacheTC implements Ehcache {
   }
 
   private int getStoreIndex(Object key) {
-    if (this.locks.length == 1) { return 0; }
-    int hashValue = Math.abs(Util.hash(key.hashCode()));
-    return hashValue % this.locks.length;
+    return Util.hash(key, locks.length);
   }
 
   private Object getLockObject(Object key) {

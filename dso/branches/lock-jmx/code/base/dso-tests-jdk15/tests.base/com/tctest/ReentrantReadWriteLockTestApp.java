@@ -47,10 +47,10 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
   private final List                   queue                    = new LinkedList();
   private final Random                 random;
 
-  private int                          numOfPutters             = 1;
-  private int                          numOfGetters;
+  private final int                    numOfPutters             = 1;
+  private final int                    numOfGetters;
   private final boolean                isCrashTest;
-  
+
   public ReentrantReadWriteLockTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
@@ -72,7 +72,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
         DebugUtil.DEBUG = true;
       }
       barrier.await();
-      
+
       unsharedToSharedTest(index, new ReentrantReadWriteLock());
 
       readWriteLockTest(index, nonFairReadWriteLockRoot, nonFairCondition);
@@ -91,6 +91,46 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
     } catch (Throwable t) {
       notifyError(t);
     }
+  }
+
+  private void tryLockTest(int index, ReentrantReadWriteLock lock) throws Exception {
+    printTimeStamp(index, "tryLockTest");
+
+    final ReadLock readLock = lock.readLock();
+    final WriteLock writeLock = lock.writeLock();
+
+    if (index == 0) {
+      writeLock.lock();
+      barrier2.await();
+      try {
+        Thread.sleep(10000);
+      } finally {
+        writeLock.unlock();
+      }
+      barrier2.await();
+    } else {
+      barrier2.await();
+      int count = 0;
+      for (int i = 0; i < 10; i++) {
+        if (!readLock.tryLock()) {
+          if (lock.isWriteLocked()) {
+            count++;
+          }
+        }
+      }
+      Assert.assertEquals(10, count);
+      barrier2.await();
+      count = 0;
+      for (int i = 0; i < 10; i++) {
+        if (!readLock.tryLock()) {
+          if (lock.isWriteLocked()) {
+            count++;
+          }
+        }
+      }
+      Assert.assertEquals(10, count);
+    }
+    barrier.await();
   }
 
   private void readWriteLockTest(int index, ReentrantReadWriteLock readWriteLock, Condition condition) throws Exception {
@@ -116,11 +156,13 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
     basicConditionVariableTesting(index, readWriteLock.writeLock(), condition);
     basicConditionVariableWaitTesting(index, readWriteLock, condition);
     singleNodeConditionVariableTesting(index, readWriteLock.writeLock(), condition);
+
+    tryLockTest(index, readWriteLock);
   }
 
   private void unsharedToSharedTest(int index, ReentrantReadWriteLock lock) throws Exception {
     printTimeStamp(index, "unsharedToSharedTest");
-    
+
     if (index == 1) {
       ReadLock readLock = lock.readLock();
       readLock.lock();
@@ -676,7 +718,8 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
       assertTryLockResult(!isLocked);
       unLockIfLocked(readLock, isLocked);
       if (DebugUtil.DEBUG) {
-        System.err.println("Client " + ManagerUtil.getClientID() + " in tryReadLockMultiNodeTest last test, isLocked: " + isLocked);
+        System.err.println("Client " + ManagerUtil.getClientID() + " in tryReadLockMultiNodeTest last test, isLocked: "
+                           + isLocked);
       }
     }
     barrier.await();
@@ -727,12 +770,12 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
 
     if (index == 0) {
       final CyclicBarrier localBarrier = new CyclicBarrier(3);
-      final List queue = new LinkedList();
+      final List localQueue = new LinkedList();
 
       Thread t1 = new Thread(new Runnable() {
         public void run() {
           try {
-            doPutter(1, lock, condition, queue, 1);
+            doPutter(1, lock, condition, localQueue, 1);
             localBarrier.await();
           } catch (Exception e) {
             throw new AssertionError(e);
@@ -743,7 +786,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
       Thread t2 = new Thread(new Runnable() {
         public void run() {
           try {
-            doGetter(2, lock, condition, queue);
+            doGetter(2, lock, condition, localQueue);
             localBarrier.await();
           } catch (Exception e) {
             throw new AssertionError(e);
@@ -773,14 +816,14 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
     barrier.await();
   }
 
-  private void doPutter(long id, WriteLock lock, Condition condition, List queue, int numOfGetters) throws Exception {
+  private void doPutter(long id, WriteLock lock, Condition condition, List Q, int getters) throws Exception {
     Thread.currentThread().setName("PUTTER-" + id);
 
     for (int i = 0; i < NUM_OF_PUTS; i++) {
       lock.lock();
       try {
         System.err.println("PUTTER-" + id + " Putting " + i);
-        queue.add(new WorkItem(String.valueOf(i)));
+        Q.add(new WorkItem(String.valueOf(i)));
         if (i % 2 == 0) {
           condition.signalAll();
         } else {
@@ -791,10 +834,10 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
       }
     }
 
-    for (int i = 0; i < numOfGetters; i++) {
+    for (int i = 0; i < getters; i++) {
       lock.lock();
       try {
-        queue.add(WorkItem.STOP);
+        Q.add(WorkItem.STOP);
         condition.signalAll();
       } finally {
         lock.unlock();
@@ -802,7 +845,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
     }
   }
 
-  private void doGetter(long id, WriteLock lock, Condition condition, List queue) throws Exception {
+  private void doGetter(long id, WriteLock lock, Condition condition, List Q) throws Exception {
     Thread.currentThread().setName("GETTER-" + id);
 
     int i = 0;
@@ -810,7 +853,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
       lock.lock();
       lock.lock();
       try {
-        while (queue.size() == 0) {
+        while (Q.size() == 0) {
           int choice = i % 4;
           switch (choice) {
             case 0:
@@ -830,7 +873,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
           }
           i++;
         }
-        WorkItem wi = (WorkItem) queue.remove(0);
+        WorkItem wi = (WorkItem) Q.remove(0);
         if (wi.isStop()) { return; }
         System.err.println("GETTER- " + id + " removes " + wi);
 
@@ -1072,7 +1115,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
 
   private void basicTryReadLockTest(int index, ReentrantReadWriteLock lock) throws Exception {
     printTimeStamp(index, "basicTryReadLockTest");
-    
+
     final ReadLock readLock = lock.readLock();
     boolean isLocked = readLock.tryLock();
     try {
@@ -1086,7 +1129,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
 
   private void basicSingleNodeReadThenWriteLockingTest(int index, ReentrantReadWriteLock lock) throws Exception {
     printTimeStamp(index, "basicSingleNodeReadThenWriteLockingTest");
-    
+
     final ReadLock readLock = lock.readLock();
     final WriteLock writeLock = lock.writeLock();
 
@@ -1220,7 +1263,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
 
     barrier.await();
   }
-  
+
   private void unLockIfLocked(Lock lock, boolean isLocked) {
     if (isLocked) {
       lock.unlock();
@@ -1232,12 +1275,12 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
       Assert.assertTrue(isLocked);
     }
   }
-  
+
   private void printTimeStamp(int index, String methodName) throws Exception {
     if (index == 0) {
       System.err.println("Running method " + methodName + " -- time: " + (new Date()));
     }
-    
+
     barrier.await();
   }
 
@@ -1278,6 +1321,11 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
     public synchronized void setLock(ReentrantReadWriteLock lock) {
       this.lock = lock;
     }
+
+    public synchronized ReentrantReadWriteLock getLock() {
+      return lock;
+    }
+
   }
 
   private static class WorkItem {

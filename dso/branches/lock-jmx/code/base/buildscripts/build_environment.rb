@@ -22,15 +22,19 @@ class BuildEnvironment < Environment
       super(platform)
       @config_source = config_source
       @build_timestamp = Time.now
-      begin
-          @svninfo = YAML::load(platform.exec("svn", "info", root_dir))
-      rescue            
-          @svninfo = {}
-          @svninfo["Last Changed Rev"] = "00"
-          @svninfo["Last Changed Author"] = "unknown-author"
-          @svninfo["Last Changed Date"] = "unknown-date"
-          @svninfo["URL"] = "unknown-url"
-      end
+      @svninfo = {}
+      @svninfo["Last Changed Rev"] = "00"
+      @svninfo["Last Changed Author"] = "unknown-author"
+      @svninfo["Last Changed Date"] = "unknown-date"
+      @svninfo["URL"] = "unknown-url"            
+      svn_info = `svn info '#{root_dir}'`
+      if $? == 0 && !svn_info.blank?        
+        begin
+          @svninfo.merge!(YAML::load(svn_info))
+        rescue
+          # ignore
+        end
+      end      
   end
 
   # What's the latest revision on the local source base?
@@ -57,16 +61,16 @@ class BuildEnvironment < Environment
   # if not, try to parse from "svn info" command
   def current_branch
       return @branch unless @branch.blank?
-      if @branch.nil?
+      if @branch.nil? && !@svninfo["URL"].nil?
           case @svninfo["URL"]
               when /trunk/: @branch="trunk"
               when /branches\/private\/([^\/]+)/: @branch = $1
               when /branches\/([^\/]+)/: @branch = $1
               when /tags\/([^\/]+)/: @branch = $1
-              else @branch = @config_source["branch"] || "branch-unknown"
-          end
-      end
-      @branch
+              else @branch = @config_source["branch"]
+          end              
+      end      
+      @branch || "branch-unkown"
   end
 
   
@@ -93,7 +97,7 @@ class BuildEnvironment < Environment
   # property is set in the configuration source supplied in the constructor.
   def version
     return @version unless @version.nil?
-    @version = @config_source['version'] || current_branch || 'unknown'        
+    @version = @config_source['version'] || current_branch.to_s + "-revrevision" || 'unknown'        
     @version.gsub!(/revision/, current_revision.to_s)    
     @version
   end
