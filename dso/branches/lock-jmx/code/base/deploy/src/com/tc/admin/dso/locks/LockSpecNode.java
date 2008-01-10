@@ -26,7 +26,7 @@ public class LockSpecNode extends BasicLockNode {
     }
     fChildren = list.toArray(new LockTraceElementNode[0]);
 
-    fLabel = getName();
+    fLabel = fLockSpec.getLockID().asString();
     String objectType = fLockSpec.getObjectType();
     if(objectType != null && objectType.length() > 0) {
       fLabel += " (" + objectType + ")";
@@ -38,7 +38,7 @@ public class LockSpecNode extends BasicLockNode {
   }
 
   public String getName() {
-    return fLockSpec.getLockID().asString();
+    return fLabel;
   }
 
   public LockStats getStats() {

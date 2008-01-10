@@ -19,6 +19,14 @@ public class ServerLockTableModel extends XObjectTableModel {
       "<html>Average<br>Held Time</html>"             };
   static protected String[]                cFields     = { "Name", "Requested", "Hops", "Waiters", "AcquireTime",
       "HeldTime"                                      };
+  static protected String[]                cTips       = { "Lock identifier",
+      "<html>Number of times this lock<br>was requested</html>",
+      "<html>Times an acquired greedy lock was<br>retracted from holding client and<br>granted to another</html>",
+      "<html>Average number of threads wishing<br>to acquire this lock at the time<br>it was granted</html>",
+      "<html>Average time between lock<br>request and grant</html>",
+      "<html>Average time grantee held<br>this lock</html>",
+      "<html>Average number of outstanding<br>locks held by acquiring thread<br>at grant time</html>" };
+
   public static final ServerLockTableModel EMPTY_MODEL = new ServerLockTableModel();
 
   public ServerLockTableModel() {
@@ -39,7 +47,11 @@ public class ServerLockTableModel extends XObjectTableModel {
       add(new LockSpecWrapper(iter.next()));
     }
   }
-  
+
+  public static String columnTip(int column) {
+    return cTips[column];
+  }
+
   public static class LockSpecWrapper {
     private LockSpec fLockSpec;
     private String   fName;
