@@ -309,4 +309,30 @@ public class TestL2 extends TestXmlObject implements Server {
 
   }
 
+  public String getStatistics() {
+    throw new ImplementMe();
+  }
+
+  public boolean isSetStatistics() {
+    throw new ImplementMe();
+  }
+
+  public void setStatistics(String arg0) {
+    throw new ImplementMe();
+    
+  }
+
+  public void unsetStatistics() {
+    throw new ImplementMe();
+    
+  }
+
+  public Path xgetStatistics() {
+    throw new ImplementMe();
+  }
+
+  public void xsetStatistics(Path arg0) {
+    throw new ImplementMe();
+    
+  }
 }

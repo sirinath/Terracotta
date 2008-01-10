@@ -13,6 +13,8 @@ import com.terracottatech.config.Modules;
 public interface NewCommonL1Config extends NewConfig {
 
   FileConfigItem logsPath();
+  
+  FileConfigItem statisticsPath();
 
   Modules modules();
 
