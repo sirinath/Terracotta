@@ -28,7 +28,7 @@ public class SRASystemPropertiesTest extends TestCase {
     assertNull(data.getElement());
     Properties props = new Properties();
     props.load(new ByteArrayInputStream(((String)data.getData()).getBytes("ISO-8859-1")));
-    
+
     Properties sysprops = System.getProperties();
     assertEquals(props, sysprops);
   }

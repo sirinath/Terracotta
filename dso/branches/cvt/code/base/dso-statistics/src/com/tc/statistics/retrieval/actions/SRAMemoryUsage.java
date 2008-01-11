@@ -13,16 +13,16 @@ import com.tc.statistics.retrieval.StatisticType;
 import java.util.Date;
 
 public class SRAMemoryUsage implements StatisticRetrievalAction {
-  public final static String ELEMENT_FREE ="free";
-  public final static String ELEMENT_USED ="used";
-  public final static String ELEMENT_MAX ="max";
-  
+  public final static String ELEMENT_FREE = "free";
+  public final static String ELEMENT_USED = "used";
+  public final static String ELEMENT_MAX = "max";
+
   private JVMMemoryManager manager;
-  
+
   public SRAMemoryUsage() {
     manager = TCRuntime.getJVMMemoryManager();
   }
-  
+
   public StatisticType getType() {
     return StatisticType.SNAPSHOT;
   }
@@ -31,9 +31,9 @@ public class SRAMemoryUsage implements StatisticRetrievalAction {
     Date moment = new Date();
     MemoryUsage usage = manager.getMemoryUsage();
     return new StatisticData[] {
-        StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_FREE, new Long(usage.getFreeMemory())),
-        StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_USED, new Long(usage.getUsedMemory())),
-        StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_MAX, new Long(usage.getMaxMemory()))
-      };
+      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_FREE, new Long(usage.getFreeMemory())),
+      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_USED, new Long(usage.getUsedMemory())),
+      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_MAX, new Long(usage.getMaxMemory()))
+    };
   }
 }

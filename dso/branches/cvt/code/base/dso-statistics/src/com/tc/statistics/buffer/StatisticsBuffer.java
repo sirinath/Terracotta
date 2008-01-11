@@ -10,8 +10,12 @@ import java.util.Date;
 
 public interface StatisticsBuffer {
   public void open() throws TCStatisticsBufferException;
+
   public void close() throws TCStatisticsBufferException;
+
   public long createCaptureSession(Date start) throws TCStatisticsBufferException;
+
   public long storeStatistic(long sessionId, StatisticData data) throws TCStatisticsBufferException;
+
   public void consumeStatistics(long sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
 }

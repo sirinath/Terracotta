@@ -3,8 +3,6 @@
  */
 package com.tc.statistics.retrieval.impl;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
-
 import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -25,21 +23,23 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
+
 public class StatisticsRetrieverImpl implements StatisticsRetriever {
   private final StatisticsBuffer buffer;
   private final Map actionsMap;
-  
+
   private long schedulePeriod = 1000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
-  
+
   private long sessionId;
-  
+
   public StatisticsRetrieverImpl(StatisticsBuffer buffer, long sessionId) {
     Assert.assertNotNull("buffer", buffer);
     this.buffer = buffer;
     this.sessionId = sessionId;
-    
+
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();
@@ -51,12 +51,23 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
     actionsMap = Collections.unmodifiableMap(actions_map_construction);
   }
 
+  public void removeAllActions() {
+    Iterator actions_entry_it = actionsMap.entrySet().iterator();
+    while (actions_entry_it.hasNext()) {
+      Map.Entry actions_entry = (Map.Entry)actions_entry_it.next();
+      List actions = (List)actions_entry.getValue();
+      actions.clear();
+    }
+  }
+
   public void registerAction(StatisticRetrievalAction action) {
     if (null == action) return;
     if (null == action.getType()) Assert.fail("Can't register an action with a null type.");
-    
+
     List action_list = (List)actionsMap.get(action.getType());
-    if (null == action_list) Assert.fail("the actionsMap doesn't contain an entry for the statistic type '"+action.getType()+"'");
+    if (null == action_list) {
+      Assert.fail("the actionsMap doesn't contain an entry for the statistic type '" + action.getType() + "'");
+    }
     action_list.add(action);
   }
 
@@ -70,15 +81,15 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
     disableTimer();
     retrieveShutdownMarker();
   }
-  
+
   private void retrieveStartupMarker() {
     retrieveAction(new SRAStartupTimestamp());
   }
-  
+
   private void retrieveShutdownMarker() {
     retrieveAction(new SRAShutdownTimestamp());
   }
-  
+
   private void retrieveStartupStatistics() {
     List action_list = (List)actionsMap.get(StatisticType.STARTUP);
     Assert.assertNotNull("list of startup actions", action_list);
@@ -87,7 +98,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       retrieveAction((StatisticRetrievalAction)actions_it.next());
     }
   }
-  
+
   private void retrieveAction(StatisticRetrievalAction action) {
     StatisticData[] data = action.retrieveStatisticData();
     if (data != null) {
@@ -96,7 +107,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       }
     }
   }
-  
+
   private void bufferData(StatisticData data) {
     try {
       buffer.storeStatistic(sessionId, data);
@@ -104,18 +115,18 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       throw new TCRuntimeException(e);
     }
   }
-  
+
   private synchronized void enableTimer() {
     if (timer != null &&
         task != null) {
       disableTimer();
     }
-    
+
     timer = new TCTimerImpl("Statistics Retriever Timer", true);
     task = new RetrieveStatsTask();
     timer.scheduleAtFixedRate(task, 0, schedulePeriod);
   }
-  
+
   private synchronized void disableTimer() {
     if (timer != null &&
         task != null) {
@@ -125,7 +136,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       timer = null;
     }
   }
-  
+
   private class RetrieveStatsTask extends TimerTask {
     public void run() {
       List action_list = (List)actionsMap.get(StatisticType.SNAPSHOT);
