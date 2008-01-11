@@ -18,15 +18,14 @@ public class SRASystemProperties implements StatisticRetrievalAction {
     return StatisticType.STARTUP;
   }
 
-  public StatisticData retrieveStatisticData() {
+  public StatisticData[] retrieveStatisticData() {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     Properties properties = System.getProperties();
     try {
       properties.store(out, null);
-      System.out.println(out.toString("ISO-8859-1"));
-      return StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(), out.toString("ISO-8859-1"));
+      return new StatisticData[] {StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(), out.toString("ISO-8859-1"))};
     } catch (IOException e) {
-      throw new TCRuntimeException(e);
+      throw new TCRuntimeException("Unexpected error while storing the system properties.", e);
     }
   }
 }

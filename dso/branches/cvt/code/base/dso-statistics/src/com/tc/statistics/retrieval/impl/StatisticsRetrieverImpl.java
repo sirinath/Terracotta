@@ -12,6 +12,8 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.retrieval.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.StatisticType;
 import com.tc.statistics.retrieval.StatisticsRetriever;
+import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
+import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
 import com.tc.util.Assert;
 import com.tc.util.TCTimerImpl;
 
@@ -51,6 +53,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
 
   public void registerAction(StatisticRetrievalAction action) {
     if (null == action) return;
+    if (null == action.getType()) Assert.fail("Can't register an action with a null type.");
     
     List action_list = (List)actionsMap.get(action.getType());
     if (null == action_list) Assert.fail("the actionsMap doesn't contain an entry for the statistic type '"+action.getType()+"'");
@@ -58,12 +61,22 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
   }
 
   public void startup() {
+    retrieveStartupMarker();
     retrieveStartupStatistics();
     enableTimer();
   }
 
   public void shutdown() {
     disableTimer();
+    retrieveShutdownMarker();
+  }
+  
+  private void retrieveStartupMarker() {
+    retrieveAction(new SRAStartupTimestamp());
+  }
+  
+  private void retrieveShutdownMarker() {
+    retrieveAction(new SRAShutdownTimestamp());
   }
   
   private void retrieveStartupStatistics() {
@@ -76,8 +89,12 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
   }
   
   private void retrieveAction(StatisticRetrievalAction action) {
-    StatisticData data = action.retrieveStatisticData();
-    bufferData(data);
+    StatisticData[] data = action.retrieveStatisticData();
+    if (data != null) {
+      for (int i = 0; i < data.length; i++) {
+        bufferData(data[i]);
+      }
+    }
   }
   
   private void bufferData(StatisticData data) {

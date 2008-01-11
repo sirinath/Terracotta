@@ -1,7 +1,7 @@
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
-package com.tctest.statistics;
+package com.tctest.statistics.buffer.h2;
 
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
@@ -155,7 +155,6 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid1 = buffer.storeStatistic(sessionid1, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
-      .element(0)
       .name("the stat")
       .data("stuff"));
     assertEquals(1, statid1);
@@ -163,7 +162,6 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid2 = buffer.storeStatistic(sessionid1, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
-      .element(0)
       .name("the stat")
       .data("stuff2"));
     assertEquals(2, statid2);
@@ -173,7 +171,6 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid3 = buffer.storeStatistic(sessionid2, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
-      .element(0)
       .name("the stat 2")
       .data("stuff3"));
     assertEquals(3, statid3);

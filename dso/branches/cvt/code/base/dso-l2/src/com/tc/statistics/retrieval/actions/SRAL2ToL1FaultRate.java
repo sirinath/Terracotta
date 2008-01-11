@@ -25,8 +25,8 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
     return StatisticType.SNAPSHOT;
   }
 
-  public StatisticData retrieveStatisticData() {
+  public StatisticData[] retrieveStatisticData() {
     TimeStampedCounterValue value = counter.getMostRecentSample();
-    return StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(value.getTimestamp()), new Long(value.getCounterValue()));
+    return new StatisticData[] {StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(value.getTimestamp()), new Long(value.getCounterValue()))};
   }
 }

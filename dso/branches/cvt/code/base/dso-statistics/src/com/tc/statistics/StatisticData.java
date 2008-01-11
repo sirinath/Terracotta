@@ -19,28 +19,41 @@ public class StatisticData implements Serializable {
   private String agentIp;
   private Date moment;
   private String name;
-  private int element;
+  private String element;
   private Object data;
   
   public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, Long value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, value);
+    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
   }
   
   public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, value);
+    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
   }
   
   public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, Date value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, value);
+    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
   }
   
-  private static StatisticData _buildInstanceForClassAtLocalhost(Class klass, Date moment, Object value) {
+  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Long value) {
+    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  }
+  
+  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, String value) {
+    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  }
+  
+  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Date value) {
+    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  }
+  
+  private static StatisticData _buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Object value) {
     try {
       return new StatisticData()
+        .moment(moment)
         .name(ClassUtils.getShortClassName(klass))
         .agentIp(InetAddress.getLocalHost().getHostAddress())
-        .data(value)
-        .moment(moment);
+        .element(element)
+        .data(value);
     } catch (UnknownHostException e) {
       throw new TCRuntimeException(e);
     }
@@ -58,7 +71,7 @@ public class StatisticData implements Serializable {
     return name;
   }
   
-  public int getElement() {
+  public String getElement() {
     return element;
   }
   
@@ -93,11 +106,11 @@ public class StatisticData implements Serializable {
     return this;
   }
   
-  public void setElement(int element) {
+  public void setElement(String element) {
     this.element = element;
   }
   
-  public StatisticData element(int element) {
+  public StatisticData element(String element) {
     setElement(element);
     return this;
   }
@@ -133,6 +146,15 @@ public class StatisticData implements Serializable {
   
   public StatisticData data(Date data) {
     return data((Object)data);
+  }
+  
+  public Object clone() {
+    return new StatisticData()
+      .agentIp(agentIp)
+      .moment(moment)
+      .name(name)
+      .element(element)
+      .data(data);
   }
   
   public String toString() {

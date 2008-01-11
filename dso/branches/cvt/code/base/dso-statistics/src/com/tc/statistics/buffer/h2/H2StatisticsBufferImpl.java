@@ -98,7 +98,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
                     "agentip VARCHAR(39) NOT NULL, "+
                     "moment TIMESTAMP NOT NULL, "+
                     "statname VARCHAR(255) NOT NULL,"+
-                    "statelement INT NULL, "+
+                    "statelement VARCHAR(255) NULL, "+
                     "datanumber BIGINT NULL, "+
                     "datatext TEXT NULL, "+
                     "datatimestamp TIMESTAMP NULL, "+
@@ -206,7 +206,11 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
           statement.setString(3, data.getAgentIp());
           statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
           statement.setString(5, data.getName());
-          statement.setInt(6, data.getElement());
+          if (null == data.getElement()) {
+            statement.setNull(6, Types.VARCHAR);
+          } else {
+            statement.setString(6, data.getElement());
+          }
           if (null == data.getData()) {
             statement.setNull(7, Types.BIGINT);            
             statement.setNull(8, Types.VARCHAR);
@@ -273,7 +277,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
                     .agentIp(resultSet.getString("agentip"))
                     .moment(resultSet.getTimestamp("moment"))
                     .name(resultSet.getString("statname"))
-                    .element(resultSet.getInt("statelement"));
+                    .element(resultSet.getString("statelement"));
                   
                   long datanumber = resultSet.getLong("datanumber");
                   if (!resultSet.wasNull()) {

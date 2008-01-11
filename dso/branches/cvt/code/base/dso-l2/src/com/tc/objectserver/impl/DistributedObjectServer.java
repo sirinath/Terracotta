@@ -171,9 +171,7 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
-import com.tc.statistics.retrieval.actions.SRAMemoryUsageFree;
-import com.tc.statistics.retrieval.actions.SRAMemoryUsageUsed;
-import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
@@ -748,9 +746,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     StatisticsRetriever retriever = new StatisticsRetrieverImpl(statisticsBuffer, sessionId); // HACK: sessionId is a hack for now
     retriever.registerAction(new SRAL2ToL1FaultRate(managementContext.getServerStats())); // HACK: actions should be configurable per session
-    retriever.registerAction(new SRAMemoryUsageFree());
-    retriever.registerAction(new SRAMemoryUsageUsed());
-    retriever.registerAction(new SRASystemProperties());
+    retriever.registerAction(new SRAMemoryUsage());
     retriever.startup();
 
     if (networkedHA) {

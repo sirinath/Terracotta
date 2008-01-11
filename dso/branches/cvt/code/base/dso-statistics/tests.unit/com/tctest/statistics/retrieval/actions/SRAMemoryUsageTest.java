@@ -1,0 +1,93 @@
+/*
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ */
+package com.tctest.statistics.retrieval.actions;
+
+import com.tc.statistics.StatisticData;
+import com.tc.statistics.retrieval.StatisticRetrievalAction;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
+
+import java.net.InetAddress;
+import java.util.Date;
+
+import junit.framework.TestCase;
+
+public class SRAMemoryUsageTest extends TestCase {
+  public void testRetrieval() throws Exception {
+    StatisticRetrievalAction action = new SRAMemoryUsage();
+    
+    Date before1 = new Date();
+    StatisticData[] data1 = action.retrieveStatisticData();
+    Date after1 = new Date();
+
+    long[] values1 = assertMemUsageData(data1, before1, after1);
+    long free1 = values1[0];
+    long used1 = values1[1];
+    long max1 = values1[2];
+    
+    int memsize = 1024*1024*10;
+    byte[] mem = new byte[memsize];
+    
+    Date before2 = new Date();
+    StatisticData[] data2 = action.retrieveStatisticData();
+    Date after2 = new Date();
+    
+    long[] values2 = assertMemUsageData(data2, before2, after2);
+    long free2 = values2[0];
+    long used2 = values2[1];
+    long max2 = values2[2];
+
+    assertTrue(free1 - free2 >= memsize);
+    assertTrue(used2 - used1 >= memsize);
+    assertEquals(max1, max2);
+    
+    mem = null;
+    
+    System.gc();
+    Thread.sleep(500);
+    System.gc();
+    Thread.sleep(500);
+    
+    Date before3 = new Date();
+    StatisticData[] data3 = action.retrieveStatisticData();
+    Date after3 = new Date();
+    
+    long[] values3 = assertMemUsageData(data3, before3, after3);
+    long free3 = values3[0];
+    long used3 = values3[1];
+    long max3 = values3[2];
+
+    assertTrue(free3 - free2 >= memsize);
+    assertTrue(used2 - used3 >= memsize);
+    assertEquals(max3, max2);
+  }
+  
+  private long[] assertMemUsageData(StatisticData[] data, Date before, Date after) throws Exception {
+    long[] values = new long[3];
+    for (int i = 0; i < data.length; i++) {
+      assertEquals("SRAMemoryUsage", data[i].getName());
+      assertEquals(InetAddress.getLocalHost().getHostAddress(), data[i].getAgentIp());
+      assertTrue(before.compareTo(data[i].getMoment()) <= 0);
+      assertTrue(after.compareTo(data[i].getMoment()) >= 0);
+      switch (i) {
+        case 0:
+          assertEquals(SRAMemoryUsage.ELEMENT_FREE, data[i].getElement());
+          values[0] = ((Long)data[i].getData()).longValue();
+          break;
+        case 1:
+          assertEquals(SRAMemoryUsage.ELEMENT_USED, data[i].getElement());
+          values[1] = ((Long)data[i].getData()).longValue();
+          break;
+        case 2:
+          assertEquals(SRAMemoryUsage.ELEMENT_MAX, data[i].getElement());
+          values[2] = ((Long)data[i].getData()).longValue();
+          break;
+        default:
+          fail();
+          break;
+      }
+    }
+    
+    return values;
+  }
+}
