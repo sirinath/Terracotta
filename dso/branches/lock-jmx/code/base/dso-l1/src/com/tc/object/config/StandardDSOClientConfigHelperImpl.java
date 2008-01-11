@@ -25,6 +25,7 @@ import com.tc.geronimo.transform.HostGBeanAdapter;
 import com.tc.geronimo.transform.MultiParentClassLoaderAdapter;
 import com.tc.geronimo.transform.ProxyMethodInterceptorAdapter;
 import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
+import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
@@ -660,6 +661,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec.addAlwaysLogSpec(SerializationUtil.URL_SET_SIGNATURE);
 
+    spec = getOrCreateSpec("java.util.Calendar");
+    spec = getOrCreateSpec("java.util.GregorianCalendar");
+    spec.setHonorTransient(true);
+
     /**
      * // ---------------------------- // implicit config-bundle - JAG // ----------------------------
      * addPermanentExcludePattern("java.util.WeakHashMap+"); addPermanentExcludePattern("java.lang.ref.*");
@@ -755,6 +760,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     ld.commit();
     addLock("* test.event.*.setTextArea(..)", ld);
 
+    // hard code junk for Axis2 problem (CDV-525)
+    addCustomAdapter("org.codehaus.jam.internal.reflect.ReflectClassBuilder", new ReflectClassBuilderAdapter());
+
     /**
      * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- //
      * doAutoconfigForSpring(); // doAutoconfigForSpringWebFlow();
@@ -795,7 +803,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (WeblogicHelper.isWeblogicPresent()) {
       if (WeblogicHelper.isSupportedVersion()) {
         addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
-        
+
         addCustomAdapter("weblogic.Server", new ServerAdapter());
         addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
         addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
@@ -894,7 +902,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
       spec.markPreInstrumented();
+      spec.setPreCreateMethod("validateInUnLockState");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
+      spec.setPreCreateMethod("validateInUnLockState");
       spec.markPreInstrumented();
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
