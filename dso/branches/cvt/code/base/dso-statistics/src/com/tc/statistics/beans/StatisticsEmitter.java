@@ -4,13 +4,11 @@
  */
 package com.tc.statistics.beans;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
-
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.StatisticsBuffer;
+import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.util.TCTimerImpl;
 
@@ -21,25 +19,28 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
+
 public class StatisticsEmitter extends AbstractTerracottaMBean implements StatisticsEmitterMBean {
-  private static final String                  STATISTICS_EVENT_TYPE = "tc.statistics.event";
+  private static final String STATISTICS_EVENT_TYPE = "tc.statistics.event";
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
+
   static {
     final String[] notifTypes = new String[] { STATISTICS_EVENT_TYPE };
     final String name = Notification.class.getName();
     final String description = "Each notification sent contains a Terracotta statistics event";
     NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
   }
-  
+
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
-  
-  private final StatisticsBuffer buffer; 
+
+  private final StatisticsBuffer buffer;
   private final long sessionId; // HACK: properly implement support for different sessions
 
   private long schedulePeriod = 10000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
-  
+
   public StatisticsEmitter(StatisticsBuffer buffer, long sessionId) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
     this.buffer = buffer;
@@ -57,18 +58,18 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
       disableTimer();
     }
   }
-  
+
   private synchronized void enableTimer() {
     if (timer != null &&
         task != null) {
       disableTimer();
     }
-    
+
     timer = new TCTimerImpl("Statistics Emitter Timer", true);
     task = new SendStatsTask();
     timer.scheduleAtFixedRate(task, 0, schedulePeriod);
   }
-  
+
   private synchronized void disableTimer() {
     if (timer != null &&
         task != null) {
@@ -81,7 +82,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
 
   public void reset() {
   }
-  
+
   private class SendStatsTask extends TimerTask {
     public void run() {
       boolean has_listeners = hasListeners();

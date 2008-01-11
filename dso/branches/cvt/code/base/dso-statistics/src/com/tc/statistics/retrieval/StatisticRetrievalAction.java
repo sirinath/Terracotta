@@ -7,5 +7,6 @@ import com.tc.statistics.StatisticData;
 
 public interface StatisticRetrievalAction {
   public StatisticData[] retrieveStatisticData();
+
   public StatisticType getType();
 }

@@ -4,8 +4,8 @@
 package com.tctest.statistics.buffer.h2;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.StatisticsBuffer;
+import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferNotReadyException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
@@ -21,17 +21,17 @@ import junit.framework.TestCase;
 
 public class H2StatisticsBufferTest extends TestCase {
   private StatisticsBuffer buffer;
-  
+
   public void setUp() throws Exception {
     File tmpDir = new TempDirectoryHelper(getClass(), true).getDirectory();
     buffer = new H2StatisticsBufferImpl(tmpDir);
     buffer.open();
   }
-  
+
   public void tearDown() throws Exception {
     buffer.close();
   }
-  
+
   public void testInvalidBufferDirectory() throws Exception {
     try {
       new H2StatisticsBufferImpl(null);
@@ -60,7 +60,7 @@ public class H2StatisticsBufferTest extends TestCase {
     } finally {
       tmpDir.delete();
     }
-    
+
     tmpDir = new TempDirectoryHelper(getClass(), true).getDirectory();
     tmpDir.setReadOnly();
     try {
@@ -72,7 +72,7 @@ public class H2StatisticsBufferTest extends TestCase {
       tmpDir.delete();
     }
   }
-  
+
   public void testOpenClose() throws Exception {
     // several opens and closes are silently detected
     buffer.open();
@@ -80,15 +80,15 @@ public class H2StatisticsBufferTest extends TestCase {
     buffer.close();
     buffer.close();
   }
-  
+
   public void testCloseUnopenedBuffer() throws Exception {
     buffer.close();
-    
+
     File tmpDir = new TempDirectoryHelper(getClass(), true).getDirectory();
     StatisticsBuffer newBuffer = new H2StatisticsBufferImpl(tmpDir);
     newBuffer.close(); // should not throw an exception
   }
-  
+
   public void testCreateCaptureSessionNullDate() throws Exception {
     try {
       buffer.createCaptureSession(null);
@@ -97,7 +97,7 @@ public class H2StatisticsBufferTest extends TestCase {
       // start can't be null
     }
   }
-  
+
   public void testCreateCaptureSessionUnopenedBuffer() throws Exception {
     buffer.close();
     try {
@@ -107,13 +107,13 @@ public class H2StatisticsBufferTest extends TestCase {
       // expected
     }
   }
-  
+
   public void testCreateCaptureSession() throws Exception {
     assertEquals(1L, buffer.createCaptureSession(new Date()));
     assertEquals(2L, buffer.createCaptureSession(new Date()));
     assertEquals(3L, buffer.createCaptureSession(new Date()));
   }
-  
+
   public void testStoretatisticsDataNullAgentIp() throws Exception {
     long sessionid = buffer.createCaptureSession(new Date());
     try {
@@ -123,7 +123,7 @@ public class H2StatisticsBufferTest extends TestCase {
       // agentIp can't be null
     }
   }
-  
+
   public void testStoretatisticsDataNullData() throws Exception {
     long sessionid = buffer.createCaptureSession(new Date());
     try {
@@ -134,7 +134,7 @@ public class H2StatisticsBufferTest extends TestCase {
       // data can't be null
     }
   }
-  
+
   public void testStoreStatisticsUnopenedBuffer() throws Exception {
     long sessionid = buffer.createCaptureSession(new Date());
 
@@ -148,17 +148,17 @@ public class H2StatisticsBufferTest extends TestCase {
       // expected
     }
   }
-  
+
   public void testStoreStatistics() throws Exception {
     long sessionid1 = buffer.createCaptureSession(new Date());
-    
+
     long statid1 = buffer.storeStatistic(sessionid1, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
     assertEquals(1, statid1);
-    
+
     long statid2 = buffer.storeStatistic(sessionid1, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
@@ -167,7 +167,7 @@ public class H2StatisticsBufferTest extends TestCase {
     assertEquals(2, statid2);
 
     long sessionid2 = buffer.createCaptureSession(new Date());
-    
+
     long statid3 = buffer.storeStatistic(sessionid2, new StatisticData()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
@@ -175,7 +175,7 @@ public class H2StatisticsBufferTest extends TestCase {
       .data("stuff3"));
     assertEquals(3, statid3);
   }
-  
+
   public void testConsumeStatisticsInvalidSessionId() throws Exception {
     try {
       buffer.consumeStatistics(0, null);
@@ -184,7 +184,7 @@ public class H2StatisticsBufferTest extends TestCase {
       // session ID has to be positive
     }
   }
-  
+
   public void testConsumeStatisticsNullConsumer() throws Exception {
     try {
       buffer.consumeStatistics(1, null);
@@ -193,7 +193,7 @@ public class H2StatisticsBufferTest extends TestCase {
       // consumer can't be null
     }
   }
-  
+
   public void testConsumeStatisticsUnopenedBuffer() throws Exception {
     long sessionid = buffer.createCaptureSession(new Date());
 
@@ -205,56 +205,56 @@ public class H2StatisticsBufferTest extends TestCase {
       // expected
     }
   }
-  
+
   public void testConsumeStatistics() throws Exception {
     long sessionid1 = buffer.createCaptureSession(new Date());
     long sessionid2 = buffer.createCaptureSession(new Date());
     populateBufferWithStatistics(sessionid1, sessionid2);
-    
+
     TestStaticticConsumer consumer1 = new TestStaticticConsumer();
     buffer.consumeStatistics(sessionid1, consumer1);
     consumer1.ensureCorrectCounts(100, 50);
-    
+
     TestStaticticConsumer consumer2 = new TestStaticticConsumer();
     buffer.consumeStatistics(sessionid1, consumer2);
     consumer2.ensureCorrectCounts(0, 0);
-    
+
     TestStaticticConsumer consumer3 = new TestStaticticConsumer();
     buffer.consumeStatistics(sessionid2, consumer3);
     consumer3.ensureCorrectCounts(70, 0);
-    
+
     TestStaticticConsumer consumer4 = new TestStaticticConsumer();
     buffer.consumeStatistics(sessionid2, consumer4);
     consumer4.ensureCorrectCounts(0, 0);
   }
-  
+
   public void testConsumeStatisticsInterruptions() throws Exception {
     long sessionid1 = buffer.createCaptureSession(new Date());
     long sessionid2 = buffer.createCaptureSession(new Date());
     populateBufferWithStatistics(sessionid1, sessionid2);
-    
+
     TestStaticticConsumer consumer1 = new TestStaticticConsumer().countLimit1(1);
     buffer.consumeStatistics(sessionid1, consumer1);
     consumer1.ensureCorrectCounts(1, 0);
-    
+
     TestStaticticConsumer consumer2 = new TestStaticticConsumer().countOffset1(1).countLimit1(98);
     buffer.consumeStatistics(sessionid1, consumer2);
     consumer2.ensureCorrectCounts(98, 0);
-    
+
     TestStaticticConsumer consumer3 = new TestStaticticConsumer().countOffset1(99).countLimit2(20);
     buffer.consumeStatistics(sessionid1, consumer3);
     consumer3.ensureCorrectCounts(1, 20);
-    
+
     TestStaticticConsumer consumer4 = new TestStaticticConsumer().countOffset1(100).countOffset2(20);
     buffer.consumeStatistics(sessionid1, consumer4);
     consumer4.ensureCorrectCounts(0, 30);
   }
-  
+
   public void testConsumeStatisticsExceptions() throws Exception {
     long sessionid1 = buffer.createCaptureSession(new Date());
     long sessionid2 = buffer.createCaptureSession(new Date());
     populateBufferWithStatistics(sessionid1, sessionid2);
-    
+
     TestStaticticConsumer consumer1 = new TestStaticticConsumer().countLimit1(1).limitWithExceptions(true);
     try {
       buffer.consumeStatistics(sessionid1, consumer1);
@@ -262,8 +262,10 @@ public class H2StatisticsBufferTest extends TestCase {
     } catch (RuntimeException e) {
       assertEquals("stat1 limited", e.getMessage());
     }
-    
-    TestStaticticConsumer consumer2 = new TestStaticticConsumer().countOffset1(1).countLimit1(98).limitWithExceptions(true);
+
+    TestStaticticConsumer consumer2 = new TestStaticticConsumer().countOffset1(1)
+      .countLimit1(98)
+      .limitWithExceptions(true);
     try {
       buffer.consumeStatistics(sessionid1, consumer2);
       fail("expected exception");
@@ -271,8 +273,10 @@ public class H2StatisticsBufferTest extends TestCase {
       assertEquals("stat1 limited", e.getMessage());
     }
     consumer2.ensureCorrectCounts(98, 0);
-    
-    TestStaticticConsumer consumer3 = new TestStaticticConsumer().countOffset1(99).countLimit2(20).limitWithExceptions(true);
+
+    TestStaticticConsumer consumer3 = new TestStaticticConsumer().countOffset1(99)
+      .countLimit2(20)
+      .limitWithExceptions(true);
     try {
       buffer.consumeStatistics(sessionid1, consumer3);
       fail("expected exception");
@@ -280,8 +284,10 @@ public class H2StatisticsBufferTest extends TestCase {
       assertEquals("stat2 limited", e.getMessage());
     }
     consumer3.ensureCorrectCounts(1, 20);
-    
-    TestStaticticConsumer consumer4 = new TestStaticticConsumer().countOffset1(100).countOffset2(20).limitWithExceptions(true);
+
+    TestStaticticConsumer consumer4 = new TestStaticticConsumer().countOffset1(100)
+      .countOffset2(20)
+      .limitWithExceptions(true);
     buffer.consumeStatistics(sessionid1, consumer4);
     consumer4.ensureCorrectCounts(0, 30);
   }
@@ -302,7 +308,7 @@ public class H2StatisticsBufferTest extends TestCase {
         .name("stat2")
         .data(String.valueOf(i)));
     }
-    
+
     for (int i = 1; i <= 70; i++) {
       buffer.storeStatistic(sessionid2, new StatisticData()
         .agentIp(ip)
@@ -312,44 +318,44 @@ public class H2StatisticsBufferTest extends TestCase {
     }
     return sessionid1;
   }
-  
+
   private class TestStaticticConsumer implements StatisticsConsumer {
     private int statCount1 = 0;
     private int statCount2 = 0;
-    
+
     private int countOffset1 = 0;
     private int countOffset2 = 0;
-    
+
     private int countLimit1 = 0;
     private int countLimit2 = 0;
-    
+
     private boolean limitWithExceptions = false;
-    
+
     public TestStaticticConsumer countOffset1(int countOffset1) {
       this.countOffset1 = countOffset1;
       return this;
     }
-    
+
     public TestStaticticConsumer countOffset2(int countOffset2) {
       this.countOffset2 = countOffset2;
       return this;
     }
-    
+
     public TestStaticticConsumer countLimit1(int countLimit1) {
       this.countLimit1 = countLimit1;
       return this;
     }
-    
+
     public TestStaticticConsumer countLimit2(int countLimit2) {
       this.countLimit2 = countLimit2;
       return this;
     }
-    
+
     public TestStaticticConsumer limitWithExceptions(boolean limitWithExceptions) {
       this.limitWithExceptions = limitWithExceptions;
       return this;
     }
-    
+
     public boolean consumeStatisticData(long sessionId, StatisticData data) {
       if (data.getName().equals("stat1")) {
         if (countLimit1 > 0 &&
@@ -361,7 +367,7 @@ public class H2StatisticsBufferTest extends TestCase {
           }
         }
         statCount1++;
-        assertEquals(((Long)data.getData()).longValue(), statCount1+countOffset1);
+        assertEquals(((Long)data.getData()).longValue(), statCount1 + countOffset1);
       }
       if (data.getName().equals("stat2")) {
         if (countLimit2 > 0 &&
@@ -373,11 +379,11 @@ public class H2StatisticsBufferTest extends TestCase {
           }
         }
         statCount2++;
-        assertEquals(String.valueOf(data.getData()), String.valueOf(statCount2+countOffset2));
+        assertEquals(String.valueOf(data.getData()), String.valueOf(statCount2 + countOffset2));
       }
       return true;
     }
-    
+
     public void ensureCorrectCounts(int count1, int count2) {
       assertEquals(count1, statCount1);
       assertEquals(count2, statCount2);

@@ -16,6 +16,6 @@ public class SRAStartupTimestamp implements StatisticRetrievalAction {
 
   public StatisticData[] retrieveStatisticData() {
     Date moment = new Date();
-    return new StatisticData[] {StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, moment)};
+    return new StatisticData[] { StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, moment) };
   }
 }

@@ -21,7 +21,7 @@ public class StatisticsDataTest extends TestCase {
     assertNull(data.getElement());
     assertNull(data.getData());
   }
-  
+
   public void testFluentInterface() throws Exception {
     Date moment = new Date();
     StatisticData data = new StatisticData()
@@ -36,15 +36,15 @@ public class StatisticsDataTest extends TestCase {
     assertEquals("statname", data.getName());
     assertEquals("first", data.getElement());
     assertEquals(new Long(987983343L), data.getData());
-    
+
     data.data("datastring");
     assertEquals("datastring", data.getData());
-    
+
     Date dataDate = new Date();
     data.data(dataDate);
     assertEquals(dataDate, data.getData());
   }
-  
+
   public void testSetters() throws Exception {
     Date moment = new Date();
     StatisticData data = new StatisticData();
@@ -59,15 +59,15 @@ public class StatisticsDataTest extends TestCase {
     assertEquals("statname", data.getName());
     assertEquals("first", data.getElement());
     assertEquals(new Long(987983343L), data.getData());
-    
+
     data.setData("datastring");
     assertEquals("datastring", data.getData());
-    
+
     Date dataDate = new Date();
     data.setData(dataDate);
     assertEquals(dataDate, data.getData());
   }
-  
+
   public void testToString() throws Exception {
     Calendar moment = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
     moment.set(2008, 0, 9, 16, 25, 52);

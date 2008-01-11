@@ -20,7 +20,7 @@ public abstract class JdbcHelper {
       rs_id.close();
     }
   }
-  
+
   public static int executeUpdateQuery(final Connection connection, final String sql, final PreparedStatementHandler handler) throws SQLException {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("handler", handler);
@@ -33,12 +33,12 @@ public abstract class JdbcHelper {
       ps_update.close();
     }
   }
-  
+
   public static void executeQuery(final Connection connection, final String sql, final PreparedStatementHandler psHandler, final ResultSetHandler rsHandler) throws SQLException {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("psHandler", psHandler);
     Assert.assertNotNull("rsHandler", rsHandler);
-    
+
     PreparedStatement ps_query = connection.prepareStatement(sql);
     try {
       psHandler.setParameters(ps_query);

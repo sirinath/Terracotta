@@ -5,6 +5,10 @@ package com.tc.statistics.retrieval;
 
 public interface StatisticsRetriever {
   public void startup();
+
   public void shutdown();
+
+  public void removeAllActions();
+
   public void registerAction(StatisticRetrievalAction action);
 }

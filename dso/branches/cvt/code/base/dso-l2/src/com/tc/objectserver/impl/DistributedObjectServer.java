@@ -297,7 +297,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
 
-    long sessionId; // HACK: ugly capture session hack hack for now
+    long sessionId; // HACK: ugly capture session hack for now
     File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
     FileUtils.forceMkdir(statPath);
     statisticsBuffer = new H2StatisticsBufferImpl(statPath);
