@@ -251,9 +251,4 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
       }
     }
   }
-  
-  private void logDebug(String msg) {
-    System.err.println(msg);
-  }
-
 }
