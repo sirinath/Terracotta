@@ -9,4 +9,6 @@ public interface StatisticRetrievalAction {
   public StatisticData[] retrieveStatisticData();
 
   public StatisticType getType();
+
+  public void cleanup();
 }

@@ -52,11 +52,15 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
   }
 
   public void removeAllActions() {
-    Iterator actions_entry_it = actionsMap.entrySet().iterator();
-    while (actions_entry_it.hasNext()) {
-      Map.Entry actions_entry = (Map.Entry)actions_entry_it.next();
-      List actions = (List)actions_entry.getValue();
-      actions.clear();
+    Iterator keys_it = actionsMap.keySet().iterator();
+    while (keys_it.hasNext()) {
+      Object key = keys_it.next();
+      List previous_actions = (List)actionsMap.put(key, new CopyOnWriteArrayList());
+      Iterator action_it = previous_actions.iterator();
+      while (action_it.hasNext()) {
+        StatisticRetrievalAction action = (StatisticRetrievalAction)action_it.next();
+        action.cleanup();
+      }
     }
   }
 
@@ -80,6 +84,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
   public void shutdown() {
     disableTimer();
     retrieveShutdownMarker();
+    cleanupActions();
   }
 
   private void retrieveStartupMarker() {
@@ -88,6 +93,18 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
 
   private void retrieveShutdownMarker() {
     retrieveAction(new SRAShutdownTimestamp());
+  }
+
+  private void cleanupActions() {
+    Iterator values_it = actionsMap.values().iterator();
+    while (values_it.hasNext()) {
+      List actions = (List)values_it.next();
+      Iterator action_it = actions.iterator();
+      while (action_it.hasNext()) {
+        StatisticRetrievalAction action = (StatisticRetrievalAction)action_it.next();
+        action.cleanup();
+      }
+    }
   }
 
   private void retrieveStartupStatistics() {
