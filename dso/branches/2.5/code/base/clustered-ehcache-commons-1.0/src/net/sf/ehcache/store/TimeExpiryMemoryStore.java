@@ -47,21 +47,10 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
+      long threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
+      long timeToIdleSec = cache.getTimeToIdleSeconds();
+      long timeToLiveSec = cache.getTimeToLiveSeconds();
 
-      long threadIntervalSec = -1;
-      long timeToIdleSec = -1;
-      long timeToLiveSec = -1;
-      
-      if(cache.getCacheConfiguration() != null) {
-        threadIntervalSec = cache.getCacheConfiguration().getDiskExpiryThreadIntervalSeconds();
-        timeToIdleSec = cache.getCacheConfiguration().getTimeToIdleSeconds();
-        timeToLiveSec = cache.getCacheConfiguration().getTimeToLiveSeconds();
-      } else {
-        threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
-        timeToIdleSec = cache.getTimeToIdleSeconds();
-        timeToLiveSec = cache.getTimeToLiveSeconds();        
-      }
-      
       threadIntervalSec = getThreadIntervalSeconds(threadIntervalSec, timeToIdleSec, timeToLiveSec);
 
       Map candidateMap = new SpoolingTimeExpiryMap(threadIntervalSec, timeToIdleSec, timeToLiveSec, cacheName);
@@ -84,9 +73,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   }
 
   public final void stopTimeMonitoring() {
-    if(map != null) {
-      ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
-    }
+    ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
   }
 
   public final void evictExpiredElements() {
