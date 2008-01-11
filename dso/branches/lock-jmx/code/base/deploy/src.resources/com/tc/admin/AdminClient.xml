@@ -242,7 +242,7 @@
         </tabbedpane>
         <container>
           <children>
-            <label text="Enable Lock Tracing:"/>
+            <label text="Enable Lock Stats:"/>
             <togglebutton text="Off" name="DisableButton"/>
             <togglebutton text="On" name="EnableButton"/>
             <label text="Trace depth:"/>
