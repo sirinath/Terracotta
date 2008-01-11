@@ -18,7 +18,7 @@ public class StatisticsDataTest extends TestCase {
     assertNull(data.getAgentIp());
     assertNull(data.getMoment());
     assertNull(data.getName());
-    assertEquals(0, data.getElement());
+    assertNull(data.getElement());
     assertNull(data.getData());
   }
   
@@ -28,13 +28,13 @@ public class StatisticsDataTest extends TestCase {
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(moment)
       .name("statname")
-      .element(34)
+      .element("first")
       .data(new Long(987983343L));
 
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
-    assertEquals(34, data.getElement());
+    assertEquals("first", data.getElement());
     assertEquals(new Long(987983343L), data.getData());
     
     data.data("datastring");
@@ -51,13 +51,13 @@ public class StatisticsDataTest extends TestCase {
     data.setAgentIp(InetAddress.getLocalHost().getHostAddress());
     data.setMoment(moment);
     data.setName("statname");
-    data.setElement(34);
+    data.setElement("first");
     data.setData(new Long(987983343L));
 
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
-    assertEquals(34, data.getElement());
+    assertEquals("first", data.getElement());
     assertEquals(new Long(987983343L), data.getData());
     
     data.setData("datastring");
@@ -76,8 +76,8 @@ public class StatisticsDataTest extends TestCase {
       .agentIp("192.168.1.18")
       .moment(moment.getTime())
       .name("statname")
-      .element(34)
+      .element("first")
       .data(new Long(987983343L));
-    assertEquals("[agentIp = 192.168.1.18; moment = 1/9/08 5:25 PM; name = statname; element = 34; data = 987983343]", data.toString());
+    assertEquals("[agentIp = 192.168.1.18; moment = 1/9/08 5:25 PM; name = statname; element = first; data = 987983343]", data.toString());
   }
 }
