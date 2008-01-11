@@ -150,8 +150,4 @@ public class ServerLockStatisticsInfoImpl implements LockSpec, LockStatisticsInf
     sb.append("\n");
     return sb.toString();
   }
-
-  private void logDebug(String msg) {
-    System.err.println(msg);
-  }
 }

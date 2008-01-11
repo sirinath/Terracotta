@@ -334,10 +334,6 @@ public class LockStatElement implements TCSerializable, Serializable, LockTraceE
     return sb.toString();
   }
 
-  private void logDebug(String msg) {
-    System.err.println(msg);
-  }
-
   private void computeHashCode() {
     if (stackTraceElement != null) {
       this.hashCode = new HashCodeBuilder(5503, 6737).append(lockID).append(stackTraceElement).toHashCode();

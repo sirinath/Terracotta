@@ -4,6 +4,7 @@
  */
 package com.tc.object.lockmanager.impl;
 
+import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
@@ -98,7 +99,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   }
 
   boolean tryLock(ThreadID threadID, WaitInvocation timeout, int type) {
-    lock(threadID, type, timeout, true, "");
+    lock(threadID, type, timeout, true, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     return isHeldBy(threadID, type);
   }
 
