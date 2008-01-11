@@ -35,7 +35,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
   private final StatisticsBuffer buffer;
-  private final long sessionId; // HACK: properly implement support for different sessions
+  private final long sessionId; // HACK: properly support multiple capture sessions
 
   private long schedulePeriod = 10000; // HACK: make configurable
   private Timer timer = null;
@@ -97,7 +97,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
             }
           });
         } catch (TCStatisticsBufferException e) {
-          throw new TCRuntimeException(e); // HACK: properly propagate exception
+          throw new TCRuntimeException(e); // HACK: properly handle exception, need to investigate if it should be propagated or logged
         }
       }
     }
