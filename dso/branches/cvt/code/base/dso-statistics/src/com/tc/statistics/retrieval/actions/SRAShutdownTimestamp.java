@@ -18,4 +18,8 @@ public class SRAShutdownTimestamp implements StatisticRetrievalAction {
     Date moment = new Date();
     return new StatisticData[] { StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, moment) };
   }
+
+  public void cleanup() {
+    // nothing to clean up
+  }
 }
