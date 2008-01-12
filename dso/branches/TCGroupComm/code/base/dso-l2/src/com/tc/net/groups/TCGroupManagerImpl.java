@@ -41,6 +41,7 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
@@ -97,8 +98,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
 
-    // members = new TCGroupMemberDiscoveryStatic(configSetupManager);
-
     this.configSetupManager.commonl2Config().changesInItemIgnored(configSetupManager.commonl2Config().dataPath());
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
 
@@ -112,7 +111,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   }
 
   /*
-   * for testing purpose only
+   * for testing purpose only. Tester needs to do setDiscover() and start()
    */
   public TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
                             TCThreadGroup threadGroup) {
@@ -121,10 +120,14 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
   }
+  
+  public String makeGroupNodeName(String hostname, int groupPort) {
+    return (hostname + ":" + groupPort);
+  }
 
   private NodeID init(String hostname, int groupPort, int workerThreads) {
 
-    String nodeName = hostname + ":" + groupPort;
+    String nodeName = makeGroupNodeName(hostname, groupPort);
     NodeID aNodeID = new NodeIdUuidImpl(nodeName);
     logger.info("Creating group node: " + aNodeID);
 
@@ -174,6 +177,8 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     getStageManager().stopAll();
     discover.stop();
     groupListener.stop(timeout);
+    closeAllChannels();
+    members.clear();
   }
 
   public void registerForGroupEvents(GroupEventsListener listener) {
@@ -196,6 +201,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   }
 
   public void memberAdded(TCGroupMember member) {
+    TCGroupMember memberToClose = null;
     if (isStopped) {
       member.close();
       return;
@@ -219,8 +225,10 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
           int order = member.getSrcNodeID().compareTo(member.getDstNodeID());
           if (order > 0) {
             // choose new connection
-            m.close();
-            // members.remove(m);
+            // avoid deadlock, close outside of sync
+            memberToClose = m;
+            m.setTCGroupManager(null);
+            members.remove(m);
           } else if (order < 0) {
             // keep original one
             member.close();
@@ -233,7 +241,9 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       member.setTCGroupManager(this);
       members.add(member);
     }
+    logger.info(getNodeID() + " added " + member);
     fireNodeEvent(member.getNodeID(), true);
+    if (memberToClose != null) memberToClose.close();
   }
 
   public boolean isExist(TCGroupMember member) {
@@ -251,9 +261,15 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
   public void memberDisappeared(TCGroupMember member) {
     if (isStopped || (member == null)) return;
+    member.setTCGroupManager(null);
+    member.close();
     synchronized (members) {
-      members.remove(member);
+      if (!members.remove(member)) {
+        logger.warn("Remove non-exit member " + member);
+        return;
+      }
     }
+    logger.info(getNodeID() + " removed " + member);
     fireNodeEvent(member.getNodeID(), false);
   }
 
@@ -340,7 +356,10 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
    * Event notification when a new connection setup by channelManager
    */
   public void channelCreated(MessageChannel channel) {
-    if (isStopped) return;
+    if (isStopped) {
+      channel.close();
+      return;
+    }
     logger.debug("Channel established from " + channel.getChannelID().getNodeID());
     memberAdded(new TCGroupMemberImpl(channel, getNodeID()));
   }
@@ -349,7 +368,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
    * Event notification when a connection removed by DSOChannelManager
    */
   public void channelRemoved(MessageChannel channel) {
-    if (isStopped) return;
     logger.debug("Channel removed from " + channel.getChannelID().getNodeID());
     memberDisappeared(getMember(channel));
   }
@@ -412,7 +430,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   public void shutdown() {
     try {
       stop(1000);
-      closeAllChannels();
     } catch (TCTimeoutException e) {
       logger.warn("Timeout at shutting down " + e);
     }
@@ -512,7 +529,9 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
         logger.error("Error sending ZapNode Request to " + nodeID + " msg = " + msg);
       }
       logger.warn("Removing member " + m + " from group");
-      memberDisappeared(m);
+      // wait a little bit, hope other end receives it
+      ThreadUtil.reallySleep(100);
+      m.close();
     }
   }
 
