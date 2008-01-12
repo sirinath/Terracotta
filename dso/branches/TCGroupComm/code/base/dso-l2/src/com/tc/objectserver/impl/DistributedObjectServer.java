@@ -190,6 +190,7 @@ import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
+import javax.management.remote.JMXConnectorServer;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -795,6 +796,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public int getListenPort() {
     return this.l1Listener.getBindPort();
   }
+  
+  public InetAddress getListenAddr() {
+    return this.l1Listener.getBindAddress();
+  }
 
   public synchronized void stop() {
     try {
@@ -894,6 +899,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
   public MBeanServer getMBeanServer() {
     return l2Management.getMBeanServer();
+  }
+  
+  public JMXConnectorServer getJMXConnServer() {
+    return l2Management.getJMXConnServer();
   }
 
   private void startJMXServer() throws Exception {

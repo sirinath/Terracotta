@@ -23,6 +23,7 @@ appserver=tomcat-5.5.25
 #appserver=websphere-6.1.0.7
 #appserver=glassfish-v1.ur1-p01-b02
 #appserver=wasce-1.0.1.2
+#appserver=resin-3.0.25
 
 # you only need one of these specified to run containter tests
 # if both specified, appserver.home takes precedent
@@ -35,3 +36,7 @@ tc.tests.configuration.appserver.repository=http://download.terracotta.org/appse
 maven.version=2.6.0-SNAPSHOT
 maven.snapshot=true
 
+# BEGIN JETTY
+# to run tests with Jetty, check out the forge and execute "mvn clean install"
+# then you need to run the tests with tests-jdk=1.5 because the Jetty TIM requires jre1.5
+# END JETTY
