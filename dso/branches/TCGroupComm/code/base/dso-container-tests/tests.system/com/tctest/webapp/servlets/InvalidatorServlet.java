@@ -4,22 +4,15 @@
  */
 package com.tctest.webapp.servlets;
 
-import com.tctest.webapp.listeners.BindingListenerWithException;
 import com.tctest.webapp.listeners.InvalidatorBindingListener;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public final class InvalidatorServlet extends HttpServlet {
-  private static final Map callCounts = new HashMap();
-
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+public final class InvalidatorServlet extends ListenerReportingServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     final String action = req.getParameter("action");
     final String key = req.getParameter("key");
     String reply = "OK";
@@ -27,13 +20,6 @@ public final class InvalidatorServlet extends HttpServlet {
       reply = key + "=" + req.getSession().getAttribute(key);
     } else if ("set".equals(action)) {
       req.getSession().setAttribute(key, new InvalidatorBindingListener(key));
-    } else if ("setwithexception".equals(action)) {
-      try {
-        req.getSession().setAttribute(key, new BindingListenerWithException(key));
-        reply = "Did not get expected exception!";
-      } catch (Throwable e) {
-        // this is expected
-      }
     } else if ("remove".equals(action)) {
       req.getSession().removeAttribute(key);
     } else if ("call_count".equals(action)) {
@@ -54,32 +40,5 @@ public final class InvalidatorServlet extends HttpServlet {
     }
     resp.getWriter().print(reply);
     resp.flushBuffer();
-  }
-
-  private void sleep(int i) {
-    try {
-      Date now = new Date();
-      System.err.println("SERVLET: " + now + ": going to sleep for " + i + " millis");
-      Thread.sleep(i);
-      now = new Date();
-      System.err.println("SERVLET: " + now + ": woke up from sleeping for " + i + " millis");
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private synchronized static int getCallCount(String key) {
-    Integer i = (Integer) callCounts.get(key);
-    return i == null ? 0 : i.intValue();
-  }
-
-  public synchronized static void incrementCallCount(String key) {
-    Integer i = (Integer) callCounts.get(key);
-    if (i == null) {
-      i = new Integer(1);
-    } else {
-      i = new Integer(i.intValue() + 1);
-    }
-    callCounts.put(key, i);
   }
 }
