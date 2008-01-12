@@ -6,9 +6,6 @@ package com.tc.net.protocol;
 
 import com.tc.net.protocol.tcm.MessageChannelInternal;
 import com.tc.net.protocol.tcm.ServerMessageChannelFactory;
-import com.tc.net.protocol.transport.ClientConnectionEstablisher;
-import com.tc.net.protocol.transport.ClientMessageTransport;
-import com.tc.net.protocol.transport.ConnectionWatcher;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportFactory;
 import com.tc.net.protocol.transport.MessageTransportListener;
@@ -61,14 +58,14 @@ public class TCGroupNetworkStackHarnessFactory implements NetworkStackHarnessFac
       transport.setAllowConnectionReplace(allowConnectionReplace);
 
       // XXX: this is super ugly, but...
-      if (transport instanceof ClientMessageTransport) {
-        ClientMessageTransport cmt = (ClientMessageTransport) transport;
-        ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
-        ConnectionWatcher cw = new ConnectionWatcher(cmt, channel, cce);
-        transport.addTransportListener(cw);
-      } else {
+//      if (transport instanceof ClientMessageTransport) {
+//        ClientMessageTransport cmt = (ClientMessageTransport) transport;
+//        ClientConnectionEstablisher cce = cmt.getConnectionEstablisher();
+//        ConnectionWatcher cw = new ConnectionWatcher(cmt, channel, cce);
+//        transport.addTransportListener(cw);
+//      } else {
         transport.addTransportListener(channel);
-      }
+//      }
     }
 
     protected void createIntermediateLayers() {

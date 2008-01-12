@@ -72,7 +72,7 @@ public class TCGroupManagerImplTest extends TestCase {
                                              .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
       groups[i].start(new HashSet());
-      listeners[i] = new TestGroupMessageListener(100);
+      listeners[i] = new TestGroupMessageListener(1000);
     }
   }
 
@@ -238,7 +238,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(500);
+    Thread.sleep(1500);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -297,7 +297,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(500);
+    Thread.sleep(1500);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -335,7 +335,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(500);
+    Thread.sleep(1500);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }

@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.Set;
 
 public interface TCGroupManager extends GroupManager {
-
+  
+  public String makeGroupNodeName(String hostname, int groupPort);
+  
   public boolean isExist(TCGroupMember member);
 
   public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException, UnknownHostException,

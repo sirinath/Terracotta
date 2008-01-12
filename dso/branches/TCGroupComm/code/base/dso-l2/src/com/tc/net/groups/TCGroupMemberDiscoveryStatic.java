@@ -9,7 +9,6 @@ import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
-import com.tc.net.TCSocketAddress;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.concurrent.ThreadUtil;
@@ -100,15 +99,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       // skip local one
       if (local.equals(n) || (n == null)) continue;
 
-      TCSocketAddress remote;
-      try {
-        remote = new TCSocketAddress(n.getHost(), n.getPort());
-      } catch (UnknownHostException e) {
-        nodes[i] = null;
-        logger.error("Removed bad node:" + n + " " + e);
-        continue;
-      }
-      if (getMember(remote) == null) {
+      if (getMember(n) == null) {
         toConnectList.add(n);
       }
     }
@@ -117,7 +108,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     for (int i = 0; i < toConnectList.size(); ++i) {
       chOpeners[i] = new ChannelOpener(toConnectList.get(i));
       chOpeners[i].start();
-      ThreadUtil.reallySleep(100);
+      ThreadUtil.reallySleep(10); // avoid storm
     }
     for (int i = 0; i < toConnectList.size(); ++i) {
       try {
@@ -132,7 +123,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     private Node node;
 
     ChannelOpener(Node node) {
-      super("Open channel " + node);
+      super(local.toString() + " open channel to " + node);
       this.node = node;
     }
 
@@ -154,12 +145,13 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     }
   }
 
-  private TCGroupMember getMember(TCSocketAddress remote) {
+  private TCGroupMember getMember(Node node) {
+    String sid = manager.makeGroupNodeName(node.getHost(), node.getPort());
     TCGroupMember member = null;
     Iterator it = manager.getMembers().iterator();
     while (it.hasNext()) {
       TCGroupMember m = (TCGroupMember) it.next();
-      if (remote.equals(m.getChannel().getRemoteAddress())) {
+      if (sid.equals(((NodeIDImpl)(m.getNodeID())).getName())) {
         member = m;
         break;
       }
@@ -169,7 +161,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public void stop() {
     if (!running.get()) return;
-    stopAttempt.set(false);
+    stopAttempt.set(true);
   }
 
   public void setLocalNode(Node local) {
