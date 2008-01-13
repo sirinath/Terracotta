@@ -227,8 +227,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
             // choose new connection
             // avoid deadlock, close outside of sync
             memberToClose = m;
-            m.setTCGroupManager(null);
-            members.remove(m);
           } else if (order < 0) {
             // keep original one
             member.close();
@@ -241,9 +239,11 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       member.setTCGroupManager(this);
       members.add(member);
     }
+    if (memberToClose != null) {
+      memberDisappeared(memberToClose);
+    }
     logger.info(getNodeID() + " added " + member);
     fireNodeEvent(member.getNodeID(), true);
-    if (memberToClose != null) memberToClose.close();
   }
 
   public boolean isExist(TCGroupMember member) {
@@ -271,7 +271,18 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     }
     logger.info(getNodeID() + " removed " + member);
     fireNodeEvent(member.getNodeID(), false);
+    notifyAnyPendingRequests(member);
   }
+  
+  private void notifyAnyPendingRequests(TCGroupMember member) {
+    synchronized (pendingRequests) {
+      for (Iterator<GroupResponse> i = pendingRequests.values().iterator(); i.hasNext();) {
+        GroupResponseImpl response = (GroupResponseImpl) i.next();
+        response.notifyMemberDead(member);
+      }
+    }
+  }
+
 
   public void sendAll(GroupMessage msg) throws GroupException {
     Iterator it = members.iterator();
@@ -283,8 +294,11 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
     TCGroupMember member = getMember(node);
-    Assert.assertTrue(member != null);
-    if (member != null) member.send(msg);
+    if (member != null) {
+      member.send(msg);
+    } else {
+      throw new GroupException("send to non-exist member of " + node);
+    }
   }
 
   public GroupMessage sendToAndWaitForResponse(NodeID nodeID, GroupMessage msg) throws GroupException {
