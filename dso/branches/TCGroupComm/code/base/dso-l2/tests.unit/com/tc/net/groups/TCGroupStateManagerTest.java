@@ -31,7 +31,8 @@ import java.util.HashSet;
 
 public class TCGroupStateManagerTest extends TCTestCase {
 
-  private static final TCLogger logger  = TCLogging.getLogger(StateManagerImpl.class);
+  private final static String   LOCALHOST = "localhost";
+  private static final TCLogger logger    = TCLogging.getLogger(StateManagerImpl.class);
   private TCThreadGroup         threadGroup;
 
   public TCGroupStateManagerTest() {
@@ -166,7 +167,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i]);
+      allNodes[i] = new Node(LOCALHOST, ports[i]);
     }
 
     StateManager[] managers = new StateManager[nodes];
@@ -183,7 +184,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       groupMgr[i].join(allNodes[i], allNodes);
     }
     Thread.sleep(1000);
-    
+
     System.out.println("*** Start Election...");
     // run them concurrently
     for (int i = 0; i < nodes; ++i) {
@@ -234,7 +235,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i]);
+      allNodes[i] = new Node(LOCALHOST, ports[i]);
     }
 
     StateManager[] managers = new StateManager[nodes];
@@ -282,7 +283,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i]);
+      allNodes[i] = new Node(LOCALHOST, ports[i]);
     }
 
     final StateManager[] managers = new StateManager[nodes];
@@ -362,13 +363,14 @@ public class TCGroupStateManagerTest extends TCTestCase {
     shutdown(groupMgr, msgStage, 1, nodes);
   }
 
-  private StateManager createStateManageNode(int localIndex, Node[] nodes, ChangeSink[] sinks, TCGroupManager[] groupMgr,
-                                             L2StateMessageStage[] messageStage) throws Exception {
-    TCGroupManager gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(), nodes[localIndex]
-        .getPort(), 0, threadGroup);
+  private StateManager createStateManageNode(int localIndex, Node[] nodes, ChangeSink[] sinks,
+                                             TCGroupManager[] groupMgr, L2StateMessageStage[] messageStage)
+      throws Exception {
+    TCGroupManager gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(),
+                                               nodes[localIndex].getPort(), 0, threadGroup);
     gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes));
     gm.start(new HashSet());
-    
+
     groupMgr[localIndex] = gm;
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());
     MyListener l = new MyListener();
@@ -492,7 +494,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     private NodeID lastNodeJoined;
     private NodeID lastNodeLeft;
     private NodeID gmNodeID;
-    
+
     public MyGroupEventListener(NodeID nodeID) {
       this.gmNodeID = nodeID;
     }

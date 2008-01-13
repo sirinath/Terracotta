@@ -27,7 +27,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   private TCGroupManager        manager;
   private AtomicBoolean         running           = new AtomicBoolean(false);
   private AtomicBoolean         stopAttempt       = new AtomicBoolean(false);
-  private boolean               debug             = true;
+  private boolean               debug             = false;
   private long                  connectIntervalms = 1000;
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
