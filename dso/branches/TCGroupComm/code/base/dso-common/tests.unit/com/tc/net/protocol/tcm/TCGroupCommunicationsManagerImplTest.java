@@ -21,6 +21,9 @@ import junit.framework.TestCase;
 
 public class TCGroupCommunicationsManagerImplTest extends TestCase {
 
+  private final static String       LOCALHOST      = "localhost";
+  private final static String       NODE_CLIENT    = "node-client";
+  private final static String       NODE_SERVER    = "node-server";
   MessageMonitor                    monitor        = new NullMessageMonitor();
   final NullSessionManager          sessionManager = new NullSessionManager();
   final TCMessageFactory            msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
@@ -33,8 +36,8 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
                                                    };
 
   public void testOneWayChannelOpenClose() throws Exception {
-    NodeID nodeID1 = new NodeIdUuidImpl("node-client");
-    NodeID nodeID2 = new NodeIdUuidImpl("node-server");
+    NodeID nodeID1 = new NodeIdUuidImpl(NODE_CLIENT);
+    NodeID nodeID2 = new NodeIdUuidImpl(NODE_SERVER);
     CommunicationsManager clientComms = new TCGroupCommunicationsManagerImpl(monitor,
                                                                              new TCGroupNetworkStackHarnessFactory(),
                                                                              null, new NullConnectionPolicy(), 0,
@@ -61,7 +64,7 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
                                3000,
                                new ConnectionAddressProvider(
                                                              new ConnectionInfo[] { new ConnectionInfo(
-                                                                                                       "localhost",
+                                                                                                       LOCALHOST,
                                                                                                        lsnr
                                                                                                            .getBindPort()) }));
       channel.open();
@@ -98,56 +101,42 @@ public class TCGroupCommunicationsManagerImplTest extends TestCase {
   public void testTwoWayChannelOpenClose() throws Exception {
     NodeID nodeID1 = new NodeIdUuidImpl("node1");
     NodeID nodeID2 = new NodeIdUuidImpl("node2");
-    
+
     CommunicationsManager clientComms1 = new TCGroupCommunicationsManagerImpl(monitor,
-                                                                        new TCGroupNetworkStackHarnessFactory(), null,
-                                                                        new NullConnectionPolicy(), 0, nodeID1);
+                                                                              new TCGroupNetworkStackHarnessFactory(),
+                                                                              null, new NullConnectionPolicy(), 0,
+                                                                              nodeID1);
     CommunicationsManager serverComms1 = clientComms1;
     CommunicationsManager clientComms2 = new TCGroupCommunicationsManagerImpl(monitor,
-                                                                        new TCGroupNetworkStackHarnessFactory(), null,
-                                                                        new NullConnectionPolicy(), 0, nodeID2);
+                                                                              new TCGroupNetworkStackHarnessFactory(),
+                                                                              null, new NullConnectionPolicy(), 0,
+                                                                              nodeID2);
     CommunicationsManager serverComms2 = clientComms2;
     try {
-      NetworkListener lsnr1 = serverComms1.createListener(sessionManager, new TCSocketAddress(TCSocketAddress.LOOPBACK_ADDR,
-                                                                                        0), true,
-                                                    new DefaultConnectionIdFactory());
+      NetworkListener lsnr1 = serverComms1.createListener(sessionManager,
+                                                          new TCSocketAddress(TCSocketAddress.LOOPBACK_ADDR, 0), true,
+                                                          new DefaultConnectionIdFactory());
       lsnr1.start(new HashSet());
       ChannelManager channelManager1 = lsnr1.getChannelManager();
       assertEquals(0, channelManager1.getChannels().length);
 
-      NetworkListener lsnr2 = serverComms2.createListener(sessionManager, new TCSocketAddress(TCSocketAddress.LOOPBACK_ADDR,
-                                                                                        0), true,
-                                                    new DefaultConnectionIdFactory());
+      NetworkListener lsnr2 = serverComms2.createListener(sessionManager,
+                                                          new TCSocketAddress(TCSocketAddress.LOOPBACK_ADDR, 0), true,
+                                                          new DefaultConnectionIdFactory());
       lsnr2.start(new HashSet());
       ChannelManager channelManager2 = lsnr2.getChannelManager();
       assertEquals(0, channelManager2.getChannels().length);
 
       ClientMessageChannel channel1;
       channel1 = clientComms1
-          .createClientChannel(
-                               sessionManager,
-                               0,
-                               TCSocketAddress.LOOPBACK_IP,
-                               lsnr2.getBindPort(),
-                               3000,
-                               new ConnectionAddressProvider(
-                                                             new ConnectionInfo[] { new ConnectionInfo(
-                                                                                                       "localhost",
-                                                                                                       lsnr2
-                                                                                                           .getBindPort()) }));
+          .createClientChannel(sessionManager, 0, TCSocketAddress.LOOPBACK_IP, lsnr2.getBindPort(), 3000,
+                               new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(LOCALHOST, lsnr2
+                                   .getBindPort()) }));
       ClientMessageChannel channel2;
       channel2 = clientComms2
-          .createClientChannel(
-                               sessionManager,
-                               0,
-                               TCSocketAddress.LOOPBACK_IP,
-                               lsnr1.getBindPort(),
-                               3000,
-                               new ConnectionAddressProvider(
-                                                             new ConnectionInfo[] { new ConnectionInfo(
-                                                                                                       "localhost",
-                                                                                                       lsnr1
-                                                                                                           .getBindPort()) }));
+          .createClientChannel(sessionManager, 0, TCSocketAddress.LOOPBACK_IP, lsnr1.getBindPort(), 3000,
+                               new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(LOCALHOST, lsnr1
+                                   .getBindPort()) }));
 
       channel1.open();
       assertTrue(channel1.isConnected());

@@ -42,6 +42,7 @@ import junit.framework.TestCase;
 
 public class TCGroupManagerImplTest extends TestCase {
 
+  private final static String      LOCALHOST      = "localhost";
   MessageMonitor                   monitor        = new NullMessageMonitor();
   final NullSessionManager         sessionManager = new NullSessionManager();
   final TCMessageFactory           msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
@@ -63,11 +64,11 @@ public class TCGroupManagerImplTest extends TestCase {
     PortChooser pc = new PortChooser();
     for (int i = 0; i < n; ++i) {
       groupPorts[i] = pc.chooseRandomPort();
-      nodes[i] = new Node("localhost", groupPorts[i]);
+      nodes[i] = new Node(LOCALHOST, groupPorts[i]);
     }
     for (int i = 0; i < n; ++i) {
       discovers[i] = new TCGroupMemberDiscoveryStatic(nodes);
-      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), "localhost", groupPorts[i], 0,
+      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i], 0,
                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                              .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
@@ -86,7 +87,7 @@ public class TCGroupManagerImplTest extends TestCase {
     setupGroups(2);
 
     // open test
-    TCGroupMember member1 = groups[0].openChannel("localhost", groupPorts[1]);
+    TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
 
     // wait for channel established at group2
     for (int i = 0; i < 30; i++) {
@@ -118,8 +119,8 @@ public class TCGroupManagerImplTest extends TestCase {
   public void testResolveTwoWayConnection() throws Exception {
     setupGroups(2);
 
-    TCGroupMember member1 = groups[0].openChannel("localhost", groupPorts[1]);
-    TCGroupMember member2 = groups[1].openChannel("localhost", groupPorts[0]);
+    TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
+    TCGroupMember member2 = groups[1].openChannel(LOCALHOST, groupPorts[0]);
 
     // wait one channel to be closed.
     Thread.sleep(1000);
@@ -144,7 +145,7 @@ public class TCGroupManagerImplTest extends TestCase {
     groups[0].registerForMessages(GroupZapNodeMessage.class, listener1);
     groups[1].registerForMessages(GroupZapNodeMessage.class, listener2);
 
-    TCGroupMember member1 = groups[0].openChannel("localhost", groupPorts[1]);
+    TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
     Thread.sleep(200);
     TCGroupMember member2 = groups[1].getMembers().get(0);
 

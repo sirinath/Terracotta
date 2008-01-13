@@ -58,12 +58,15 @@ import junit.framework.TestCase;
  */
 public class TCGroupMessageWrapperTest extends TestCase {
 
+  private final static String               LOCALHOST      = "localhost";
+  private final static String               NODE_CLIENT    = "node-client";
+  private final static String               NODE_SERVER    = "node-server";
   MessageMonitor                            monitor        = new NullMessageMonitor();
   final NullSessionManager                  sessionManager = new NullSessionManager();
   final TCMessageFactory                    msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
   final TCMessageRouter                     msgRouter      = new TCMessageRouterImpl();
-  private final NodeID                      nodeID1        = new NodeIdUuidImpl("node-client");
-  private final NodeID                      nodeID2        = new NodeIdUuidImpl("node-server");
+  private final NodeID                      nodeID1        = new NodeIdUuidImpl(NODE_CLIENT);
+  private final NodeID                      nodeID2        = new NodeIdUuidImpl(NODE_SERVER);
   private CommunicationsManager             clientComms;
   private CommunicationsManager             serverComms;
   private ChannelManager                    channelManager;
@@ -127,7 +130,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
     ClientMessageChannel channel;
     channel = clientComms
         .createClientChannel(sessionManager, 0, TCSocketAddress.LOOPBACK_IP, lsnr.getBindPort(), 3000,
-                             new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("localhost", lsnr
+                             new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(LOCALHOST, lsnr
                                  .getBindPort()) }));
     channel.open();
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
