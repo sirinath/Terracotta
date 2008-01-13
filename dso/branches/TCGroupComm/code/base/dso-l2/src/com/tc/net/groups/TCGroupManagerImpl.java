@@ -297,7 +297,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     if (member != null) {
       member.send(msg);
     } else {
-      throw new GroupException("send to non-exist member of " + node);
+      logger.warn("send to non-exist member of " + node);
     }
   }
 
