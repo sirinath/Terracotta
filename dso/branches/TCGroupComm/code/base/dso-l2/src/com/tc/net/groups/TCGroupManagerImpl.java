@@ -171,18 +171,17 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
     registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
 
-    // not start comm listen thread until ready to do messages routing  
+    // not start comm listen thread until ready to do messages routing
     connMgr.getTcComm().start();
-    
+
     return (aNodeID);
   }
-  
+
   private class TCGroupConnectionManager extends TCConnectionManagerJDK14 {
     public TCGroupConnectionManager(int workerCommCount) {
       super(workerCommCount, false);
     }
   }
-
 
   public NodeID getLocalNodeID() throws GroupException {
     if (this.thisNodeID == null) { throw new GroupException("Node hasnt joined the group yet !"); }
@@ -222,30 +221,32 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     }
   }
 
-  public synchronized void memberAdded(TCGroupMember member) {
+  public void memberAdded(TCGroupMember member) {
     if (isStopped) {
       member.close();
       return;
     }
 
     // Keep only one connection between two nodes. Close the redundant one.
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
+    synchronized (this) {
+      Iterator it = members.iterator();
+      while (it.hasNext()) {
+        TCGroupMember m = (TCGroupMember) it.next();
 
-      // sanity check
-      if (member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID())) { throw new RuntimeException(
-                                                                                                                                         "Drop duplicate channel to the same node "
-                                                                                                                                             + member); }
+        // sanity check
+        if (member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID())) { throw new RuntimeException(
+                                                                                                                                           "Drop duplicate channel to the same node "
+                                                                                                                                               + member); }
 
-      if (member.getNodeID().equals(m.getNodeID())) {
-        // there is one exist already
-        member.close();
-        return;
+        if (member.getNodeID().equals(m.getNodeID())) {
+          // there is one exist already
+          member.close();
+          return;
+        }
       }
+      member.setTCGroupManager(this);
+      members.add(member);
     }
-    member.setTCGroupManager(this);
-    members.add(member);
     logger.debug(getNodeID() + " added " + member);
     fireNodeEvent(member.getNodeID(), true);
   }
@@ -261,13 +262,15 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     return (getNodeID());
   }
 
-  public synchronized void memberDisappeared(TCGroupMember member) {
+  public void memberDisappeared(TCGroupMember member) {
     if (isStopped || (member == null)) return;
-    member.setTCGroupManager(null);
-    member.close();
-    if (!members.remove(member)) {
-      logger.warn("Remove non-exist member " + member);
-      return;
+    synchronized (this) {
+      member.setTCGroupManager(null);
+      member.close();
+      if (!members.remove(member)) {
+        logger.warn("Remove non-exist member " + member);
+        return;
+      }
     }
     logger.debug(getNodeID() + " removed " + member);
     fireNodeEvent(member.getNodeID(), false);
@@ -353,13 +356,13 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     ClientMessageChannel channel = communicationsManager
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), -1, null, -1, 10000, addrProvider);
 
-    channel.open();
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage
         .getSink());
     channel.addClassMapping(TCMessageType.GROUP_PING_MESSAGE, TCGroupPingMessage.class);
     channel.routeMessageType(TCMessageType.GROUP_PING_MESSAGE, receivePingMessageStage.getSink(), hydrateStage
         .getSink());
+    channel.open();
 
     if (debug) {
       logger.debug("Channel setup to " + channel.getChannelID().getNodeID());
