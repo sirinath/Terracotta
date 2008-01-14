@@ -9,11 +9,17 @@ public class Node {
   private final String host;
   private final int    port;
   private final int    hashCode;
+  private final String bind;
 
   public Node(final String host, final int port) {
+    this(host, port, null);
+  }
+
+  public Node(final String host, final int port, final String bind) {
     checkArgs(host, port);
     this.host = host.trim();
     this.port = port;
+    this.bind = bind; // not part of equals()
     this.hashCode = (host + "-" + port).hashCode();
   }
 
@@ -23,6 +29,10 @@ public class Node {
 
   public int getPort() {
     return port;
+  }
+
+  public String getBind() {
+    return bind;
   }
 
   public boolean equals(Object obj) {
