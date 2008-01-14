@@ -26,4 +26,6 @@ public interface TCGroupMember {
   public boolean isConnected();
   
   public void close();
+  
+  public boolean highPriorityLink();
 }

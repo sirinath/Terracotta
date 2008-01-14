@@ -57,5 +57,7 @@ public interface TCGroupManager extends GroupManager {
   public void memberDisappeared(TCGroupMember member);
   
   public void messageReceived(GroupMessage message, MessageChannel channel);
+  
+  public void pingReceived(TCGroupPingMessage msg);
 
 }

@@ -106,5 +106,9 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     connected.set(false);
     getChannel().close();
   }
+  
+  public boolean highPriorityLink() {
+    return(srcNodeID.compareTo(dstNodeID) > 0);
+  }
 
 }
