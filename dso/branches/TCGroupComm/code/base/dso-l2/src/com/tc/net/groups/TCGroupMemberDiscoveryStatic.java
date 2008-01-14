@@ -113,7 +113,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     for (int i = 0; i < toConnectList.size(); ++i) {
       chOpeners[i] = new ChannelOpener(toConnectList.get(i));
       chOpeners[i].start();
-      ThreadUtil.reallySleep(10); // avoid storm
     }
     for (int i = 0; i < toConnectList.size(); ++i) {
       try {
@@ -178,7 +177,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public void pause() {
-    if(debug) {
+    if (debug) {
       logger.info("Lock discovery of " + manager);
     }
     discoverLock.lock();
@@ -186,7 +185,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public void resume() {
     discoverLock.unlock();
-    if(debug) {
+    if (debug) {
       logger.info("Unlock discovery of " + manager);
     }
 

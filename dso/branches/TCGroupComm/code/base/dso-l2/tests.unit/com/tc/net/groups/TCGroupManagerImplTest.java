@@ -20,6 +20,7 @@ import com.tc.net.protocol.tcm.TCMessageFactory;
 import com.tc.net.protocol.tcm.TCMessageFactoryImpl;
 import com.tc.net.protocol.tcm.TCMessageRouter;
 import com.tc.net.protocol.tcm.TCMessageRouterImpl;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -164,6 +165,35 @@ public class TCGroupManagerImplTest extends TestCase {
     tearGroups();
   }
 
+  public void testSendTCGroupPingMessage() throws Exception {
+    int nGrp = 2;
+    setupGroups(nGrp);
+
+    groups[0].join(nodes[0], nodes);
+    groups[1].join(nodes[1], nodes);
+    Thread.sleep(500);
+    assertEquals(1, groups[0].size());
+    assertEquals(1, groups[1].size());
+
+    TCGroupMember member = groups[0].getMembers().get(0);
+    TCGroupPingMessage ping = (TCGroupPingMessage) member.getChannel().createMessage(TCMessageType.GROUP_PING_MESSAGE);
+    ping.okMessage();
+    ping.send();
+    LinkedBlockingQueue<TCGroupPingMessage> pingQueue = ((TCGroupManagerImpl) groups[1]).getPingQueue();
+    TCGroupPingMessage rcvPing = pingQueue.poll(1000, TimeUnit.MILLISECONDS);
+    assertTrue(rcvPing.isOkMessage());
+
+    member = groups[1].getMembers().get(0);
+    ping = (TCGroupPingMessage) member.getChannel().createMessage(TCMessageType.GROUP_PING_MESSAGE);
+    ping.denyMessage();
+    ping.send();
+    pingQueue = ((TCGroupManagerImpl) groups[0]).getPingQueue();
+    rcvPing = pingQueue.poll(1000, TimeUnit.MILLISECONDS);
+    assertTrue(!rcvPing.isOkMessage());
+
+    tearGroups();
+  }
+
   private ObjectSyncMessage createTestObjectSyncMessage() {
     Set dnaOids = new ObjectIDSet2();
     for (long i = 1; i <= 100; ++i) {
@@ -194,7 +224,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
     groups[0].join(nodes[0], nodes);
     groups[1].join(nodes[1], nodes);
-    Thread.sleep(200);
+    Thread.sleep(500);
     assertEquals(1, groups[0].size());
     assertEquals(1, groups[1].size());
 
