@@ -18,6 +18,8 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
+import com.tc.net.core.TCConnectionManager;
+import com.tc.net.core.TCConnectionManagerJDK14;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.TCGroupNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
@@ -85,7 +87,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   private Stage                                           receiveGroupMessageStage;
   private Stage                                           receivePingMessageStage;
   private LinkedBlockingQueue<TCGroupPingMessage>         pingQueue               = new LinkedBlockingQueue<TCGroupPingMessage>(
-                                                                                                                                5);
+                                                                                                                                100);
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -136,9 +138,19 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     NodeID aNodeID = new NodeIdUuidImpl(nodeName);
     logger.info("Creating group node: " + aNodeID);
 
+    int maxStageSize = 5000;
+    StageManager stageManager = getStageManager();
+    hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK, new HydrateHandler(), 1,
+                                            maxStageSize);
+    receiveGroupMessageStage = stageManager.createStage(ServerConfigurationContext.RECEIVE_GROUP_MESSAGE_STAGE,
+                                                        new ReceiveGroupMessageHandler(this), 1, maxStageSize);
+    receivePingMessageStage = stageManager.createStage(ServerConfigurationContext.GROUP_PING_MESSAGE_STAGE,
+                                                       new TCGroupPingMessageHandler(this), 1, maxStageSize);
+
     final NetworkStackHarnessFactory networkStackHarnessFactory = new TCGroupNetworkStackHarnessFactory();
+    TCConnectionManager connMgr = new TCGroupConnectionManager(workerThreads);
     communicationsManager = new TCGroupCommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                                 null, this.connectionPolicy, workerThreads, aNodeID);
+                                                                 connMgr, this.connectionPolicy, workerThreads, aNodeID);
 
     groupListener = communicationsManager.createListener(new NullSessionManager(),
                                                          new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort),
@@ -146,24 +158,10 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     // Listen to channel creation/removal
     groupListener.getChannelManager().addEventListener(this);
 
-    int maxStageSize = 5000;
-    StageManager stageManager = getStageManager();
-    hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK, new HydrateHandler(), 1,
-                                            maxStageSize);
-    receiveGroupMessageStage = stageManager.createStage(ServerConfigurationContext.RECEIVE_GROUP_MESSAGE_STAGE,
-                                                        new ReceiveGroupMessageHandler(this), 1, maxStageSize);
-
     groupListener.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
-
     groupListener.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(),
                                    hydrateStage.getSink());
-
-    // ping message
-    receivePingMessageStage = stageManager.createStage(ServerConfigurationContext.GROUP_PING_MESSAGE_STAGE,
-                                                       new TCGroupPingMessageHandler(this), 1, maxStageSize);
-
     groupListener.addClassMapping(TCMessageType.GROUP_PING_MESSAGE, TCGroupPingMessage.class);
-
     groupListener.routeMessageType(TCMessageType.GROUP_PING_MESSAGE, receivePingMessageStage.getSink(), hydrateStage
         .getSink());
 
@@ -173,8 +171,18 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
     registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
 
+    // not start comm listen thread until ready to do messages routing  
+    connMgr.getTcComm().start();
+    
     return (aNodeID);
   }
+  
+  private class TCGroupConnectionManager extends TCConnectionManagerJDK14 {
+    public TCGroupConnectionManager(int workerCommCount) {
+      super(workerCommCount, false);
+    }
+  }
+
 
   public NodeID getLocalNodeID() throws GroupException {
     if (this.thisNodeID == null) { throw new GroupException("Node hasnt joined the group yet !"); }
@@ -238,7 +246,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     }
     member.setTCGroupManager(this);
     members.add(member);
-    logger.info(getNodeID() + " added " + member);
+    logger.debug(getNodeID() + " added " + member);
     fireNodeEvent(member.getNodeID(), true);
   }
 
@@ -261,7 +269,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       logger.warn("Remove non-exist member " + member);
       return;
     }
-    logger.info(getNodeID() + " removed " + member);
+    logger.debug(getNodeID() + " removed " + member);
     fireNodeEvent(member.getNodeID(), false);
     notifyAnyPendingRequests(member);
   }
@@ -288,6 +296,15 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     if (member != null) {
       member.send(msg);
     } else {
+      // member may be joining, try again
+      for (int i = 0; i < 10; ++i) {
+        ThreadUtil.reallySleep(10);
+        member = getMember(node);
+        if (member != null) {
+          member.send(msg);
+          return;
+        }
+      }
       logger.warn("send to non-exist member of " + node);
     }
   }
@@ -362,11 +379,20 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     }
 
     // this is low priority link, wait signal from other end to join
+    if (debug) {
+      logger.debug("open a low priority link to " + member);
+    }
     if (receivedOkToJoin(member)) {
       if (getMember(member.getNodeID()) != null) { throw new RuntimeException("Conflict on resolving connection "
                                                                               + member); }
+      if (debug) {
+        logger.debug("ok to add a low priority link " + member);
+      }
       memberAdded(member);
       return member;
+    }
+    if (debug) {
+      logger.debug("deny to add a low priority link " + member);
     }
     member.close();
     return null;
@@ -397,7 +423,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       logger.debug("Channel established from " + channel.getChannelID().getNodeID());
     }
 
-    TCGroupMember member = new TCGroupMemberImpl(channel, getNodeID());
+    final TCGroupMember member = new TCGroupMemberImpl(channel, getNodeID());
     // close if link exist alreay
     if (getMember(member.getNodeID()) != null) {
       member.close();
@@ -412,27 +438,52 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
     // this is low priority link
     // wait for current opening connection to complete and then pause discover
-    discover.pause();
-    ThreadUtil.reallySleep(100);
-    // close if link exist
-    if (getMember(member.getNodeID()) != null) {
-      signalToJoin(member, false);
-      discover.resume();
-      member.close();
-      return;
+    if (debug) {
+      logger.debug("received a low priority link to " + member);
     }
-    // signal other end to join, joins itself and resume discover
-    signalToJoin(member, true);
-    memberAdded(member);
-    discover.resume();
+    // spawn a new thread to contine work, avoid dead lock on discovery
+    final Thread t = new Thread() {
+      public void run() {
+        discover.pause();
+        ThreadUtil.reallySleep(100);
+        // close if link exist
+        if (getMember(member.getNodeID()) != null) {
+          if (debug) {
+            logger.debug("deny received a low priority link to " + member);
+          }
+          signalToJoin(member, false);
+          discover.resume();
+          member.close();
+          return;
+        }
+        // signal other end to join, joins itself and resume discover
+        if (debug) {
+          logger.debug("ok received a low priority link to " + member);
+        }
+        signalToJoin(member, true);
+        memberAdded(member);
+        discover.resume();
+      }
+    };
+    t.start();
+    if (debug) {
+      logger.debug("new thread for received a low priority link to " + member);
+    }
     return;
   }
 
   private void signalToJoin(TCGroupMember member, boolean ok) {
     TCGroupPingMessage ping = (TCGroupPingMessage) member.getChannel().createMessage(TCMessageType.GROUP_PING_MESSAGE);
     if (ok) {
+      if (debug) {
+        logger.info("Send ok message to " + member);
+      }
       ping.okMessage();
     } else {
+      if (debug) {
+        logger.info("Send deny message to " + member);
+      }
+
       ping.denyMessage();
     }
     ping.send();
@@ -447,7 +498,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
         if (ping.getChannel() == channel) {
           ping = pingQueue.poll();
           if (debug) {
-            logger.info("Received ok message from " + member);
+            logger.info("Received ok message " + ping.isOkMessage() + " from " + member);
           }
           return (ping.isOkMessage());
         }
@@ -462,6 +513,13 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
 
   public void pingReceived(TCGroupPingMessage msg) {
     if (!pingQueue.offer(msg)) { throw new RuntimeException("Failed to receive ping message"); }
+  }
+
+  /*
+   * for testing purpose only
+   */
+  public LinkedBlockingQueue<TCGroupPingMessage> getPingQueue() {
+    return pingQueue;
   }
 
   /*
@@ -541,26 +599,19 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       logger.info(getNodeID() + " recd msg " + message.getMessageID() + " From " + channel + " Msg : " + message);
     }
 
-    TCGroupMember m = getMember(channel);
-    if (m == null) {
-      logger.warn("Message from non-existing member with channel: " + channel);
-      // XXX? drop message
-      return;
-    }
-
+    NodeID from = channel.getChannelID().getNodeID();
     MessageID requestID = message.inResponseTo();
-    NodeID from = m.getNodeID();
 
     message.setMessageOrginator(from);
-    if (requestID.isNull() || !notifyPendingRequests(requestID, message, m)) {
+    if (requestID.isNull() || !notifyPendingRequests(requestID, message, from)) {
       fireMessageReceivedEvent(from, message);
     }
   }
 
-  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, TCGroupMember sender) {
+  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, NodeID nodeID) {
     GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
     if (response != null) {
-      response.addResponseFrom(sender, gmsg);
+      response.addResponseFrom(nodeID, gmsg);
       return true;
     }
     return false;
@@ -595,6 +646,15 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     if (listener != null) {
       listener.messageReceived(from, msg);
     } else {
+      // L2H is setting up, try again
+      for (int i = 0; i < 10; ++i) {
+        ThreadUtil.reallySleep(100);
+        listener = messageListeners.get(msg.getClass().getName());
+        if (listener != null) {
+          listener.messageReceived(from, msg);
+          return;
+        }
+      }
       String errorMsg = "No Route for " + msg + " from " + from;
       logger.error(errorMsg);
       throw new AssertionError(errorMsg);
@@ -654,24 +714,17 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     }
 
     public void sendAll(TCGroupManager manager, GroupMessage msg) throws GroupException {
-      List<TCGroupMember> m = manager.getMembers();
-      if (m.size() > 0) {
-        setUpWaitFor(m);
-        manager.sendAll(msg);
-      }
-    }
-
-    private synchronized void setUpWaitFor(List<TCGroupMember> members) {
-      Iterator it = members.iterator();
+      Iterator it = manager.getMembers().iterator();
       while (it.hasNext()) {
         TCGroupMember member = (TCGroupMember) it.next();
         waitFor.add(member.getNodeID());
+        member.send(msg);
       }
     }
 
-    public synchronized void addResponseFrom(TCGroupMember sender, GroupMessage gmsg) {
-      if (!waitFor.remove(sender.getNodeID())) {
-        String message = "Recd response from a member not in list : " + sender + " : waiting For : " + waitFor
+    public synchronized void addResponseFrom(NodeID nodeID, GroupMessage gmsg) {
+      if (!waitFor.remove(nodeID)) {
+        String message = "Recd response from a member not in list : " + nodeID + " : waiting For : " + waitFor
                          + " msg : " + gmsg;
         logger.error(message);
         throw new AssertionError(message);
