@@ -154,11 +154,11 @@ public class TCGroupManagerImplTest extends TestCase {
     GroupMessage sMesg = new GroupZapNodeMessage(GroupZapNodeMessage.ZAP_NODE_REQUEST,
                                                  L2HAZapNodeRequestProcessor.SPLIT_BRAIN, "Zapping node", weights);
 
-    groups[0].sendTo(member1.getNodeID(), sMesg);
+    groups[0].sendTo(member1.getPeerNodeID(), sMesg);
     GroupMessage rMesg = listener2.getNextMessageFrom(groups[0].getNodeID());
     assertTrue(sMesg.toString().equals(rMesg.toString()));
 
-    groups[1].sendTo(member2.getNodeID(), sMesg);
+    groups[1].sendTo(member2.getPeerNodeID(), sMesg);
     rMesg = listener1.getNextMessageFrom(groups[1].getNodeID());
     assertTrue(sMesg.toString().equals(rMesg.toString()));
 
@@ -230,13 +230,13 @@ public class TCGroupManagerImplTest extends TestCase {
 
     GroupMessage sMesg = createTestObjectSyncMessage();
     TCGroupMember member = groups[0].getMembers().get(0);
-    groups[0].sendTo(member.getNodeID(), sMesg);
+    groups[0].sendTo(member.getPeerNodeID(), sMesg);
     GroupMessage rMesg = listeners[1].getNextMessageFrom(groups[0].getNodeID());
     assertTrue(cmpObjectSyncMessage((ObjectSyncMessage) sMesg, (ObjectSyncMessage) rMesg));
 
     sMesg = createTestObjectSyncMessage();
     member = groups[1].getMembers().get(0);
-    groups[1].sendTo(member.getNodeID(), sMesg);
+    groups[1].sendTo(member.getPeerNodeID(), sMesg);
     rMesg = listeners[0].getNextMessageFrom(groups[1].getNodeID());
     assertTrue(cmpObjectSyncMessage((ObjectSyncMessage) sMesg, (ObjectSyncMessage) rMesg));
 
@@ -277,15 +277,15 @@ public class TCGroupManagerImplTest extends TestCase {
     // test with one to one first
     GroupMessage sMesg = createGCResultMessage();
     TCGroupMember member = groups[0].getMembers().get(0);
-    groups[0].sendTo(member.getNodeID(), sMesg);
-    TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
+    groups[0].sendTo(member.getPeerNodeID(), sMesg);
+    TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
     GroupMessage rMesg = listener.getNextMessageFrom(groups[0].getNodeID());
     assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
 
     sMesg = createGCResultMessage();
     member = groups[1].getMembers().get(0);
-    groups[1].sendTo(member.getNodeID(), sMesg);
-    listener = listenerMap.get(member.getNodeID());
+    groups[1].sendTo(member.getPeerNodeID(), sMesg);
+    listener = listenerMap.get(member.getPeerNodeID());
     rMesg = listener.getNextMessageFrom(groups[1].getNodeID());
     assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
 
@@ -294,7 +294,7 @@ public class TCGroupManagerImplTest extends TestCase {
     groups[0].sendAll(sMesg);
     for (int i = 0; i < groups[0].size(); ++i) {
       TCGroupMember m = groups[0].getMembers().get(i);
-      TestGroupMessageListener l = listenerMap.get(m.getNodeID());
+      TestGroupMessageListener l = listenerMap.get(m.getPeerNodeID());
       rMesg = l.getNextMessageFrom(groups[0].getNodeID());
       assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
     }
@@ -336,15 +336,15 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < groups[0].getMembers().size(); ++i) {
       GroupMessage sMesg = createL2StateMessage();
       TCGroupMember member = groups[0].getMembers().get(i);
-      groups[0].sendToAndWaitForResponse(member.getNodeID(), sMesg);
-      TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
+      groups[0].sendToAndWaitForResponse(member.getPeerNodeID(), sMesg);
+      TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
       GroupMessage rMesg = listener.getNextMessageFrom(groups[0].getNodeID());
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
 
       sMesg = createL2StateMessage();
       member = groups[1].getMembers().get(i);
-      groups[1].sendToAndWaitForResponse(member.getNodeID(), sMesg);
-      listener = listenerMap.get(member.getNodeID());
+      groups[1].sendToAndWaitForResponse(member.getPeerNodeID(), sMesg);
+      listener = listenerMap.get(member.getPeerNodeID());
       rMesg = listener.getNextMessageFrom(groups[1].getNodeID());
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
     }
@@ -377,7 +377,7 @@ public class TCGroupManagerImplTest extends TestCase {
       ms.sendAllAndWaitForResponse(sMesg);
       for (int i = 0; i < ms.getMembers().size(); ++i) {
         TCGroupMember member = ms.getMembers().get(i);
-        TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
+        TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
         GroupMessage rMesg = listener.getNextMessageFrom(ms.getNodeID());
         assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
       }
@@ -414,14 +414,14 @@ public class TCGroupManagerImplTest extends TestCase {
     TestMessage msg1 = new TestMessage("Hello there");
     TCGroupMember member = groups[0].getMembers().get(0);
     groups[0].sendAll(msg1);
-    TestGroupMessageListener listener = listenerMap.get(member.getNodeID());
+    TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
     TestMessage msg2 = (TestMessage) listener.getNextMessageFrom(groups[0].getNodeID());
     assertEquals(msg1, msg2);
 
     TestMessage msg3 = new TestMessage("Hello back");
     member = groups[1].getMembers().get(0);
     groups[1].sendAll(msg3);
-    listener = listenerMap.get(member.getNodeID());
+    listener = listenerMap.get(member.getPeerNodeID());
     TestMessage msg4 = (TestMessage) listener.getNextMessageFrom(groups[1].getNodeID());
     assertEquals(msg3, msg4);
 

@@ -46,8 +46,6 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
       NetworkStackID id = this.sendLayer.open();
       getStatus().open();
       this.channelID = new ChannelID(id.toLong());
-      // TC-Group-Comm passes NodeID from transport to channel, it is our NodeID
-      this.channelID.setNodeID(id.getNodeID());
       this.cidProvider.setChannelID(this.channelID);
       this.channelSessionID = sessionProvider.getSessionID();
       return id;

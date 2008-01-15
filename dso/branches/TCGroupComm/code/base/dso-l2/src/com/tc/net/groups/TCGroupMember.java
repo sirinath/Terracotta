@@ -13,7 +13,7 @@ public interface TCGroupMember {
   
   public NodeID getDstNodeID();
   
-  public NodeID getNodeID();
+  public NodeID getPeerNodeID();
   
   public MessageChannel getChannel();
   

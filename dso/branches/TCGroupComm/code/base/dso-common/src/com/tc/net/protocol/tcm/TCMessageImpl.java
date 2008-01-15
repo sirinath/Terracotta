@@ -292,6 +292,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
 
   protected void putNVPair(byte name, byte[] bytes) {
     nvCount++;
+    out.write(name);
     out.writeInt(bytes.length);
     out.write(bytes);
   }

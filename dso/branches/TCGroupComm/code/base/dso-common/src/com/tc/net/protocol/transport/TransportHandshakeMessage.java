@@ -3,8 +3,6 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.net.groups.NodeID;
-
 
 public interface TransportHandshakeMessage extends WireProtocolMessage {
   public ConnectionID getConnectionId();
@@ -12,9 +10,6 @@ public interface TransportHandshakeMessage extends WireProtocolMessage {
   public boolean isMaxConnectionsExceeded();
 
   public int getMaxConnections();
-  
-  // currently used by TC-Grouop-Comm
-  public NodeID getNodeID();
   
   // XXX: Yuck.
   public boolean isSyn();

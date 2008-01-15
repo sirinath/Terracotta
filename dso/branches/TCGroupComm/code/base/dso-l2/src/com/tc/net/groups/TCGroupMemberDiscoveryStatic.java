@@ -155,7 +155,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     Iterator it = manager.getMembers().iterator();
     while (it.hasNext()) {
       TCGroupMember m = (TCGroupMember) it.next();
-      if (sid.equals(((NodeIDImpl) (m.getNodeID())).getName())) {
+      if (sid.equals(((NodeIDImpl) (m.getPeerNodeID())).getName())) {
         member = m;
         break;
       }
