@@ -7,6 +7,7 @@ package com.tc.statistics.beans;
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
@@ -42,7 +43,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   private final StatisticsBuffer buffer;
   private final Set activeSessionIds = Collections.synchronizedSet(new HashSet());
 
-  private long schedulePeriod = 10000; // HACK: make configurable
+  private long schedulePeriod = 3000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
 
@@ -93,7 +94,6 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   }
 
   public void capturingStopped(long sessionId) {
-    activeSessionIds.remove(new Long(sessionId));
   }
 
   private class SendStatsTask extends TimerTask {
@@ -106,9 +106,17 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
           try {
             buffer.consumeStatistics(((Long)it.next()).longValue(), new StatisticsConsumer() {
               public boolean consumeStatisticData(long sessionId, StatisticData data) {
-                final Notification notif = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
-                notif.setUserData(data);
-                sendNotification(notif);
+                // create the notification event
+                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
+                notification.setUserData(data);
+                sendNotification(notification);
+
+                // detect when a capture session has shut down and remove it
+                // from the list of active sessions
+                if (SRAShutdownTimestamp.ACTION_NAME.equals(data.getName())) {
+                  activeSessionIds.remove(new Long(sessionId));
+                }
+
                 return true;
               }
             });

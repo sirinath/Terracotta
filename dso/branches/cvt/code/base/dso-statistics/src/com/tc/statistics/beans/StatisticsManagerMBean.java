@@ -6,8 +6,12 @@ package com.tc.statistics.beans;
 
 public interface StatisticsManagerMBean {
   public String[] getSupportedStatistics();
+
   public long createCaptureSession();
-  public void registerAction(long sessionId, String actionName);
+
+  public void enableStatistic(long sessionId, String name);
+
   public void startCapturing(long sessionId);
+
   public void stopCapturing(long sessionId);
 }

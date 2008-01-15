@@ -48,14 +48,11 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     }
   }
 
-  public void registerAction(long sessionId, String actionName) {
-    StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(new Long(sessionId));
-    if (null == retriever) {
-      throw new RuntimeException("The capture session with ID '"+sessionId+"' couldn't be found.");
-    }
-    StatisticRetrievalAction action = registry.getActionInstance(actionName);
+  public void enableStatistic(long sessionId, String name) {
+    StatisticsRetriever retriever = obtainRetriever(sessionId);
+    StatisticRetrievalAction action = registry.getActionInstance(name);
     if (null == action) {
-      throw new RuntimeException("Couldn't find an action with the name '"+actionName+"' to register for capture session with ID '"+sessionId+"'.");
+      throw new RuntimeException("Couldn't find a statistic retrieval action with the name '"+name+"' to register for capture session with ID '"+sessionId+"'.");
     }
     retriever.registerAction(action);
   }
@@ -75,5 +72,13 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     } catch (TCStatisticsBufferException e) {
       throw new RuntimeException("Error while stopping the capture session with ID '"+sessionId+"'.", e);
     }
+  }
+
+  private StatisticsRetriever obtainRetriever(long sessionId) {
+    StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(new Long(sessionId));
+    if (null == retriever) {
+      throw new RuntimeException("The capture session with ID '"+sessionId+"' couldn't be found.");
+    }
+    return retriever;
   }
 }
