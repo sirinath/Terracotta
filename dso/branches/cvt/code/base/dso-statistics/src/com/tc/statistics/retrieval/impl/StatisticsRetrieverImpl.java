@@ -5,10 +5,11 @@ package com.tc.statistics.retrieval.impl;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 import com.tc.statistics.buffer.StatisticsBuffer;
+import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
-import com.tc.statistics.retrieval.StatisticType;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
@@ -25,7 +26,7 @@ import java.util.TimerTask;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
-public class StatisticsRetrieverImpl implements StatisticsRetriever {
+public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
   private final StatisticsBuffer buffer;
   private final Map actionsMap;
 
@@ -49,6 +50,10 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       actions_map_construction.put(type, new CopyOnWriteArrayList());
     }
     actionsMap = Collections.unmodifiableMap(actions_map_construction);
+  }
+
+  public long getSessionId() {
+    return sessionId;
   }
 
   public void removeAllActions() {
@@ -152,6 +157,14 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever {
       task = null;
       timer = null;
     }
+  }
+
+  public void capturingStarted(long sessionId) {
+    startup();
+  }
+
+  public void capturingStopped(long sessionId) {
+    shutdown();
   }
 
   private class RetrieveStatsTask extends TimerTask {

@@ -3,8 +3,6 @@
  */
 package com.tc.statistics;
 
-import org.apache.commons.lang.ClassUtils;
-
 import com.tc.exception.TCRuntimeException;
 
 import java.io.Serializable;
@@ -14,6 +12,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.math.BigDecimal;
 
 public class StatisticData implements Serializable {
   private static final long serialVersionUID = -5767295895871812119L;
@@ -24,35 +23,43 @@ public class StatisticData implements Serializable {
   private String element;
   private Object data;
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, Long value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, Long value) {
+    return _buildInstanceForLocalhost(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String value) {
+    return _buildInstanceForLocalhost(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, Date value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, null, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, Date value) {
+    return _buildInstanceForLocalhost(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Long value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, BigDecimal value) {
+    return _buildInstanceForLocalhost(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, String value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, Long value) {
+    return _buildInstanceForLocalhost(name, moment, element, value);
   }
 
-  public static StatisticData buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Date value) {
-    return _buildInstanceForClassAtLocalhost(klass, moment, element, value);
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, String value) {
+    return _buildInstanceForLocalhost(name, moment, element, value);
   }
 
-  private static StatisticData _buildInstanceForClassAtLocalhost(Class klass, Date moment, String element, Object value) {
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, Date value) {
+    return _buildInstanceForLocalhost(name, moment, element, value);
+  }
+
+  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, BigDecimal value) {
+    return _buildInstanceForLocalhost(name, moment, element, value);
+  }
+
+  private static StatisticData _buildInstanceForLocalhost(String name, Date moment, String element, Object value) {
     try {
       return new StatisticData()
         .moment(moment)
-        .name(ClassUtils.getShortClassName(klass))
+        .name(name)
         .agentIp(InetAddress.getLocalHost().getHostAddress())
         .element(element)
         .data(value);
@@ -147,6 +154,14 @@ public class StatisticData implements Serializable {
   }
 
   public StatisticData data(Date data) {
+    return data((Object)data);
+  }
+
+  public void setData(BigDecimal data) {
+    setData((Object)data);
+  }
+
+  public StatisticData data(BigDecimal data) {
     return data((Object)data);
   }
 

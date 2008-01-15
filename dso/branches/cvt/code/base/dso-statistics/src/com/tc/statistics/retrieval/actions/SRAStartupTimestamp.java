@@ -4,19 +4,26 @@
 package com.tc.statistics.retrieval.actions;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
-import com.tc.statistics.retrieval.StatisticType;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 
 import java.util.Date;
 
 public class SRAStartupTimestamp implements StatisticRetrievalAction {
+
+  public final static String ACTION_NAME = "startup timestamp";
+
+  public String getName() {
+    return ACTION_NAME;
+  }
+
   public StatisticType getType() {
     return null;
   }
 
   public StatisticData[] retrieveStatisticData() {
     Date moment = new Date();
-    return new StatisticData[] { StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, moment) };
+    return new StatisticData[] { StatisticData.buildInstanceForLocalhost(ACTION_NAME, moment, moment) };
   }
 
   public void cleanup() {

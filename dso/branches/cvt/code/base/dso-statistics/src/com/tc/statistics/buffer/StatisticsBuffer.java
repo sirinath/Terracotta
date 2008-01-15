@@ -4,18 +4,25 @@
 package com.tc.statistics.buffer;
 
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.CaptureSession;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
-
-import java.util.Date;
 
 public interface StatisticsBuffer {
   public void open() throws TCStatisticsBufferException;
 
   public void close() throws TCStatisticsBufferException;
 
-  public long createCaptureSession(Date start) throws TCStatisticsBufferException;
+  public CaptureSession createCaptureSession() throws TCStatisticsBufferException;
+
+  public void startCapturing(long sessionId) throws TCStatisticsBufferException;
+
+  public void stopCapturing(long sessionId) throws TCStatisticsBufferException;
 
   public long storeStatistic(long sessionId, StatisticData data) throws TCStatisticsBufferException;
 
   public void consumeStatistics(long sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
+
+  public void addListener(StatisticsBufferListener listener);
+
+  public void removeListener(StatisticsBufferListener listener);
 }
