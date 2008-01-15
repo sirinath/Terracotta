@@ -8,6 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.TCConnectionManager;
+import com.tc.net.protocol.transport.ConnectionHealthChecker;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
@@ -16,7 +17,10 @@ import com.tc.object.session.SessionProvider;
  * CommsMgr provides Listener and Channel endpoints for exchanging <code>TCMessage</code> type messages
  */
 public interface CommunicationsManager {
+  
   public TCConnectionManager getConnectionManager();
+  
+  public ConnectionHealthChecker getConnHealthChecker();
 
   public void shutdown();
 

@@ -9,6 +9,7 @@ import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.TCConnectionManager;
+import com.tc.net.protocol.transport.ConnectionHealthChecker;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
@@ -61,6 +62,10 @@ public class TestCommunicationsManager implements CommunicationsManager {
                                         ConnectionIDFactory connectionIdFactory,
                                         WireProtocolMessageSink wireProtoMsgSink) {
     throw new ImplementMe();
+  }
+
+  public ConnectionHealthChecker getConnHealthChecker() {
+    return null;
   }
 
 }

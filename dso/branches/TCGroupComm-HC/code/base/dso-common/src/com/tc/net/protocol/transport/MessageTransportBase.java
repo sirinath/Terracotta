@@ -20,6 +20,7 @@ import com.tc.net.protocol.IllegalReconnectException;
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.transport.ConnectionHealthChecker.ConnectionHealthCheckerContext;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 
@@ -36,7 +37,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected final MessageTransportStatus           status;
   protected final SynchronizedBoolean              isOpen;
   protected final TransportHandshakeMessageFactory messageFactory;
-  private final ConnectionHealthChecker            connHlthChkr;
+  private final ConnectionHealthCheckerContext     connHlthChkrCtxt;
   private final TransportHandshakeErrorHandler     handshakeErrorHandler;
   private NetworkLayer                             receiveLayer;
 
@@ -51,17 +52,30 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected MessageTransportBase(MessageTransportState initialState,
                                  TransportHandshakeErrorHandler handshakeErrorHandler,
                                  TransportHandshakeMessageFactory messageFactory, boolean isOpen, TCLogger logger) {
+    this(initialState, handshakeErrorHandler, messageFactory, isOpen, logger, null);
+  }
+
+  protected MessageTransportBase(MessageTransportState initialState,
+                                 TransportHandshakeErrorHandler handshakeErrorHandler,
+                                 TransportHandshakeMessageFactory messageFactory, boolean isOpen, TCLogger logger,
+                                 ConnectionHealthChecker connHlthChkr) {
 
     super(logger);
     this.handshakeErrorHandler = handshakeErrorHandler;
     this.messageFactory = messageFactory;
     this.isOpen = new SynchronizedBoolean(isOpen);
     this.status = new MessageTransportStatus(initialState, logger);
-    this.connHlthChkr = new ConnectionHealthChecker(this);
+    if (connHlthChkr != null) {
+      this.connHlthChkrCtxt = connHlthChkr.checkHealthFor(this);
+    } else {
+      this.connHlthChkrCtxt = null;
+    }
   }
 
-  public void activateConnHC() {
-    this.connHlthChkr.activate();
+  public void startHealthMonitoring() {
+    if (this.connHlthChkrCtxt != null) {
+      this.connHlthChkrCtxt.startMonitoring();
+    }
   }
 
   public void setAllowConnectionReplace(boolean allow) {
@@ -99,11 +113,18 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     if (message instanceof TransportHandshakeMessage) {
       // top layers dont want to know my layer specific language.
       if (((TransportHandshakeMessage) message).isPing()) {
-        send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection()));
-        this.connHlthChkr.pingSent(System.currentTimeMillis());
+        if (this.connHlthChkrCtxt != null) {
+          send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection(), this.connHlthChkrCtxt
+              .getLocalHClsnrInfo()));
+        } else {
+          send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection(), null));
+        }
         return;
       } else if (((TransportHandshakeMessage) message).isPingReply()) {
-        this.connHlthChkr.pingReplyRcvd(System.currentTimeMillis());
+        if (this.connHlthChkrCtxt != null) {
+          this.connHlthChkrCtxt.pingReplyRcvd(System.currentTimeMillis(), ((TransportHandshakeMessage) message)
+              .getPeerHCInfo());
+        }
         return;
       } else {
         throw new AssertionError("Wrong handshake message from: " + message.getSource());
