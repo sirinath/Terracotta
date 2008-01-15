@@ -41,6 +41,8 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     this.buffer = buffer;
     this.sessionId = sessionId;
 
+    this.buffer.addListener(this);
+
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();

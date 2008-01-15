@@ -207,7 +207,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     try {
       final int row_count = JdbcHelper.executeUpdateQuery(connection, "UPDATE capturesession SET start = ? WHERE id = ? AND start IS NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setDate(1, new java.sql.Date(new Date().getTime()));
+          statement.setTimestamp(1, new Timestamp(new Date().getTime()));
           statement.setLong(2, sessionId);
         }
       });
@@ -233,9 +233,11 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     ensureExistingConnection();
 
     try {
+      fireCapturingStopped(sessionId);
+
       final int row_count = JdbcHelper.executeUpdateQuery(connection, "UPDATE capturesession SET stop = ? WHERE id = ? AND start IS NOT NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setDate(1, new java.sql.Date(new Date().getTime()));
+          statement.setTimestamp(1, new Timestamp(new Date().getTime()));
           statement.setLong(2, sessionId);
         }
       });
@@ -243,8 +245,6 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       if (row_count != 1) {
         throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", null);
       }
-
-      fireCapturingStopped(sessionId);
     } catch (SQLException e) {
       throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", e);
     }
@@ -367,9 +367,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
                     data.data(datatext);
                   } else {
                     Timestamp datatimestamp = resultSet.getTimestamp("datatimestamp");
-                    Assert.eval("All the data elements of the statistic data were NULL, this shouldn't be possible.",
-                      !resultSet.wasNull());
-                    data.data(datatimestamp);
+                    if (!resultSet.wasNull()) {
+                      data.data(datatimestamp);
+                    } else {
+                      BigDecimal datadecimal = resultSet.getBigDecimal("datadecimal");
+                      Assert.eval("All the data elements of the statistic data were NULL, this shouldn't be possible.",
+                        !resultSet.wasNull());
+                      data.data(datadecimal);
+                    }
                   }
                 }
 
