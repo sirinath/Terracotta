@@ -292,6 +292,11 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
 
     String bindAddress = l2DSOConfig.bind().getString();
+    if (bindAddress == null) {
+      // workaround for CDV-584
+      bindAddress = TCSocketAddress.WILDCARD_IP;
+    }
+
     InetAddress bind = InetAddress.getByName(bindAddress);
 
     AddressChecker addressChecker = new AddressChecker();
