@@ -6,12 +6,15 @@ package com.tc.net.protocol.transport;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
+import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.TCNetworkHeader;
 import com.tc.net.protocol.TCProtocolException;
 import com.tc.util.Assert;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage {
   static final byte          VERSION_1  = 1;
@@ -28,7 +31,10 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   private final String       errorContext;
   private final boolean      hasErrorContext;
   private final int          maxConnections;
+  private final boolean      hasPeerHCSocketInfo;
   private final boolean      isMaxConnectionsExceeded;
+  private final int          peerHClsnrPort;
+  private final String       peerHClsnrAddr;
 
   TransportHandshakeMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
       throws TCProtocolException {
@@ -50,6 +56,16 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
 
       this.isMaxConnectionsExceeded = in.readBoolean();
       this.maxConnections = in.readInt();
+
+      this.hasPeerHCSocketInfo = in.readBoolean();
+      if (this.hasPeerHCSocketInfo) {
+        this.peerHClsnrAddr = in.readString();
+        this.peerHClsnrPort = in.readInt();
+      } else {
+        this.peerHClsnrAddr = null;
+        this.peerHClsnrPort = 0;
+      }
+
       this.hasErrorContext = in.readBoolean();
 
       if (this.hasErrorContext) {
@@ -85,6 +101,14 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
         return "PING_REPLY";
       default:
         return "UNKNOWN";
+    }
+  }
+
+  public TCSocketAddress getPeerHCInfo() {
+    try {
+      return new TCSocketAddress(InetAddress.getByName(peerHClsnrAddr), peerHClsnrPort);
+    } catch (UnknownHostException e) {
+      return null;
     }
   }
 

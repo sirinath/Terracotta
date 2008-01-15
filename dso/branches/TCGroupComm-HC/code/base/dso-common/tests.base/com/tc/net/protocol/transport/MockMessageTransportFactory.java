@@ -32,4 +32,8 @@ public class MockMessageTransportFactory implements MessageTransportFactory {
     callCount++;
     return transport;
   }
+
+  public void setConnectionHealthChecker(ConnectionHealthChecker connHlthChkr) {
+    //
+  }
 }

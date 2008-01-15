@@ -3,6 +3,8 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.net.TCSocketAddress;
+
 public class TestSynMessage extends TestTransportHandshakeMessage implements SynMessage {
 
   public boolean isSyn() {
@@ -23,5 +25,9 @@ public class TestSynMessage extends TestTransportHandshakeMessage implements Syn
 
   public boolean isPingReply() {
     return false;
+  }
+
+  public TCSocketAddress getPeerHCInfo() {
+    return null;
   }
 }

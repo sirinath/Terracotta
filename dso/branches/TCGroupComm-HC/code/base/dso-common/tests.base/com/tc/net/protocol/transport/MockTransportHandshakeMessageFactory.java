@@ -3,6 +3,7 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
@@ -76,11 +77,13 @@ public class MockTransportHandshakeMessageFactory implements TransportHandshakeM
     }
   }
 
-  public TransportHandshakeMessage createPing(ConnectionID connectionId, TCConnection source) {
+  public TransportHandshakeMessage createPing(ConnectionID connectionId, TCConnection source,
+                                              TCSocketAddress peerHCSockAddr) {
     return null;
   }
 
-  public TransportHandshakeMessage createPingReply(ConnectionID connectionId, TCConnection source) {
+  public TransportHandshakeMessage createPingReply(ConnectionID connectionId, TCConnection source,
+                                                   TCSocketAddress peerHCSockAddr) {
     return null;
   }
 

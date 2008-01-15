@@ -46,8 +46,16 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
+    this(clientConnectionEstablisher, handshakeErrorHandler, messageFactory, wireProtocolAdaptorFactory, null);
+  }
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false,  TCLogging.getLogger(ClientMessageTransport.class));
+  public ClientMessageTransport(ClientConnectionEstablisher clientConnectionEstablisher,
+                                TransportHandshakeErrorHandler handshakeErrorHandler,
+                                TransportHandshakeMessageFactory messageFactory,
+                                WireProtocolAdaptorFactory wireProtocolAdaptorFactory, ConnectionHealthChecker connHlthChkr) {
+
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, TCLogging
+        .getLogger(ClientMessageTransport.class), connHlthChkr);
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }
@@ -86,9 +94,9 @@ public class ClientMessageTransport extends MessageTransportBase {
         Assert.eval(!this.connectionId.isNull());
         isOpen.set(true);
         sendAck();
-        NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
+        NetworkStackID nid = new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
-        return(nid);
+        return (nid);
       } catch (TCTimeoutException e) {
         status.reset();
         throw e;
@@ -204,15 +212,15 @@ public class ClientMessageTransport extends MessageTransportBase {
       this.sendToConnection(ack);
       this.status.established();
       fireTransportConnectedEvent();
-      activateConnHC();
+      startHealthMonitoring();
     }
   }
 
   void reconnect(TCConnection connection) throws Exception {
-    
+
     // don't do reconnect if open is still going on
-    if(!wasOpened) return;
-    
+    if (!wasOpened) return;
+
     Assert.eval(!isConnected());
     wireNewConnection(connection);
     try {
