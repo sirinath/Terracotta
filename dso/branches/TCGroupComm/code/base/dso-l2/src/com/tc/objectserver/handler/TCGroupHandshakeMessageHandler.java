@@ -7,19 +7,19 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
+import com.tc.net.groups.TCGroupHandshakeMessage;
 import com.tc.net.groups.TCGroupManagerImpl;
-import com.tc.net.groups.TCGroupPingMessage;
 
-public class TCGroupPingMessageHandler extends AbstractEventHandler {
+public class TCGroupHandshakeMessageHandler extends AbstractEventHandler {
   private final TCGroupManagerImpl manager;
   
-  public TCGroupPingMessageHandler(TCGroupManagerImpl manager) {
+  public TCGroupHandshakeMessageHandler(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
   
   public void handleEvent(EventContext context) {
-    TCGroupPingMessage ping = (TCGroupPingMessage) context;
-    manager.pingReceived(ping);
+    TCGroupHandshakeMessage msg = (TCGroupHandshakeMessage) context;
+    manager.handshakeReceived(msg);
   }
 
   public void initialize(ConfigurationContext context) {

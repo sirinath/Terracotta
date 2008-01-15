@@ -1,16 +1,13 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice. All rights reserved.
  */
 package com.tc.net.protocol;
 
-import com.tc.net.groups.NodeID;
 import com.tc.util.AbstractIdentifier;
 
 public class NetworkStackID extends AbstractIdentifier {
-  private NodeID nodeID;
 
-  private NetworkStackID() {
+  private NetworkStackID()  {
     super();
   }
 
@@ -20,14 +17,6 @@ public class NetworkStackID extends AbstractIdentifier {
 
   public String getIdentifierType() {
     return "NetworkStackID";
-  }
-  
-  public void setNodeID(NodeID nodeID) {
-    this.nodeID = nodeID;
-  }
-  
-  public NodeID getNodeID() {
-    return nodeID;
   }
 
 }

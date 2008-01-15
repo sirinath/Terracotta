@@ -19,15 +19,15 @@ import com.tc.l2.state.Enrollment;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
-import com.tc.net.protocol.TCGroupNetworkStackHarnessFactory;
+import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ChannelManager;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.CommunicationsManager;
+import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
-import com.tc.net.protocol.tcm.TCGroupCommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.net.protocol.tcm.TCMessageFactory;
 import com.tc.net.protocol.tcm.TCMessageFactoryImpl;
@@ -76,10 +76,10 @@ public class TCGroupMessageWrapperTest extends TestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    clientComms = new TCGroupCommunicationsManagerImpl(monitor, new TCGroupNetworkStackHarnessFactory(), null,
-                                                       new NullConnectionPolicy(), 0, nodeID1);
-    serverComms = new TCGroupCommunicationsManagerImpl(monitor, new TCGroupNetworkStackHarnessFactory(), null,
-                                                       new NullConnectionPolicy(), 0, nodeID2);
+    clientComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
+                                                       new NullConnectionPolicy(), 0);
+    serverComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
+                                                       new NullConnectionPolicy(), 0);
   }
 
   protected void tearDown() throws Exception {
@@ -132,11 +132,10 @@ public class TCGroupMessageWrapperTest extends TestCase {
         .createClientChannel(sessionManager, 0, TCSocketAddress.LOOPBACK_IP, lsnr.getBindPort(), 3000,
                              new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(LOCALHOST, lsnr
                                  .getBindPort()) }));
-    channel.open();
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
+    channel.open();
 
     assertTrue(channel.isConnected());
-    assertTrue(channel.getChannelID().getNodeID().equals(nodeID2));
 
     assertEquals(1, channelManager.getChannels().length);
     return (channel);
@@ -158,7 +157,6 @@ public class TCGroupMessageWrapperTest extends TestCase {
     ClientMessageChannel channel = openChannel(lsnr);
 
     MessageChannel serverChannel = channelManager.getChannels()[0];
-    assertTrue(nodeID1.equals(serverChannel.getChannelID().getNodeID()));
 
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) channel.createMessage(TCMessageType.GROUP_WRAPPER_MESSAGE);
     wrapper.setGroupMessage(sendMesg);

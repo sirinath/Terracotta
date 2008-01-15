@@ -6,7 +6,6 @@ package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutput;
-import com.tc.net.groups.GroupMessage;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -14,7 +13,11 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.DSOMessageBase;
 import com.tc.object.session.SessionID;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * @author EY
@@ -42,13 +45,29 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
   }
 
   protected void dehydrateValues() {
-    putNVPair(GROUP_MESSAGE_ID, new TCGroupMessageSerializer(message));
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      ObjectOutputStream stream = new ObjectOutputStream(out);
+      stream.writeObject(this.message);
+    } catch (IOException e) {
+      throw new RuntimeException();
+    }
+    putNVPair(GROUP_MESSAGE_ID, out.toByteArray());
   }
 
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case GROUP_MESSAGE_ID:
-        message = (GroupMessage) getObject(new TCGroupMessageSerializer());
+        
+        byte[] data = getBytesArray();
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        ObjectInputStream stream = new ObjectInputStream(in);
+        try {
+          this.message = (GroupMessage) stream.readObject();
+        } catch (ClassNotFoundException e) {
+          throw new RuntimeException();
+        }
+        
         return true;
       default:
         return false;

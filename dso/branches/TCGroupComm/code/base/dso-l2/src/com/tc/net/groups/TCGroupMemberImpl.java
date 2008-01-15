@@ -20,28 +20,30 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private final MessageChannel channel;
   private final NodeID         srcNodeID;                           // who setup channel
   private final NodeID         dstNodeID;
-  private final NodeID         nodeID;
+  private final NodeID         peerNodeID;
   private AtomicBoolean        connected = new AtomicBoolean(false);
 
   /*
-   * Member channel established by this node, srcNodeID.
+   * Member channel established from src to dst.
+   * Called by channel initiator, openChannel, peer is dstNodeID.
    */
-  public TCGroupMemberImpl(NodeID srcNodeID, MessageChannel channel) {
+  public TCGroupMemberImpl(NodeID srcNodeID, NodeID dstNodeID, MessageChannel channel) {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
-    this.dstNodeID = channel.getChannelID().getNodeID();
-    this.nodeID = this.dstNodeID;
+    this.dstNodeID = dstNodeID;
+    this.peerNodeID = this.dstNodeID;
     this.channel.addListener(this);
   }
 
   /*
-   * Member established by dstNodeID.
+   * Member channel established from src to dst.
+   * Called by channel receiver, channelCreated, peer is srcNodeID.
    */
-  public TCGroupMemberImpl(MessageChannel channel, NodeID dstNodeID) {
+  public TCGroupMemberImpl(MessageChannel channel, NodeID srcNodeID, NodeID dstNodeID) {
     this.channel = channel;
-    this.srcNodeID = channel.getChannelID().getNodeID();
+    this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
-    this.nodeID = this.srcNodeID;
+    this.peerNodeID = this.srcNodeID;
     this.channel.addListener(this);
   }
 
@@ -60,7 +62,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   public String toString() {
-    return ("Group Member: " + ((NodeIDImpl) nodeID).getName() + " " + srcNodeID + " <-> " + dstNodeID);
+    return ("Group Member: " + ((NodeIDImpl) peerNodeID).getName() + " " + srcNodeID + " <-> " + dstNodeID);
   }
 
   public void notifyChannelEvent(ChannelEvent event) {
@@ -85,8 +87,8 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     return dstNodeID;
   }
 
-  public NodeID getNodeID() {
-    return nodeID;
+  public NodeID getPeerNodeID() {
+    return peerNodeID;
   }
 
   public void setTCGroupManager(TCGroupManager manager) {

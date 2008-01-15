@@ -78,11 +78,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
     this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0);
   }
-  
-  public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
-    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, workerCommCount, new TransportHandshakeMessageFactoryImpl());
-  }
 
   /**
    * Create a comms manager with the given connection manager. This cstr is mostly for testing, or in the event that you
@@ -92,11 +87,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    * @param serverDescriptors
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, 
-                                   int workerCommCount, TransportHandshakeMessageFactory transportHandshakeMessageFactory) {
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
 
     this.monitor = monitor;
-    this.transportHandshakeMessageFactory = transportHandshakeMessageFactory;
+    this.transportHandshakeMessageFactory =  new TransportHandshakeMessageFactoryImpl();
     this.connectionPolicy = connectionPolicy;
     this.stackHarnessFactory = stackHarnessFactory;
     privateConnMgr = (connMgr == null);
@@ -107,7 +101,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
       this.connectionManager = connMgr;
     }
   }
-
 
   public TCConnectionManager getConnectionManager() {
     return this.connectionManager;
@@ -239,7 +232,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   /**
    * Creates a network listener with a default network stack.
    */
-  protected NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
+  private NetworkListener createListener(SessionProvider sessionProvider, TCSocketAddress addr,
                                          boolean transportDisconnectRemovesChannel,
                                          ConnectionIDFactory connectionIdFactory, boolean reuseAddr, Sink httpSink,
                                          WireProtocolMessageSink wireProtoMsgSnk) {

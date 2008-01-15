@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 public abstract class AbstractGroupMessage implements GroupMessage {
-  private final static byte GROUP_MESSAGE_ID   = 1;
 
   private static long      nextID           = 0;
 
@@ -63,7 +62,6 @@ public abstract class AbstractGroupMessage implements GroupMessage {
   public NodeID messageFrom() {
     return messageOrginator;
   }
-  
 
   public final void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     type = in.readInt();

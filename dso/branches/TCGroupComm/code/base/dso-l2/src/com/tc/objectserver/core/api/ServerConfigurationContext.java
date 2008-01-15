@@ -58,6 +58,7 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String TRANSACTION_LOWWATERMARK_STAGE                     = "transaction_lowwatermark_stage";
   public static final String RECEIVE_GROUP_MESSAGE_STAGE                        = "receive_group_message_stage";
   public static final String GROUP_PING_MESSAGE_STAGE                           = "group_ping_message_stage";
+  public static final String GROUP_HANDSHAKE_MESSAGE_STAGE                      = "group_handshake_message_stage";
 
   public L2Coordinator getL2Coordinator();
 
