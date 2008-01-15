@@ -3,10 +3,14 @@
  */
 package com.tc.statistics.retrieval;
 
+import com.tc.statistics.StatisticRetrievalAction;
+
 public interface StatisticsRetriever {
   public void startup();
 
   public void shutdown();
+
+  public long getSessionId();
 
   public void removeAllActions();
 

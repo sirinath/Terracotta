@@ -4,7 +4,7 @@
 package com.tctest.statistics.retrieval.actions;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 
 import java.net.InetAddress;
@@ -65,27 +65,25 @@ public class SRAMemoryUsageTest extends TestCase {
   private long[] assertMemUsageData(StatisticData[] data, Date before, Date after) throws Exception {
     long[] values = new long[3];
     for (int i = 0; i < data.length; i++) {
-      assertEquals("SRAMemoryUsage", data[i].getName());
+      assertTrue(data[i].getName().startsWith(SRAMemoryUsage.ACTION_NAME));
       assertEquals(InetAddress.getLocalHost().getHostAddress(), data[i].getAgentIp());
       assertTrue(before.compareTo(data[i].getMoment()) <= 0);
       assertTrue(after.compareTo(data[i].getMoment()) >= 0);
       switch (i) {
         case 0:
-          assertEquals(SRAMemoryUsage.ELEMENT_FREE, data[i].getElement());
-          values[0] = ((Long)data[i].getData()).longValue();
+          assertEquals(SRAMemoryUsage.DATA_NAME_FREE, data[i].getName());
           break;
         case 1:
-          assertEquals(SRAMemoryUsage.ELEMENT_USED, data[i].getElement());
-          values[1] = ((Long)data[i].getData()).longValue();
+          assertEquals(SRAMemoryUsage.DATA_NAME_USED, data[i].getName());
           break;
         case 2:
-          assertEquals(SRAMemoryUsage.ELEMENT_MAX, data[i].getElement());
-          values[2] = ((Long)data[i].getData()).longValue();
+          assertEquals(SRAMemoryUsage.DATA_NAME_MAX, data[i].getName());
           break;
         default:
           fail();
           break;
       }
+      values[i] = ((Long)data[i].getData()).longValue();
     }
 
     return values;

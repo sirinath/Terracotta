@@ -333,6 +333,27 @@ modules:
         - management
         - thirdparty-api
         - thirdparty
+  - dso-statistics-tests:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - aspectwerkz
+        - common-api
+        - common
+        - deploy
+        - dso-common
+        - dso-common-jdk15
+        - dso-l1-api
+        - dso-l1
+        - dso-l2-common
+        - dso-l2
+        - dso-statistics
+        - legacy-test-tree
+        - linked-child-process
+        - management
+        - simulator
+        - thirdparty-api
+        - thirdparty
   - dso-spring:
       options:
         jdk: J2SE-1.4

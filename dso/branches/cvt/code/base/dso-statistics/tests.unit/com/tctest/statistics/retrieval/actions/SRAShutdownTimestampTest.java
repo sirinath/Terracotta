@@ -4,7 +4,7 @@
 package com.tctest.statistics.retrieval.actions;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 
 import java.net.InetAddress;
@@ -18,7 +18,7 @@ public class SRAShutdownTimestampTest extends TestCase {
     Date before = new Date();
     StatisticData data = action.retrieveStatisticData()[0];
     Date after = new Date();
-    assertEquals("SRAShutdownTimestamp", data.getName());
+    assertEquals(SRAShutdownTimestamp.ACTION_NAME, data.getName());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
     assertTrue(before.compareTo(data.getData()) <= 0);
     assertTrue(after.compareTo(data.getData()) >= 0);

@@ -7,20 +7,27 @@ import com.tc.runtime.JVMMemoryManager;
 import com.tc.runtime.MemoryUsage;
 import com.tc.runtime.TCRuntime;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
-import com.tc.statistics.retrieval.StatisticType;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 
 import java.util.Date;
 
 public class SRAMemoryUsage implements StatisticRetrievalAction {
-  public final static String ELEMENT_FREE = "free";
-  public final static String ELEMENT_USED = "used";
-  public final static String ELEMENT_MAX = "max";
+  
+  public final static String ACTION_NAME = "memory";
+
+  public final static String DATA_NAME_FREE = ACTION_NAME + " free";
+  public final static String DATA_NAME_USED = ACTION_NAME + " used";
+  public final static String DATA_NAME_MAX = ACTION_NAME + " max";
 
   private JVMMemoryManager manager;
 
   public SRAMemoryUsage() {
     manager = TCRuntime.getJVMMemoryManager();
+  }
+
+  public String getName() {
+    return ACTION_NAME;
   }
 
   public StatisticType getType() {
@@ -31,9 +38,9 @@ public class SRAMemoryUsage implements StatisticRetrievalAction {
     Date moment = new Date();
     MemoryUsage usage = manager.getMemoryUsage();
     return new StatisticData[] {
-      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_FREE, new Long(usage.getFreeMemory())),
-      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_USED, new Long(usage.getUsedMemory())),
-      StatisticData.buildInstanceForClassAtLocalhost(getClass(), moment, ELEMENT_MAX, new Long(usage.getMaxMemory()))
+      StatisticData.buildInstanceForLocalhost(DATA_NAME_FREE, moment, new Long(usage.getFreeMemory())),
+      StatisticData.buildInstanceForLocalhost(DATA_NAME_USED, moment, new Long(usage.getUsedMemory())),
+      StatisticData.buildInstanceForLocalhost(DATA_NAME_MAX, moment, new Long(usage.getMaxMemory()))
     };
   }
 

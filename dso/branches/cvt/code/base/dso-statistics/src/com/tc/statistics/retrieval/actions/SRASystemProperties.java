@@ -5,8 +5,8 @@ package com.tc.statistics.retrieval.actions;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
-import com.tc.statistics.retrieval.StatisticType;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +14,13 @@ import java.util.Date;
 import java.util.Properties;
 
 public class SRASystemProperties implements StatisticRetrievalAction {
+
+  public final static String ACTION_NAME = "system properties";
+
+  public String getName() {
+    return ACTION_NAME;
+  }
+
   public StatisticType getType() {
     return StatisticType.STARTUP;
   }
@@ -23,7 +30,7 @@ public class SRASystemProperties implements StatisticRetrievalAction {
     Properties properties = System.getProperties();
     try {
       properties.store(out, null);
-      return new StatisticData[] { StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(), out.toString("ISO-8859-1")) };
+      return new StatisticData[] { StatisticData.buildInstanceForLocalhost(ACTION_NAME, new Date(), out.toString("ISO-8859-1")) };
     } catch (IOException e) {
       throw new TCRuntimeException("Unexpected error while storing the system properties.", e);
     }

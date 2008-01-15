@@ -16,6 +16,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.util.PortChooser;
 
 import java.io.File;
@@ -59,16 +60,18 @@ public class L2Management extends TerracottaManagement {
   private final ObjectManagementMonitor        objectManagementBean;
   private final LockStatisticsMonitorMBean     lockStatistics;
   private final StatisticsEmitterMBean         statisticsEmitter;
+  private final StatisticsManagerMBean         statisticsManager;
   private static final Map                     rmiRegistryMap = new HashMap();
 
   public L2Management(TCServerInfoMBean tcServerInfo, LockStatisticsMonitorMBean lockStatistics, StatisticsEmitterMBean statisticsEmitter,
-                      L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
+                      StatisticsManagerMBean statisticsManager, L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
                       String defaultL2HostAddr) throws MBeanRegistrationException, NotCompliantMBeanException,
       InstanceAlreadyExistsException {
     this.tcServerInfo = tcServerInfo;
     this.lockStatistics = lockStatistics;
     this.configurationSetupManager = configurationSetupManager;
     this.statisticsEmitter = statisticsEmitter;
+    this.statisticsManager = statisticsManager;
     this.tcDumper = tcDumper;
     this.defaultL2Host = defaultL2HostAddr;
 
@@ -226,6 +229,7 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.registerMBean(objectManagementBean, L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.registerMBean(lockStatistics, L2MBeanNames.LOCK_STATISTICS);
     mBeanServer.registerMBean(statisticsEmitter, L2MBeanNames.STATISTICS_EMITTER);
+    mBeanServer.registerMBean(statisticsManager, L2MBeanNames.STATISTICS_MANAGER);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.registerMBean(new L2Dumper(tcDumper), L2MBeanNames.DUMPER);
@@ -238,6 +242,7 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.unregisterMBean(L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.unregisterMBean(L2MBeanNames.LOCK_STATISTICS);
     mBeanServer.unregisterMBean(L2MBeanNames.STATISTICS_EMITTER);
+    mBeanServer.unregisterMBean(L2MBeanNames.STATISTICS_MANAGER);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.unregisterMBean(L2MBeanNames.DUMPER);

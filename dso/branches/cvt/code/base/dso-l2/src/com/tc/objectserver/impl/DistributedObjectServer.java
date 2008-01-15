@@ -6,9 +6,6 @@ package com.tc.objectserver.impl;
 
 import org.apache.commons.io.FileUtils;
 
-import bsh.EvalError;
-import bsh.Interpreter;
-
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -166,13 +163,16 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.beans.StatisticsEmitter;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.beans.StatisticsManager;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
-import com.tc.statistics.retrieval.StatisticsRetriever;
+import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
-import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.impl.StatisticsRetrievalRegistryImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterManager;
@@ -195,7 +195,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -203,6 +202,9 @@ import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
+
+import bsh.EvalError;
+import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -248,6 +250,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   
   private StatisticsBuffer                     statisticsBuffer;
   private StatisticsEmitterMBean               statisticsEmitterMBean;
+  private StatisticsManagerMBean               statisticsManagerMBean;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -297,21 +300,27 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
 
-    long sessionId; // HACK: ugly capture session hack for now
     File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
     FileUtils.forceMkdir(statPath);
     statisticsBuffer = new H2StatisticsBufferImpl(statPath);
     try {
       statisticsBuffer.open();
-      sessionId = statisticsBuffer.createCaptureSession(new Date());
     } catch (TCStatisticsBufferException sbe) {
       throw new TCRuntimeException("Unable to open the statistics buffer", sbe);
     }
     
     try {
-      statisticsEmitterMBean = new StatisticsEmitter(statisticsBuffer, sessionId); // HACK: session ID is ugly hack for now
+      statisticsEmitterMBean = new StatisticsEmitter(statisticsBuffer);
     } catch (NotCompliantMBeanException ncmbe) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
+                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
+    }
+
+    StatisticsRetrievalRegistry registry = new StatisticsRetrievalRegistryImpl();
+    try {
+      statisticsManagerMBean = new StatisticsManager(registry, statisticsBuffer);
+    } catch (NotCompliantMBeanException ncmbe) {
+      throw new TCRuntimeException("Unable to construct the " + StatisticsManager.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
@@ -734,6 +743,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
                                                                     globalTxnCounter, objMgrStats);
 
+    populateStatisticsRetrievalRegistry(registry, serverStats);
+
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,
                                                     (LockManagerMBean) lockManager,
@@ -744,11 +755,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     lockStatsManager.start(channelManager, lockManager, respondToLockRequestStage.getSink());
 
-    StatisticsRetriever retriever = new StatisticsRetrieverImpl(statisticsBuffer, sessionId); // HACK: sessionId is a hack for now
-    retriever.registerAction(new SRAL2ToL1FaultRate(managementContext.getServerStats())); // HACK: actions should be configurable per session
-    retriever.registerAction(new SRAMemoryUsage());
-    retriever.startup();
-
     if (networkedHA) {
       final Node thisNode = makeThisNode();
       final Node[] allNodes = makeAllNodes();
@@ -757,6 +763,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
+  }
+
+  private void populateStatisticsRetrievalRegistry(StatisticsRetrievalRegistry registry, DSOGlobalServerStats serverStats) {
+    registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
+    registry.registerActionInstance(new SRAMemoryUsage());
+    registry.registerActionInstance(new SRASystemProperties());
+    registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
   }
 
   public boolean isBlocking() {
@@ -946,7 +959,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsEmitterMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsEmitterMBean, statisticsManagerMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no

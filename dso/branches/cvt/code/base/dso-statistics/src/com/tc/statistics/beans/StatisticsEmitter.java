@@ -8,10 +8,15 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
+import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.util.TCTimerImpl;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,7 +26,7 @@ import javax.management.Notification;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-public class StatisticsEmitter extends AbstractTerracottaMBean implements StatisticsEmitterMBean {
+public class StatisticsEmitter extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
   private static final String STATISTICS_EVENT_TYPE = "tc.statistics.event";
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
@@ -35,16 +40,16 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
   private final StatisticsBuffer buffer;
-  private final long sessionId; // HACK: properly support multiple capture sessions
+  private final Set activeSessionIds = Collections.synchronizedSet(new HashSet());
 
   private long schedulePeriod = 10000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
 
-  public StatisticsEmitter(StatisticsBuffer buffer, long sessionId) throws NotCompliantMBeanException {
+  public StatisticsEmitter(StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
     this.buffer = buffer;
-    this.sessionId = sessionId;
+    this.buffer.addListener(this);
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {
@@ -83,21 +88,33 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   public void reset() {
   }
 
+  public void capturingStarted(long sessionId) {
+    activeSessionIds.add(new Long(sessionId));
+  }
+
+  public void capturingStopped(long sessionId) {
+    activeSessionIds.remove(new Long(sessionId));
+  }
+
   private class SendStatsTask extends TimerTask {
     public void run() {
       boolean has_listeners = hasListeners();
-      if (has_listeners) {
-        try {
-          buffer.consumeStatistics(sessionId, new StatisticsConsumer() {
-            public boolean consumeStatisticData(long sessionId, StatisticData data) {
-              final Notification notif = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
-              notif.setUserData(data);
-              sendNotification(notif);
-              return true;
-            }
-          });
-        } catch (TCStatisticsBufferException e) {
-          throw new TCRuntimeException(e); // HACK: properly handle exception, need to investigate if it should be propagated or logged
+      if (has_listeners
+          && !activeSessionIds.isEmpty()) {
+        Iterator it = activeSessionIds.iterator();
+        while (it.hasNext()) {
+          try {
+            buffer.consumeStatistics(((Long)it.next()).longValue(), new StatisticsConsumer() {
+              public boolean consumeStatisticData(long sessionId, StatisticData data) {
+                final Notification notif = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
+                notif.setUserData(data);
+                sendNotification(notif);
+                return true;
+              }
+            });
+          } catch (TCStatisticsBufferException e) {
+            throw new TCRuntimeException(e); // HACK: properly handle exception, need to investigate if it should be propagated or logged
+          }
         }
       }
     }

@@ -5,8 +5,8 @@ package com.tc.statistics.retrieval.actions;
 
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.StatisticRetrievalAction;
-import com.tc.statistics.retrieval.StatisticType;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 import com.tc.util.Assert;
@@ -14,11 +14,18 @@ import com.tc.util.Assert;
 import java.util.Date;
 
 public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
+
+  public final static String ACTION_NAME = "l2 l1 fault";
+
   private SampledCounter counter;
   
   public SRAL2ToL1FaultRate(DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     counter = serverStats.getObjectFaultCounter();
+  }
+
+  public String getName() {
+    return ACTION_NAME;
   }
   
   public StatisticType getType() {
@@ -27,7 +34,7 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
 
   public StatisticData[] retrieveStatisticData() {
     TimeStampedCounterValue value = counter.getMostRecentSample();
-    return new StatisticData[] {StatisticData.buildInstanceForClassAtLocalhost(getClass(), new Date(value.getTimestamp()), new Long(value.getCounterValue()))};
+    return new StatisticData[] {StatisticData.buildInstanceForLocalhost(ACTION_NAME, new Date(value.getTimestamp()), value.getCounterValue())};
   }
 
   public void cleanup() {
