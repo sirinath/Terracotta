@@ -184,8 +184,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     int loopCount = 1000;
     for (int i = 0; i < loopCount; ++i) {
       for (TCGroupHandshakeMessage msg : handshakeQueue) {
-        if (msg.getChannelID() == channel.getChannelID()) {
+        if (msg.getChannel() == channel) {
           handshakeQueue.remove(msg);
+          chToNodeID.put(channel, msg.getNodeID());
           return msg;
         }
       }
@@ -259,8 +260,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private boolean addMember(TCGroupMember member) {
     if (isStopped) {
-      member.close();
-      chToNodeID.remove(member.getChannel());
+      closeMember(member);
       return false;
     }
 
@@ -271,14 +271,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         TCGroupMember m = (TCGroupMember) it.next();
 
         // sanity check
-        if (member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID())) { throw new RuntimeException(
-                                                                                                                                           "Drop duplicate channel to the same node "
-                                                                                                                                               + member); }
+        boolean dup = member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID());
+        if (dup) { throw new RuntimeException("Drop duplicate channel to the same node " + member); }
 
         if (member.getPeerNodeID().equals(m.getPeerNodeID())) {
           // there is one exist already
-          member.close();
-          chToNodeID.remove(member.getChannel());
+          closeMember(member);
           return false;
         }
       }
@@ -289,23 +287,17 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return true;
   }
 
-  public synchronized boolean isExist(TCGroupMember member) {
-    return (members.contains(member));
-  }
-
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
     discover.setLocalNode(thisNode);
     discover.start();
-
     return (getNodeID());
   }
 
   public void memberDisappeared(TCGroupMember member) {
     if (isStopped || (member == null)) return;
-    chToNodeID.remove(member.getChannel());
     synchronized (this) {
       member.setTCGroupManager(null);
-      member.close();
+      closeMember(member);
       if (!members.remove(member)) {
         logger.warn("Remove non-exist member " + member);
         return;
@@ -387,8 +379,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return groupResponse;
   }
 
+  private void closeMember(TCGroupMember member) {
+    chToNodeID.remove(member.getChannel());
+    member.close();
+  }
+
   /*
-   * channel opening from dst to src
+   * channel opening from src to dst
    */
   public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException {
@@ -412,7 +409,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       channel.close();
       return null;
     }
-    chToNodeID.put(channel, peermsg.getNodeID());
 
     if (debug) {
       logger.debug("Channel setup to " + peermsg.getNodeID());
@@ -421,8 +417,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), peermsg.getNodeID(), channel);
     // close if link exist alreay
     if (getMember(member.getPeerNodeID()) != null) {
-      member.close();
-      chToNodeID.remove(channel);
+      closeMember(member);
       return (null);
     }
 
@@ -436,11 +431,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (debug) {
       logger.debug("open a low priority link to " + member);
     }
-    
+
     ThreadUtil.reallySleep(50);
     if (getMember(member.getPeerNodeID()) != null) {
-      member.close();
-      chToNodeID.remove(channel);
+      closeMember(member);
       return (null);
     }
 
@@ -458,8 +452,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       if (debug) {
         logger.debug("deny to add a low priority link " + member);
       }
-      member.close();
-      chToNodeID.remove(channel);
+      closeMember(member);
       return null;
     }
   }
@@ -469,17 +462,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, groupPort) }));
   }
 
-  public void closeChannel(TCGroupMember member) {
-    member.close();
-    chToNodeID.remove(member.getChannel());
-  }
-
-  public void closeChannel(MessageChannel channel) {
-    closeChannel(getMember(channel));
-  }
-
   /*
-   * Event notification when a new connection setup by channelManager channel opened from src to dst
+   * Event notification when a new connection setup by channelManager channel opened from dst to src
    */
   public void channelCreated(MessageChannel aChannel) {
     final MessageChannel channel = aChannel;
@@ -498,7 +482,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           channel.close();
           return;
         }
-        chToNodeID.put(channel, peermsg.getNodeID());
 
         if (debug) {
           logger.debug("Channel established from " + peermsg.getNodeID());
@@ -507,8 +490,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         final TCGroupMember member = new TCGroupMemberImpl(channel, peermsg.getNodeID(), getNodeID());
         // close if link exist alreay
         if (getMember(member.getPeerNodeID()) != null) {
-          member.close();
-          chToNodeID.remove(channel);
+          closeMember(member);
           return;
         }
 
@@ -529,8 +511,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
             logger.debug("deny received a low priority link to " + member);
           }
           signalToJoin(member, false);
-          member.close();
-          chToNodeID.remove(member.getChannel());
+          closeMember(member);
           return;
         }
 
