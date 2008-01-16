@@ -15,7 +15,7 @@ public class ChannelID extends AbstractIdentifier {
   /**
    * Indicates no ID
    */
-  public static final ChannelID NULL_ID     = new ChannelID();
+  public static final ChannelID NULL_ID      = new ChannelID();
   
   /**
    * Construct with specific id value
