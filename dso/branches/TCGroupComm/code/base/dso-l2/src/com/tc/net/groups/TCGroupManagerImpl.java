@@ -201,7 +201,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCGroupHandshakeMessage msg = (TCGroupHandshakeMessage) channel
         .createMessage(TCMessageType.GROUP_HANDSHAKE_MESSAGE);
     msg.setNodeID(getNodeID());
-    if (channel.isClosed()) return false;
     msg.send();
     if (debug) {
       logger.debug("Send group handshake message to " + channel);
@@ -446,7 +445,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       return;
     }
 
-    // spawn a new thread to contine work, avoid dead lock on discovery
+    // spawn a new thread to contine work
     final Thread t = new Thread() {
       public void run() {
 
