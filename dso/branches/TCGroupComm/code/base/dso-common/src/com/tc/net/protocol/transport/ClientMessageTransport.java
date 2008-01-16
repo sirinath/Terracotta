@@ -47,7 +47,7 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, TCLogging.getLogger(ClientMessageTransport.class));
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false,  TCLogging.getLogger(ClientMessageTransport.class));
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }
@@ -88,7 +88,7 @@ public class ClientMessageTransport extends MessageTransportBase {
         sendAck();
         NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
-        return (nid);
+        return(nid);
       } catch (TCTimeoutException e) {
         status.reset();
         throw e;
