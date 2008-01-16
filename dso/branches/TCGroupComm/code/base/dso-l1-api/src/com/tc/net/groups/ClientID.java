@@ -4,7 +4,6 @@
  */
 package com.tc.net.groups;
 
-import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -76,10 +75,6 @@ public class ClientID implements NodeID {
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
     serialOutput.writeLong(this.channelID.toLong());
-  }
-
-  public int compareTo(Object arg0) {
-    throw new ImplementMe();
   }
 
 }
