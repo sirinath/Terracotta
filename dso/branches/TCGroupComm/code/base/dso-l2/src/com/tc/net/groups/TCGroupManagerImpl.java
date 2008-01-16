@@ -580,16 +580,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   /*
-   * stop reconnecting for a L2 acts like a L1.
-   */
-  private void quitReconnectAttempts(MessageChannel channel) {
-    if (channel instanceof ClientMessageChannel) {
-      ((ClientMessageChannel)channel).get
-    }
-    
-  }
-
-  /*
    * for testing purpose only
    */
   public LinkedBlockingQueue<TCGroupPingMessage> getPingQueue() {
