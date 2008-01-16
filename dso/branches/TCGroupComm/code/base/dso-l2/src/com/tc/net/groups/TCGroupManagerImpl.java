@@ -190,20 +190,23 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           return msg;
         }
       }
+      if (channel.isClosed()) return null;
       ThreadUtil.reallySleep(5);
     }
     logger.warn("Failed to receive handshake message from peer " + channel);
     return null;
   }
 
-  private void writeHandshakeMessage(MessageChannel channel) {
+  private boolean writeHandshakeMessage(MessageChannel channel) {
     TCGroupHandshakeMessage msg = (TCGroupHandshakeMessage) channel
         .createMessage(TCMessageType.GROUP_HANDSHAKE_MESSAGE);
     msg.setNodeID(getNodeID());
+    if (channel.isClosed()) return false;
     msg.send();
     if (debug) {
       logger.debug("Send group handshake message to " + channel);
     }
+    return true;
   }
 
   public void handshakeReceived(TCGroupHandshakeMessage msg) {
@@ -395,7 +398,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         .getSink());
 
     channel.open();
-    writeHandshakeMessage(channel);
+    if (!writeHandshakeMessage(channel)) return null;
     TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel);
     if (peermsg == null) {
       channel.close();
@@ -447,7 +450,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     final Thread t = new Thread() {
       public void run() {
 
-        writeHandshakeMessage(channel);
+        if (!writeHandshakeMessage(channel)) return;
         TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel);
         if (peermsg == null) {
           channel.close();
