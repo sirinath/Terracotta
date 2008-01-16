@@ -118,5 +118,4 @@ public class NodeIDImpl implements NodeID {
     out.writeInt(length);
     out.write(this.uid);
   }
-  
 }

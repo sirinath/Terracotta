@@ -90,7 +90,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
 
     this.monitor = monitor;
-    this.transportHandshakeMessageFactory =  new TransportHandshakeMessageFactoryImpl();
+    this.transportHandshakeMessageFactory = new TransportHandshakeMessageFactoryImpl();
     this.connectionPolicy = connectionPolicy;
     this.stackHarnessFactory = stackHarnessFactory;
     privateConnMgr = (connMgr == null);

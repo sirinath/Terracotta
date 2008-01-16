@@ -98,7 +98,7 @@ public abstract class AbstractGroupMessage implements GroupMessage {
       out.write(buffer.array(), buffer.arrayOffset(), length);
     }
   }
-
+  
   protected ObjectStringSerializer readObjectStringSerializer(ObjectInput in) throws IOException {
     TCByteBuffer buffers[] = readByteBuffers(in);
     ObjectStringSerializer lserializer = new ObjectStringSerializer();
