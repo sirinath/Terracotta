@@ -270,15 +270,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       while (it.hasNext()) {
         TCGroupMember m = (TCGroupMember) it.next();
 
-        // sanity check
-        boolean dup = member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID());
-        if (dup) { throw new RuntimeException("Drop duplicate channel to the same node " + member); }
-
         if (member.getPeerNodeID().equals(m.getPeerNodeID())) {
           // there is one exist already
           closeMember(member);
           return false;
         }
+        
+        // sanity check
+        boolean dup = member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID());
+        if (dup) { throw new RuntimeException("Duplicate channels to the same node " + member); }
+
       }
       member.setTCGroupManager(this);
       members.add(member);
