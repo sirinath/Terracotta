@@ -388,7 +388,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException {
     ClientMessageChannel channel = communicationsManager
-        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), -1, null, -1, 10000, addrProvider);
+        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), 0, null, -1, 10000, addrProvider);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage
