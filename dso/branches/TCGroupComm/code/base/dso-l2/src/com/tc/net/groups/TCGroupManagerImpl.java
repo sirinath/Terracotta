@@ -62,8 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener,
-    TCGroupMemberListener {
+public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener {
   private boolean                                         debug                   = false;
   private static final TCLogger                           logger                  = TCLogging
                                                                                       .getLogger(TCGroupManagerImpl.class);
@@ -252,11 +251,17 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
   }
 
-  public void memberAdded(TCGroupMember member) {
+  public boolean memberAdded(TCGroupMember member) {
+    boolean added = addMember(member);
+    if (added) fireNodeEvent(member.getPeerNodeID(), true);
+    return (added);
+  }
+
+  private boolean addMember(TCGroupMember member) {
     if (isStopped) {
       member.close();
       chToNodeID.remove(member.getChannel());
-      return;
+      return false;
     }
 
     // Keep only one connection between two nodes. Close the redundant one.
@@ -274,14 +279,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           // there is one exist already
           member.close();
           chToNodeID.remove(member.getChannel());
-          return;
+          return false;
         }
       }
       member.setTCGroupManager(this);
       members.add(member);
     }
     logger.debug(getNodeID() + " added " + member);
-    fireNodeEvent(member.getPeerNodeID(), true);
+    return true;
   }
 
   public synchronized boolean isExist(TCGroupMember member) {
@@ -431,21 +436,32 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (debug) {
       logger.debug("open a low priority link to " + member);
     }
+    
+    ThreadUtil.reallySleep(50);
+    if (getMember(member.getPeerNodeID()) != null) {
+      member.close();
+      chToNodeID.remove(channel);
+      return (null);
+    }
+
+    if (!addMember(member)) { return (null); }
+
     if (receivedOkToJoin(member)) {
       if (getMember(member.getPeerNodeID()) != null) { throw new RuntimeException("Conflict on resolving connection "
                                                                                   + member); }
       if (debug) {
         logger.debug("ok to add a low priority link " + member);
       }
-      memberAdded(member);
+      fireNodeEvent(member.getPeerNodeID(), true);
       return member;
+    } else {
+      if (debug) {
+        logger.debug("deny to add a low priority link " + member);
+      }
+      member.close();
+      chToNodeID.remove(channel);
+      return null;
     }
-    if (debug) {
-      logger.debug("deny to add a low priority link " + member);
-    }
-    member.close();
-    chToNodeID.remove(channel);
-    return null;
   }
 
   public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
@@ -508,26 +524,21 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           logger.debug("received a low priority link to " + member);
         }
 
-        discover.pause();
-        ThreadUtil.reallySleep(100);
-        // close if link exist
-        if (getMember(member.getPeerNodeID()) != null) {
+        if (!memberAdded(member)) {
           if (debug) {
             logger.debug("deny received a low priority link to " + member);
           }
           signalToJoin(member, false);
-          discover.resume();
           member.close();
           chToNodeID.remove(member.getChannel());
           return;
         }
+
         // signal other end to join, joins itself and resume discover
         if (debug) {
           logger.debug("ok received a low priority link to " + member);
         }
         signalToJoin(member, true);
-        memberAdded(member);
-        discover.resume();
         if (debug) {
           logger.debug("new thread for received a low priority link to " + member);
         }
