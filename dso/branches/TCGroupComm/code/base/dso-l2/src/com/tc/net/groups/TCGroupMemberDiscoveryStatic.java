@@ -17,18 +17,21 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private static final TCLogger logger            = TCLogging.getLogger(TCGroupMemberDiscoveryStatic.class);
+  private static final TCLogger               logger            = TCLogging
+                                                                    .getLogger(TCGroupMemberDiscoveryStatic.class);
 
-  private Node                  local;
-  private Node[]                nodes;
-  private TCGroupManagerImpl    manager;
-  private AtomicBoolean         running           = new AtomicBoolean(false);
-  private AtomicBoolean         stopAttempt       = new AtomicBoolean(false);
-  private boolean               debug             = false;
-  private long                  connectIntervalms = 1000;
+  private Node                                local;
+  private Node[]                              nodes;
+  private TCGroupManagerImpl                  manager;
+  private AtomicBoolean                       running           = new AtomicBoolean(false);
+  private AtomicBoolean                       stopAttempt       = new AtomicBoolean(false);
+  private boolean                             debug             = false;
+  private long                                connectIntervalms = 1000;
+  private ConcurrentHashMap<Node, NodeStatus> statusMap         = new ConcurrentHashMap<Node, NodeStatus>();
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
     nodes = makeAllNodes(configSetupManager);
@@ -38,6 +41,9 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
    * for testing purpose
    */
   public TCGroupMemberDiscoveryStatic(Node[] nodes) {
+    for (Node node : nodes) {
+      statusMap.put(node, new NodeStatus());
+    }
     this.nodes = nodes;
   }
 
@@ -56,8 +62,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return rv;
   }
 
-  private static Node makeNode(NewL2DSOConfig l2) {
-    return new Node(l2.host().getString(), l2.l2GroupPort().getInt());
+  private Node makeNode(NewL2DSOConfig l2) {
+    Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt());
+    statusMap.put(node, new NodeStatus());
+    return (node);
   }
 
   public Node[] getAllNodes() {
@@ -95,12 +103,15 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     ArrayList<Node> toConnectList = new ArrayList<Node>();
     for (int i = 0; i < nodes.length; ++i) {
       Node n = nodes[i];
+      NodeStatus status = statusMap.get(n);
 
       // skip local one
       if (local.equals(n) || (n == null)) continue;
 
       if (getMember(n) == null) {
-        toConnectList.add(n);
+        if (status.isTimeToCheck()) toConnectList.add(n);
+      } else {
+        status.setOk();
       }
     }
 
@@ -119,11 +130,13 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   private class ChannelOpener extends Thread {
-    private Node node;
+    private Node       node;
+    private NodeStatus status;
 
     ChannelOpener(Node node) {
       super(local.toString() + " open channel to " + node);
       this.node = node;
+      this.status = statusMap.get(this.node);
     }
 
     public void run() {
@@ -133,12 +146,16 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         }
         manager.openChannel(node.getHost(), node.getPort());
       } catch (TCTimeoutException e) {
+        status.setBad();
         logger.warn("Node:" + node + " " + e);
       } catch (UnknownHostException e) {
+        status.setVerybad();
         logger.warn("Node:" + node + " " + e);
       } catch (MaxConnectionsExceededException e) {
+        status.setBad();
         logger.warn("Node:" + node + " " + e);
       } catch (IOException e) {
+        status.setBad();
         logger.warn("Node:" + node + " " + e);
       }
     }
@@ -150,7 +167,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     Iterator it = manager.getMembers().iterator();
     while (it.hasNext()) {
       TCGroupMember m = (TCGroupMember) it.next();
-      if (sid.equals(((NodeIDImpl) (m.getPeerNodeID())).getName())) {
+      if (sid.equals(((NodeIdUuidImpl) (m.getPeerNodeID())).getName())) {
         member = m;
         break;
       }
@@ -169,6 +186,88 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public Node getLocalNode() {
     return local;
+  }
+
+  private class NodeStatus {
+    public final int STATUS_UNKNOWN  = 0;
+    public final int STATUS_OK       = 1;
+    public final int STATUS_BAD      = 2;
+    public final int STATUS_VERY_BAD = 3;
+
+    private int      status;
+    private int      badCount;
+    private long     timestamp;
+
+    public NodeStatus() {
+      status = STATUS_UNKNOWN;
+      badCount = 0;
+    }
+
+    public synchronized boolean isTimeToCheck() {
+      if (status == STATUS_UNKNOWN || status == STATUS_OK) return true;
+
+      switch (status) {
+        case STATUS_UNKNOWN:
+        case STATUS_OK:
+          return true;
+        case STATUS_BAD:
+          // check 10 times then every min
+          if (badCount <= 10) {
+            ++badCount;
+            timestamp = System.currentTimeMillis();
+            return true;
+          }
+          if (System.currentTimeMillis() > (timestamp + 1000 * 60)) {
+            timestamp = System.currentTimeMillis();
+            return true;
+          } else {
+            return false;
+          }
+        case STATUS_VERY_BAD:
+          // check every 5 min
+          if (System.currentTimeMillis() > (timestamp + 1000 * 60 * 5)) {
+            timestamp = System.currentTimeMillis();
+            return true;
+          } else {
+            return false;
+          }
+        default:
+          return true;
+      }
+    }
+
+    public synchronized void setOk() {
+      status = STATUS_OK;
+      badCount = 0;
+    }
+
+    public synchronized boolean isOk() {
+      return (status == STATUS_OK);
+    }
+
+    public synchronized void setBad() {
+      ++badCount;
+      status = STATUS_BAD;
+    }
+
+    public synchronized boolean isBad() {
+      return (status == STATUS_BAD);
+    }
+
+    public synchronized void setVerybad() {
+      status = STATUS_VERY_BAD;
+      timestamp = System.currentTimeMillis();
+    }
+
+    public synchronized boolean isVerybad() {
+      return (status == STATUS_VERY_BAD);
+    }
+
+    public synchronized void reset() {
+      status = STATUS_UNKNOWN;
+      badCount = 0;
+    }
+
   }
 
 }
