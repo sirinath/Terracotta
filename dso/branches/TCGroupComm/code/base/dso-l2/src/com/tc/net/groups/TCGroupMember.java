@@ -8,11 +8,11 @@ import com.tc.net.protocol.tcm.MessageChannel;
 
 public interface TCGroupMember {
 
-  public NodeID getSrcNodeID();
+  public NodeIdUuidImpl getSrcNodeID();
 
-  public NodeID getDstNodeID();
+  public NodeIdUuidImpl getDstNodeID();
 
-  public NodeID getPeerNodeID();
+  public NodeIdUuidImpl getPeerNodeID();
 
   public MessageChannel getChannel();
 

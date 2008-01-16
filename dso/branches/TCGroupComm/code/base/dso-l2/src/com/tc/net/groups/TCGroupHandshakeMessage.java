@@ -20,7 +20,7 @@ import java.io.IOException;
  */
 public class TCGroupHandshakeMessage extends DSOMessageBase {
   private final static byte NODE_ID = 1;
-  private NodeID            nodeID;
+  private NodeIdUuidImpl    nodeID;
 
   public TCGroupHandshakeMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
                                  MessageChannel channel, TCMessageType type) {
@@ -32,11 +32,11 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public void setNodeID(NodeID nodeID) {
+  public void setNodeID(NodeIdUuidImpl nodeID) {
     this.nodeID = nodeID;
   }
-  
-  public NodeID getNodeID() {
+
+  public NodeIdUuidImpl getNodeID() {
     return this.nodeID;
   }
 
