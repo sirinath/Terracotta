@@ -40,6 +40,8 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       return timeToIdleSec;
     } else if (timeToLiveSec <= timeToIdleSec) {
       return timeToLiveSec;
+    } else if (threadIntervalSec <= 0) {
+      return timeToIdleSec;
     } else if (timeToIdleSec < threadIntervalSec) { return timeToIdleSec; }
     return threadIntervalSec;
   }
@@ -84,9 +86,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   }
 
   public final void stopTimeMonitoring() {
-    if(map != null) {
-      ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
-    }
+    ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
   }
 
   public final void evictExpiredElements() {
