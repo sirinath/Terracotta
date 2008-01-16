@@ -18,15 +18,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private TCGroupManagerImpl   manager;
   private final MessageChannel channel;
-  private final NodeID         srcNodeID;                           // who setup channel
-  private final NodeID         dstNodeID;
-  private final NodeID         peerNodeID;
+  private final NodeIdUuidImpl srcNodeID;                           // who setup channel
+  private final NodeIdUuidImpl dstNodeID;
+  private final NodeIdUuidImpl peerNodeID;
   private AtomicBoolean        connected = new AtomicBoolean(false);
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
    */
-  public TCGroupMemberImpl(NodeID srcNodeID, NodeID dstNodeID, MessageChannel channel) {
+  public TCGroupMemberImpl(NodeIdUuidImpl srcNodeID, NodeIdUuidImpl dstNodeID, MessageChannel channel) {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -37,7 +37,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   /*
    * Member channel established from src to dst. Called by channel receiver, channelCreated, peer is srcNodeID.
    */
-  public TCGroupMemberImpl(MessageChannel channel, NodeID srcNodeID, NodeID dstNodeID) {
+  public TCGroupMemberImpl(MessageChannel channel, NodeIdUuidImpl srcNodeID, NodeIdUuidImpl dstNodeID) {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -77,15 +77,15 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     }
   }
 
-  public NodeID getSrcNodeID() {
+  public NodeIdUuidImpl getSrcNodeID() {
     return srcNodeID;
   }
 
-  public NodeID getDstNodeID() {
+  public NodeIdUuidImpl getDstNodeID() {
     return dstNodeID;
   }
 
-  public NodeID getPeerNodeID() {
+  public NodeIdUuidImpl getPeerNodeID() {
     return peerNodeID;
   }
 
@@ -108,7 +108,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   public boolean highPriorityLink() {
-    return (((NodeIdUuidImpl)srcNodeID).compareTo((NodeIdUuidImpl)dstNodeID) > 0);
+    return ((srcNodeID).compareTo(dstNodeID) > 0);
   }
 
 }
