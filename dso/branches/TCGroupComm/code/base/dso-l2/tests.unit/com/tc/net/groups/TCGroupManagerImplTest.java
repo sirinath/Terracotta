@@ -14,6 +14,7 @@ import com.tc.l2.state.Enrollment;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
+import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageFactory;
@@ -65,7 +66,7 @@ public class TCGroupManagerImplTest extends TestCase {
     PortChooser pc = new PortChooser();
     for (int i = 0; i < n; ++i) {
       groupPorts[i] = pc.chooseRandomPort();
-      nodes[i] = new Node(LOCALHOST, groupPorts[i]);
+      nodes[i] = new Node(LOCALHOST, groupPorts[i], TCSocketAddress.WILDCARD_IP);
     }
     for (int i = 0; i < n; ++i) {
       discovers[i] = new TCGroupMemberDiscoveryStatic(nodes);

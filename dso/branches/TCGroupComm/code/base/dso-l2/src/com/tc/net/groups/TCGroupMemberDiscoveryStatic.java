@@ -57,13 +57,13 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       } catch (ConfigurationSetupException e) {
         throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
       }
-      rv[i] = makeNode(l2);
+      rv[i] = makeNode(l2, null);
     }
     return rv;
   }
 
-  private Node makeNode(NewL2DSOConfig l2) {
-    Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt());
+  private Node makeNode(NewL2DSOConfig l2, String bind) {
+    Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt(), bind);
     statusMap.put(node, new NodeStatus());
     return (node);
   }
