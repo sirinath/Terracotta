@@ -51,7 +51,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
   private int                      groupPorts[];
   private TCGroupMemberDiscovery   discovers[];
-  private TCGroupManager           groups[];
+  private TCGroupManagerImpl       groups[];
   private TestGroupMessageListener listeners[];
   private Node                     nodes[];
 
@@ -372,7 +372,7 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     for (int m = 0; m < nGrp; ++m) {
-      TCGroupManager ms = groups[m];
+      TCGroupManagerImpl ms = groups[m];
       GroupMessage sMesg = createL2StateMessage();
       ms.sendAllAndWaitForResponse(sMesg);
       for (int i = 0; i < ms.getMembers().size(); ++i) {
@@ -483,9 +483,9 @@ public class TCGroupManagerImplTest extends TestCase {
   }
 
   private class responseL2StateMessageListener extends TestGroupMessageListener {
-    TCGroupManager manager;
+    TCGroupManagerImpl manager;
 
-    responseL2StateMessageListener(TCGroupManager manager, long timeout) {
+    responseL2StateMessageListener(TCGroupManagerImpl manager, long timeout) {
       super(timeout);
       this.manager = manager;
     }

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Each TCGroupMember sits on top of a channel.
  */
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
-  private TCGroupManager       manager;
+  private TCGroupManagerImpl   manager;
   private final MessageChannel channel;
   private final NodeID         srcNodeID;                           // who setup channel
   private final NodeID         dstNodeID;
@@ -24,8 +24,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private AtomicBoolean        connected = new AtomicBoolean(false);
 
   /*
-   * Member channel established from src to dst.
-   * Called by channel initiator, openChannel, peer is dstNodeID.
+   * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
    */
   public TCGroupMemberImpl(NodeID srcNodeID, NodeID dstNodeID, MessageChannel channel) {
     this.channel = channel;
@@ -36,8 +35,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   /*
-   * Member channel established from src to dst.
-   * Called by channel receiver, channelCreated, peer is srcNodeID.
+   * Member channel established from src to dst. Called by channel receiver, channelCreated, peer is srcNodeID.
    */
   public TCGroupMemberImpl(MessageChannel channel, NodeID srcNodeID, NodeID dstNodeID) {
     this.channel = channel;
@@ -91,12 +89,12 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     return peerNodeID;
   }
 
-  public void setTCGroupManager(TCGroupManager manager) {
+  public void setTCGroupManager(TCGroupManagerImpl manager) {
     this.manager = manager;
     connected.set(true);
   }
 
-  public TCGroupManager getTCGroupManager() {
+  public TCGroupManagerImpl getTCGroupManager() {
     return manager;
   }
 
@@ -108,9 +106,9 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     connected.set(false);
     getChannel().close();
   }
-  
+
   public boolean highPriorityLink() {
-    return(srcNodeID.compareTo(dstNodeID) > 0);
+    return (srcNodeID.compareTo(dstNodeID) > 0);
   }
 
 }
