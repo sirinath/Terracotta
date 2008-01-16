@@ -83,6 +83,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < groups.length; ++i) {
       groups[i].shutdown();
     }
+    Thread.sleep(200);
   }
 
   public void testBasicChannelOpenClose() throws Exception {
