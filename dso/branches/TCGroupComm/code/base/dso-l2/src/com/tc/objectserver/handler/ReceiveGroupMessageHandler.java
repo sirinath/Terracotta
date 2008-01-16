@@ -7,13 +7,13 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.net.groups.TCGroupManager;
+import com.tc.net.groups.TCGroupManagerImpl;
 import com.tc.net.groups.TCGroupMessageWrapper;
 
 public class ReceiveGroupMessageHandler extends AbstractEventHandler {
-  private final TCGroupManager manager;
+  private final TCGroupManagerImpl manager;
   
-  public ReceiveGroupMessageHandler(TCGroupManager manager) {
+  public ReceiveGroupMessageHandler(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
   

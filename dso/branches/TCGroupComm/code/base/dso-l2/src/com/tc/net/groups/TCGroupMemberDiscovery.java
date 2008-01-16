@@ -5,21 +5,21 @@
 package com.tc.net.groups;
 
 public interface TCGroupMemberDiscovery {
-  
+
   public Node[] getAllNodes();
-  
-  public void setTCGroupManager(TCGroupManager manager);
-  
+
+  public void setTCGroupManager(TCGroupManagerImpl manager);
+
   public void start() throws GroupException;
-  
+
   public void stop();
-  
+
   public void pause();
-  
+
   public void resume();
-  
+
   public void setLocalNode(Node local);
-  
+
   public Node getLocalNode();
 
 }

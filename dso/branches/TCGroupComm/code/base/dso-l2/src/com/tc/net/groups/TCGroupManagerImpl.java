@@ -62,7 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelManagerEventListener,
+public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener,
     TCGroupMemberListener {
   private boolean                                         debug                   = false;
   private static final TCLogger                           logger                  = TCLogging
@@ -228,7 +228,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     getStageManager().stopAll();
     discover.stop();
     groupListener.stop(timeout);
-    // closeAllChannels(); <-- this can cause dead lock when tc-comm fire disconnect event
     communicationsManager.getConnectionManager().asynchCloseAllConnections();
     members.clear();
     chToNodeID.clear();
@@ -508,7 +507,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
         if (debug) {
           logger.debug("received a low priority link to " + member);
         }
-        
+
         discover.pause();
         ThreadUtil.reallySleep(100);
         // close if link exist
@@ -535,7 +534,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       }
     };
     t.start();
-    
+
     return;
   }
 
@@ -581,6 +580,16 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
   }
 
   /*
+   * stop reconnecting for a L2 acts like a L1.
+   */
+  private void quitReconnectAttempts(MessageChannel channel) {
+    if (channel instanceof ClientMessageChannel) {
+      ((ClientMessageChannel)channel).get
+    }
+    
+  }
+
+  /*
    * for testing purpose only
    */
   public LinkedBlockingQueue<TCGroupPingMessage> getPingQueue() {
@@ -595,14 +604,6 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
     if (m != null) {
       logger.debug("Channel removed from " + m.getPeerNodeID());
       memberDisappeared(m);
-    }
-  }
-
-  public void closeAllChannels() {
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
-      closeChannel(m);
     }
   }
 
@@ -781,7 +782,7 @@ public class TCGroupManagerImpl extends SEDA implements TCGroupManager, ChannelM
       member.send(msg);
     }
 
-    public void sendAll(TCGroupManager manager, GroupMessage msg) throws GroupException {
+    public void sendAll(TCGroupManagerImpl manager, GroupMessage msg) throws GroupException {
       Iterator it = manager.getMembers().iterator();
       while (it.hasNext()) {
         TCGroupMember member = (TCGroupMember) it.next();

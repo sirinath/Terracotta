@@ -6,26 +6,25 @@ package com.tc.net.groups;
 
 import com.tc.net.protocol.tcm.MessageChannel;
 
-
 public interface TCGroupMember {
-  
+
   public NodeID getSrcNodeID();
-  
+
   public NodeID getDstNodeID();
-  
+
   public NodeID getPeerNodeID();
-  
+
   public MessageChannel getChannel();
-  
+
   public void send(GroupMessage msg) throws GroupException;
-  
-  public void setTCGroupManager(TCGroupManager manager);
-  
-  public TCGroupManager getTCGroupManager();
-  
+
+  public void setTCGroupManager(TCGroupManagerImpl manager);
+
+  public TCGroupManagerImpl getTCGroupManager();
+
   public boolean isConnected();
-  
+
   public void close();
-  
+
   public boolean highPriorityLink();
 }

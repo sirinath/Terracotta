@@ -26,7 +26,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   private Node                  local;
   private Node[]                nodes;
-  private TCGroupManager        manager;
+  private TCGroupManagerImpl    manager;
   private AtomicBoolean         running           = new AtomicBoolean(false);
   private AtomicBoolean         stopAttempt       = new AtomicBoolean(false);
   private boolean               debug             = false;
@@ -67,7 +67,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return nodes;
   }
 
-  public void setTCGroupManager(TCGroupManager manager) {
+  public void setTCGroupManager(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
 
