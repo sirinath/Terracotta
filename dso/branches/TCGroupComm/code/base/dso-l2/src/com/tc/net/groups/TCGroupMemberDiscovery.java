@@ -14,10 +14,6 @@ public interface TCGroupMemberDiscovery {
 
   public void stop();
 
-  public void pause();
-
-  public void resume();
-
   public void setLocalNode(Node local);
 
   public Node getLocalNode();

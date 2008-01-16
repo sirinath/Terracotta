@@ -18,8 +18,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   private static final TCLogger logger            = TCLogging.getLogger(TCGroupMemberDiscoveryStatic.class);
@@ -31,7 +29,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   private AtomicBoolean         stopAttempt       = new AtomicBoolean(false);
   private boolean               debug             = false;
   private long                  connectIntervalms = 1000;
-  private final Lock            discoverLock      = new ReentrantLock();
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
     nodes = makeAllNodes(configSetupManager);
@@ -80,9 +77,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     Thread discover = new Thread(new Runnable() {
       public void run() {
         while (!stopAttempt.get()) {
-          discoverLock.lock();
           openChannels();
-          discoverLock.unlock();
           ThreadUtil.reallySleep(connectIntervalms);
         }
         stopAttempt.set(false);
@@ -174,21 +169,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public Node getLocalNode() {
     return local;
-  }
-
-  public void pause() {
-    if (debug) {
-      logger.info("Lock discovery of " + manager);
-    }
-    discoverLock.lock();
-  }
-
-  public void resume() {
-    discoverLock.unlock();
-    if (debug) {
-      logger.info("Unlock discovery of " + manager);
-    }
-
   }
 
 }
