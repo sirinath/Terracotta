@@ -330,16 +330,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null) {
       member.send(msg);
     } else {
-      // member may be joining, try again
-      for (int i = 0; i < 10; ++i) {
-        ThreadUtil.reallySleep(10);
-        member = getMember(node);
-        if (member != null) {
-          member.send(msg);
-          return;
-        }
-      }
-      logger.warn("send to non-exist member of " + node);
+      logger.error("Send to non-exist member of " + node);
     }
   }
 
@@ -415,44 +406,23 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
 
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), peermsg.getNodeID(), channel);
-    // close if link exist alreay
-    if (getMember(member.getPeerNodeID()) != null) {
-      closeMember(member);
-      return (null);
+    // favor high priority link
+    if (!member.highPriorityLink()) {
+      ThreadUtil.reallySleep(50);
     }
 
-    // if high priority link then go ahead and join
-    if (member.highPriorityLink()) {
-      memberAdded(member);
-      return member;
-    }
-
-    // this is low priority link, wait signal from other end to join
-    if (debug) {
-      logger.debug("open a low priority link to " + member);
-    }
-
-    ThreadUtil.reallySleep(50);
-    if (getMember(member.getPeerNodeID()) != null) {
-      closeMember(member);
-      return (null);
-    }
-
-    if (!addMember(member)) { return (null); }
-
-    if (receivedOkToJoin(member)) {
-      if (getMember(member.getPeerNodeID()) != null) { throw new RuntimeException("Conflict on resolving connection "
-                                                                                  + member); }
-      if (debug) {
-        logger.debug("ok to add a low priority link " + member);
+    if (addMember(member)) {
+      signalToJoin(member, true);
+      if (receivedOkToJoin(member)) {
+        fireNodeEvent(member.getPeerNodeID(), true);
+        return member;
+      } else {
+        members.remove(member);
+        closeMember(member);
+        return null;
       }
-      fireNodeEvent(member.getPeerNodeID(), true);
-      return member;
     } else {
-      if (debug) {
-        logger.debug("deny to add a low priority link " + member);
-      }
-      closeMember(member);
+      signalToJoin(member, false);
       return null;
     }
   }
@@ -488,40 +458,25 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         }
 
         final TCGroupMember member = new TCGroupMemberImpl(channel, peermsg.getNodeID(), getNodeID());
-        // close if link exist alreay
-        if (getMember(member.getPeerNodeID()) != null) {
-          closeMember(member);
-          return;
+        // favor high priority link
+        if (!member.highPriorityLink()) {
+          ThreadUtil.reallySleep(50);
         }
 
-        // if high priority link then go ahead and join
-        if (member.highPriorityLink()) {
-          memberAdded(member);
-          return;
-        }
-
-        // this is low priority link
-        // wait for current opening connection to complete and then pause discover
-        if (debug) {
-          logger.debug("received a low priority link to " + member);
-        }
-
-        if (!memberAdded(member)) {
-          if (debug) {
-            logger.debug("deny received a low priority link to " + member);
+        if (addMember(member)) {
+          if (receivedOkToJoin(member)) {
+            signalToJoin(member, true);
+            fireNodeEvent(member.getPeerNodeID(), true);
+            return;
+          } else {
+            members.remove(member);
+            return;
           }
-          signalToJoin(member, false);
-          closeMember(member);
+        } else {
+          if (receivedOkToJoin(member)) {
+            signalToJoin(member, false);
+          }
           return;
-        }
-
-        // signal other end to join, joins itself and resume discover
-        if (debug) {
-          logger.debug("ok received a low priority link to " + member);
-        }
-        signalToJoin(member, true);
-        if (debug) {
-          logger.debug("new thread for received a low priority link to " + member);
         }
       }
     };
@@ -697,15 +652,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (listener != null) {
       listener.messageReceived(from, msg);
     } else {
-      // NHA is setting up, try again
-      for (int i = 0; i < 10; ++i) {
-        ThreadUtil.reallySleep(100);
-        listener = messageListeners.get(msg.getClass().getName());
-        if (listener != null) {
-          listener.messageReceived(from, msg);
-          return;
-        }
-      }
       String errorMsg = "No Route for " + msg + " from " + from;
       logger.error(errorMsg);
       throw new AssertionError(errorMsg);
