@@ -37,5 +37,9 @@ public class NodeIdUuidImpl extends NodeIDImpl implements Comparable {
     }
     return 0;
   }
+  
+  public byte getType() {
+    return L2_NODE_TYPE;
+  }
 
 }
