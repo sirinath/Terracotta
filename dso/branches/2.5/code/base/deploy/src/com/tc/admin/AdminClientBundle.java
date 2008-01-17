@@ -42,6 +42,26 @@ public class AdminClientBundle extends ListResourceBundle {
 
       { "server.properties.headings", new String[] { "Name", "Value" } },
 
+      { "server.activated.status", "{0} activated on {1}" },
+
+      { "server.activated.label", "Activated on {0}" },
+
+      { "server.started.status", "Started {0} on {1}" },
+
+      { "server.started.label", "Started on {0}" },
+
+      { "server.initializing.status", "Initializing {0} on {1}" },
+
+      { "server.initializing.label", "Initializing on {0}" },
+      
+      { "server.standingby.status", "{0} standing by on {1}" },
+
+      { "server.standingby.label", "Standing by on {0}" },
+
+      { "server.disconnected.status", "{0} disconnected on {1}" },
+
+      { "server.disconnected.label", "Disconnected on {0}" },
+
       { "dso", "DSO" },
 
       { "dso.roots", "Roots" },
