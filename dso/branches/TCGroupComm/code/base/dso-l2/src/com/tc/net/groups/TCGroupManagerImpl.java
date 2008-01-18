@@ -760,6 +760,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           this.wait(5000);
           if (++count > 1) {
             logger.warn("Still waiting for response from " + waitFor + ". Count = " + count);
+            if (count > 50) { throw new RuntimeException("Still waiting for response from " + waitFor); }
           }
         } catch (InterruptedException e) {
           throw new GroupException(e);
