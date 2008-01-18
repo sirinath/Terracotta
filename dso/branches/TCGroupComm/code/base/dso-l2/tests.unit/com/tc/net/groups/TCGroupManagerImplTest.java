@@ -76,6 +76,7 @@ public class TCGroupManagerImplTest extends TestCase {
                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                              .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
+      groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
       groups[i].start(new HashSet());
       listeners[i] = new TestGroupMessageListener(1000);
     }
@@ -273,7 +274,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(1500);
+    Thread.sleep(3000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -325,14 +326,14 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 100);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getNodeID(), listeners[i]);
     }
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(1500);
+    Thread.sleep(3000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -363,14 +364,14 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 100);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getNodeID(), listeners[i]);
     }
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(1500);
+    Thread.sleep(3000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -722,6 +723,23 @@ public class TCGroupManagerImplTest extends TestCase {
     public String toString() {
       return "TestMessage [ " + msg + "]";
     }
+  }
+
+  private static class TestGroupEventListener implements GroupEventsListener {
+    private TCGroupManagerImpl manager;
+    
+    TestGroupEventListener(TCGroupManagerImpl manager) {
+      this.manager = manager;
+    }
+    
+    public void nodeJoined(NodeID nodeID) {
+      System.out.println("XXX " + manager.getNodeID() + " Node joined: " + nodeID);
+    }
+
+    public void nodeLeft(NodeID nodeID) {
+      System.out.println("XXX " + manager.getNodeID() + " Node left: " + nodeID);
+    }
+
   }
 
 }
