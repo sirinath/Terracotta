@@ -22,7 +22,9 @@ public interface TCGroupMember {
 
   public TCGroupManagerImpl getTCGroupManager();
 
-  public boolean isConnected();
+  public boolean isReady();
+  
+  public void setReady(boolean isReady);
 
   public void close();
 
