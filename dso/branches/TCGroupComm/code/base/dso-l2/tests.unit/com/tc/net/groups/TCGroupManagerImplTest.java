@@ -29,6 +29,8 @@ import com.tc.object.session.NullSessionManager;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.PortChooser;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
+import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.runtime.ThreadDump;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -442,6 +444,134 @@ public class TCGroupManagerImplTest extends TestCase {
     tearGroups();
   }
 
+  private void checkMessagesOrdering(final TCGroupManagerImpl mgr1, final TestGroupMessageListener l1,
+                                     final TCGroupManagerImpl mgr2, final TestGroupMessageListener l2)
+      throws GroupException {
+
+    final Integer upbound = new Integer(50);
+
+    // setup throwable ThreadGroup to catch AssertError from threads.
+    TCThreadGroup threadGroup = new TCThreadGroup(new ThrowableHandler(null), "TCGroupManagerImplTestGroup");
+    ThreadUtil.reallySleep(1000);
+
+    Thread t1 = new SenderThread(threadGroup, "Node-0", mgr1, upbound);
+    Thread t2 = new SenderThread(threadGroup, "Node-1", mgr2, upbound);
+    Thread vt1 = new ReceiverThread(threadGroup, "Node-0", l1, upbound, mgr2.getLocalNodeID());
+    Thread vt2 = new ReceiverThread(threadGroup, "Node-1", l2, upbound, mgr1.getLocalNodeID());
+
+    System.err.println("*** Start sending ordered messages....");
+    t1.start();
+    t2.start();
+    vt1.start();
+    vt2.start();
+
+    try {
+      t1.join();
+      t2.join();
+      vt1.join();
+      vt2.join();
+    } catch (InterruptedException x) {
+      throw new GroupException("Join interrupted:" + x);
+    }
+    System.err.println("*** Done with messages ordering test");
+
+  }
+
+  private static final class SenderThread extends Thread {
+    private TCGroupManagerImpl mgr;
+    private Integer            upbound;
+    private Integer            index = new Integer(0);
+    private NodeID             toNode;
+
+    public SenderThread(ThreadGroup group, String name, TCGroupManagerImpl mgr, Integer upbound) {
+      this(group, name, mgr, upbound, NodeIDImpl.NULL_ID);
+    }
+
+    public SenderThread(ThreadGroup group, String name, TCGroupManagerImpl mgr, Integer upbound, NodeID toNode) {
+      super(group, name);
+      this.mgr = mgr;
+      this.upbound = upbound;
+      this.toNode = toNode;
+    }
+
+    public void run() {
+      while (index <= upbound) {
+        TestMessage msg = new TestMessage(index.toString());
+        if (index % 10 == 0) System.err.println("*** " + getName() + " sends " + index);
+        try {
+          if (toNode.isNull()) {
+            mgr.sendAll(msg);
+          } else {
+            mgr.sendTo(toNode, msg);
+          }
+        } catch (Exception x) {
+          System.err.println("Got exception : " + getName() + " " + x.getMessage());
+          x.printStackTrace();
+          throw new RuntimeException("sendAll GroupException:" + x);
+        }
+        ++index;
+      }
+    }
+  }
+
+  private static final class ReceiverThread extends Thread {
+    private TestGroupMessageListener l;
+    private Integer                  upbound;
+    private Integer                  index = new Integer(0);
+    private NodeID                   fromNode;
+
+    public ReceiverThread(ThreadGroup group, String name, TestGroupMessageListener l, Integer upbound, NodeID fromNode) {
+      super(group, name);
+      this.l = l;
+      this.upbound = upbound;
+      this.fromNode = fromNode;
+    }
+
+    public void run() {
+      while (index <= upbound) {
+        TestMessage msg;
+        try {
+          msg = (TestMessage) l.getNextMessageFrom(fromNode);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+        if (index % 10 == 0) System.err.println("*** " + getName() + " receives " + msg);
+        assertEquals(new TestMessage(index.toString()), msg);
+        index++;
+      }
+    }
+
+  }
+
+  public void testMessagesOrdering() throws Exception {
+
+    int nGrp = 2;
+    NodeID nodeIDs[] = new NodeID[nGrp];
+    setupGroups(nGrp);
+
+    for (int i = 0; i < nGrp; ++i) {
+      groups[i].registerForMessages(TestMessage.class, listeners[i]);
+    }
+    for (int i = 0; i < nGrp; ++i) {
+      nodeIDs[i] = groups[i].join(nodes[i], nodes);
+    }
+    Thread.sleep(500);
+    for (int i = 0; i < nGrp; ++i) {
+      assertEquals(nGrp - 1, groups[i].size());
+    }
+
+    try {
+      checkMessagesOrdering(groups[0], listeners[0], groups[1], listeners[1]);
+    } catch (Exception e) {
+      System.out.println("*****  message order check failed: " + e.getStackTrace());
+      ThreadDump.dumpThreadsMany(3, 500);
+      throw e;
+    }
+
+    groups[0].stop(1000);
+    groups[1].stop(1000);
+  }
+
   private class MessagePackage {
     private final GroupMessage message;
     private final NodeID       nodeID;
@@ -462,7 +592,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
   private class TestGroupMessageListener implements GroupMessageListener {
     private long                                timeout;
-    private LinkedBlockingQueue<MessagePackage> queue = new LinkedBlockingQueue(10);
+    private LinkedBlockingQueue<MessagePackage> queue = new LinkedBlockingQueue(100);
 
     TestGroupMessageListener(long timeout) {
       this.timeout = timeout;
