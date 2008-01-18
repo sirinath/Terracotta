@@ -239,7 +239,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     groupListeners.add(listener);
   }
 
-  private void fireNodeEvent(NodeIdUuidImpl newNode, boolean joined) {
+  private void fireNodeEvent(TCGroupMember member, boolean joined) {
+    NodeIdUuidImpl newNode = member.getPeerNodeID();
+    member.setReady(joined);
     if (debug) {
       logger.info("fireNodeEvent: joined = " + joined + ", node = " + newNode);
     }
@@ -256,7 +258,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public boolean memberAdded(TCGroupMember member) {
     boolean added = addMember(member);
-    if (added) fireNodeEvent(member.getPeerNodeID(), true);
+    if (added) fireNodeEvent(member, true);
     return (added);
   }
 
@@ -302,12 +304,15 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       member.setTCGroupManager(null);
       closeMember(member);
       if (!members.remove(member)) {
+        // member is not in group yet but a transport
+        // disconnect/close event occurred.
+        notifyAnyPendingRequests(member);
         logger.warn("Remove non-exist member " + member);
         return;
       }
     }
     logger.debug(getNodeID() + " removed " + member);
-    fireNodeEvent(member.getPeerNodeID(), false);
+    fireNodeEvent(member, false);
     notifyAnyPendingRequests(member);
   }
 
@@ -333,7 +338,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null) {
       member.send(msg);
     } else {
-      logger.error("Send to non-exist member of " + node);
+      throw new RuntimeException("Send to non-exist member of " + node);
     }
   }
 
@@ -374,6 +379,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   private void closeMember(TCGroupMember member) {
+    member.setReady(false);
     chToNodeID.remove(member.getChannel());
     member.close();
   }
@@ -417,7 +423,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (addMember(member)) {
       signalToJoin(member, true);
       if (receivedOkToJoin(member)) {
-        fireNodeEvent(member.getPeerNodeID(), true);
+        fireNodeEvent(member, true);
         return member;
       } else {
         members.remove(member);
@@ -469,7 +475,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         if (addMember(member)) {
           if (receivedOkToJoin(member)) {
             signalToJoin(member, true);
-            fireNodeEvent(member.getPeerNodeID(), true);
+            fireNodeEvent(member, true);
             return;
           } else {
             members.remove(member);
@@ -709,16 +715,25 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
 
     public void sendTo(TCGroupMember member, GroupMessage msg) throws GroupException {
-      waitFor.add(member.getPeerNodeID());
-      member.send(msg);
+      if (member.isReady()) {
+        waitFor.add(member.getPeerNodeID());
+        member.send(msg);
+      } else {
+        throw new RuntimeException("Send to a not ready member " + member);
+      }
     }
 
     public void sendAll(TCGroupManagerImpl manager, GroupMessage msg) throws GroupException {
       Iterator it = manager.getMembers().iterator();
       while (it.hasNext()) {
         TCGroupMember member = (TCGroupMember) it.next();
-        waitFor.add(member.getPeerNodeID());
-        member.send(msg);
+        if (member.isReady()) {
+          waitFor.add(member.getPeerNodeID());
+          member.send(msg);
+        } else {
+          throw new RuntimeException("Send to a not ready member " + member);
+        }
+
       }
     }
 

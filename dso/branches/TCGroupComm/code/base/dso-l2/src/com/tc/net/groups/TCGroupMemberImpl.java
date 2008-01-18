@@ -18,10 +18,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private TCGroupManagerImpl   manager;
   private final MessageChannel channel;
-  private final NodeIdUuidImpl srcNodeID;                           // who setup channel
+  private final NodeIdUuidImpl srcNodeID;
   private final NodeIdUuidImpl dstNodeID;
   private final NodeIdUuidImpl peerNodeID;
-  private AtomicBoolean        connected = new AtomicBoolean(false);
+  // set member ready only when both ends are in group
+  private AtomicBoolean        ready = new AtomicBoolean(false);
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
@@ -53,7 +54,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
    * Use a wrapper to send old tribes GroupMessage out through channel's TCMessage
    */
   public void send(GroupMessage msg) throws GroupException {
-    if (!connected.get() || !channel.isOpen()) { throw new GroupException("Channel is not open: " + toString()); }
+    if (!channel.isOpen()) { throw new GroupException("Channel is not ready: " + toString()); }
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) channel.createMessage(TCMessageType.GROUP_WRAPPER_MESSAGE);
     wrapper.setGroupMessage(msg);
     wrapper.send();
@@ -66,12 +67,12 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public void notifyChannelEvent(ChannelEvent event) {
     if (event.getChannel() == channel) {
       if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
-        connected.set(true);
+        ready.set(true);
       } else if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
-        connected.set(false);
+        ready.set(false);
         if (manager != null) manager.memberDisappeared(this);
       } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
-        connected.set(false);
+        ready.set(false);
         if (manager != null) manager.memberDisappeared(this);
       }
     }
@@ -91,19 +92,22 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   public void setTCGroupManager(TCGroupManagerImpl manager) {
     this.manager = manager;
-    connected.set(true);
   }
 
   public TCGroupManagerImpl getTCGroupManager() {
     return manager;
   }
 
-  public boolean isConnected() {
-    return (connected.get());
+  public boolean isReady() {
+    return (ready.get());
+  }
+  
+  public void setReady(boolean isReady) {
+    ready.set(isReady);
   }
 
   public void close() {
-    connected.set(false);
+    ready.set(false);
     getChannel().close();
   }
 
