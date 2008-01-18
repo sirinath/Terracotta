@@ -89,7 +89,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                                                                                                                   100);
   private LinkedBlockingQueue<TCGroupHandshakeMessage>      handshakeQueue          = new LinkedBlockingQueue<TCGroupHandshakeMessage>(
                                                                                                                                        100);
-  private ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> chToNodeID              = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -186,7 +185,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       for (TCGroupHandshakeMessage msg : handshakeQueue) {
         if (msg.getChannel() == channel) {
           handshakeQueue.remove(msg);
-          chToNodeID.put(channel, msg.getNodeID());
           return msg;
         }
       }
@@ -232,7 +230,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     groupListener.stop(timeout);
     communicationsManager.getConnectionManager().asynchCloseAllConnections();
     members.clear();
-    chToNodeID.clear();
   }
 
   public void registerForGroupEvents(GroupEventsListener listener) {
@@ -312,7 +309,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       }
     }
     logger.debug(getNodeID() + " removed " + member);
-    fireNodeEvent(member, false);
+    if (member.isReady()) fireNodeEvent(member, false);
     notifyAnyPendingRequests(member);
   }
 
@@ -380,7 +377,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private void closeMember(TCGroupMember member) {
     member.setReady(false);
-    chToNodeID.remove(member.getChannel());
     member.close();
   }
 
@@ -389,6 +385,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
    */
   public TCGroupMember openChannel(ConnectionAddressProvider addrProvider) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException {
+
+    if (isStopped) return null;
+
     ClientMessageChannel channel = communicationsManager
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), 0, null, -1, 10000, addrProvider);
 
@@ -422,13 +421,15 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     if (addMember(member)) {
       signalToJoin(member, true);
-      if (receivedOkToJoin(member)) {
-        fireNodeEvent(member, true);
-        return member;
-      } else {
-        members.remove(member);
-        closeMember(member);
-        return null;
+      synchronized (member) {
+        if (receivedOkToJoin(member)) {
+          fireNodeEvent(member, true);
+          return member;
+        } else {
+          members.remove(member);
+          closeMember(member);
+          return null;
+        }
       }
     } else {
       signalToJoin(member, false);
@@ -614,12 +615,19 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       logger.info(getNodeID() + " recd msg " + message.getMessageID() + " From " + channel + " Msg : " + message);
     }
 
-    NodeIdUuidImpl from = chToNodeID.get(channel);
+    TCGroupMember m = getMember(channel);
+    if (m == null) { throw new RuntimeException("Received message to non-exist member from " + channel); }
+    NodeIdUuidImpl from = m.getPeerNodeID();
     MessageID requestID = message.inResponseTo();
 
     message.setMessageOrginator(from);
     if (requestID.isNull() || !notifyPendingRequests(requestID, message, from)) {
-      fireMessageReceivedEvent(from, message);
+      // There is a race condition, peer notified upper layer and sent L2StateMessage
+      // while this node still waiting handshake from peer.
+      // exception: No Route for L2StateMessage <-- sync to resolve this issue
+      synchronized (m) {
+        fireMessageReceivedEvent(from, message);
+      }
     }
   }
 
@@ -730,10 +738,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         if (member.isReady()) {
           waitFor.add(member.getPeerNodeID());
           member.send(msg);
-        } else {
-          throw new RuntimeException("Send to a not ready member " + member);
         }
-
       }
     }
 

@@ -79,11 +79,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   public void start() throws GroupException {
     if (nodes == null || nodes.length == 0) { throw new GroupException("Wrong nodes"); }
 
-    if (running.get()) return;
-    stopAttempt.set(false);
-    running.set(true);
     Thread discover = new Thread(new Runnable() {
       public void run() {
+        stopAttempt.set(false);
+        running.set(true);
         while (!stopAttempt.get()) {
           openChannels();
           ThreadUtil.reallySleep(connectIntervalms);
@@ -92,6 +91,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         running.set(false);
       }
     }, "Member discovery");
+    if (running.get()) return;
     discover.start();
   }
 
@@ -176,7 +176,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public void stop() {
-    if (!running.get()) return;
     stopAttempt.set(true);
   }
 
