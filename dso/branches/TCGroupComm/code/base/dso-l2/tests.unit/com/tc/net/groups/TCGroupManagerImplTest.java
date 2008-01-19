@@ -326,7 +326,7 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 2000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getNodeID(), listeners[i]);
     }
@@ -364,7 +364,7 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 2000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getNodeID(), listeners[i]);
     }
@@ -610,6 +610,7 @@ public class TCGroupManagerImplTest extends TestCase {
     public GroupMessage getNextMessageFrom(NodeID nodeID) throws InterruptedException {
       MessagePackage pkg = poll();
       // System.out.println("XXX expected:" + nodeID + " got:" + pkg.getNodeID());
+      assertNotNull("Failed to receive message from " + nodeID, pkg);
       assertTrue(nodeID.equals(pkg.getNodeID()));
       return (pkg.getMessage());
     }
