@@ -642,11 +642,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     MessageID requestID = message.inResponseTo();
 
     message.setMessageOrginator(from);
-    if (requestID.isNull() || !notifyPendingRequests(requestID, message, from)) {
+    synchronized (m) {
       // There is a race condition, peer notified upper layer and sent L2StateMessage
       // while this node still waiting handshake from peer.
       // exception: No Route for L2StateMessage <-- sync to resolve this issue
-      synchronized (m) {
+      if (requestID.isNull() || !notifyPendingRequests(requestID, message, from)) {
         fireMessageReceivedEvent(from, message);
       }
     }
