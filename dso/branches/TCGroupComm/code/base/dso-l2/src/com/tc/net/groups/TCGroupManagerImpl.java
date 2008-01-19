@@ -320,7 +320,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       }
     }
     logger.debug(getNodeID() + " removed " + member);
-    if (member.isReady()) fireNodeEvent(member, false);
+    fireNodeEvent(member, false);
     notifyAnyPendingRequests(member);
   }
 
