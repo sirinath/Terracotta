@@ -415,7 +415,19 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     channel.routeMessageType(TCMessageType.GROUP_HANDSHAKE_MESSAGE, handshakeMessageStage.getSink(), hydrateStage
         .getSink());
 
-    channel.open();
+    try {
+      channel.open();
+    } catch (TCTimeoutException e) {
+      channel.close();
+      throw e;
+    } catch (MaxConnectionsExceededException e) {
+      channel.close();
+      throw e;
+    } catch (IOException e) {
+      channel.close();
+      throw e;
+    }
+
     if (!writeHandshakeMessage(channel)) return null;
     TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel);
     if (peermsg == null) {
