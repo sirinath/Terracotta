@@ -53,7 +53,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +77,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private final CopyOnWriteArrayList<TCGroupMember>         members                 = new CopyOnWriteArrayList<TCGroupMember>();
   private final CopyOnWriteArrayList<GroupEventsListener>   groupListeners          = new CopyOnWriteArrayList<GroupEventsListener>();
   private final Map<String, GroupMessageListener>           messageListeners        = new ConcurrentHashMap<String, GroupMessageListener>();
-  private final Map<MessageID, GroupResponse>               pendingRequests         = new Hashtable<MessageID, GroupResponse>();
+  private final Map<MessageID, GroupResponse>               pendingRequests         = new ConcurrentHashMap<MessageID, GroupResponse>();
   private ZapNodeRequestProcessor                           zapNodeRequestProcessor = new DefaultZapNodeRequestProcessor(
                                                                                                                          logger);
   private AtomicBoolean                                     isStopped               = new AtomicBoolean(false);
@@ -389,7 +388,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private void closeMember(TCGroupMember member) {
     member.setReady(false);
     member.close();
-    notifyAnyPendingRequests(member);
     mapChNodeID.remove(member.getChannel());
   }
 
