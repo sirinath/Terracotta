@@ -129,6 +129,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     this.configSetupManager = null;
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
+    ready.set(true);
   }
 
   public String makeGroupNodeName(String hostname, int groupPort) {
