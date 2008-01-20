@@ -81,6 +81,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private ZapNodeRequestProcessor                           zapNodeRequestProcessor = new DefaultZapNodeRequestProcessor(
                                                                                                                          logger);
   private AtomicBoolean                                     isStopped               = new AtomicBoolean(false);
+  private AtomicBoolean                                     ready                   = new AtomicBoolean(false);
   private Stage                                             hydrateStage;
   private Stage                                             receiveGroupMessageStage;
   private Stage                                             receivePingMessageStage;
@@ -300,6 +301,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
+    ready.set(true);
     discover.setLocalNode(thisNode);
     discover.start();
     return (getNodeID());
@@ -458,7 +460,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
    */
   public void channelCreated(MessageChannel aChannel) {
     final MessageChannel channel = aChannel;
-    if (isStopped.get()) {
+    if (isStopped.get() || !ready.get()) {
+      // !ready.get(): Accept channels only after fully initialized.
+      // otherwise "java.lang.AssertionError: No Route" when receive messaage
       channel.close();
       return;
     }
