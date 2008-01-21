@@ -159,6 +159,9 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       } catch (IOException e) {
         status.setBad();
         logger.warn("Node:" + node + " " + e);
+      } catch (RuntimeException e) {
+        status.setBad();
+        logger.error("Node:" + node + " " + e);
       }
     }
   }
