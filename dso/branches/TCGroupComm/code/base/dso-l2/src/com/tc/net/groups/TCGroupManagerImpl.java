@@ -647,8 +647,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (debug) {
       logger.info(getNodeID() + " recd msg " + message.getMessageID() + " From " + channel + " Msg : " + message);
     }
-
+    
     TCGroupMember m = getMember(channel);
+
+    if (channel.isClosed()) {
+      logger.warn(getNodeID() + " recd msg " + message.getMessageID() + " From closed " + channel + " Msg : " + message);
+      return;
+    }
+
     if (m == null) { throw new RuntimeException("Received message to non-exist member from "
                                                 + channel.getRemoteAddress() + " to " + channel.getLocalAddress()
                                                 + " Node: " + mapChNodeID.get(channel)); }
