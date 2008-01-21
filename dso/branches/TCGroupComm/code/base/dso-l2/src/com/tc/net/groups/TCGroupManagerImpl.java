@@ -383,7 +383,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     MessageID msgID = msg.getMessageID();
     GroupResponse old = pendingRequests.put(msgID, groupResponse);
     Assert.assertNull(old);
-    groupResponse.sendAll(this, msg);
+    groupResponse.sendAll(msg);
     groupResponse.waitForResponses(getNodeID());
     pendingRequests.remove(msgID);
     return groupResponse;
@@ -447,6 +447,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
 
     if (addMember(member)) {
+      
+      // sync again to have both in group
+      if (!writeHandshakeMessage(channel) || (null == readHandshakeMessage(channel))) {
+        members.remove(member);
+        closeMember(member);
+        return null;
+      }
+      
       synchronized (member) {
         signalToJoin(member, true);
         if (receivedOkToJoin(member)) {
@@ -503,6 +511,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         }
 
         if (addMember(member)) {
+          
+          // sync again to have both in group
+          if (!writeHandshakeMessage(channel) || (null == readHandshakeMessage(channel))) {
+            members.remove(member);
+            closeMember(member);
+            return;
+          }
+          
           synchronized (member) {
             if (receivedOkToJoin(member)) {
               signalToJoin(member, true);
@@ -510,6 +526,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
               return;
             } else {
               members.remove(member);
+              closeMember(member);
               return;
             }
           }
@@ -779,7 +796,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       }
     }
 
-    public void sendAll(TCGroupManagerImpl manager, GroupMessage msg) throws GroupException {
+    public void sendAll(GroupMessage msg) throws GroupException {
       Iterator it = manager.getMembers().iterator();
       while (it.hasNext()) {
         TCGroupMember member = (TCGroupMember) it.next();
