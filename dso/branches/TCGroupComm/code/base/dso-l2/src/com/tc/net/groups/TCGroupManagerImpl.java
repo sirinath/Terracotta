@@ -320,9 +320,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         logger.warn("Remove non-exist member " + member);
         return;
       }
+      fireNodeEvent(member, false);
     }
     logger.debug(getNodeID() + " removed " + member);
-    fireNodeEvent(member, false);
     notifyAnyPendingRequests(member);
   }
 
@@ -348,7 +348,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null) {
       member.send(msg);
     } else {
-      throw new RuntimeException("Send to non-exist member of " + node);
+      // member in zombie mode
+      logger.warn("Send to non-exist member of " + node);
     }
   }
 
