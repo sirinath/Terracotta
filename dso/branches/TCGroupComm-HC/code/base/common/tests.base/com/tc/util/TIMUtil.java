@@ -4,15 +4,16 @@
  */
 package com.tc.util;
 
+import com.tc.bundles.BundleSpec;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
 /**
- * Terracotta Integration Module Util
- * This should be the only source where the TIM names and versions
- * are defined. Check content of integration-modules.properties
+ * Terracotta Integration Module Util This should be the only source where the TIM names and versions are defined. Check
+ * content of integration-modules.properties
  */
 public class TIMUtil {
   public static final String      APACHE_STRUTS_1_1;
@@ -22,13 +23,13 @@ public class TIMUtil {
   public static final String      EHCACHE_1_3;
   public static final String      HIBERNATE_3_1_2;
   public static final String      IBATIS_2_2_0;
-  public static final String      JETTY_6_1;
   public static final String      LUCENE_2_0_0;
   public static final String      RIFE_1_6_0;
   public static final String      SUREFIRE_2_3;
   public static final String      WEBSPHERE_6_1_0_7;
   public static final String      WICKET_1_3;
   public static final String      MODULES_COMMON;
+  public static final String      JETTY_6_1;
 
   private static final Properties modules = new Properties();
 
@@ -45,17 +46,17 @@ public class TIMUtil {
     EHCACHE_1_3 = lookup(".*ehcache-1.3");
     HIBERNATE_3_1_2 = lookup(".*hibernate-3.1.2");
     IBATIS_2_2_0 = lookup(".*iBatis-2.2.0");
-    JETTY_6_1 = lookup(".*jetty-6.1");
     LUCENE_2_0_0 = lookup(".*lucene-2.0.0");
     RIFE_1_6_0 = lookup(".*rife-1.6.0");
     SUREFIRE_2_3 = lookup(".*surefire-2.3");
     WEBSPHERE_6_1_0_7 = lookup(".*websphere-6.1.0.7");
     WICKET_1_3 = lookup(".*wicket-1.3");
     MODULES_COMMON = lookup("modules-common");
+    JETTY_6_1 = lookup(".*jetty-6.1.4");
   }
 
   private TIMUtil() {
-  // singleton
+    // singleton
   }
 
   private static String lookup(String pattern) {
@@ -81,7 +82,20 @@ public class TIMUtil {
   }
 
   public static String getVersion(String moduleName) {
-    return modules.getProperty(moduleName);
+    String spec = modules.getProperty(moduleName);
+    BundleSpec bundleSpec = BundleSpec.newInstance(spec);
+    return bundleSpec.getVersion();
+  }
+
+  public static String getGroupId(String moduleName) {
+    String spec = modules.getProperty(moduleName);
+    BundleSpec bundleSpec = BundleSpec.newInstance(spec);
+    return bundleSpec.getGroupId();
+  }
+
+  public static BundleSpec getBundleSpec(String moduleName) {
+    String spec = modules.getProperty(moduleName);
+    return BundleSpec.newInstance(spec);
   }
 
   public static Set getModuleNames() {
@@ -89,7 +103,10 @@ public class TIMUtil {
   }
 
   public static void main(String[] args) {
-    System.out.println(TIMUtil.getVersion(APACHE_STRUTS_1_1));
-    System.out.println(TIMUtil.getModuleNames());
+    System.out.println("Jetty group id: " + TIMUtil.getGroupId(JETTY_6_1));
+    System.out.println("Jetty version: " + TIMUtil.getVersion(JETTY_6_1));
+
+    System.out.println("modules-common group id: " + TIMUtil.getGroupId(MODULES_COMMON));
+    System.out.println("modules-common version: " + TIMUtil.getVersion(MODULES_COMMON));
   }
 }

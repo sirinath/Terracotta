@@ -14,11 +14,14 @@ import com.tc.object.util.ToggleableStrongReference;
 /**
  * This adapter is to add behavior to subclasses of AbstractQueuedSynchronizer(AQS). A transient field is added to store
  * a toggle reference. When the state becomes non-zero, the toggle reference causes this object to be strongly
- * referenced. The strong reference is cleared when the state returns to zero
+ * referenced. The strong reference is cleared when the state returns to zero<br>
+ * <br>
+ * NOTE: This zero/non-zero policy might not be appropriate for all AQS subclasses. It is possible that other types
+ * might use different values to represent conditions that should apply for the toggling of the strong reference.
  */
 public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes {
 
-  private static final String TOGGLE_REF_FIELD = ByteCodeUtil.TC_FIELD_PREFIX + "RRWLSyncToggleRef";
+  private static final String TOGGLE_REF_FIELD = ByteCodeUtil.TC_FIELD_PREFIX + "toggleRef";
   private static final String TOGGLE_REF_CLASS = ToggleableStrongReference.class.getName().replace('.', '/');
   private static final String TOGGLE_REF_TYPE  = "L" + TOGGLE_REF_CLASS + ";";
 
@@ -64,7 +67,12 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
    *     } else {
    *       // Since we can't know the previous state value in all cases, we can't
    *       // optimize the case of setting the hard reference only when going from 0 to non-zero
-   *       __tc_RRWLToggleRef.strongRef();
+   *       //
+   * <br>
+   *       // NOTE: It might be worth trying to optimize this to only happen in the case where the transition is from zero to non-zero
+   *       //       For the path from AQS.compareAndSwapState() this is reasonable since we known the expected prior state, for AQS.setState()
+   *       //       you'll need to evaluate if it safe to read the state before it is mutated.
+   *       __tc_RRWLToggleRef.strongRef(this);
    *     }
    *   }
    * }
@@ -100,7 +108,8 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
     mv.visitLabel(stateNonZero);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, className, TOGGLE_REF_FIELD, TOGGLE_REF_TYPE);
-    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "strongRef", "()V");
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "strongRef", "(Ljava/lang/Object;)V");
     mv.visitLabel(notManaged);
     mv.visitInsn(RETURN);
     mv.visitMaxs(0, 0);

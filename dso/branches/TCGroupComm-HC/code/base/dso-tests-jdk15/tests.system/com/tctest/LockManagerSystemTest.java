@@ -7,6 +7,7 @@ package com.tctest;
 import org.apache.xmlbeans.XmlObject;
 
 import com.tc.cluster.Cluster;
+import com.tc.config.lock.LockContextInfo;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.config.schema.NewHaConfig;
 import com.tc.config.schema.NewSystemConfig;
@@ -73,11 +74,9 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
      */
     System.setProperty("org.terracotta.server.disableJmxConnector", "true");
     /*
-     * disable OOO temporary because:
-     * It keeps starting and stopping different client/server within the same process 
-     * and cleaning up the environement etc. Since the shutdown methods are poorly supported 
-     * as of now Sometimes the clients are still trying to reconnect to non-exisitent servers 
-     * and with OOO it seems to happen more.
+     * disable OOO temporary because: It keeps starting and stopping different client/server within the same process and
+     * cleaning up the environement etc. Since the shutdown methods are poorly supported as of now Sometimes the clients
+     * are still trying to reconnect to non-exisitent servers and with OOO it seems to happen more.
      */
     TCPropertiesImpl.setProperty("l1.reconnect.enabled", "false");
   }
@@ -146,18 +145,20 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     final ThreadID tid1 = new ThreadID(1);
     final ThreadID tid2 = new ThreadID(2);
 
-    lockManager.lock(l1, tid1, LockLevel.READ);
-    lockManager.lock(l1, tid2, LockLevel.READ);
+    lockManager.lock(l1, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    lockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
 
     Thread t1 = new Thread() {
       public void run() {
-        LockManagerSystemTest.this.lockManager.lock(l1, tid1, LockLevel.WRITE);
+        LockManagerSystemTest.this.lockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(),
+                                                    LockContextInfo.NULL_LOCK_CONTEXT_INFO);
       }
     };
 
     Thread t2 = new Thread() {
       public void run() {
-        LockManagerSystemTest.this.lockManager.lock(l1, tid2, LockLevel.WRITE);
+        LockManagerSystemTest.this.lockManager.lock(l1, tid2, LockLevel.WRITE, String.class.getName(),
+                                                    LockContextInfo.NULL_LOCK_CONTEXT_INFO);
       }
     };
 
@@ -216,14 +217,15 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     final ThreadID tid3 = new ThreadID(3);
 
     final SetOnceFlag flag = new SetOnceFlag();
-    lockManager.lock(l1, tid1, LockLevel.READ);
-    lockManager.lock(l1, tid2, LockLevel.READ);
-    lockManager.lock(l1, tid3, LockLevel.READ);
+    lockManager.lock(l1, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    lockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    lockManager.lock(l1, tid3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
 
     Thread t = new Thread() {
       public void run() {
         try {
-          LockManagerSystemTest.this.lockManager.lock(l1, tid1, LockLevel.WRITE);
+          LockManagerSystemTest.this.lockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(),
+                                                      LockContextInfo.NULL_LOCK_CONTEXT_INFO);
           throw new AssertionError("Should have thrown a TCLockUpgradeNotSupportedError.");
         } catch (TCLockUpgradeNotSupportedError e) {
           flag.set();
@@ -243,7 +245,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     Thread secondReader = new Thread() {
       public void run() {
         System.out.println("Read requested !");
-        LockManagerSystemTest.this.lockManager.lock(l1, tid2, LockLevel.READ);
+        LockManagerSystemTest.this.lockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(),
+                                                    LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got Read !");
       }
     };
@@ -252,7 +255,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     Thread secondWriter = new Thread() {
       public void run() {
         System.out.println("Write requested !");
-        LockManagerSystemTest.this.lockManager.lock(l1, tid3, LockLevel.WRITE);
+        LockManagerSystemTest.this.lockManager.lock(l1, tid3, LockLevel.WRITE, String.class.getName(),
+                                                    LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got Write !");
       }
     };
@@ -281,12 +285,12 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     // Get the lock for threadID 1
     System.out.println("Asked for first lock");
-    lockManager.lock(l1, tid1, LockLevel.WRITE);
+    lockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
 
     System.out.println("Got first lock");
 
     // Try to get it again, this should pretty much be a noop as we handle recursive lock calls
-    lockManager.lock(l1, tid1, LockLevel.WRITE);
+    lockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     System.out.println("Got first lock again");
 
     final boolean[] done = new boolean[2];
@@ -296,7 +300,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     Thread t = new Thread() {
       public void run() {
         System.out.println("Asked for second lock");
-        lockManager.lock(l1, tid2, LockLevel.WRITE);
+        lockManager.lock(l1, tid2, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got second lock");
         done[0] = true;
       }
@@ -311,14 +315,14 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     assertTrue(done[0]); // thread should have been unblocked and finished
 
     // Get a bunch of read locks on l3
-    lockManager.lock(l3, tid1, LockLevel.READ);
-    lockManager.lock(l3, tid2, LockLevel.READ);
-    lockManager.lock(l3, tid3, LockLevel.READ);
+    lockManager.lock(l3, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    lockManager.lock(l3, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    lockManager.lock(l3, tid3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     done[0] = false;
     t = new Thread() {
       public void run() {
         System.out.println("Asking for write lock");
-        lockManager.lock(l3, tid4, LockLevel.WRITE);
+        lockManager.lock(l3, tid4, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got write lock");
         done[0] = true;
       }
@@ -343,7 +347,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t = new Thread() {
       public void run() {
         System.out.println("Asking for read lock");
-        lockManager.lock(l3, tid1, LockLevel.READ);
+        lockManager.lock(l3, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got read lock");
         done[0] = true;
       }
@@ -354,7 +358,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t = new Thread() {
       public void run() {
         System.out.println("Asking for read lock");
-        lockManager.lock(l3, tid2, LockLevel.READ);
+        lockManager.lock(l3, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
         System.out.println("Got read lock");
         done[1] = true;
       }
@@ -427,7 +431,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     public UpdateCheckConfig updateCheckConfig() {
       return realConfig.updateCheckConfig();
     }
-    
+
     private static class L2ConfigOverride implements NewL2DSOConfig {
 
       private final NewL2DSOConfig config;
@@ -512,6 +516,10 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
           }
 
         };
+      }
+
+      public StringConfigItem bind() {
+        return config.bind();
       }
 
     }

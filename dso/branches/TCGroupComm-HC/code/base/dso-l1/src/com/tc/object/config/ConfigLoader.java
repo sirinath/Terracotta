@@ -5,6 +5,9 @@
 package com.tc.object.config;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.TCLogger;
@@ -40,8 +43,10 @@ import com.terracottatech.config.DistributedMethods.MethodExpression;
 
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public class ConfigLoader {
@@ -60,34 +65,41 @@ public class ConfigLoader {
         Root[] roots = rootsList.getRootArray();
         for (int i = 0; i < roots.length; ++i) {
           Root root = roots[i];
-          try {
-            String rootName = root.getRootName();
-            String fieldName = root.getFieldName();
-            String fieldExpression = root.getFieldExpression();
+          String rootName = root.getRootName();
+          String fieldName = root.getFieldName();
+          String fieldExpression = root.getFieldExpression();
 
-            // XXX: It would be nice to enforce this constraint in XML Schema
-            if (fieldName == null && fieldExpression == null) {
-              throw new ConfigurationSetupException("must specify either field-name or field-expression");
+          // XXX: It would be nice to enforce this constraint in XML Schema
+          if (fieldName == null && fieldExpression == null) {
+            String message = "Must specify either field-name or field-expression";
+            if(rootName != null) {
+              message += " for root " + rootName;
             }
+            throw new ConfigurationSetupException(message);
+          }
 
-            if (fieldName != null && fieldExpression != null) {
-              throw new ConfigurationSetupException("cannot specify both field-name and field-expression");
+          if (fieldName != null && fieldExpression != null) {
+            String message = "Cannot specify both field-name and field-expression";
+            if(rootName != null) {
+              message += " for root " + rootName;
             }
+            throw new ConfigurationSetupException(message);
+          }
 
-            Assert.assertTrue((fieldName != null && fieldExpression == null) || (fieldName == null && fieldExpression != null));
+          Assert.assertTrue((fieldName != null && fieldExpression == null) || (fieldName == null && fieldExpression != null));
 
-            if (fieldName != null) {
+          if (fieldName != null) {
+            try {
               ClassSpec classSpec = ClassUtils.parseFullyQualifiedFieldName(fieldName);
               String className = classSpec.getFullyQualifiedClassName();
               config.addRoot(new com.tc.object.config.Root(className, classSpec.getShortFieldName(), rootName), false);
-            } else if (fieldExpression != null) {
-              config.addRoot(new com.tc.object.config.Root(fieldExpression, rootName), false);
-            } else {
-              throw new AssertionError();
+            } catch (ParseException pe) {
+              throw new ConfigurationSetupException("Root '" + root.getFieldName() + "' is invalid", pe);
             }
-          } catch (ParseException pe) {
-            throw new ConfigurationSetupException("Root '" + root.getFieldName() + "' is invalid", pe);
-          }
+          } else if (fieldExpression != null) {
+            config.addRoot(new com.tc.object.config.Root(fieldExpression, rootName), false);
+          } 
+          // no possible else - this is guaranteed by if check above  
         }
       }
 
@@ -221,20 +233,40 @@ public class ConfigLoader {
     throw Assert.failure("Unknown lock level " + lockLevel);
   }
 
+  private static void gatherNamespaces(XmlObject x, Map nsMap) {
+    XmlCursor c = x.newCursor();
+    while(!c.isContainer()) c.toNextToken();
+    c.getAllNamespaces(nsMap);
+    c.dispose();
+  }
+
+  private static String xmlObject2Text(XmlObject xmlObject, XmlOptions options) {
+    return xmlObject.xmlText(options);
+  }
+
   private void loadLocks(Locks lockList) {
     if (lockList == null) return;
 
+    XmlOptions options = new XmlOptions();
+    options.setSaveOuter();
+    options.setSavePrettyPrint();
+    options.setSavePrettyPrintIndent(2);
+    Map nsMap = new HashMap();
+    gatherNamespaces(lockList, nsMap);
+    options.setSaveImplicitNamespaces(nsMap);
+    
     Autolock[] autolocks = lockList.getAutolockArray();
     for (int i = 0; autolocks != null && i < autolocks.length; i++) {
-      config.addAutolock(autolocks[i].getMethodExpression(), getLockLevel(autolocks[i].getLockLevel(), autolocks[i]
-          .getAutoSynchronized()));
+      Autolock autolock = autolocks[i];
+      config.addAutolock(autolock.getMethodExpression(), getLockLevel(autolock.getLockLevel(), autolock
+          .getAutoSynchronized()), xmlObject2Text(autolock, options));
     }
 
     NamedLock[] namedLocks = lockList.getNamedLockArray();
     for (int i = 0; namedLocks != null && i < namedLocks.length; i++) {
       NamedLock namedLock = namedLocks[i];
-      LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(),
-                                                         getLockLevel(namedLock.getLockLevel(), false));
+      LockDefinition lockDefinition = new LockDefinitionImpl(namedLock.getLockName(), getLockLevel(namedLock
+          .getLockLevel(), false), xmlObject2Text(namedLock, options));
       lockDefinition.commit();
       config.addLock(namedLock.getMethodExpression(), lockDefinition);
     }
