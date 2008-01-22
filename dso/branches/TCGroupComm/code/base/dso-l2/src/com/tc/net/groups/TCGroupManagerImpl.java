@@ -448,13 +448,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     if (addMember(member)) {
       
-      // sync again to have both in group
-      if (!writeHandshakeMessage(channel) || (null == readHandshakeMessage(channel))) {
-        members.remove(member);
-        closeMember(member);
-        return null;
-      }
-      
       synchronized (member) {
         signalToJoin(member, true);
         if (receivedOkToJoin(member)) {
@@ -511,13 +504,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         }
 
         if (addMember(member)) {
-          
-          // sync again to have both in group
-          if (!writeHandshakeMessage(channel) || (null == readHandshakeMessage(channel))) {
-            members.remove(member);
-            closeMember(member);
-            return;
-          }
           
           synchronized (member) {
             if (receivedOkToJoin(member)) {
