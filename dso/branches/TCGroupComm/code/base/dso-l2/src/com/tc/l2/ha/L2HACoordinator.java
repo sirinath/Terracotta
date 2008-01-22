@@ -46,9 +46,10 @@ import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupEventsListener;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
-import com.tc.net.groups.GroupManagerFactory;
 import com.tc.net.groups.Node;
 import com.tc.net.groups.NodeID;
+import com.tc.net.groups.TCGroupManagerImpl;
+import com.tc.net.groups.TribesGroupManager;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -56,6 +57,7 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.sequence.SequenceGenerator;
 import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorException;
 import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorListener;
@@ -65,7 +67,11 @@ import java.io.IOException;
 public class L2HACoordinator implements L2Coordinator, StateChangeListener, GroupEventsListener,
     SequenceGeneratorListener {
 
-  private static final TCLogger                logger = TCLogging.getLogger(L2HACoordinator.class);
+  public static final String                   NHA_COMM_LAYER_PROPERTY = "l2.nha.groupcomm.type";
+  public static final String                   TC_GROUP_COMM           = "tc-group-comm";
+  public static final String                   TRIBES_COMM             = "tribes";
+
+  private static final TCLogger                logger                  = TCLogging.getLogger(L2HACoordinator.class);
 
   private final TCLogger                       consoleLogger;
   private final DistributedObjectServer        server;
@@ -118,7 +124,21 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
-    this.groupManager = GroupManagerFactory.createGroupManager(configSetupManager, threadGroup);
+
+    // choose a group comm layer
+    final String commLayer = TCPropertiesImpl.getProperties().getProperty(NHA_COMM_LAYER_PROPERTY);
+    if (commLayer.equals(TC_GROUP_COMM)) {
+      try {
+        this.groupManager = new TCGroupManagerImpl(configSetupManager, threadGroup);
+      } catch (IOException e) {
+        throw new GroupException(e);
+      }
+    } else if (commLayer.equals(TRIBES_COMM)) {
+      this.groupManager = new TribesGroupManager();
+    } else {
+      throw new GroupException("wrong property " + NHA_COMM_LAYER_PROPERTY + " can be " + TC_GROUP_COMM + " or "
+                               + TRIBES_COMM);
+    }
 
     this.stateManager = new StateManagerImpl(consoleLogger, groupManager, stateChangeSink,
                                              new StateManagerConfigImpl(haConfig),

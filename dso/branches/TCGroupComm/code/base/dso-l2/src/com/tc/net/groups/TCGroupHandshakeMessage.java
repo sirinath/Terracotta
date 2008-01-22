@@ -32,12 +32,12 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public void setNodeID(NodeIdUuidImpl nodeID) {
-    this.nodeID = nodeID;
-  }
-
   public NodeIdUuidImpl getNodeID() {
     return this.nodeID;
+  }
+  
+  public void initialize(NodeIdUuidImpl nodeID) {
+    this.nodeID = nodeID;
   }
 
   protected void dehydrateValues() {

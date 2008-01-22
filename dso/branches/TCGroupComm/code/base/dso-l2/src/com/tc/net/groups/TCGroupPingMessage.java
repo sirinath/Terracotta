@@ -20,8 +20,8 @@ import java.io.IOException;
  */
 public class TCGroupPingMessage extends DSOMessageBase {
   private final static byte PING_MESSAGE_ID = 1;
-  private final int         PING_OK          = 1;
-  private final int         PING_DENY        = 0;
+  private final static int  PING_OK         = 1;
+  private final static int  PING_DENY       = 0;
   private int               message;
 
   public TCGroupPingMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
@@ -33,15 +33,15 @@ public class TCGroupPingMessage extends DSOMessageBase {
                             TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
-  
-  public void okMessage() {
+
+  public void initializeOk() {
     this.message = PING_OK;
   }
 
-  public void denyMessage() {
+  public void initializeDeny() {
     this.message = PING_DENY;
   }
-  
+
   public boolean isOkMessage() {
     return (this.message == PING_OK);
   }
