@@ -4,25 +4,19 @@
 package demo.chatter;
 
 class Message {
-    private final String text;
-    private final User user;
-    private final boolean alreadyDisplayedLocally;
+	private String message;
+	private User user;
 
-    public Message(User user, String text, boolean displayed) {
-        this.user = user;
-        this.text = text;
-        this.alreadyDisplayedLocally = displayed;
-    }
+	public Message(User user, String message) {
+		this.user = user;
+		this.message = message;
+	}
 
-    public String getText() {
-        return text;
-    }
+	public String getMessage() {
+		return message;
+	}
 
-    public User getUser() {
-        return user;
-    }
-
-    public boolean wasAlreadyDisplayedLocally() {
-      return alreadyDisplayedLocally;
-    }
+	public User getUser() {
+		return user;
+	}
 }

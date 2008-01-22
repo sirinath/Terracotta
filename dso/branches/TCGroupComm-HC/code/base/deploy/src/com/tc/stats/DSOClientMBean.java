@@ -20,8 +20,6 @@ public interface DSOClientMBean extends TerracottaMBean {
 
   CountStatistic getObjectFlushRate();
 
-  CountStatistic getPendingTransactionsCount();
-
   Statistic[] getStatistics(String[] names);
 
 }

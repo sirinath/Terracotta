@@ -1,83 +1,94 @@
 /*
- * @COPYRIGHT@
+ @COPYRIGHT@
  */
 package demo.chatter;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Vector;
+import javax.swing.DefaultListModel;
 
 /**
- * Description of the Class
+ *  Description of the Class
  *
- * @author Terracotta, Inc.
+ *@author    Terracotta, Inc.
  */
 class ChatManager {
+  private transient ChatListener listener;
 
-  private final Map<String, User>         users;
-  private volatile transient ChatListener listener;
+  private List messages;
+
+  private DefaultListModel listModel;
+
+  private Map map;
 
   public ChatManager() {
-    this.users = new TreeMap<String, User>();
-    init();
+    listModel = new DefaultListModel();
+    messages = new Vector();
+    map = new HashMap();
   }
 
-  private void init() {
-    this.listener = new NullChatListener();
+  public Message[] getMessages() {
+    return (Message[]) messages.toArray(new Message[0]);
   }
 
-  public User[] getCurrentUsers() {
-    synchronized (users) {
-      return users.values().toArray(new User[] {});
+  public Object[] getCurrentUsers() {
+    synchronized (listModel) {
+      return listModel.toArray();
     }
   }
 
-  public void send(Message msg) {
+  public void send(User user, String message) {
+    Message msg = new Message(user, message);
+    synchronized (messages) {
+      messages.add(msg);
+    }
     sendNewMessageEvent(msg);
   }
 
   public void registerUser(User user) {
-    synchronized (users) {
-      users.put(user.getNodeId(), user);
+
+    synchronized(Lock.lock) {
+      System.err.println("setting listener from " + listener + " to " + user);
+      this.listener = user;
+    }
+
+    synchronized (listModel) {
+      listModel.addElement(user);
+      map.put(user.getNodeId(), user);
     }
     sendNewUserEvent(user.getName());
   }
 
-  public void removeUser(String nodeId) {
-    synchronized (users) {
-      users.remove(nodeId);
+  public String removeUser(String nodeId) {
+    synchronized (listModel) {
+      if (map.containsKey(nodeId)) {
+        User removedUser = (User) map.get(nodeId);
+        listModel.removeElement(removedUser);
+        return removedUser.getName();
+      } else {
+        return "";
+      }
     }
   }
 
-  /**
-   * Normally the user list is maintained via JMX notifications received in each node. This method will ensure that the
-   * list is consistent even if all clients crash simultaneously
-   */
-  public void retainNodes(NodeListProvider listProvider) {
-    synchronized (users) {
-      users.keySet().retainAll(listProvider.getNodeList());
+  private synchronized void sendNewUserEvent(String username) {
+    synchronized(Lock.lock) {
+      if (this.listener == null) {
+        System.err.println("listener is NULL!!!!");
+        return;
+      }
+      this.listener.newUser(username);
     }
   }
 
-  private void sendNewUserEvent(String username) {
-    this.listener.newUser(username);
-  }
-
-  private void sendNewMessageEvent(Message message) {
+  private synchronized void sendNewMessageEvent(Message message) {
     this.listener.newMessage(message);
   }
 
-  public void setLocalListener(ChatListener listener) {
-    this.listener = listener;
-  }
-
-  private static class NullChatListener implements ChatListener {
-    public void newMessage(Message message) {
-      //
-    }
-
-    public void newUser(String username) {
-      //
-    }
+  static class Lock {
+    final static Object lock = new Object();
   }
 
 }

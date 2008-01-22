@@ -16,8 +16,4 @@ public interface SessionCookieWriter {
   String encodeURL(String url, HttpServletRequest req);
 
   String encodeRedirectURL(String url, HttpServletRequest req);
-
-  String getCookieName();
-
-  String getPathParameterTag();
 }

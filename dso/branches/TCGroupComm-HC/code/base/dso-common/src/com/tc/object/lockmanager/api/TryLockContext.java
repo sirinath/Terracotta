@@ -12,8 +12,8 @@ public class TryLockContext extends WaitContext {
     return;
   }
 
-  public TryLockContext(LockID lockID, ClientID clientID, ThreadID threadID, int lockLevel, String lockType,
+  public TryLockContext(LockID lockID, ClientID clientID, ThreadID threadID, int lockLevel,
                         WaitInvocation waitInvocation) {
-    super(lockID, clientID, threadID, lockLevel, lockType, waitInvocation);
+    super(lockID, clientID, threadID, lockLevel, waitInvocation);
   }
 }

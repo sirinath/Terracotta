@@ -498,6 +498,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
+
   private void dumpServers() throws Exception {
     if (serverControl != null && serverControl.isRunning()) {
       System.out.println("Dumping server=[" + serverControl.getDsoPort() + "]");

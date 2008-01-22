@@ -95,7 +95,7 @@ public class XObjectTable extends XTable {
     loadSortPrefs();
   }
   
-  protected class TableColumnRenderer extends XTableCellRenderer {
+  private class TableColumnRenderer extends XTableCellRenderer {
     private JComponent sortView;
     private Border     border;
 

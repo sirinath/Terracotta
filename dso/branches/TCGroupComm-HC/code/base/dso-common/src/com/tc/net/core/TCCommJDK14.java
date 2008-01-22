@@ -29,6 +29,7 @@ class TCCommJDK14 implements TCComm {
   }
 
   TCCommJDK14(int workerCommCount, SocketParams socketParams) {
+
     if (workerCommCount > 0) {
       workerCommMgr = new TCWorkerCommManager(workerCommCount, socketParams);
     } else {
@@ -37,6 +38,11 @@ class TCCommJDK14 implements TCComm {
     }
 
     this.commThread = new CoreNIOServices(commThreadName, workerCommMgr, socketParams);
+  }
+
+  public int getWorkerCommsCount() {
+    if (workerCommMgr != null) { return workerCommMgr.getActiveWorkerCommsCount(false); }
+    return 0;
   }
 
   public int getClientCountForWorkerComm(int workerCommId) {
@@ -81,7 +87,7 @@ class TCCommJDK14 implements TCComm {
         logger.debug("Stop requested");
       }
       commThread.requestStop();
-      if (workerCommMgr != null) {
+      if (workerCommMgr != null && workerCommMgr.isStarted()) {
         workerCommMgr.stop();
       }
     }

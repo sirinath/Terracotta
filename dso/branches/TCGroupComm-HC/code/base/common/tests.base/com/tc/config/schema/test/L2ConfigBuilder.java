@@ -16,8 +16,8 @@ public class L2ConfigBuilder extends BaseConfigBuilder {
     super(3, ALL_PROPERTIES);
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setName(String data) {
+    this.name = data;
   }
 
   String getName() {
@@ -103,8 +103,8 @@ public class L2ConfigBuilder extends BaseConfigBuilder {
     out += indent() + "<server" + (this.name != null ? " name=\"" + this.name + "\"" : "") + ">\n";
 
     out += elements(L2) + elementGroup("authentication", AUTHENTICATION) + openElement("dso", DSO)
-           + elementGroup("persistence", DSO_PERSISTENCE) + elementGroup("garbage-collection", DSO_GC)
-           + closeElement("dso", DSO);
+        + elementGroup("persistence", DSO_PERSISTENCE) + elementGroup("garbage-collection", DSO_GC)
+        + closeElement("dso", DSO);
 
     out += closeElement("server");
 

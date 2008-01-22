@@ -13,7 +13,6 @@ import com.tc.admin.common.DemoChartFactory;
 import com.tc.admin.common.PollerNode;
 import com.tc.admin.common.RatePanel;
 import com.tc.admin.common.StatisticPanel;
-import com.tc.admin.dso.locks.LocksNode;
 
 import javax.management.ObjectName;
 import javax.swing.SwingConstants;

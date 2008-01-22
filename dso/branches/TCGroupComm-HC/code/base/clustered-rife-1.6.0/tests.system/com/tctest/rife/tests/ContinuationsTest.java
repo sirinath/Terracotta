@@ -13,7 +13,6 @@ import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebForm;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
-import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
@@ -167,7 +166,7 @@ public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
 		// start the addition by accessing the first server
 		WebResponse response1 = doQueryStringRequest(server0, url, null);
 		form = response1.getFormWithName("getanswer");
-		assertEquals(" : true", response1.getTitle());
+		assertEquals(": true", response1.getTitle());
 		assertNotNull(form);
 		form.setCheckbox("start", true);
 
@@ -327,12 +326,8 @@ public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
 			builder
 				.addDirectoryOrJARContainingClass(com.uwyn.rife.Version.class) // rife jar
 				.addFilter("RIFE", "/*", RifeFilter.class, new HashMap() {{ put("rep.path", "rife-config-files/continuations/participants.xml"); }})
-				.addResource("/web-resources", "counter.html", "WEB-INF/classes")
-				.addResource("/web-resources", "stepback.html", "WEB-INF/classes");
-			
-			if(AppServerFactory.getCurrentAppServerId() == AppServerFactory.JETTY) {
-			  builder.addResource("/web-resources", "jetty6-web.xml", "WEB-INF");
-			}
+				.addResourceFullpath("/web-resources", "counter.html", "WEB-INF/classes/counter.html")
+				.addResourceFullpath("/web-resources", "stepback.html", "WEB-INF/classes/stepback.html");
 		}
 		
 		@SuppressWarnings( { "serial", "unchecked" })

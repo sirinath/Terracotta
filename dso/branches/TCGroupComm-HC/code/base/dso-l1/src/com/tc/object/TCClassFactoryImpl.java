@@ -9,7 +9,6 @@ import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.applicator.AccessibleObjectApplicator;
 import com.tc.object.applicator.ArrayApplicator;
-import com.tc.object.applicator.CalendarApplicator;
 import com.tc.object.applicator.ChangeApplicator;
 import com.tc.object.applicator.FileApplicator;
 import com.tc.object.applicator.LiteralTypesApplicator;
@@ -23,9 +22,7 @@ import com.tc.object.field.TCFieldFactory;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.ClassUtils;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,15 +105,13 @@ public class TCClassFactoryImpl implements TCClassFactory {
         return new ProxyApplicator(encoding);
       } else if (ClassUtils.isPortableReflectionClass(clazz.getPeerClass())) {
         return new AccessibleObjectApplicator(encoding);
-      } else if (File.class.isAssignableFrom(clazz.getPeerClass())) {
+      } else if ("java.io.File".equals(name)) {
         return new FileApplicator(clazz, encoding);
-      } else if (Calendar.class.isAssignableFrom(clazz.getPeerClass())) {
-        return new CalendarApplicator(clazz, encoding);
       } else if ("java.util.concurrent.atomic.AtomicInteger".equals(name)) {
         try {
           Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
           Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding });
+          return (ChangeApplicator)constructor.newInstance(new Object[] {encoding});
         } catch (Exception e) {
           throw new AssertionError(e);
         }
@@ -124,7 +119,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
         try {
           Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
           Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding });
+          return (ChangeApplicator)constructor.newInstance(new Object[] {encoding});
         } catch (Exception e) {
           throw new AssertionError(e);
         }

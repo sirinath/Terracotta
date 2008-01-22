@@ -5,30 +5,22 @@ package com.tc.object.lockmanager.api;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import com.tc.config.lock.LockContextInfo;
-
 public class LockRequest {
   private LockID   lockID;
   private ThreadID threadID;
   private int      lockLevel;
-  private String   lockType;
   private int      hashCode;
   private boolean  initialized;
   
   public LockRequest(LockID lockID, ThreadID threadID, int lockLevel) {
-    initialize(lockID, threadID, lockLevel, LockContextInfo.NULL_LOCK_OBJECT_TYPE);
+    initialize(lockID, threadID, lockLevel);
   }
   
-  public LockRequest(LockID lockID, ThreadID threadID, int lockLevel, String lockType) {
-    initialize(lockID, threadID, lockLevel, lockType);
-  }
-  
-  public void initialize(LockID theLockID, ThreadID theThreadID, int theLockLevel, String lockType) {
+  public void initialize(LockID theLockID, ThreadID theThreadID, int theLockLevel) {
     if (initialized) throw new AssertionError("Attempt to intialize more than once.");
     this.lockID = theLockID;
     this.threadID = theThreadID;
     this.lockLevel = theLockLevel;
-    this.lockType = lockType;
     hashCode = new HashCodeBuilder(5503, 6737).append(theLockID).append(theThreadID).append(theLockLevel).toHashCode();
     initialized = true;
   }
@@ -43,10 +35,6 @@ public class LockRequest {
 
   public int lockLevel() {
     return lockLevel;
-  }
-  
-  public String lockType() {
-    return lockType;
   }
   
   public boolean equals(Object o) {

@@ -50,7 +50,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
   private static class TxnMgr implements ClientTransactionManager {
 
-    public boolean begin(String lock, int lockLevel, String lockType, String contextInfo) {
+    public boolean begin(String lock, int lockLevel) {
       throw new AssertionError("should not be called");
     }
 
@@ -119,10 +119,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
     }
 
-//    public void lock(String lockName, int lockLevel) {
-//      throw new ImplementMe();
-//    }
-//
+    public void lock(String lockName, int lockLevel) {
+      throw new ImplementMe();
+    }
+
     public void unlock(String lockName) {
       throw new ImplementMe();
     }
@@ -155,7 +155,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public boolean tryBegin(String lock, WaitInvocation timeout, int lockLevel, String lockType) {
+    public boolean tryBegin(String lock, WaitInvocation timeout, int lockLevel) {
       throw new ImplementMe();
     }
 

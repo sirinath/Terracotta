@@ -10,6 +10,8 @@ import com.tc.object.bytecode.ManagerUtil;
 public class Lock {
 
   private final String lockId;
+
+  private boolean      isLocked = false;
   private final int    lockType;
 
   // for non-synchronous-write tests
@@ -30,18 +32,24 @@ public class Lock {
 
   public void commitLock() {
     ManagerUtil.commitLock(lockId);
+    isLocked = false;
   }
 
   public void getWriteLock() {
     ManagerUtil.beginLock(lockId, lockType);
+    isLocked = true;
   }
 
   public boolean tryWriteLock() {
-    return ManagerUtil.tryBeginLock(lockId, lockType);
+    isLocked = ManagerUtil.tryBeginLock(lockId, lockType);
+    return isLocked;
   }
 
   public String getLockId() {
     return lockId;
   }
 
+  public boolean isLocked() {
+    return isLocked;
+  }
 }

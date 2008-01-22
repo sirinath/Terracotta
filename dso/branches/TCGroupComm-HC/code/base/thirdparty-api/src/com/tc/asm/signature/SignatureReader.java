@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,8 +86,12 @@ public class SignatureReader {
                     pos = parseType(signature, pos, v.visitClassBound());
                 }
 
-                while ((c = signature.charAt(pos++)) == ':') {
-                    pos = parseType(signature, pos, v.visitInterfaceBound());
+                for (;;) {
+                    if ((c = signature.charAt(pos++)) == ':') {
+                        pos = parseType(signature, pos, v.visitInterfaceBound());
+                    } else {
+                        break;
+                    }
                 }
             } while (c != '>');
         } else {
@@ -95,7 +99,7 @@ public class SignatureReader {
         }
 
         if (signature.charAt(pos) == '(') {
-            pos++;
+            pos = pos + 1;
             while (signature.charAt(pos) != ')') {
                 pos = parseType(signature, pos, v.visitParameterType());
             }

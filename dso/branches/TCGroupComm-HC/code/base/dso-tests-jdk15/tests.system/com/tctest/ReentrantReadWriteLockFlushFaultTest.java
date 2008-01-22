@@ -186,6 +186,7 @@ public class ReentrantReadWriteLockFlushFaultTest extends TransparentTestBase {
       spec.addRoot("writeLocks", "writeLocks");
       spec.addRoot("readLocks", " readLocks");
       config.addWriteAutolock("* " + App.class.getName() + "*.*(..)");
+
     }
 
   }

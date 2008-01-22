@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,24 +44,24 @@ final class FieldWriter implements FieldVisitor {
     /**
      * The class writer to which this field must be added.
      */
-    private final ClassWriter cw;
+    private ClassWriter cw;
 
     /**
      * Access flags of this field.
      */
-    private final int access;
+    private int access;
 
     /**
      * The index of the constant pool item that contains the name of this
      * method.
      */
-    private final int name;
+    private int name;
 
     /**
      * The index of the constant pool item that contains the descriptor of this
      * field.
      */
-    private final int desc;
+    private int desc;
 
     /**
      * The index of the constant pool item that contains the signature of this
@@ -104,7 +104,7 @@ final class FieldWriter implements FieldVisitor {
      * @param signature the field's signature. May be <tt>null</tt>.
      * @param value the field's constant value. May be <tt>null</tt>.
      */
-    FieldWriter(
+    protected FieldWriter(
         final ClassWriter cw,
         final int access,
         final String name,
@@ -122,7 +122,7 @@ final class FieldWriter implements FieldVisitor {
         this.access = access;
         this.name = cw.newUTF8(name);
         this.desc = cw.newUTF8(desc);
-        if (ClassReader.SIGNATURES && signature != null) {
+        if (signature != null) {
             this.signature = cw.newUTF8(signature);
         }
         if (value != null) {
@@ -138,9 +138,6 @@ final class FieldWriter implements FieldVisitor {
         final String desc,
         final boolean visible)
     {
-        if (!ClassReader.ANNOTATIONS) {
-            return null;
-        }
         ByteVector bv = new ByteVector();
         // write type, and reserve space for values count
         bv.putShort(cw.newUTF8(desc)).putShort(0);
@@ -188,15 +185,15 @@ final class FieldWriter implements FieldVisitor {
             cw.newUTF8("Deprecated");
             size += 6;
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             cw.newUTF8("Signature");
             size += 8;
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             cw.newUTF8("RuntimeVisibleAnnotations");
             size += 8 + anns.getSize();
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             cw.newUTF8("RuntimeInvisibleAnnotations");
             size += 8 + ianns.getSize();
         }
@@ -225,13 +222,13 @@ final class FieldWriter implements FieldVisitor {
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             ++attributeCount;
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             ++attributeCount;
         }
         if (attrs != null) {
@@ -250,15 +247,15 @@ final class FieldWriter implements FieldVisitor {
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             out.putShort(cw.newUTF8("Deprecated")).putInt(0);
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             out.putShort(cw.newUTF8("Signature"));
             out.putInt(2).putShort(signature);
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             out.putShort(cw.newUTF8("RuntimeVisibleAnnotations"));
             anns.put(out);
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             out.putShort(cw.newUTF8("RuntimeInvisibleAnnotations"));
             ianns.put(out);
         }

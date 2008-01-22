@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,7 @@ public class ClassNode extends MemberNode implements ClassVisitor {
      * Informations about the inner classes of this class. This list is a list
      * of {@link InnerClassNode} objects.
      * 
-     * @associates org.objectweb.asm.tree.InnerClassNode
+     * @associates com.tc.asm.tree.InnerClassNode
      */
     public List innerClasses;
 
@@ -124,7 +124,7 @@ public class ClassNode extends MemberNode implements ClassVisitor {
      * The fields of this class. This list is a list of {@link FieldNode}
      * objects.
      * 
-     * @associates org.objectweb.asm.tree.FieldNode
+     * @associates com.tc.asm.tree.FieldNode
      */
     public List fields;
 
@@ -132,7 +132,7 @@ public class ClassNode extends MemberNode implements ClassVisitor {
      * The methods of this class. This list is a list of {@link MethodNode}
      * objects.
      * 
-     * @associates org.objectweb.asm.tree.MethodNode
+     * @associates com.tc.asm.tree.MethodNode
      */
     public List methods;
 
@@ -222,6 +222,9 @@ public class ClassNode extends MemberNode implements ClassVisitor {
                 exceptions);
         methods.add(mn);
         return mn;
+    }
+
+    public void visitEnd() {
     }
 
     // ------------------------------------------------------------------------

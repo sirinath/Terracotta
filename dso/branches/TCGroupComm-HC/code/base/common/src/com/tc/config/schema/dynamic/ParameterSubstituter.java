@@ -102,8 +102,7 @@ public class ParameterSubstituter {
             break;
 
           default:
-            // don't do any substitution and preserve the original chars
-            value = "%" + nextChar;
+            // nothing here; don't do any substitution
             break;
         }
 
