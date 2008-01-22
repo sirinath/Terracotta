@@ -118,7 +118,7 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     /**/
   }
 
-  public void addAspectModule(String pattern, String moduleName) {
+  public void addAspectModule(String classNamePrefix, String moduleName) {
     /**/
   }
 
@@ -404,5 +404,13 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
 
   public boolean reflectionEnabled() {
     return false;
+  }
+
+  public void addAutolock(String methodPattern, ConfigLockLevel type, String configurationText) {
+    //
+  }
+
+  public void addWriteAutolock(String methodPattern, String lockContextInfo) {
+    //      
   }
 }

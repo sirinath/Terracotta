@@ -5,6 +5,7 @@
 package com.terracotta.session.util;
 
 import com.tc.util.Assert;
+import com.terracotta.session.SessionId;
 
 import java.lang.reflect.Field;
 
@@ -14,6 +15,7 @@ public class WebsphereIdGenerator extends DefaultIdGenerator {
 
   private final String        cacheId                 = getCacheId();
   private final String        cloneId                 = getCloneId();
+  private final int           cacheIdLength           = cacheId.length();
 
   private final String        tcDelimiter;
 
@@ -31,6 +33,23 @@ public class WebsphereIdGenerator extends DefaultIdGenerator {
     }
 
     Assert.assertFalse(tcDelimiter.equals(delimiter));
+  }
+
+  public SessionId makeInstanceFromBrowserId(String requestedSessionId) {
+    if (requestedSessionId != null) {
+      // trim the cacheId and cloneId from this point on
+
+      if (requestedSessionId.length() >= cacheIdLength) {
+        requestedSessionId = requestedSessionId.substring(cacheIdLength);
+      }
+
+      int dlmIndex = requestedSessionId.lastIndexOf(getDelimiter());
+      if (dlmIndex >= 0) {
+        requestedSessionId = requestedSessionId.substring(0, dlmIndex);
+      }
+    }
+
+    return super.makeInstanceFromBrowserId(requestedSessionId);
   }
 
   protected String makeExternalId(String key) {
