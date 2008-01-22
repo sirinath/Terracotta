@@ -11,7 +11,6 @@ package com.tc.config.schema.test;
 public class L2ConfigBuilder extends BaseConfigBuilder {
 
   private String name;
-  private String host;
 
   public L2ConfigBuilder() {
     super(3, ALL_PROPERTIES);
@@ -21,16 +20,8 @@ public class L2ConfigBuilder extends BaseConfigBuilder {
     this.name = data;
   }
 
-  public void setHost(String data) {
-    this.host = data;
-  }
-
   String getName() {
     return this.name;
-  }
-
-  String getHost() {
-    return this.host;
   }
 
   public void setData(String data) {
@@ -109,12 +100,11 @@ public class L2ConfigBuilder extends BaseConfigBuilder {
   public String toString() {
     String out = "";
 
-    out += indent() + "<server" + (this.host != null ? " host=\"" + this.host + "\"" : "")
-           + (this.name != null ? " name=\"" + this.name + "\"" : "") + ">\n";
+    out += indent() + "<server" + (this.name != null ? " name=\"" + this.name + "\"" : "") + ">\n";
 
     out += elements(L2) + elementGroup("authentication", AUTHENTICATION) + openElement("dso", DSO)
-           + elementGroup("persistence", DSO_PERSISTENCE) + elementGroup("garbage-collection", DSO_GC)
-           + closeElement("dso", DSO);
+        + elementGroup("persistence", DSO_PERSISTENCE) + elementGroup("garbage-collection", DSO_GC)
+        + closeElement("dso", DSO);
 
     out += closeElement("server");
 
