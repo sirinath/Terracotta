@@ -30,7 +30,7 @@
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/ehcache-1.2.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/hsqldb-1.7.2.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jta-1.0.1b.jar"/>
-	<classpathentry sourcepath="C:/Program Files/hibernate-3.2.5/hibernate-3.2/src" kind="lib" path="/dependencies/lib/hibernate-3.2.5.jar"/>
+	<classpathentry kind="lib" path="/dependencies/lib/hibernate-3.1.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-container-tests"/>
 	<classpathentry kind="lib" path="/dependencies/lib/derby-10.2.2.0.jar"/>
 	<classpathentry kind="lib" path="/dependencies/lib/derbyclient-10.2.2.0.jar"/>
