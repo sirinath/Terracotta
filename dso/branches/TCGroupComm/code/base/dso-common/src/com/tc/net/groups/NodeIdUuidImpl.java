@@ -8,16 +8,10 @@ import com.tc.util.UUID;
 
 public class NodeIdUuidImpl extends NodeIDImpl implements Comparable {
 
-  public static final NodeID  NULL_ID       = new NodeIdUuidImpl("NULL-ID", new byte[0]);
-
   public NodeIdUuidImpl() {
     super();
   }
 
-  public NodeIdUuidImpl(String name, byte[] uid) {
-    super(name, uid);
-  }
-  
   /*
    * NodeID with a uuid generated
    */

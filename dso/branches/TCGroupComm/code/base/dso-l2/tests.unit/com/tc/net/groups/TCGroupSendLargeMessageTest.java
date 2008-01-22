@@ -41,17 +41,20 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
     gm1.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes));
     MyListener l1 = new MyListener();
     gm1.registerForMessages(GCResultMessage.class, l1);
-    NodeID n1 = gm1.join(allNodes[0], allNodes);
 
     TCGroupManagerImpl gm2 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p2, 0,
                                                     new TCThreadGroup(new ThrowableHandler(null)));
     gm2.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes));
     MyListener l2 = new MyListener();
     gm2.registerForMessages(GCResultMessage.class, l2);
-    NodeID n2 = gm2.join(allNodes[1], allNodes);
-
+    
     gm1.start(new HashSet());
     gm2.start(new HashSet());
+   
+    NodeID n1 = gm1.join(allNodes[0], allNodes);
+    NodeID n2 = gm2.join(allNodes[1], allNodes);
+    
+    Thread.sleep(1000);
 
     assertNotEquals(n1, n2);
     checkSendingReceivingMessages(gm1, l1, gm2, l2, oidsCount);

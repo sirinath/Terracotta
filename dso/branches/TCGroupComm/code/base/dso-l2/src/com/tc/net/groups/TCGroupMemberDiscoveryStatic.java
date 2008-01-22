@@ -16,7 +16,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -29,7 +28,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   private TCGroupManagerImpl                  manager;
   private AtomicBoolean                       running           = new AtomicBoolean(false);
   private AtomicBoolean                       stopAttempt       = new AtomicBoolean(false);
-  private boolean                             debug             = false;
   private long                                connectIntervalms = 1000;
   private ConcurrentHashMap<Node, NodeStatus> statusMap         = new ConcurrentHashMap<Node, NodeStatus>();
 
@@ -78,11 +76,11 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public void start() throws GroupException {
     if (nodes == null || nodes.length == 0) { throw new GroupException("Wrong nodes"); }
-    
+
     if (running.get()) return;
     running.set(true);
     openChannels();
-    
+
     Thread discover = new Thread(new Runnable() {
       public void run() {
         stopAttempt.set(false);
@@ -143,10 +141,11 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
     public void run() {
       try {
-        if (debug) {
-          logger.debug(manager.getNodeID().toString() + " opens channel to " + node);
-        }
+        if (logger.isDebugEnabled()) logger.debug(manager.getLocalNodeID().toString() + " opens channel to " + node);
         manager.openChannel(node.getHost(), node.getPort());
+      } catch (GroupException e) {
+        status.setBad();
+        logger.warn("Node:" + node + " " + e);
       } catch (TCTimeoutException e) {
         status.setBad();
         logger.warn("Node:" + node + " " + e);
@@ -167,17 +166,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   private TCGroupMember getMember(Node node) {
-    String sid = manager.makeGroupNodeName(node.getHost(), node.getPort());
-    TCGroupMember member = null;
-    Iterator it = manager.getMembers().iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
-      if (sid.equals(m.getPeerNodeID().getName())) {
-        member = m;
-        break;
-      }
-    }
-    return member;
+    String nodeName = manager.makeGroupNodeName(node.getHost(), node.getPort());
+    return (manager.getMember(nodeName));
   }
 
   public void stop() {
