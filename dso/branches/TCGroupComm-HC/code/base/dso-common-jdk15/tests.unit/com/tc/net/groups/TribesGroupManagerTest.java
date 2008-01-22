@@ -8,7 +8,6 @@ import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.TCSocketAddress;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.PortChooser;
@@ -124,8 +123,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
     MyGroupEventListener gel1 = new MyGroupEventListener();
@@ -154,8 +152,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
     MyGroupEventListener g1 = new MyGroupEventListener();
@@ -195,8 +192,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
     MyGroupEventListener g1 = new MyGroupEventListener();
@@ -273,8 +269,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
     MyListener l1 = new MyListener();
@@ -316,8 +311,7 @@ public class TribesGroupManagerTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
 
     System.err.println("Testing message Ordering - Static");
 

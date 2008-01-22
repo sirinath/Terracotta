@@ -145,8 +145,7 @@ public class GCRunner {
     try {
       mbean.runGC();
     } catch (RuntimeException e) {
-      //DEV-1168
-      consoleLogger.error((e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+      consoleLogger.error(e.getCause().getMessage());
     }
   }
 

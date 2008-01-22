@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,31 +29,29 @@
  */
 package com.tc.asm.commons;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * A {@link com.tc.asm.MethodAdapter} to insert before, after and around
  * advices in methods and constructors. <p> The behavior for constructors is
  * like this: <ol>
- *
+ * 
  * <li>as long as the INVOKESPECIAL for the object initialization has not been
  * reached, every bytecode instruction is dispatched in the ctor code visitor</li>
- *
+ * 
  * <li>when this one is reached, it is only added in the ctor code visitor and
  * a JP invoke is added</li>
- *
+ * 
  * <li>after that, only the other code visitor receives the instructions</li>
- *
+ * 
  * </ol>
- *
+ * 
  * @author Eugene Kuleshov
  * @author Eric Bruneton
  */
@@ -67,18 +65,18 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
 
     private boolean constructor;
     private boolean superInitialized;
-    private List stackFrame;
-    private Map branches;
+    private ArrayList stackFrame;
+    private HashMap branches;
 
     /**
      * Creates a new {@link AdviceAdapter}.
-     *
+     * 
      * @param mv the method visitor to which this adapter delegates calls.
      * @param access the method's access flags (see {@link Opcodes}).
      * @param name the method's name.
      * @param desc the method's descriptor (see {@link Type Type}).
      */
-    protected AdviceAdapter(
+    public AdviceAdapter(
         final MethodVisitor mv,
         final int access,
         final String name,
@@ -93,12 +91,12 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
 
     public void visitCode() {
         mv.visitCode();
-        if (constructor) {
-            stackFrame = new ArrayList();
-            branches = new HashMap();
-        } else {
+        if (!constructor) {
             superInitialized = true;
             onMethodEnter();
+        } else {
+            stackFrame = new ArrayList();
+            branches = new HashMap();
         }
     }
 
@@ -106,7 +104,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
         mv.visitLabel(label);
 
         if (constructor && branches != null) {
-            List frame = (List) branches.get(label);
+            ArrayList frame = (ArrayList) branches.get(label);
             if (frame != null) {
                 stackFrame = frame;
                 branches.remove(label);
@@ -116,7 +114,6 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
 
     public void visitInsn(final int opcode) {
         if (constructor) {
-            int s;
             switch (opcode) {
                 case RETURN: // empty stack
                     onMethodExit(opcode);
@@ -126,6 +123,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
                 case FRETURN: // 1 before n/a after
                 case ARETURN: // 1 before n/a after
                 case ATHROW: // 1 before n/a after
+                    popValue();
                     popValue();
                     onMethodExit(opcode);
                     break;
@@ -151,7 +149,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
                 case I2C:
                 case I2S:
                 case I2F:
-                case ARRAYLENGTH:
+                case Opcodes.ARRAYLENGTH:
                     break;
 
                 case ACONST_NULL:
@@ -262,37 +260,77 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
                     break;
 
                 case DUP_X1:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 2, stackFrame.get(s - 1));
+                    // TODO optimize this
+                {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    pushValue(o1);
+                    pushValue(o2);
+                    pushValue(o1);
+                }
                     break;
 
                 case DUP_X2:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 3, stackFrame.get(s - 1));
+                    // TODO optimize this
+                {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    Object o3 = popValue();
+                    pushValue(o1);
+                    pushValue(o3);
+                    pushValue(o2);
+                    pushValue(o1);
+                }
                     break;
 
                 case DUP2:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 2, stackFrame.get(s - 1));
-                    stackFrame.add(s - 2, stackFrame.get(s - 1));
+                    // TODO optimize this
+                {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    pushValue(o2);
+                    pushValue(o1);
+                    pushValue(o2);
+                    pushValue(o1);
+                }
                     break;
 
                 case DUP2_X1:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 3, stackFrame.get(s - 1));
-                    stackFrame.add(s - 3, stackFrame.get(s - 1));
+                    // TODO optimize this
+                {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    Object o3 = popValue();
+                    pushValue(o2);
+                    pushValue(o1);
+                    pushValue(o3);
+                    pushValue(o2);
+                    pushValue(o1);
+                }
                     break;
 
                 case DUP2_X2:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 4, stackFrame.get(s - 1));
-                    stackFrame.add(s - 4, stackFrame.get(s - 1));
+                    // TODO optimize this
+                {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    Object o3 = popValue();
+                    Object o4 = popValue();
+                    pushValue(o2);
+                    pushValue(o1);
+                    pushValue(o4);
+                    pushValue(o3);
+                    pushValue(o2);
+                    pushValue(o1);
+                }
                     break;
 
-                case SWAP:
-                    s = stackFrame.size();
-                    stackFrame.add(s - 2, stackFrame.get(s - 1));
-                    stackFrame.remove(s);
+                case SWAP: {
+                    Object o1 = popValue();
+                    Object o2 = popValue();
+                    pushValue(o1);
+                    pushValue(o2);
+                }
                     break;
             }
         } else {
@@ -412,8 +450,8 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
         }
     }
 
-    public void visitTypeInsn(final int opcode, final String type) {
-        mv.visitTypeInsn(opcode, type);
+    public void visitTypeInsn(final int opcode, final String name) {
+        mv.visitTypeInsn(opcode, name);
 
         // ANEWARRAY, CHECKCAST or INSTANCEOF don't change stack
         if (constructor && opcode == NEW) {
@@ -542,7 +580,9 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
         if (branches.containsKey(label)) {
             return;
         }
-        branches.put(label, new ArrayList(stackFrame));
+        ArrayList frame = new ArrayList();
+        frame.addAll(stackFrame);
+        branches.put(label, frame);
     }
 
     private Object popValue() {
@@ -560,18 +600,17 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
     /**
      * Called at the beginning of the method or after super class class call in
      * the constructor. <br><br>
-     *
+     * 
      * <i>Custom code can use or change all the local variables, but should not
      * change state of the stack.</i>
      */
-    protected void onMethodEnter() {
-    }
+    protected abstract void onMethodEnter();
 
     /**
      * Called before explicit exit from the method using either return or throw.
      * Top element on the stack contains the return value or exception instance.
      * For example:
-     *
+     * 
      * <pre>
      *   public void onMethodExit(int opcode) {
      *     if(opcode==RETURN) {
@@ -594,18 +633,17 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
      *   public static void onExit(int opcode, Object param) {
      *     ...
      * </pre>
-     *
+     * 
      * <br><br>
-     *
+     * 
      * <i>Custom code can use or change all the local variables, but should not
      * change state of the stack.</i>
-     *
+     * 
      * @param opcode one of the RETURN, IRETURN, FRETURN, ARETURN, LRETURN,
      *        DRETURN or ATHROW
-     *
+     * 
      */
-    protected void onMethodExit(int opcode) {
-    }
+    protected abstract void onMethodExit(int opcode);
 
     // TODO onException, onMethodCall
 

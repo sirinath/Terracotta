@@ -8,9 +8,6 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
-import com.tc.exception.TCClassNotFoundException;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.dmi.DmiDescriptor;
@@ -37,8 +34,6 @@ import java.util.List;
  * @author steve
  */
 public class ReceiveTransactionHandler extends AbstractEventHandler {
-  private static final TCLogger                      logger = TCLogging.getLogger(ReceiveTransactionHandler.class);
-
   private ClientTransactionManager                   txManager;
   private ClientLockManager                          lockManager;
   private final SessionManager                       sessionManager;
@@ -79,13 +74,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
         if (false) System.err.println(cidProvider.getChannelID() + " Applying - committer=" + btm.getCommitterID()
                                       + " , " + btm.getTransactionID() + " , " + btm.getGlobalTransactionID());
 
-        try {
-          txManager.apply(btm.getTransactionType(), btm.getLockIDs(), changes, btm.getLookupObjectIDs(), btm
-              .getNewRoots());
-        } catch (TCClassNotFoundException cnfe) {
-          logger.warn("transaction apply failed for " + btm.getTransactionID(), cnfe);
-        }
-
+        txManager.apply(btm.getTransactionType(), btm.getLockIDs(), changes, btm.getLookupObjectIDs(), btm
+            .getNewRoots());
       }
     }
 

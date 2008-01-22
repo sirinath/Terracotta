@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.terracotta.session;
 
@@ -9,9 +8,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class BaseRequestResponseFactory implements RequestResponseFactory {
 
-  public TerracottaRequest createRequest(SessionId id, HttpServletRequest request, HttpServletResponse response,
-                                         SessionManager manager, String rawRequestedSessionId, SessionIDSource source) {
-    return new SessionRequest(id, request, response, manager, rawRequestedSessionId, source);
+  public TerracottaRequest createRequest(SessionId id, HttpServletRequest request, HttpServletResponse response, SessionManager manager) {
+    return new SessionRequest(id, request, response, manager);
   }
 
   public TerracottaResponse createResponse(TerracottaRequest request, HttpServletResponse response) {

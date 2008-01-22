@@ -11,7 +11,6 @@ import com.tc.net.core.event.TCListenerEvent;
 import com.tc.net.core.event.TCListenerEventListener;
 import com.tc.util.Assert;
 import com.tc.util.Util;
-import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.runtime.Os;
 
 import java.io.IOException;
@@ -33,16 +32,21 @@ import java.util.Random;
 import java.util.Set;
 
 class CoreNIOServices extends Thread implements TCListenerEventListener {
-  private static final TCLogger     logger        = TCLogging.getLogger(CoreNIOServices.class);
+  private static final TCLogger     logger              = TCLogging.getLogger(CoreNIOServices.class);
+
+  private static final short        NIO_THREAD_INIT     = 0x00;
+  private static final short        NIO_THREAD_STARTED  = 0x01;
+  private static final short        NIO_THREAD_STOPPED  = 0x02;
+  private static final short        NIO_THREAD_STOP_REQ = 0x02;
 
   private final Selector            selector;
   private final LinkedQueue         selectorTasks;
   private final String              baseThreadName;
   private final TCWorkerCommManager workerCommMgr;
-  private final List                listeners     = new ArrayList();
+  private final List                listeners           = new ArrayList();
   private final SocketParams        socketParams;
-  private final SynchronizedLong    bytesRead     = new SynchronizedLong(0);
-  private final SetOnceFlag         stopRequested = new SetOnceFlag();
+  private short                     status;
+  private final SynchronizedLong    bytesRead           = new SynchronizedLong(0);
 
   public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams) {
     setDaemon(true);
@@ -50,6 +54,7 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
 
     this.selector = createSelector();
     this.selectorTasks = new LinkedQueue();
+    this.status = NIO_THREAD_INIT;
 
     this.socketParams = socketParams;
     this.baseThreadName = commThreadName;
@@ -57,6 +62,7 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
   }
 
   public void run() {
+    status = NIO_THREAD_STARTED;
     try {
       selectLoop();
     } catch (Throwable t) {
@@ -67,14 +73,37 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
     }
   }
 
+  public boolean isStarted() {
+    if (status == NIO_THREAD_STARTED) { return true; }
+    return false;
+  }
+
   public void requestStop() {
-    if (stopRequested.attemptSet()) {
+    if (isStarted()) {
+      status = NIO_THREAD_STOP_REQ;
       try {
         this.selector.wakeup();
       } catch (Exception e) {
         logger.error("Exception trying to stop " + getName() + ": ", e);
       }
+    } else {
+      logger.error("Stop requested for already stopped thread " + getName());
     }
+  }
+
+  public boolean isStopRequested() {
+    if (status == NIO_THREAD_STOP_REQ) { return true; }
+    return false;
+  }
+
+  public boolean isStopped() {
+    if (status == NIO_THREAD_STOPPED) { return true; }
+    return false;
+  }
+
+  public boolean isStoppedOrStopping() {
+    if ((status == NIO_THREAD_STOPPED) || (status == NIO_THREAD_STOP_REQ)) { return true; }
+    return false;
   }
 
   private String makeListenerString() {
@@ -429,7 +458,7 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
       sc = ssc.accept();
       sc.configureBlocking(false);
 
-      if (workerCommMgr == null) {
+      if (workerCommMgr == null || !workerCommMgr.isStarted()) {
         // Single threaded server model
         final TCConnectionJDK14 conn = lsnr.createConnection(sc, this, socketParams);
         sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
@@ -442,11 +471,10 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
       }
 
       cleanupChannel(sc, null);
-      return;
     }
 
     // Multi threaded server model
-    final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
+    final CoreNIOServices workerCommThread = workerCommMgr.getNextFreeWorkerComm();
     final TCConnectionJDK14 conn = lsnr.createConnection(sc, workerCommThread, socketParams);
 
     workerCommThread.requestReadWriteInterest(conn, sc);
@@ -484,7 +512,7 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
 
   private void handleRequest(final InterestRequest req) {
     // ignore the request if we are stopped/stopping
-    if (isStopRequested()) { return; }
+    if (isStoppedOrStopping()) { return; }
 
     if (Thread.currentThread() == this) {
       modifyInterest(req);
@@ -497,10 +525,6 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
         }
       });
     }
-  }
-
-  private boolean isStopRequested() {
-    return stopRequested.isSet();
   }
 
   private void modifyInterest(InterestRequest request) {

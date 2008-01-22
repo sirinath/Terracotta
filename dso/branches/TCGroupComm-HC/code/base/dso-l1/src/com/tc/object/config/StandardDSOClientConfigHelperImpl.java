@@ -25,7 +25,6 @@ import com.tc.geronimo.transform.HostGBeanAdapter;
 import com.tc.geronimo.transform.MultiParentClassLoaderAdapter;
 import com.tc.geronimo.transform.ProxyMethodInterceptorAdapter;
 import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
-import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
@@ -34,13 +33,13 @@ import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
-import com.tc.object.bytecode.AQSSubclassStrongReferenceAdapter;
 import com.tc.object.bytecode.AbstractListMethodCreator;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DelegateMethodAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
+import com.tc.object.bytecode.AQSSubclassStrongReferenceAdapter;
 import com.tc.object.bytecode.ManagerHelper;
 import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
@@ -71,7 +70,6 @@ import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
 import com.tc.util.runtime.Vm;
-import com.tc.weblogic.WeblogicHelper;
 import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
 import com.tc.weblogic.transform.EventsManagerAdapter;
 import com.tc.weblogic.transform.FilterManagerAdapter;
@@ -661,10 +659,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec.addAlwaysLogSpec(SerializationUtil.URL_SET_SIGNATURE);
 
-    spec = getOrCreateSpec("java.util.Calendar");
-    spec = getOrCreateSpec("java.util.GregorianCalendar");
-    spec.setHonorTransient(true);
-
     /**
      * // ---------------------------- // implicit config-bundle - JAG // ----------------------------
      * addPermanentExcludePattern("java.util.WeakHashMap+"); addPermanentExcludePattern("java.lang.ref.*");
@@ -734,7 +728,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
-    addWeblogicInstrumentation();
+    // BEGIN: weblogic stuff
+    addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
+    addWeblogicCustomAdapters();
+    // END: weblogic stuff
 
     // BEGIN: tomcat stuff
     // don't install tomcat-specific adaptors if this sys prop is defined
@@ -759,9 +756,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
     ld.commit();
     addLock("* test.event.*.setTextArea(..)", ld);
-
-    // hard code junk for Axis2 problem (CDV-525)
-    addCustomAdapter("org.codehaus.jam.internal.reflect.ReflectClassBuilder", new ReflectClassBuilderAdapter());
 
     /**
      * // ---------------------------- // implicit config-bundle - JAG // ---------------------------- //
@@ -795,27 +789,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         } catch (Exception e) {
           logger.error(e);
         }
-      }
-    }
-  }
-
-  private void addWeblogicInstrumentation() {
-    if (WeblogicHelper.isWeblogicPresent()) {
-      if (WeblogicHelper.isSupportedVersion()) {
-        addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
-
-        addCustomAdapter("weblogic.Server", new ServerAdapter());
-        addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
-        addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-        addCustomAdapter("weblogic.ejb.container.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-        addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
-        addCustomAdapter("weblogic.servlet.internal.EventsManager", new EventsManagerAdapter());
-        addCustomAdapter("weblogic.servlet.internal.FilterManager", new FilterManagerAdapter());
-        addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
-        addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
-                         new DelegateMethodAdapter("weblogic.servlet.internal.ServletResponseImpl", "nativeResponse"));
-      } else {
-        logger.warn("weblogic instrumentation NOT being added since this appears to be an unsupported version");
       }
     }
   }
@@ -902,9 +875,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
       spec.markPreInstrumented();
-      spec.setPreCreateMethod("validateInUnLockState");
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      spec.setPreCreateMethod("validateInUnLockState");
       spec.markPreInstrumented();
 
       spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
@@ -1057,6 +1028,19 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (applicationNames.isEmpty()) {
       removeCustomAdapter("org.apache.catalina.core.ContainerBase");
     }
+  }
+
+  private void addWeblogicCustomAdapters() {
+    addCustomAdapter("weblogic.Server", new ServerAdapter());
+    addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
+    addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
+    addCustomAdapter("weblogic.ejb.container.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
+    addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
+    addCustomAdapter("weblogic.servlet.internal.EventsManager", new EventsManagerAdapter());
+    addCustomAdapter("weblogic.servlet.internal.FilterManager", new FilterManagerAdapter());
+    addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
+    addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
+                     new DelegateMethodAdapter("weblogic.servlet.internal.ServletResponseImpl", "nativeResponse"));
   }
 
   public boolean removeCustomAdapter(String name) {
@@ -1365,10 +1349,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public void addWriteAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.WRITE);
   }
-  
-  public void addWriteAutolock(String methodPattern, String lockContextInfo) {
-    addAutolock(methodPattern, ConfigLockLevel.WRITE, lockContextInfo);
-  }
 
   public void addSynchronousWriteAutolock(String methodPattern) {
     addAutolock(methodPattern, ConfigLockLevel.SYNCHRONOUS_WRITE);
@@ -1380,12 +1360,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public void addAutolock(String methodPattern, ConfigLockLevel type) {
     LockDefinition lockDefinition = new LockDefinitionImpl(LockDefinition.TC_AUTOLOCK_NAME, type);
-    lockDefinition.commit();
-    addLock(methodPattern, lockDefinition);
-  }
-  
-  public void addAutolock(String methodPattern, ConfigLockLevel type, String configurationText) {
-    LockDefinition lockDefinition = new LockDefinitionImpl(LockDefinition.TC_AUTOLOCK_NAME, type, configurationText);
     lockDefinition.commit();
     addLock(methodPattern, lockDefinition);
   }
@@ -1817,11 +1791,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     throw new UnsupportedOperationException();
   }
 
-  public void addAspectModule(String classNamePrefix, String moduleName) {
-    List modules = (List) this.aspectModules.get(classNamePrefix);
+  public void addAspectModule(String pattern, String moduleName) {
+    List modules = (List) this.aspectModules.get(pattern);
     if (modules == null) {
       modules = new ArrayList();
-      this.aspectModules.put(classNamePrefix, modules);
+      this.aspectModules.put(pattern, modules);
     }
     modules.add(moduleName);
   }

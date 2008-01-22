@@ -40,8 +40,6 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       return timeToIdleSec;
     } else if (timeToLiveSec <= timeToIdleSec) {
       return timeToLiveSec;
-    } else if (threadIntervalSec <= 0) {
-      return timeToIdleSec;
     } else if (timeToIdleSec < threadIntervalSec) { return timeToIdleSec; }
     return threadIntervalSec;
   }
@@ -49,21 +47,10 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
+      long threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
+      long timeToIdleSec = cache.getTimeToIdleSeconds();
+      long timeToLiveSec = cache.getTimeToLiveSeconds();
 
-      long threadIntervalSec = -1;
-      long timeToIdleSec = -1;
-      long timeToLiveSec = -1;
-      
-      if(cache.getCacheConfiguration() != null) {
-        threadIntervalSec = cache.getCacheConfiguration().getDiskExpiryThreadIntervalSeconds();
-        timeToIdleSec = cache.getCacheConfiguration().getTimeToIdleSeconds();
-        timeToLiveSec = cache.getCacheConfiguration().getTimeToLiveSeconds();
-      } else {
-        threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
-        timeToIdleSec = cache.getTimeToIdleSeconds();
-        timeToLiveSec = cache.getTimeToLiveSeconds();        
-      }
-      
       threadIntervalSec = getThreadIntervalSeconds(threadIntervalSec, timeToIdleSec, timeToLiveSec);
 
       Map candidateMap = new SpoolingTimeExpiryMap(threadIntervalSec, timeToIdleSec, timeToLiveSec, cacheName);

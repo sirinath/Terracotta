@@ -14,7 +14,6 @@ import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.GroupEventsListener;
 import com.tc.net.groups.GroupManagerFactory;
@@ -191,7 +190,7 @@ public class StateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i], TCSocketAddress.WILDCARD_IP);
+      allNodes[i] = new Node("localhost", ports[i]);
     }
 
     StateManager[] managers = new StateManager[nodes];
@@ -258,7 +257,7 @@ public class StateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i], TCSocketAddress.WILDCARD_IP);
+      allNodes[i] = new Node("localhost", ports[i]);
     }
 
     StateManager[] managers = new StateManager[nodes];
@@ -306,7 +305,7 @@ public class StateManagerTest extends TCTestCase {
     Node[] allNodes = new Node[nodes];
     for (int i = 0; i < nodes; ++i) {
       ports[i] = pc.chooseRandomPort();
-      allNodes[i] = new Node("localhost", ports[i], TCSocketAddress.WILDCARD_IP);
+      allNodes[i] = new Node("localhost", ports[i]);
     }
 
     final StateManager[] managers = new StateManager[nodes];
@@ -426,7 +425,7 @@ public class StateManagerTest extends TCTestCase {
     public synchronized void requestStop() {
       stop = true;
     }
-
+    
     public synchronized boolean isStopped() {
       return stop;
     }

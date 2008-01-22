@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.tomcat50.session;
 
@@ -15,7 +14,6 @@ import org.apache.coyote.tomcat5.CoyoteRequest;
 import org.apache.coyote.tomcat5.CoyoteResponse;
 import org.apache.tomcat.util.buf.MessageBytes;
 
-import com.terracotta.session.SessionIDSource;
 import com.terracotta.session.SessionId;
 import com.terracotta.session.SessionManager;
 import com.terracotta.session.SessionRequest;
@@ -37,9 +35,9 @@ public class SessionRequest50 extends SessionRequest implements HttpRequest {
   private final CoyoteRequest req;
   private SessionResponse50   sessRes50;
 
-  public SessionRequest50(SessionId requestedSessionId, CoyoteRequest req, CoyoteResponse res, SessionManager manager,
-                          String rawRequestedSessionId, SessionIDSource source) {
-    super(requestedSessionId, req, res, manager, rawRequestedSessionId, source);
+  public SessionRequest50(SessionId requestedSessionId, CoyoteRequest req,
+                          CoyoteResponse res, SessionManager manager) {
+    super(requestedSessionId, req, res, manager);
     this.req = req;
   }
 

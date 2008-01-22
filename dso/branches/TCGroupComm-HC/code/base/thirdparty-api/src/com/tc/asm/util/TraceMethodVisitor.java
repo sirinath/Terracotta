@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@ import com.tc.asm.Type;
 import com.tc.asm.signature.SignatureReader;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A {@link MethodVisitor} that prints a disassembled view of the methods it
@@ -74,7 +73,7 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
     /**
      * The label names. This map associate String values to Label keys.
      */
-    protected final Map labelNames;
+    protected final HashMap labelNames;
 
     /**
      * Constructs a new {@link TraceMethodVisitor}.
@@ -181,12 +180,12 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
                 appendFrameTypes(nLocal, local);
                 buf.append("] [");
                 appendFrameTypes(nStack, stack);
-                buf.append(']');
+                buf.append("]");
                 break;
             case Opcodes.F_APPEND:
                 buf.append("APPEND [");
                 appendFrameTypes(nLocal, local);
-                buf.append(']');
+                buf.append("]");
                 break;
             case Opcodes.F_CHOP:
                 buf.append("CHOP ").append(nLocal);
@@ -199,7 +198,7 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
                 appendFrameTypes(1, stack);
                 break;
         }
-        buf.append('\n');
+        buf.append("\n");
         text.add(buf.toString());
 
         if (mv != null) {
@@ -247,15 +246,19 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
         }
     }
 
-    public void visitTypeInsn(final int opcode, final String type) {
+    public void visitTypeInsn(final int opcode, final String desc) {
         buf.setLength(0);
         buf.append(tab2).append(OPCODES[opcode]).append(' ');
-        appendDescriptor(INTERNAL_NAME, type);
+        if (desc.startsWith("[")) {
+            appendDescriptor(FIELD_DESCRIPTOR, desc);
+        } else {
+            appendDescriptor(INTERNAL_NAME, desc);
+        }
         buf.append('\n');
         text.add(buf.toString());
 
         if (mv != null) {
-            mv.visitTypeInsn(opcode, type);
+            mv.visitTypeInsn(opcode, desc);
         }
     }
 
@@ -327,7 +330,7 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
         if (cst instanceof String) {
             AbstractVisitor.appendString(buf, (String) cst);
         } else if (cst instanceof Type) {
-            buf.append(((Type) cst).getDescriptor()).append(".class");
+            buf.append(((Type) cst).getDescriptor() + ".class");
         } else {
             buf.append(cst);
         }
@@ -358,7 +361,7 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
         final int min,
         final int max,
         final Label dflt,
-        final Label[] labels)
+        final Label labels[])
     {
         buf.setLength(0);
         buf.append(tab2).append("TABLESWITCH\n");
@@ -379,8 +382,8 @@ public class TraceMethodVisitor extends TraceAbstractVisitor implements
 
     public void visitLookupSwitchInsn(
         final Label dflt,
-        final int[] keys,
-        final Label[] labels)
+        final int keys[],
+        final Label labels[])
     {
         buf.setLength(0);
         buf.append(tab2).append("LOOKUPSWITCH\n");

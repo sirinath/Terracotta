@@ -128,9 +128,7 @@ public class TribesGroupManager implements GroupManager, ChannelListener, Member
 
       // set up receiver
       ReceiverBase receiver = (ReceiverBase) group.getChannelReceiver();
-      String bind = thisNode.getBind();
-      Assert.assertNotNull(bind);
-      receiver.setAddress(bind); // use the bind address, not the "host" for the reciever
+      receiver.setAddress(thisNode.getHost());
       receiver.setPort(thisNode.getPort());
       receiver.setAutoBind(0);
       receiver.setDirect(false);

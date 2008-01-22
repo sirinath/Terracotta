@@ -9,6 +9,7 @@ import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.lang.RuntimeException;
 
 public class ProxyConnectManagerImpl implements ProxyConnectManager {
   private TCPProxy         proxy    = null;

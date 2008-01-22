@@ -1,6 +1,6 @@
 /***
  * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2007 INRIA, France Telecom
+ * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -201,14 +201,22 @@ public class BasicInterpreter implements Opcodes, Interpreter {
                 }
             case ANEWARRAY:
                 String desc = ((TypeInsnNode) insn).desc;
-                return newValue(Type.getType("[" + Type.getObjectType(desc)));
+                if (desc.charAt(0) == '[') {
+                    return newValue(Type.getType("[" + desc));
+                } else {
+                    return newValue(Type.getType("[L" + desc + ";"));
+                }
             case ARRAYLENGTH:
                 return BasicValue.INT_VALUE;
             case ATHROW:
                 return null;
             case CHECKCAST:
                 desc = ((TypeInsnNode) insn).desc;
-                return newValue(Type.getObjectType(desc));
+                if (desc.charAt(0) == '[') {
+                    return newValue(Type.getType(desc));
+                } else {
+                    return newValue(Type.getObjectType(desc));
+                }
             case INSTANCEOF:
                 return BasicValue.INT_VALUE;
             case MONITORENTER:

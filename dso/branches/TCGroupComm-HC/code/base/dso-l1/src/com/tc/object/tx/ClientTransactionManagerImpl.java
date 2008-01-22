@@ -118,11 +118,11 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return lockManager.isLocked(lockID, lockLevel);
   }
 
-//  public void lock(String lockName, int lockLevel) {
-//    final LockID lockID = lockManager.lockIDFor(lockName);
-//    lockManager.lock(lockID, lockLevel, "");
-//  }
-//
+  public void lock(String lockName, int lockLevel) {
+    final LockID lockID = lockManager.lockIDFor(lockName);
+    lockManager.lock(lockID, lockLevel);
+  }
+
   public void unlock(String lockName) {
     final LockID lockID = lockManager.lockIDFor(lockName);
     if (lockID != null) {
@@ -131,7 +131,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
   }
 
-  public boolean tryBegin(String lockName, WaitInvocation timeout, int lockLevel, String lockType) {
+  public boolean tryBegin(String lockName, WaitInvocation timeout, int lockLevel) {
     logTryBegin0(lockName, lockLevel);
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return true; }
@@ -145,7 +145,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
 
     final LockID lockID = lockManager.lockIDFor(lockName);
-    boolean isLocked = lockManager.tryLock(lockID, timeout, lockLevel, lockType);
+    boolean isLocked = lockManager.tryLock(lockID, timeout, lockLevel);
     if (!isLocked) { return isLocked; }
 
     pushTxContext(lockID, txnType);
@@ -159,7 +159,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return isLocked;
   }
 
-  public boolean begin(String lockName, int lockLevel, String lockType, String contextInfo) {
+  public boolean begin(String lockName, int lockLevel) {
     logBegin0(lockName, lockLevel);
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return false; }
@@ -178,7 +178,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
 
     try {
-      lockManager.lock(lockID, lockLevel, lockType, contextInfo);
+      lockManager.lock(lockID, lockLevel);
       return true;
     } catch (TCLockUpgradeNotSupportedError e) {
       popTransaction(lockID);
@@ -463,7 +463,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
             .getDefiningLoaderDescription());
         tcobj = objectManager.lookup(dna.getObjectID());
       } catch (ClassNotFoundException cnfe) {
-        logger.warn("Could not apply change because class not local: " + dna.getTypeName());
+        logger.warn("Could not apply change because class not local:" + dna.getTypeName());
         continue;
       }
       // Important to have a hard reference to the object while we apply
@@ -474,7 +474,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
         try {
           tcobj.hydrate(dna, force);
         } catch (ClassNotFoundException cnfe) {
-          logger.warn("Could not apply change because class not local: " + cnfe.getMessage());
+          logger.warn("Could not apply change because class not local:" + cnfe.getMessage());
           throw new TCClassNotFoundException(cnfe);
         }
       }
