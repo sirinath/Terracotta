@@ -108,6 +108,7 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
     ConnectionHealthChecker connHC = clientComms.getConnHealthChecker();
     assertNotNull(connHC);
 
+    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning()) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -145,6 +146,7 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
     ConnectionHealthChecker connHC = serverComms.getConnHealthChecker();
     assertNotNull(connHC);
 
+    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning()) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -185,6 +187,7 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
     ConnectionHealthChecker connHC = serverComms.getConnHealthChecker();
     assertNotNull(connHC);
 
+    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning()) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -241,6 +244,7 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
     ConnectionHealthChecker connHC = serverComms.getConnHealthChecker();
 
     assertNotNull(connHC);
+    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 2)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -266,11 +270,6 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
 
     clientMsgCh1.close();
     System.out.println("ClientMessasgeChannel 1 Closed");
-
-    /*
-     * System.out.println("Trying to send more data to closed client channel"); PingMessage ping = (PingMessage)
-     * clientMsgCh1.createMessage(TCMessageType.PING_MESSAGE); ping.initialize(sq); ping.send();
-     */
 
     ThreadUtil.reallySleep(hcConfig.getKeepAliveIdleTime() * 1000);
     ThreadUtil.reallySleep(2 * hcConfig.getKeepAiveInterval() * 1000);

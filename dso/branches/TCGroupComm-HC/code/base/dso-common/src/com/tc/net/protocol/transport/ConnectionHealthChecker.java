@@ -10,6 +10,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.net.InetAddress;
@@ -26,8 +27,9 @@ public class ConnectionHealthChecker {
 
   private final TCLogger                   logger;
   private Map                              connSet           = new ConcurrentHashMap();
+  private final SetOnceFlag                shutdown          = new SetOnceFlag();
   private Iterator                         connHlthChkerCtxtIterator;
-  private boolean                          enabled;
+  private boolean                          hcEnabled;
   private Thread                           pingThread;
   private ConnectionHealthCheckerSocketMgr hcSocketMgr;
   private boolean                          pingThreadRunning = false;
@@ -40,42 +42,56 @@ public class ConnectionHealthChecker {
                                  + healthCheckerConfig.getHealthCheckerName());
 
     if (healthCheckerConfig.isKeepAliveEnabled()) {
-      enabled = true;
+      hcEnabled = true;
       pingThread = new Thread(new healthCheckerPingThread(healthCheckerConfig), "HealthChecker");
       pingThread.setDaemon(true);
+
+      if (hcEnabled) {
+        // HC Listener to detect long GC; XXX shd be configurable - enable/disable
+        try {
+          hcSocketMgr = new ConnectionHealthCheckerSocketMgr(InetAddress.getLocalHost());
+          while (!hcSocketMgr.isRunning()) {
+            ThreadUtil.reallySleep(1000);
+          }
+          logger.info("Health Checker Sock Mgr : " + hcSocketMgr.getBindAddress().getHostAddress() + ":"
+                      + hcSocketMgr.getBindPort());
+        } catch (UnknownHostException e) {
+          //
+        }
+      }
     } else {
-      enabled = false;
+      hcEnabled = false;
+    }
+
+    if (!hcEnabled) {
       logger.info("Health Checker - Disabled");
     }
 
-    // Listener to detect long GC; XXX shd be configurable - enable/disable
-    try {
-      hcSocketMgr = new ConnectionHealthCheckerSocketMgr(InetAddress.getLocalHost());
-      while (!hcSocketMgr.isRunning()) {
-        ThreadUtil.reallySleep(1000);
-      }
-      logger.info("Health Checker Sock Mgr : " + hcSocketMgr.getBindAddress().getHostAddress() + ":" + hcSocketMgr.getBindPort());
-    } catch (UnknownHostException e) {
-      //
-    }
   }
 
   public ConnectionHealthCheckerContext checkHealthFor(MessageTransportBase mtb) {
-    if (enabled) {
+    if (hcEnabled) {
       ConnectionHealthCheckerContext connHCCtxt = new ConnectionHealthCheckerContext(mtb);
       return connHCCtxt;
     } else {
-      logger.info("Health monitoring agent for " + mtb.getConnectionId() + " NOT requested");
       return null;
     }
   }
 
   public synchronized void stop() {
-    pingThreadRunning = false;
+    if (shutdown.attemptSet()) {
+      pingThreadRunning = false;
+    } else {
+      logger.info("Connection Health Checker STOP already started");
+    }
   }
 
   public synchronized boolean isRunning() {
     return pingThreadRunning;
+  }
+
+  public synchronized boolean isEnabled() {
+    return hcEnabled;
   }
 
   class healthCheckerPingThread implements Runnable {
@@ -87,14 +103,14 @@ public class ConnectionHealthChecker {
       keepaliveIdleTime = healthCheckerConfig.getKeepAliveIdleTime() * 1000;
       keepaliveInterval = healthCheckerConfig.getKeepAiveInterval() * 1000;
       keepaliveProbes = healthCheckerConfig.getKeepAliveProbes();
-      if (keepaliveIdleTime - keepaliveInterval <= 0) {
+      if (keepaliveIdleTime - keepaliveInterval < 0) {
         logger.info("keepalive_interval period should be less than keepalive_idletime");
         logger.info("Disabling HealthChecker for this CommsMgr");
-        pingThreadRunning = false;
+        hcEnabled = false;
       } else if (keepaliveIdleTime <= 0 || keepaliveInterval <= 0 || keepaliveProbes <= 0) {
         logger.info("keepalive Ideltime/Interval/Probes cannot be 0 or negative");
         logger.info("Disabling HealthChecker for this CommsMgr");
-        pingThreadRunning = false;
+        hcEnabled = false;
       }
     }
 
@@ -103,6 +119,7 @@ public class ConnectionHealthChecker {
 
         if (!pingThreadRunning) {
           logger.info("HealthChecker SHUTDOWN");
+          hcSocketMgr.stop();
           return;
         }
 
@@ -195,6 +212,11 @@ public class ConnectionHealthChecker {
     }
 
     public void startMonitoring() {
+
+      if (shutdown.isSet()) {
+        logger.info("Conection Health Checker is Shutting Down. Request not taken.");
+        return;
+      }
 
       synchronized (connSet) {
         connSet.put(this.mtb, this);

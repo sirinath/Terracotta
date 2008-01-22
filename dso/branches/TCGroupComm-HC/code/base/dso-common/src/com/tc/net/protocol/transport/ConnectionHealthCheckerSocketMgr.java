@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ConnectionHealthCheckerSocketMgr {
   private ServerSocket      servSocket;
@@ -22,16 +23,15 @@ public class ConnectionHealthCheckerSocketMgr {
 
   public ConnectionHealthCheckerSocketMgr(InetAddress addr) {
     this.localBindAddr = addr;
-    hcSockMgrThread = new Thread(new AcceptorThread(), "HC SocketMgr Acceptor Thread");
+    hcSockMgrThread = new Thread(new HCAcceptorThread(), "HC SocketMgr Acceptor Thread");
     hcSockMgrThread.setDaemon(true);
     hcSockMgrThread.start();
   }
 
   public synchronized void stop() {
     if (hcSockMgrThreadRunning) {
-      hcSockMgrThread.interrupt();
+      hcSockMgrThreadRunning = false;
     }
-    hcSockMgrThreadRunning = false;
   }
 
   public boolean connectToPeerHCSocketMgr(TCSocketAddress addr) {
@@ -40,27 +40,46 @@ public class ConnectionHealthCheckerSocketMgr {
     try {
       clntSocket = new Socket();
       InetSocketAddress inetAddr = new InetSocketAddress(addr.getAddress(), addr.getPort());
-      clntSocket.connect(inetAddr); // XXX Timeout ???
+      try {
+        clntSocket.connect(inetAddr, 5000); // XXX Timeout needed ???
+      } catch (SocketTimeoutException ste) {
+        return false;
+      }
     } catch (IOException ioe) {
       //
     }
 
-    if ((clntSocket != null) && clntSocket.isConnected()) { return true; }
+    if ((clntSocket != null) && clntSocket.isConnected()) {
+      Thread th = new Thread(new ClntSocketCloserThread(clntSocket), "HC SocketMgr Peer connected sckt close thread");
+      th.start();
+      return true;
+    }
     return false;
   }
 
-  class AcceptorThread implements Runnable {
+  class HCAcceptorThread implements Runnable {
     public void run() {
-      try {
-        servSocket = new ServerSocket(0, 5, localBindAddr);
-        hcSockMgrThreadRunning = true;
-        Socket clntSocket;
-        while ((clntSocket = servSocket.accept()) != null) {
-          Thread th = new Thread(new ClntSocketCloserThread(clntSocket), "HC SocketMgr clnt close thred");
-          th.start();
+      hcSockMgrThreadRunning = true;
+      while (true) {
+        try {
+
+          if (!hcSockMgrThreadRunning) { return; }
+
+          servSocket = new ServerSocket(0, 5, localBindAddr);
+          Socket clntSocket = null;
+          servSocket.setSoTimeout(2000);
+          try {
+            clntSocket = servSocket.accept();
+          } catch (SocketTimeoutException ste) {
+            continue;
+          }
+          if (clntSocket != null) {
+            Thread th = new Thread(new ClntSocketCloserThread(clntSocket), "HC SocketMgr clnt sckt close thread");
+            th.start();
+          }
+        } catch (IOException ioe) {
+          // 
         }
-      } catch (IOException ioe) {
-        //
       }
     }
   }
