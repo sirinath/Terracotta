@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener {
@@ -76,7 +75,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private NetworkListener                                         groupListener;
   private final ConnectionPolicy                                  connectionPolicy;
   private TCGroupMemberDiscovery                                  discover;
-  private final CopyOnWriteArrayList<TCGroupMember>               members                      = new CopyOnWriteArrayList<TCGroupMember>();
   private final CopyOnWriteArrayList<GroupEventsListener>         groupListeners               = new CopyOnWriteArrayList<GroupEventsListener>();
   private final Map<String, GroupMessageListener>                 messageListeners             = new ConcurrentHashMap<String, GroupMessageListener>();
   private final Map<MessageID, GroupResponse>                     pendingRequests              = new ConcurrentHashMap<MessageID, GroupResponse>();
@@ -90,11 +88,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private Stage                                                   receiveGroupMessageStage;
   private Stage                                                   receivePingMessageStage;
   private Stage                                                   handshakeMessageStage;
-  private final LinkedBlockingQueue<TCGroupPingMessage>           pingQueue                    = new LinkedBlockingQueue<TCGroupPingMessage>(
-                                                                                                                                             100);
-  private final ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
+
+  private final ConcurrentHashMap<MessageChannel, TCFuture>       pingMessages                 = new ConcurrentHashMap<MessageChannel, TCFuture>();
 
   private final ConcurrentHashMap<MessageChannel, TCFuture>       handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
+
+  private final ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
+
+  private final ConcurrentHashMap<NodeIdUuidImpl, TCGroupMember>  members                      = new ConcurrentHashMap<NodeIdUuidImpl, TCGroupMember>();
 
   public static final String                                      NHA_GCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
 
@@ -296,7 +297,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     discover.stop();
     groupListener.stop(timeout);
     communicationsManager.getConnectionManager().asynchCloseAllConnections();
-    for (TCGroupMember m : members) {
+    for (TCGroupMember m : members.values()) {
       notifyAnyPendingRequests(m);
     }
     members.clear();
@@ -325,30 +326,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   private boolean tryAddMember(TCGroupMember member) {
-    if (isStopped.get()) {
-      closeMember(member);
-      return false;
-    }
+    if (isStopped.get()) { return false; }
 
     // Keep only one connection between two nodes. Close the redundant one.
     synchronized (this) {
-      Iterator it = members.iterator();
-      while (it.hasNext()) {
-        TCGroupMember m = (TCGroupMember) it.next();
-
-        if (member.getPeerNodeID().equals(m.getPeerNodeID())) {
-          // there is one exist already
-          closeMember(member);
-          return false;
-        }
-
-        // sanity check
-        boolean dup = member.getSrcNodeID().equals(m.getSrcNodeID()) && member.getDstNodeID().equals(m.getDstNodeID());
-        if (dup) { throw new RuntimeException("Duplicate channels to the same node " + member); }
-
+      if (null != members.get(member.getPeerNodeID())) {
+        // there is one exist already
+        return false;
       }
       member.setTCGroupManager(this);
-      members.add(member);
+      members.put(member.getPeerNodeID(), member);
     }
     logger.debug(getNodeID() + " added " + member);
     return true;
@@ -366,15 +353,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (isStopped.get()) return;
     synchronized (this) {
       member.setTCGroupManager(null);
-      closeMember(member);
-      if (!members.remove(member)) {
-        // member is not in group yet but a transport
-        // disconnect/close event occurred.
-        notifyAnyPendingRequests(member);
-        logger.warn("Remove non-exist member " + member);
-        return;
+      if (null != members.remove(member.getPeerNodeID())) {
+        fireNodeEvent(member, false);
       }
-      fireNodeEvent(member, false);
+      closeMember(member, true);
     }
     logger.debug(getNodeID() + " removed " + member);
     notifyAnyPendingRequests(member);
@@ -390,9 +372,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public void sendAll(GroupMessage msg) throws GroupException {
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
+    for (TCGroupMember m : members.values()) {
       m.send(msg);
     }
   }
@@ -441,10 +421,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return groupResponse;
   }
 
-  private void closeMember(TCGroupMember member) {
+  private void closeMember(TCGroupMember member, boolean isAdded) {
     member.setReady(false);
     member.close();
     mapChNodeID.remove(member.getChannel());
+    if (isAdded) {
+      members.remove(member.getPeerNodeID());
+    }
   }
 
   /*
@@ -492,22 +475,17 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       ThreadUtil.reallySleep(50);
     }
 
-    if (tryAddMember(member)) {
-      synchronized (member) {
-        signalToJoin(member, true);
-        if (receivedOkToJoin(member)) {
-          fireNodeEvent(member, true);
-          return member;
-        } else {
-          members.remove(member);
-          closeMember(member);
-          return null;
-        }
+    boolean isAdded = tryAddMember(member);
+    synchronized (member) {
+      signalToJoin(member, isAdded);
+      if (isAdded && receivedOkToJoin(member)) {
+        fireNodeEvent(member, true);
+      } else {
+        closeMember(member, isAdded);
+        member = null;
       }
-    } else {
-      signalToJoin(member, false);
-      return null;
     }
+    return member;
   }
 
   public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
@@ -543,26 +521,19 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           ThreadUtil.reallySleep(50);
         }
 
-        if (tryAddMember(member)) {
-          synchronized (member) {
-            if (receivedOkToJoin(member)) {
-              signalToJoin(member, true);
-              fireNodeEvent(member, true);
-              return;
-            } else {
-              members.remove(member);
-              closeMember(member);
-              return;
-            }
-          }
-        } else {
-          if (receivedOkToJoin(member)) {
+        boolean isAdded = tryAddMember(member);
+        synchronized (member) {
+          if (receivedOkToJoin(member) && isAdded) {
+            signalToJoin(member, true);
+            fireNodeEvent(member, true);
+          } else {
             signalToJoin(member, false);
+            closeMember(member, isAdded);
           }
-          return;
         }
       }
     };
+    t.setDaemon(true);
     t.start();
   }
 
@@ -581,33 +552,42 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   private boolean receivedOkToJoin(TCGroupMember member) {
+    Assert.assertNotNull(member);
     MessageChannel channel = member.getChannel();
-
-    int loopCount = 1000;
-    for (int i = 0; i < loopCount; ++i) {
-      for (TCGroupPingMessage ping : pingQueue) {
-        if (ping.getChannel() == channel) {
-          pingQueue.remove(ping);
-          return (ping.isOkMessage());
-        }
+    Assert.assertNotNull(channel);
+    TCFuture result;
+    synchronized (pingMessages) {
+      // check if message arrived already
+      result = pingMessages.get(channel);
+      if (result == null) {
+        result = new TCFuture();
+        pingMessages.put(channel, result);
       }
-      if (channel.isClosed()) break;
-      ThreadUtil.reallySleep(5);
     }
 
-    if (logger.isDebugEnabled()) logger.debug("Failed to receive ok message from " + member);
-    return false;
+    TCGroupPingMessage ping = null;
+    try {
+      ping = (TCGroupPingMessage) result.get(handshakeTimeout);
+    } catch (Exception e) {
+      if (logger.isDebugEnabled()) logger.debug("Failed to receive ok message from " + member);
+    }
+
+    pingMessages.remove(channel);
+
+    return ((ping != null) ? ping.isOkMessage() : false);
   }
 
   public void pingReceived(TCGroupPingMessage msg) {
-    if (!pingQueue.offer(msg)) { throw new RuntimeException("No room for ping messages"); }
-  }
-
-  /*
-   * for testing purpose only
-   */
-  public LinkedBlockingQueue<TCGroupPingMessage> getPingQueue() {
-    return pingQueue;
+    MessageChannel channel = msg.getChannel();
+    synchronized (pingMessages) {
+      TCFuture result = pingMessages.get(channel);
+      if (result == null) {
+        // handshake message may arrive before local node is ready to receive it.
+        result = new TCFuture();
+        pingMessages.put(channel, result);
+      }
+      result.set(msg);
+    }
   }
 
   /*
@@ -622,36 +602,19 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public synchronized TCGroupMember getMember(MessageChannel channel) {
-    TCGroupMember member = null;
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
-      if (m.getChannel() == channel) {
-        member = m;
-        break;
-      }
-    }
-    return (member);
+    NodeIdUuidImpl nodeID = mapChNodeID.get(channel);
+    if (nodeID == null) return null;
+    TCGroupMember m = members.get(nodeID);
+    return ((m != null) && (m.getChannel() == channel)) ? m : null;
   }
 
-  public synchronized TCGroupMember getMember(NodeIdUuidImpl aNodeID) {
-    TCGroupMember member = null;
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
-      if (m.getPeerNodeID().equals(aNodeID)) {
-        member = m;
-        break;
-      }
-    }
-    return (member);
+  public synchronized TCGroupMember getMember(NodeIdUuidImpl nodeID) {
+    return (members.get(nodeID));
   }
 
   public TCGroupMember getMember(String nodeName) {
     TCGroupMember member = null;
-    Iterator it = members.iterator();
-    while (it.hasNext()) {
-      TCGroupMember m = (TCGroupMember) it.next();
+    for (TCGroupMember m : members.values()) {
       if (nodeName.equals(m.getPeerNodeID().getName())) {
         member = m;
         break;
@@ -661,7 +624,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public List<TCGroupMember> getMembers() {
-    return Collections.unmodifiableList(members);
+    return Collections.unmodifiableList(new ArrayList(members.values()));
   }
 
   public void setDiscover(TCGroupMemberDiscovery discover) {
@@ -731,9 +694,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     String name = clazz.getName();
     try {
       Constructor<AbstractGroupMessage> cons = clazz.getDeclaredConstructor(new Class[0]);
-      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) { throw new AssertionError(
-                                                                                   name
-                                                                                       + " : public no arg constructor not found"); }
+      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) {
+        // 
+        throw new AssertionError(name + " : public no arg constructor not found");
+      }
     } catch (NoSuchMethodException ex) {
       throw new AssertionError(name + " : public no arg constructor not found");
     }
@@ -824,12 +788,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
 
     public void sendAll(GroupMessage msg) throws GroupException {
-      Iterator it = manager.getMembers().iterator();
-      while (it.hasNext()) {
-        TCGroupMember member = (TCGroupMember) it.next();
-        if (member.isReady()) {
-          waitFor.add(member.getPeerNodeID());
-          member.send(msg);
+      for (TCGroupMember m : manager.getMembers()) {
+        if (m.isReady()) {
+          waitFor.add(m.getPeerNodeID());
+          m.send(msg);
         }
       }
     }
@@ -857,7 +819,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           this.wait(5000);
           if (++count > 1) {
             logger.warn(sender + " Still waiting for response from " + waitFor + ". Count = " + count);
-            if (count > 50) { throw new RuntimeException("Still waiting for response from " + waitFor); }
+            if (count > 60) { throw new RuntimeException("Still waiting for response from " + waitFor); }
           }
         } catch (InterruptedException e) {
           throw new GroupException(e);
