@@ -3941,7 +3941,7 @@ public class ConfigurationHelper {
         map.put(IMarker.LOCATION, "line " + line);
 
         IFile configFile = plugin.getConfigurationFile(m_project);
-        //MarkerUtilities.createMarker(configFile, map, markerType);
+        MarkerUtilities.createMarker(configFile, map, markerType);
       }
     } catch (Exception e2) {
       plugin.openError("Problem creating marker '" + markerType + "'", e2);
