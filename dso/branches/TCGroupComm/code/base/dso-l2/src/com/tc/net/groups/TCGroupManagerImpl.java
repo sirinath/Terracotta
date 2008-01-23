@@ -470,6 +470,17 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (logger.isDebugEnabled()) logger.debug("Channel setup to " + peermsg.getNodeID());
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), peermsg.getNodeID(), channel);
 
+    if (!tryJoinGroup(member, true)) return null;
+
+    return member;
+  }
+
+  public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
+      MaxConnectionsExceededException, IOException {
+    return openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, groupPort) }));
+  }
+
+  private boolean tryJoinGroup(TCGroupMember member, boolean connInitiator) {
     // favor high priority link
     if (!member.highPriorityLink()) {
       ThreadUtil.reallySleep(50);
@@ -477,20 +488,20 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     boolean isAdded = tryAddMember(member);
     synchronized (member) {
-      signalToJoin(member, isAdded);
+      // connection initiator signal status to peer
+      if (connInitiator) signalToJoin(member, isAdded);
       if (receivedOkToJoin(member) && isAdded) {
+        // target node replies ok to initiator
+        if (!connInitiator) signalToJoin(member, true);
         fireNodeEvent(member, true);
+        return (true);
       } else {
+        // target node replies deny to initiator
+        if (!connInitiator) signalToJoin(member, false);
         closeMember(member, isAdded);
-        member = null;
+        return (false);
       }
     }
-    return member;
-  }
-
-  public TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
-      MaxConnectionsExceededException, IOException {
-    return openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, groupPort) }));
   }
 
   /*
@@ -516,21 +527,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         if (logger.isDebugEnabled()) logger.debug("Channel established from " + peermsg.getNodeID());
 
         final TCGroupMember member = new TCGroupMemberImpl(channel, peermsg.getNodeID(), getNodeID());
-        // favor high priority link
-        if (!member.highPriorityLink()) {
-          ThreadUtil.reallySleep(50);
-        }
 
-        boolean isAdded = tryAddMember(member);
-        synchronized (member) {
-          if (receivedOkToJoin(member) && isAdded) {
-            signalToJoin(member, true);
-            fireNodeEvent(member, true);
-          } else {
-            signalToJoin(member, false);
-            closeMember(member, isAdded);
-          }
-        }
+        tryJoinGroup(member, false);
+
       }
     };
     t.setDaemon(true);
@@ -541,11 +540,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCGroupPingMessage ping = (TCGroupPingMessage) member.getChannel().createMessage(TCMessageType.GROUP_PING_MESSAGE);
     if (ok) {
       if (logger.isDebugEnabled()) logger.debug("Send ok message to " + member);
-
       ping.initializeOk();
     } else {
       if (logger.isDebugEnabled()) logger.debug("Send deny message to " + member);
-
       ping.initializeDeny();
     }
     ping.send();
