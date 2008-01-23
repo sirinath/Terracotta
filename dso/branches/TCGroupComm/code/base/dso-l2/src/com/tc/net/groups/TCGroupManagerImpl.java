@@ -20,6 +20,9 @@ import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
+import com.tc.net.protocol.tcm.ChannelEvent;
+import com.tc.net.protocol.tcm.ChannelEventListener;
+import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.CommunicationsManager;
@@ -43,6 +46,7 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.concurrent.TCFuture;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.SimpleSequence;
 
@@ -64,31 +68,41 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener {
-  private static final TCLogger                                   logger                  = TCLogging
-                                                                                              .getLogger(TCGroupManagerImpl.class);
+  private static final TCLogger                                   logger                       = TCLogging
+                                                                                                   .getLogger(TCGroupManagerImpl.class);
   private final NodeIdUuidImpl                                    thisNodeID;
 
   private CommunicationsManager                                   communicationsManager;
   private NetworkListener                                         groupListener;
   private final ConnectionPolicy                                  connectionPolicy;
   private TCGroupMemberDiscovery                                  discover;
-  private final CopyOnWriteArrayList<TCGroupMember>               members                 = new CopyOnWriteArrayList<TCGroupMember>();
-  private final CopyOnWriteArrayList<GroupEventsListener>         groupListeners          = new CopyOnWriteArrayList<GroupEventsListener>();
-  private final Map<String, GroupMessageListener>                 messageListeners        = new ConcurrentHashMap<String, GroupMessageListener>();
-  private final Map<MessageID, GroupResponse>                     pendingRequests         = new ConcurrentHashMap<MessageID, GroupResponse>();
-  private ZapNodeRequestProcessor                                 zapNodeRequestProcessor = new DefaultZapNodeRequestProcessor(
-                                                                                                                               logger);
-  private AtomicBoolean                                           isStopped               = new AtomicBoolean(false);
-  private AtomicBoolean                                           ready                   = new AtomicBoolean(false);
+  private final CopyOnWriteArrayList<TCGroupMember>               members                      = new CopyOnWriteArrayList<TCGroupMember>();
+  private final CopyOnWriteArrayList<GroupEventsListener>         groupListeners               = new CopyOnWriteArrayList<GroupEventsListener>();
+  private final Map<String, GroupMessageListener>                 messageListeners             = new ConcurrentHashMap<String, GroupMessageListener>();
+  private final Map<MessageID, GroupResponse>                     pendingRequests              = new ConcurrentHashMap<MessageID, GroupResponse>();
+  private ZapNodeRequestProcessor                                 zapNodeRequestProcessor      = new DefaultZapNodeRequestProcessor(
+                                                                                                                                    logger);
+  private AtomicBoolean                                           isStopped                    = new AtomicBoolean(
+                                                                                                                   false);
+  private AtomicBoolean                                           ready                        = new AtomicBoolean(
+                                                                                                                   false);
   private Stage                                                   hydrateStage;
   private Stage                                                   receiveGroupMessageStage;
   private Stage                                                   receivePingMessageStage;
   private Stage                                                   handshakeMessageStage;
-  private final LinkedBlockingQueue<TCGroupPingMessage>           pingQueue               = new LinkedBlockingQueue<TCGroupPingMessage>(
-                                                                                                                                        100);
-  private final LinkedBlockingQueue<TCGroupHandshakeMessage>      handshakeQueue          = new LinkedBlockingQueue<TCGroupHandshakeMessage>(
+  private final LinkedBlockingQueue<TCGroupPingMessage>           pingQueue                    = new LinkedBlockingQueue<TCGroupPingMessage>(
                                                                                                                                              100);
-  private final ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> mapChNodeID             = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
+  private final ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
+
+  private final ConcurrentHashMap<MessageChannel, TCFuture>       handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
+
+  public static final String                                      NHA_GCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.hstimeout";
+
+  private final static long                                       handshakeTimeout;
+
+  static {
+    handshakeTimeout = TCPropertiesImpl.getProperties().getLong(NHA_GCCOMM_HANDSHAKE_TIMEOUT);
+  }
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -178,21 +192,58 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return (aNodeID);
   }
 
-  private TCGroupHandshakeMessage readHandshakeMessage(MessageChannel channel) {
-    int loopCount = 1000;
-    for (int i = 0; i < loopCount; ++i) {
-      for (TCGroupHandshakeMessage msg : handshakeQueue) {
-        if (msg.getChannel() == channel) {
-          handshakeQueue.remove(msg);
-          mapChNodeID.put(channel, msg.getNodeID());
-          return msg;
+  /*
+   * Once connected, both send message to each other for exchanging NodeID.
+   */
+  private TCGroupHandshakeMessage handshake(final MessageChannel channel) {
+
+    TCFuture result;
+    synchronized (handshakeResults) {
+      // check if message arrived already
+      result = handshakeResults.get(channel);
+      if (result == null) {
+        result = new TCFuture();
+        handshakeResults.put(channel, result);
+      }
+    }
+    channel.addListener(new ChannelEventListener() {
+      public void notifyChannelEvent(ChannelEvent event) {
+        if (event.getChannel() == channel) {
+          if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
+              || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
+            TCFuture hsresult = handshakeResults.get(channel);
+            if (hsresult != null) hsresult.cancel();
+          }
         }
       }
-      if (channel.isClosed()) return null;
-      ThreadUtil.reallySleep(5);
+    });
+
+    writeHandshakeMessage(channel);
+    TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel, result, handshakeTimeout);
+    handshakeResults.remove(channel);
+    if (peermsg == null) {
+      channel.close();
+      return null;
     }
-    logger.warn("Failed to receive handshake message from peer " + channel);
-    return null;
+
+    mapChNodeID.put(channel, peermsg.getNodeID());
+    return peermsg;
+  }
+
+  private TCGroupHandshakeMessage readHandshakeMessage(MessageChannel channel, TCFuture result, long timeout) {
+    TCGroupHandshakeMessage msg = null;
+
+    try {
+      msg = (TCGroupHandshakeMessage) result.get(timeout);
+    } catch (TCTimeoutException e) {
+      logger.warn("Handshake message timeout from peer " + channel);
+      return null;
+    } catch (Exception e) {
+      if (logger.isDebugEnabled()) logger.debug("readHandshakeMessage: " + e);
+      return null;
+    }
+
+    return msg;
   }
 
   private void writeHandshakeMessage(MessageChannel channel) {
@@ -206,7 +257,23 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   public void handshakeReceived(TCGroupHandshakeMessage msg) {
     if (logger.isDebugEnabled()) logger.debug("Received handshake message from " + msg.getChannel());
 
-    if (!handshakeQueue.offer(msg)) { throw new RuntimeException("No room for handshake messages"); }
+    if (isStopped.get() || !ready.get()) {
+      // drop message
+      if (logger.isDebugEnabled()) logger.debug("Dropped handshake message from " + msg.getChannel());
+      return;
+    }
+
+    MessageChannel channel = msg.getChannel();
+    Assert.assertNotNull(channel);
+    synchronized (handshakeResults) {
+      TCFuture result = handshakeResults.get(channel);
+      if (result == null) {
+        // handshake message may arrive before local node is ready to receive it.
+        result = new TCFuture();
+        handshakeResults.put(channel, result);
+      }
+      result.set(msg);
+    }
   }
 
   public NodeID getLocalNodeID() throws GroupException {
@@ -257,7 +324,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
   }
 
-  private boolean addMember(TCGroupMember member) {
+  private boolean tryAddMember(TCGroupMember member) {
     if (isStopped.get()) {
       closeMember(member);
       return false;
@@ -414,22 +481,18 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       throw e;
     }
 
-    writeHandshakeMessage(channel);
-    TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel);
-    if (peermsg == null) {
-      channel.close();
-      return null;
-    }
+    TCGroupHandshakeMessage peermsg = handshake(channel);
+    if (peermsg == null) return null;
 
     if (logger.isDebugEnabled()) logger.debug("Channel setup to " + peermsg.getNodeID());
     TCGroupMember member = new TCGroupMemberImpl(getNodeID(), peermsg.getNodeID(), channel);
+
     // favor high priority link
     if (!member.highPriorityLink()) {
       ThreadUtil.reallySleep(50);
     }
 
-    if (addMember(member)) {
-
+    if (tryAddMember(member)) {
       synchronized (member) {
         signalToJoin(member, true);
         if (receivedOkToJoin(member)) {
@@ -461,7 +524,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     // spawn a new thread to continue work, otherwise block select thread
     final Thread t = new Thread("creating channel") {
       public void run() {
-        
+
         if (isStopped.get() || !ready.get()) {
           // !ready.get(): Accept channels only after fully initialized.
           // otherwise "java.lang.AssertionError: No Route" when receive messages
@@ -469,12 +532,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           return;
         }
 
-        writeHandshakeMessage(channel);
-        TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel);
-        if (peermsg == null) {
-          channel.close();
-          return;
-        }
+        TCGroupHandshakeMessage peermsg = handshake(channel);
+        if (peermsg == null) return;
 
         if (logger.isDebugEnabled()) logger.debug("Channel established from " + peermsg.getNodeID());
 
@@ -484,7 +543,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           ThreadUtil.reallySleep(50);
         }
 
-        if (addMember(member)) {
+        if (tryAddMember(member)) {
           synchronized (member) {
             if (receivedOkToJoin(member)) {
               signalToJoin(member, true);
