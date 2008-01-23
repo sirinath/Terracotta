@@ -478,7 +478,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     boolean isAdded = tryAddMember(member);
     synchronized (member) {
       signalToJoin(member, isAdded);
-      if (isAdded && receivedOkToJoin(member)) {
+      if (receivedOkToJoin(member) && isAdded) {
         fireNodeEvent(member, true);
       } else {
         closeMember(member, isAdded);
