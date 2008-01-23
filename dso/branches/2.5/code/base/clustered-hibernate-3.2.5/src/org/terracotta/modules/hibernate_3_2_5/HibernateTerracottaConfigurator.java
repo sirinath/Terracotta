@@ -42,6 +42,8 @@ public final class HibernateTerracottaConfigurator extends TerracottaConfigurato
     configHelper.addIncludePattern("org.hibernate.engine..*", false, false, false);
 
     configHelper.addIncludePattern("org.hibernate.type..*", false, false, false);
+    spec = configHelper.getOrCreateSpec("org.hibernate.type.NullableType");
+    spec.setHonorTransient(true);
 
     configHelper.addIncludePattern("org.hibernate.FetchMode", false, false, false);
 
