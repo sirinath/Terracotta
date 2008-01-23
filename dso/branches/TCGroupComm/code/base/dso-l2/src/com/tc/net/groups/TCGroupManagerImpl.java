@@ -96,7 +96,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private final ConcurrentHashMap<MessageChannel, TCFuture>       handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
 
-  public static final String                                      NHA_GCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.hstimeout";
+  public static final String                                      NHA_GCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
 
   private final static long                                       handshakeTimeout;
 
