@@ -24,8 +24,13 @@ import java.util.List;
  * (deadlock), it will fail with a timeout.
  */
 public class MutualReferenceCollectionTest extends TransparentTestBase {
-  private static final int NODE_COUNT = 2;
+  private static final int NODE_COUNT = 3;
 
+  public MutualReferenceCollectionTest() {
+    // DEV-1153
+    disableAllUntil("2008-06-01");
+  }
+  
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
     t.initializeTestRunner();
@@ -46,15 +51,18 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
 
     protected void runTest() throws Throwable {
       initLists();
-
+      System.out.println("Done initializing lists...");
+      
       CyclicBarrier readBarrier = new CyclicBarrier(2);
       ListWorker worker1 = new ListWorker(readBarrier, firstList);
       ListWorker worker2 = new ListWorker(readBarrier, secondList);
 
-      barrier.barrier();
-
+      System.out.println("Waiting to start workers...");
+      barrier.barrier();      
+      
       worker1.start();
       worker2.start();
+      System.out.println("workers started...");
       worker1.join();
       worker2.join();
 
@@ -68,14 +76,14 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
     private void initLists() throws Exception {
       if (barrier.barrier() == 0) {
         synchronized (firstList) {
-          for (int i = 0; i < 20000; i++) {
+          for (int i = 0; i < 5000; i++) {
             firstList.add(new Object());
           }
           // reference oddList
           firstList.add(secondList);
         }
         synchronized (secondList) {
-          for (int i = 1; i < 20000; i++) {
+          for (int i = 1; i < 5000; i++) {
             secondList.add(new Object());
           }
           // reference evenList
@@ -122,6 +130,7 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
 
       public void run() {
         try {
+          System.out.println("waiting for readBarrier...");
           readBarrier.barrier();
           System.out.println("Client " + ManagerUtil.getClientID() + ", thread " + getName() + ": start work...");
           doWork();
