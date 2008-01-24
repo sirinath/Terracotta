@@ -6,7 +6,6 @@ package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -25,9 +24,9 @@ import java.io.ObjectOutputStream;
 public class TCGroupMessageWrapper extends DSOMessageBase {
   private final static byte  GROUP_MESSAGE_ID = 1;
   private GroupMessage       message;
-  private TCByteBufferOutput out;
+  private TCByteBufferOutputStream out;
 
-  public TCGroupMessageWrapper(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
+  public TCGroupMessageWrapper(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
     this.out = out;
@@ -49,7 +48,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
   protected void dehydrateValues() {
     putNVPair(GROUP_MESSAGE_ID, 0); // to do TCMessageImpl nvCount++
     try {
-      ObjectOutputStream stream = new ObjectOutputStream((TCByteBufferOutputStream) this.out);
+      ObjectOutputStream stream = new ObjectOutputStream(this.out);
       stream.writeObject(this.message);
     } catch (IOException e) {
       throw new RuntimeException();
@@ -59,7 +58,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case GROUP_MESSAGE_ID:
-        TCByteBufferInputStream in = (TCByteBufferInputStream) getInputStream();
+        TCByteBufferInputStream in = getInputStream();
         in.readInt(); // clear dummy int
         ObjectInputStream stream = new ObjectInputStream(in);
         try {
