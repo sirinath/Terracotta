@@ -56,6 +56,7 @@ import java.lang.reflect.Modifier;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -80,9 +81,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private final Map<MessageID, GroupResponse>                     pendingRequests              = new ConcurrentHashMap<MessageID, GroupResponse>();
   private ZapNodeRequestProcessor                                 zapNodeRequestProcessor      = new DefaultZapNodeRequestProcessor(
                                                                                                                                     logger);
-  private AtomicBoolean                                           isStopped                    = new AtomicBoolean(
+  private final AtomicBoolean                                     isStopped                    = new AtomicBoolean(
                                                                                                                    false);
-  private AtomicBoolean                                           ready                        = new AtomicBoolean(
+  private final AtomicBoolean                                     ready                        = new AtomicBoolean(
                                                                                                                    false);
   private Stage                                                   hydrateStage;
   private Stage                                                   receiveGroupMessageStage;
@@ -198,15 +199,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
    */
   private TCGroupHandshakeMessage handshake(final MessageChannel channel) {
 
-    TCFuture result;
-    synchronized (handshakeResults) {
-      // check if message arrived already
-      result = handshakeResults.get(channel);
-      if (result == null) {
-        result = new TCFuture();
-        handshakeResults.put(channel, result);
-      }
-    }
+    TCFuture result = getOrCreateHandshakeResult(channel);
     channel.addListener(new ChannelEventListener() {
       public void notifyChannelEvent(ChannelEvent event) {
         if (event.getChannel() == channel) {
@@ -266,6 +259,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     MessageChannel channel = msg.getChannel();
     Assert.assertNotNull(channel);
+    TCFuture result = getOrCreateHandshakeResult(channel);
+    result.set(msg);
+  }
+  
+  private TCFuture getOrCreateHandshakeResult(MessageChannel channel) {
     synchronized (handshakeResults) {
       TCFuture result = handshakeResults.get(channel);
       if (result == null) {
@@ -273,7 +271,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         result = new TCFuture();
         handshakeResults.put(channel, result);
       }
-      result.set(msg);
+      return result;
     }
   }
 
@@ -511,7 +509,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     final MessageChannel channel = aChannel;
 
     // spawn a new thread to continue work, otherwise block select thread
-    final Thread t = new Thread("creating channel") {
+    final Thread t = new Thread("creating channel " + channel.getChannelID()) {
       public void run() {
 
         if (isStopped.get() || !ready.get()) {
@@ -620,8 +618,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return member;
   }
 
-  public List<TCGroupMember> getMembers() {
-    return Collections.unmodifiableList(new ArrayList(members.values()));
+  public Collection<TCGroupMember> getMembers() {
+    return Collections.unmodifiableCollection(members.values());
   }
 
   public void setDiscover(TCGroupMemberDiscovery discover) {
@@ -658,6 +656,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       logger
           .warn(getNodeID() + " recd msg " + message.getMessageID() + " From closed " + channel + " Msg : " + message);
       return;
+    }
+
+    if ((m == null) && (mapChNodeID.get(channel) != null)) {
+      // message arrived after node left
+      logger.warn("Message received after node lfet " + mapChNodeID.get(channel) + " Msg : " + message);
     }
 
     if (m == null) { throw new RuntimeException("Received message to non-exist member from "
