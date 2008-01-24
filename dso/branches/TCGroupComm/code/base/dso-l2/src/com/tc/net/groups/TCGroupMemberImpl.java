@@ -18,16 +18,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private TCGroupManagerImpl   manager;
   private final MessageChannel channel;
-  private final NodeIdUuidImpl srcNodeID;
-  private final NodeIdUuidImpl dstNodeID;
-  private final NodeIdUuidImpl peerNodeID;
+  private final NodeIdComparable srcNodeID;
+  private final NodeIdComparable dstNodeID;
+  private final NodeIdComparable peerNodeID;
   // set member ready only when both ends are in group
   private AtomicBoolean        ready = new AtomicBoolean(false);
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
    */
-  public TCGroupMemberImpl(NodeIdUuidImpl srcNodeID, NodeIdUuidImpl dstNodeID, MessageChannel channel) {
+  public TCGroupMemberImpl(NodeIdComparable srcNodeID, NodeIdComparable dstNodeID, MessageChannel channel) {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -38,7 +38,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   /*
    * Member channel established from src to dst. Called by channel receiver, channelCreated, peer is srcNodeID.
    */
-  public TCGroupMemberImpl(MessageChannel channel, NodeIdUuidImpl srcNodeID, NodeIdUuidImpl dstNodeID) {
+  public TCGroupMemberImpl(MessageChannel channel, NodeIdComparable srcNodeID, NodeIdComparable dstNodeID) {
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -78,15 +78,15 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     }
   }
 
-  public NodeIdUuidImpl getSrcNodeID() {
+  public NodeIdComparable getSrcNodeID() {
     return srcNodeID;
   }
 
-  public NodeIdUuidImpl getDstNodeID() {
+  public NodeIdComparable getDstNodeID() {
     return dstNodeID;
   }
 
-  public NodeIdUuidImpl getPeerNodeID() {
+  public NodeIdComparable getPeerNodeID() {
     return peerNodeID;
   }
 

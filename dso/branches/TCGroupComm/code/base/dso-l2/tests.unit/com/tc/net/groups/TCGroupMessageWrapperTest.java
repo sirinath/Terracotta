@@ -24,7 +24,6 @@ import com.tc.net.protocol.tcm.ChannelManager;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
-import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
@@ -43,6 +42,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.session.NullSessionManager;
 import com.tc.util.ObjectIDSet2;
+import com.tc.util.UUID;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,14 +59,10 @@ import junit.framework.TestCase;
 public class TCGroupMessageWrapperTest extends TestCase {
 
   private final static String               LOCALHOST      = "localhost";
-  private final static String               NODE_CLIENT    = "node-client";
-  private final static String               NODE_SERVER    = "node-server";
   MessageMonitor                            monitor        = new NullMessageMonitor();
   final NullSessionManager                  sessionManager = new NullSessionManager();
   final TCMessageFactory                    msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
   final TCMessageRouter                     msgRouter      = new TCMessageRouterImpl();
-  private final NodeID                      nodeID1        = new NodeIdUuidImpl(NODE_CLIENT);
-  private final NodeID                      nodeID2        = new NodeIdUuidImpl(NODE_SERVER);
   private CommunicationsManager             clientComms;
   private CommunicationsManager             serverComms;
   private ChannelManager                    channelManager;
@@ -77,9 +73,9 @@ public class TCGroupMessageWrapperTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     clientComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
-                                                       new NullConnectionPolicy(), 0);
+                                                new NullConnectionPolicy(), 0);
     serverComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
-                                                       new NullConnectionPolicy(), 0);
+                                                new NullConnectionPolicy(), 0);
   }
 
   protected void tearDown() throws Exception {
@@ -110,8 +106,6 @@ public class TCGroupMessageWrapperTest extends TestCase {
     lsnr.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     lsnr.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, new TCMessageSink() {
       public void putMessage(TCMessage message) throws UnsupportedMessageTypeException {
-        // System.out.println("XXX:"+message);
-
         try {
           TCGroupMessageWrapper mesg = (TCGroupMessageWrapper) message;
           mesg.hydrate();
@@ -156,8 +150,6 @@ public class TCGroupMessageWrapperTest extends TestCase {
 
     ClientMessageChannel channel = openChannel(lsnr);
 
-    MessageChannel serverChannel = channelManager.getChannels()[0];
-
     TCGroupMessageWrapper wrapper = (TCGroupMessageWrapper) channel.createMessage(TCMessageType.GROUP_WRAPPER_MESSAGE);
     wrapper.setGroupMessage(sendMesg);
     wrapper.send();
@@ -169,7 +161,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
 
   public void testClusterStateMessage() throws Exception {
     GroupMessage sendMesg = new ClusterStateMessage(ClusterStateMessage.OPERATION_SUCCESS, new MessageID(1000));
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testGCResultMessage() throws Exception {
@@ -178,31 +170,31 @@ public class TCGroupMessageWrapperTest extends TestCase {
       oidSet.add(new ObjectID(i));
     }
     GroupMessage sendMesg = new GCResultMessage(GCResultMessage.GC_RESULT, oidSet);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testGroupZapNodeMessage() throws Exception {
     long weights[] = new long[] { 1, 23, 44, 78 };
     GroupMessage sendMesg = new GroupZapNodeMessage(GroupZapNodeMessage.ZAP_NODE_REQUEST,
                                                     L2HAZapNodeRequestProcessor.SPLIT_BRAIN, "Zapping node", weights);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testL2StateMessage() throws Exception {
     long weights[] = new long[] { 1, 23, 44, 78 };
-    Enrollment enroll = new Enrollment(new NodeIdUuidImpl("test"), true, weights);
+    Enrollment enroll = new Enrollment(makeNodeID("test"), true, weights);
     GroupMessage sendMesg = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testObjectListSyncMessage() throws Exception {
     GroupMessage sendMesg = new ObjectListSyncMessage(new MessageID(10), ObjectListSyncMessage.REQUEST);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testObjectSyncCompleteMessage() throws Exception {
     GroupMessage sendMesg = new ObjectSyncCompleteMessage(ObjectSyncCompleteMessage.OBJECT_SYNC_COMPLETE, 100);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testObjectSyncMessage() throws Exception {
@@ -217,17 +209,16 @@ public class TCGroupMessageWrapperTest extends TestCase {
     long sID = 10;
     ObjectSyncMessage message = new ObjectSyncMessage(ObjectSyncMessage.MANAGED_OBJECT_SYNC_TYPE);
     message.initialize(dnaOids, count, serializedDNAs, objectSerializer, roots, sID);
-    GroupMessage sendMesg = (GroupMessage) message;
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(message);
   }
 
   public void testObjectSyncResetMessage() throws Exception {
     GroupMessage sendMesg = new ObjectSyncResetMessage(ObjectSyncResetMessage.REQUEST_RESET, new MessageID(10));
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testRelayedCommitTransactionMessage() throws Exception {
-    NodeID nodeID = new NodeIdUuidImpl("test");
+    NodeID nodeID = makeNodeID("test");
     TCByteBuffer[] buffer = new TCByteBuffer[] {};
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     Map sid2gid = new HashMap();
@@ -236,15 +227,19 @@ public class TCGroupMessageWrapperTest extends TestCase {
 
     GroupMessage sendMesg = new RelayedCommitTransactionMessage(nodeID, buffer, serializer, sid2gid, seqID,
                                                                 lowWaterMark);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
   }
 
   public void testServerTxnAckMessage() throws Exception {
-    NodeID nodeID = new NodeIdUuidImpl("test");
+    NodeID nodeID = makeNodeID("test");
     MessageID messageID = new MessageID(100);
     Set serverTxnIDs = new HashSet(10);
     GroupMessage sendMesg = new ServerTxnAckMessage(nodeID, messageID, serverTxnIDs);
-    GroupMessage received = sendGroupMessage(sendMesg);
+    sendGroupMessage(sendMesg);
+  }
+
+  private NodeIdComparable makeNodeID(String name) {
+    return (new NodeIdComparable(name, UUID.getUUID().toString().getBytes()));
   }
 
 }

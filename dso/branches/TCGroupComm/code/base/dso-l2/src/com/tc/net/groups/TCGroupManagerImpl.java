@@ -46,6 +46,7 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.UUID;
 import com.tc.util.concurrent.TCFuture;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.SimpleSequence;
@@ -70,7 +71,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener {
   private static final TCLogger                                   logger                       = TCLogging
                                                                                                    .getLogger(TCGroupManagerImpl.class);
-  private final NodeIdUuidImpl                                    thisNodeID;
+  private final NodeIdComparable                                    thisNodeID;
 
   private CommunicationsManager                                   communicationsManager;
   private NetworkListener                                         groupListener;
@@ -94,16 +95,18 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private final ConcurrentHashMap<MessageChannel, TCFuture>       handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
 
-  private final ConcurrentHashMap<MessageChannel, NodeIdUuidImpl> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdUuidImpl>();
+  private final ConcurrentHashMap<MessageChannel, NodeIdComparable> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdComparable>();
 
-  private final ConcurrentHashMap<NodeIdUuidImpl, TCGroupMember>  members                      = new ConcurrentHashMap<NodeIdUuidImpl, TCGroupMember>();
+  private final ConcurrentHashMap<NodeIdComparable, TCGroupMember>  members                      = new ConcurrentHashMap<NodeIdComparable, TCGroupMember>();
 
-  public static final String                                      NHA_GCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
+  public static final String                                      NHA_TCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
+  public static final String                                      NHA_TCCOMM_RESPONSE_TIMEOUT  = "l2.nha.tcgroupcomm.response.timelimit";
 
   private final static long                                       handshakeTimeout;
-
+  private final static long                                       responseTimelimit;
   static {
-    handshakeTimeout = TCPropertiesImpl.getProperties().getLong(NHA_GCCOMM_HANDSHAKE_TIMEOUT);
+    handshakeTimeout = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_HANDSHAKE_TIMEOUT);
+    responseTimelimit = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_RESPONSE_TIMEOUT);
   }
 
   /*
@@ -148,10 +151,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return (hostname + ":" + groupPort);
   }
 
-  private NodeIdUuidImpl init(String hostname, int groupPort, int workerThreads) {
+  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) {
 
     String nodeName = makeGroupNodeName(hostname, groupPort);
-    NodeIdUuidImpl aNodeID = new NodeIdUuidImpl(nodeName);
+    NodeIdComparable aNodeID = new NodeIdComparable(nodeName, UUID.getUUID().toString().getBytes());
     logger.info("Creating group node: " + aNodeID);
 
     int maxStageSize = 5000;
@@ -262,7 +265,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCFuture result = getOrCreateHandshakeResult(channel);
     result.set(msg);
   }
-  
+
   private TCFuture getOrCreateHandshakeResult(MessageChannel channel) {
     synchronized (handshakeResults) {
       TCFuture result = handshakeResults.get(channel);
@@ -280,7 +283,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return getNodeID();
   }
 
-  private NodeIdUuidImpl getNodeID() {
+  private NodeIdComparable getNodeID() {
     return thisNodeID;
   }
 
@@ -311,7 +314,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   private void fireNodeEvent(TCGroupMember member, boolean joined) {
-    NodeIdUuidImpl newNode = member.getPeerNodeID();
+    NodeIdComparable newNode = member.getPeerNodeID();
     member.setReady(joined);
     if (logger.isDebugEnabled()) logger.debug("fireNodeEvent: joined = " + joined + ", node = " + newNode);
     for (GroupEventsListener listener : groupListeners) {
@@ -376,7 +379,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
-    TCGroupMember member = getMember((NodeIdUuidImpl) node);
+    TCGroupMember member = getMember((NodeIdComparable) node);
     if (member != null) {
       member.send(msg);
     } else {
@@ -390,7 +393,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                               + msg.getMessageID());
     GroupResponseImpl groupResponse = new GroupResponseImpl(this);
     MessageID msgID = msg.getMessageID();
-    TCGroupMember m = getMember((NodeIdUuidImpl) nodeID);
+    TCGroupMember m = getMember((NodeIdComparable) nodeID);
     if (m != null) {
       GroupResponse old = pendingRequests.put(msgID, groupResponse);
       Assert.assertNull(old);
@@ -597,13 +600,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public synchronized TCGroupMember getMember(MessageChannel channel) {
-    NodeIdUuidImpl nodeID = mapChNodeID.get(channel);
+    NodeIdComparable nodeID = mapChNodeID.get(channel);
     if (nodeID == null) return null;
     TCGroupMember m = members.get(nodeID);
     return ((m != null) && (m.getChannel() == channel)) ? m : null;
   }
 
-  public synchronized TCGroupMember getMember(NodeIdUuidImpl nodeID) {
+  public synchronized TCGroupMember getMember(NodeIdComparable nodeID) {
     return (members.get(nodeID));
   }
 
@@ -667,7 +670,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                                 + channel.getRemoteAddress() + " to " + channel.getLocalAddress()
                                                 + " Node: " + mapChNodeID.get(channel)); }
 
-    NodeIdUuidImpl from = m.getPeerNodeID();
+    NodeIdComparable from = m.getPeerNodeID();
     MessageID requestID = message.inResponseTo();
 
     message.setMessageOrginator(from);
@@ -681,7 +684,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
   }
 
-  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, NodeIdUuidImpl nodeID) {
+  private boolean notifyPendingRequests(MessageID requestID, GroupMessage gmsg, NodeIdComparable nodeID) {
     GroupResponseImpl response = (GroupResponseImpl) pendingRequests.get(requestID);
     if (response != null) {
       response.addResponseFrom(nodeID, gmsg);
@@ -715,7 +718,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     registerForMessages(msgClass, new RouteGroupMessagesToSink(msgClass.getName(), sink));
   }
 
-  private void fireMessageReceivedEvent(NodeIdUuidImpl from, GroupMessage msg) {
+  private void fireMessageReceivedEvent(NodeIdComparable from, GroupMessage msg) {
     GroupMessageListener listener = messageListeners.get(msg.getClass().getName());
     if (listener != null) {
       listener.messageReceived(from, msg);
@@ -731,7 +734,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public void zapNode(NodeID nodeID, int type, String reason) {
-    TCGroupMember m = getMember((NodeIdUuidImpl) nodeID);
+    TCGroupMember m = getMember((NodeIdComparable) nodeID);
     if (m == null) {
       logger.warn("Ignoring Zap node request since Member is null");
     } else if (!zapNodeRequestProcessor.acceptOutgoingZapNodeRequest(nodeID, type, reason)) {
@@ -756,7 +759,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private static class GroupResponseImpl implements GroupResponse {
 
-    private final HashSet<NodeIdUuidImpl> waitFor   = new HashSet<NodeIdUuidImpl>();
+    private final HashSet<NodeIdComparable> waitFor   = new HashSet<NodeIdComparable>();
     private final List<GroupMessage>      responses = new ArrayList<GroupMessage>();
     private final TCGroupManagerImpl      manager;
 
@@ -796,7 +799,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       }
     }
 
-    public synchronized void addResponseFrom(NodeIdUuidImpl nodeID, GroupMessage gmsg) {
+    public synchronized void addResponseFrom(NodeIdComparable nodeID, GroupMessage gmsg) {
       if (!waitFor.remove(nodeID)) {
         String message = "Recd response from a member not in list : " + nodeID + " : waiting For : " + waitFor
                          + " msg : " + gmsg;
@@ -812,14 +815,18 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       notifyAll();
     }
 
-    public synchronized void waitForResponses(NodeIdUuidImpl sender) throws GroupException {
+    public synchronized void waitForResponses(NodeIdComparable sender) throws GroupException {
       int count = 0;
+      long start = System.currentTimeMillis();
       while (!waitFor.isEmpty() && !manager.isStopped()) {
         try {
           this.wait(5000);
           if (++count > 1) {
             logger.warn(sender + " Still waiting for response from " + waitFor + ". Count = " + count);
-            if (count > 60) { throw new RuntimeException("Still waiting for response from " + waitFor); }
+            if (System.currentTimeMillis() > (start + responseTimelimit)) {
+              // something wrong
+              throw new RuntimeException("Still waiting for response from " + waitFor);
+            }
           }
         } catch (InterruptedException e) {
           throw new GroupException(e);

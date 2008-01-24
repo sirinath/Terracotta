@@ -4,21 +4,20 @@
  */
 package com.tc.net.groups;
 
-import com.tc.util.UUID;
-
-public class NodeIdUuidImpl extends NodeIDImpl implements Comparable {
-
-  public NodeIdUuidImpl() {
+public class NodeIdComparable extends NodeIDImpl implements Comparable {
+  
+  public NodeIdComparable() {
     super();
   }
 
   /*
    * NodeID with a uuid generated
    */
-  public NodeIdUuidImpl(String name) {
-    super(name, UUID.getUUID().toString().getBytes());
+  public NodeIdComparable(String name, byte[] uid) {
+    super(name, uid);
   }
-  
+
+
   public int compareTo(Object arg0) {
     NodeIDImpl target = (NodeIDImpl)arg0;
     byte[] uid = getUID();
@@ -33,6 +32,7 @@ public class NodeIdUuidImpl extends NodeIDImpl implements Comparable {
   }
   
   public byte getType() {
+    // used by TC-group-Comm among L2s
     return L2_NODE_TYPE;
   }
 

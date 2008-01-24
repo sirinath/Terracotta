@@ -20,7 +20,7 @@ import java.io.IOException;
  */
 public class TCGroupHandshakeMessage extends DSOMessageBase {
   private final static byte NODE_ID = 1;
-  private NodeIdUuidImpl    nodeID;
+  private NodeIdComparable    nodeID;
 
   public TCGroupHandshakeMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
                                  MessageChannel channel, TCMessageType type) {
@@ -32,11 +32,11 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public NodeIdUuidImpl getNodeID() {
+  public NodeIdComparable getNodeID() {
     return this.nodeID;
   }
   
-  public void initialize(NodeIdUuidImpl nodeID) {
+  public void initialize(NodeIdComparable nodeID) {
     this.nodeID = nodeID;
   }
 
@@ -47,7 +47,7 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case NODE_ID:
-        nodeID = new NodeIdUuidImpl();
+        nodeID = new NodeIdComparable();
         getObject(nodeID);
         return true;
       default:

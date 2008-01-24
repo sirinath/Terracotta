@@ -3,6 +3,8 @@
  */
 package com.tc.net.groups;
 
+import com.tc.util.UUID;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInput;
@@ -13,14 +15,14 @@ import java.util.HashSet;
 
 import junit.framework.TestCase;
 
-public class NodeIdUuidTest extends TestCase {
+public class NodeIdComparableTest extends TestCase {
   
   public void test() throws Exception {
     
-    NodeID n1 = new NodeIdUuidImpl("node1");
-    NodeID n2 = new NodeIdUuidImpl("node2");
-    NodeID n3 = new NodeIdUuidImpl("node3");
-    NodeID n4 = new NodeIdUuidImpl("node4");
+    NodeID n1 = makeNodeID("node1");
+    NodeID n2 = makeNodeID("node2");
+    NodeID n3 = makeNodeID("node3");
+    NodeID n4 = makeNodeID("node4");
     
     assertFalse(n1.equals(n2));
     assertTrue(n1.equals(n1));
@@ -73,6 +75,10 @@ public class NodeIdUuidTest extends TestCase {
     System.err.println("Read : " + r5);
     assertEquals(NodeIDImpl.NULL_ID, r5);
 
-
   }
+  
+  private NodeIdComparable makeNodeID(String name) {
+    return (new NodeIdComparable(name, UUID.getUUID().toString().getBytes()));
+  }
+
 }
