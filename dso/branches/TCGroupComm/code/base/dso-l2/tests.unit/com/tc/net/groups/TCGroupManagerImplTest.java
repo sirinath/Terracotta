@@ -34,6 +34,7 @@ import com.tc.util.runtime.ThreadDump;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     assertEquals(1, groups[1].size());
-    TCGroupMember member2 = groups[1].getMembers().get(0);
+    TCGroupMember member2 = getMember(groups[1], 0);
     assertTrue("Expected  " + member1.getSrcNodeID() + " but got " + member2.getSrcNodeID(), member1.getSrcNodeID()
         .equals(member2.getSrcNodeID()));
     assertTrue("Expected  " + member1.getDstNodeID() + " but got " + member2.getDstNodeID(), member1.getDstNodeID()
@@ -132,8 +133,8 @@ public class TCGroupManagerImplTest extends TestCase {
 
     assertEquals(1, groups[0].size());
     assertEquals(1, groups[1].size());
-    TCGroupMember m1 = groups[0].getMembers().get(0);
-    TCGroupMember m2 = groups[1].getMembers().get(0);
+    TCGroupMember m1 = getMember(groups[0], 0);
+    TCGroupMember m2 = getMember(groups[1], 0);
     assertTrue("Expected  " + m1.getSrcNodeID() + " but got " + m2.getSrcNodeID(), m1.getSrcNodeID()
         .equals(m2.getSrcNodeID()));
     assertTrue("Expected  " + m1.getDstNodeID() + " but got " + m2.getDstNodeID(), m1.getDstNodeID()
@@ -152,7 +153,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
     TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
     Thread.sleep(200);
-    TCGroupMember member2 = groups[1].getMembers().get(0);
+    TCGroupMember member2 = getMember(groups[1], 0);
 
     long weights[] = new long[] { 1, 23, 44, 78 };
     GroupMessage sMesg = new GroupZapNodeMessage(GroupZapNodeMessage.ZAP_NODE_REQUEST,
@@ -189,6 +190,10 @@ public class TCGroupManagerImplTest extends TestCase {
             && o1.getRootsMap().equals(o2.getRootsMap()) && (o1.getType() == o2.getType()) && o1.getMessageID()
         .equals(o2.getMessageID()));
   }
+  
+  private TCGroupMember getMember(TCGroupManagerImpl mgr, int idx) {
+    return (TCGroupMember)(new ArrayList(mgr.getMembers())).get(idx);
+  }
 
   public void testJoin() throws Exception {
     int nGrp = 2;
@@ -204,13 +209,13 @@ public class TCGroupManagerImplTest extends TestCase {
     assertEquals(1, groups[1].size());
 
     GroupMessage sMesg = createTestObjectSyncMessage();
-    TCGroupMember member = groups[0].getMembers().get(0);
+    TCGroupMember member = getMember(groups[0], 0);
     groups[0].sendTo(member.getPeerNodeID(), sMesg);
     GroupMessage rMesg = listeners[1].getNextMessageFrom(groups[0].getLocalNodeID());
     assertTrue(cmpObjectSyncMessage((ObjectSyncMessage) sMesg, (ObjectSyncMessage) rMesg));
 
     sMesg = createTestObjectSyncMessage();
-    member = groups[1].getMembers().get(0);
+    member = getMember(groups[1], 0);
     groups[1].sendTo(member.getPeerNodeID(), sMesg);
     rMesg = listeners[0].getNextMessageFrom(groups[1].getLocalNodeID());
     assertTrue(cmpObjectSyncMessage((ObjectSyncMessage) sMesg, (ObjectSyncMessage) rMesg));
@@ -251,14 +256,14 @@ public class TCGroupManagerImplTest extends TestCase {
 
     // test with one to one first
     GroupMessage sMesg = createGCResultMessage();
-    TCGroupMember member = groups[0].getMembers().get(0);
+    TCGroupMember member = getMember(groups[0], 0);
     groups[0].sendTo(member.getPeerNodeID(), sMesg);
     TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
     GroupMessage rMesg = listener.getNextMessageFrom(groups[0].getLocalNodeID());
     assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
 
     sMesg = createGCResultMessage();
-    member = groups[1].getMembers().get(0);
+    member = getMember(groups[1], 0);
     groups[1].sendTo(member.getPeerNodeID(), sMesg);
     listener = listenerMap.get(member.getPeerNodeID());
     rMesg = listener.getNextMessageFrom(groups[1].getLocalNodeID());
@@ -268,7 +273,7 @@ public class TCGroupManagerImplTest extends TestCase {
     sMesg = createGCResultMessage();
     groups[0].sendAll(sMesg);
     for (int i = 0; i < groups[0].size(); ++i) {
-      TCGroupMember m = groups[0].getMembers().get(i);
+      TCGroupMember m = getMember(groups[0], i);
       TestGroupMessageListener l = listenerMap.get(m.getPeerNodeID());
       rMesg = l.getNextMessageFrom(groups[0].getLocalNodeID());
       assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
@@ -310,14 +315,14 @@ public class TCGroupManagerImplTest extends TestCase {
 
     for (int i = 0; i < groups[0].getMembers().size(); ++i) {
       GroupMessage sMesg = createL2StateMessage();
-      TCGroupMember member = groups[0].getMembers().get(i);
+      TCGroupMember member = getMember(groups[0], i);
       groups[0].sendToAndWaitForResponse(member.getPeerNodeID(), sMesg);
       TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
       GroupMessage rMesg = listener.getNextMessageFrom(groups[0].getLocalNodeID());
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
 
       sMesg = createL2StateMessage();
-      member = groups[1].getMembers().get(i);
+      member = getMember(groups[1], i);
       groups[1].sendToAndWaitForResponse(member.getPeerNodeID(), sMesg);
       listener = listenerMap.get(member.getPeerNodeID());
       rMesg = listener.getNextMessageFrom(groups[1].getLocalNodeID());
@@ -351,7 +356,7 @@ public class TCGroupManagerImplTest extends TestCase {
       GroupMessage sMesg = createL2StateMessage();
       ms.sendAllAndWaitForResponse(sMesg);
       for (int i = 0; i < ms.getMembers().size(); ++i) {
-        TCGroupMember member = ms.getMembers().get(i);
+        TCGroupMember member = getMember(ms, i);
         TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
         GroupMessage rMesg = listener.getNextMessageFrom(ms.getLocalNodeID());
         assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
@@ -387,14 +392,14 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     TestMessage msg1 = new TestMessage("Hello there");
-    TCGroupMember member = groups[0].getMembers().get(0);
+    TCGroupMember member = getMember(groups[0], 0);
     groups[0].sendAll(msg1);
     TestGroupMessageListener listener = listenerMap.get(member.getPeerNodeID());
     TestMessage msg2 = (TestMessage) listener.getNextMessageFrom(groups[0].getLocalNodeID());
     assertEquals(msg1, msg2);
 
     TestMessage msg3 = new TestMessage("Hello back");
-    member = groups[1].getMembers().get(0);
+    member = getMember(groups[1], 0);
     groups[1].sendAll(msg3);
     listener = listenerMap.get(member.getPeerNodeID());
     TestMessage msg4 = (TestMessage) listener.getNextMessageFrom(groups[1].getLocalNodeID());
