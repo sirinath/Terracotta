@@ -69,41 +69,41 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelManagerEventListener {
-  private static final TCLogger                                   logger                       = TCLogging
-                                                                                                   .getLogger(TCGroupManagerImpl.class);
+  private static final TCLogger                                     logger                       = TCLogging
+                                                                                                     .getLogger(TCGroupManagerImpl.class);
   private final NodeIdComparable                                    thisNodeID;
 
-  private CommunicationsManager                                   communicationsManager;
-  private NetworkListener                                         groupListener;
-  private final ConnectionPolicy                                  connectionPolicy;
-  private TCGroupMemberDiscovery                                  discover;
-  private final CopyOnWriteArrayList<GroupEventsListener>         groupListeners               = new CopyOnWriteArrayList<GroupEventsListener>();
-  private final Map<String, GroupMessageListener>                 messageListeners             = new ConcurrentHashMap<String, GroupMessageListener>();
-  private final Map<MessageID, GroupResponse>                     pendingRequests              = new ConcurrentHashMap<MessageID, GroupResponse>();
-  private ZapNodeRequestProcessor                                 zapNodeRequestProcessor      = new DefaultZapNodeRequestProcessor(
-                                                                                                                                    logger);
-  private final AtomicBoolean                                     isStopped                    = new AtomicBoolean(
-                                                                                                                   false);
-  private final AtomicBoolean                                     ready                        = new AtomicBoolean(
-                                                                                                                   false);
-  private Stage                                                   hydrateStage;
-  private Stage                                                   receiveGroupMessageStage;
-  private Stage                                                   receivePingMessageStage;
-  private Stage                                                   handshakeMessageStage;
+  private CommunicationsManager                                     communicationsManager;
+  private NetworkListener                                           groupListener;
+  private final ConnectionPolicy                                    connectionPolicy;
+  private TCGroupMemberDiscovery                                    discover;
+  private final CopyOnWriteArrayList<GroupEventsListener>           groupListeners               = new CopyOnWriteArrayList<GroupEventsListener>();
+  private final Map<String, GroupMessageListener>                   messageListeners             = new ConcurrentHashMap<String, GroupMessageListener>();
+  private final Map<MessageID, GroupResponse>                       pendingRequests              = new ConcurrentHashMap<MessageID, GroupResponse>();
+  private ZapNodeRequestProcessor                                   zapNodeRequestProcessor      = new DefaultZapNodeRequestProcessor(
+                                                                                                                                      logger);
+  private final AtomicBoolean                                       isStopped                    = new AtomicBoolean(
+                                                                                                                     false);
+  private final AtomicBoolean                                       ready                        = new AtomicBoolean(
+                                                                                                                     false);
+  private Stage                                                     hydrateStage;
+  private Stage                                                     receiveGroupMessageStage;
+  private Stage                                                     receivePingMessageStage;
+  private Stage                                                     handshakeMessageStage;
 
-  private final ConcurrentHashMap<MessageChannel, TCFuture>       pingMessages                 = new ConcurrentHashMap<MessageChannel, TCFuture>();
+  private final ConcurrentHashMap<MessageChannel, TCFuture>         pingMessages                 = new ConcurrentHashMap<MessageChannel, TCFuture>();
 
-  private final ConcurrentHashMap<MessageChannel, TCFuture>       handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
+  private final ConcurrentHashMap<MessageChannel, TCFuture>         handshakeResults             = new ConcurrentHashMap<MessageChannel, TCFuture>();
 
   private final ConcurrentHashMap<MessageChannel, NodeIdComparable> mapChNodeID                  = new ConcurrentHashMap<MessageChannel, NodeIdComparable>();
 
   private final ConcurrentHashMap<NodeIdComparable, TCGroupMember>  members                      = new ConcurrentHashMap<NodeIdComparable, TCGroupMember>();
 
-  public static final String                                      NHA_TCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
-  public static final String                                      NHA_TCCOMM_RESPONSE_TIMEOUT  = "l2.nha.tcgroupcomm.response.timelimit";
+  public static final String                                        NHA_TCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
+  public static final String                                        NHA_TCCOMM_RESPONSE_TIMEOUT  = "l2.nha.tcgroupcomm.response.timelimit";
 
-  private final static long                                       handshakeTimeout;
-  private final static long                                       responseTimelimit;
+  private final static long                                         handshakeTimeout;
+  private final static long                                         responseTimelimit;
   static {
     handshakeTimeout = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_HANDSHAKE_TIMEOUT);
     responseTimelimit = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_RESPONSE_TIMEOUT);
@@ -374,13 +374,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public void sendAll(GroupMessage msg) throws GroupException {
     for (TCGroupMember m : members.values()) {
-      m.send(msg);
+      if (m.isReady()) m.send(msg);
     }
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
     TCGroupMember member = getMember((NodeIdComparable) node);
-    if (member != null) {
+    if (member != null && member.isReady()) {
       member.send(msg);
     } else {
       // member in zombie mode
@@ -394,7 +394,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     GroupResponseImpl groupResponse = new GroupResponseImpl(this);
     MessageID msgID = msg.getMessageID();
     TCGroupMember m = getMember((NodeIdComparable) nodeID);
-    if (m != null) {
+    if (m != null && m.isReady()) {
       GroupResponse old = pendingRequests.put(msgID, groupResponse);
       Assert.assertNull(old);
       groupResponse.sendTo(m, msg);
@@ -661,11 +661,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       return;
     }
 
-    if ((m == null) && (mapChNodeID.get(channel) != null)) {
-      // message arrived after node left
-      logger.warn("Message received after node lfet " + mapChNodeID.get(channel) + " Msg : " + message);
-    }
-
     if (m == null) { throw new RuntimeException("Received message to non-exist member from "
                                                 + channel.getRemoteAddress() + " to " + channel.getLocalAddress()
                                                 + " Node: " + mapChNodeID.get(channel)); }
@@ -760,8 +755,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private static class GroupResponseImpl implements GroupResponse {
 
     private final HashSet<NodeIdComparable> waitFor   = new HashSet<NodeIdComparable>();
-    private final List<GroupMessage>      responses = new ArrayList<GroupMessage>();
-    private final TCGroupManagerImpl      manager;
+    private final List<GroupMessage>        responses = new ArrayList<GroupMessage>();
+    private final TCGroupManagerImpl        manager;
 
     GroupResponseImpl(TCGroupManagerImpl manager) {
       this.manager = manager;
