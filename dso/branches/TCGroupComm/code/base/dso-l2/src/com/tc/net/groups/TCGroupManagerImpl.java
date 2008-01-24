@@ -101,7 +101,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public static final String                                        NHA_TCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
   public static final String                                        NHA_TCCOMM_RESPONSE_TIMEOUT  = "l2.nha.tcgroupcomm.response.timelimit";
-
+  private static final int                                          MAX_DEFAULT_COMM_THREADS     = 16;
   private final static long                                         handshakeTimeout;
   private final static long                                         responseTimelimit;
   static {
@@ -130,10 +130,15 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.l2GroupPort());
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
-    thisNodeID = init(l2DSOConfig.host().getString(), groupPort, l2Properties.getInt("tccom.workerthreads"));
+    thisNodeID = init(l2DSOConfig.host().getString(), groupPort, getCommWorkerCount(l2Properties));
 
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
     start(new HashSet());
+  }
+
+  private int getCommWorkerCount(TCProperties props) {
+    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
+    return props.getInt("tccom.workerthreads", def);
   }
 
   /*
