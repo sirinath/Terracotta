@@ -5,7 +5,7 @@
 package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
-import com.tc.io.TCByteBufferOutput;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -22,7 +22,7 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
   private final static byte NODE_ID = 1;
   private NodeIdComparable    nodeID;
 
-  public TCGroupHandshakeMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
+  public TCGroupHandshakeMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                  MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }

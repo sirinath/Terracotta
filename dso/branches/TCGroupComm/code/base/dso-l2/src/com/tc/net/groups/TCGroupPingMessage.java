@@ -5,7 +5,7 @@
 package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
-import com.tc.io.TCByteBufferOutput;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -24,7 +24,7 @@ public class TCGroupPingMessage extends DSOMessageBase {
   private final static int  PING_DENY       = 0;
   private int               message;
 
-  public TCGroupPingMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutput out,
+  public TCGroupPingMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                             MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
