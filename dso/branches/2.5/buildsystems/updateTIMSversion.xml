@@ -1,10 +1,13 @@
 <project basedir=".." default="updateversion">
 
-<!-- Run from root of source tree to change version of TIMS -->
+<!-- 
+     Run from root of source tree to change version of TIMS 
+     %> ANT_OPTS="-Xmx512m" ant -f buildsystems/updateTIMSversion.xml 
+-->
 
 <target name="updateversion">
-  <replace token='2.5.1' value='2.5.1' dir="."/>
-  <replace token='2.5.1' value='2.5.1' dir="."/>
+  <replace token='2.5.1.SNAPSHOT' value='2.5.2.SNAPSHOT' dir="." excludes="*/updateTIMSversion.xml"/>
+  <replace token='2.5.1-SNAPSHOT' value='2.5.2-SNAPSHOT' dir="." excludes="*/updateTIMSversion.xml"/>
 </target>
  
 </project>
