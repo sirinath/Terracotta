@@ -16,13 +16,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Each TCGroupMember sits on top of a channel.
  */
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
-  private TCGroupManagerImpl   manager;
-  private final MessageChannel channel;
+  private TCGroupManagerImpl     manager;
+  private final MessageChannel   channel;
   private final NodeIdComparable srcNodeID;
   private final NodeIdComparable dstNodeID;
   private final NodeIdComparable peerNodeID;
   // set member ready only when both ends are in group
-  private AtomicBoolean        ready = new AtomicBoolean(false);
+  private AtomicBoolean          ready               = new AtomicBoolean(false);
+  private boolean                closedEventNotified = false;
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
@@ -68,11 +69,10 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     if (event.getChannel() == channel) {
       if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
         ready.set(true);
-      } else if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
+      } else if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
+                 || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
         ready.set(false);
-        if (manager != null) manager.memberDisappeared(this);
-      } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
-        ready.set(false);
+        closedEventNotified = true;
         if (manager != null) manager.memberDisappeared(this);
       }
     }
@@ -101,14 +101,19 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public boolean isReady() {
     return (ready.get());
   }
-  
+
   public void setReady(boolean isReady) {
     ready.set(isReady);
   }
 
   public void close() {
     ready.set(false);
-    getChannel().close();
+    // if closed event notified, it is closing, don't do close
+    // some incoming messages may be still under processing
+    if (!closedEventNotified) {
+      getChannel().close();
+    }
+    closedEventNotified = true;
   }
 
   public boolean highPriorityLink() {

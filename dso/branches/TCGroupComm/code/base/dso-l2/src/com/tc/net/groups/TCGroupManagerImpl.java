@@ -201,6 +201,28 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     return (aNodeID);
   }
+  
+  private class handshakeChannelEventListener implements ChannelEventListener {
+    final private MessageChannel channel;
+    
+    handshakeChannelEventListener(MessageChannel channel) {
+      this.channel = channel;
+    }
+    /*
+     * cancel future result on both stages if disconnect/closed event happened 
+     */
+    public void notifyChannelEvent(ChannelEvent event) {
+      if (event.getChannel() == channel) {
+        if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
+            || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
+          TCFuture hsresult = handshakeResults.get(channel);
+          if (hsresult != null) hsresult.cancel();
+          TCFuture pingresult = pingMessages.get(channel);
+          if (pingresult != null) pingresult.cancel();
+        }
+      }
+    }
+  }
 
   /*
    * Once connected, both send message to each other for exchanging NodeID.
@@ -208,23 +230,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private TCGroupHandshakeMessage handshake(final MessageChannel channel) {
 
     TCFuture result = getOrCreateHandshakeResult(channel);
-    channel.addListener(new ChannelEventListener() {
-      public void notifyChannelEvent(ChannelEvent event) {
-        if (event.getChannel() == channel) {
-          if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
-              || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
-            TCFuture hsresult = handshakeResults.get(channel);
-            if (hsresult != null) hsresult.cancel();
-          }
-        }
-      }
-    });
+    channel.addListener(new handshakeChannelEventListener(channel));
 
     writeHandshakeMessage(channel);
     TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel, result, handshakeTimeout);
     handshakeResults.remove(channel);
     if (peermsg == null) {
-      channel.close();
       return null;
     }
 
@@ -239,6 +250,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       msg = (TCGroupHandshakeMessage) result.get(timeout);
     } catch (TCTimeoutException e) {
       logger.warn("Handshake message timeout from peer " + channel);
+      channel.close();
       return null;
     } catch (Exception e) {
       if (logger.isDebugEnabled()) logger.debug("readHandshakeMessage: " + e);
