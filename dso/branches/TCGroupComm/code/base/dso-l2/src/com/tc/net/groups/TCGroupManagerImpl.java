@@ -201,15 +201,21 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     return (aNodeID);
   }
-  
-  private class handshakeChannelEventListener implements ChannelEventListener {
-    final private MessageChannel channel;
-    
-    handshakeChannelEventListener(MessageChannel channel) {
+
+  private static class handshakeChannelEventListener implements ChannelEventListener {
+    final private MessageChannel                              channel;
+    final private ConcurrentHashMap<MessageChannel, TCFuture> handshakeResults;
+    final private ConcurrentHashMap<MessageChannel, TCFuture> pingMessages;
+
+    handshakeChannelEventListener(MessageChannel channel, ConcurrentHashMap<MessageChannel, TCFuture> handshakeResults,
+                                  ConcurrentHashMap<MessageChannel, TCFuture> pingMessages) {
       this.channel = channel;
+      this.handshakeResults = handshakeResults;
+      this.pingMessages = pingMessages;
     }
+
     /*
-     * cancel future result on both stages if disconnect/closed event happened 
+     * cancel future result on both stages if disconnect/closed event happened
      */
     public void notifyChannelEvent(ChannelEvent event) {
       if (event.getChannel() == channel) {
@@ -230,14 +236,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private TCGroupHandshakeMessage handshake(final MessageChannel channel) {
 
     TCFuture result = getOrCreateHandshakeResult(channel);
-    channel.addListener(new handshakeChannelEventListener(channel));
+    channel.addListener(new handshakeChannelEventListener(channel, handshakeResults, pingMessages));
 
     writeHandshakeMessage(channel);
     TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel, result, handshakeTimeout);
     handshakeResults.remove(channel);
-    if (peermsg == null) {
-      return null;
-    }
+    if (peermsg == null) { return null; }
 
     mapChNodeID.put(channel, peermsg.getNodeID());
     return peermsg;
