@@ -618,7 +618,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCGroupMember m = getMember(channel);
     if (m != null) {
       logger.debug("Channel removed from " + m.getPeerNodeID());
-      memberDisappeared(m);
+      // sync to prevent race from tryJoinGroup
+      synchronized (m) {
+        memberDisappeared(m);
+      }
     }
   }
 
