@@ -374,13 +374,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     Assert.assertNotNull(member);
     if (isStopped.get()) return;
     synchronized (this) {
-      member.setTCGroupManager(null);
-      TCGroupMember m = members.get(member.getPeerNodeID());
-      if ((m != null) && (m.getChannel() == member.getChannel())) {
-        members.remove(member.getPeerNodeID());
-        fireNodeEvent(member, false);
+      // sync to prevent race from tryJoinGroup
+      synchronized (member) {
+        member.setTCGroupManager(null);
+        TCGroupMember m = members.get(member.getPeerNodeID());
+        if ((m != null) && (m.getChannel() == member.getChannel())) {
+          members.remove(member.getPeerNodeID());
+          fireNodeEvent(member, false);
+        }
+        closeMember(member, true);
       }
-      closeMember(member, true);
     }
     logger.debug(getNodeID() + " removed " + member);
     notifyAnyPendingRequests(member);
@@ -521,8 +524,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         return (true);
       } else {
         // target node replies deny to initiator
+        // let initiator issue close
         if (!connInitiator) signalToJoin(member, false);
-        closeMember(member, isAdded);
+        else closeMember(member, isAdded);
         return (false);
       }
     }
@@ -618,10 +622,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     TCGroupMember m = getMember(channel);
     if (m != null) {
       logger.debug("Channel removed from " + m.getPeerNodeID());
-      // sync to prevent race from tryJoinGroup
-      synchronized (m) {
-        memberDisappeared(m);
-      }
+      memberDisappeared(m);
     }
   }
 
