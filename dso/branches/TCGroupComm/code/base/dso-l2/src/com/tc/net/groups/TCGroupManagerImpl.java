@@ -380,7 +380,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         TCGroupMember m = members.get(member.getPeerNodeID());
         if ((m != null) && (m.getChannel() == member.getChannel())) {
           members.remove(member.getPeerNodeID());
-          fireNodeEvent(member, false);
+          if (member.isReady()) fireNodeEvent(member, false);
         }
         closeMember(member, true);
       }
