@@ -23,6 +23,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private final NodeIdComparable peerNodeID;
   // set member ready only when both ends are in group
   private AtomicBoolean          ready               = new AtomicBoolean(false);
+  private AtomicBoolean          joined              = new AtomicBoolean(false);
   private boolean                closedEventNotified = false;
 
   /*
@@ -104,6 +105,14 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   public void setReady(boolean isReady) {
     ready.set(isReady);
+  }
+  
+  public boolean isJoinedEventFired() {
+    return (joined.get());
+  }
+
+  public void setJoinedEventFired(boolean isReady) {
+    joined.set(isReady);
   }
 
   public void close() {

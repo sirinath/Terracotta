@@ -26,6 +26,10 @@ public interface TCGroupMember {
   
   public void setReady(boolean isReady);
 
+  public boolean isJoinedEventFired();
+  
+  public void setJoinedEventFired(boolean isReady);
+
   public void close();
 
   public boolean highPriorityLink();
