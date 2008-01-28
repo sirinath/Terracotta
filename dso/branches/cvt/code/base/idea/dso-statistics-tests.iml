@@ -5,6 +5,7 @@
     <content url="file://$MODULE_DIR$/../dso-statistics-tests">
       <sourceFolder url="file://$MODULE_DIR$/../dso-statistics-tests/tests.base" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../dso-statistics-tests/tests.system" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../dso-statistics-tests/tests.system.resources" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="J2SE-1.4" jdkType="JavaSDK" />
