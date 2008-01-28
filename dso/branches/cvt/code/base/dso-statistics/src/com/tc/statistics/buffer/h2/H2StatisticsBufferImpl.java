@@ -3,24 +3,28 @@
  */
 package com.tc.statistics.buffer.h2;
 
-import com.tc.statistics.StatisticData;
 import com.tc.statistics.CaptureSession;
-import com.tc.statistics.retrieval.StatisticsRetriever;
-import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
+import com.tc.statistics.StatisticData;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferBackendNotFoundException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferCaptureSessionCreationErrorException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferInstallationErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferNotReadyException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
+import com.tc.statistics.jdbc.JdbcHelper;
+import com.tc.statistics.jdbc.PreparedStatementHandler;
+import com.tc.statistics.jdbc.ResultSetHandler;
+import com.tc.statistics.retrieval.StatisticsRetriever;
+import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -32,7 +36,6 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
-import java.math.BigDecimal;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 

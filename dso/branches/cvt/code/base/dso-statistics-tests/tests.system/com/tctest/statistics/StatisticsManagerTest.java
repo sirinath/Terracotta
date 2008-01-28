@@ -3,50 +3,29 @@
  */
 package com.tctest.statistics;
 
-import org.apache.commons.io.CopyUtils;
-
-import com.tc.config.schema.builder.InstrumentedClassConfigBuilder;
-import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
-import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
-import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
-import com.tc.config.schema.test.InstrumentedClassConfigBuilderImpl;
-import com.tc.config.schema.test.L2ConfigBuilder;
-import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.management.JMXConnectorProxy;
 import com.tc.management.beans.L2MBeanNames;
-import com.tc.object.config.StandardDSOClientConfigHelperImpl;
-import com.tc.statistics.beans.StatisticsManagerMBean;
-import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
-import com.tc.util.Assert;
-import com.tc.util.PortChooser;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
-import com.tctest.runner.AbstractTransparentApp;
-import com.tctest.runner.TransparentAppConfig;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
-import javax.management.NotificationListener;
 import javax.management.Notification;
+import javax.management.NotificationListener;
 
 public class StatisticsManagerTest extends TransparentTestBase {
-  private int port;
-  private File configFile;
-  private int adminPort;
-
   protected void duringRunningCluster() throws Exception {
-    JMXConnectorProxy jmxc = new JMXConnectorProxy("localhost", adminPort);
+    JMXConnectorProxy jmxc = new JMXConnectorProxy("localhost", getAdminPort());
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
     List data = new ArrayList();
@@ -110,71 +89,12 @@ public class StatisticsManagerTest extends TransparentTestBase {
     assertTrue(received_data_names.size() > statistics.length);
   }
 
-  /**
-  /* below is all setup logic to create an appropriate configuration file
-  /* and store the useful values as fields
-   */
   protected Class getApplicationClass() {
     return StatisticsManagerTestApp.class;
-  }
-
-  public void setUp() throws Exception {
-    PortChooser pc = new PortChooser();
-    port = pc.chooseRandomPort();
-    adminPort = pc.chooseRandomPort();
-    configFile = getTempFile("config-file.xml");
-    writeConfigFile();
-    TestTVSConfigurationSetupManagerFactory factory = new TestTVSConfigurationSetupManagerFactory(
-      TestTVSConfigurationSetupManagerFactory.MODE_DISTRIBUTED_CONFIG,
-      null,
-      new FatalIllegalConfigurationChangeHandler());
-
-    factory.addServerToL1Config(null, port, adminPort);
-    L1TVSConfigurationSetupManager manager = factory.createL1TVSConfigurationSetupManager();
-    setUpControlledServer(factory, new StandardDSOClientConfigHelperImpl(manager), port, adminPort, configFile.getAbsolutePath());
-    doSetUp(this);
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(StatisticsManagerTestApp.NODE_COUNT);
     t.initializeTestRunner();
-    TransparentAppConfig cfg = t.getTransparentAppConfig();
-    cfg.setAttribute(StatisticsManagerTestApp.CONFIG_FILE, configFile.getAbsolutePath());
-    cfg.setAttribute(StatisticsManagerTestApp.PORT_NUMBER, String.valueOf(port));
-    cfg.setAttribute(StatisticsManagerTestApp.HOST_NAME, "localhost");
-    cfg.setAttribute(StatisticsManagerTestApp.JMX_PORT, String.valueOf(adminPort));
-  }
-
-  private synchronized void writeConfigFile() {
-    try {
-      TerracottaConfigBuilder builder = createConfig(port, adminPort);
-      FileOutputStream out = new FileOutputStream(configFile);
-      CopyUtils.copy(builder.toString(), out);
-      out.close();
-    } catch (Exception e) {
-      throw Assert.failure("Can't create config file", e);
-    }
-  }
-
-  public static TerracottaConfigBuilder createConfig(int port, int adminPort) {
-    String testClassName = StatisticsManagerTestApp.class.getName();
-    String testClassSuperName = AbstractTransparentApp.class.getName();
-
-    TerracottaConfigBuilder out = new TerracottaConfigBuilder();
-
-    out.getServers().getL2s()[0].setDSOPort(port);
-    out.getServers().getL2s()[0].setJMXPort(adminPort);
-    out.getServers().getL2s()[0].setPersistenceMode(L2ConfigBuilder.PERSISTENCE_MODE_TEMPORARY_SWAP_ONLY);
-
-    InstrumentedClassConfigBuilder instrumented1 = new InstrumentedClassConfigBuilderImpl();
-    instrumented1.setClassExpression(testClassName + "*");
-
-    InstrumentedClassConfigBuilder instrumented2 = new InstrumentedClassConfigBuilderImpl();
-    instrumented2.setClassExpression(testClassSuperName + "*");
-
-    out.getApplication().getDSO().setInstrumentedClasses(
-      new InstrumentedClassConfigBuilder[] { instrumented1, instrumented2 });
-
-    return out;
   }
 }
