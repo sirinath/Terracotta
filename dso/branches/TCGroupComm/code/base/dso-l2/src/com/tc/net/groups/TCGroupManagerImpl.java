@@ -527,7 +527,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       } else {
         // target node replies deny to initiator
         if (!connInitiator) signalToJoin(member, false);
-        closeMember(member, isAdded);
+        else closeMember(member, isAdded);
         return (false);
       }
     }
