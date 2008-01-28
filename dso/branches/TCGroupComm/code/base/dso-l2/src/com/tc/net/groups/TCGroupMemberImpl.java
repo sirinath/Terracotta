@@ -25,11 +25,13 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private AtomicBoolean          ready               = new AtomicBoolean(false);
   private AtomicBoolean          joined              = new AtomicBoolean(false);
   private boolean                closedEventNotified = false;
+  private final boolean          isClientChannel;
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
    */
   public TCGroupMemberImpl(NodeIdComparable srcNodeID, NodeIdComparable dstNodeID, MessageChannel channel) {
+    isClientChannel = true;
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -41,6 +43,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
    * Member channel established from src to dst. Called by channel receiver, channelCreated, peer is srcNodeID.
    */
   public TCGroupMemberImpl(MessageChannel channel, NodeIdComparable srcNodeID, NodeIdComparable dstNodeID) {
+    isClientChannel = false;
     this.channel = channel;
     this.srcNodeID = srcNodeID;
     this.dstNodeID = dstNodeID;
@@ -106,7 +109,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public void setReady(boolean isReady) {
     ready.set(isReady);
   }
-  
+
   public boolean isJoinedEventFired() {
     return (joined.get());
   }
@@ -119,10 +122,10 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
     ready.set(false);
     // if closed event notified, it is closing, don't do close
     // some incoming messages may be still under processing
-    if (!closedEventNotified) {
+    if (!closedEventNotified || isClientChannel) {
       getChannel().close();
     }
-    closedEventNotified = true;
+    closedEventNotified = false;
   }
 
   public boolean highPriorityLink() {
