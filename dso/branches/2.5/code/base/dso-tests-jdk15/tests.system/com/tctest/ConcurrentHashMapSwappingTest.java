@@ -3,19 +3,9 @@
  */
 package com.tctest;
 
-import com.tc.util.runtime.Vm;
+public class ConcurrentHashMapSwappingTest extends TransparentTestBase {
 
-import java.util.Date;
-
-public class ConcurrentHashMapSwapingTest extends TransparentTestBase {
-
-  private static final int NODE_COUNT = 3;
-
-  public ConcurrentHashMapSwapingTest() {
-    if (Vm.isIBM()) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
-    }
-  }
+  private static final int NODE_COUNT = 4;
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
@@ -23,7 +13,7 @@ public class ConcurrentHashMapSwapingTest extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return ConcurrentHashMapSwapingTestApp.class;
+    return ConcurrentHashMapSwappingTestApp.class;
   }
 
 }
