@@ -6,8 +6,8 @@
 -->
 
 <target name="updateversion">
-  <replace token='2.5.1.SNAPSHOT' value='2.5.2.SNAPSHOT' dir="." excludes="*/updateTIMSversion.xml"/>
-  <replace token='2.5.1-SNAPSHOT' value='2.5.2-SNAPSHOT' dir="." excludes="*/updateTIMSversion.xml"/>
+  <replace token='2.5.1.SNAPSHOT' value='2.5.1' dir="." excludes="*/updateTIMSversion.xml,*/*.jar"/>
+  <replace token='2.5.1-SNAPSHOT' value='2.5.1' dir="." excludes="*/updateTIMSversion.xml,*/*.jar"/>
 </target>
  
 </project>
