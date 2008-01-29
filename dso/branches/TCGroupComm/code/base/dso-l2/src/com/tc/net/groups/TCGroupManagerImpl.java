@@ -152,7 +152,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     ready.set(true);
   }
 
-  public String makeGroupNodeName(String hostname, int groupPort) {
+  private String makeGroupNodeName(String hostname, int groupPort) {
     return (hostname + ":" + groupPort);
   }
 
@@ -638,15 +638,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return (members.get(nodeID));
   }
 
-  public TCGroupMember getMember(String nodeName) {
-    TCGroupMember member = null;
-    for (TCGroupMember m : members.values()) {
-      if (nodeName.equals(m.getPeerNodeID().getName())) {
-        member = m;
+  public NodeIdComparable findNodeID(Node node) {
+    String nodeName = makeGroupNodeName(node.getHost(), node.getPort());
+    NodeIdComparable nodeID = null;
+    for (NodeIdComparable n : mapChNodeID.values()) {
+      if (nodeName.equals(n.getName())) {
+        nodeID = n;
         break;
       }
     }
-    return member;
+    return nodeID;
   }
 
   public Collection<TCGroupMember> getMembers() {

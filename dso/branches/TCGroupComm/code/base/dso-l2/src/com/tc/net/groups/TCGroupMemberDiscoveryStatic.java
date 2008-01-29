@@ -108,7 +108,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       // skip local one
       if (local.equals(n) || (n == null)) continue;
 
-      if (getMember(n) == null) {
+      if (findNodeID(n) == null) {
         if (status.isTimeToCheck()) toConnectList.add(n);
       } else {
         status.setOk();
@@ -140,6 +140,9 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     }
 
     public void run() {
+      
+      if (findNodeID(node) != null) return;
+      
       try {
         if (logger.isDebugEnabled()) logger.debug(manager.getLocalNodeID().toString() + " opens channel to " + node);
         manager.openChannel(node.getHost(), node.getPort());
@@ -165,9 +168,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     }
   }
 
-  private TCGroupMember getMember(Node node) {
-    String nodeName = manager.makeGroupNodeName(node.getHost(), node.getPort());
-    return (manager.getMember(nodeName));
+  private NodeIdComparable findNodeID(Node node) {
+    return (manager.findNodeID(node));
   }
 
   public void stop() {
