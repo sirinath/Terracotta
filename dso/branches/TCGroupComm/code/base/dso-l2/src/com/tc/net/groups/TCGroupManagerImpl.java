@@ -450,8 +450,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   private void closeMember(TCGroupMember member, boolean isAdded) {
-    member.setReady(false);
+    stopMember(member, isAdded);
     member.close();
+  }
+
+  private void stopMember(TCGroupMember member, boolean isAdded) {
+    member.setReady(false);
     mapChNodeID.remove(member.getChannel());
     if (isAdded) {
       members.remove(member.getPeerNodeID());
@@ -526,8 +530,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         return (true);
       } else {
         // target node replies deny to initiator
-        if (!connInitiator) signalToJoin(member, false);
-        else closeMember(member, isAdded);
+        if (!connInitiator) {
+          signalToJoin(member, false);
+          stopMember(member, isAdded);
+        } else {
+          closeMember(member, isAdded);
+        }
         return (false);
       }
     }
@@ -624,6 +632,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (m != null) {
       logger.debug("Channel removed from " + m.getPeerNodeID());
       memberDisappeared(m);
+    } else {
+      channel.close();
     }
   }
 
