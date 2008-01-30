@@ -515,7 +515,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private boolean tryJoinGroup(TCGroupMember member, boolean connInitiator) {
     // favor high priority link
     if (!member.highPriorityLink()) {
-      ThreadUtil.reallySleep(50);
+      ThreadUtil.reallySleep(200);
+      // check if any progress of high priority link
+      for (Map.Entry<MessageChannel, NodeIdComparable> entry : mapChNodeID.entrySet()) {
+        if ((member.getChannel() != entry.getKey()) && (member.getPeerNodeID().equals(entry.getValue()))) {
+          ThreadUtil.reallySleep(400);
+          break;
+        }
+      }
     }
 
     boolean isAdded = tryAddMember(member);
