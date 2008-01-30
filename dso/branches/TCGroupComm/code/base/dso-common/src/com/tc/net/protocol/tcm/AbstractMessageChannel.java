@@ -161,6 +161,10 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   }
 
   public final void receive(TCByteBuffer[] msgData) {
+    if (isClosed()) {
+      logger.warn("Message dropped due to channel closed, from: " + getRemoteAddress());
+      return;
+    }
     this.router.putMessage(parser.parseMessage(this, msgData));
   }
 
