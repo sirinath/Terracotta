@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.terracotta</groupId>
+  <artifactId>sigarstats</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <sigar.version>1.5.0.0</sigar.version>
+    <sigar.x86-linux>${settings.localRepository}/org/hyperic/libsigar-x86-linux/${sigar.version}</sigar.x86-linux>
+    <sigar.sparc-solaris>${settings.localRepository}/org/hyperic/libsigar-sparc-solaris/${sigar.version}</sigar.sparc-solaris>
+    <sigar.universal-macosx>${settings.localRepository}/org/hyperic/libsigar-universal-macosx/${sigar.version}</sigar.universal-macosx>
+    <sigar.x86-winnt>${settings.localRepository}/org/hyperic/libsigar-x86-winnt/${sigar.version}</sigar.x86-winnt>
+    <sigar.nativeLibraryDirectories>${sigar.x86-linux}${path.separator}${sigar.sparc-solaris}${path.separator}${sigar.x86-winnt}${path.separator}${sigar.universal-macosx}</sigar.nativeLibraryDirectories>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar</artifactId>
+      <version>${sigar.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-x86-linux</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>tc-compile</artifactId>
+      <version>2.6.0_cvt-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkMode>always</forkMode>
+          <argLine>-Djava.library.path=${sigar.nativeLibraryDirectories}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
