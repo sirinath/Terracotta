@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public abstract class JdbcHelper {
   public static long fetchNextSequenceValue(final PreparedStatement psNextId) throws SQLException {
@@ -21,7 +22,16 @@ public abstract class JdbcHelper {
     }
   }
 
-  public static int executeUpdateQuery(final Connection connection, final String sql, final PreparedStatementHandler handler) throws SQLException {
+  public static void executeUpdate(final Connection connection, final String sql) throws SQLException {
+    Statement stmt = connection.createStatement();
+    try {
+      stmt.executeUpdate(sql);
+    } finally {
+      stmt.close();
+    }
+  }
+
+  public static int executeUpdate(final Connection connection, final String sql, final PreparedStatementHandler handler) throws SQLException {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("handler", handler);
 

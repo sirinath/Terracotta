@@ -3,8 +3,8 @@
  */
 package com.tc.statistics.buffer.exceptions;
 
-public class TCStatisticsBufferBackendNotFoundException extends TCStatisticsBufferException {
-  public TCStatisticsBufferBackendNotFoundException(String message, Throwable cause) {
+public class TCStatisticsBufferStatisticConsumptionErrorException extends TCStatisticsBufferException {
+  public TCStatisticsBufferStatisticConsumptionErrorException(String message, Throwable cause) {
     super(message, cause);
   }
 }

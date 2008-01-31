@@ -3,8 +3,8 @@
  */
 package com.tc.statistics.buffer.exceptions;
 
-public class TCStatisticsBufferNotReadyException extends TCStatisticsBufferException {
-  public TCStatisticsBufferNotReadyException(String message) {
-    super(message, null);
+public class TCStatisticsBufferSetupErrorException extends TCStatisticsBufferException {
+  public TCStatisticsBufferSetupErrorException(String message, Throwable cause) {
+    super(message, cause);
   }
 }
