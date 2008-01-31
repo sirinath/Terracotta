@@ -20,7 +20,7 @@ module Config
   # 'native'
   EOL_NATIVE_EXTENSIONS = %w(
     c c\\+\\+ cxx cpp h hxx hpp java jsp properties tld rb rbx rbw rhtml rxml rjs py
-    html css js cgi fcgi xml dtd sql txt yaml yml y l xsd xsdconfig)
+    html css js cgi fcgi xml dtd sql txt yaml yml y l xsd xsdconfig groovy)
 
   # Other file names that should  have the svn:eol-style property set to 'native'
   OTHER_EOL_NATIVE = %w(.project .classpath makefile rakefile readme)
