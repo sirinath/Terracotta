@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface MessageTransportFactory {
 
-  void setConnectionHealthChecker(ConnectionHealthChecker connHlthChkr);
-
   MessageTransport createNewTransport();
 
   MessageTransport createNewTransport(ConnectionID connectionID, TransportHandshakeErrorHandler handler,

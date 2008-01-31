@@ -8,7 +8,6 @@ import com.tc.async.api.Sink;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.protocol.transport.ConnectionHealthChecker;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
@@ -19,8 +18,6 @@ import com.tc.object.session.SessionProvider;
 public interface CommunicationsManager {
   
   public TCConnectionManager getConnectionManager();
-  
-  public ConnectionHealthChecker getConnHealthChecker();
 
   public void shutdown();
 

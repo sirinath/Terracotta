@@ -28,13 +28,14 @@ import com.tc.net.protocol.transport.HealthCheckerConfig;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.net.protocol.transport.MessageTransportFactory;
 import com.tc.net.protocol.transport.MessageTransportListener;
+import com.tc.net.protocol.transport.NullHealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.ServerMessageTransport;
 import com.tc.net.protocol.transport.ServerStackProvider;
 import com.tc.net.protocol.transport.TransportHandshakeErrorContext;
 import com.tc.net.protocol.transport.TransportHandshakeErrorHandler;
 import com.tc.net.protocol.transport.TransportHandshakeMessage;
 import com.tc.net.protocol.transport.TransportHandshakeMessageFactory;
-import com.tc.net.protocol.transport.TransportHandshakeMessageFactoryImpl;
+import com.tc.net.protocol.transport.TransportMessageFactoryImpl;
 import com.tc.net.protocol.transport.WireProtocolAdaptorFactoryImpl;
 import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
@@ -69,17 +70,17 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy, 0, null);
+    this(monitor, stackHarnessFactory, null, connectionPolicy, 0, new NullHealthCheckerConfigImpl());
   }
 
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    ConnectionPolicy connectionPolicy, int workerCommCount) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommCount, null);
+    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommCount, new NullHealthCheckerConfigImpl());
   }
 
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0, null);
+    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0, new NullHealthCheckerConfigImpl());
   }
 
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
@@ -104,16 +105,9 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    HealthCheckerConfig healthCheckerConfig) {
 
     this.monitor = monitor;
-    this.transportHandshakeMessageFactory = new TransportHandshakeMessageFactoryImpl();
+    this.transportHandshakeMessageFactory = new TransportMessageFactoryImpl();
     this.connectionPolicy = connectionPolicy;
     this.stackHarnessFactory = stackHarnessFactory;
-
-    if (healthCheckerConfig != null) {
-      connectionHealthChecker = new ConnectionHealthChecker(healthCheckerConfig);
-    } else {
-      connectionHealthChecker = null;
-    }
-
     privateConnMgr = (connMgr == null);
 
     if (null == connMgr) {
@@ -121,6 +115,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     } else {
       this.connectionManager = connMgr;
     }
+    connectionHealthChecker = new ConnectionHealthChecker(healthCheckerConfig);
   }
 
   public TCConnectionManager getConnectionManager() {
@@ -135,7 +130,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     if (shutdown.attemptSet()) {
       if (privateConnMgr) {
         connectionManager.shutdown();
-        if (connectionHealthChecker != null) connectionHealthChecker.stop();
+        connectionHealthChecker.stop();
       }
     } else {
       logger.warn("shutdown already started");
@@ -155,14 +150,12 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     // once and only once protocol stack.
 
     final ConnectionAddressProvider provider = addressProvider;
+    connectionHealthChecker.start();
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(new TCMessageFactoryImpl(sessionProvider, monitor),
                                                                new TCMessageRouterImpl(), sessionProvider);
 
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
-
-      private ConnectionHealthChecker connHlthChkr = null;
-
       public MessageTransport createNewTransport() {
         TransportHandshakeErrorHandler handshakeErrorHandler = new TransportHandshakeErrorHandler() {
 
@@ -198,7 +191,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
                                                                 transportHandshakeMessageFactory,
                                                                 new WireProtocolAdaptorFactoryImpl(),
-                                                                (this.connHlthChkr));
+                                                                connectionHealthChecker);
+        cmt.addTransportListener(connectionHealthChecker);
         return cmt;
       }
 
@@ -214,14 +208,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                  List transportListeners) {
         throw new AssertionError();
       }
-
-      public void setConnectionHealthChecker(ConnectionHealthChecker connHlthChkr) {
-        this.connHlthChkr = connHlthChkr;
-      }
-
     };
 
-    transportFactory.setConnectionHealthChecker(this.connectionHealthChecker);
     NetworkStackHarness stackHarness = this.stackHarnessFactory.createClientHarness(transportFactory, rv,
                                                                                     new MessageTransportListener[0]);
 
@@ -289,10 +277,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                  boolean resueAddr, Set initialConnectionIDs, ConnectionIDFactory connectionIdFactory,
                                  Sink httpSink, WireProtocolMessageSink wireProtocolMessageSink) throws IOException {
 
+    connectionHealthChecker.start();
     MessageTransportFactory transportFactory = new MessageTransportFactory() {
-
-      ConnectionHealthChecker connHlthChkr = null;
-
       public MessageTransport createNewTransport() {
         throw new AssertionError();
       }
@@ -301,8 +287,9 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                  TransportHandshakeMessageFactory handshakeMessageFactory,
                                                  List transportListeners) {
         MessageTransport rv = new ServerMessageTransport(connectionID, handler, handshakeMessageFactory,
-                                                         this.connHlthChkr);
+                                                         connectionHealthChecker);
         rv.addTransportListeners(transportListeners);
+        rv.addTransportListener(connectionHealthChecker);
         return rv;
       }
 
@@ -311,18 +298,13 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                  TransportHandshakeMessageFactory handshakeMessageFactory,
                                                  List transportListeners) {
         MessageTransport rv = new ServerMessageTransport(connectionId, connection, handler, handshakeMessageFactory,
-                                                         this.connHlthChkr);
+                                                         connectionHealthChecker);
         rv.addTransportListeners(transportListeners);
+        rv.addTransportListener(connectionHealthChecker);
         return rv;
       }
-
-      public void setConnectionHealthChecker(ConnectionHealthChecker connHlthChkr) {
-        this.connHlthChkr = connHlthChkr;
-      }
-
     };
 
-    transportFactory.setConnectionHealthChecker(this.connectionHealthChecker);
     ServerStackProvider stackProvider = new ServerStackProvider(TCLogging.getLogger(ServerStackProvider.class),
                                                                 initialConnectionIDs, stackHarnessFactory,
                                                                 channelFactory, transportFactory,

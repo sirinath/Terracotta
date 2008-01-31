@@ -4,24 +4,31 @@
  */
 package com.tc.net.protocol.transport;
 
-
 public interface HealthCheckerConfig {
 
   // HC - HealthChecker
 
+  /* HC enabled/disabled for this commsMgr */
+  boolean isHealthCheckerEnabled();
+
   /* HC Name - describing what it is monitoring */
   String getHealthCheckerName();
-
-  /* HC enabled/disabled for this commsMgr */
-  boolean isKeepAliveEnabled();
 
   /* HC tests liveness of a connection when no message transaction is seen on it for more than keepalive_idle time */
   int getKeepAliveIdleTime();
 
   /* HC probes a connection once in keepalive_interval time after it is found idle for keepalive_idle time */
-  int getKeepAiveInterval();
+  int getKeepAliveInterval();
 
   /* HC probes a idle connection for keepalive_probes times before tagging it as dead */
   int getKeepAliveProbes();
-  
+
+  /*
+   * When HC detected the peer has died by above probes, it can do additional checks to see any traces of life left out 
+   *  1. chk whether the peer is in Long GC
+   *  2. more similar checks
+   *  
+   *  If the peer is un-responsive and not died, a grace period is given before deciding it as dead.
+   */
+  boolean doExtraChecks();
 }
