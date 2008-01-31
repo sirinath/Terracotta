@@ -40,7 +40,7 @@ import java.util.List;
 
 /**
  * JDK14 (nio) implementation of TCConnection
- * 
+ *
  * @author teck
  */
 final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJDK14ChannelWriter {
@@ -63,15 +63,16 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private final SetOnceRef               localSocketAddress  = new SetOnceRef();
   private final SetOnceRef               remoteSocketAddress = new SetOnceRef();
   private volatile SocketChannel         channel;
+  private final SocketParams             socketParams;
 
   // for creating unconnected client connections
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor,
-                    TCConnectionManagerJDK14 managerJDK14) {
-    this(listener, comm, adaptor, null, managerJDK14);
+                    TCConnectionManagerJDK14 managerJDK14, SocketParams socketParams) {
+    this(listener, comm, adaptor, null, managerJDK14, socketParams);
   }
 
   TCConnectionJDK14(TCConnectionEventListener listener, TCCommJDK14 comm, TCProtocolAdaptor adaptor, SocketChannel ch,
-                    TCConnectionManagerJDK14 parent) {
+                    TCConnectionManagerJDK14 parent, SocketParams socketParams) {
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
 
@@ -83,6 +84,12 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     Assert.assertNotNull(comm);
     this.comm = comm;
     this.channel = ch;
+
+    if (ch != null) {
+      socketParams.applySocketParams(ch.socket());
+    }
+
+    this.socketParams = socketParams;
   }
 
   private void closeImpl(Runnable callback) {
@@ -137,13 +144,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private SocketChannel createChannel() throws IOException, SocketException {
     SocketChannel rv = SocketChannel.open();
     Socket s = rv.socket();
-
-    // TODO: provide config options for setting any and all socket options
-    s.setSendBufferSize(64 * 1024);
-    s.setReceiveBufferSize(64 * 1024);
-    // s.setReuseAddress(true);
-    s.setTcpNoDelay(true);
-
+    socketParams.applySocketParams(s);
     return rv;
   }
 

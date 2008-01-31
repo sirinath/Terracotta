@@ -42,9 +42,10 @@ import java.util.Set;
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
 
   protected static final TCLogger logger = TCLogging.getLogger(TCComm.class);
+  private final SocketParams params;
 
-  TCCommJDK14() {
-    // nada
+  TCCommJDK14(SocketParams params) {
+    this.params = params;
   }
 
   protected void startImpl() {
@@ -480,21 +481,8 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
       final ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
       sc = ssc.accept();
       sc.configureBlocking(false);
-      final Socket s = sc.socket();
 
-      try {
-        s.setSendBufferSize(64 * 1024);
-      } catch (IOException ioe) {
-        logger.warn("IOException trying to setSendBufferSize()");
-      }
-
-      try {
-        s.setTcpNoDelay(true);
-      } catch (IOException ioe) {
-        logger.warn("IOException trying to setTcpNoDelay()", ioe);
-      }
-
-      TCConnectionJDK14 conn = lsnr.createConnection(sc);
+      TCConnectionJDK14 conn = lsnr.createConnection(sc, params);
       sc.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, conn);
     } catch (IOException ioe) {
       if (logger.isInfoEnabled()) {

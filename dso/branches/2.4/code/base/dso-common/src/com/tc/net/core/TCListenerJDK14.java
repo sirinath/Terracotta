@@ -27,7 +27,7 @@ import java.util.Iterator;
 
 /**
  * TCListener implementation
- * 
+ *
  * @author teck
  */
 final class TCListenerJDK14 implements TCListener {
@@ -64,9 +64,9 @@ final class TCListenerJDK14 implements TCListener {
     comm.stopListener(ssc, callback);
   }
 
-  TCConnectionJDK14 createConnection(SocketChannel ch) {
+  TCConnectionJDK14 createConnection(SocketChannel ch, SocketParams params) {
     TCProtocolAdaptor adaptor = getProtocolAdaptorFactory().getInstance();
-    TCConnectionJDK14 rv = new TCConnectionJDK14(listener, comm, adaptor, ch, parent);
+    TCConnectionJDK14 rv = new TCConnectionJDK14(listener, comm, adaptor, ch, parent, params);
     rv.finishConnect();
     parent.newConnection(rv);
     return rv;
