@@ -98,20 +98,13 @@ enable-auto-props = yes
 *.hpp = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/x-c++hdr
 *.hxx = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/x-c++hdr
 
-# Eiffel
-*.e = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.ace = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.xace = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.eant = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.geant = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-*.se = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
-
-# Java/JSP
+# Java related
 *.java = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/x-java
 *.jsp = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 *.properties = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 *.properties.template = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 *.tld = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id;svn:mime-type=text/xml
+*.groovy = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
 
 # Eclipse files
 .classpath = svn:eol-style=native
