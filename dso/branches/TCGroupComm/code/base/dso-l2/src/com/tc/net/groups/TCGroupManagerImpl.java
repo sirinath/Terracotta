@@ -512,17 +512,34 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, groupPort) }));
   }
 
+  private boolean isMakingHighPriorityLink(TCGroupMember member) {
+    for (Map.Entry<MessageChannel, NodeIdComparable> entry : mapChNodeID.entrySet()) {
+      if ((member.getPeerNodeID().equals(entry.getValue())) && (member.getChannel() != entry.getKey())) { return true; }
+    }
+    return (false);
+  }
+
   private boolean tryJoinGroup(TCGroupMember member, boolean connInitiator) {
-    // favor high priority link
+    // handshake on low priority link to check no progress of high priority link
     if (!member.highPriorityLink()) {
-      ThreadUtil.reallySleep(200);
-      // check if any progress of high priority link
-      for (Map.Entry<MessageChannel, NodeIdComparable> entry : mapChNodeID.entrySet()) {
-        if ((member.getChannel() != entry.getKey()) && (member.getPeerNodeID().equals(entry.getValue()))) {
-          ThreadUtil.reallySleep(400);
-          break;
-        }
+
+      boolean tryJoinLowPriority = false;
+      if (connInitiator) {
+        tryJoinLowPriority = !isMakingHighPriorityLink(member);
+        signalToJoin(member, tryJoinLowPriority);
       }
+      tryJoinLowPriority = receivedOkToJoin(member);
+      if (!connInitiator) {
+        if (tryJoinLowPriority) tryJoinLowPriority = !isMakingHighPriorityLink(member);
+        signalToJoin(member, tryJoinLowPriority);
+      }
+
+      if (!tryJoinLowPriority) {
+        // both sides agree not to join
+        closeMember(member, false);
+        return false;
+      }
+      logger.debug("Try joining low priority link " + member);
     }
 
     boolean isAdded = tryAddMember(member);
