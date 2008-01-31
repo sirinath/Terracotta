@@ -8,46 +8,31 @@ import com.tc.management.beans.L2MBeanNames;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.statistics.beans.StatisticsMBeansNames;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 
-public class StatisticsManagerTest extends TransparentTestBase {
+public class StatisticsManagerNoActionsTest extends TransparentTestBase {
   protected void duringRunningCluster() throws Exception {
     JMXConnectorProxy jmxc = new JMXConnectorProxy("localhost", getAdminPort());
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
-    List data = new ArrayList();
-    final boolean[] shutdown = new boolean[] {false};
-    NotificationListener listener = new NotificationListener() {
-      public void handleNotification(Notification notification, Object o) {
-        StatisticData data = (StatisticData)notification.getUserData();
-        ((List)o).add(data);
-        if (SRAShutdownTimestamp.ACTION_NAME.equals(data.getName())) {
-          shutdown[0] = true;
-          synchronized (this) {
-            this.notifyAll();
-          }
-        }
-      }
-    };
-
     StatisticsManagerMBean stat_manager = (StatisticsManagerMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbsc, L2MBeanNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
+        .newProxyInstance(mbsc, StatisticsMBeansNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
     StatisticsEmitterMBean stat_emitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbsc, L2MBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
-    mbsc.addNotificationListener(L2MBeanNames.STATISTICS_EMITTER, listener, null, data);
+        .newProxyInstance(mbsc, StatisticsMBeansNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
+
+    List data = new ArrayList();
+    CollectingNotificationListener listener = new CollectingNotificationListener();
+    mbsc.addNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener, null, data);
     stat_emitter.enable();
 
     long sessionid = stat_manager.createCaptureSession();
@@ -58,6 +43,9 @@ public class StatisticsManagerTest extends TransparentTestBase {
       stat_manager.enableStatistic(sessionid, statistics[i]);
     }
 
+    // remove all statistics
+    stat_manager.disableAllStatistics(sessionid);
+
     // start capturing
     stat_manager.startCapturing(sessionid);
 
@@ -67,26 +55,19 @@ public class StatisticsManagerTest extends TransparentTestBase {
     // stop capturing and wait for the last data
     synchronized (listener) {
       stat_manager.stopCapturing(sessionid);
-      while (!shutdown[0]) {
+      while (!listener.getShutdown()) {
         listener.wait(2000);
       }
     }
 
     // disable the notification and detach the listener
     stat_emitter.disable();
-    mbsc.removeNotificationListener(L2MBeanNames.STATISTICS_EMITTER, listener);
+    mbsc.removeNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener);
 
     // check the data
-    assertTrue(data.size() > 2);
+    assertEquals(2, data.size());
     assertEquals(SRAStartupTimestamp.ACTION_NAME, ((StatisticData)data.get(0)).getName());
-    assertEquals(SRAShutdownTimestamp.ACTION_NAME, ((StatisticData)data.get(data.size() - 1)).getName());
-    Set received_data_names = new HashSet();
-    for (int i = 1; i < data.size() - 1; i++) {
-      StatisticData stat_data = (StatisticData)data.get(i);
-      received_data_names.add(stat_data.getName());
-    }
-    // check that there's at least one data element name per registered statistic
-    assertTrue(received_data_names.size() > statistics.length);
+    assertEquals(SRAShutdownTimestamp.ACTION_NAME, ((StatisticData)data.get(1)).getName());
   }
 
   protected Class getApplicationClass() {

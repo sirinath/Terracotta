@@ -28,7 +28,8 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
   private final StatisticsBuffer buffer;
-  private final Map actionsMap;
+
+  private Map actionsMap;
 
   private long schedulePeriod = 1000; // HACK: make configurable
   private Timer timer = null;
@@ -43,6 +44,10 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
     this.buffer.addListener(this);
 
+    createEmptyActionsMap();
+  }
+
+  private void createEmptyActionsMap() {
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();
@@ -59,10 +64,13 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   }
 
   public void removeAllActions() {
-    Iterator keys_it = actionsMap.keySet().iterator();
-    while (keys_it.hasNext()) {
-      Object key = keys_it.next();
-      List previous_actions = (List)actionsMap.put(key, new CopyOnWriteArrayList());
+    Map old_actions_map = actionsMap;
+
+    createEmptyActionsMap();    
+
+    Iterator values_it = old_actions_map.values().iterator();
+    while (values_it.hasNext()) {
+      List previous_actions = (List)values_it.next();
       Iterator action_it = previous_actions.iterator();
       while (action_it.hasNext()) {
         StatisticRetrievalAction action = (StatisticRetrievalAction)action_it.next();

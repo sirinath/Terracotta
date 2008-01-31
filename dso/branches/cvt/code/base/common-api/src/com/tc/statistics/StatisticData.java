@@ -177,14 +177,15 @@ public class StatisticData implements Serializable {
   public String toString() {
     DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
     String data_formatted;
-    if (data instanceof Date) {
+    if (data != null &&
+        data instanceof Date) {
       data_formatted = format.format(data);
     } else {
       data_formatted = String.valueOf(data);
     }
     return "["
            + "agentIp = " + agentIp + "; "
-           + "moment = " + format.format(moment) + "; "
+           + "moment = " + (null == moment ? String.valueOf(moment): format.format(moment)) + "; "
            + "name = " + name + "; "
            + "element = " + element + "; "
            + "data = " + data_formatted + ""

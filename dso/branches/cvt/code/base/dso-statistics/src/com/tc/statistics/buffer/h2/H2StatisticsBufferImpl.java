@@ -5,17 +5,20 @@ package com.tc.statistics.buffer.h2;
 
 import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferBackendNotFoundException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferCaptureSessionCreationErrorException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferInstallationErrorException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferNotReadyException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferInstallationErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticConsumptionErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferSetupErrorException;
+import com.tc.statistics.database.StatisticsDatabase;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
+import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
@@ -25,12 +28,9 @@ import com.tc.util.Assert;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Date;
@@ -40,154 +40,112 @@ import java.util.Set;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
-  private final static String H2_JDBC_DRIVER = "org.h2.Driver";
-  private final static String H2_URL_PREFIX = "jdbc:h2:";
-  private final static String H2_URL_SUFFIX = "statistics";
-  private final static String H2_USER = "sa";
-  private final static String H2_PASSWORD = "";
+  private final static String SQL_NEXT_CAPTURESESSIONID = "SELECT nextval('seq_capturesession')";
+  private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
+  private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
+  private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
 
-  private Set listeners = new CopyOnWriteArraySet();
+  private final StatisticsDatabase database;
 
-  private File statDir;
-  private Connection connection;
-  private PreparedStatement psGetNextCaptureSessionId;
-  private PreparedStatement psGetNextStatisticLogId;
-  private PreparedStatement psGetNextConsumptionId;
-  private PreparedStatement psMakeAllDataConsumable;
+  private final Set listeners = new CopyOnWriteArraySet();
 
-  public H2StatisticsBufferImpl(final File statDir) {
-    if (null == statDir) Assert.fail("statDir can't be null");
-    if (!statDir.exists()) Assert.fail("statDir '" + statDir.getAbsolutePath() + "' doesn't exist");
-    if (!statDir.isDirectory()) Assert.fail("statDir '" + statDir.getAbsolutePath() + "' is not a directory");
-    if (!statDir.canWrite()) Assert.fail("statDir '" + statDir.getAbsolutePath() + "' is not writable");
-    this.statDir = statDir;
+  public H2StatisticsBufferImpl(final File dbDir) {
+    database = new H2StatisticsDatabase(dbDir);
   }
 
   public synchronized void open() throws TCStatisticsBufferException {
-    if (connection != null) return;
-
     try {
-      Class.forName(H2_JDBC_DRIVER);
-    } catch (ClassNotFoundException e) {
-      throw new TCStatisticsBufferBackendNotFoundException("Unable to load JDBC driver '" + H2_JDBC_DRIVER + "'", e);
+      database.open();
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsBufferException("Unexpected error while opening the H2 database.", e);
     }
 
-    openConnection();
     install();
     setupPreparedStatements();
-    makeAllDataConsumable();
+    makeAllDataConsumable();    
   }
 
-  private void openConnection() throws TCStatisticsBufferException {
-    String url = H2_URL_PREFIX + new File(statDir, H2_URL_SUFFIX).getAbsolutePath();
+  public synchronized void close() throws TCStatisticsBufferException {
     try {
-      connection = DriverManager.getConnection(url, H2_USER, H2_PASSWORD);
-      connection.setAutoCommit(true);
-    } catch (SQLException e) {
-      throw new TCStatisticsBufferException("Can't connect to H2 database with URL '" + url + "', user '" + H2_USER + "' and password '" + H2_PASSWORD + "'", e);
+      database.close();
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsBufferException("Unexpected error while closing the H2 database.", e);
     }
   }
 
-  private void ensureExistingConnection() throws TCStatisticsBufferNotReadyException {
-    if (null == connection) {
-      throw new TCStatisticsBufferNotReadyException("Connection to H2 database not established beforehand, call open() before performing another operation on the StatisticsBuffer.");
-    }
-  }
-
-  private void install() throws TCStatisticsBufferException {
-    ensureExistingConnection();
+  protected void install() throws TCStatisticsBufferException {
     try {
-      connection.setAutoCommit(false);
+      database.ensureExistingConnection();
 
-      executeUpdate("CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
+      database.getConnection().setAutoCommit(false);
 
-      executeUpdate("CREATE TABLE IF NOT EXISTS capturesession (" +
-                    "id BIGINT NOT NULL PRIMARY KEY, " +
-                    "start TIMESTAMP NULL, " +
-                    "stop TIMESTAMP NULL)");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
 
-      executeUpdate("CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE TABLE IF NOT EXISTS capturesession (" +
+          "id BIGINT NOT NULL PRIMARY KEY, " +
+          "start TIMESTAMP NULL, " +
+          "stop TIMESTAMP NULL)");
 
-      executeUpdate("CREATE SEQUENCE IF NOT EXISTS seq_consumption");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
 
-      executeUpdate("CREATE TABLE IF NOT EXISTS statisticlog (" +
-                    "id BIGINT NOT NULL PRIMARY KEY, " +
-                    "capturesessionid BIGINT NOT NULL, " +
-                    "agentip VARCHAR(39) NOT NULL, " +
-                    "moment TIMESTAMP NOT NULL, " +
-                    "statname VARCHAR(255) NOT NULL," +
-                    "statelement VARCHAR(255) NULL, " +
-                    "datanumber BIGINT NULL, " +
-                    "datatext TEXT NULL, " +
-                    "datatimestamp TIMESTAMP NULL, " +
-                    "datadecimal DECIMAL(8, 4) NULL, " +
-                    "consumptionid BIGINT NULL)");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE SEQUENCE IF NOT EXISTS seq_consumption");
 
-      executeUpdate("CREATE INDEX IF NOT EXISTS idx_statisticlog_capturesessionid ON statisticlog(capturesessionid)");
-      executeUpdate("CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionid)");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE TABLE IF NOT EXISTS statisticlog (" +
+          "id BIGINT NOT NULL PRIMARY KEY, " +
+          "capturesessionid BIGINT NOT NULL, " +
+          "agentip VARCHAR(39) NOT NULL, " +
+          "moment TIMESTAMP NOT NULL, " +
+          "statname VARCHAR(255) NOT NULL," +
+          "statelement VARCHAR(255) NULL, " +
+          "datanumber BIGINT NULL, " +
+          "datatext TEXT NULL, " +
+          "datatimestamp TIMESTAMP NULL, " +
+          "datadecimal DECIMAL(8, 4) NULL, " +
+          "consumptionid BIGINT NULL)");
 
-      connection.commit();
-      connection.setAutoCommit(true);
-    } catch (SQLException e) {
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_capturesessionid ON statisticlog(capturesessionid)");
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionid)");
+
+      database.getConnection().commit();
+      database.getConnection().setAutoCommit(true);
+    } catch (Exception e) {
       throw new TCStatisticsBufferInstallationErrorException("Unable to install the H2 database table structure.", e);
-    }
-  }
-
-  private void executeUpdate(String sql) throws SQLException {
-    Statement stmt = connection.createStatement();
-    try {
-      stmt.executeUpdate(sql);
-    } finally {
-      stmt.close();
     }
   }
 
   private void setupPreparedStatements() throws TCStatisticsBufferException {
     try {
-      psGetNextCaptureSessionId = connection.prepareStatement("SELECT nextval('seq_capturesession')");
-      psGetNextStatisticLogId = connection.prepareStatement("SELECT nextval('seq_statisticlog')");
-      psGetNextConsumptionId = connection.prepareStatement("SELECT nextval('seq_consumption')");
-      psMakeAllDataConsumable = connection.prepareStatement("UPDATE statisticlog SET consumptionid = NULL");
-    } catch (SQLException e) {
-      throw new TCStatisticsBufferException("Unexpected error while preparing the statements for the H2 statitistics buffer.", e);
+      database.createPreparedStatement(SQL_NEXT_CAPTURESESSIONID);
+      database.createPreparedStatement(SQL_NEXT_STATISTICLOGID);
+      database.createPreparedStatement(SQL_NEXT_CONSUMPTIONID);
+      database.createPreparedStatement(SQL_MAKE_ALL_CONSUMABLE);
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsBufferSetupErrorException("Unexpected error while preparing the statements for the H2 statistics buffer.", e);
     }
   }
 
   private void makeAllDataConsumable() throws TCStatisticsBufferException {
     try {
-      psMakeAllDataConsumable.executeUpdate();
+      database.getPreparedStatement(SQL_MAKE_ALL_CONSUMABLE).executeUpdate();
     } catch (SQLException e) {
-      throw new TCStatisticsBufferException("Unexpected error while making all the existing data consumable in the H2 statitistics buffer.", e);
-    }
-  }
-
-  public synchronized void close() throws TCStatisticsBufferException {
-    if (null == connection) return;
-
-    try {
-      try {
-        psGetNextCaptureSessionId.close();
-        psGetNextStatisticLogId.close();
-        psGetNextConsumptionId.close();
-      } finally {
-        connection.close();
-      }
-    } catch (SQLException e) {
-      throw new TCStatisticsBufferException("Unexpected error while closing the connection with the H2 database.", e);
-    } finally {
-      psGetNextCaptureSessionId = null;
-      psGetNextStatisticLogId = null;
-      connection = null;
+      throw new TCStatisticsBufferSetupErrorException("Unexpected error while making all the existing data consumable in the H2 statistics buffer.", e);
     }
   }
 
   public CaptureSession createCaptureSession() throws TCStatisticsBufferException {
-    ensureExistingConnection();
-
     try {
-      final long id = JdbcHelper.fetchNextSequenceValue(psGetNextCaptureSessionId);
+      database.ensureExistingConnection();
 
-      final int row_count = JdbcHelper.executeUpdateQuery(connection, "INSERT INTO capturesession (id) VALUES (?)", new PreparedStatementHandler() {
+      final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_CAPTURESESSIONID));
+
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO capturesession (id) VALUES (?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
         }
@@ -199,16 +157,16 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       StatisticsRetriever retriever = new StatisticsRetrieverImpl(this, id);
       return new CaptureSession(id, retriever);
-    } catch (SQLException e) {
+    } catch (Exception e) {
       throw new TCStatisticsBufferCaptureSessionCreationErrorException("Unexpected error while creating a new capture session", e);
     }
   }
 
   public void startCapturing(final long sessionId) throws TCStatisticsBufferException {
-    ensureExistingConnection();
-
     try {
-      final int row_count = JdbcHelper.executeUpdateQuery(connection, "UPDATE capturesession SET start = ? WHERE id = ? AND start IS NULL", new PreparedStatementHandler() {
+      database.ensureExistingConnection();
+
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET start = ? WHERE id = ? AND start IS NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setTimestamp(1, new Timestamp(new Date().getTime()));
           statement.setLong(2, sessionId);
@@ -220,7 +178,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       }
 
       fireCapturingStarted(sessionId);
-    } catch (SQLException e) {
+    } catch (Exception e) {
       throw new TCStatisticsBufferStartCapturingErrorException("The capture session with ID '" + sessionId + "' could not be started", e);
     }
   }
@@ -233,12 +191,12 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   }
 
   public void stopCapturing(final long sessionId) throws TCStatisticsBufferException {
-    ensureExistingConnection();
-
     try {
+      database.ensureExistingConnection();
+
       fireCapturingStopped(sessionId);
 
-      final int row_count = JdbcHelper.executeUpdateQuery(connection, "UPDATE capturesession SET stop = ? WHERE id = ? AND start IS NOT NULL", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE id = ? AND start IS NOT NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setTimestamp(1, new Timestamp(new Date().getTime()));
           statement.setLong(2, sessionId);
@@ -248,7 +206,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       if (row_count != 1) {
         throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", null);
       }
-    } catch (SQLException e) {
+    } catch (Exception e) {
       throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", e);
     }
   }
@@ -265,14 +223,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
     Assert.assertNotNull("data property of data", data.getData());
 
-    ensureExistingConnection();
-
     try {
+      database.ensureExistingConnection();
+
       // obtain a new ID for the statistic data
-      final long id = JdbcHelper.fetchNextSequenceValue(psGetNextStatisticLogId);
+      final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
 
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdateQuery(connection, "INSERT INTO statisticlog (id, capturesessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, capturesessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
           statement.setLong(2, sessionId);
@@ -319,7 +277,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       }
 
       return id;
-    } catch (SQLException e) {
+    } catch (Exception e) {
       throw new TCStatisticsBufferStatisticStorageErrorException("Unexpected error while storing the statistic data " + data + ".", e);
     }
   }
@@ -328,15 +286,15 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     Assert.eval("sessionId must be bigger than 0", sessionId > 0);
     Assert.assertNotNull("consumer", consumer);
 
-    ensureExistingConnection();
-
     try {
+      database.ensureExistingConnection();
+
       // create a unique ID for this consumption phase
-      final long consumption_id = JdbcHelper.fetchNextSequenceValue(psGetNextConsumptionId);
+      final long consumption_id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_CONSUMPTIONID));
 
       // reserve all existing statistic data with the provided session ID
       // for the consumption ID
-      final int row_count = JdbcHelper.executeUpdateQuery(connection, "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND capturesessionid = ?", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND capturesessionid = ?", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, consumption_id);
           statement.setLong(2, sessionId);
@@ -346,7 +304,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       try {
         // consume all the statistic data in this capture session
         if (row_count > 0) {
-          JdbcHelper.executeQuery(connection, "SELECT * FROM statisticlog WHERE consumptionid = ? AND capturesessionid = ? ORDER BY moment ASC, id ASC", new PreparedStatementHandler() {
+          JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM statisticlog WHERE consumptionid = ? AND capturesessionid = ? ORDER BY moment ASC, id ASC", new PreparedStatementHandler() {
             public void setParameters(PreparedStatement statement) throws SQLException {
               statement.setLong(1, consumption_id);
               statement.setLong(2, sessionId);
@@ -355,31 +313,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
             public void useResultSet(ResultSet resultSet) throws SQLException {
               while (resultSet.next()) {
                 // obtain the statistics data
-                StatisticData data = new StatisticData()
-                  .agentIp(resultSet.getString("agentip"))
-                  .moment(resultSet.getTimestamp("moment"))
-                  .name(resultSet.getString("statname"))
-                  .element(resultSet.getString("statelement"));
-
-                long datanumber = resultSet.getLong("datanumber");
-                if (!resultSet.wasNull()) {
-                  data.data(new Long(datanumber));
-                } else {
-                  String datatext = resultSet.getString("datatext");
-                  if (!resultSet.wasNull()) {
-                    data.data(datatext);
-                  } else {
-                    Timestamp datatimestamp = resultSet.getTimestamp("datatimestamp");
-                    if (!resultSet.wasNull()) {
-                      data.data(datatimestamp);
-                    } else {
-                      BigDecimal datadecimal = resultSet.getBigDecimal("datadecimal");
-                      Assert.eval("All the data elements of the statistic data were NULL, this shouldn't be possible.",
-                        !resultSet.wasNull());
-                      data.data(datadecimal);
-                    }
-                  }
-                }
+                StatisticData data = database.getStatisticsData(resultSet);
 
                 // consume the data
                 if (!consumer.consumeStatisticData(sessionId, data)) {
@@ -394,14 +328,16 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       } finally {
         // make the statistic data that wasn't consumed during this consumption phase
         // available again so that it can be picked up by another consumption operation
-        JdbcHelper.executeUpdateQuery(connection, "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?", new PreparedStatementHandler() {
+        JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?", new PreparedStatementHandler() {
           public void setParameters(PreparedStatement statement) throws SQLException {
             statement.setLong(1, consumption_id);
           }
         });
       }
-    } catch (SQLException e) {
-      throw new TCStatisticsBufferStatisticStorageErrorException("Unexpected error while consuming the statistic data for session with ID '" + sessionId + "'.", e);
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new TCStatisticsBufferStatisticConsumptionErrorException("Unexpected error while consuming the statistic data for session with ID '" + sessionId + "'.", e);
     }
   }
 

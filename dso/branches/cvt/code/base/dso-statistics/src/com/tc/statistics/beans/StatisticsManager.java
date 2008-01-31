@@ -20,9 +20,9 @@ import javax.management.StandardMBean;
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 public class StatisticsManager extends StandardMBean implements StatisticsManagerMBean {
-  private StatisticsRetrievalRegistry registry;
-  private StatisticsBuffer buffer;
-  private Map retrieverMap = new ConcurrentHashMap();
+  private final StatisticsRetrievalRegistry registry;
+  private final StatisticsBuffer buffer;
+  private final Map retrieverMap = new ConcurrentHashMap();
   
   public StatisticsManager(StatisticsRetrievalRegistry registry, StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsManagerMBean.class);
@@ -46,6 +46,11 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     } catch (TCStatisticsBufferException e) {
       throw new RuntimeException("Unexpected error while creating a new capture session.", e);
     }
+  }
+
+  public void disableAllStatistics(long sessionId) {
+    StatisticsRetriever retriever = obtainRetriever(sessionId);
+    retriever.removeAllActions();
   }
 
   public void enableStatistic(long sessionId, String name) {

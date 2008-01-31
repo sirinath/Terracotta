@@ -18,7 +18,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegistry {
   private static final TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
-  private Map instanceMap = new ConcurrentHashMap();
+  private final Map instanceMap = new ConcurrentHashMap();
 
   public void removeAllActionInstances() {
     instanceMap.clear();

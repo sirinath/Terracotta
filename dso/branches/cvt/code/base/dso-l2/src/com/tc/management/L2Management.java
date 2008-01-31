@@ -17,6 +17,7 @@ import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.statistics.beans.StatisticsMBeansNames;
 import com.tc.util.PortChooser;
 
 import java.io.File;
@@ -228,8 +229,8 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.registerMBean(TCLogging.getJMXAppender().getMBean(), L2MBeanNames.LOGGER);
     mBeanServer.registerMBean(objectManagementBean, L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.registerMBean(lockStatistics, L2MBeanNames.LOCK_STATISTICS);
-    mBeanServer.registerMBean(statisticsEmitter, L2MBeanNames.STATISTICS_EMITTER);
-    mBeanServer.registerMBean(statisticsManager, L2MBeanNames.STATISTICS_MANAGER);
+    mBeanServer.registerMBean(statisticsEmitter, StatisticsMBeansNames.STATISTICS_EMITTER);
+    mBeanServer.registerMBean(statisticsManager, StatisticsMBeansNames.STATISTICS_MANAGER);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.registerMBean(new L2Dumper(tcDumper), L2MBeanNames.DUMPER);
@@ -241,8 +242,8 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.unregisterMBean(L2MBeanNames.LOGGER);
     mBeanServer.unregisterMBean(L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.unregisterMBean(L2MBeanNames.LOCK_STATISTICS);
-    mBeanServer.unregisterMBean(L2MBeanNames.STATISTICS_EMITTER);
-    mBeanServer.unregisterMBean(L2MBeanNames.STATISTICS_MANAGER);
+    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_EMITTER);
+    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_MANAGER);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.unregisterMBean(L2MBeanNames.DUMPER);

@@ -9,6 +9,8 @@ public interface StatisticsManagerMBean {
 
   public long createCaptureSession();
 
+  public void disableAllStatistics(long sessionId);
+
   public void enableStatistic(long sessionId, String name);
 
   public void startCapturing(long sessionId);

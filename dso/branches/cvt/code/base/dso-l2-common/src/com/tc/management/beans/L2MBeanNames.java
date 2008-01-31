@@ -20,8 +20,6 @@ public class L2MBeanNames {
   public static final ObjectName OBJECT_MANAGEMENT;
   public static final ObjectName DUMPER;
   public static final ObjectName LOCK_STATISTICS;
-  public static final ObjectName STATISTICS_EMITTER;
-  public static final ObjectName STATISTICS_MANAGER;
 
   static {
     try {
@@ -32,8 +30,6 @@ public class L2MBeanNames {
       OBJECT_MANAGEMENT = TerracottaManagement.createObjectName(Type.Server, Subsystem.ObjectManagement, null, "ObjectManagement", true);
       DUMPER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "L2Dumper", false);
       LOCK_STATISTICS = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Lock Statistics", false);
-      STATISTICS_EMITTER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Statistics Emitter", true);
-      STATISTICS_MANAGER = TerracottaManagement.createObjectName(Type.Server, Subsystem.None, null, "Terracotta Statistics Manager", true);
     } catch (MalformedObjectNameException mone) {
       throw new RuntimeException(mone);
     } catch (NullPointerException npe) {

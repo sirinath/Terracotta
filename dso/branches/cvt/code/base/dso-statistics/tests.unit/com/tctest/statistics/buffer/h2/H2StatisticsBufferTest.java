@@ -5,11 +5,11 @@ package com.tctest.statistics.buffer.h2;
 
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.CaptureSession;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferNotReadyException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.util.TCAssertionError;
@@ -97,8 +97,9 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.createCaptureSession();
       fail("expected exception");
-    } catch (TCStatisticsBufferNotReadyException e) {
+    } catch (TCStatisticsBufferException e) {
       // expected
+      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
     }
   }
 
@@ -119,7 +120,7 @@ public class H2StatisticsBufferTest extends TestCase {
     assertEquals(3L, session3.getRetriever().getSessionId());
   }
 
-  public void testStoretatisticsDataNullAgentIp() throws Exception {
+  public void testStoreStatisticsDataNullAgentIp() throws Exception {
     long sessionid = buffer.createCaptureSession().getId();
     try {
       buffer.storeStatistic(sessionid, new StatisticData());
@@ -129,7 +130,7 @@ public class H2StatisticsBufferTest extends TestCase {
     }
   }
 
-  public void testStoretatisticsDataNullData() throws Exception {
+  public void testStoreStatisticsDataNullData() throws Exception {
     long sessionid = buffer.createCaptureSession().getId();
     try {
       buffer.storeStatistic(sessionid, new StatisticData()
@@ -149,8 +150,9 @@ public class H2StatisticsBufferTest extends TestCase {
         .agentIp(InetAddress.getLocalHost().getHostAddress())
         .data("test"));
       fail("expected exception");
-    } catch (TCStatisticsBufferNotReadyException e) {
+    } catch (TCStatisticsBufferException e) {
       // expected
+      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
     }
   }
 
@@ -206,8 +208,9 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.consumeStatistics(sessionid, new TestStaticticConsumer());
       fail("expected exception");
-    } catch (TCStatisticsBufferNotReadyException e) {
+    } catch (TCStatisticsBufferException e) {
       // expected
+      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
     }
   }
 
