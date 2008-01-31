@@ -383,9 +383,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           if (member.isJoinedEventFired()) fireNodeEvent(member, false);
           member.setJoinedEventFired(false);
         }
-        closeMember(member, false);
       }
     }
+    closeMember(member, false);
     logger.debug(getNodeID() + " removed " + member);
     notifyAnyPendingRequests(member);
   }
@@ -542,6 +542,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       logger.debug("Try joining low priority link " + member);
     }
 
+    boolean doCloseMember = false;
     boolean isAdded = tryAddMember(member);
     synchronized (member) {
       // connection initiator signal status to peer
@@ -558,11 +559,15 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
           signalToJoin(member, false);
           stopMember(member, isAdded);
         } else {
-          closeMember(member, isAdded);
+          doCloseMember = true;
         }
-        return (false);
       }
     }
+    // close member outside of sync to prevent deadlock
+    if (doCloseMember) {
+      closeMember(member, isAdded);
+    }
+    return (false);
   }
 
   /*
