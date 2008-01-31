@@ -212,7 +212,6 @@ public class ClientMessageTransport extends MessageTransportBase {
       this.sendToConnection(ack);
       this.status.established();
       fireTransportConnectedEvent();
-      startHealthMonitoring();
     }
   }
 

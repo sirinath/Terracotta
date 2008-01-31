@@ -4,12 +4,9 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.net.TCSocketAddress;
 
 public interface TransportHandshakeMessage extends WireProtocolMessage {
   public ConnectionID getConnectionId();
-
-  public TCSocketAddress getPeerHCInfo();
 
   public boolean isMaxConnectionsExceeded();
 
@@ -22,7 +19,4 @@ public interface TransportHandshakeMessage extends WireProtocolMessage {
 
   public boolean isAck();
 
-  public boolean isPing();
-
-  public boolean isPingReply();
 }

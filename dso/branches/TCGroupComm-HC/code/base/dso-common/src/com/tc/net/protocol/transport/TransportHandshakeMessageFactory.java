@@ -4,7 +4,6 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 
 public interface TransportHandshakeMessageFactory {
@@ -19,11 +18,4 @@ public interface TransportHandshakeMessageFactory {
   public TransportHandshakeMessage createSynAck(ConnectionID connectionId, TransportHandshakeErrorContext errorContext,
                                                 TCConnection source, boolean isMaxConnectionsExceeded,
                                                 int maxConnections);
-
-  public TransportHandshakeMessage createPing(ConnectionID connectionId, TCConnection source,
-                                              TCSocketAddress peerHCSockAddr);
-
-  public TransportHandshakeMessage createPingReply(ConnectionID connectionId, TCConnection source,
-                                                   TCSocketAddress peerHCSockAddr);
-
 }

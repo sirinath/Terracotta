@@ -81,7 +81,6 @@ public class ServerMessageTransport extends MessageTransportBase {
                   this.connectionId.equals(ack.getConnectionId()));
       status.established();
       fireTransportConnectedEvent();
-      startHealthMonitoring();
     }
   }
 

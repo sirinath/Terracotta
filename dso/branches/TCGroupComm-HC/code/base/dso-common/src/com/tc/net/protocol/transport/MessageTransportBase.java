@@ -20,7 +20,6 @@ import com.tc.net.protocol.IllegalReconnectException;
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
-import com.tc.net.protocol.transport.ConnectionHealthChecker.ConnectionHealthCheckerContext;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 
@@ -37,7 +36,6 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected final MessageTransportStatus           status;
   protected final SynchronizedBoolean              isOpen;
   protected final TransportHandshakeMessageFactory messageFactory;
-  private final ConnectionHealthCheckerContext     connHlthChkrCtxt;
   private final TransportHandshakeErrorHandler     handshakeErrorHandler;
   private NetworkLayer                             receiveLayer;
 
@@ -48,6 +46,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   private byte[]                                   destinationAddress;
   private int                                      destinationPort;
   private boolean                                  allowConnectionReplace = false;
+  private ConnectionHealthCheckerContext           healthCheckerContext;
 
   protected MessageTransportBase(MessageTransportState initialState,
                                  TransportHandshakeErrorHandler handshakeErrorHandler,
@@ -65,21 +64,15 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     this.messageFactory = messageFactory;
     this.isOpen = new SynchronizedBoolean(isOpen);
     this.status = new MessageTransportStatus(initialState, logger);
-    if (connHlthChkr != null) {
-      this.connHlthChkrCtxt = connHlthChkr.checkHealthFor(this);
-    } else {
-      this.connHlthChkrCtxt = null;
-    }
-  }
-
-  public void startHealthMonitoring() {
-    if (this.connHlthChkrCtxt != null) {
-      this.connHlthChkrCtxt.startMonitoring();
-    }
+    this.healthCheckerContext = new ConnectionHealthCheckerContextEchoImpl(this);
   }
 
   public void setAllowConnectionReplace(boolean allow) {
     this.allowConnectionReplace = allow;
+  }
+
+  public synchronized void setHealthCheckerContext(ConnectionHealthCheckerContext context) {
+    healthCheckerContext = context;
   }
 
   public final ConnectionID getConnectionId() {
@@ -110,22 +103,18 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
 
   protected final void receiveToReceiveLayer(WireProtocolMessage message) {
     Assert.assertNotNull(receiveLayer);
-    if (message instanceof TransportHandshakeMessage) {
-      // top layers dont want to know my layer specific language.
-      if (((TransportHandshakeMessage) message).isPing()) {
-        if (this.connHlthChkrCtxt != null) {
-          send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection(), this.connHlthChkrCtxt
-              .getLocalHClsnrInfo()));
-        } else {
-          send(this.messageFactory.createPingReply(this.getConnectionId(), this.getConnection(), null));
-        }
-        return;
-      } else if (((TransportHandshakeMessage) message).isPingReply()) {
-        if (this.connHlthChkrCtxt != null) {
-          this.connHlthChkrCtxt.pingReplyRcvd(System.currentTimeMillis(), ((TransportHandshakeMessage) message)
-              .getPeerHCInfo());
-        }
-        return;
+    if (message.getMessageProtocol() == WireProtocolHeader.PROTOCOL_TRANSPORT_HANDSHAKE) {
+      throw new AssertionError("Wrong handshake message from: " + message.getSource());
+    } else if (message.getMessageProtocol() == WireProtocolHeader.PROTOCOL_HEALTHCHECK_PROBES) {
+      if (((HealthCheckerProbeMessage) message).isPing()) {
+        this.healthCheckerContext.receivePing();
+        return; // RETURN BACK
+      } else if (((HealthCheckerProbeMessage) message).isPingReply()) {
+        this.healthCheckerContext.receivePingReply();
+        return; // RETURN BACK
+      } else if (((HealthCheckerProbeMessage) message).isPingDummy()) {
+        // he he he Dummy HC.. i will not send u back anything
+        return; // RETURN BACK
       } else {
         throw new AssertionError("Wrong handshake message from: " + message.getSource());
       }
@@ -142,6 +131,14 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
    * Moves the MessageTransport state to closed and closes the underlying connection, if any.
    */
   public void close() {
+    terminate(false);
+  }
+
+  public void disconnect() {
+    terminate(true);
+  }
+
+  private void terminate(boolean disconnect) {
     synchronized (isOpen) {
       if (!isOpen.get()) {
         // see DEV-659: we used to throw an assertion error here if already closed
@@ -149,7 +146,13 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
         return;
       }
       isOpen.set(false);
-      fireTransportClosedEvent();
+      if (disconnect) {
+        this.status.disconnect();
+        fireTransportDisconnectedEvent();
+      } else {
+        this.status.closed();
+        fireTransportClosedEvent();
+      }
     }
 
     synchronized (status) {
@@ -209,7 +212,12 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
    */
   public final boolean isConnected() {
     synchronized (status) {
-      return this.status.isEstablished();
+      if (getConnection().isConnected()) {
+        return this.status.isEstablished();
+      } else {
+        this.status.reset();
+        return false;
+      }
     }
   }
 

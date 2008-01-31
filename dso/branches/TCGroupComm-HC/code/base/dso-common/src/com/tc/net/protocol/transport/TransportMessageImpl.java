@@ -6,17 +6,14 @@ package com.tc.net.protocol.transport;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
-import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.TCNetworkHeader;
 import com.tc.net.protocol.TCProtocolException;
 import com.tc.util.Assert;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
-class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage {
+class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage, HealthCheckerProbeMessage {
   static final byte          VERSION_1  = 1;
 
   static final byte          SYN        = 1;
@@ -24,6 +21,7 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   static final byte          SYN_ACK    = 3;
   static final byte          PING       = 4;
   static final byte          PING_REPLY = 5;
+  static final byte          PING_DUMMY = 6;
 
   private final byte         version;
   private final byte         type;
@@ -31,12 +29,9 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
   private final String       errorContext;
   private final boolean      hasErrorContext;
   private final int          maxConnections;
-  private final boolean      hasPeerHCSocketInfo;
   private final boolean      isMaxConnectionsExceeded;
-  private final int          peerHClsnrPort;
-  private final String       peerHClsnrAddr;
 
-  TransportHandshakeMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
+  TransportMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
       throws TCProtocolException {
     super(source, header, payload);
 
@@ -56,16 +51,6 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
 
       this.isMaxConnectionsExceeded = in.readBoolean();
       this.maxConnections = in.readInt();
-
-      this.hasPeerHCSocketInfo = in.readBoolean();
-      if (this.hasPeerHCSocketInfo) {
-        this.peerHClsnrAddr = in.readString();
-        this.peerHClsnrPort = in.readInt();
-      } else {
-        this.peerHClsnrAddr = null;
-        this.peerHClsnrPort = 0;
-      }
-
       this.hasErrorContext = in.readBoolean();
 
       if (this.hasErrorContext) {
@@ -97,18 +82,12 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
         return "SYN_ACK";
       case PING:
         return "PING";
+      case PING_DUMMY:
+        return "PING_DUMMY";
       case PING_REPLY:
         return "PING_REPLY";
       default:
         return "UNKNOWN";
-    }
-  }
-
-  public TCSocketAddress getPeerHCInfo() {
-    try {
-      return new TCSocketAddress(InetAddress.getByName(peerHClsnrAddr), peerHClsnrPort);
-    } catch (UnknownHostException e) {
-      return null;
     }
   }
 
@@ -127,6 +106,10 @@ class TransportHandshakeMessageImpl extends WireProtocolMessageImpl implements S
 
   public boolean isPing() {
     return type == PING;
+  }
+  
+  public boolean isPingDummy() {
+    return type == PING_DUMMY;
   }
 
   public boolean isPingReply() {
