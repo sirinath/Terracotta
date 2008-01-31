@@ -10,18 +10,19 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-public class BundleClassExportTestApp extends AbstractErrorCatchingTransparentApp {
+public class BundleClassExportLoadClassTestApp extends AbstractErrorCatchingTransparentApp {
 
-  public BundleClassExportTestApp(final String appId, final ApplicationConfig cfg,
+  public BundleClassExportLoadClassTestApp(final String appId, final ApplicationConfig cfg,
                                   final ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
   protected void runTest() throws Throwable {
-    Class.forName("org.terracotta.modules.test.DummyClass");
+    // CDV-598
+    getClass().getClassLoader().loadClass("org.terracotta.modules.test.DummyClass");
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    //config.addModule(TIMUtil.MODULES_COMMON, TIMUtil.getVersion(TIMUtil.MODULES_COMMON));
+    //
   }
 }
