@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * JDK 1.4 (NIO) version of TCComm. Uses a single internal thread and a selector to manage channels associated with
  * <code>TCConnection</code>'s
- * 
+ *
  * @author teck
  */
 class TCCommJDK14 implements TCComm, TCListenerEventListener {
@@ -641,7 +641,7 @@ class TCCommJDK14 implements TCComm, TCListenerEventListener {
         commInstance.selectLoop();
       } catch (Throwable t) {
         logger.error("Unhandled exception from selectLoop", t);
-        t.printStackTrace();
+        throw new RuntimeException(t);
       } finally {
         commInstance.dispose();
       }
