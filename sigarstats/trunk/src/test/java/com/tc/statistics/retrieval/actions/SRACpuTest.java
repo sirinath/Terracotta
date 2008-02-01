@@ -1,12 +1,13 @@
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
-package com.tctest.statistics.retrieval.actions;
+package com.tc.statistics.retrieval.actions;
 
 import org.hyperic.sigar.Sigar;
 
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.retrieval.SigarUtil;
 import com.tc.statistics.retrieval.actions.SRACpu;
 
 import java.net.InetAddress;
@@ -16,6 +17,9 @@ import java.math.BigDecimal;
 import junit.framework.TestCase;
 
 public class SRACpuTest extends TestCase {
+  static {
+    SigarUtil.sigarInit();
+  }
   private Sigar sigar;
 
   public void setUp() {
