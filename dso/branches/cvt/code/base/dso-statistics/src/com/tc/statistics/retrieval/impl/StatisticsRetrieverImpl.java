@@ -135,6 +135,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     StatisticData[] data = action.retrieveStatisticData();
     if (data != null) {
       for (int i = 0; i < data.length; i++) {
+        data[i].setSessionId(new Long(sessionId));
         bufferData(data[i]);
       }
     }
@@ -142,7 +143,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
   private void bufferData(StatisticData data) {
     try {
-      buffer.storeStatistic(sessionId, data);
+      buffer.storeStatistic(data);
     } catch (TCStatisticsBufferException e) {
       throw new TCRuntimeException(e);
     }

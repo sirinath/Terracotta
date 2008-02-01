@@ -3,22 +3,22 @@
  */
 package com.tctest.statistics.buffer.h2;
 
-import com.tc.statistics.StatisticData;
 import com.tc.statistics.CaptureSession;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
+import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.util.TCAssertionError;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
-import java.math.BigDecimal;
 
 import junit.framework.TestCase;
 
@@ -120,10 +120,21 @@ public class H2StatisticsBufferTest extends TestCase {
     assertEquals(3L, session3.getRetriever().getSessionId());
   }
 
+  public void testStoreStatisticsDataNullSessionId() throws Exception {
+    long sessionid = buffer.createCaptureSession().getId();
+    try {
+      buffer.storeStatistic(new StatisticData());
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // sessionId can't be null
+    }
+  }
+
   public void testStoreStatisticsDataNullAgentIp() throws Exception {
     long sessionid = buffer.createCaptureSession().getId();
     try {
-      buffer.storeStatistic(sessionid, new StatisticData());
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid)));
       fail("expected exception");
     } catch (NullPointerException e) {
       // agentIp can't be null
@@ -133,7 +144,8 @@ public class H2StatisticsBufferTest extends TestCase {
   public void testStoreStatisticsDataNullData() throws Exception {
     long sessionid = buffer.createCaptureSession().getId();
     try {
-      buffer.storeStatistic(sessionid, new StatisticData()
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid))
         .agentIp(InetAddress.getLocalHost().getHostAddress()));
       fail("expected exception");
     } catch (NullPointerException e) {
@@ -146,7 +158,8 @@ public class H2StatisticsBufferTest extends TestCase {
 
     buffer.close();
     try {
-      buffer.storeStatistic(sessionid, new StatisticData()
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid))
         .agentIp(InetAddress.getLocalHost().getHostAddress())
         .data("test"));
       fail("expected exception");
@@ -159,14 +172,16 @@ public class H2StatisticsBufferTest extends TestCase {
   public void testStoreStatistics() throws Exception {
     long sessionid1 = buffer.createCaptureSession().getId();
 
-    long statid1 = buffer.storeStatistic(sessionid1, new StatisticData()
+    long statid1 = buffer.storeStatistic(new StatisticData()
+      .sessionId(new Long(sessionid1))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
     assertEquals(1, statid1);
 
-    long statid2 = buffer.storeStatistic(sessionid1, new StatisticData()
+    long statid2 = buffer.storeStatistic(new StatisticData()
+      .sessionId(new Long(sessionid1))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat")
@@ -175,7 +190,8 @@ public class H2StatisticsBufferTest extends TestCase {
 
     long sessionid2 = buffer.createCaptureSession().getId();
 
-    long statid3 = buffer.storeStatistic(sessionid2, new StatisticData()
+    long statid3 = buffer.storeStatistic(new StatisticData()
+      .sessionId(new Long(sessionid2))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat 2")
@@ -345,14 +361,16 @@ public class H2StatisticsBufferTest extends TestCase {
   private long populateBufferWithStatistics(long sessionid1, long sessionid2) throws TCStatisticsBufferException, UnknownHostException {
     String ip = InetAddress.getLocalHost().getHostAddress();
     for (int i = 1; i <= 100; i++) {
-      buffer.storeStatistic(sessionid1, new StatisticData()
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid1))
         .agentIp(ip)
         .moment(new Date())
         .name("stat1")
         .data(new Long(i)));
     }
     for (int i = 1; i <= 50; i++) {
-      buffer.storeStatistic(sessionid1, new StatisticData()
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid1))
         .agentIp(ip)
         .moment(new Date())
         .name("stat2")
@@ -360,7 +378,8 @@ public class H2StatisticsBufferTest extends TestCase {
     }
 
     for (int i = 1; i <= 70; i++) {
-      buffer.storeStatistic(sessionid2, new StatisticData()
+      buffer.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid2))
         .agentIp(ip)
         .moment(new Date())
         .name("stat1")
@@ -406,7 +425,7 @@ public class H2StatisticsBufferTest extends TestCase {
       return this;
     }
 
-    public boolean consumeStatisticData(long sessionId, StatisticData data) {
+    public boolean consumeStatisticData(StatisticData data) {
       if (data.getName().equals("stat1")) {
         if (countLimit1 > 0 &&
             countLimit1 == statCount1) {

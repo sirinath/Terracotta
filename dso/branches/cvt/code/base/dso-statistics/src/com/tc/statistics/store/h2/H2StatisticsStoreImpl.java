@@ -13,13 +13,13 @@ import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreOpenErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreInstallationErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreOpenErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreRetrievalErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
 import com.tc.util.Assert;
 
 import java.io.File;
@@ -74,8 +74,8 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       JdbcHelper.executeUpdate(database.getConnection(),
         "CREATE TABLE IF NOT EXISTS statisticlog (" +
           "id BIGINT NOT NULL PRIMARY KEY, " +
-          "capturesessionid BIGINT NOT NULL, " +
-          "agentip VARCHAR(39) NOT NULL, " +
+          "sessionId BIGINT NOT NULL, " +
+          "agentIp VARCHAR(39) NOT NULL, " +
           "moment TIMESTAMP NOT NULL, " +
           "statname VARCHAR(255) NOT NULL," +
           "statelement VARCHAR(255) NULL, " +
@@ -99,8 +99,9 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public long storeStatistic(final long sessionId, final StatisticData data) throws TCStatisticsStoreException {
+  public long storeStatistic(final StatisticData data) throws TCStatisticsStoreException {
     Assert.assertNotNull("data", data);
+    Assert.assertNotNull("sessionId property of data", data.getSessionId());
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
     Assert.assertNotNull("data property of data", data.getData());
 
@@ -111,10 +112,10 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
       
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, capturesessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionId, agentIp, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
-          statement.setLong(2, sessionId);
+          statement.setLong(2, data.getSessionId().longValue());
           statement.setString(3, data.getAgentIp());
           statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
           statement.setString(5, data.getName());
@@ -175,7 +176,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
         sql_where.add("agentIp = ?");
       }
       if (criteria.getSessionId() != null) {
-        sql_where.add("captureSessionId = ?");
+        sql_where.add("sessionId = ?");
       }
       if (criteria.getStart() != null) {
         sql_where.add("moment >= ?");
@@ -218,7 +219,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
           sql.append(it.next());
         }
       }
-      sql.append(" ORDER BY captureSessionId ASC, moment ASC, id ASC");
+      sql.append(" ORDER BY sessionId ASC, moment ASC, id ASC");
 
       JdbcHelper.executeQuery(database.getConnection(), sql.toString(), new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
@@ -254,7 +255,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             StatisticData data = database.getStatisticsData(resultSet);
 
             // consume the data
-            if (!consumer.consumeStatisticData(resultSet.getLong("captureSessionId"), data)) {
+            if (!consumer.consumeStatisticData(data)) {
               return;
             }
           }

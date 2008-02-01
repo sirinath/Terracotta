@@ -6,11 +6,9 @@ package com.tc.statistics.gatherer;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
 
 public interface StatisticsGatherer {
-  public void initialize() throws TCStatisticsGathererException;
+  public void createSession(String managerHostName, int managerPort) throws TCStatisticsGathererException;
 
-  public void connectManager(String managerHostName, int managerPort) throws TCStatisticsGathererException;
-
-  public void disconnectManager() throws TCStatisticsGathererException;
+  public void closeSession() throws TCStatisticsGathererException;
 
   public String[] getSupportedStatistics() throws TCStatisticsGathererException;
 

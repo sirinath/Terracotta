@@ -6,7 +6,21 @@ package com.tc.statistics.gatherer.exceptions;
 import com.tc.exception.TCException;
 
 public class TCStatisticsGathererException extends TCException {
+  private TCStatisticsGathererException next;
+
   public TCStatisticsGathererException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  public TCStatisticsGathererException getNextException() {
+    return next;
+  }
+
+  public synchronized void setNextException(TCStatisticsGathererException e) {
+    TCStatisticsGathererException last = this;
+    while (last.next != null) {
+      last = last.next;
+    }
+    last.next = e;
   }
 }

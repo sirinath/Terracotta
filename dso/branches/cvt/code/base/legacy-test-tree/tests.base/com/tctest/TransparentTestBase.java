@@ -5,6 +5,7 @@
 package com.tctest;
 
 import org.apache.commons.io.CopyUtils;
+import org.apache.commons.lang.ClassUtils;
 
 import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
@@ -219,6 +220,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   protected void setupConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
     // do nothing
+  }
+
+  protected File makeTestClassTmpDir() {
+    File tmp_dir_root = new File(getTestConfigObject().tempDirectoryRoot());
+    File tmp_dir = new File(tmp_dir_root, ClassUtils.getShortClassName(getClass()));
+    tmp_dir.mkdirs();
+    return tmp_dir;
   }
 
   private final void setupProxyConnect(RestartTestHelper helper, PortChooser portChooser) throws Exception {

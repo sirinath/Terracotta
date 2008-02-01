@@ -93,9 +93,18 @@ public class H2StatisticsStoreTest extends TestCase {
     newStore.close(); // should not throw an exception
   }
 
+  public void testStoreStatisticsDataNullSessionId() throws Exception {
+    try {
+      store.storeStatistic(new StatisticData());
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // sessionId can't be null
+    }
+  }
+
   public void testStoreStatisticsDataNullAgentIp() throws Exception {
     try {
-      store.storeStatistic(374938L, new StatisticData());
+      store.storeStatistic(new StatisticData().sessionId(new Long(374938L)));
       fail("expected exception");
     } catch (NullPointerException e) {
       // agentIp can't be null
@@ -104,7 +113,8 @@ public class H2StatisticsStoreTest extends TestCase {
 
   public void testStoreStatisticsDataNullData() throws Exception {
     try {
-      store.storeStatistic(374938L, new StatisticData()
+      store.storeStatistic(new StatisticData()
+        .sessionId(new Long(374938L))
         .agentIp(InetAddress.getLocalHost().getHostAddress()));
       fail("expected exception");
     } catch (NullPointerException e) {
@@ -115,7 +125,8 @@ public class H2StatisticsStoreTest extends TestCase {
   public void testStoreStatisticsUnopenedBuffer() throws Exception {
     store.close();
     try {
-      store.storeStatistic(342L, new StatisticData()
+      store.storeStatistic(new StatisticData()
+        .sessionId(new Long(342L))
         .agentIp(InetAddress.getLocalHost().getHostAddress())
         .data("test"));
       fail("expected exception");
@@ -126,21 +137,24 @@ public class H2StatisticsStoreTest extends TestCase {
   }
 
   public void testStoreStatistics() throws Exception {
-    long statid1 = store.storeStatistic(376487L, new StatisticData()
+    long statid1 = store.storeStatistic(new StatisticData()
+      .sessionId(new Long(376487L))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
     assertEquals(1, statid1);
 
-    long statid2 = store.storeStatistic(376487L, new StatisticData()
+    long statid2 = store.storeStatistic(new StatisticData()
+      .sessionId(new Long(376487L))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat")
       .data("stuff2"));
     assertEquals(2, statid2);
 
-    long statid3 = store.storeStatistic(2232L, new StatisticData()
+    long statid3 = store.storeStatistic(new StatisticData()
+      .sessionId(new Long(2232L))
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(new Date())
       .name("the stat 2")
@@ -292,7 +306,8 @@ public class H2StatisticsStoreTest extends TestCase {
   private long populateBufferWithStatistics(long sessionid1, long sessionid2) throws TCStatisticsStoreException, UnknownHostException {
     String ip = InetAddress.getLocalHost().getHostAddress();
     for (int i = 1; i <= 100; i++) {
-      store.storeStatistic(sessionid1, new StatisticData()
+      store.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid1))
         .agentIp(ip)
         .moment(new Date())
         .name("stat1")
@@ -300,7 +315,8 @@ public class H2StatisticsStoreTest extends TestCase {
         .data(new Long(i)));
     }
     for (int i = 1; i <= 50; i++) {
-      store.storeStatistic(sessionid1, new StatisticData()
+      store.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid1))
         .agentIp(ip)
         .moment(new Date())
         .name("stat2")
@@ -309,7 +325,8 @@ public class H2StatisticsStoreTest extends TestCase {
     }
 
     for (int i = 1; i <= 70; i++) {
-      store.storeStatistic(sessionid2, new StatisticData()
+      store.storeStatistic(new StatisticData()
+        .sessionId(new Long(sessionid2))
         .agentIp(ip)
         .moment(new Date())
         .name("stat1")
@@ -345,8 +362,8 @@ public class H2StatisticsStoreTest extends TestCase {
       return this;
     }
 
-    public boolean consumeStatisticData(long sessionId, StatisticData data) {
-      StatisticData previous = (StatisticData)lastDataPerSession.get(new Long(sessionId));
+    public boolean consumeStatisticData(StatisticData data) {
+      StatisticData previous = (StatisticData)lastDataPerSession.get(data.getSessionId());
       if (previous != null) {
         assertTrue(previous.getMoment().compareTo(data.getMoment()) <= 0);
       }
@@ -374,7 +391,7 @@ public class H2StatisticsStoreTest extends TestCase {
         statCount2++;
       }
 
-      lastDataPerSession.put(new Long(sessionId), data);
+      lastDataPerSession.put(data.getSessionId(), data);
 
       return true;
     }

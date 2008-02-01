@@ -3,24 +3,24 @@
  */
 package com.tc.statistics.database.impl;
 
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.database.StatisticsDatabase;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseCloseErrorException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotFoundException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseCloseErrorException;
-import com.tc.statistics.StatisticData;
 import com.tc.util.Assert;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.math.BigDecimal;
 
 public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   protected Connection connection;
@@ -76,7 +76,8 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   public StatisticData getStatisticsData(ResultSet resultSet) throws SQLException {
     StatisticData data;// obtain the statistics data
     data = new StatisticData()
-      .agentIp(resultSet.getString("agentip"))
+      .sessionId(new Long(resultSet.getLong("sessionId")))
+      .agentIp(resultSet.getString("agentIp"))
       .moment(resultSet.getTimestamp("moment"))
       .name(resultSet.getString("statname"))
       .element(resultSet.getString("statelement"));
