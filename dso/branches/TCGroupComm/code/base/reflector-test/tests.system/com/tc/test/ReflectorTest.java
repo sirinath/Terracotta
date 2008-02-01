@@ -8,7 +8,6 @@ import com.meterware.httpunit.HeadMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
-import com.tc.util.runtime.Vm;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -47,10 +46,6 @@ public class ReflectorTest extends TestCase {
   }
 
   public void testBrokenLinks() throws Exception {
-    // only run this test with jdk1.4 to reduce the amount
-    // of unnecessary runs
-    if (!Vm.isJDK14()) return;
-
     for (Iterator it = reflector.entrySet().iterator(); it.hasNext();) {
       Map.Entry e = (Map.Entry) it.next();
       if (excludedLinks.contains(e.getKey())) continue;
