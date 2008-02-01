@@ -5,6 +5,8 @@ package com.tc.statistics.retrieval;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.net.URL;
+import java.util.Properties;
 
 public class SigarUtil {
   private static final String PATH_SEPARATOR = System.getProperty("path.separator");
@@ -64,10 +66,30 @@ public class SigarUtil {
       buf.append(FILE_SEPARATOR).append(baseLibraryName);
 
       // FIXME: Do not hardcode version.  Instead, figure out how to retrieve it from the POM.
-      buf.append(FILE_SEPARATOR).append("1.5.0.0");
+      buf.append(FILE_SEPARATOR).append(getSigarVersion());
 
       System.setProperty("java.library.path", buf.toString());
     }
+  }
+
+  private static String getSigarVersion() {
+    URL propsUrl = SigarUtil.class.getResource("/sigarstats.properties");
+    if (propsUrl == null) {
+      return "";
+    }
+    Properties props = new Properties();
+    try {
+      props.load(propsUrl.openStream());
+    }
+    catch (Exception e) {
+      return "";
+    }
+
+    String result = props.getProperty("sigar.version");
+    if (result == null) {
+      result = "";
+    }
+    return result;
   }
 
   // Adapted from Sigar's ArchName.java
