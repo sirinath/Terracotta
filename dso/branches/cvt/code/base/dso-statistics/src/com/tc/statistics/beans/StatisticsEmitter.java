@@ -7,11 +7,11 @@ package com.tc.statistics.beans;
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.TCTimerImpl;
 
 import java.util.Collections;
@@ -105,7 +105,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
         while (it.hasNext()) {
           try {
             buffer.consumeStatistics(((Long)it.next()).longValue(), new StatisticsConsumer() {
-              public boolean consumeStatisticData(long sessionId, StatisticData data) {
+              public boolean consumeStatisticData(StatisticData data) {
                 // create the notification event
                 final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
                 notification.setUserData(data);
@@ -114,7 +114,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
                 // detect when a capture session has shut down and remove it
                 // from the list of active sessions
                 if (SRAShutdownTimestamp.ACTION_NAME.equals(data.getName())) {
-                  activeSessionIds.remove(new Long(sessionId));
+                  activeSessionIds.remove(data.getSessionId());
                 }
 
                 return true;

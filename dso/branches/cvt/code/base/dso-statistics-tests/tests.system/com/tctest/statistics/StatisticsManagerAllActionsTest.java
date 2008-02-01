@@ -76,11 +76,11 @@ public class StatisticsManagerAllActionsTest extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return StatisticsManagerTestApp.class;
+    return StatisticsManagerAllActionsTestApp.class;
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(StatisticsManagerTestApp.NODE_COUNT);
+    t.getTransparentAppConfig().setClientCount(StatisticsManagerAllActionsTestApp.NODE_COUNT);
     t.initializeTestRunner();
   }
 }

@@ -6,5 +6,5 @@ package com.tc.statistics.buffer;
 import com.tc.statistics.StatisticData;
 
 public interface StatisticsConsumer {
-  public boolean consumeStatisticData(long sessionId, StatisticData data);
+  public boolean consumeStatisticData(StatisticData data);
 }

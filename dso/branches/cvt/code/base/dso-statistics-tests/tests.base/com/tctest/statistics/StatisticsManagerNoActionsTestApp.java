@@ -12,18 +12,13 @@ import com.tctest.runner.AbstractTransparentApp;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
-public class StatisticsManagerTestApp extends AbstractTransparentApp {
+public class StatisticsManagerNoActionsTestApp extends AbstractTransparentApp {
 
   public static final int NODE_COUNT = 2;
 
-  public static final String CONFIG_FILE = "config-file";
-  public static final String PORT_NUMBER = "port-number";
-  public static final String HOST_NAME = "host-name";
-  public static final String JMX_PORT = "jmx-port";
-
   private CyclicBarrier barrier = new CyclicBarrier(NODE_COUNT);
 
-  public StatisticsManagerTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
+  public StatisticsManagerNoActionsTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
@@ -40,13 +35,12 @@ public class StatisticsManagerTestApp extends AbstractTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    String testClass = StatisticsManagerTestApp.class.getName();
+    String testClass = StatisticsManagerNoActionsTestApp.class.getName();
 
     config.getOrCreateSpec(testClass)
       .addRoot("barrier", "barrier");
 
     config.addWriteAutolock("* " + testClass + "*.*(..)");
     new CyclicBarrierSpec().visit(visitor, config);
-
   }
 }

@@ -3,14 +3,14 @@
  */
 package com.tctest.statistics;
 
-import com.tc.util.Assert;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
+import com.tc.util.Assert;
 
 import java.util.Collection;
 
-import javax.management.NotificationListener;
 import javax.management.Notification;
+import javax.management.NotificationListener;
 
 public class CollectingNotificationListener implements NotificationListener {
   private boolean shutdown = false;

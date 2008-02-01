@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 public class StatisticData implements Serializable {
   private static final long serialVersionUID = -5767295895871812119L;
 
+  private Long sessionId;
   private String agentIp;
   private Date moment;
   private String name;
@@ -66,6 +67,19 @@ public class StatisticData implements Serializable {
     } catch (UnknownHostException e) {
       throw new TCRuntimeException(e);
     }
+  }
+
+  public Long getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(Long sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  public StatisticData sessionId(Long sessionId) {
+    setSessionId(sessionId);
+    return this;
   }
 
   public String getAgentIp() {
@@ -167,6 +181,7 @@ public class StatisticData implements Serializable {
 
   public Object clone() {
     return new StatisticData()
+      .sessionId(sessionId)
       .agentIp(agentIp)
       .moment(moment)
       .name(name)
@@ -184,6 +199,7 @@ public class StatisticData implements Serializable {
       data_formatted = String.valueOf(data);
     }
     return "["
+           + "sessionId = " + sessionId + "; "
            + "agentIp = " + agentIp + "; "
            + "moment = " + (null == moment ? String.valueOf(moment): format.format(moment)) + "; "
            + "name = " + name + "; "

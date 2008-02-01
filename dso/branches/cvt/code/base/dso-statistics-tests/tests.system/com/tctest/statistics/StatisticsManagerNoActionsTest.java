@@ -4,11 +4,10 @@
 package com.tctest.statistics;
 
 import com.tc.management.JMXConnectorProxy;
-import com.tc.management.beans.L2MBeanNames;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
 import com.tctest.TransparentTestBase;
@@ -71,11 +70,11 @@ public class StatisticsManagerNoActionsTest extends TransparentTestBase {
   }
 
   protected Class getApplicationClass() {
-    return StatisticsManagerTestApp.class;
+    return StatisticsManagerNoActionsTestApp.class;
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(StatisticsManagerTestApp.NODE_COUNT);
+    t.getTransparentAppConfig().setClientCount(StatisticsManagerNoActionsTestApp.NODE_COUNT);
     t.initializeTestRunner();
   }
 }

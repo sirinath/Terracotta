@@ -12,7 +12,7 @@ public interface StatisticsStore {
 
   public void close() throws TCStatisticsStoreException;
 
-  public long storeStatistic(long sessionId, StatisticData data) throws TCStatisticsStoreException;
+  public long storeStatistic(StatisticData data) throws TCStatisticsStoreException;
 
   public void retrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticsConsumer consumer) throws TCStatisticsStoreException;
 }

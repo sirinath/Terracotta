@@ -3,9 +3,8 @@
  */
 package com.tc.statistics.database;
 
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

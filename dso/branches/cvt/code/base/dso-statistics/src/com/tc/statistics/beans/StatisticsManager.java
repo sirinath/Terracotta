@@ -4,12 +4,12 @@
  */
 package com.tc.statistics.beans;
 
+import com.tc.statistics.CaptureSession;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.StatisticsRetriever;
-import com.tc.statistics.StatisticRetrievalAction;
-import com.tc.statistics.CaptureSession;
 
 import java.util.Collection;
 import java.util.Map;
