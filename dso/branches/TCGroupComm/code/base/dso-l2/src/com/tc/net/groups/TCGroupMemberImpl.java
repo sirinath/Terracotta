@@ -76,6 +76,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
       } else if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
                  || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
         ready.set(false);
+        if (!channel.isClosed()) channel.close();
         closedEventNotified = true;
         if (manager != null) manager.memberDisappeared(this);
       }
