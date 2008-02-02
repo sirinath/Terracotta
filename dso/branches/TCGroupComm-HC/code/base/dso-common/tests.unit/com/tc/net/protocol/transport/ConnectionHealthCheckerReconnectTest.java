@@ -58,10 +58,22 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
 
-    serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                new NullConnectionPolicy(), serverHCConf);
-    clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                new NullConnectionPolicy(), clientHCConf);
+    if (serverHCConf != null) {
+      serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy(), serverHCConf);
+    } else {
+      serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy());
+    }
+
+    if (clientHCConf != null) {
+      clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy(), clientHCConf);
+    } else {
+      clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy());
+
+    }
 
     serverLsnr = serverComms.createListener(new NullSessionManager(), new TCSocketAddress(0), false,
                                             new DefaultConnectionIdFactory());
@@ -125,29 +137,28 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
   public long getMinSleepTimeToSendFirstProbe(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    return ((config.getKeepAliveIdleTime() + 2 * config.getKeepAliveInterval()) * 1000);
+    return ((config.getPingIdleTime() + 2 * config.getPingInterval()) * 1000);
   }
 
   public long getMinSleepTimeToConirmDeath(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    long exact_time = (config.getKeepAliveIdleTime() + (config.getKeepAliveInterval() * config.getKeepAliveProbes())) * 1000;
-    long grace_time = config.getKeepAliveInterval() * 1000;
+    long exact_time = (config.getPingIdleTime() + (config.getPingInterval() * config.getPingProbes())) * 1000;
+    long grace_time = config.getPingInterval() * 1000;
     return (exact_time + grace_time);
   }
 
   public void testL1DisconnectAndL1Reconnect() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test11");
-    this.setUp(hcConfig, new NullHealthCheckerConfigImpl());
+    this.setUp(hcConfig, null);
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
-    assertFalse(((CommunicationsManagerImpl) clientComms).getConnHealthChecker().isEnabled());
-    ConnectionHealthChecker connHC = ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) serverComms)
+        .getConnHealthChecker();
     assertNotNull(connHC);
 
-    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -190,16 +201,14 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
 
   public void testL2CloseL1Reconnect() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test12");
-    this.setUp(hcConfig, new NullHealthCheckerConfigImpl());
+    this.setUp(hcConfig, null);
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
-    assertFalse(((CommunicationsManagerImpl) clientComms).getConnHealthChecker().isEnabled());
-    ConnectionHealthChecker connHC = ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
     assertNotNull(connHC);
 
-    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -222,13 +231,13 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
 
     System.out.println("Sleeping for " + getMinSleepTimeToSendFirstProbe(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToSendFirstProbe(hcConfig));
-    
+
     proxy.start();
     System.out.println("Proxy STARTED");
-    
+
     System.out.println("Sleeping for " + getMinSleepTimeToSendFirstProbe(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToSendFirstProbe(hcConfig));
-    
+
     /* By Now, the client would have reconnected */
     assertEquals(1, connHC.getTotalConnsUnderMonitor());
 

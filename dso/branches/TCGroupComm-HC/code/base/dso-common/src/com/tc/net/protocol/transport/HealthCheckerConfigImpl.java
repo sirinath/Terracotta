@@ -8,36 +8,36 @@ import com.tc.properties.TCProperties;
 
 public class HealthCheckerConfigImpl implements HealthCheckerConfig {
 
-  private final boolean    keepaliveEnable;
-  private final boolean    doExtraChecks;
+  private final boolean    enable;
+  private final boolean    doSocketConnect;
   private final String     name;
-  private final int        keepaliveIdleTime;
-  private final int        keepaliveInterval;
-  private final int        keepaliveProbes;
+  private final int        pingIdleTime;
+  private final int        pingInterval;
+  private final int        pingProbes;
 
   // Default keepalive values in seconds
-  private final static int KEEPALIVE_IDLETIME = 45;
-  private final static int KEEPALIVE_INTERVAL = 15;
-  private final static int KEEPALIVE_PROBECNT = 3;
+  private final static int PING_IDLETIME = 45;
+  private final static int PING_INTERVAL = 15;
+  private final static int PING_PROBECNT = 3;
 
   // for testing
-  boolean                  dummy              = false;
+  boolean                  dummy         = false;
 
   public HealthCheckerConfigImpl(TCProperties healthCheckerProperties, String hcName) {
-    this.keepaliveIdleTime = healthCheckerProperties.getInt("idletime");
-    this.keepaliveInterval = healthCheckerProperties.getInt("interval");
-    this.keepaliveProbes = healthCheckerProperties.getInt("probes");
+    this.pingIdleTime = healthCheckerProperties.getInt("ping.idletime");
+    this.pingInterval = healthCheckerProperties.getInt("ping.interval");
+    this.pingProbes = healthCheckerProperties.getInt("ping.probes");
     this.name = hcName;
-    this.doExtraChecks = healthCheckerProperties.getBoolean("extraChecks");
-    this.keepaliveEnable = healthCheckerProperties.getBoolean("enabled");
+    this.doSocketConnect = healthCheckerProperties.getBoolean("socketConnect");
+    this.enable = healthCheckerProperties.getBoolean("ping.enabled");
   }
 
   public HealthCheckerConfigImpl(String name) {
-    this(KEEPALIVE_IDLETIME, KEEPALIVE_INTERVAL, KEEPALIVE_PROBECNT, name, false);
+    this(PING_IDLETIME, PING_INTERVAL, PING_PROBECNT, name, false);
   }
 
   public HealthCheckerConfigImpl(String name, boolean extraCheck) {
-    this(KEEPALIVE_IDLETIME, KEEPALIVE_INTERVAL, KEEPALIVE_PROBECNT, name, extraCheck);
+    this(PING_IDLETIME, PING_INTERVAL, PING_PROBECNT, name, extraCheck);
   }
 
   public HealthCheckerConfigImpl(int idle, int interval, int probes, String name) {
@@ -45,32 +45,32 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
   }
 
   public HealthCheckerConfigImpl(int idle, int interval, int probes, String name, boolean extraCheck) {
-    this.keepaliveIdleTime = idle;
-    this.keepaliveInterval = interval;
-    this.keepaliveProbes = probes;
+    this.pingIdleTime = idle;
+    this.pingInterval = interval;
+    this.pingProbes = probes;
     this.name = name;
-    this.doExtraChecks = extraCheck;
-    this.keepaliveEnable = true;
+    this.doSocketConnect = extraCheck;
+    this.enable = true;
   }
 
-  public boolean doExtraChecks() {
-    return doExtraChecks;
+  public boolean doSocketConnect() {
+    return doSocketConnect;
   }
 
   public boolean isHealthCheckerEnabled() {
-    return keepaliveEnable;
+    return enable;
   }
 
-  public int getKeepAliveIdleTime() {
-    return this.keepaliveIdleTime;
+  public int getPingIdleTime() {
+    return this.pingIdleTime;
   }
 
-  public int getKeepAliveInterval() {
-    return this.keepaliveInterval;
+  public int getPingInterval() {
+    return this.pingInterval;
   }
 
-  public int getKeepAliveProbes() {
-    return this.keepaliveProbes;
+  public int getPingProbes() {
+    return this.pingProbes;
   }
 
   public String getHealthCheckerName() {
@@ -82,7 +82,7 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
   public void setDummy() {
     this.dummy = true;
   }
-  
+
   public boolean isDummy() {
     return this.dummy;
   }

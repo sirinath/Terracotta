@@ -51,13 +51,6 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected MessageTransportBase(MessageTransportState initialState,
                                  TransportHandshakeErrorHandler handshakeErrorHandler,
                                  TransportHandshakeMessageFactory messageFactory, boolean isOpen, TCLogger logger) {
-    this(initialState, handshakeErrorHandler, messageFactory, isOpen, logger, null);
-  }
-
-  protected MessageTransportBase(MessageTransportState initialState,
-                                 TransportHandshakeErrorHandler handshakeErrorHandler,
-                                 TransportHandshakeMessageFactory messageFactory, boolean isOpen, TCLogger logger,
-                                 ConnectionHealthChecker connHlthChkr) {
 
     super(logger);
     this.handshakeErrorHandler = handshakeErrorHandler;
@@ -116,7 +109,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
         // he he he Dummy HC.. i will not send u back anything
         return; // RETURN BACK
       } else {
-        throw new AssertionError("Wrong handshake message from: " + message.getSource());
+        throw new AssertionError("Wrong HealthChecker Probe message from: " + message.getSource());
       }
     }
     this.receiveLayer.receive(message.getPayload());

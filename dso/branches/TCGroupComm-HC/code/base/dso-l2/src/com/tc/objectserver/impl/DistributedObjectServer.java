@@ -54,6 +54,7 @@ import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
+import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
@@ -191,7 +192,7 @@ import javax.management.NotCompliantMBeanException;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- *
+ * 
  * @author steve
  */
 public class DistributedObjectServer extends SEDA implements TCDumper {
@@ -235,8 +236,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
     this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State());
-    
-    
+
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -404,7 +404,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy, l2Properties.getInt("tccom.workerthreads"));
+                                                          connectionPolicy, l2Properties.getInt("tccom.workerthreads"),
+                                                          new HealthCheckerConfigImpl(l2Properties
+                                                              .getPropertiesFor("healthCheck.l1"), "DSO Server"));
 
     final DSOApplicationEvents appEvents;
     try {
