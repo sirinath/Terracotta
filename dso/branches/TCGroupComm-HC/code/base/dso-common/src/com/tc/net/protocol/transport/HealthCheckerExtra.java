@@ -38,8 +38,9 @@ public class HealthCheckerExtra {
       h1 = false;
     } catch (IOException e) {
       h1 = false;
+    } finally {
+      conn.close(LONG_GC_CONNECTION_TIMEOUT);
     }
-    conn.close(LONG_GC_CONNECTION_TIMEOUT);
 
     /*
      * Other Heurisrtics ... keep adding if you find a better one h2 .. h3 .. h4

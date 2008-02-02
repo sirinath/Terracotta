@@ -18,26 +18,19 @@ public class ConnectionHealthCheckerContextEchoImpl implements ConnectionHealthC
   }
 
   public boolean isDead(long maxIdleTime) {
-    return true;
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
   public boolean isDying() {
-    return true;
-  }
-
-  public void pingReplyReceived(long time) {
-    //
-  }
-
-  public void pingSent(long time) {
-    //
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
   public void refresh() {
-    //
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
   public void receiveDummyPing() {
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
   public void receivePing() {
@@ -53,23 +46,26 @@ public class ConnectionHealthCheckerContextEchoImpl implements ConnectionHealthC
   }
 
   public void receivePingReply() {
+    throw new AssertionError("HealthChecker ECHO impl");
     //
   }
 
   public void sendDummyPing() {
+    throw new AssertionError("HealthChecker ECHO impl");
     //
   }
 
   public void sendPing() {
+    throw new AssertionError("HealthChecker ECHO impl");
     //
   }
 
   public boolean extraCheck() {
-    return false;
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
   public int getExtraCheckSuccessCount() {
-    return 99;
+    throw new AssertionError("HealthChecker ECHO impl");
   }
 
 }

@@ -16,8 +16,8 @@ public class ServerMessageTransport extends MessageTransportBase {
   private static final TCLogger smtLogger = TCLogging.getLogger(ServerMessageTransport.class);
 
   public ServerMessageTransport(ConnectionID connectionID, TransportHandshakeErrorHandler handshakeErrorHandler,
-                                TransportHandshakeMessageFactory messageFactory, ConnectionHealthChecker connHlthChkr) {
-    super(MessageTransportState.STATE_RESTART, handshakeErrorHandler, messageFactory, true, smtLogger, connHlthChkr);
+                                TransportHandshakeMessageFactory messageFactory) {
+    super(MessageTransportState.STATE_RESTART, handshakeErrorHandler, messageFactory, true, smtLogger);
     this.connectionId = connectionID;
   }
 
@@ -28,13 +28,7 @@ public class ServerMessageTransport extends MessageTransportBase {
   public ServerMessageTransport(ConnectionID connectionId, TCConnection conn,
                                 TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory) {
-    this(connectionId, conn, handshakeErrorHandler, messageFactory, null);
-  }
-
-  public ServerMessageTransport(ConnectionID connectionId, TCConnection conn,
-                                TransportHandshakeErrorHandler handshakeErrorHandler,
-                                TransportHandshakeMessageFactory messageFactory, ConnectionHealthChecker connHlthChkr) {
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, true, smtLogger, connHlthChkr);
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, true, smtLogger);
     this.connectionId = connectionId;
     Assert.assertNotNull(conn);
     wireNewConnection(conn);

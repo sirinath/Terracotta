@@ -58,10 +58,22 @@ public class ConnectionHealthCheckerExtraCheckTest extends TCTestCase {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
 
-    serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                new NullConnectionPolicy(), serverHCConf);
-    clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                new NullConnectionPolicy(), clientHCConf);
+    if (serverHCConf != null) {
+      serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy(), serverHCConf);
+    } else {
+      serverComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy());
+    }
+
+    if (clientHCConf != null) {
+      clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy(), clientHCConf);
+    } else {
+      clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                  new NullConnectionPolicy());
+
+    }
 
     serverLsnr = serverComms.createListener(new NullSessionManager(), new TCSocketAddress(0), false,
                                             new DefaultConnectionIdFactory());
@@ -124,27 +136,27 @@ public class ConnectionHealthCheckerExtraCheckTest extends TCTestCase {
   public long getMinSleepTimeToSendFirstProbe(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    return ((config.getKeepAliveIdleTime() + 2 * config.getKeepAliveInterval()) * 1000);
+    return ((config.getPingIdleTime() + 2 * config.getPingInterval()) * 1000);
   }
 
   public long getMinSleepTimeToConirmDeath(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    long exact_time = (config.getKeepAliveIdleTime() + (config.getKeepAliveInterval() * config.getKeepAliveProbes())) * 1000;
-    long grace_time = config.getKeepAliveInterval() * 1000;
+    long exact_time = (config.getPingIdleTime() + (config.getPingInterval() * config.getPingProbes())) * 1000;
+    long grace_time = config.getPingInterval() * 1000;
     return (exact_time + grace_time);
   }
 
   public long getMinExtraCheckTime(HealthCheckerConfig config) {
     assertNotNull(config);
-    long extraTimeSecs = (config.getKeepAliveInterval() * config.getKeepAliveProbes()) + config.getKeepAliveInterval();
+    long extraTimeSecs = (config.getPingInterval() * config.getPingProbes()) + config.getPingInterval();
     return (extraTimeSecs * 1000);
   }
   
   public long getFullExtraCheckTime(HealthCheckerConfig config) {
     assertNotNull(config);
-    long extraTimeSecs = config.getKeepAliveInterval() * config.getKeepAliveProbes()
-                         * ConnectionHealthChecker.MAX_EXTRACHECK_VALIDITY;
+    long extraTimeSecs = config.getPingInterval() * config.getPingProbes()
+                         * ConnectionHealthCheckerImpl.MAX_EXTRACHECK_VALIDITY;
 
     return (extraTimeSecs * 1000);
   }
@@ -152,16 +164,14 @@ public class ConnectionHealthCheckerExtraCheckTest extends TCTestCase {
   public void testL2ExtraCheckL1() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test31", true /* EXTRA CHECK ON */);
     ((HealthCheckerConfigImpl) hcConfig).setDummy(); // Sends Dummy Ping Probe
-    this.setUp(hcConfig, new NullHealthCheckerConfigImpl());
+    this.setUp(hcConfig, null); 
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
-    assertFalse(((CommunicationsManagerImpl) clientComms).getConnHealthChecker().isEnabled());
-    ConnectionHealthChecker connHC = ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
     assertNotNull(connHC);
 
-    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -191,16 +201,14 @@ public class ConnectionHealthCheckerExtraCheckTest extends TCTestCase {
   public void testL1ExtraCheckL2() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test32", true /* EXTRA CHECK ON */);
     ((HealthCheckerConfigImpl) hcConfig).setDummy(); // Sends Dummy Ping Probe
-    this.setUp(new NullHealthCheckerConfigImpl(), hcConfig);
+    this.setUp(null, hcConfig);
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
-    assertFalse(((CommunicationsManagerImpl) serverComms).getConnHealthChecker().isEnabled());
-    ConnectionHealthChecker connHC = ((CommunicationsManagerImpl) clientComms).getConnHealthChecker();
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) clientComms).getConnHealthChecker();
     assertNotNull(connHC);
 
-    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);
@@ -233,17 +241,15 @@ public class ConnectionHealthCheckerExtraCheckTest extends TCTestCase {
   
   public void testL2ExtraCheckL1WithProxyDelay() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5, 2, 2, "ServerCommsHC-Test33", true /* EXTRA CHECK ON */);
-    this.setUp(hcConfig, new NullHealthCheckerConfigImpl());
+    this.setUp(hcConfig, null);
 
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
-    assertFalse(((CommunicationsManagerImpl) clientComms).getConnHealthChecker().isEnabled());
-    ConnectionHealthChecker connHC = ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) serverComms).getConnHealthChecker();
     assertNotNull(connHC);
 
-    assertTrue(connHC.isEnabled());
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
       System.out.println("Yet to start the connection health cheker thread...");
       ThreadUtil.reallySleep(1000);

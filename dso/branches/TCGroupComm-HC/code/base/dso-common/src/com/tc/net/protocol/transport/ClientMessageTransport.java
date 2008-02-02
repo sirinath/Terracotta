@@ -46,16 +46,9 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeErrorHandler handshakeErrorHandler,
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
-    this(clientConnectionEstablisher, handshakeErrorHandler, messageFactory, wireProtocolAdaptorFactory, null);
-  }
-
-  public ClientMessageTransport(ClientConnectionEstablisher clientConnectionEstablisher,
-                                TransportHandshakeErrorHandler handshakeErrorHandler,
-                                TransportHandshakeMessageFactory messageFactory,
-                                WireProtocolAdaptorFactory wireProtocolAdaptorFactory, ConnectionHealthChecker connHlthChkr) {
 
     super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, TCLogging
-        .getLogger(ClientMessageTransport.class), connHlthChkr);
+        .getLogger(ClientMessageTransport.class));
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }
