@@ -222,9 +222,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // do nothing
   }
 
-  protected File makeTestClassTmpDir() {
+  protected File makeTmpDir(Class klass) {
     File tmp_dir_root = new File(getTestConfigObject().tempDirectoryRoot());
-    File tmp_dir = new File(tmp_dir_root, ClassUtils.getShortClassName(getClass()));
+    File tmp_dir = new File(tmp_dir_root, ClassUtils.getShortClassName(klass));
     tmp_dir.mkdirs();
     return tmp_dir;
   }
