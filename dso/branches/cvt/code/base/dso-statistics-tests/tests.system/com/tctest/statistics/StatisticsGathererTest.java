@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class StatisticsGathererTest extends TransparentTestBase {
   protected void duringRunningCluster() throws Exception {
-    File tmp_dir = makeTestClassTmpDir();
+    File tmp_dir = makeTmpDir(getClass());
     
     StatisticsStore store = new H2StatisticsStoreImpl(tmp_dir);
     StatisticsGatherer gatherer = new StatisticsGathererImpl(store);

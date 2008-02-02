@@ -297,9 +297,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException, FileNotCreatedException {
 
     L2LockStatsManager lockStatsManager = new L2LockStatsManagerImpl();
-    
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
 
+    // create the statistics buffer
     File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
     FileUtils.forceMkdir(statPath);
     statisticsBuffer = new H2StatisticsBufferImpl(statPath);
@@ -308,7 +308,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     } catch (TCStatisticsBufferException sbe) {
       throw new TCRuntimeException("Unable to open the statistics buffer", sbe);
     }
-    
+
+    // create the statistics emitter mbean
     try {
       statisticsEmitterMBean = new StatisticsEmitter(statisticsBuffer);
     } catch (NotCompliantMBeanException ncmbe) {
@@ -316,6 +317,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
+    // setup an empty statistics retrieval registry
     StatisticsRetrievalRegistry registry = new StatisticsRetrievalRegistryImpl();
     try {
       statisticsManagerMBean = new StatisticsManager(registry, statisticsBuffer);
@@ -324,6 +326,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
+    // start the JMX server
     try {
       startJMXServer();
     } catch (Exception e) {
@@ -703,30 +706,18 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     logger.debug("Client Reconnect Window: " + reconnectTimeout + " seconds");
     reconnectTimeout *= 1000;
     ServerClientHandshakeManager clientHandshakeManager = new ServerClientHandshakeManager(
-                                                                                           TCLogging
-                                                                                               .getLogger(ServerClientHandshakeManager.class),
-                                                                                           channelManager,
-                                                                                           transactionManager,
-                                                                                           sequenceValidator,
-                                                                                           clientStateManager,
-                                                                                           lockManager,
-                                                                                           stageManager
-                                                                                               .getStage(
-                                                                                                         ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
-                                                                                               .getSink(),
-                                                                                           objectStore,
-                                                                                           new TCTimerImpl(
-                                                                                                           "Reconnect timer",
-                                                                                                           true),
-                                                                                           reconnectTimeout,
-                                                                                           persistent, consoleLogger);
+        TCLogging.getLogger(ServerClientHandshakeManager.class),
+        channelManager, transactionManager, sequenceValidator, clientStateManager, lockManager,
+        stageManager
+          .getStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
+          .getSink(),
+        objectStore, new TCTimerImpl("Reconnect timer", true), reconnectTimeout, persistent, consoleLogger);
 
     boolean networkedHA = configSetupManager.haConfig().isNetworkedActivePassive();
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, gtxm, channelManager, configSetupManager
-                                              .haConfig());
+                                          objectManager, transactionManager, gtxm, channelManager, configSetupManager.haConfig());
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
