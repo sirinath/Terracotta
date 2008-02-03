@@ -22,31 +22,31 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private final NodeIdComparable dstNodeID;
   private final NodeIdComparable peerNodeID;
   // set member ready only when both ends are in group
-  private AtomicBoolean          ready               = new AtomicBoolean(false);
-  private AtomicBoolean          joined              = new AtomicBoolean(false);
+  private final AtomicBoolean    ready               = new AtomicBoolean(false);
+  private final AtomicBoolean    joined              = new AtomicBoolean(false);
   private boolean                closedEventNotified = false;
   private final boolean          isClientChannel;
 
   /*
    * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
    */
-  public TCGroupMemberImpl(NodeIdComparable srcNodeID, NodeIdComparable dstNodeID, MessageChannel channel) {
+  public TCGroupMemberImpl(NodeIdComparable localNodeID, NodeIdComparable dstNodeID, MessageChannel channel) {
     isClientChannel = true;
     this.channel = channel;
-    this.srcNodeID = srcNodeID;
+    this.srcNodeID = localNodeID;
     this.dstNodeID = dstNodeID;
     this.peerNodeID = this.dstNodeID;
     this.channel.addListener(this);
   }
 
   /*
-   * Member channel established from src to dst. Called by channel receiver, channelCreated, peer is srcNodeID.
+   * Member channel established from dst to src. Called by channel receiver, channelCreated, peer is srcNodeID.
    */
-  public TCGroupMemberImpl(MessageChannel channel, NodeIdComparable srcNodeID, NodeIdComparable dstNodeID) {
+  public TCGroupMemberImpl(MessageChannel channel, NodeIdComparable srcNodeID, NodeIdComparable localNodeID) {
     isClientChannel = false;
     this.channel = channel;
     this.srcNodeID = srcNodeID;
-    this.dstNodeID = dstNodeID;
+    this.dstNodeID = localNodeID;
     this.peerNodeID = this.srcNodeID;
     this.channel.addListener(this);
   }
