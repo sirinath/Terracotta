@@ -10,37 +10,44 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.object.config.schema.NewL2DSOConfig;
+import com.tc.properties.TCPropertiesImpl;
+import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.concurrent.TCExceptionResultException;
+import com.tc.util.concurrent.TCFuture;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private static final TCLogger               logger            = TCLogging
-                                                                    .getLogger(TCGroupMemberDiscoveryStatic.class);
+  private static final TCLogger                     logger            = TCLogging
+                                                                          .getLogger(TCGroupMemberDiscoveryStatic.class);
 
-  private Node                                local;
-  private Node[]                              nodes;
-  private TCGroupManagerImpl                  manager;
-  private AtomicBoolean                       running           = new AtomicBoolean(false);
-  private AtomicBoolean                       stopAttempt       = new AtomicBoolean(false);
-  private long                                connectIntervalms = 1000;
-  private ConcurrentHashMap<Node, NodeStatus> statusMap         = new ConcurrentHashMap<Node, NodeStatus>();
+  private Node                                      local;
+  private final Node[]                              nodes;
+  private TCGroupManagerImpl                        manager;
+  private final AtomicBoolean                       running           = new AtomicBoolean(false);
+  private final AtomicBoolean                       stopAttempt       = new AtomicBoolean(false);
+  private final ConcurrentHashMap<Node, NodeStatus> statusMap         = new ConcurrentHashMap<Node, NodeStatus>();
+  private final static long                         connectIntervalms = 1000;
+  private final static long                         handshakeTimeout;
+  static {
+    handshakeTimeout = TCPropertiesImpl.getProperties().getLong(TCGroupManagerImpl.NHA_TCCOMM_HANDSHAKE_TIMEOUT);
+  }
 
   public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
     nodes = makeAllNodes(configSetupManager);
   }
 
   /*
-   * for testing purpose
+   * for testing purpose only
    */
-  public TCGroupMemberDiscoveryStatic(Node[] nodes) {
+  TCGroupMemberDiscoveryStatic(Node[] nodes) {
     for (Node node : nodes) {
-      statusMap.put(node, new NodeStatus());
+      statusMap.put(node, new NodeStatus(node));
     }
     this.nodes = nodes;
   }
@@ -62,24 +69,28 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   private Node makeNode(NewL2DSOConfig l2, String bind) {
     Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt(), bind);
-    statusMap.put(node, new NodeStatus());
+    statusMap.put(node, new NodeStatus(node));
     return (node);
-  }
-
-  public Node[] getAllNodes() {
-    return nodes;
   }
 
   public void setTCGroupManager(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
 
+  TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
+      MaxConnectionsExceededException, IOException {
+    return (manager.openChannel(hostname, groupPort));
+  }
+
+  NodeID getLocalNodeID() throws GroupException {
+    return (manager.getLocalNodeID());
+  }
+
   public void start() throws GroupException {
-    if (nodes == null || nodes.length == 0) { throw new GroupException("Wrong nodes"); }
+    if (nodes == null || nodes.length == 0) { throw new GroupException("No nodes"); }
 
     if (running.get()) return;
     running.set(true);
-    openChannels();
 
     Thread discover = new Thread(new Runnable() {
       public void run() {
@@ -91,79 +102,105 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         stopAttempt.set(false);
         running.set(false);
       }
-    }, "Member discovery");
+    }, "Static Member discovery");
+    discover.setDaemon(true);
     discover.start();
   }
 
   /*
-   * Open channel to each unconnected Node
+   * Open channel to each not connected Node
    */
   protected void openChannels() {
 
-    ArrayList<Node> toConnectList = new ArrayList<Node>();
     for (int i = 0; i < nodes.length; ++i) {
       Node n = nodes[i];
-      NodeStatus status = statusMap.get(n);
+      Assert.assertNotNull(n);
 
       // skip local one
-      if (local.equals(n) || (n == null)) continue;
+      if (local.equals(n)) continue;
+
+      NodeStatus status = statusMap.get(n);
+      Assert.assertNotNull(status);
 
       if (findNodeID(n) == null) {
-        if (status.isTimeToCheck()) toConnectList.add(n);
+        if (status.isTimeToCheck(local)) {
+          status.newFuture();
+          ChannelOpener chOpener = new ChannelOpener(this, local, n, status);
+          chOpener.start();
+          // interrupt/cancel thread if make no progress
+          CancelThread cancelThread = new CancelThread(this, n, chOpener, handshakeTimeout);
+          cancelThread.start();
+        }
       } else {
         status.setOk();
       }
     }
+  }
 
-    ChannelOpener chOpeners[] = new ChannelOpener[toConnectList.size()];
-    for (int i = 0; i < toConnectList.size(); ++i) {
-      chOpeners[i] = new ChannelOpener(toConnectList.get(i));
-      chOpeners[i].start();
+  private static class CancelThread extends Thread {
+    private final TCGroupMemberDiscoveryStatic discover;
+    private final Node                         node;
+    private final Thread                       target;
+    private final long                         timeout;
+
+    public CancelThread(TCGroupMemberDiscoveryStatic discover, Node node, Thread target, long timeout) {
+      super("CancelThread on " + target);
+      this.discover = discover;
+      this.node = node;
+      this.target = target;
+      this.timeout = timeout;
     }
-    for (int i = 0; i < toConnectList.size(); ++i) {
-      try {
-        chOpeners[i].join();
-      } catch (InterruptedException e) {
-        logger.warn("Connect to " + toConnectList.get(i) + " " + e);
+
+    public void run() {
+      ThreadUtil.reallySleep(timeout);
+      // cancel thread if made no progress
+      if (target.isAlive() && (discover.findNodeID(node) == null)) {
+        target.interrupt();
+        logger.warn("Cancelled channel opener " + target);
       }
     }
   }
 
-  private class ChannelOpener extends Thread {
-    private Node       node;
-    private NodeStatus status;
+  private static class ChannelOpener extends Thread {
+    private final TCGroupMemberDiscoveryStatic discover;
+    private final Node                         node;
+    private final NodeStatus                   status;
 
-    ChannelOpener(Node node) {
+    ChannelOpener(TCGroupMemberDiscoveryStatic discover, Node local, Node node, NodeStatus status) {
       super(local.toString() + " open channel to " + node);
+      this.discover = discover;
       this.node = node;
-      this.status = statusMap.get(this.node);
+      this.status = status;
     }
 
     public void run() {
-      
-      if (findNodeID(node) != null) return;
-      
+
+      TCFuture runStatus = status.getFuture();
+      Assert.assertNotNull(status);
       try {
-        if (logger.isDebugEnabled()) logger.debug(manager.getLocalNodeID().toString() + " opens channel to " + node);
-        manager.openChannel(node.getHost(), node.getPort());
+        if (logger.isDebugEnabled()) logger.debug(discover.getLocalNodeID().toString() + " opens channel to " + node);
+        discover.openChannel(node.getHost(), node.getPort());
+        runStatus.set(new Object());
       } catch (GroupException e) {
         status.setBad();
+        status.setException(e);
         logger.warn("Node:" + node + " " + e);
       } catch (TCTimeoutException e) {
         status.setBad();
+        status.setException(e);
         logger.warn("Node:" + node + " " + e);
       } catch (UnknownHostException e) {
         status.setVerybad();
+        status.setException(e);
         logger.warn("Node:" + node + " " + e);
       } catch (MaxConnectionsExceededException e) {
         status.setBad();
+        status.setException(e);
         logger.warn("Node:" + node + " " + e);
       } catch (IOException e) {
         status.setBad();
+        status.setException(e);
         logger.warn("Node:" + node + " " + e);
-      } catch (RuntimeException e) {
-        status.setBad();
-        logger.error("Node:" + node + " " + e);
       }
     }
   }
@@ -184,31 +221,65 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return local;
   }
 
-  private class NodeStatus {
-    public final int STATUS_UNKNOWN  = 0;
-    public final int STATUS_OK       = 1;
-    public final int STATUS_BAD      = 2;
-    public final int STATUS_VERY_BAD = 3;
+  private static class NodeStatus {
+    public final static int STATUS_UNKNOWN  = 0;
+    public final static int STATUS_OK       = 1;
+    public final static int STATUS_BAD      = 2;
+    public final static int STATUS_VERY_BAD = 3;
 
-    private int      status;
-    private int      badCount;
-    private long     timestamp;
+    private int             status;
+    private int             badCount;
+    private long            timestamp;
+    private final Node      node;
+    private TCFuture        future;
 
-    public NodeStatus() {
+    NodeStatus(Node node) {
+      this.node = node;
       status = STATUS_UNKNOWN;
       badCount = 0;
     }
 
-    public synchronized boolean isTimeToCheck() {
-      if (status == STATUS_UNKNOWN || status == STATUS_OK) return true;
+    synchronized TCFuture newFuture() {
+      return (future = new TCFuture());
+    }
+
+    synchronized TCFuture getFuture() {
+      return (future);
+    }
+
+    synchronized void clrFuture() {
+      future = null;
+    }
+
+    synchronized void setException(Throwable e) {
+      future.setException(e);
+    }
+
+    synchronized Object peekFuture() throws TCTimeoutException, InterruptedException, TCExceptionResultException {
+      if (future == null) return null;
+      return (future.get(1));
+    }
+
+    synchronized boolean isTimeToCheck(Node local) {
+      try {
+        peekFuture();
+      } catch (TCTimeoutException e) {
+        // not ready yet
+        logger.warn("Waiting connection from " + local + " to " + node);
+        return false;
+      } catch (InterruptedException e) {
+        logger.warn("Interrupped connection from " + local + " to " + node);
+      } catch (TCExceptionResultException e) {
+        logger.warn("ResultException on connection from " + local + " to " + node);
+      }
 
       switch (status) {
         case STATUS_UNKNOWN:
         case STATUS_OK:
           return true;
         case STATUS_BAD:
-          // check 10 times then every min
-          if (badCount <= 10) {
+          // check 60 times then every min
+          if (badCount <= 60) {
             ++badCount;
             timestamp = System.currentTimeMillis();
             return true;
@@ -232,34 +303,34 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       }
     }
 
-    public synchronized void setOk() {
+    synchronized void setOk() {
       status = STATUS_OK;
       badCount = 0;
     }
 
-    public synchronized boolean isOk() {
+    synchronized boolean isOk() {
       return (status == STATUS_OK);
     }
 
-    public synchronized void setBad() {
+    synchronized void setBad() {
       ++badCount;
       status = STATUS_BAD;
     }
 
-    public synchronized boolean isBad() {
+    synchronized boolean isBad() {
       return (status == STATUS_BAD);
     }
 
-    public synchronized void setVerybad() {
+    synchronized void setVerybad() {
       status = STATUS_VERY_BAD;
       timestamp = System.currentTimeMillis();
     }
 
-    public synchronized boolean isVerybad() {
+    synchronized boolean isVerybad() {
       return (status == STATUS_VERY_BAD);
     }
 
-    public synchronized void reset() {
+    synchronized void reset() {
       status = STATUS_UNKNOWN;
       badCount = 0;
     }
