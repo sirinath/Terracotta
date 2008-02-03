@@ -542,7 +542,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
       if (!tryJoinLowPriority) {
         // both sides agree not to join
-        closeMember(member, false);
+        if (connInitiator) closeMember(member, false);
+        else stopMember(member, false);
         return false;
       }
       logger.debug("Try joining low priority link " + member);
