@@ -52,7 +52,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesConcurrentJoining(2);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerTwoServers failed!");
+          throw new RuntimeException("testStateManagerTwoServers failed! " + e);
         }
       }
     });
@@ -68,7 +68,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesConcurrentJoining(3);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerThreeServers failed!");
+          throw new RuntimeException("testStateManagerThreeServers failed! " + e);
         }
       }
     });
@@ -84,7 +84,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesConcurrentJoining(6);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerSixServers failed!");
+          throw new RuntimeException("testStateManagerSixServers failed! " + e);
         }
       }
     });
@@ -100,7 +100,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesMixJoinAndElect(3);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerMixJoinAndElect3 failed!");
+          throw new RuntimeException("testStateManagerMixJoinAndElect3 failed! " + e);
         }
       }
     });
@@ -116,7 +116,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesMixJoinAndElect(6);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerMixJoinAndElect6 failed!");
+          throw new RuntimeException("testStateManagerMixJoinAndElect6 failed! " + e);
         }
       }
     });
@@ -132,7 +132,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesJoinLater(3);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerJoinLater3 failed!");
+          throw new RuntimeException("testStateManagerJoinLater3 failed! " + e);
         }
       }
     });
@@ -148,7 +148,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
         try {
           nodesJoinLater(6);
         } catch (Exception e) {
-          throw new RuntimeException("testStateManagerJoinLater6 failed!");
+          throw new RuntimeException("testStateManagerJoinLater6 failed! " + e);
         }
       }
     });
@@ -184,7 +184,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     for (int i = 0; i < nodes; ++i) {
       groupMgr[i].join(allNodes[i], allNodes);
     }
-    Thread.sleep(1000);
+    Thread.sleep(1000 * nodes);
 
     System.out.println("*** Start Election...");
     // run them concurrently
@@ -315,7 +315,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       ids[i] = groupMgr[i].join(allNodes[i], allNodes);
     }
 
-    Thread.sleep(1000);
+    Thread.sleep(1000 * nodes);
     // verification: first node must be active
     int activeCount = 0;
     for (int i = 0; i < nodes; ++i) {

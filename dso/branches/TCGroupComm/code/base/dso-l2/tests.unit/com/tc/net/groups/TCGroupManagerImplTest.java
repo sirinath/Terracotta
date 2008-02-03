@@ -78,6 +78,7 @@ public class TCGroupManagerImplTest extends TestCase {
                                              .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
       groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
+      System.out.println("Starting " + groups[i]);
       groups[i].start(new HashSet());
       listeners[i] = new TestGroupMessageListener(1000);
     }
@@ -85,6 +86,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
   private void tearGroups() throws Exception {
     for (int i = 0; i < groups.length; ++i) {
+      System.out.println("Shutting down " + groups[i]);
       groups[i].shutdown();
     }
     Thread.sleep(200);
@@ -545,8 +547,7 @@ public class TCGroupManagerImplTest extends TestCase {
       throw e;
     }
 
-    groups[0].stop(1000);
-    groups[1].stop(1000);
+    tearGroups();
   }
 
   private class MessagePackage {
