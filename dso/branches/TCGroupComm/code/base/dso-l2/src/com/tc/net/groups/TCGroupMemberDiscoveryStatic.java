@@ -201,6 +201,12 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         status.setBad();
         status.setException(e);
         logger.warn("Node:" + node + " " + e);
+      } catch (RuntimeException e) {
+        // catch InterrupptedException thrown from TCFuture
+        // at ClientMessageTransport.waitForSynAck
+        status.setBad();
+        status.setException(e);
+        logger.warn("Node:" + node + " " + e);
       }
     }
   }
