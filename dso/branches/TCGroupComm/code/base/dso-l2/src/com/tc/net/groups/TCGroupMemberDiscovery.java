@@ -6,8 +6,6 @@ package com.tc.net.groups;
 
 public interface TCGroupMemberDiscovery {
 
-  public Node[] getAllNodes();
-
   public void setTCGroupManager(TCGroupManagerImpl manager);
 
   public void start() throws GroupException;
