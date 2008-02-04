@@ -63,7 +63,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,7 +130,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     thisNodeID = init(l2DSOConfig.host().getString(), groupPort, getCommWorkerCount(l2Properties));
     Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
-    start(new HashSet());
+    groupListener.start(new HashSet());
+    isStopped.set(false);
   }
 
   private int getCommWorkerCount(TCProperties props) {
@@ -143,10 +143,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
    * for testing purpose only. Tester needs to do setDiscover() and start()
    */
   TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
-                     TCThreadGroup threadGroup) {
+                     TCThreadGroup threadGroup) throws IOException {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
+    groupListener.start(new HashSet());
+    isStopped.set(false);
   }
 
   private String makeGroupNodeName(String hostname, int groupPort) {
@@ -305,11 +307,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   private NodeIdComparable getNodeID() {
     return thisNodeID;
-  }
-
-  public void start(Set initialConnectionIDs) throws IOException {
-    groupListener.start(initialConnectionIDs);
-    isStopped.set(false);
   }
 
   public void stop(long timeout) throws TCTimeoutException {

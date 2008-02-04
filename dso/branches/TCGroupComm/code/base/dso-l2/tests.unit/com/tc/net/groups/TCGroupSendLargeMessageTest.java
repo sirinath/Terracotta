@@ -18,8 +18,6 @@ import com.tc.util.PortChooser;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.util.HashSet;
-
 public class TCGroupSendLargeMessageTest extends TCTestCase {
   private final static String LOCALHOST   = "localhost";
   private static final long   millionOids = 1024 * 1024;
@@ -48,9 +46,6 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
     MyListener l2 = new MyListener();
     gm2.registerForMessages(GCResultMessage.class, l2);
     
-    gm1.start(new HashSet());
-    gm2.start(new HashSet());
-   
     NodeID n1 = gm1.join(allNodes[0], allNodes);
     NodeID n2 = gm2.join(allNodes[1], allNodes);
     

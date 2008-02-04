@@ -37,7 +37,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -79,7 +78,6 @@ public class TCGroupManagerImplTest extends TestCase {
       groups[i].setDiscover(discovers[i]);
       groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
       System.out.println("Starting " + groups[i]);
-      groups[i].start(new HashSet());
       listeners[i] = new TestGroupMessageListener(1000);
     }
   }

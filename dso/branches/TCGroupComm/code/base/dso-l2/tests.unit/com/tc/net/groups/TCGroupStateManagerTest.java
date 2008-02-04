@@ -28,7 +28,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashSet;
 
 public class TCGroupStateManagerTest extends TCTestCase {
 
@@ -370,7 +369,6 @@ public class TCGroupStateManagerTest extends TCTestCase {
     TCGroupManagerImpl gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(),
                                                    nodes[localIndex].getPort(), 0, threadGroup);
     gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes));
-    gm.start(new HashSet());
 
     groupMgr[localIndex] = gm;
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());
