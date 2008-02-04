@@ -397,12 +397,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public void sendAll(GroupMessage msg) throws GroupException {
     for (TCGroupMember m : members.values()) {
-      if (m.isReady()) m.send(msg);
+      if (m.isReady()) {
+        m.send(msg);
+      } else {
+        logger.info("Send to not ready member " + m);
+      }
     }
   }
 
   public void sendTo(NodeID node, GroupMessage msg) throws GroupException {
-    TCGroupMember member = getMember((NodeIdComparable) node);
+    TCGroupMember member = getMember(node);
     if (member != null && member.isReady()) {
       member.send(msg);
     } else {
@@ -416,7 +420,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                               + msg.getMessageID());
     GroupResponseImpl groupResponse = new GroupResponseImpl(this);
     MessageID msgID = msg.getMessageID();
-    TCGroupMember m = getMember((NodeIdComparable) nodeID);
+    TCGroupMember m = getMember(nodeID);
     if (m != null && m.isReady()) {
       GroupResponse old = pendingRequests.put(msgID, groupResponse);
       Assert.assertNull(old);
@@ -667,14 +671,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
   }
 
-  public synchronized TCGroupMember getMember(MessageChannel channel) {
+  private TCGroupMember getMember(MessageChannel channel) {
     NodeIdComparable nodeID = channelToNodeID.get(channel);
     if (nodeID == null) return null;
     TCGroupMember m = members.get(nodeID);
     return ((m != null) && (m.getChannel() == channel)) ? m : null;
   }
 
-  public synchronized TCGroupMember getMember(NodeIdComparable nodeID) {
+  private TCGroupMember getMember(NodeID nodeID) {
     return (members.get(nodeID));
   }
 
@@ -797,7 +801,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public void zapNode(NodeID nodeID, int type, String reason) {
-    TCGroupMember m = getMember((NodeIdComparable) nodeID);
+    TCGroupMember m = getMember(nodeID);
     if (m == null) {
       logger.warn("Ignoring Zap node request since Member is null");
     } else if (!zapNodeRequestProcessor.acceptOutgoingZapNodeRequest(nodeID, type, reason)) {
