@@ -11,6 +11,7 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.ConfigurationContextImpl;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.exception.TCRuntimeException;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -126,7 +127,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.l2GroupPort());
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
-    thisNodeID = init(l2DSOConfig.host().getString(), groupPort, getCommWorkerCount(l2Properties));
+    TCSocketAddress socketAddress;
+    try {
+      socketAddress = new TCSocketAddress(l2DSOConfig.bind().getString(), groupPort);
+    } catch (UnknownHostException e) {
+      throw new TCRuntimeException(e);
+    }
+    thisNodeID = init(makeGroupNodeName(l2DSOConfig.host().getString(), groupPort), getCommWorkerCount(l2Properties),
+                      socketAddress);
     Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
   }
@@ -143,16 +151,16 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                      TCThreadGroup threadGroup) {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
-    thisNodeID = init(hostname, groupPort, workerThreads);
+    thisNodeID = init(makeGroupNodeName(hostname, groupPort), workerThreads,
+                      new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort));
   }
 
   private String makeGroupNodeName(String hostname, int groupPort) {
     return (hostname + ":" + groupPort);
   }
 
-  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) {
+  private NodeIdComparable init(String nodeName, int workerThreads, TCSocketAddress socketAddress) {
 
-    String nodeName = makeGroupNodeName(hostname, groupPort);
     NodeIdComparable aNodeID = new NodeIdComparable(nodeName, UUID.getUUID().toString().getBytes());
     logger.info("Creating group node: " + aNodeID);
 
@@ -171,9 +179,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory, null,
                                                           this.connectionPolicy, workerThreads);
 
-    groupListener = communicationsManager.createListener(new NullSessionManager(),
-                                                         new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort),
-                                                         true, new DefaultConnectionIdFactory());
+    groupListener = communicationsManager.createListener(new NullSessionManager(), socketAddress, true,
+                                                         new DefaultConnectionIdFactory());
     // Listen to channel creation/removal
     groupListener.getChannelManager().addEventListener(this);
 
@@ -365,7 +372,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     discover.start();
     return (getNodeID());
   }
-  
+
   public void memberDisappeared(TCGroupMember member) {
     Assert.assertNotNull(member);
     if (isStopped.get()) return;
