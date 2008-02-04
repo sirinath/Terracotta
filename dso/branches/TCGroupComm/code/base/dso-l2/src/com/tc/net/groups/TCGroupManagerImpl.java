@@ -130,8 +130,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     thisNodeID = init(l2DSOConfig.host().getString(), groupPort, getCommWorkerCount(l2Properties));
     Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
-    groupListener.start(new HashSet());
-    isStopped.set(false);
   }
 
   private int getCommWorkerCount(TCProperties props) {
@@ -147,15 +145,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
-    groupListener.start(new HashSet());
-    isStopped.set(false);
   }
 
   private String makeGroupNodeName(String hostname, int groupPort) {
     return (hostname + ":" + groupPort);
   }
 
-  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) {
+  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) throws IOException {
 
     String nodeName = makeGroupNodeName(hostname, groupPort);
     NodeIdComparable aNodeID = new NodeIdComparable(nodeName, UUID.getUUID().toString().getBytes());
@@ -197,6 +193,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     stageManager.startAll(context);
 
     registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
+
+    groupListener.start(new HashSet());
+    isStopped.set(false);
 
     return (aNodeID);
   }
