@@ -711,21 +711,12 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     public void nodeJoined(NodeID nodeID) {
-      try {
         System.out.println("XXX " + manager.getLocalNodeID() + " Node joined: " + nodeID);
-      } catch (GroupException e) {
-        throw new RuntimeException(e);
-      }
     }
 
     public void nodeLeft(NodeID nodeID) {
-      try {
         System.out.println("XXX " + manager.getLocalNodeID() + " Node left: " + nodeID);
-      } catch (GroupException e) {
-        throw new RuntimeException(e);
       }
     }
-
-  }
 
 }
