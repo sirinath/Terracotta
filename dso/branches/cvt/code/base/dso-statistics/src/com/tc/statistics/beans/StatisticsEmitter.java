@@ -7,12 +7,14 @@ package com.tc.statistics.beans;
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.TCTimerImpl;
+import com.tc.util.Assert;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,15 +42,18 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
+  private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
   private final Set activeSessionIds = Collections.synchronizedSet(new HashSet());
 
-  private long schedulePeriod = 3000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
 
-  public StatisticsEmitter(StatisticsBuffer buffer) throws NotCompliantMBeanException {
+  public StatisticsEmitter(StatisticsConfig config, StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
+    Assert.assertNotNull("config", config);
+    Assert.assertNotNull("buffer", buffer);
+    this.config = config;
     this.buffer = buffer;
     this.buffer.addListener(this);
   }
@@ -73,7 +78,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
 
     timer = new TCTimerImpl("Statistics Emitter Timer", true);
     task = new SendStatsTask();
-    timer.scheduleAtFixedRate(task, 0, schedulePeriod);
+    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
   }
 
   private synchronized void disableTimer() {
