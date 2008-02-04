@@ -193,7 +193,7 @@ public class DistributedObjectClient extends SEDA {
     // //////////////////////////////////
 
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          new NullConnectionPolicy());
+                                                          new NullConnectionPolicy(), 0);
 
     logger.debug("Created CommunicationsManager.");
 

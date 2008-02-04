@@ -202,10 +202,8 @@ import javax.management.remote.JMXConnectorServer;
 public class DistributedObjectServer extends SEDA implements TCDumper {
   private final ConnectionPolicy               connectionPolicy;
 
-  private static final TCLogger                logger                   = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                consoleLogger            = CustomerLogging.getConsoleLogger();
-
-  private static final int                     MAX_DEFAULT_COMM_THREADS = 16;
+  private static final TCLogger                logger        = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger                consoleLogger = CustomerLogging.getConsoleLogger();
 
   private final L2TVSConfigurationSetupManager configSetupManager;
   private final Sink                           httpSink;
@@ -431,10 +429,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
 
-    int numCommWorkers = getCommWorkerCount(l2Properties);
-
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy, numCommWorkers);
+                                                          connectionPolicy);
 
     final DSOApplicationEvents appEvents;
     try {
@@ -733,11 +729,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
-  }
-
-  private int getCommWorkerCount(TCProperties props) {
-    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
-    return props.getInt("tccom.workerthreads", def);
   }
 
   public boolean isBlocking() {

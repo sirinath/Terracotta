@@ -36,6 +36,8 @@ import com.tc.net.protocol.transport.TransportHandshakeMessageFactoryImpl;
 import com.tc.net.protocol.transport.WireProtocolAdaptorFactoryImpl;
 import com.tc.net.protocol.transport.WireProtocolMessageSink;
 import com.tc.object.session.SessionProvider;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.concurrent.SetOnceFlag;
 
 import java.io.IOException;
@@ -45,20 +47,22 @@ import java.util.Set;
 
 /**
  * Communications manager for setting up listners and creating client connections
- *
+ * 
  * @author teck
  */
 public class CommunicationsManagerImpl implements CommunicationsManager {
-  private static final TCLogger                  logger    = TCLogging.getLogger(CommunicationsManager.class);
+  private static final TCLogger                  logger                   = TCLogging
+                                                                              .getLogger(CommunicationsManager.class);
 
-  private final SetOnceFlag                      shutdown  = new SetOnceFlag();
-  private final Set                              listeners = new HashSet();
+  private final SetOnceFlag                      shutdown                 = new SetOnceFlag();
+  private final Set                              listeners                = new HashSet();
   private final TCConnectionManager              connectionManager;
   private final boolean                          privateConnMgr;
   private final NetworkStackHarnessFactory       stackHarnessFactory;
   private final TransportHandshakeMessageFactory transportHandshakeMessageFactory;
   private final MessageMonitor                   monitor;
   private final ConnectionPolicy                 connectionPolicy;
+  private static final int                       MAX_DEFAULT_COMM_THREADS = 16;
 
   /**
    * Create a communications manager. This implies that one or more network handling threads will be started on your
@@ -66,28 +70,30 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy, 0);
+    this(monitor, stackHarnessFactory, null, connectionPolicy);
   }
 
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   ConnectionPolicy connectionPolicy, int workerCommCount) {
-    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommCount);
+                                   ConnectionPolicy connectionPolicy, int workerCommThreadCount) {
+    this(monitor, stackHarnessFactory, null, connectionPolicy, workerCommThreadCount);
   }
 
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
                                    TCConnectionManager connMgr, ConnectionPolicy connectionPolicy) {
-    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, 0);
+    this(monitor, stackHarnessFactory, connMgr, connectionPolicy, getCommWorkerCount(TCPropertiesImpl.getProperties()
+        .getPropertiesFor("l2")));
   }
 
   /**
    * Create a comms manager with the given connection manager. This cstr is mostly for testing, or in the event that you
    * actually want to use an explicit connection manager
-   *
+   * 
    * @param connMgr the connection manager to use
    * @param serverDescriptors
    */
   public CommunicationsManagerImpl(MessageMonitor monitor, NetworkStackHarnessFactory stackHarnessFactory,
-                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy, int workerCommCount) {
+                                   TCConnectionManager connMgr, ConnectionPolicy connectionPolicy,
+                                   int workerCommThreadCount) {
 
     this.monitor = monitor;
     this.transportHandshakeMessageFactory = new TransportHandshakeMessageFactoryImpl();
@@ -96,7 +102,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     privateConnMgr = (connMgr == null);
 
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerJDK14(workerCommCount);
+      this.connectionManager = new TCConnectionManagerJDK14(workerCommThreadCount);
     } else {
       this.connectionManager = connMgr;
     }
@@ -291,6 +297,11 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                 new WireProtocolAdaptorFactoryImpl(httpSink),
                                                                 wireProtocolMessageSink);
     return connectionManager.createListener(addr, stackProvider, Constants.DEFAULT_ACCEPT_QUEUE_DEPTH, resueAddr);
+  }
+
+  private static int getCommWorkerCount(TCProperties props) {
+    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
+    return props.getInt("tccom.workerthreads", def);
   }
 
   void registerListener(NetworkListener lsnr) {
