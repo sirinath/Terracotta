@@ -84,8 +84,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                                                                                                                       logger);
   private final AtomicBoolean                                       isStopped                    = new AtomicBoolean(
                                                                                                                      false);
-  private final AtomicBoolean                                       ready                        = new AtomicBoolean(
-                                                                                                                     false);
   private Stage                                                     hydrateStage;
   private Stage                                                     receiveGroupMessageStage;
   private Stage                                                     receivePingMessageStage;
@@ -131,7 +129,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     int groupPort = l2DSOConfig.l2GroupPort().getInt();
 
     thisNodeID = init(l2DSOConfig.host().getString(), groupPort, getCommWorkerCount(l2Properties));
-
+    Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
     start(new HashSet());
   }
@@ -149,7 +147,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
-    ready.set(true);
   }
 
   private String makeGroupNodeName(String hostname, int groupPort) {
@@ -205,12 +202,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   /*
    * monitor channel events while doing group member handshaking
    */
-  private static class handshakeChannelEventListener implements ChannelEventListener {
+  private static class HandshakeChannelEventListener implements ChannelEventListener {
     final private MessageChannel                              channel;
     final private ConcurrentHashMap<MessageChannel, TCFuture> handshakeResults;
     final private ConcurrentHashMap<MessageChannel, TCFuture> pingMessages;
 
-    handshakeChannelEventListener(MessageChannel channel, ConcurrentHashMap<MessageChannel, TCFuture> handshakeResults,
+    HandshakeChannelEventListener(MessageChannel channel, ConcurrentHashMap<MessageChannel, TCFuture> handshakeResults,
                                   ConcurrentHashMap<MessageChannel, TCFuture> pingMessages) {
       this.channel = channel;
       this.handshakeResults = handshakeResults;
@@ -239,7 +236,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private TCGroupHandshakeMessage handshake(final MessageChannel channel) {
 
     TCFuture result = getOrCreateHandshakeResult(channel);
-    channel.addListener(new handshakeChannelEventListener(channel, handshakeResults, pingMessages));
+    channel.addListener(new HandshakeChannelEventListener(channel, handshakeResults, pingMessages));
 
     writeHandshakeMessage(channel);
     TCGroupHandshakeMessage peermsg = readHandshakeMessage(channel, result, handshakeTimeout);
@@ -259,8 +256,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       logger.warn("Handshake message timeout from peer " + channel);
       channel.close();
       return null;
+    } catch (InterruptedException e) {
+      logger.warn("readHandshakeMessage: " + e);
+      return null;
     } catch (Exception e) {
-      if (logger.isDebugEnabled()) logger.debug("readHandshakeMessage: " + e);
+      logger.error("readHandshakeMessage: " + e);
       return null;
     }
 
@@ -285,8 +285,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   /*
-   * handshake message may arrive before local node is ready to receive it.
-   * create it by whoever comes first, either receiver or sender.
+   * handshake message may arrive before local node is ready to receive it. create it by whoever comes first, either
+   * receiver or sender.
    */
   private TCFuture getOrCreateHandshakeResult(MessageChannel channel) {
     synchronized (handshakeResults) {
@@ -299,8 +299,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
   }
 
-  public NodeID getLocalNodeID() throws GroupException {
-    if (this.thisNodeID == null) { throw new GroupException("Node hasnt joined the group yet !"); }
+  public NodeID getLocalNodeID() {
     return getNodeID();
   }
 
@@ -364,7 +363,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
-    ready.set(true);
     discover.setLocalNode(thisNode);
     discover.start();
     return (getNodeID());
@@ -513,8 +511,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   /*
-   * Called by low priority link member.
-   * Scan current active channels for one with same nodeID which is high priority link.
+   * Called by low priority link member. Scan current active channels for one with same nodeID which is high priority
+   * link.
    */
   private boolean isMakingHighPriorityLink(TCGroupMember member) {
     Assert.assertFalse(member.highPriorityLink());
@@ -584,7 +582,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   public void channelCreated(MessageChannel aChannel) {
     final MessageChannel channel = aChannel;
 
-    if (isStopped.get() || !ready.get()) {
+    if (isStopped.get()) {
       // !ready.get(): Accept channels only after fully initialized.
       // otherwise "java.lang.AssertionError: No Route" when receive messages
       channel.close();
@@ -765,9 +763,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     String name = clazz.getName();
     try {
       Constructor<AbstractGroupMessage> cons = clazz.getDeclaredConstructor(new Class[0]);
-      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) {
-        throw new AssertionError(name + " : public no arg constructor not found");
-      }
+      if ((cons.getModifiers() & Modifier.PUBLIC) == 0) { throw new AssertionError(
+                                                                                   name
+                                                                                       + " : public no arg constructor not found"); }
     } catch (NoSuchMethodException ex) {
       throw new AssertionError(name + " : public no arg constructor not found");
     }

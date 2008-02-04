@@ -82,15 +82,16 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return (manager.openChannel(hostname, groupPort));
   }
 
-  NodeID getLocalNodeID() throws GroupException {
+  NodeID getLocalNodeID() {
     return (manager.getLocalNodeID());
   }
 
   public void start() throws GroupException {
     if (nodes == null || nodes.length == 0) { throw new GroupException("No nodes"); }
 
-    if (running.get()) return;
-    running.set(true);
+    if (running.getAndSet(true)) {
+      Assert.failure("Not to start discovert second time");
+    }
 
     Thread discover = new Thread(new Runnable() {
       public void run() {
@@ -181,10 +182,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
         if (logger.isDebugEnabled()) logger.debug(discover.getLocalNodeID().toString() + " opens channel to " + node);
         discover.openChannel(node.getHost(), node.getPort());
         runStatus.set(new Object());
-      } catch (GroupException e) {
-        status.setBad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
       } catch (TCTimeoutException e) {
         status.setBad();
         status.setException(e);
