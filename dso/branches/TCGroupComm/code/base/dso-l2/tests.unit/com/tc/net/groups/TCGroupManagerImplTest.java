@@ -93,6 +93,10 @@ public class TCGroupManagerImplTest extends TestCase {
   public void testBasicChannelOpenClose() throws Exception {
     setupGroups(2);
 
+    groups[0].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[1].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[0].join(nodes[0], nodes);
+    groups[1].join(nodes[1], nodes);
     // open test
     TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
 
@@ -125,6 +129,11 @@ public class TCGroupManagerImplTest extends TestCase {
    */
   public void testResolveTwoWayConnection() throws Exception {
     setupGroups(2);
+    
+    groups[0].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[1].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[0].join(nodes[0], nodes);
+    groups[1].join(nodes[1], nodes);
 
     groups[0].openChannel(LOCALHOST, groupPorts[1]);
     groups[1].openChannel(LOCALHOST, groupPorts[0]);
@@ -146,11 +155,16 @@ public class TCGroupManagerImplTest extends TestCase {
 
   public void testSendTo() throws Exception {
     setupGroups(2);
-
+    
     TestGroupMessageListener listener1 = new TestGroupMessageListener(100);
     TestGroupMessageListener listener2 = new TestGroupMessageListener(100);
     groups[0].registerForMessages(GroupZapNodeMessage.class, listener1);
     groups[1].registerForMessages(GroupZapNodeMessage.class, listener2);
+
+    groups[0].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[1].setDiscover(new NullTCGroupMemberDiscovery());
+    groups[0].join(nodes[0], nodes);
+    groups[1].join(nodes[1], nodes);
 
     TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
     Thread.sleep(200);

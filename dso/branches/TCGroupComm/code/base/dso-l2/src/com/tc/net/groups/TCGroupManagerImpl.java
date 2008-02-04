@@ -109,13 +109,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   /*
    * Setup a communication manager which can establish channel from either sides.
    */
-  public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup)
-      throws IOException {
+  public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup) {
     this(configSetupManager, new NullConnectionPolicy(), threadGroup);
   }
 
   public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
-                            TCThreadGroup threadGroup) throws IOException {
+                            TCThreadGroup threadGroup) {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
 
@@ -141,7 +140,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
    * for testing purpose only. Tester needs to do setDiscover() and start()
    */
   TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
-                     TCThreadGroup threadGroup) throws IOException {
+                     TCThreadGroup threadGroup) {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
     thisNodeID = init(hostname, groupPort, workerThreads);
@@ -151,7 +150,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     return (hostname + ":" + groupPort);
   }
 
-  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) throws IOException {
+  private NodeIdComparable init(String hostname, int groupPort, int workerThreads) {
 
     String nodeName = makeGroupNodeName(hostname, groupPort);
     NodeIdComparable aNodeID = new NodeIdComparable(nodeName, UUID.getUUID().toString().getBytes());
@@ -193,9 +192,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     stageManager.startAll(context);
 
     registerForMessages(GroupZapNodeMessage.class, new ZapNodeRequestRouter());
-
-    groupListener.start(new HashSet());
-    isStopped.set(false);
 
     return (aNodeID);
   }
@@ -359,11 +355,17 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
+
+    try {
+      groupListener.start(new HashSet());
+    } catch (IOException e) {
+      throw new GroupException(e);
+    }
     discover.setLocalNode(thisNode);
     discover.start();
     return (getNodeID());
   }
-
+  
   public void memberDisappeared(TCGroupMember member) {
     Assert.assertNotNull(member);
     if (isStopped.get()) return;
