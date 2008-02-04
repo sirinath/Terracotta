@@ -4,8 +4,11 @@
 package com.tc.statistics.retrieval;
 
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.config.StatisticsConfig;
 
 public interface StatisticsRetriever {
+  public final static Long  DEFAULT_GLOBAL_SAMPLE_PERIOD = new Long(1000L);
+
   public void startup();
 
   public void shutdown();
@@ -15,4 +18,6 @@ public interface StatisticsRetriever {
   public void removeAllActions();
 
   public void registerAction(StatisticRetrievalAction action);
+
+  public StatisticsConfig getConfig();
 }

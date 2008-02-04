@@ -221,6 +221,7 @@ modules:
         - common
         - common-api
         - dso-common
+        - management
   - dso-l2:
       options:
         jdk: J2SE-1.5

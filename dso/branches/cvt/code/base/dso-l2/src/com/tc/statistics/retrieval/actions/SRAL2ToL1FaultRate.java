@@ -34,7 +34,12 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
 
   public StatisticData[] retrieveStatisticData() {
     TimeStampedCounterValue value = counter.getMostRecentSample();
-    Date moment = new Date(); // todo: this might have to be changed into new Date(value.getTimestamp()), which is when the actual sampling occurred
+    // todo: this might have to be changed into new Date(value.getTimestamp()),
+    // which is when the actual sampling occurred, we use the 'now' timestamp at
+    // the moment to make sure that the statistic data retrieval arrives in order.
+    // Otherwise, this data entry could be timed before the startup data event of
+    // the capture session.
+    Date moment = new Date();
     return new StatisticData[] {StatisticData.buildInstanceForLocalhost(ACTION_NAME, moment, value.getCounterValue())};
   }
 

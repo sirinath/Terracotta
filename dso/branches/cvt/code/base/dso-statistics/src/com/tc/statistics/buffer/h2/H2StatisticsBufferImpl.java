@@ -5,6 +5,7 @@ package com.tc.statistics.buffer.h2;
 
 import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
@@ -45,11 +46,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
   private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
 
+  private final StatisticsConfig config;
   private final StatisticsDatabase database;
 
   private final Set listeners = new CopyOnWriteArraySet();
 
-  public H2StatisticsBufferImpl(final File dbDir) {
+  public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) {
+    Assert.assertNotNull("config", config);
+    this.config = config;
     database = new H2StatisticsDatabase(dbDir);
   }
 
@@ -155,7 +159,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
         throw new TCStatisticsBufferCaptureSessionCreationErrorException("A new capture session could not be created with ID '" + id + "'.", null);
       }
 
-      StatisticsRetriever retriever = new StatisticsRetrieverImpl(this, id);
+      StatisticsRetriever retriever = new StatisticsRetrieverImpl(config.createNewChildConfig(), this, id);
       return new CaptureSession(id, retriever);
     } catch (Exception e) {
       throw new TCStatisticsBufferCaptureSessionCreationErrorException("Unexpected error while creating a new capture session", e);

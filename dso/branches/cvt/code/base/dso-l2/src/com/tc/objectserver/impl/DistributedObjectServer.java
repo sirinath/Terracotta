@@ -168,6 +168,8 @@ import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
+import com.tc.statistics.config.impl.StatisticsConfigImpl;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
@@ -299,10 +301,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     L2LockStatsManager lockStatsManager = new L2LockStatsManagerImpl();
     this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
 
+    StatisticsConfig globalStatisticsConfig = new StatisticsConfigImpl();
+
     // create the statistics buffer
     File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
     FileUtils.forceMkdir(statPath);
-    statisticsBuffer = new H2StatisticsBufferImpl(statPath);
+    statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
     try {
       statisticsBuffer.open();
     } catch (TCStatisticsBufferException sbe) {
@@ -311,7 +315,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     // create the statistics emitter mbean
     try {
-      statisticsEmitterMBean = new StatisticsEmitter(statisticsBuffer);
+      statisticsEmitterMBean = new StatisticsEmitter(globalStatisticsConfig, statisticsBuffer);
     } catch (NotCompliantMBeanException ncmbe) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
@@ -320,7 +324,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     // setup an empty statistics retrieval registry
     StatisticsRetrievalRegistry registry = new StatisticsRetrievalRegistryImpl();
     try {
-      statisticsManagerMBean = new StatisticsManager(registry, statisticsBuffer);
+      statisticsManagerMBean = new StatisticsManager(globalStatisticsConfig, registry, statisticsBuffer);
     } catch (NotCompliantMBeanException ncmbe) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsManager.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
@@ -950,7 +954,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void startJMXServer() throws Exception {
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsEmitterMBean, statisticsManagerMBean, configSetupManager, this, TCSocketAddress.WILDCARD_IP);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean,
+      statisticsEmitterMBean, statisticsManagerMBean,
+      configSetupManager, this, TCSocketAddress.WILDCARD_IP);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no

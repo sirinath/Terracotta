@@ -6,7 +6,11 @@ package com.tc.statistics.gatherer;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
 
 public interface StatisticsGatherer {
-  public void createSession(String managerHostName, int managerPort) throws TCStatisticsGathererException;
+  public void connect(String managerHostName, int managerPort) throws TCStatisticsGathererException;
+
+  public void disconnect() throws TCStatisticsGathererException;
+
+  public void createSession() throws TCStatisticsGathererException;
 
   public void closeSession() throws TCStatisticsGathererException;
 
@@ -17,4 +21,12 @@ public interface StatisticsGatherer {
   public void startCapturing() throws TCStatisticsGathererException;
 
   public void stopCapturing() throws TCStatisticsGathererException;
+
+  public void setGlobalParam(String key, Object value) throws TCStatisticsGathererException;
+
+  public Object getGlobalParam(String key) throws TCStatisticsGathererException;
+
+  public void setSessionParam(String key, Object value) throws TCStatisticsGathererException;
+
+  public Object getSessionParam(String key) throws TCStatisticsGathererException;
 }

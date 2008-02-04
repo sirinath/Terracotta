@@ -16,4 +16,12 @@ public interface StatisticsManagerMBean {
   public void startCapturing(long sessionId);
 
   public void stopCapturing(long sessionId);
+
+  public void setGlobalParam(String key, Object value);
+
+  public Object getGlobalParam(String key);
+
+  public void setSessionParam(long sessionId, String key, Object value);
+
+  public Object getSessionParam(long sessionId, String key);
 }

@@ -7,4 +7,5 @@ package com.tc.statistics.beans;
 import com.tc.management.TerracottaMBean;
 
 public interface StatisticsEmitterMBean extends TerracottaMBean {
+  public final static Long DEFAULT_SCHEDULE_PERIOD = new Long(3000L);
 }

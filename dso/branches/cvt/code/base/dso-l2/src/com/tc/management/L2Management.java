@@ -16,8 +16,8 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.util.PortChooser;
 
 import java.io.File;
@@ -64,9 +64,10 @@ public class L2Management extends TerracottaManagement {
   private final StatisticsManagerMBean         statisticsManager;
   private static final Map                     rmiRegistryMap = new HashMap();
 
-  public L2Management(TCServerInfoMBean tcServerInfo, LockStatisticsMonitorMBean lockStatistics, StatisticsEmitterMBean statisticsEmitter,
-                      StatisticsManagerMBean statisticsManager, L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
-                      String defaultL2HostAddr) throws MBeanRegistrationException, NotCompliantMBeanException,
+  public L2Management(TCServerInfoMBean tcServerInfo, LockStatisticsMonitorMBean lockStatistics,
+                      StatisticsEmitterMBean statisticsEmitter, StatisticsManagerMBean statisticsManager,
+                      L2TVSConfigurationSetupManager configurationSetupManager,
+                      TCDumper tcDumper, String defaultL2HostAddr) throws MBeanRegistrationException, NotCompliantMBeanException,
       InstanceAlreadyExistsException {
     this.tcServerInfo = tcServerInfo;
     this.lockStatistics = lockStatistics;

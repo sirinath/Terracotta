@@ -10,6 +10,7 @@ import com.tc.statistics.StatisticType;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
@@ -27,18 +28,20 @@ import java.util.TimerTask;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
+  private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
 
   private Map actionsMap;
 
-  private long schedulePeriod = 1000; // HACK: make configurable
   private Timer timer = null;
   private TimerTask task = null;
 
   private long sessionId;
 
-  public StatisticsRetrieverImpl(StatisticsBuffer buffer, long sessionId) {
+  public StatisticsRetrieverImpl(StatisticsConfig config, StatisticsBuffer buffer, long sessionId) {
+    Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
+    this.config = config;
     this.buffer = buffer;
     this.sessionId = sessionId;
 
@@ -61,6 +64,10 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
   public long getSessionId() {
     return sessionId;
+  }
+
+  public StatisticsConfig getConfig() {
+    return config;
   }
 
   public void removeAllActions() {
@@ -157,7 +164,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
     timer = new TCTimerImpl("Statistics Retriever Timer", true);
     task = new RetrieveStatsTask();
-    timer.scheduleAtFixedRate(task, 0, schedulePeriod);
+    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
   }
 
   private synchronized void disableTimer() {

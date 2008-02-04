@@ -28,9 +28,12 @@ public class StatisticsGathererTest extends TransparentTestBase {
     StatisticsStore store = new H2StatisticsStoreImpl(tmp_dir);
     StatisticsGatherer gatherer = new StatisticsGathererImpl(store);
 
-    gatherer.createSession("localhost", getAdminPort());
+    gatherer.connect("localhost", getAdminPort());
 
     String[] statistics = gatherer.getSupportedStatistics();
+
+    gatherer.createSession();
+
     gatherer.enableStatistics(statistics);
 
     gatherer.startCapturing();
@@ -47,7 +50,7 @@ public class StatisticsGathererTest extends TransparentTestBase {
       }
     });
 
-    gatherer.closeSession();
+    gatherer.disconnect();
 
     // check the data
     assertTrue(data_list.size() > 2);
