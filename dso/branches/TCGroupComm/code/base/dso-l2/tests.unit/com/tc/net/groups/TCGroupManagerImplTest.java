@@ -72,7 +72,7 @@ public class TCGroupManagerImplTest extends TestCase {
     }
     for (int i = 0; i < n; ++i) {
       discovers[i] = new TCGroupMemberDiscoveryStatic(nodes);
-      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i], 0,
+      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i],
                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                              .getLogger(TCGroupManagerImplTest.class))));
       groups[i].setDiscover(discovers[i]);
@@ -205,9 +205,9 @@ public class TCGroupManagerImplTest extends TestCase {
             && o1.getRootsMap().equals(o2.getRootsMap()) && (o1.getType() == o2.getType()) && o1.getMessageID()
         .equals(o2.getMessageID()));
   }
-  
+
   private TCGroupMember getMember(TCGroupManagerImpl mgr, int idx) {
-    return (TCGroupMember)(new ArrayList(mgr.getMembers())).get(idx);
+    return (TCGroupMember) (new ArrayList(mgr.getMembers())).get(idx);
   }
 
   public void testJoin() throws Exception {
@@ -300,7 +300,8 @@ public class TCGroupManagerImplTest extends TestCase {
 
   private L2StateMessage createL2StateMessage() {
     long weights[] = new long[] { 1, 23, 44, 78 };
-    Enrollment enroll = new Enrollment(new NodeIdComparable("test", UUID.getUUID().toString().getBytes()), true, weights);
+    Enrollment enroll = new Enrollment(new NodeIdComparable("test", UUID.getUUID().toString().getBytes()), true,
+                                       weights);
     L2StateMessage message = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
     return (message);
   }

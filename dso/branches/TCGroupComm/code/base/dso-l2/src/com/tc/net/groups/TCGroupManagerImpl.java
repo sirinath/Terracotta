@@ -133,33 +133,26 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     } catch (UnknownHostException e) {
       throw new TCRuntimeException(e);
     }
-    thisNodeID = init(makeGroupNodeName(l2DSOConfig.host().getString(), groupPort), getCommWorkerCount(l2Properties),
-                      socketAddress);
+    thisNodeID = init(makeGroupNodeName(l2DSOConfig.host().getString(), groupPort), socketAddress);
     Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager));
-  }
-
-  private int getCommWorkerCount(TCProperties props) {
-    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
-    return props.getInt("tccom.workerthreads", def);
   }
 
   /*
    * for testing purpose only. Tester needs to do setDiscover() and start()
    */
-  TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, int workerThreads,
-                     TCThreadGroup threadGroup) {
+  TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, TCThreadGroup threadGroup) {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
-    thisNodeID = init(makeGroupNodeName(hostname, groupPort), workerThreads,
-                      new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR, groupPort));
+    thisNodeID = init(makeGroupNodeName(hostname, groupPort), new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR,
+                                                                                     groupPort));
   }
 
   private String makeGroupNodeName(String hostname, int groupPort) {
     return (hostname + ":" + groupPort);
   }
 
-  private NodeIdComparable init(String nodeName, int workerThreads, TCSocketAddress socketAddress) {
+  private NodeIdComparable init(String nodeName, TCSocketAddress socketAddress) {
 
     NodeIdComparable aNodeID = new NodeIdComparable(nodeName, UUID.getUUID().toString().getBytes());
     logger.info("Creating group node: " + aNodeID);
@@ -177,7 +170,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory, null,
-                                                          this.connectionPolicy, workerThreads);
+                                                          this.connectionPolicy);
 
     groupListener = communicationsManager.createListener(new NullSessionManager(), socketAddress, true,
                                                          new DefaultConnectionIdFactory());

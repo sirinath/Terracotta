@@ -367,7 +367,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
                                              TCGroupManagerImpl[] groupMgr, L2StateMessageStage[] messageStage)
       throws Exception {
     TCGroupManagerImpl gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(),
-                                                   nodes[localIndex].getPort(), 0, threadGroup);
+                                                   nodes[localIndex].getPort(), threadGroup);
     gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes));
 
     groupMgr[localIndex] = gm;
