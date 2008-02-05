@@ -20,8 +20,8 @@ public class SRAStartupTimestampTest extends TestCase {
     Date after = new Date();
     assertEquals(SRAStartupTimestamp.ACTION_NAME, data.getName());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
-    assertTrue(before.compareTo(data.getData()) <= 0);
-    assertTrue(after.compareTo(data.getData()) >= 0);
+    assertTrue(before.compareTo((Date)data.getData()) <= 0);
+    assertTrue(after.compareTo((Date)data.getData()) >= 0);
 
     assertNull(data.getElement());
     assertEquals(data.getMoment(), data.getData());
