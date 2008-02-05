@@ -7,18 +7,18 @@ import com.tc.statistics.beans.StatisticsEmitter;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+import java.text.NumberFormat;
 
 public class StatisticsConfigImpl implements StatisticsConfig {
   private final Map defaultParams;
   private final StatisticsConfig parent;
 
-  private Map params = new ConcurrentHashMap();
+  private final Map params = new CopyOnWriteArrayMap();
 
   public StatisticsConfigImpl() {
     // initialize default parameters
@@ -36,16 +36,20 @@ public class StatisticsConfigImpl implements StatisticsConfig {
     this.parent = parent;
   }
 
-  public StatisticsConfig getParentConfig() {
+  public StatisticsConfig getParent() {
     return parent;
   }
 
-  public StatisticsConfig createNewChildConfig() {
+  public StatisticsConfig createChild() {
     return new StatisticsConfigImpl(this);
   }
 
   public void setParam(String key, Object value) {
     params.put(key, value);
+  }
+
+  public void removeParam(String key) {
+    params.remove(key);
   }
 
   public Object getParam(String key) {
@@ -63,9 +67,10 @@ public class StatisticsConfigImpl implements StatisticsConfig {
   public long getParamLong(String key) {
     Object value = getParam(key);
     if (null == value) {
-      value = new Long(0L);
+      return 0L;
     }
-    return ((Long)value).longValue();
+
+    return ((Number)value).longValue();
   }
 
   public String getParamString(String key) {
