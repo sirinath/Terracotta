@@ -221,7 +221,7 @@ modules:
         - common
         - common-api
         - dso-common
-	- dso-common-jdk15
+        - dso-common-jdk15
         - management
   - dso-l2:
       options:
