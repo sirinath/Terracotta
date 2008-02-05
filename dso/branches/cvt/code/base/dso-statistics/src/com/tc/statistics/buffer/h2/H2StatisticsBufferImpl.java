@@ -159,7 +159,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
         throw new TCStatisticsBufferCaptureSessionCreationErrorException("A new capture session could not be created with ID '" + id + "'.", null);
       }
 
-      StatisticsRetriever retriever = new StatisticsRetrieverImpl(config.createNewChildConfig(), this, id);
+      StatisticsRetriever retriever = new StatisticsRetrieverImpl(config.createChild(), this, id);
       return new CaptureSession(id, retriever);
     } catch (Exception e) {
       throw new TCStatisticsBufferCaptureSessionCreationErrorException("Unexpected error while creating a new capture session", e);

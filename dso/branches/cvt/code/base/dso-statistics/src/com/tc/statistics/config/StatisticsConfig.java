@@ -7,15 +7,17 @@ public interface StatisticsConfig {
   public final static String  KEY_EMITTER_SCHEDULE_PERIOD = "emitter.sample.period";
   public final static String  KEY_GLOBAL_SAMPLE_PERIOD = "global.sample.period";
 
-  public StatisticsConfig getParentConfig();
+  public StatisticsConfig getParent();
 
-  public StatisticsConfig createNewChildConfig();
+  public StatisticsConfig createChild();
 
   public void setParam(String key, Object value);
 
   public Object getParam(String key);
 
   public long getParamLong(String key);
+
+  public void removeParam(String key);
 
   public String getParamString(String key);
 }
