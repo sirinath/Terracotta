@@ -43,7 +43,6 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handler.ReceiveGroupMessageHandler;
 import com.tc.objectserver.handler.TCGroupHandshakeMessageHandler;
 import com.tc.objectserver.handler.TCGroupPingMessageHandler;
-import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
@@ -99,7 +98,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public static final String                                        NHA_TCCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
   public static final String                                        NHA_TCCOMM_RESPONSE_TIMEOUT  = "l2.nha.tcgroupcomm.response.timelimit";
-  private static final int                                          MAX_DEFAULT_COMM_THREADS     = 16;
   private final static long                                         handshakeTimeout;
   private final static long                                         responseTimelimit;
   static {
@@ -118,8 +116,6 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                             TCThreadGroup threadGroup) {
     super(threadGroup);
     this.connectionPolicy = connectionPolicy;
-
-    TCProperties l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
 
     configSetupManager.commonl2Config().changesInItemIgnored(configSetupManager.commonl2Config().dataPath());
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
