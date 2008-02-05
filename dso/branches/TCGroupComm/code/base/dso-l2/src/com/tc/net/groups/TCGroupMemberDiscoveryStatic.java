@@ -95,12 +95,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
     Thread discover = new Thread(new Runnable() {
       public void run() {
-        stopAttempt.set(false);
         while (!stopAttempt.get()) {
           openChannels();
           ThreadUtil.reallySleep(connectIntervalms);
         }
-        stopAttempt.set(false);
         running.set(false);
       }
     }, "Static Member discovery");
