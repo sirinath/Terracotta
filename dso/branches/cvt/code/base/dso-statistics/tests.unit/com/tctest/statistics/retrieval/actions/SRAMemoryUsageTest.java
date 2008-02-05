@@ -7,7 +7,9 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 
+import java.lang.reflect.Array;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.Date;
 
 import junit.framework.TestCase;
@@ -26,7 +28,7 @@ public class SRAMemoryUsageTest extends TestCase {
     long max1 = values1[2];
 
     int memsize = 1024 * 1024 * 10;
-    byte[] mem = new byte[memsize];
+    byte[] mem = (byte[])Array.newInstance(byte.class, memsize);
 
     Date before2 = new Date();
     StatisticData[] data2 = action.retrieveStatisticData();
@@ -37,8 +39,10 @@ public class SRAMemoryUsageTest extends TestCase {
     long used2 = values2[1];
     long max2 = values2[2];
 
-    assertTrue(free1 - free2 >= memsize);
-    assertTrue(used2 - used1 >= memsize);
+    long difference = free1 - free2;
+    assertTrue(free1 > free2);
+    assertTrue(used2 > used1);
+    assertTrue(difference <= used2 - used1);
     assertEquals(max1, max2);
 
     mem = null;
@@ -57,8 +61,10 @@ public class SRAMemoryUsageTest extends TestCase {
     long used3 = values3[1];
     long max3 = values3[2];
 
-    assertTrue(free3 - free2 >= memsize);
-    assertTrue(used2 - used3 >= memsize);
+    assertTrue(free3 > free2);
+    assertTrue(used2 > used3);
+    assertTrue(free3 - free2 >= difference);
+    assertTrue(used3 - used2 <= difference);
     assertEquals(max3, max2);
   }
 
