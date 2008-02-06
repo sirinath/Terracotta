@@ -5,6 +5,7 @@
 package com.tc.objectserver.tx;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
+import EDU.oswego.cs.dl.util.concurrent.Latch;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -157,6 +158,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
+  public void nodeConnected(NodeID nodeID) {
+    lockManager.enableLockStatsForNodeIfNeeded(nodeID);
+  }
+
   public void start(Set cids) {
     synchronized (transactionAccounts) {
       int sizeB4 = transactionAccounts.size();
@@ -176,9 +181,27 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   }
 
   public void goToActiveMode() {
+    waitForTxnsToComplete();
     state = ACTIVE_MODE;
     resentTxnSequencer.goToActiveMode();
     lwmProvider.goToActiveMode();
+  }
+
+  private void waitForTxnsToComplete() {
+    final Latch latch = new Latch();
+    logger.info("Waiting for txns to complete");
+    callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionLister() {
+      public void onCompletion() {
+        logger.info("No more txns in the system.");
+        latch.release();
+      }
+    });
+    try {
+      latch.acquire();
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
+
   }
 
   public GlobalTransactionID getLowGlobalTransactionIDWatermark() {
@@ -190,7 +213,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     if (ci != null) {
       ci.addWaitee(waitee, txnID);
     } else {
-      logger.warn("Not adding to Wating for Ack since Waiter not found in the states map: " + waiter);
+      logger.warn("Not adding to Waiting for Ack since Waiter not found in the states map: " + waiter);
+    }
+    if (isActive() && waitee.getType() == NodeID.L1_NODE_TYPE) {
+      channelStats.notifyTransactionBroadcastedTo(waitee);
     }
   }
 
@@ -209,6 +235,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   }
 
   public void acknowledgement(NodeID waiter, TransactionID txnID, NodeID waitee) {
+
+    // NOTE ::TODO Sometime you can get double notification for the same txn in server restart cases. In those cases the
+    // accounting could be messed up. The counter is set to have a min of zero to avoid ugly negative values.
+    if (isActive() && waitee.getType() == NodeID.L1_NODE_TYPE) {
+      channelStats.notifyTransactionAckedFrom(waitee);
+    }
 
     TransactionAccount transactionAccount = getTransactionAccount(waiter);
     if (transactionAccount == null) {

@@ -2,6 +2,7 @@ import com.tc.l2.msg.GCResultMessage;
 import com.tc.l2.msg.GCResultMessageFactory;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
@@ -25,6 +26,9 @@ public class TribesSendLargeMessageTest extends TCTestCase {
   private static final long     millionOids = 1024 * 1024;
 
   public TribesSendLargeMessageTest() {
+    // Per Ey, tribe is being replaced
+    disableAllUntil("2008-06-01");
+    
     // use random mcast port for testing purpose.
     useRandomMcastPort();
   }
@@ -50,7 +54,8 @@ public class TribesSendLargeMessageTest extends TCTestCase {
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1), new Node("localhost", p2) };
+    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
+        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
 
     TribesGroupManager gm1 = new TribesGroupManager();
     MyListener l1 = new MyListener();
