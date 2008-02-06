@@ -40,6 +40,8 @@ public class TimeExpiryMemoryStore extends MemoryStore {
       return timeToIdleSec;
     } else if (timeToLiveSec <= timeToIdleSec) {
       return timeToLiveSec;
+    } else if (threadIntervalSec <= 0) {
+      return timeToIdleSec;
     } else if (timeToIdleSec < threadIntervalSec) { return timeToIdleSec; }
     return threadIntervalSec;
   }
@@ -47,10 +49,30 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   private Map loadMapInstance(String cacheName) throws CacheException {
     try {
       Class.forName("com.tcclient.ehcache.TimeExpiryMap");
-      long threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
-      long timeToIdleSec = cache.getTimeToIdleSeconds();
-      long timeToLiveSec = cache.getTimeToLiveSeconds();
 
+      long threadIntervalSec = -1;
+      long timeToIdleSec = -1;
+      long timeToLiveSec = -1;
+
+      try {
+        // this should only succeed on ehcache 1.3+
+        cache.getClass().getMethod("getCacheConfiguration", null);
+        if(cache.getCacheConfiguration() != null) {
+          threadIntervalSec = cache.getCacheConfiguration().getDiskExpiryThreadIntervalSeconds();
+          timeToIdleSec = cache.getCacheConfiguration().getTimeToIdleSeconds();
+          timeToLiveSec = cache.getCacheConfiguration().getTimeToLiveSeconds();
+        } // else fall through and get the old way
+        
+      } catch(NoSuchMethodException e) {
+        // ignore and fall through - must be ehcache 1.2.x
+      }
+      
+      if(threadIntervalSec < 0) {
+        threadIntervalSec = cache.getDiskExpiryThreadIntervalSeconds();
+        timeToIdleSec = cache.getTimeToIdleSeconds();
+        timeToLiveSec = cache.getTimeToLiveSeconds();        
+      }
+      
       threadIntervalSec = getThreadIntervalSeconds(threadIntervalSec, timeToIdleSec, timeToLiveSec);
 
       Map candidateMap = new SpoolingTimeExpiryMap(threadIntervalSec, timeToIdleSec, timeToLiveSec, cacheName);
@@ -73,7 +95,9 @@ public class TimeExpiryMemoryStore extends MemoryStore {
   }
 
   public final void stopTimeMonitoring() {
-    ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
+    if(map != null) {
+      ((SpoolingTimeExpiryMap) map).stopTimeMonitoring();
+    }
   }
 
   public final void evictExpiredElements() {

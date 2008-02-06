@@ -18,7 +18,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeansNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
-import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -57,25 +55,26 @@ public class L2Management extends TerracottaManagement {
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final TCServerInfoMBean              tcServerInfo;
   private final TCDumper                       tcDumper;
-  private final String                         defaultL2Host;
   private final ObjectManagementMonitor        objectManagementBean;
   private final LockStatisticsMonitorMBean     lockStatistics;
   private final StatisticsEmitterMBean         statisticsEmitter;
   private final StatisticsManagerMBean         statisticsManager;
   private static final Map                     rmiRegistryMap = new HashMap();
+  private final int                            jmxPort;
+  private final InetAddress                    bindAddress;
 
   public L2Management(TCServerInfoMBean tcServerInfo, LockStatisticsMonitorMBean lockStatistics,
                       StatisticsEmitterMBean statisticsEmitter, StatisticsManagerMBean statisticsManager,
-                      L2TVSConfigurationSetupManager configurationSetupManager,
-                      TCDumper tcDumper, String defaultL2HostAddr) throws MBeanRegistrationException, NotCompliantMBeanException,
-      InstanceAlreadyExistsException {
+                      L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
+                      InetAddress bindAddr, int port) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
     this.tcServerInfo = tcServerInfo;
     this.lockStatistics = lockStatistics;
     this.configurationSetupManager = configurationSetupManager;
     this.statisticsEmitter = statisticsEmitter;
     this.statisticsManager = statisticsManager;
     this.tcDumper = tcDumper;
-    this.defaultL2Host = defaultL2HostAddr;
+    this.bindAddress = bindAddr;
+    this.jmxPort = port;
 
     try {
       objectManagementBean = new ObjectManagementMonitor();
@@ -101,7 +100,8 @@ public class L2Management extends TerracottaManagement {
   /**
    * Keep track of RMI Registries by jmxPort. In 1.5 and forward you can create multiple RMI Registries in a single VM.
    */
-  private static Registry getRMIRegistry(int jmxPort, RMIClientSocketFactory csf, RMIServerSocketFactory ssf) throws RemoteException {
+  private static Registry getRMIRegistry(int jmxPort, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
+      throws RemoteException {
     Integer key = new Integer(jmxPort);
     Registry registry = (Registry) rmiRegistryMap.get(key);
     if (registry == null) {
@@ -145,23 +145,6 @@ public class L2Management extends TerracottaManagement {
   }
 
   public synchronized void start() throws Exception {
-    int jmxPort = configurationSetupManager.commonl2Config().jmxPort().getInt();
-    String l2Host = configurationSetupManager.commonl2Config().host().getString();
-    InetAddress bindAddress = null;
-
-    if ((l2Host != null) && (l2Host.trim().length() == 0)) {
-      l2Host = defaultL2Host;
-    }
-
-    try {
-      bindAddress = InetAddress.getByName(l2Host);
-    } catch (UnknownHostException uhe) {
-      throw new TCRuntimeException("JMX : unable to resolove the host " + l2Host);
-    }
-
-    if (jmxPort == 0) {
-      jmxPort = new PortChooser().chooseRandomPort();
-    }
     JMXServiceURL url;
     Map env = new HashMap();
     String authMsg = "Authentication OFF";
@@ -186,7 +169,7 @@ public class L2Management extends TerracottaManagement {
       jmxConnectorServer = new RMIConnectorServer(url, env, server, mBeanServer);
       jmxConnectorServer.start();
       getRMIRegistry(jmxPort, csf, ssf).bind("jmxrmi", server);
-      String urlHost = bindAddress.isAnyLocalAddress() ? bindAddress.getCanonicalHostName() : l2Host;
+      String urlHost = bindAddress.getHostAddress();
       CustomerLogging.getConsoleLogger().info(
                                               "JMX Server started. " + authMsg + " - Available at URL["
                                                   + "Service:jmx:rmi:///jndi/rmi://" + urlHost + ":" + jmxPort
@@ -194,7 +177,7 @@ public class L2Management extends TerracottaManagement {
       if (!credentialsMsg.equals("")) CustomerLogging.getConsoleLogger().info(credentialsMsg);
     } else {
       // DEV-1060
-      url = new JMXServiceURL("jmxmp", l2Host, jmxPort);
+      url = new JMXServiceURL("jmxmp", bindAddress.getHostAddress(), jmxPort);
       jmxConnectorServer = JMXConnectorServerFactory.newJMXConnectorServer(url, env, mBeanServer);
       jmxConnectorServer.start();
       CustomerLogging.getConsoleLogger().info("JMX Server started. Available at URL[" + url + "]");
@@ -215,7 +198,7 @@ public class L2Management extends TerracottaManagement {
   public MBeanServer getMBeanServer() {
     return mBeanServer;
   }
-  
+
   public JMXConnectorServer getJMXConnServer() {
     return jmxConnectorServer;
   }
