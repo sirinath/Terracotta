@@ -22,7 +22,7 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
   private final int        maxSocketConnectCount;
   private final String     name;
 
-  // Default keepalive values in seconds
+  // Default ping probe values in seconds
   private final static int PING_IDLETIME = 45;
   private final static int PING_INTERVAL = 15;
   private final static int PING_PROBECNT = 3;

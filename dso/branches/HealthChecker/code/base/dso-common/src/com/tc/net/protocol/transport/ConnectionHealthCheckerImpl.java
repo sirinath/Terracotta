@@ -28,7 +28,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   private final HealthCheckerMonitorThreadEngine monitorThreadEngine;
 
   private final SetOnceFlag                      shutdown = new SetOnceFlag();
-  private SetOnceFlag                            started  = new SetOnceFlag();
+  private final SetOnceFlag                      started  = new SetOnceFlag();
 
   public ConnectionHealthCheckerImpl(HealthCheckerConfig healthCheckerConfig, TCConnectionManager connManager) {
     Assert.assertNotNull(healthCheckerConfig);
@@ -104,7 +104,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
 
       if ((pingIdleTime - pingInterval < 0) || pingIdleTime <= 0 || pingInterval <= 0 || pingProbes <= 0) {
         logger
-            .info("keepalive_interval period should be less than keepalive_idletime And keepalive Ideltime/Interval/Probes cannot be 0 or negative.");
+            .info("ping_interval period should be less than ping_idletime and ping Ideltime/Interval/Probes cannot be 0 or negative.");
         logger.info("Disabling HealthChecker for this CommsMgr");
         throw new AssertionError("HealthChecker Config Error");
       }
@@ -126,21 +126,6 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
       stop.attemptSet();
     }
 
-    public int getTotalConnectionsUnderMonitor() {
-      return connectionMap.size();
-    }
-
-    public long getTotalProbesSentOnAllConnections() {
-      Iterator connIterator = connectionMap.values().iterator();
-      long totalProbeSent = 0;
-      while (connIterator.hasNext()) {
-        MessageTransportBase mtb = (MessageTransportBase) connIterator.next();
-        ConnectionHealthCheckerContextImpl connContext = (ConnectionHealthCheckerContextImpl) mtb
-            .getHealthCheckerContext();
-        totalProbeSent += connContext.getTotalProbesSent();
-      }
-      return totalProbeSent;
-    }
 
     public void run() {
       while (true) {
@@ -183,9 +168,27 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
         ThreadUtil.reallySleep(this.pingInterval);
       }
     }
+
+    /* For testing only */
+    public int getTotalConnectionsUnderMonitor() {
+      return connectionMap.size();
+    }
+    
+    public long getTotalProbesSentOnAllConnections() {
+      Iterator connIterator = connectionMap.values().iterator();
+      long totalProbeSent = 0;
+      while (connIterator.hasNext()) {
+        MessageTransportBase mtb = (MessageTransportBase) connIterator.next();
+        ConnectionHealthCheckerContextImpl connContext = (ConnectionHealthCheckerContextImpl) mtb
+            .getHealthCheckerContext();
+        totalProbeSent += connContext.getTotalProbesSent();
+      }
+      return totalProbeSent;
+    }
+
   }
 
-  /* For testing only - start */
+  /* For testing only */
   public synchronized int getTotalConnsUnderMonitor() {
     return monitorThreadEngine.getTotalConnectionsUnderMonitor();
   }
@@ -193,6 +196,5 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   public long getTotalProbesSentOnAllConns() {
     return monitorThreadEngine.getTotalProbesSentOnAllConnections();
   }
-  /* For testing only - end */
 
 }

@@ -22,10 +22,6 @@ public class ConnectionHealthCheckerContextEchoImpl implements ConnectionHealthC
     throw new AssertionError("Echo HealthChecker");
   }
 
-  public int getExtraCheckSuccessCount() {
-    throw new AssertionError("Echo HealthChecker");
-  }
-
   public boolean receiveProbe(HealthCheckerProbeMessage message) {
     if (message.isPing()) {
       HealthCheckerProbeMessage pingReplyMessage = this.messageFactory.createPingReply(transport.getConnectionId(),

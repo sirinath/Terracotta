@@ -202,12 +202,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
    */
   public final boolean isConnected() {
     synchronized (status) {
-      if (getConnection().isConnected()) {
-        return this.status.isEstablished();
-      } else {
-        this.status.reset();
-        return false;
-      }
+      return (getConnection().isConnected() && this.status.isEstablished());
     }
   }
 
