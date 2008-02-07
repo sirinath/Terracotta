@@ -6,10 +6,10 @@ package com.tc.statistics;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 
 public class CaptureSession {
-  private long id;
-  private StatisticsRetriever retriever;
+  private final long id;
+  private final StatisticsRetriever retriever;
 
-  public CaptureSession(long id, StatisticsRetriever retriever) {
+  public CaptureSession(final long id, final StatisticsRetriever retriever) {
     this.id = id;
     this.retriever = retriever;
   }

@@ -9,6 +9,7 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseCloseErrorExcep
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotFoundException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStatementPreparationErrorException;
 import com.tc.util.Assert;
 
 import java.math.BigDecimal;
@@ -26,13 +27,13 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   protected Connection connection;
   protected final Map preparedStatements = new HashMap();
 
-  protected synchronized void open(String driver) throws TCStatisticsDatabaseException {
+  protected synchronized void open(final String driver) throws TCStatisticsDatabaseException {
     if (connection != null) return;
 
     try {
       Class.forName(driver);
     } catch (ClassNotFoundException e) {
-      throw new TCStatisticsDatabaseNotFoundException("Unable to load JDBC driver '" + driver + "'", e);
+      throw new TCStatisticsDatabaseNotFoundException(driver, e);
     }
 
     openConnection();
@@ -42,7 +43,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   
   public void ensureExistingConnection() throws TCStatisticsDatabaseException {
     if (null == connection) {
-      throw new TCStatisticsDatabaseNotReadyException("Connection to database not established beforehand, call open() before performing another operation.");
+      throw new TCStatisticsDatabaseNotReadyException();
     }
   }
 
@@ -50,7 +51,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     return connection;
   }
 
-  public PreparedStatement createPreparedStatement(String sql) throws TCStatisticsDatabaseException {
+  public PreparedStatement createPreparedStatement(final String sql) throws TCStatisticsDatabaseException {
     ensureExistingConnection();
 
     try {
@@ -63,19 +64,18 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
       }
       return stmt;
     } catch (SQLException e) {
-      throw new TCStatisticsDatabaseException("Unexpected error while preparing a statement for SQL '"+sql+"'.", e);
+      throw new TCStatisticsDatabaseStatementPreparationErrorException(sql, e);
     }
   }
 
-  public PreparedStatement getPreparedStatement(String sql) {
+  public PreparedStatement getPreparedStatement(final String sql) {
     synchronized (preparedStatements) {
       return (PreparedStatement)preparedStatements.get(sql);
     }
   }
 
-  public StatisticData getStatisticsData(ResultSet resultSet) throws SQLException {
-    StatisticData data;// obtain the statistics data
-    data = new StatisticData()
+  public StatisticData getStatisticsData(final ResultSet resultSet) throws SQLException {
+    StatisticData data = new StatisticData()
       .sessionId(new Long(resultSet.getLong("sessionId")))
       .agentIp(resultSet.getString("agentIp"))
       .moment(resultSet.getTimestamp("moment"))
@@ -142,7 +142,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     }
 
     if (exception != null) {
-      throw new TCStatisticsDatabaseCloseErrorException("Unexpected error while closing the connection with the database.", exception);
+      throw new TCStatisticsDatabaseCloseErrorException(exception);
     }
   }
 }

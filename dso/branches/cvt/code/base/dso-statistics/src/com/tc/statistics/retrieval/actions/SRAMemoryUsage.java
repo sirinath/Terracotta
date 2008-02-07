@@ -20,7 +20,7 @@ public class SRAMemoryUsage implements StatisticRetrievalAction {
   public final static String DATA_NAME_USED = ACTION_NAME + " used";
   public final static String DATA_NAME_MAX = ACTION_NAME + " max";
 
-  private JVMMemoryManager manager;
+  private final JVMMemoryManager manager;
 
   public SRAMemoryUsage() {
     manager = TCRuntime.getJVMMemoryManager();

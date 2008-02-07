@@ -5,11 +5,12 @@ package com.tc.statistics.buffer.h2;
 
 import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferCaptureSessionCreationErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferDatabaseCloseErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferDatabaseOpenErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferInstallationErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferSetupErrorException;
@@ -17,6 +18,7 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingError
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticConsumptionErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
@@ -61,7 +63,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     try {
       database.open();
     } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsBufferException("Unexpected error while opening the H2 database.", e);
+      throw new TCStatisticsBufferDatabaseOpenErrorException(e);
     }
 
     install();
@@ -73,7 +75,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     try {
       database.close();
     } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsBufferException("Unexpected error while closing the H2 database.", e);
+      throw new TCStatisticsBufferDatabaseCloseErrorException(e);
     }
   }
 
@@ -120,7 +122,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       database.getConnection().commit();
       database.getConnection().setAutoCommit(true);
     } catch (Exception e) {
-      throw new TCStatisticsBufferInstallationErrorException("Unable to install the H2 database table structure.", e);
+      throw new TCStatisticsBufferInstallationErrorException(e);
     }
   }
 
@@ -156,13 +158,13 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       });
 
       if (row_count != 1) {
-        throw new TCStatisticsBufferCaptureSessionCreationErrorException("A new capture session could not be created with ID '" + id + "'.", null);
+        throw new TCStatisticsBufferCaptureSessionCreationErrorException(id);
       }
 
       StatisticsRetriever retriever = new StatisticsRetrieverImpl(config.createChild(), this, id);
       return new CaptureSession(id, retriever);
     } catch (Exception e) {
-      throw new TCStatisticsBufferCaptureSessionCreationErrorException("Unexpected error while creating a new capture session", e);
+      throw new TCStatisticsBufferCaptureSessionCreationErrorException(e);
     }
   }
 
@@ -178,16 +180,16 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       });
 
       if (row_count != 1) {
-        throw new TCStatisticsBufferStartCapturingErrorException("The capture session with ID '" + sessionId + "' could not be started", null);
+        throw new TCStatisticsBufferStartCapturingErrorException(sessionId, null);
       }
 
       fireCapturingStarted(sessionId);
     } catch (Exception e) {
-      throw new TCStatisticsBufferStartCapturingErrorException("The capture session with ID '" + sessionId + "' could not be started", e);
+      throw new TCStatisticsBufferStartCapturingErrorException(sessionId, e);
     }
   }
 
-  private void fireCapturingStarted(long sessionId) {
+  private void fireCapturingStarted(final long sessionId) {
     Iterator it = listeners.iterator();
     while (it.hasNext()) {
       ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
@@ -208,14 +210,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       });
 
       if (row_count != 1) {
-        throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", null);
+        throw new TCStatisticsBufferStopCapturingErrorException(sessionId, null);
       }
     } catch (Exception e) {
-      throw new TCStatisticsBufferStopCapturingErrorException("The capture session with ID '" + sessionId + "' could not be stopped", e);
+      throw new TCStatisticsBufferStopCapturingErrorException(sessionId, e);
     }
   }
 
-  private void fireCapturingStopped(long sessionId) {
+  private void fireCapturingStopped(final long sessionId) {
     Iterator it = listeners.iterator();
     while (it.hasNext()) {
       ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
@@ -278,12 +280,12 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       // ensure that a row was inserted
       if (row_count != 1) {
-        throw new TCStatisticsBufferStatisticStorageErrorException("Unexpected error while storing the statistic with id '" + id + "' and data " + data + ".", null);
+        throw new TCStatisticsBufferStatisticStorageErrorException(id, data);
       }
 
       return id;
     } catch (Exception e) {
-      throw new TCStatisticsBufferStatisticStorageErrorException("Unexpected error while storing the statistic data " + data + ".", e);
+      throw new TCStatisticsBufferStatisticStorageErrorException(data, e);
     }
   }
 
@@ -342,11 +344,11 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      throw new TCStatisticsBufferStatisticConsumptionErrorException("Unexpected error while consuming the statistic data for session with ID '" + sessionId + "'.", e);
+      throw new TCStatisticsBufferStatisticConsumptionErrorException(sessionId, e);
     }
   }
 
-  public void addListener(StatisticsBufferListener listener) {
+  public void addListener(final StatisticsBufferListener listener) {
     if (null == listener) {
       return;
     }
@@ -354,7 +356,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     listeners.add(listener);
   }
 
-  public void removeListener(StatisticsBufferListener listener) {
+  public void removeListener(final StatisticsBufferListener listener) {
     if (null == listener) {
       return;
     }

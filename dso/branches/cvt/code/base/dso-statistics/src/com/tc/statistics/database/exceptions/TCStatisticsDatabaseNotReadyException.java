@@ -4,7 +4,7 @@
 package com.tc.statistics.database.exceptions;
 
 public class TCStatisticsDatabaseNotReadyException extends TCStatisticsDatabaseException {
-  public TCStatisticsDatabaseNotReadyException(String message) {
-    super(message, null);
+  public TCStatisticsDatabaseNotReadyException() {
+    super("Connection to database not established beforehand, call open() before performing another operation.", null);
   }
 }

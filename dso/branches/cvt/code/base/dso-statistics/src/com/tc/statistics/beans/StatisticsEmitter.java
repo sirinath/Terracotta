@@ -49,7 +49,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   private Timer timer = null;
   private TimerTask task = null;
 
-  public StatisticsEmitter(StatisticsConfig config, StatisticsBuffer buffer) throws NotCompliantMBeanException {
+  public StatisticsEmitter(final StatisticsConfig config, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
@@ -94,11 +94,11 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   public void reset() {
   }
 
-  public void capturingStarted(long sessionId) {
+  public void capturingStarted(final long sessionId) {
     activeSessionIds.add(new Long(sessionId));
   }
 
-  public void capturingStopped(long sessionId) {
+  public void capturingStopped(final long sessionId) {
   }
 
   private class SendStatsTask extends TimerTask {

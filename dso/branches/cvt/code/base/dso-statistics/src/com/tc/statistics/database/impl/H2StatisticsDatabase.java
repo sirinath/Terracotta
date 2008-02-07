@@ -38,8 +38,7 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
       connection = DriverManager.getConnection(url, H2_USER, H2_PASSWORD);
       connection.setAutoCommit(true);
     } catch (SQLException e) {
-      throw new TCStatisticsDatabaseOpenErrorException("Can't connect to H2 database with URL '" + url + "', user '" + H2_USER + "' and password '" + H2_PASSWORD + "'", e);
+      throw new TCStatisticsDatabaseOpenErrorException(url, H2_USER, H2_PASSWORD, e);
     }
   }
-
 }

@@ -8,7 +8,7 @@ import com.tc.exception.TCException;
 public class TCStatisticsGathererException extends TCException {
   private TCStatisticsGathererException next;
 
-  public TCStatisticsGathererException(String message, Throwable cause) {
+  public TCStatisticsGathererException(final String message, final Throwable cause) {
     super(message, cause);
   }
 
@@ -16,7 +16,7 @@ public class TCStatisticsGathererException extends TCException {
     return next;
   }
 
-  public synchronized void setNextException(TCStatisticsGathererException e) {
+  public synchronized void setNextException(final TCStatisticsGathererException e) {
     TCStatisticsGathererException last = this;
     while (last.next != null) {
       last = last.next;

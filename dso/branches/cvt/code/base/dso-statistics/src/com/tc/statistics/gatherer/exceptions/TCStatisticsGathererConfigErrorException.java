@@ -4,7 +4,7 @@
 package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererConfigErrorException extends TCStatisticsGathererException {
-  public TCStatisticsGathererConfigErrorException(String message, Throwable cause) {
+  public TCStatisticsGathererConfigErrorException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

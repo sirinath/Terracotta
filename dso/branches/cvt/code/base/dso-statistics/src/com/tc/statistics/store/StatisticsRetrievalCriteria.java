@@ -19,20 +19,16 @@ public class StatisticsRetrievalCriteria {
   private String agentIp = null;
   private Set names = null;
   private Set elements = null;
-
-  public StatisticsRetrievalCriteria() {
-    super();
-  }
-
+  
   public Long getSessionId() {
     return sessionId;
   }
 
-  public void setSessionId(Long sessionId) {
+  public void setSessionId(final Long sessionId) {
     this.sessionId = sessionId;
   }
 
-  public StatisticsRetrievalCriteria sessionId(Long sessionId) {
+  public StatisticsRetrievalCriteria sessionId(final Long sessionId) {
     setSessionId(sessionId);
     return this;
   }
@@ -41,11 +37,11 @@ public class StatisticsRetrievalCriteria {
     return start;
   }
 
-  public void setStart(Date start) {
+  public void setStart(final Date start) {
     this.start = start;
   }
 
-  public StatisticsRetrievalCriteria start(Date start) {
+  public StatisticsRetrievalCriteria start(final Date start) {
     setStart(start);
     return this;
   }
@@ -54,11 +50,11 @@ public class StatisticsRetrievalCriteria {
     return stop;
   }
 
-  public void setStop(Date stop) {
+  public void setStop(final Date stop) {
     this.stop = stop;
   }
 
-  public StatisticsRetrievalCriteria stop(Date stop) {
+  public StatisticsRetrievalCriteria stop(final Date stop) {
     setStop(stop);
     return this;
   }
@@ -67,11 +63,11 @@ public class StatisticsRetrievalCriteria {
     return agentIp;
   }
 
-  public void setAgentIp(String agentIp) {
+  public void setAgentIp(final String agentIp) {
     this.agentIp = agentIp;
   }
 
-  public StatisticsRetrievalCriteria agentIp(String agentIp) {
+  public StatisticsRetrievalCriteria agentIp(final String agentIp) {
     setAgentIp(agentIp);
     return this;
   }
@@ -84,7 +80,7 @@ public class StatisticsRetrievalCriteria {
     return Collections.unmodifiableSet(names);
   }
 
-  public StatisticsRetrievalCriteria addName(String name) {
+  public StatisticsRetrievalCriteria addName(final String name) {
     if (null == names) {
       names = new LinkedHashSet();
     }
@@ -101,7 +97,7 @@ public class StatisticsRetrievalCriteria {
     return Collections.unmodifiableSet(elements);
   }
 
-  public StatisticsRetrievalCriteria addElement(String element) {
+  public StatisticsRetrievalCriteria addElement(final String element) {
     if (null == elements) {
       elements = new LinkedHashSet();
     }
