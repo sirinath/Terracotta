@@ -10,6 +10,14 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotFoundException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStatementPreparationErrorException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStoreVersionErrorException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseVersionCheckErrorException;
+import com.tc.statistics.jdbc.JdbcHelper;
+import com.tc.statistics.jdbc.PreparedStatementHandler;
+import com.tc.statistics.jdbc.ResultSetHandler;
+import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.util.Assert;
 
 import java.math.BigDecimal;
@@ -18,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -71,6 +80,58 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   public PreparedStatement getPreparedStatement(final String sql) {
     synchronized (preparedStatements) {
       return (PreparedStatement)preparedStatements.get(sql);
+    }
+  }
+
+  public void createVersionTable() throws SQLException {
+    JdbcHelper.executeUpdate(getConnection(),
+        "CREATE TABLE IF NOT EXISTS dbstructureversion (" +
+          "version INT NOT NULL PRIMARY KEY, "+
+          "created TIMESTAMP NOT NULL)");
+  }
+
+  // TODO: Currently version checks just fail hard when they don't match, in the future this should
+  // be made more intelligent to automatically migrate from older versions to newer ones.
+  public void checkVersion(final int currentVersion, long currentChecksum, ChecksumCalculator csc) throws TCStatisticsDatabaseException {
+    long checksum = csc.checksum();
+    Assert.assertTrue("The checksum of the SQL that creates the database structure doesn't correspond to the checksum that corresponds to the version number of the database structure. Any significant change to the database structure should increase the version number and adapt the SQL checksum. The current checksum is "+checksum+"L.", currentChecksum == checksum);
+
+    final Integer[] version = new Integer[1];
+    final Date[] created = new Date[1];
+
+    try {
+      JdbcHelper.executeQuery(getConnection(), "SELECT version, created FROM dbstructureversion", new ResultSetHandler() {
+        public void useResultSet(ResultSet resultSet) throws SQLException {
+          if (resultSet.next()) {
+            version[0] = new Integer(resultSet.getInt("version"));
+            created[0] = resultSet.getTimestamp("created");
+          }
+        }
+      });
+    } catch (SQLException e) {
+      throw new TCStatisticsDatabaseVersionCheckErrorException("Unexpected error while checking the version.", e);
+    }
+
+    if (null == version[0]) {
+      storeCurrentVersion(currentVersion);
+    } else {
+      if (version[0].intValue() < currentVersion) {
+        throw new TCStatisticsDatabaseStructureOutdatedException(version[0].intValue(), currentVersion, created[0]);
+      } else if (version[0].intValue() > currentVersion) {
+        throw new TCStatisticsDatabaseStructureFuturedatedException(version[0].intValue(), currentVersion, created[0]);
+      }
+    }
+  }
+
+  private void storeCurrentVersion(final int currentVersion) throws TCStatisticsDatabaseException {
+    try {
+      JdbcHelper.executeUpdate(getConnection(), "INSERT INTO dbstructureversion (version, created) VALUES (?, now())", new PreparedStatementHandler() {
+        public void setParameters(PreparedStatement statement) throws SQLException {
+          statement.setInt(1, currentVersion);
+        }
+      });
+    } catch (SQLException e) {
+      throw new TCStatisticsDatabaseStoreVersionErrorException(currentVersion, e);
     }
   }
 

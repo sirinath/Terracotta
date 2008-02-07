@@ -31,6 +31,11 @@ public abstract class JdbcHelper {
     }
   }
 
+  public static void executeUpdate(final ChecksumCalculator checksum, final Connection connection, final String sql) throws SQLException {
+    checksum.append(sql);
+    executeUpdate(connection, sql);
+  }
+
   public static int executeUpdate(final Connection connection, final String sql, final PreparedStatementHandler handler) throws SQLException {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("handler", handler);
@@ -61,6 +66,24 @@ public abstract class JdbcHelper {
       }
     } finally {
       ps_query.close();
+    }
+  }
+
+  public static void executeQuery(final Connection connection, final String sql, final ResultSetHandler rsHandler) throws SQLException {
+    Assert.assertNotNull("connection", connection);
+    Assert.assertNotNull("rsHandler", rsHandler);
+
+    Statement stmt = connection.createStatement();
+    try {
+      stmt.execute(sql);
+      ResultSet rs = stmt.getResultSet();
+      try {
+        rsHandler.useResultSet(rs);
+      } finally {
+        rs.close();
+      }
+    } finally {
+      stmt.close();
     }
   }
 
