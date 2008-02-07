@@ -79,17 +79,17 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
       ChecksumCalculator csc = new ChecksumCalculator();
 
-      /*====================================================================*/
-      /*== !!! IMPORTANT !!!
-      /*==
-      /*== Any significant change to the structure of the database
-      /*== should increase the version number of the database, which is
-      /*== stored in the DATABASE_STRUCTURE_VERSION field of this class.
-      /*== You will need to update the DATABASE_STRUCTURE_CHECKSUM field
-      /*== also since it serves as a safeguard to ensure that the version is
-      /*== always adapted. The correct checksum value will be given to you
-      /*== when a checksum mismatch is detected.
-      /*====================================================================*/
+      /*====================================================================
+        == !!! IMPORTANT !!!
+        ==
+        == Any significant change to the structure of the database
+        == should increase the version number of the database, which is
+        == stored in the DATABASE_STRUCTURE_VERSION field of this class.
+        == You will need to update the DATABASE_STRUCTURE_CHECKSUM field
+        == also since it serves as a safeguard to ensure that the version is
+        == always adapted. The correct checksum value will be given to you
+        == when a checksum mismatch is detected.
+        ====================================================================*/
 
       JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
