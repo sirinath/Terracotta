@@ -8,17 +8,16 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
+import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
-
 public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegistry {
   private static final TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
-  private final Map instanceMap = new ConcurrentHashMap();
+  private final Map instanceMap = new CopyOnWriteArrayMap();
 
   public void removeAllActionInstances() {
     instanceMap.clear();
@@ -28,21 +27,21 @@ public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegis
     return Collections.unmodifiableSet(instanceMap.keySet());
   }
 
-  public StatisticRetrievalAction getActionInstance(String name) {
+  public StatisticRetrievalAction getActionInstance(final String name) {
     if (null == name) {
       return null;
     }
     return (StatisticRetrievalAction)instanceMap.get(name);
   }
 
-  public void registerActionInstance(StatisticRetrievalAction action) {
+  public void registerActionInstance(final StatisticRetrievalAction action) {
     if (null == action) {
       return;
     }
     instanceMap.put(action.getName(), action);
   }
 
-  public void registerActionInstance(String sraClassName) {
+  public void registerActionInstance(final String sraClassName) {
     try {
       Class sra_cpu_class = Class.forName(sraClassName);
       StatisticRetrievalAction sra_cpu_action = (StatisticRetrievalAction)sra_cpu_class.newInstance();

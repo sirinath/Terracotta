@@ -6,7 +6,7 @@ package com.tc.statistics.database.exceptions;
 import com.tc.exception.TCException;
 
 public class TCStatisticsDatabaseException extends TCException {
-  public TCStatisticsDatabaseException(String message, Throwable cause) {
+  public TCStatisticsDatabaseException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

@@ -63,4 +63,17 @@ public abstract class JdbcHelper {
       ps_query.close();
     }
   }
+
+  public static void executeQuery(final PreparedStatement preparedStatement, final ResultSetHandler rsHandler) throws SQLException {
+    Assert.assertNotNull("preparedStatement", preparedStatement);
+    Assert.assertNotNull("rsHandler", rsHandler);
+
+    preparedStatement.execute();
+    ResultSet rs = preparedStatement.getResultSet();
+    try {
+      rsHandler.useResultSet(rs);
+    } finally {
+      rs.close();
+    }
+  }
 }

@@ -38,7 +38,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
   private long sessionId;
 
-  public StatisticsRetrieverImpl(StatisticsConfig config, StatisticsBuffer buffer, long sessionId) {
+  public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final long sessionId) {
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
     this.config = config;
@@ -86,7 +86,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  public void registerAction(StatisticRetrievalAction action) {
+  public void registerAction(final StatisticRetrievalAction action) {
     if (null == action) return;
     if (null == action.getType()) Assert.fail("Can't register an action with a null type.");
 
@@ -138,7 +138,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  private void retrieveAction(StatisticRetrievalAction action) {
+  private void retrieveAction(final StatisticRetrievalAction action) {
     StatisticData[] data = action.retrieveStatisticData();
     if (data != null) {
       for (int i = 0; i < data.length; i++) {
@@ -148,7 +148,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  private void bufferData(StatisticData data) {
+  private void bufferData(final StatisticData data) {
     try {
       buffer.storeStatistic(data);
     } catch (TCStatisticsBufferException e) {
@@ -177,11 +177,11 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  public void capturingStarted(long sessionId) {
+  public void capturingStarted(final long sessionId) {
     startup();
   }
 
-  public void capturingStopped(long sessionId) {
+  public void capturingStopped(final long sessionId) {
     shutdown();
   }
 

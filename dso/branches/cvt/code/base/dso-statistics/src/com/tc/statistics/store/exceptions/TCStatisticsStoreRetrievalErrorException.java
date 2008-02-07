@@ -3,8 +3,18 @@
  */
 package com.tc.statistics.store.exceptions;
 
+import com.tc.statistics.store.StatisticsRetrievalCriteria;
+
 public class TCStatisticsStoreRetrievalErrorException extends TCStatisticsStoreException {
-  public TCStatisticsStoreRetrievalErrorException(String message, Throwable cause) {
-    super(message, cause);
+  private final StatisticsRetrievalCriteria criteria;
+
+  public TCStatisticsStoreRetrievalErrorException(final StatisticsRetrievalCriteria criteria, final Throwable cause) {
+    super("Unexpected error while retrieving the statistic data for criteria '" + criteria + "'.", cause);
+
+    this.criteria = criteria;
+  }
+
+  public StatisticsRetrievalCriteria getCriteria() {
+    return criteria;
   }
 }

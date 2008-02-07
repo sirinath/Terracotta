@@ -4,7 +4,7 @@
 package com.tc.statistics.store.exceptions;
 
 public class TCStatisticsStoreSetupErrorException extends TCStatisticsStoreException {
-  public TCStatisticsStoreSetupErrorException(String message, Throwable cause) {
-    super(message, cause);
+  public TCStatisticsStoreSetupErrorException(final Throwable cause) {
+    super("Unexpected error while preparing the statements for the H2 statistics store.", cause);
   }
 }

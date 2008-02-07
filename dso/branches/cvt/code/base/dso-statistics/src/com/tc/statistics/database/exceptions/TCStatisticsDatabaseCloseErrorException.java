@@ -4,7 +4,7 @@
 package com.tc.statistics.database.exceptions;
 
 public class TCStatisticsDatabaseCloseErrorException extends TCStatisticsDatabaseException {
-  public TCStatisticsDatabaseCloseErrorException(String message, Throwable cause) {
-    super(message, cause);
+  public TCStatisticsDatabaseCloseErrorException(final Throwable cause) {
+    super("Unexpected error while closing the connection with the database.", cause);
   }
 }

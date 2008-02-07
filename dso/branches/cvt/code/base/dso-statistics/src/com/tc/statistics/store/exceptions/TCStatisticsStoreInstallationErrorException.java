@@ -4,7 +4,7 @@
 package com.tc.statistics.store.exceptions;
 
 public class TCStatisticsStoreInstallationErrorException extends TCStatisticsStoreException {
-  public TCStatisticsStoreInstallationErrorException(String message, Throwable cause) {
-    super(message, cause);
+  public TCStatisticsStoreInstallationErrorException(final Throwable cause) {
+    super("Unable to install the H2 database table structure.", cause);
   }
 }

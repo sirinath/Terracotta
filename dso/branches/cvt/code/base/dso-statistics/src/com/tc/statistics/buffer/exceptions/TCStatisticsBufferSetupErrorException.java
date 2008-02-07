@@ -4,7 +4,7 @@
 package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferSetupErrorException extends TCStatisticsBufferException {
-  public TCStatisticsBufferSetupErrorException(String message, Throwable cause) {
+  public TCStatisticsBufferSetupErrorException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

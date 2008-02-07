@@ -57,12 +57,12 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     }
   }
 
-  public void disableAllStatistics(long sessionId) {
+  public void disableAllStatistics(final long sessionId) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.removeAllActions();
   }
 
-  public void enableStatistic(long sessionId, String name) {
+  public void enableStatistic(final long sessionId, final String name) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     StatisticRetrievalAction action = registry.getActionInstance(name);
     if (null == action) {
@@ -71,7 +71,7 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     retriever.registerAction(action);
   }
 
-  public void startCapturing(long sessionId) {
+  public void startCapturing(final long sessionId) {
     try {
       buffer.startCapturing(sessionId);
     } catch (TCStatisticsBufferException e) {
@@ -79,7 +79,7 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     }
   }
 
-  public void stopCapturing(long sessionId) {
+  public void stopCapturing(final long sessionId) {
     try {
       buffer.stopCapturing(sessionId);
       retrieverMap.remove(new Long(sessionId));
@@ -88,25 +88,25 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     }
   }
 
-  public void setGlobalParam(String key, Object value) {
+  public void setGlobalParam(final String key, final Object value) {
     config.setParam(key, value);
   }
 
-  public Object getGlobalParam(String key) {
+  public Object getGlobalParam(final String key) {
     return config.getParam(key);
   }
 
-  public void setSessionParam(long sessionId, String key, Object value) {
+  public void setSessionParam(final long sessionId, final String key, final Object value) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.getConfig().setParam(key, value);
   }
 
-  public Object getSessionParam(long sessionId, String key) {
+  public Object getSessionParam(final long sessionId, final String key) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     return retriever.getConfig().getParam(key);
   }
 
-  StatisticsRetriever obtainRetriever(long sessionId) {
+  StatisticsRetriever obtainRetriever(final long sessionId) {
     StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(new Long(sessionId));
     if (null == retriever) {
       throw new RuntimeException("The statistics retriever for the capture session with ID '"+sessionId+"' couldn't be found.");

@@ -4,7 +4,14 @@
 package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferStopCapturingErrorException extends TCStatisticsBufferException {
-  public TCStatisticsBufferStopCapturingErrorException(String message, Throwable cause) {
-    super(message, cause);
+  private final long sessionId;
+
+  public TCStatisticsBufferStopCapturingErrorException(final long sessionId, final Throwable cause) {
+    super("The capture session with ID '" + sessionId + "' could not be stopped.", cause);
+    this.sessionId = sessionId;
+  }
+
+  public long getSessionId() {
+    return sessionId;
   }
 }

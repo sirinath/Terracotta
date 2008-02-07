@@ -13,11 +13,13 @@ import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreInstallationErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreOpenErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreRetrievalErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreSessionIdsRetrievalErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
 import com.tc.util.Assert;
@@ -36,6 +38,7 @@ import java.util.List;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
+  private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionId FROM statisticlog GROUP BY sessionId ORDER BY sessionId ASC";
 
   private final StatisticsDatabase database;
 
@@ -47,7 +50,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     try {
       database.open();
     } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreOpenErrorException("Unexpected error while opening the H2 database.", e);
+      throw new TCStatisticsStoreOpenErrorException(e);
     }
 
     install();
@@ -58,7 +61,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     try {
       database.close();
     } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreCloseErrorException("Unexpected error while closing the H2 database.", e);
+      throw new TCStatisticsStoreCloseErrorException(e);
     }
   }
 
@@ -84,18 +87,34 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
           "datatimestamp TIMESTAMP NULL, " +
           "datadecimal DECIMAL(8, 4) NULL)");
 
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
+
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentIp)");
+
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
+
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_statname ON statisticlog(statname)");
+
+      JdbcHelper.executeUpdate(database.getConnection(),
+        "CREATE INDEX IF NOT EXISTS idx_statisticlog_statelement ON statisticlog(statelement)");
+
       database.getConnection().commit();
       database.getConnection().setAutoCommit(true);
     } catch (Exception e) {
-      throw new TCStatisticsStoreInstallationErrorException("Unable to install the H2 database table structure.", e);
+      throw new TCStatisticsStoreInstallationErrorException(e);
     }
   }
 
   private void setupPreparedStatements() throws TCStatisticsStoreException {
     try {
       database.createPreparedStatement(SQL_NEXT_STATISTICLOGID);
+      database.createPreparedStatement(SQL_GET_AVAILABLE_SESSIONIDS);
     } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreSetupErrorException("Unexpected error while preparing the statements for the H2 statistics store.", e);
+      throw new TCStatisticsStoreSetupErrorException(e);
     }
   }
 
@@ -155,15 +174,14 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
       // ensure that a row was inserted
       if (row_count != 1) {
-        throw new TCStatisticsStoreStatisticStorageErrorException("Unexpected error while storing the statistic with id '" + id + "' and data " + data + ".", null);
+        throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
       }
 
       return id;
     } catch (Exception e) {
-      throw new TCStatisticsStoreStatisticStorageErrorException("Unexpected error while storing the statistic data " + data + ".", e);
+      throw new TCStatisticsStoreStatisticStorageErrorException(data, e);
     }
   }
-
 
   public void retrieveStatistics(final StatisticsRetrievalCriteria criteria, final StatisticsConsumer consumer) throws TCStatisticsStoreException {
     Assert.assertNotNull("criteria", criteria);
@@ -264,7 +282,50 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      throw new TCStatisticsStoreRetrievalErrorException("Unexpected error while retrieving the statistic data for criteria '" + criteria + "'.", e);
+      throw new TCStatisticsStoreRetrievalErrorException(criteria, e);
+    }
+  }
+
+  public long[] getAvailableSessionIds() throws TCStatisticsStoreException {
+    final List results = new ArrayList();
+    try {
+      database.ensureExistingConnection();
+
+      JdbcHelper.executeQuery(database.getPreparedStatement(SQL_GET_AVAILABLE_SESSIONIDS), new ResultSetHandler() {
+        public void useResultSet(ResultSet resultSet) throws SQLException {
+          while (resultSet.next()) {
+            results.add(new Long(resultSet.getLong("sessionId")));
+          }
+        }
+      });
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new TCStatisticsStoreSessionIdsRetrievalErrorException(e);
+    }
+
+    long[] result_array = new long[results.size()];
+    int i = 0;
+    Iterator it = results.iterator();
+    while (it.hasNext()) {
+      result_array[i++] = ((Long)it.next()).longValue();
+    }
+
+    return result_array;
+  }
+
+  public void clearStatistics(final long sessionId) throws TCStatisticsStoreException {
+    try {
+      database.ensureExistingConnection();
+
+      // remove statistics, based on the provided session Id
+      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog WHERE sessionId = ?", new PreparedStatementHandler() {
+        public void setParameters(PreparedStatement statement) throws SQLException {
+          statement.setLong(1, sessionId);
+        }
+      });
+    } catch (Exception e) {
+      throw new TCStatisticsStoreClearStatisticsErrorException(sessionId, e);
     }
   }
 }

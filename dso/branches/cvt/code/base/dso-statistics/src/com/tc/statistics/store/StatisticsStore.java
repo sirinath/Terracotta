@@ -15,4 +15,8 @@ public interface StatisticsStore {
   public long storeStatistic(StatisticData data) throws TCStatisticsStoreException;
 
   public void retrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticsConsumer consumer) throws TCStatisticsStoreException;
+
+  public long[] getAvailableSessionIds() throws TCStatisticsStoreException;
+
+  public void clearStatistics(long sessionId) throws TCStatisticsStoreException;
 }

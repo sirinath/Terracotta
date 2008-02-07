@@ -4,7 +4,7 @@
 package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererCloseSessionErrorException extends TCStatisticsGathererException {
-  public TCStatisticsGathererCloseSessionErrorException(String message, Throwable cause) {
+  public TCStatisticsGathererCloseSessionErrorException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

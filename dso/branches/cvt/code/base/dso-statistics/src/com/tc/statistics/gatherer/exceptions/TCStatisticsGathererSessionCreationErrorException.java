@@ -4,7 +4,7 @@
 package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererSessionCreationErrorException extends TCStatisticsGathererException {
-  public TCStatisticsGathererSessionCreationErrorException(String message, Throwable cause) {
+  public TCStatisticsGathererSessionCreationErrorException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

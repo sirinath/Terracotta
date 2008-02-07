@@ -303,6 +303,70 @@ public class H2StatisticsStoreTest extends TestCase {
     consumer4.ensureCorrectCounts(100, 50);
   }
 
+  public void testGetAvailableSessionIds() throws Exception {
+    store.storeStatistic(new StatisticData()
+      .sessionId(new Long(376487L))
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff"));
+    store.storeStatistic(new StatisticData()
+      .sessionId(new Long(12L))
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+    store.storeStatistic(new StatisticData()
+      .sessionId(new Long(376487L))
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff2"));
+    store.storeStatistic(new StatisticData()
+      .sessionId(new Long(2232L))
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+    store.storeStatistic(new StatisticData()
+      .sessionId(new Long(12L))
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+
+    long[] sessionids = store.getAvailableSessionIds();
+    assertEquals(3, sessionids.length);
+    assertEquals(12L, sessionids[0]);
+    assertEquals(2232L, sessionids[1]);
+    assertEquals(376487L, sessionids[2]);
+  }
+
+  public void testClearStatistics() throws Exception {
+    Long sessionid1 = new Long(34987L);
+    Long sessionid2 = new Long(9367L);
+
+    Thread.sleep(500);
+    populateBufferWithStatistics(sessionid1.longValue(), sessionid2.longValue());
+    Thread.sleep(500);
+
+    TestStaticticConsumer consumer1 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer1);
+    consumer1.ensureCorrectCounts(170, 50);
+
+    store.clearStatistics(sessionid2.longValue());
+
+    TestStaticticConsumer consumer2 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer2);
+    consumer2.ensureCorrectCounts(100, 50);
+
+    store.clearStatistics(sessionid1.longValue());
+
+    TestStaticticConsumer consumer3 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer3);
+    consumer3.ensureCorrectCounts(0, 0);
+  }
+
   private long populateBufferWithStatistics(long sessionid1, long sessionid2) throws TCStatisticsStoreException, UnknownHostException {
     String ip = InetAddress.getLocalHost().getHostAddress();
     for (int i = 1; i <= 100; i++) {

@@ -4,7 +4,14 @@
 package com.tc.statistics.database.exceptions;
 
 public class TCStatisticsDatabaseNotFoundException extends TCStatisticsDatabaseException {
-  public TCStatisticsDatabaseNotFoundException(String message, Throwable cause) {
-    super(message, cause);
+  private final String driver;
+
+  public TCStatisticsDatabaseNotFoundException(final String driver, final Throwable cause) {
+    super("Unable to load JDBC driver '" + driver + "'", cause);
+    this.driver = driver;
+  }
+
+  public String getDriver() {
+    return driver;
   }
 }

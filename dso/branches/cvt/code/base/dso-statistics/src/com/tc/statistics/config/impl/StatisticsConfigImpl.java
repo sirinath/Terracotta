@@ -12,7 +12,6 @@ import com.tc.util.concurrent.CopyOnWriteArrayMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.text.NumberFormat;
 
 public class StatisticsConfigImpl implements StatisticsConfig {
   private final Map defaultParams;
@@ -30,7 +29,7 @@ public class StatisticsConfigImpl implements StatisticsConfig {
     parent = null;
   }
 
-  private StatisticsConfigImpl(StatisticsConfig parent) {
+  private StatisticsConfigImpl(final StatisticsConfig parent) {
     Assert.assertNotNull("parent", parent);
     defaultParams = Collections.EMPTY_MAP;
     this.parent = parent;
@@ -44,15 +43,15 @@ public class StatisticsConfigImpl implements StatisticsConfig {
     return new StatisticsConfigImpl(this);
   }
 
-  public void setParam(String key, Object value) {
+  public void setParam(final String key, final Object value) {
     params.put(key, value);
   }
 
-  public void removeParam(String key) {
+  public void removeParam(final String key) {
     params.remove(key);
   }
 
-  public Object getParam(String key) {
+  public Object getParam(final String key) {
     Object value = params.get(key);
     if (null == value) {
       value = defaultParams.get(key);
@@ -64,7 +63,7 @@ public class StatisticsConfigImpl implements StatisticsConfig {
     return value;
   }
 
-  public long getParamLong(String key) {
+  public long getParamLong(final String key) {
     Object value = getParam(key);
     if (null == value) {
       return 0L;
@@ -73,7 +72,7 @@ public class StatisticsConfigImpl implements StatisticsConfig {
     return ((Number)value).longValue();
   }
 
-  public String getParamString(String key) {
+  public String getParamString(final String key) {
     Object value = getParam(key);
     if (null == value) {
       return null;

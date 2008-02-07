@@ -4,7 +4,14 @@
 package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferStatisticConsumptionErrorException extends TCStatisticsBufferException {
-  public TCStatisticsBufferStatisticConsumptionErrorException(String message, Throwable cause) {
-    super(message, cause);
+  private final long sessionId;
+
+  public TCStatisticsBufferStatisticConsumptionErrorException(final long sessionId, final Throwable cause) {
+    super("Unexpected error while consuming the statistic data for session with ID '" + sessionId + "'.", cause);
+    this.sessionId = sessionId;
+  }
+
+  public long getSessionId() {
+    return sessionId;
   }
 }

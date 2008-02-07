@@ -4,7 +4,7 @@
 package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferInstallationErrorException extends TCStatisticsBufferException {
-  public TCStatisticsBufferInstallationErrorException(String message, Throwable cause) {
-    super(message, cause);
+  public TCStatisticsBufferInstallationErrorException(final Throwable cause) {
+    super("Unable to install the H2 database table structure.", cause);
   }
 }
