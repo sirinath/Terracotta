@@ -25,6 +25,7 @@ import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
+import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.util.Assert;
@@ -43,6 +44,9 @@ import java.util.Set;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
+  private final static int DATABASE_STRUCTURE_VERSION = 1;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 1558319363L;
+
   private final static String SQL_NEXT_CAPTURESESSIONID = "SELECT nextval('seq_capturesession')";
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
@@ -85,22 +89,38 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       database.getConnection().setAutoCommit(false);
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      database.createVersionTable();
+
+      ChecksumCalculator csc = new ChecksumCalculator();
+
+      /*====================================================================*/
+      /*== !!! IMPORTANT !!!
+      /*==
+      /*== Any significant change to the structure of the database
+      /*== should increase the version number of the database, which is
+      /*== stored in the DATABASE_STRUCTURE_VERSION field of this class.
+      /*== You will need to update the DATABASE_STRUCTURE_CHECKSUM field
+      /*== also since it serves as a safeguard to ensure that the version is
+      /*== always adapted. The correct checksum value will be given to you
+      /*== when a checksum mismatch is detected.
+      /*====================================================================*/
+
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE TABLE IF NOT EXISTS capturesession (" +
           "id BIGINT NOT NULL PRIMARY KEY, " +
           "start TIMESTAMP NULL, " +
           "stop TIMESTAMP NULL)");
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE SEQUENCE IF NOT EXISTS seq_consumption");
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE TABLE IF NOT EXISTS statisticlog (" +
           "id BIGINT NOT NULL PRIMARY KEY, " +
           "sessionId BIGINT NOT NULL, " +
@@ -114,13 +134,15 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
           "datadecimal DECIMAL(8, 4) NULL, " +
           "consumptionid BIGINT NULL)");
 
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
-      JdbcHelper.executeUpdate(database.getConnection(),
+      JdbcHelper.executeUpdate(csc, database.getConnection(),
         "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionId)");
 
       database.getConnection().commit();
       database.getConnection().setAutoCommit(true);
+
+      database.checkVersion(DATABASE_STRUCTURE_VERSION, DATABASE_STRUCTURE_CHECKSUM, csc);
     } catch (Exception e) {
       throw new TCStatisticsBufferInstallationErrorException(e);
     }

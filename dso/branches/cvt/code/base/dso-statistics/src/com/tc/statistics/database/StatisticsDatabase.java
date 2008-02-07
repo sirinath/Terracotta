@@ -4,6 +4,7 @@
 package com.tc.statistics.database;
 
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 
 import java.sql.Connection;
@@ -25,4 +26,8 @@ public interface StatisticsDatabase {
   public void close() throws TCStatisticsDatabaseException;
 
   public StatisticData getStatisticsData(ResultSet resultSet) throws SQLException;
+
+  public void createVersionTable() throws SQLException;
+
+  public void checkVersion(int currentVersion, long currentChecksum, ChecksumCalculator csc) throws TCStatisticsDatabaseException;
 }
