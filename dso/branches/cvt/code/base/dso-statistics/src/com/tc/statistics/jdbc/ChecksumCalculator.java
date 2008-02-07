@@ -12,7 +12,7 @@ import java.util.zip.Checksum;
 public class ChecksumCalculator {
   private final StringBuffer buffer = new StringBuffer();
 
-  public void append(String string) {
+  public void append(final String string) {
     buffer.append(string);
   }
 
