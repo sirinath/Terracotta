@@ -14,13 +14,13 @@ public interface HealthCheckerConfig {
   /* HC Name - describing what it is monitoring */
   String getHealthCheckerName();
 
-  /* HC tests liveness of a connection when no message transaction is seen on it for more than keepalive_idle time */
+  /* HC tests liveness of a connection when no message transaction is seen on it for more than ping_idle time */
   int getPingIdleTime();
 
-  /* HC probes a connection once in keepalive_interval time after it is found idle for keepalive_idle time */
+  /* HC probes a connection once in ping_interval time after it is found idle for ping_idle time */
   int getPingInterval();
 
-  /* HC probes a idle connection for keepalive_probes times before tagging it as dead */
+  /* HC probes a idle connection for ping_probes times before tagging it as dead */
   int getPingProbes();
 
   /*
