@@ -50,6 +50,7 @@ import com.tc.net.groups.Node;
 import com.tc.net.groups.NodeID;
 import com.tc.net.groups.TCGroupManagerImpl;
 import com.tc.net.groups.TribesGroupManager;
+import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -67,11 +68,10 @@ import java.io.IOException;
 public class L2HACoordinator implements L2Coordinator, StateChangeListener, GroupEventsListener,
     SequenceGeneratorListener {
 
+  private static final TCLogger                logger                  = TCLogging.getLogger(L2HACoordinator.class);
   public static final String                   NHA_COMM_LAYER_PROPERTY = "l2.nha.groupcomm.type";
   public static final String                   TC_GROUP_COMM           = "tc-group-comm";
   public static final String                   TRIBES_COMM             = "tribes";
-
-  private static final TCLogger                logger                  = TCLogging.getLogger(L2HACoordinator.class);
 
   private final TCLogger                       consoleLogger;
   private final DistributedObjectServer        server;
@@ -94,21 +94,21 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
                          TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
                          PersistentMapStore clusterStateStore, ObjectManager objectManager,
                          ServerTransactionManager transactionManager, ServerGlobalTransactionManager gtxm,
-                         DSOChannelManager channelManager, NewHaConfig haConfig) {
+                         DSOChannelManager channelManager, NewHaConfig haConfig, MessageRecycler recycler) {
     this.configSetupManager = configSetupManager;
     this.threadGroup = threadGroup;
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.haConfig = haConfig;
 
-    init(stageManager, clusterStateStore, objectManager, transactionManager, gtxm, channelManager);
+    init(stageManager, clusterStateStore, objectManager, transactionManager, gtxm, channelManager, recycler);
   }
 
   private void init(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
                     ServerTransactionManager transactionManager, ServerGlobalTransactionManager gtxm,
-                    DSOChannelManager channelManager) {
+                    DSOChannelManager channelManager, MessageRecycler recycler) {
     try {
-      basicInit(stageManager, clusterStateStore, objectManager, transactionManager, gtxm, channelManager);
+      basicInit(stageManager, clusterStateStore, objectManager, transactionManager, gtxm, channelManager, recycler);
     } catch (GroupException e) {
       logger.error(e);
       throw new AssertionError(e);
@@ -117,14 +117,13 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   private void basicInit(StageManager stageManager, PersistentMapStore clusterStateStore, ObjectManager objectManager,
                          ServerTransactionManager transactionManager, ServerGlobalTransactionManager gtxm,
-                         DSOChannelManager channelManager) throws GroupException {
+                         DSOChannelManager channelManager, MessageRecycler recycler) throws GroupException {
 
     this.clusterState = new ClusterState(clusterStateStore, server.getManagedObjectStore(), server
         .getConnectionIdFactory(), gtxm.getGlobalTransactionIDSequenceProvider());
 
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
-
     // choose a group comm layer
     final String commLayer = TCPropertiesImpl.getProperties().getProperty(NHA_COMM_LAYER_PROPERTY);
     if (commLayer.equals(TC_GROUP_COMM)) {
@@ -177,7 +176,7 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
     OrderedSink orderedObjectsSyncSink = new OrderedSink(logger, objectsSyncSink);
     this.rTxnManager = new ReplicatedTransactionManagerImpl(groupManager, orderedObjectsSyncSink, transactionManager,
-                                                            gtxm);
+                                                            gtxm, recycler);
 
     this.rObjectManager = new ReplicatedObjectManagerImpl(groupManager, stateManager, l2ObjectStateManager,
                                                           rTxnManager, objectManager, transactionManager,
