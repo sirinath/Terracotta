@@ -29,5 +29,5 @@ public interface StatisticsDatabase {
 
   public void createVersionTable() throws SQLException;
 
-  public void checkVersion(int currentVersion, long currentChecksum, ChecksumCalculator csc) throws TCStatisticsDatabaseException;
+  public void checkVersion(int currentVersion, long currentChecksum) throws TCStatisticsDatabaseException;
 }

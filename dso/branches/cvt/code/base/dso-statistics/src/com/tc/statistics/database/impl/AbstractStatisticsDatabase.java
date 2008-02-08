@@ -92,7 +92,10 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
 
   // TODO: Currently version checks just fail hard when they don't match, in the future this should
   // be made more intelligent to automatically migrate from older versions to newer ones.
-  public void checkVersion(final int currentVersion, long currentChecksum, ChecksumCalculator csc) throws TCStatisticsDatabaseException {
+  public void checkVersion(final int currentVersion, long currentChecksum) throws TCStatisticsDatabaseException {
+    ChecksumCalculator csc = JdbcHelper.getActiveChecksumCalculator();
+    Assert.assertNotNull("Expected the checksum of SQL statements to be calculated at this time.", csc);
+
     long checksum = csc.checksum();
     Assert.assertTrue("The checksum of the SQL that creates the database structure doesn't correspond to the checksum that corresponds to the version number of the database structure. Any significant change to the database structure should increase the version number and adapt the SQL checksum. The current checksum is "+checksum+"L.", currentChecksum == checksum);
 

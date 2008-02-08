@@ -12,6 +12,29 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public abstract class JdbcHelper {
+  private final static ThreadLocal checksumCalculator = new ThreadLocal();
+
+  public static void calculateChecksum(CaptureChecksum capture) throws Exception {
+    Assert.assertNotNull("capture", capture);
+    checksumCalculator.set(new ChecksumCalculator());
+    try {
+      capture.execute();
+    } finally {
+      checksumCalculator.set(null);
+    }
+  }
+
+  public static ChecksumCalculator getActiveChecksumCalculator() {
+    return (ChecksumCalculator)checksumCalculator.get();
+  }
+
+  private static void appendChecksumPart(String sql) {
+    ChecksumCalculator csc = getActiveChecksumCalculator();
+    if (csc != null) {
+      csc.append(sql);
+    }
+  }
+
   public static long fetchNextSequenceValue(final PreparedStatement psNextId) throws SQLException {
     ResultSet rs_id = psNextId.executeQuery();
     try {
@@ -23,6 +46,8 @@ public abstract class JdbcHelper {
   }
 
   public static void executeUpdate(final Connection connection, final String sql) throws SQLException {
+    appendChecksumPart(sql);
+
     Statement stmt = connection.createStatement();
     try {
       stmt.executeUpdate(sql);
@@ -31,15 +56,12 @@ public abstract class JdbcHelper {
     }
   }
 
-  public static void executeUpdate(final ChecksumCalculator checksum, final Connection connection, final String sql) throws SQLException {
-    checksum.append(sql);
-    executeUpdate(connection, sql);
-  }
-
   public static int executeUpdate(final Connection connection, final String sql, final PreparedStatementHandler handler) throws SQLException {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("handler", handler);
 
+    appendChecksumPart(sql);
+    
     PreparedStatement ps_update = connection.prepareStatement(sql);
     try {
       handler.setParameters(ps_update);
@@ -53,6 +75,8 @@ public abstract class JdbcHelper {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("psHandler", psHandler);
     Assert.assertNotNull("rsHandler", rsHandler);
+
+    appendChecksumPart(sql);
 
     PreparedStatement ps_query = connection.prepareStatement(sql);
     try {
@@ -73,6 +97,8 @@ public abstract class JdbcHelper {
     Assert.assertNotNull("connection", connection);
     Assert.assertNotNull("rsHandler", rsHandler);
 
+    appendChecksumPart(sql);
+
     Statement stmt = connection.createStatement();
     try {
       stmt.execute(sql);
@@ -90,6 +116,7 @@ public abstract class JdbcHelper {
   public static void executeQuery(final PreparedStatement preparedStatement, final ResultSetHandler rsHandler) throws SQLException {
     Assert.assertNotNull("preparedStatement", preparedStatement);
     Assert.assertNotNull("rsHandler", rsHandler);
+    Assert.assertTrue("You can't call this method when a checksum is being calculated for the SQL statements that have been run.", null == getActiveChecksumCalculator());
 
     preparedStatement.execute();
     ResultSet rs = preparedStatement.getResultSet();
