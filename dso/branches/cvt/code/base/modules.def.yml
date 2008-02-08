@@ -719,6 +719,16 @@ modules:
         - simulator
         - thirdparty
         - thirdparty-api
+  - clustered-surefire-2.3:
+      options:
+        jdk: J2SE-1.4
+        module: true
+      dependencies:
+        - common
+        - common-api
+        - dso-l1-api
+        - modules-common
+        - thirdparty-api
   - dso-container-tests:
       options:
         jdk: J2SE-1.4
