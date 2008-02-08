@@ -12,7 +12,7 @@ public class TCStatisticsDatabaseStructureFuturedatedException extends TCStatist
   private final Date created;
 
   public TCStatisticsDatabaseStructureFuturedatedException(final int actual, final int expected, final Date created) {
-    super("The structure of the database is newer than what the software supports. It has version number "+actual+", while version "+expected+" was expected. It was created on "+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(created)+".", null);
+    super("The structure of the database is newer than what the software supports. It has version number "+actual+", while version "+expected+" was expected. It was created on "+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(created)+".", null);
     this.actual = actual;
     this.expected = expected;
     this.created = created;

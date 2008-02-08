@@ -12,6 +12,10 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
 import com.tc.statistics.config.impl.StatisticsConfigImpl;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
+import com.tc.statistics.database.impl.H2StatisticsDatabase;
+import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.util.TCAssertionError;
 
@@ -25,10 +29,11 @@ import junit.framework.TestCase;
 
 public class H2StatisticsBufferTest extends TestCase {
   private StatisticsBuffer buffer;
+  private File tmpDir;
 
   public void setUp() throws Exception {
-    File tmp_dir = new TempDirectoryHelper(getClass(), true).getDirectory();
-    buffer = new H2StatisticsBufferImpl(new StatisticsConfigImpl(), tmp_dir);
+    tmpDir = new TempDirectoryHelper(getClass(), true).getDirectory();
+    buffer = new H2StatisticsBufferImpl(new StatisticsConfigImpl(), tmpDir);
     buffer.open();
   }
 
@@ -74,6 +79,50 @@ public class H2StatisticsBufferTest extends TestCase {
       // dir is not writable
     } finally {
       tmp_dir.delete();
+    }
+  }
+
+  public void testOutdatedVersionCheck() throws Exception {
+    buffer.close();
+
+    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir);
+    database.open();
+    try {
+      JdbcHelper.executeUpdate(database.getConnection(), "UPDATE dbstructureversion SET version = "+ (H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION - 1));
+      try {
+        buffer.open();
+        fail("expected exception");
+      } catch (TCStatisticsBufferException e) {
+        assertTrue(e.getCause() instanceof TCStatisticsDatabaseStructureOutdatedException);
+        TCStatisticsDatabaseStructureOutdatedException cause = (TCStatisticsDatabaseStructureOutdatedException)e.getCause();
+        assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION - 1, cause.getActualVersion());
+        assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION, cause.getExpectedVersion());
+        assertNotNull(cause.getCreationDate());
+      }
+    } finally {
+      database.close();
+    }
+  }
+
+  public void testFuturedatedVersionCheck() throws Exception {
+    buffer.close();
+
+    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir);
+    database.open();
+    try {
+      JdbcHelper.executeUpdate(database.getConnection(), "UPDATE dbstructureversion SET version = "+ (H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION + 1));
+      try {
+        buffer.open();
+        fail("expected exception");
+      } catch (TCStatisticsBufferException e) {
+        assertTrue(e.getCause() instanceof TCStatisticsDatabaseStructureFuturedatedException);
+        TCStatisticsDatabaseStructureFuturedatedException cause = (TCStatisticsDatabaseStructureFuturedatedException)e.getCause();
+        assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION + 1, cause.getActualVersion());
+        assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION, cause.getExpectedVersion());
+        assertNotNull(cause.getCreationDate());
+      }
+    } finally {
+      database.close();
     }
   }
 
