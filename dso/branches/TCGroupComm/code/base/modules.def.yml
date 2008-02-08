@@ -3,7 +3,7 @@
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
-
+#
 # NOTE: if you want tests in a module be run in monkeys, you have to add your module
 # to a module-group as below (spring, dso, container, etc...)
 
@@ -728,7 +728,6 @@ modules:
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
-        - clustered-ehcache-commons-1.0
   - clustered-hibernate-3.2.5:
       options:
         jdk: J2SE-1.4
@@ -754,7 +753,6 @@ modules:
         - thirdparty
         - legacy-test-tree
         - dso-memory-datastore
-        - clustered-ehcache-commons-1.0
   - clustered-rife-1.6.0:
       options:
         jdk: J2SE-1.5
