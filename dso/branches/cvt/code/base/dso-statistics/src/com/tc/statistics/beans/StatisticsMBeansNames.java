@@ -14,8 +14,8 @@ public class StatisticsMBeansNames {
 
   static {
     try {
-      STATISTICS_EMITTER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Server, TerracottaManagement.Subsystem.None, null, "Terracotta Statistics Emitter", true);
-      STATISTICS_MANAGER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Server, TerracottaManagement.Subsystem.None, null, "Terracotta Statistics Manager", true);
+      STATISTICS_EMITTER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Agent, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Emitter", true);
+      STATISTICS_MANAGER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Agent, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Manager", true);
     } catch (MalformedObjectNameException mone) {
       throw new RuntimeException(mone);
     } catch (NullPointerException npe) {
