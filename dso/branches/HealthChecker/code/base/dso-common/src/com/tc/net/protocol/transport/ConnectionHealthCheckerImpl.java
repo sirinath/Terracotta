@@ -36,7 +36,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ": "
                                  + healthCheckerConfig.getHealthCheckerName());
 
-    monitorThreadEngine = new HealthCheckerMonitorThreadEngine(healthCheckerConfig, connManager);
+    monitorThreadEngine = new HealthCheckerMonitorThreadEngine(healthCheckerConfig, connManager, logger);
     monitorThread = new Thread(monitorThreadEngine, "HealthChecker");
     monitorThread.setDaemon(true);
     logger.info("HealthChecker - Enabled");
@@ -83,7 +83,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     //
   }
 
-  private class HealthCheckerMonitorThreadEngine implements Runnable {
+  private static class HealthCheckerMonitorThreadEngine implements Runnable {
     private ConcurrentHashMap         connectionMap = new ConcurrentHashMap();
     private final int                 pingIdleTime;
     private final int                 pingInterval;
@@ -91,16 +91,20 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     private final SetOnceFlag         stop          = new SetOnceFlag();
     private final boolean             doSocketConnect;
     private final HealthCheckerConfig config;
+    private final TCLogger            logger;
     private final TCConnectionManager connectionManager;
 
     public HealthCheckerMonitorThreadEngine(HealthCheckerConfig healthCheckerConfig,
-                                            TCConnectionManager connectionManager) {
+                                            TCConnectionManager connectionManager, TCLogger logger) {
       pingIdleTime = healthCheckerConfig.getPingIdleTime() * 1000;
       pingInterval = healthCheckerConfig.getPingInterval() * 1000;
       pingProbes = healthCheckerConfig.getPingProbes();
       doSocketConnect = healthCheckerConfig.doSocketConnect();
       this.connectionManager = connectionManager;
       this.config = healthCheckerConfig;
+
+      Assert.assertNotNull(logger);
+      this.logger = logger;
 
       if ((pingIdleTime - pingInterval < 0) || pingIdleTime <= 0 || pingInterval <= 0 || pingProbes <= 0) {
         logger
@@ -125,7 +129,6 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     public void stop() {
       stop.attemptSet();
     }
-
 
     public void run() {
       while (true) {
@@ -173,7 +176,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     public int getTotalConnectionsUnderMonitor() {
       return connectionMap.size();
     }
-    
+
     public long getTotalProbesSentOnAllConnections() {
       Iterator connIterator = connectionMap.values().iterator();
       long totalProbeSent = 0;
@@ -189,7 +192,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   }
 
   /* For testing only */
-  public synchronized int getTotalConnsUnderMonitor() {
+  public int getTotalConnsUnderMonitor() {
     return monitorThreadEngine.getTotalConnectionsUnderMonitor();
   }
 
