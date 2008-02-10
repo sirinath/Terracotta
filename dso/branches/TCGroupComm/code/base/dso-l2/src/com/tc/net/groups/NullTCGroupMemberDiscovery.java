@@ -4,12 +4,14 @@
  */
 package com.tc.net.groups;
 
-import com.tc.exception.ImplementMe;
+import com.tc.async.api.EventContext;
+import com.tc.util.Assert;
 
 public class NullTCGroupMemberDiscovery implements TCGroupMemberDiscovery {
 
   public Node getLocalNode() {
-    throw new ImplementMe();
+    Assert.fail();
+    return null;
   }
 
   public void setLocalNode(Node local) {
@@ -25,6 +27,18 @@ public class NullTCGroupMemberDiscovery implements TCGroupMemberDiscovery {
   }
 
   public void stop() {
+    return;
+  }
+
+  public void discoveryHandler(EventContext context) {
+    Assert.fail();
+  }
+
+  public void nodeJoined(NodeID nodeID) {
+    return;
+  }
+
+  public void nodeLeft(NodeID nodeID) {
     return;
   }
 

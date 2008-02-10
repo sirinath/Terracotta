@@ -19,7 +19,7 @@ public class TCGroupHandshakeMessageHandler extends AbstractEventHandler {
   
   public void handleEvent(EventContext context) {
     TCGroupHandshakeMessage msg = (TCGroupHandshakeMessage) context;
-    manager.handshakeReceived(msg);
+    manager.receivedHandshake(msg);
   }
 
   public void initialize(ConfigurationContext context) {

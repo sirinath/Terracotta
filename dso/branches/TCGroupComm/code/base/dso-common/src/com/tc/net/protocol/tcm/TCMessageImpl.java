@@ -78,6 +78,11 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   protected TCByteBufferInputStream getInputStream() {
     return this.bbis;
   }
+  
+//use me to write directly to the message data (as opposed to using the name-value mechanism)
+  protected TCByteBufferOutputStream getOutputStream() {
+    return this.out;
+  }
 
   // use me to write directly to the message data (as opposed to using the name-value mechanism)
   // protected TCByteBufferOutputStream getOutputStream() {

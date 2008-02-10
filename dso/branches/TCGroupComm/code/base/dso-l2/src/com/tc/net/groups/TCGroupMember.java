@@ -8,9 +8,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 
 public interface TCGroupMember {
 
-  public NodeIdComparable getSrcNodeID();
-
-  public NodeIdComparable getDstNodeID();
+  public NodeIdComparable getLocalNodeID();
 
   public NodeIdComparable getPeerNodeID();
 
@@ -32,5 +30,5 @@ public interface TCGroupMember {
 
   public void close();
 
-  public boolean highPriorityLink();
+  public boolean isHighPriorityNode();
 }

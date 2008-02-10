@@ -8,18 +8,16 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.net.groups.TCGroupManagerImpl;
-import com.tc.net.groups.TCGroupPingMessage;
 
-public class TCGroupPingMessageHandler extends AbstractEventHandler {
+public class TCGroupMemberDiscoveryHandler extends AbstractEventHandler {
   private final TCGroupManagerImpl manager;
   
-  public TCGroupPingMessageHandler(TCGroupManagerImpl manager) {
+  public TCGroupMemberDiscoveryHandler(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
   
   public void handleEvent(EventContext context) {
-    TCGroupPingMessage ping = (TCGroupPingMessage) context;
-    manager.pingReceived(ping);
+    manager.getDiscover().discoveryHandler(context);
   }
 
   public void initialize(ConfigurationContext context) {

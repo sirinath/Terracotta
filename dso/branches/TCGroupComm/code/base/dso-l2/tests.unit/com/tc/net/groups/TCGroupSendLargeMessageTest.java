@@ -36,26 +36,26 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
 
     TCGroupManagerImpl gm1 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p1,
                                                     new TCThreadGroup(new ThrowableHandler(null)));
-    gm1.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes));
+    gm1.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes, gm1));
     MyListener l1 = new MyListener();
     gm1.registerForMessages(GCResultMessage.class, l1);
 
     TCGroupManagerImpl gm2 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p2,
                                                     new TCThreadGroup(new ThrowableHandler(null)));
-    gm2.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes));
+    gm2.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes, gm2));
     MyListener l2 = new MyListener();
     gm2.registerForMessages(GCResultMessage.class, l2);
 
     NodeID n1 = gm1.join(allNodes[0], allNodes);
     NodeID n2 = gm2.join(allNodes[1], allNodes);
 
-    Thread.sleep(1000);
+    ThreadUtil.reallySleep(1000);
 
     assertNotEquals(n1, n2);
     checkSendingReceivingMessages(gm1, l1, gm2, l2, oidsCount);
 
-    gm1.stop(1000);
-    gm2.stop(1000);
+    gm1.shutdown();
+    gm2.shutdown();
   }
 
   public void testSendingReceivingMessagesStatic4M() throws Exception {
