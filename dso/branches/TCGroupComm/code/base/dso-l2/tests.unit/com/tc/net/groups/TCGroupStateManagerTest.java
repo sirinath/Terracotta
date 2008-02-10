@@ -183,7 +183,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     for (int i = 0; i < nodes; ++i) {
       groupMgr[i].join(allNodes[i], allNodes);
     }
-    Thread.sleep(1000 * nodes);
+    ThreadUtil.reallySleep(1000 * nodes);
 
     System.out.println("*** Start Election...");
     // run them concurrently
@@ -194,7 +194,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       elections[i].join();
     }
 
-    Thread.sleep(1000);
+    ThreadUtil.reallySleep(1000);
     // verification
     int activeCount = 0;
     for (int i = 0; i < nodes; ++i) {
@@ -259,7 +259,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       elections[i].join();
     }
 
-    Thread.sleep(1000);
+    ThreadUtil.reallySleep(1000);
     // verification
     int activeCount = 0;
     for (int i = 0; i < nodes; ++i) {
@@ -298,7 +298,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     System.out.println("*** First node joins to be an active node...");
     ids[0] = groupMgr[0].join(allNodes[0], allNodes);
     managers[0].startElection();
-    Thread.sleep(100);
+    ThreadUtil.reallySleep(100);
 
     // move following join nodes to passive-standby
     groupMgr[0].registerForGroupEvents(new MyGroupEventListener(groupMgr[0].getLocalNodeID()) {
@@ -314,7 +314,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       ids[i] = groupMgr[i].join(allNodes[i], allNodes);
     }
 
-    Thread.sleep(1000 * nodes);
+    ThreadUtil.reallySleep(1000 * nodes);
     // verification: first node must be active
     int activeCount = 0;
     for (int i = 0; i < nodes; ++i) {
@@ -348,7 +348,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     for (int i = 1; i < nodes; ++i) {
       reElectThreads[i].join();
     }
-    Thread.sleep(1000);
+    ThreadUtil.reallySleep(1000);
 
     // verify
     activeCount = 0;
@@ -368,7 +368,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       throws Exception {
     TCGroupManagerImpl gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(),
                                                    nodes[localIndex].getPort(), threadGroup);
-    gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes));
+    gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes, gm));
 
     groupMgr[localIndex] = gm;
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());

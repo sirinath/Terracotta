@@ -18,36 +18,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private TCGroupManagerImpl     manager;
   private final MessageChannel   channel;
-  private final NodeIdComparable srcNodeID;
-  private final NodeIdComparable dstNodeID;
+  private final NodeIdComparable localNodeID;
   private final NodeIdComparable peerNodeID;
   // set member ready only when both ends are in group
-  private final AtomicBoolean    ready               = new AtomicBoolean(false);
-  private final AtomicBoolean    joined              = new AtomicBoolean(false);
-  private boolean                closedEventNotified = false;
-  private final boolean          isClientChannel;
+  private final AtomicBoolean    ready              = new AtomicBoolean(false);
+  private final AtomicBoolean    joined             = new AtomicBoolean(false);
+  private volatile boolean       closeEventNotified = false;
 
-  /*
-   * Member channel established from src to dst. Called by channel initiator, openChannel, peer is dstNodeID.
-   */
-  public TCGroupMemberImpl(NodeIdComparable localNodeID, NodeIdComparable dstNodeID, MessageChannel channel) {
-    isClientChannel = true;
+  public TCGroupMemberImpl(NodeIdComparable localNodeID, NodeIdComparable peerNodeID, MessageChannel channel) {
     this.channel = channel;
-    this.srcNodeID = localNodeID;
-    this.dstNodeID = dstNodeID;
-    this.peerNodeID = this.dstNodeID;
-    this.channel.addListener(this);
-  }
-
-  /*
-   * Member channel established from dst to src. Called by channel receiver, channelCreated, peer is srcNodeID.
-   */
-  public TCGroupMemberImpl(MessageChannel channel, NodeIdComparable srcNodeID, NodeIdComparable localNodeID) {
-    isClientChannel = false;
-    this.channel = channel;
-    this.srcNodeID = srcNodeID;
-    this.dstNodeID = localNodeID;
-    this.peerNodeID = this.srcNodeID;
+    this.localNodeID = localNodeID;
+    this.peerNodeID = peerNodeID;
     this.channel.addListener(this);
   }
 
@@ -66,7 +47,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   public String toString() {
-    return ("Group Member: " + ((NodeIDImpl) peerNodeID).getName() + " " + srcNodeID + " <-> " + dstNodeID);
+    return ("Group Member: " + localNodeID + " <-> " + peerNodeID);
   }
 
   public void notifyChannelEvent(ChannelEvent event) {
@@ -76,19 +57,13 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
       } else if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
                  || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
         ready.set(false);
-        if (!channel.isClosed()) channel.close();
-        closedEventNotified = true;
-        if (manager != null) manager.memberDisappeared(this);
+        closeEventNotified = true;
       }
     }
   }
 
-  public NodeIdComparable getSrcNodeID() {
-    return srcNodeID;
-  }
-
-  public NodeIdComparable getDstNodeID() {
-    return dstNodeID;
+  public NodeIdComparable getLocalNodeID() {
+    return localNodeID;
   }
 
   public NodeIdComparable getPeerNodeID() {
@@ -121,16 +96,11 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   public void close() {
     ready.set(false);
-    // if closed event notified, it is closing, don't do close
-    // some incoming messages may be still under processing
-    if (!closedEventNotified || isClientChannel) {
-      getChannel().close();
-    }
-    closedEventNotified = false;
+    if (!closeEventNotified) getChannel().close();
   }
 
-  public boolean highPriorityLink() {
-    return ((srcNodeID).compareTo(dstNodeID) > 0);
+  public boolean isHighPriorityNode() {
+    return (localNodeID.compareTo(peerNodeID) > 0);
   }
 
 }

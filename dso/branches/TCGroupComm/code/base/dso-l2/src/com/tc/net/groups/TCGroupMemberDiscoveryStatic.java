@@ -4,52 +4,63 @@
  */
 package com.tc.net.groups;
 
+import com.tc.async.api.EventContext;
+import com.tc.async.api.StageManager;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.protocol.tcm.ChannelEvent;
+import com.tc.net.protocol.tcm.ChannelEventListener;
+import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
-import com.tc.util.concurrent.TCExceptionResultException;
-import com.tc.util.concurrent.TCFuture;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private static final TCLogger                     logger            = TCLogging
-                                                                          .getLogger(TCGroupMemberDiscoveryStatic.class);
-
-  private Node                                      local;
-  private final Node[]                              nodes;
-  private TCGroupManagerImpl                        manager;
-  private final AtomicBoolean                       running           = new AtomicBoolean(false);
-  private final AtomicBoolean                       stopAttempt       = new AtomicBoolean(false);
-  private final ConcurrentHashMap<Node, NodeStatus> statusMap         = new ConcurrentHashMap<Node, NodeStatus>();
-  private final static long                         connectIntervalms = 1000;
-  private final static long                         handshakeTimeout;
+  private static final TCLogger                    logger                          = TCLogging
+                                                                                       .getLogger(TCGroupMemberDiscoveryStatic.class);
+  private final static long                        DISCOVERY_INTERVAL_MS;
+  public static final String                       NHA_TCGPCOMM_DISCOVERY_INTERVAL = "l2.nha.tcgroupcomm.discovery.interval";
   static {
-    handshakeTimeout = TCPropertiesImpl.getProperties().getLong(TCGroupManagerImpl.NHA_TCCOMM_HANDSHAKE_TIMEOUT);
+    DISCOVERY_INTERVAL_MS = TCPropertiesImpl.getProperties().getLong(NHA_TCGPCOMM_DISCOVERY_INTERVAL);
   }
 
-  public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager) {
-    nodes = makeAllNodes(configSetupManager);
+  private final AtomicBoolean                      running                         = new AtomicBoolean(false);
+  private final AtomicBoolean                      stopAttempt                     = new AtomicBoolean(false);
+  private final Map<String, DiscoveryStateMachine> nodeStateMap                    = Collections
+                                                                                       .synchronizedMap(new HashMap<String, DiscoveryStateMachine>());
+  private final TCGroupManagerImpl                 manager;
+  private Node                                     local;
+  private Integer                                  joinedNodes                     = 0;
+
+  public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager, StageManager stageManager,
+                                      TCGroupManagerImpl manager) {
+    this.manager = manager;
+    makeAllNodes(configSetupManager);
   }
 
   /*
    * for testing purpose only
    */
-  TCGroupMemberDiscoveryStatic(Node[] nodes) {
+  TCGroupMemberDiscoveryStatic(Node[] nodes, TCGroupManagerImpl manager) {
+    this.manager = manager;
     for (Node node : nodes) {
-      statusMap.put(node, new NodeStatus(node));
+      DiscoveryStateMachine stateMachine = new DiscoveryStateMachine(node);
+      DiscoveryStateMachine old = nodeStateMap.put(getNodeName(node), stateMachine);
+      Assert.assertNull(old);
+      stateMachine.start();
     }
-    this.nodes = nodes;
   }
 
   private Node[] makeAllNodes(L2TVSConfigurationSetupManager configSetupManager) {
@@ -67,19 +78,47 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return rv;
   }
 
+  private String getNodeName(Node node) {
+    return (TCGroupManagerImpl.makeGroupNodeName(node.getHost(), node.getPort()));
+  }
+
   private Node makeNode(NewL2DSOConfig l2, String bind) {
     Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt(), bind);
-    statusMap.put(node, new NodeStatus(node));
+    DiscoveryStateMachine stateMachine = new DiscoveryStateMachine(node);
+    DiscoveryStateMachine old = nodeStateMap.put(getNodeName(node).intern(), stateMachine);
+    Assert.assertNull(old);
+    stateMachine.start();
     return (node);
   }
 
-  public void setTCGroupManager(TCGroupManagerImpl manager) {
-    this.manager = manager;
+  private void discoveryPut(DiscoveryStateMachine stateMachine) {
+    manager.getDiscoveryHandlerSink().add(stateMachine);
   }
 
-  TCGroupMember openChannel(String hostname, int groupPort) throws TCTimeoutException, UnknownHostException,
-      MaxConnectionsExceededException, IOException {
-    return (manager.openChannel(hostname, groupPort));
+  public void discoveryHandler(EventContext context) {
+    DiscoveryStateMachine stateMachine = (DiscoveryStateMachine) context;
+    Assert.assertNotNull(stateMachine);
+    Node node = stateMachine.getNode();
+
+    if (stateMachine.isMemberInGroup()) { return; }
+
+    try {
+      if (logger.isDebugEnabled()) logger.debug(getLocalNodeID().toString() + " opens channel to " + node);
+      manager.openChannel(node.getHost(), node.getPort(), stateMachine);
+      stateMachine.connected();
+    } catch (TCTimeoutException e) {
+      stateMachine.connectTimeout();
+      logger.warn("Node:" + node + " " + e);
+    } catch (UnknownHostException e) {
+      stateMachine.unknownHost();
+      logger.warn("Node:" + node + " " + e);
+    } catch (MaxConnectionsExceededException e) {
+      stateMachine.maxConnExceed();
+      logger.warn("Node:" + node + " " + e);
+    } catch (IOException e) {
+      stateMachine.connetIOException();
+      logger.warn("Node:" + node + " " + e);
+    }
   }
 
   NodeID getLocalNodeID() {
@@ -87,17 +126,20 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public void start() throws GroupException {
-    if (nodes == null || nodes.length == 0) { throw new GroupException("No nodes"); }
+    if (nodeStateMap.isEmpty()) { throw new GroupException("No nodes"); }
 
     if (running.getAndSet(true)) {
       Assert.failure("Not to start discovert second time");
     }
 
+    manager.registerForGroupEvents(this);
+
     Thread discover = new Thread(new Runnable() {
       public void run() {
         while (!stopAttempt.get()) {
           openChannels();
-          ThreadUtil.reallySleep(connectIntervalms);
+          ThreadUtil.reallySleep(DISCOVERY_INTERVAL_MS);
+          pauseDiscovery();
         }
         running.set(false);
       }
@@ -107,107 +149,19 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   /*
-   * Open channel to each not connected Node
+   * Open channel to unconnected nodes
    */
   protected void openChannels() {
 
-    for (int i = 0; i < nodes.length; ++i) {
-      Node n = nodes[i];
-      Assert.assertNotNull(n);
-
+    for (DiscoveryStateMachine stateMachine : nodeStateMap.values()) {
       // skip local one
-      if (local.equals(n)) continue;
+      if (local.equals(stateMachine.getNode())) continue;
 
-      NodeStatus status = statusMap.get(n);
-      Assert.assertNotNull(status);
-
-      if (findNodeID(n) == null) {
-        if (status.isTimeToCheck(local)) {
-          status.newFuture();
-          ChannelOpener chOpener = new ChannelOpener(this, local, n, status);
-          chOpener.start();
-          // interrupt/cancel thread if make no progress
-          CancelThread cancelThread = new CancelThread(this, n, chOpener, handshakeTimeout);
-          cancelThread.start();
-        }
-      } else {
-        status.setOk();
+      if (stateMachine.isTimeToConnect()) {
+        stateMachine.connecting();
+        discoveryPut(stateMachine);
       }
     }
-  }
-
-  private static class CancelThread extends Thread {
-    private final TCGroupMemberDiscoveryStatic discover;
-    private final Node                         node;
-    private final Thread                       target;
-    private final long                         timeout;
-
-    public CancelThread(TCGroupMemberDiscoveryStatic discover, Node node, Thread target, long timeout) {
-      super("CancelThread on " + target);
-      this.discover = discover;
-      this.node = node;
-      this.target = target;
-      this.timeout = timeout;
-    }
-
-    public void run() {
-      ThreadUtil.reallySleep(timeout);
-      // cancel thread if made no progress
-      if (target.isAlive() && (discover.findNodeID(node) == null)) {
-        target.interrupt();
-        logger.warn("Cancelled channel opener " + target);
-      }
-    }
-  }
-
-  private static class ChannelOpener extends Thread {
-    private final TCGroupMemberDiscoveryStatic discover;
-    private final Node                         node;
-    private final NodeStatus                   status;
-
-    ChannelOpener(TCGroupMemberDiscoveryStatic discover, Node local, Node node, NodeStatus status) {
-      super(local.toString() + " open channel to " + node);
-      this.discover = discover;
-      this.node = node;
-      this.status = status;
-    }
-
-    public void run() {
-
-      TCFuture runStatus = status.getFuture();
-      Assert.assertNotNull(status);
-      try {
-        if (logger.isDebugEnabled()) logger.debug(discover.getLocalNodeID().toString() + " opens channel to " + node);
-        discover.openChannel(node.getHost(), node.getPort());
-        runStatus.set(new Object());
-      } catch (TCTimeoutException e) {
-        status.setBad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
-      } catch (UnknownHostException e) {
-        status.setVerybad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
-      } catch (MaxConnectionsExceededException e) {
-        status.setBad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
-      } catch (IOException e) {
-        status.setBad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
-      } catch (RuntimeException e) {
-        // catch InterrupptedException thrown from TCFuture
-        // at ClientMessageTransport.waitForSynAck
-        status.setBad();
-        status.setException(e);
-        logger.warn("Node:" + node + " " + e);
-      }
-    }
-  }
-
-  private NodeIdComparable findNodeID(Node node) {
-    return (manager.findNodeID(node));
   }
 
   public void stop() {
@@ -222,118 +176,310 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     return local;
   }
 
-  private static class NodeStatus {
-    public final static int STATUS_UNKNOWN  = 0;
-    public final static int STATUS_OK       = 1;
-    public final static int STATUS_BAD      = 2;
-    public final static int STATUS_VERY_BAD = 3;
+  public synchronized void nodeJoined(NodeID nodeID) {
+    String nodeName = ((NodeIdComparable) nodeID).getName();
+    nodeStateMap.get(nodeName).nodeJoined();
+    joinedNodes++;
+  }
 
-    private int             status;
-    private int             badCount;
-    private long            timestamp;
-    private final Node      node;
-    private TCFuture        future;
+  public synchronized void nodeLeft(NodeID nodeID) {
+    joinedNodes--;
+    String nodeName = ((NodeIdComparable) nodeID).getName();
+    nodeStateMap.get(nodeName).nodeLeft();
+    notifyAll();
+  }
 
-    NodeStatus(Node node) {
-      this.node = node;
-      status = STATUS_UNKNOWN;
-      badCount = 0;
-    }
-
-    synchronized TCFuture newFuture() {
-      return (future = new TCFuture());
-    }
-
-    synchronized TCFuture getFuture() {
-      return (future);
-    }
-
-    synchronized void clrFuture() {
-      future = null;
-    }
-
-    synchronized void setException(Throwable e) {
-      future.setException(e);
-    }
-
-    synchronized Object peekFuture() throws TCTimeoutException, InterruptedException, TCExceptionResultException {
-      if (future == null) return null;
-      return (future.get(1));
-    }
-
-    synchronized boolean isTimeToCheck(Node local) {
+  public synchronized void pauseDiscovery() {
+    while (joinedNodes == (nodeStateMap.size() - 1) && !stopAttempt.get()) {
       try {
-        peekFuture();
-      } catch (TCTimeoutException e) {
-        // not ready yet
-        logger.warn("Waiting connection from " + local + " to " + node);
-        return false;
+        wait();
       } catch (InterruptedException e) {
-        logger.warn("Interrupped connection from " + local + " to " + node);
-      } catch (TCExceptionResultException e) {
-        logger.warn("ResultException on connection from " + local + " to " + node);
-      }
-
-      switch (status) {
-        case STATUS_UNKNOWN:
-        case STATUS_OK:
-          return true;
-        case STATUS_BAD:
-          // check 60 times then every min
-          if (badCount <= 60) {
-            ++badCount;
-            timestamp = System.currentTimeMillis();
-            return true;
-          }
-          if (System.currentTimeMillis() > (timestamp + 1000 * 60)) {
-            timestamp = System.currentTimeMillis();
-            return true;
-          } else {
-            return false;
-          }
-        case STATUS_VERY_BAD:
-          // check every 5 min
-          if (System.currentTimeMillis() > (timestamp + 1000 * 60 * 5)) {
-            timestamp = System.currentTimeMillis();
-            return true;
-          } else {
-            return false;
-          }
-        default:
-          return true;
+        //
       }
     }
+  }
 
-    synchronized void setOk() {
-      status = STATUS_OK;
-      badCount = 0;
+  private static class DiscoveryStateMachine implements EventContext, ChannelEventListener {
+    private final DiscoveryState STATE_INIT            = new InitState();
+    private final DiscoveryState STATE_CONNECTING      = new ConnectingState();
+    private final DiscoveryState STATE_CONNECTED       = new ConnectedState();
+    private final DiscoveryState STATE_CONNECT_TIMEOUT = new ConnectTimeoutState();
+    private final DiscoveryState STATE_MAX_CONNECTION  = new MaxConnExceedState();
+    private final DiscoveryState STATE_IO_EXCEPTION    = new IOExceptionState();
+    private final DiscoveryState STATE_UNKNOWN_HOST    = new UnknownHostState();
+    private final DiscoveryState STATE_MEMBER_IN_GROUP = new MemberInGroupState();
+
+    private DiscoveryState       current;
+
+    private final Node           node;
+    private int                  badCount;
+    private long                 timestamp;
+
+    public DiscoveryStateMachine(Node node) {
+      this.node = node;
     }
 
-    synchronized boolean isOk() {
-      return (status == STATUS_OK);
+    public final void start() {
+      switchToState(initialState());
     }
 
-    synchronized void setBad() {
-      ++badCount;
-      status = STATUS_BAD;
+    public void execute() {
+      current.execute();
     }
 
-    synchronized boolean isBad() {
-      return (status == STATUS_BAD);
+    protected DiscoveryState initialState() {
+      return (STATE_INIT);
     }
 
-    synchronized void setVerybad() {
-      status = STATUS_VERY_BAD;
-      timestamp = System.currentTimeMillis();
+    protected synchronized void switchToState(DiscoveryState state) {
+      Assert.assertNotNull(state);
+      this.current = state;
+      state.enter();
     }
 
-    synchronized boolean isVerybad() {
-      return (status == STATUS_VERY_BAD);
+    protected synchronized boolean switchToStateFrom(DiscoveryState from, DiscoveryState to) {
+      Assert.assertNotNull(from);
+      Assert.assertNotNull(to);
+      if (this.current == from) {
+        this.current = to;
+        to.enter();
+        return true;
+      } else {
+        logger.warn("Ignore switching " + node + ":" + current + " from " + from + " to " + to);
+        return false;
+      }
     }
 
-    synchronized void reset() {
-      status = STATUS_UNKNOWN;
-      badCount = 0;
+    Node getNode() {
+      return node;
+    }
+    
+    synchronized boolean isMemberInGroup() {
+      return (current == STATE_MEMBER_IN_GROUP);
+    }
+
+    synchronized boolean isTimeToConnect() {
+      return current.isTimeToConnect();
+    }
+
+    void connecting() {
+      Assert.eval(current != STATE_CONNECTING);
+      switchToState(STATE_CONNECTING);
+    }
+
+    void connected() {
+      switchToStateFrom(STATE_CONNECTING, STATE_CONNECTED);
+    }
+
+    void notifyDisconnected() {
+      if (!switchToStateFrom(STATE_CONNECTING, STATE_INIT)) {
+        switchToStateFrom(STATE_CONNECTED, STATE_INIT);
+      }
+    }
+
+    synchronized void badConnect(DiscoveryState state) {
+      if (current == state) {
+        current.execute();
+        return;
+      }
+      if (current == STATE_MEMBER_IN_GROUP) { return; }
+      switchToState(state);
+    }
+
+    void connectTimeout() {
+      badConnect(STATE_CONNECT_TIMEOUT);
+    }
+
+    void maxConnExceed() {
+      badConnect(STATE_MAX_CONNECTION);
+    }
+
+    void connetIOException() {
+      badConnect(STATE_IO_EXCEPTION);
+    }
+
+    synchronized void unknownHost() {
+      if (current == STATE_UNKNOWN_HOST) { return; }
+      if (current == STATE_MEMBER_IN_GROUP) { return; }
+      switchToState(STATE_UNKNOWN_HOST);
+    }
+
+    synchronized void nodeJoined() {
+      switchToState(STATE_MEMBER_IN_GROUP);
+    }
+
+    synchronized void nodeLeft() {
+      switchToState(STATE_INIT);
+    }
+
+    /*
+     * DiscoveryState -- base class for member discovery state
+     */
+    private abstract class DiscoveryState {
+      private final String name;
+
+      public DiscoveryState(String name) {
+        this.name = name;
+      }
+
+      public void enter() {
+        // override me if you want
+      }
+
+      public void execute() {
+        // override me if you want
+      }
+
+      public boolean isTimeToConnect() {
+        // override me if you want
+        return true;
+      }
+
+      public String toString() {
+        return name;
+      }
+    }
+
+    /*
+     * InitState --
+     */
+    private class InitState extends DiscoveryState {
+      public InitState() {
+        super("Init");
+      }
+
+      public boolean isTimeToConnect() {
+        return true;
+      }
+    }
+
+    /*
+     * ConnectingState --
+     */
+    private class ConnectingState extends DiscoveryState {
+      public ConnectingState() {
+        super("Connecting");
+      }
+
+      public boolean isTimeToConnect() {
+        return false;
+      }
+    }
+
+    /*
+     * ConnectedState --
+     */
+    private class ConnectedState extends DiscoveryState {
+      public ConnectedState() {
+        super("Connected");
+      }
+
+      public boolean isTimeToConnect() {
+        return false;
+      }
+    }
+
+    /*
+     * BadState -- abstract bad connection
+     */
+    private abstract class BadState extends DiscoveryState {
+      public BadState(String name) {
+        super(name);
+      }
+
+      public void enter() {
+        badCount = 0;
+      }
+
+      public void execute() {
+        ++badCount;
+      }
+
+      public boolean isTimeToConnect() {
+        // check 60 times then every min
+        if (badCount < 60) {
+          timestamp = System.currentTimeMillis();
+          return true;
+        }
+        if (System.currentTimeMillis() > (timestamp + DISCOVERY_INTERVAL_MS * 60)) {
+          timestamp = System.currentTimeMillis();
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    /*
+     * ConnetTimeoutState --
+     */
+    private class ConnectTimeoutState extends BadState {
+      public ConnectTimeoutState() {
+        super("Connection-Timeouted");
+      }
+    }
+
+    /*
+     * MaxConnExceedState --
+     */
+    private class MaxConnExceedState extends BadState {
+      public MaxConnExceedState() {
+        super("Max-Connections-Exceed");
+      }
+    }
+
+    /*
+     * IOExceptionState --
+     */
+    private class IOExceptionState extends BadState {
+      public IOExceptionState() {
+        super("IO-Exception");
+      }
+    }
+
+    /*
+     * UnknowHostState --
+     */
+    private class UnknownHostState extends DiscoveryState {
+      public UnknownHostState() {
+        super("Unknown-Host");
+      }
+
+      public void enter() {
+        timestamp = System.currentTimeMillis();
+      }
+
+      public boolean isTimeToConnect() {
+        // check every 5 min
+        if (System.currentTimeMillis() > (timestamp + 1000 * 60 * 5)) {
+          timestamp = System.currentTimeMillis();
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    /*
+     * MemberInGroup -- A valid connection established
+     */
+    private class MemberInGroupState extends DiscoveryState {
+      public MemberInGroupState() {
+        super("Member-In-Group");
+      }
+
+      public boolean isTimeToConnect() {
+        return false;
+      }
+    }
+
+    public void notifyChannelEvent(ChannelEvent event) {
+      if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
+        //
+      } else if ((event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT)
+                 || (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT)) {
+        notifyDisconnected();
+      }
     }
 
   }

@@ -4,9 +4,9 @@
  */
 package com.tc.net.groups;
 
-public interface TCGroupMemberDiscovery {
+import com.tc.async.api.EventContext;
 
-  public void setTCGroupManager(TCGroupManagerImpl manager);
+public interface TCGroupMemberDiscovery extends GroupEventsListener {
 
   public void start() throws GroupException;
 
@@ -15,5 +15,7 @@ public interface TCGroupMemberDiscovery {
   public void setLocalNode(Node local);
 
   public Node getLocalNode();
+  
+  public void discoveryHandler(EventContext context);
 
 }

@@ -22,14 +22,12 @@ import java.io.ObjectOutputStream;
  * @author EY
  */
 public class TCGroupMessageWrapper extends DSOMessageBase {
-  private final static byte  GROUP_MESSAGE_ID = 1;
-  private GroupMessage       message;
-  private TCByteBufferOutputStream out;
+  private final static byte GROUP_MESSAGE_ID = 1;
+  private GroupMessage      message;
 
   public TCGroupMessageWrapper(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
-    this.out = out;
   }
 
   public TCGroupMessageWrapper(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
@@ -48,7 +46,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
   protected void dehydrateValues() {
     putNVPair(GROUP_MESSAGE_ID, 0); // to do TCMessageImpl nvCount++
     try {
-      ObjectOutputStream stream = new ObjectOutputStream(this.out);
+      ObjectOutputStream stream = new ObjectOutputStream(getOutputStream());
       stream.writeObject(this.message);
     } catch (IOException e) {
       throw new RuntimeException();

@@ -12,6 +12,7 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.DSOMessageBase;
 import com.tc.object.session.SessionID;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 
@@ -19,8 +20,14 @@ import java.io.IOException;
  * @author EY
  */
 public class TCGroupHandshakeMessage extends DSOMessageBase {
-  private final static byte NODE_ID = 1;
-  private NodeIdComparable    nodeID;
+  private final static byte MESSAGE_TYPE         = 1;
+  private final static byte NODE_ID              = 2;
+  private final static byte HANDSHAKE_MESSAGE_ID = 3;
+  private final static int  HANDSHAKE_OK         = 1;
+  private final static int  HANDSHAKE_DENY       = 0;
+  private byte              messageType;
+  private NodeIdComparable  nodeID;
+  private int               message;
 
   public TCGroupHandshakeMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                  MessageChannel channel, TCMessageType type) {
@@ -32,26 +39,58 @@ public class TCGroupHandshakeMessage extends DSOMessageBase {
     super(sessionID, monitor, channel, header, data);
   }
 
+  public void initializeOk() {
+    this.messageType = HANDSHAKE_MESSAGE_ID;
+    this.message = HANDSHAKE_OK;
+  }
+
+  public void initializeDeny() {
+    this.messageType = HANDSHAKE_MESSAGE_ID;
+    this.message = HANDSHAKE_DENY;
+  }
+
+  public boolean isOkMessage() {
+    Assert.eval(this.messageType == HANDSHAKE_MESSAGE_ID);
+    return (this.message == HANDSHAKE_OK);
+  }
+
   public NodeIdComparable getNodeID() {
+    Assert.eval(this.messageType == NODE_ID);
     return this.nodeID;
   }
-  
-  public void initialize(NodeIdComparable nodeID) {
-    this.nodeID = nodeID;
+
+  public void initializeNodeID(NodeIdComparable aNodeID) {
+    this.messageType = NODE_ID;
+    this.nodeID = aNodeID;
   }
 
   protected void dehydrateValues() {
-    putNVPair(NODE_ID, nodeID);
+    putNVPair(MESSAGE_TYPE, messageType);
+    switch (messageType) {
+      case NODE_ID:
+        putNVPair(NODE_ID, nodeID);
+        return;
+      case HANDSHAKE_MESSAGE_ID:
+        putNVPair(HANDSHAKE_MESSAGE_ID, message);
+        return;
+    }
   }
 
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
+      case MESSAGE_TYPE:
+        messageType = getByteValue();
+        return true;
       case NODE_ID:
         nodeID = new NodeIdComparable();
         getObject(nodeID);
+        return true;
+      case HANDSHAKE_MESSAGE_ID:
+        message = getIntValue();
         return true;
       default:
         return false;
     }
   }
+
 }

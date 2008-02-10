@@ -5,7 +5,6 @@
 package com.tc.net.groups;
 
 import com.tc.bytes.TCByteBuffer;
-import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.GCResultMessage;
 import com.tc.l2.msg.L2StateMessage;
 import com.tc.l2.msg.L2StateMessageFactory;
@@ -15,6 +14,8 @@ import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.protocol.tcm.ChannelEvent;
+import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageFactory;
@@ -71,14 +72,14 @@ public class TCGroupManagerImplTest extends TestCase {
       nodes[i] = new Node(LOCALHOST, groupPorts[i], TCSocketAddress.WILDCARD_IP);
     }
     for (int i = 0; i < n; ++i) {
-      discovers[i] = new TCGroupMemberDiscoveryStatic(nodes);
       groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i],
                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                              .getLogger(TCGroupManagerImplTest.class))));
+      discovers[i] = new TCGroupMemberDiscoveryStatic(nodes, groups[i]);
       groups[i].setDiscover(discovers[i]);
       groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
       System.out.println("Starting " + groups[i]);
-      listeners[i] = new TestGroupMessageListener(1000);
+      listeners[i] = new TestGroupMessageListener(2000);
     }
   }
 
@@ -87,7 +88,7 @@ public class TCGroupManagerImplTest extends TestCase {
       System.out.println("Shutting down " + groups[i]);
       groups[i].shutdown();
     }
-    Thread.sleep(200);
+    ThreadUtil.reallySleep(200);
   }
 
   public void testBasicChannelOpenClose() throws Exception {
@@ -98,27 +99,26 @@ public class TCGroupManagerImplTest extends TestCase {
     groups[0].join(nodes[0], nodes);
     groups[1].join(nodes[1], nodes);
     // open test
-    TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
+    groups[0].openChannel(LOCALHOST, groupPorts[1], new NullChannelEventListener());
 
-    // wait for channel established at group2
-    for (int i = 0; i < 30; i++) {
-      if (groups[1].size() > 0) break;
-      Thread.sleep(100);
-    }
+    Thread.sleep(2000);
 
+    assertEquals(1, groups[0].size());
     assertEquals(1, groups[1].size());
+    TCGroupMember member1 = getMember(groups[0], 0);
     TCGroupMember member2 = getMember(groups[1], 0);
-    assertTrue("Expected  " + member1.getSrcNodeID() + " but got " + member2.getSrcNodeID(), member1.getSrcNodeID()
-        .equals(member2.getSrcNodeID()));
-    assertTrue("Expected  " + member1.getDstNodeID() + " but got " + member2.getDstNodeID(), member1.getDstNodeID()
-        .equals(member2.getDstNodeID()));
+    assertTrue("Expected  " + member1.getLocalNodeID() + " but got " + member2.getPeerNodeID(), member1
+        .getLocalNodeID().equals(member2.getPeerNodeID()));
+    assertTrue("Expected  " + member1.getPeerNodeID() + " but got " + member2.getLocalNodeID(), member1.getPeerNodeID()
+        .equals(member2.getLocalNodeID()));
 
     // close test
     member1.getChannel().close();
     for (int i = 0; i < 30; i++) {
-      if (groups[1].size() == 0) break;
+      if (groups[0].size() == 0 && groups[1].size() == 0) break;
       Thread.sleep(100);
     }
+    assertEquals(0, groups[0].size());
     assertEquals(0, groups[1].size());
 
     tearGroups();
@@ -129,58 +129,57 @@ public class TCGroupManagerImplTest extends TestCase {
    */
   public void testResolveTwoWayConnection() throws Exception {
     setupGroups(2);
-    
+
     groups[0].setDiscover(new NullTCGroupMemberDiscovery());
     groups[1].setDiscover(new NullTCGroupMemberDiscovery());
     groups[0].join(nodes[0], nodes);
     groups[1].join(nodes[1], nodes);
 
-    groups[0].openChannel(LOCALHOST, groupPorts[1]);
-    groups[1].openChannel(LOCALHOST, groupPorts[0]);
+    groups[0].openChannel(LOCALHOST, groupPorts[1], new NullChannelEventListener());
+    groups[1].openChannel(LOCALHOST, groupPorts[0], new NullChannelEventListener());
 
     // wait one channel to be closed.
-    Thread.sleep(1000);
+    Thread.sleep(2000);
 
     assertEquals(1, groups[0].size());
     assertEquals(1, groups[1].size());
-    TCGroupMember m1 = getMember(groups[0], 0);
-    TCGroupMember m2 = getMember(groups[1], 0);
-    assertTrue("Expected  " + m1.getSrcNodeID() + " but got " + m2.getSrcNodeID(), m1.getSrcNodeID()
-        .equals(m2.getSrcNodeID()));
-    assertTrue("Expected  " + m1.getDstNodeID() + " but got " + m2.getDstNodeID(), m1.getDstNodeID()
-        .equals(m2.getDstNodeID()));
+    TCGroupMember m0 = getMember(groups[0], 0);
+    TCGroupMember m1 = getMember(groups[1], 0);
+    assertTrue("Expected  " + m0.getLocalNodeID() + " but got " + m1.getPeerNodeID(), m0.getLocalNodeID()
+        .equals(m1.getPeerNodeID()));
+    assertTrue("Expected  " + m0.getPeerNodeID() + " but got " + m1.getLocalNodeID(), m0.getPeerNodeID()
+        .equals(m1.getLocalNodeID()));
 
     tearGroups();
   }
 
   public void testSendTo() throws Exception {
     setupGroups(2);
-    
+
     TestGroupMessageListener listener1 = new TestGroupMessageListener(100);
     TestGroupMessageListener listener2 = new TestGroupMessageListener(100);
-    groups[0].registerForMessages(GroupZapNodeMessage.class, listener1);
-    groups[1].registerForMessages(GroupZapNodeMessage.class, listener2);
+    groups[0].registerForMessages(ObjectSyncMessage.class, listener1);
+    groups[1].registerForMessages(ObjectSyncMessage.class, listener2);
 
     groups[0].setDiscover(new NullTCGroupMemberDiscovery());
     groups[1].setDiscover(new NullTCGroupMemberDiscovery());
     groups[0].join(nodes[0], nodes);
     groups[1].join(nodes[1], nodes);
 
-    TCGroupMember member1 = groups[0].openChannel(LOCALHOST, groupPorts[1]);
-    Thread.sleep(200);
-    TCGroupMember member2 = getMember(groups[1], 0);
+    groups[0].openChannel(LOCALHOST, groupPorts[1], new NullChannelEventListener());
+    Thread.sleep(1000);
+    TCGroupMember member0 = getMember(groups[0], 0);
+    TCGroupMember member1 = getMember(groups[1], 0);
 
-    long weights[] = new long[] { 1, 23, 44, 78 };
-    GroupMessage sMesg = new GroupZapNodeMessage(GroupZapNodeMessage.ZAP_NODE_REQUEST,
-                                                 L2HAZapNodeRequestProcessor.SPLIT_BRAIN, "Zapping node", weights);
+    ObjectSyncMessage sMesg = createTestObjectSyncMessage();
+    groups[0].sendTo(member0.getPeerNodeID(), sMesg);
+    ObjectSyncMessage rMesg = (ObjectSyncMessage) listener2.getNextMessageFrom(groups[0].getLocalNodeID());
+    assertTrue(cmpObjectSyncMessage(sMesg, rMesg));
 
-    groups[0].sendTo(member1.getPeerNodeID(), sMesg);
-    GroupMessage rMesg = listener2.getNextMessageFrom(groups[0].getLocalNodeID());
-    assertTrue(sMesg.toString().equals(rMesg.toString()));
-
-    groups[1].sendTo(member2.getPeerNodeID(), sMesg);
-    rMesg = listener1.getNextMessageFrom(groups[1].getLocalNodeID());
-    assertTrue(sMesg.toString().equals(rMesg.toString()));
+    sMesg = createTestObjectSyncMessage();
+    groups[1].sendTo(member1.getPeerNodeID(), sMesg);
+    rMesg = (ObjectSyncMessage) listener1.getNextMessageFrom(groups[1].getLocalNodeID());
+    assertTrue(cmpObjectSyncMessage(sMesg, rMesg));
 
     tearGroups();
   }
@@ -219,7 +218,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
     groups[0].join(nodes[0], nodes);
     groups[1].join(nodes[1], nodes);
-    Thread.sleep(500);
+    ThreadUtil.reallySleep(1000);
     assertEquals(1, groups[0].size());
     assertEquals(1, groups[1].size());
 
@@ -264,7 +263,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(3000);
+    ThreadUtil.reallySleep(5000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -294,7 +293,7 @@ public class TCGroupManagerImplTest extends TestCase {
       assertTrue(cmpGCResultMessage((GCResultMessage) sMesg, (GCResultMessage) rMesg));
     }
 
-    Thread.sleep(200);
+    ThreadUtil.reallySleep(200);
     tearGroups();
   }
 
@@ -317,14 +316,14 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 2000);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getLocalNodeID(), listeners[i]);
     }
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(3000);
+    ThreadUtil.reallySleep(5000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -345,7 +344,7 @@ public class TCGroupManagerImplTest extends TestCase {
       assertTrue(cmpL2StateMessage((L2StateMessage) sMesg, (L2StateMessage) rMesg));
     }
 
-    Thread.sleep(200);
+    ThreadUtil.reallySleep(200);
     tearGroups();
   }
 
@@ -355,14 +354,15 @@ public class TCGroupManagerImplTest extends TestCase {
     HashMap<NodeID, TestGroupMessageListener> listenerMap = new HashMap<NodeID, TestGroupMessageListener>();
 
     for (int i = 0; i < nGrp; ++i) {
-      listeners[i] = new responseL2StateMessageListener(groups[i], 2000);
+      listeners[i] = new responseL2StateMessageListener(groups[i], 1000);
       groups[i].registerForMessages(L2StateMessage.class, listeners[i]);
       listenerMap.put(groups[i].getLocalNodeID(), listeners[i]);
     }
     for (int i = 0; i < nGrp; ++i) {
       groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(3000);
+
+    ThreadUtil.reallySleep(5000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -379,7 +379,7 @@ public class TCGroupManagerImplTest extends TestCase {
       }
     }
 
-    Thread.sleep(200);
+    ThreadUtil.reallySleep(200);
     tearGroups();
   }
 
@@ -402,7 +402,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       nodeIDs[i] = groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(500);
+    ThreadUtil.reallySleep(1000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -547,7 +547,7 @@ public class TCGroupManagerImplTest extends TestCase {
     for (int i = 0; i < nGrp; ++i) {
       nodeIDs[i] = groups[i].join(nodes[i], nodes);
     }
-    Thread.sleep(500);
+    ThreadUtil.reallySleep(1000);
     for (int i = 0; i < nGrp; ++i) {
       assertEquals(nGrp - 1, groups[i].size());
     }
@@ -555,7 +555,7 @@ public class TCGroupManagerImplTest extends TestCase {
     try {
       checkMessagesOrdering(groups[0], listeners[0], groups[1], listeners[1]);
     } catch (Exception e) {
-      System.out.println("*****  message order check failed: " + e.getStackTrace());
+      System.out.println("***** message order check failed: " + e.getStackTrace());
       ThreadDump.dumpThreadsMany(3, 500);
       throw e;
     }
@@ -599,7 +599,6 @@ public class TCGroupManagerImplTest extends TestCase {
 
     public GroupMessage getNextMessageFrom(NodeID nodeID) throws InterruptedException {
       MessagePackage pkg = poll();
-      // System.out.println("XXX expected:" + nodeID + " got:" + pkg.getNodeID());
       assertNotNull("Failed to receive message from " + nodeID, pkg);
       assertTrue(nodeID.equals(pkg.getNodeID()));
       return (pkg.getMessage());
@@ -615,6 +614,7 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     public void messageReceived(NodeID fromNode, GroupMessage msg) {
+      super.messageReceived(fromNode, msg);
       L2StateMessage message = (L2StateMessage) msg;
       GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(message, message.getEnrollment());
       try {
@@ -622,7 +622,6 @@ public class TCGroupManagerImplTest extends TestCase {
       } catch (GroupException e) {
         throw new RuntimeException(e);
       }
-      super.messageReceived(fromNode, msg);
     }
   }
 
@@ -724,12 +723,19 @@ public class TCGroupManagerImplTest extends TestCase {
     }
 
     public void nodeJoined(NodeID nodeID) {
-        System.out.println("XXX " + manager.getLocalNodeID() + " Node joined: " + nodeID);
+      System.out.println("XXX " + manager.getLocalNodeID() + " Node joined: " + nodeID);
     }
 
     public void nodeLeft(NodeID nodeID) {
-        System.out.println("XXX " + manager.getLocalNodeID() + " Node left: " + nodeID);
-      }
+      System.out.println("XXX " + manager.getLocalNodeID() + " Node left: " + nodeID);
     }
+  }
+  
+  private static class NullChannelEventListener implements ChannelEventListener {
+
+    public void notifyChannelEvent(ChannelEvent event) {
+      return;
+    }
+  }
 
 }
