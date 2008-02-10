@@ -312,7 +312,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       if (m.isReady()) {
         m.send(msg);
       } else {
-        logger.info("Send to not ready member " + m);
+        logger.warn("Send to a not ready member " + m);
       }
     }
   }
@@ -322,8 +322,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null && member.isReady()) {
       member.send(msg);
     } else {
-      // member in zombie mode
-      logger.warn("Send to non-exist member of " + node);
+      throw new GroupException("Send to non-exist member of " + node);
     }
   }
 
@@ -590,7 +589,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         waitFor.add(member.getPeerNodeID());
         member.send(msg);
       } else {
-        throw new RuntimeException("Send to a not ready member " + member);
+        throw new GroupException("Send to a not ready member " + member);
       }
     }
 
@@ -886,6 +885,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
       public void execute(TCGroupHandshakeMessage msg) {
         boolean isOkToJoin = msg.isOkMessage();
+        if (isOkToJoin) member.eventFiringInProcess();
         if (!member.isHighPriorityNode()) {
           if (isOkToJoin) Assert.assertTrue(manager.tryAddMember(member));
           signalToJoin(isOkToJoin);
@@ -928,6 +928,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         cancelTimerTask();
         manager.fireNodeEvent(member, true);
         member.setJoinedEventFired(true);
+        member.notifyEventFired();
       }
     }
 
@@ -942,6 +943,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       public void enter() {
         cancelTimerTask();
         if (member != null) {
+          member.abortEventFiring();
           manager.memberDisappeared(member, disconnectEventNotified);
         } else {
           channel.close();

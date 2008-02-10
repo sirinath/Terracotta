@@ -24,6 +24,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   private final AtomicBoolean    ready              = new AtomicBoolean(false);
   private final AtomicBoolean    joined             = new AtomicBoolean(false);
   private volatile boolean       closeEventNotified = false;
+  private volatile boolean       eventFiring        = false;
 
   public TCGroupMemberImpl(NodeIdComparable localNodeID, NodeIdComparable peerNodeID, MessageChannel channel) {
     this.channel = channel;
@@ -79,6 +80,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   public boolean isReady() {
+    waitForEventFired();
     return (ready.get());
   }
 
@@ -101,6 +103,29 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
 
   public boolean isHighPriorityNode() {
     return (localNodeID.compareTo(peerNodeID) > 0);
+  }
+
+  public synchronized void eventFiringInProcess() {
+    eventFiring = true;
+  }
+  
+  public void abortEventFiring() {
+    notifyEventFired();
+  }
+
+  public synchronized void notifyEventFired() {
+    eventFiring = false;
+    notifyAll();
+  }
+
+  private synchronized void waitForEventFired() {
+    while(eventFiring) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
+      }
+    }
   }
 
 }
