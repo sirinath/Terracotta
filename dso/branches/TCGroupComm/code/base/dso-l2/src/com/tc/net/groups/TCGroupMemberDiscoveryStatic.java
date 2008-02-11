@@ -5,16 +5,12 @@
 package com.tc.net.groups;
 
 import com.tc.async.api.EventContext;
-import com.tc.async.api.StageManager;
-import com.tc.config.schema.setup.ConfigurationSetupException;
-import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
-import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
@@ -44,17 +40,12 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   private Node                                     local;
   private Integer                                  joinedNodes                     = 0;
 
-  public TCGroupMemberDiscoveryStatic(L2TVSConfigurationSetupManager configSetupManager, StageManager stageManager,
-                                      TCGroupManagerImpl manager) {
+  public TCGroupMemberDiscoveryStatic(TCGroupManagerImpl manager) {
     this.manager = manager;
-    makeAllNodes(configSetupManager);
   }
-
-  /*
-   * for testing purpose only
-   */
-  TCGroupMemberDiscoveryStatic(Node[] nodes, TCGroupManagerImpl manager) {
-    this.manager = manager;
+  
+  public void setupNodes(Node local, Node[] nodes) {
+    this.local = local;
     for (Node node : nodes) {
       DiscoveryStateMachine stateMachine = new DiscoveryStateMachine(node);
       DiscoveryStateMachine old = nodeStateMap.put(getNodeName(node), stateMachine);
@@ -63,32 +54,8 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     }
   }
 
-  private Node[] makeAllNodes(L2TVSConfigurationSetupManager configSetupManager) {
-    String[] l2s = configSetupManager.allCurrentlyKnownServers();
-    Node[] rv = new Node[l2s.length];
-    for (int i = 0; i < l2s.length; i++) {
-      NewL2DSOConfig l2;
-      try {
-        l2 = configSetupManager.dsoL2ConfigFor(l2s[i]);
-      } catch (ConfigurationSetupException e) {
-        throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
-      }
-      rv[i] = makeNode(l2, null);
-    }
-    return rv;
-  }
-
   private String getNodeName(Node node) {
     return (TCGroupManagerImpl.makeGroupNodeName(node.getHost(), node.getPort()));
-  }
-
-  private Node makeNode(NewL2DSOConfig l2, String bind) {
-    Node node = new Node(l2.host().getString(), l2.l2GroupPort().getInt(), bind);
-    DiscoveryStateMachine stateMachine = new DiscoveryStateMachine(node);
-    DiscoveryStateMachine old = nodeStateMap.put(getNodeName(node).intern(), stateMachine);
-    Assert.assertNull(old);
-    stateMachine.start();
-    return (node);
   }
 
   private void discoveryPut(DiscoveryStateMachine stateMachine) {
@@ -166,10 +133,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
   public void stop() {
     stopAttempt.set(true);
-  }
-
-  public void setLocalNode(Node local) {
-    this.local = local;
   }
 
   public Node getLocalNode() {

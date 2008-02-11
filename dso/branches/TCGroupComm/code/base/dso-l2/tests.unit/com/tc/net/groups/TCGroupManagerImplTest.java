@@ -54,14 +54,12 @@ public class TCGroupManagerImplTest extends TestCase {
   final TCMessageRouter            msgRouter      = new TCMessageRouterImpl();
 
   private int                      groupPorts[];
-  private TCGroupMemberDiscovery   discovers[];
   private TCGroupManagerImpl       groups[];
   private TestGroupMessageListener listeners[];
   private Node                     nodes[];
 
   private void setupGroups(int n) throws Exception {
     groupPorts = new int[n];
-    discovers = new TCGroupMemberDiscoveryStatic[n];
     groups = new TCGroupManagerImpl[n];
     listeners = new TestGroupMessageListener[n];
     nodes = new Node[n];
@@ -75,8 +73,7 @@ public class TCGroupManagerImplTest extends TestCase {
       groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i],
                                          new TCThreadGroup(new ThrowableHandler(TCLogging
                                              .getLogger(TCGroupManagerImplTest.class))));
-      discovers[i] = new TCGroupMemberDiscoveryStatic(nodes, groups[i]);
-      groups[i].setDiscover(discovers[i]);
+      groups[i].setDiscover(new TCGroupMemberDiscoveryStatic(groups[i]));
       groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
       System.out.println("Starting " + groups[i]);
       listeners[i] = new TestGroupMessageListener(2000);

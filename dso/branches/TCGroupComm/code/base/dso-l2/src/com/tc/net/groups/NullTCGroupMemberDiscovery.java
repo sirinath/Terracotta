@@ -14,7 +14,7 @@ public class NullTCGroupMemberDiscovery implements TCGroupMemberDiscovery {
     return null;
   }
 
-  public void setLocalNode(Node local) {
+  public void setupNodes(Node local, Node[] nodes) {
     return;
   }
 

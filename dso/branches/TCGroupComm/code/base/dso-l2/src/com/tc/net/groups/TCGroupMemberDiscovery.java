@@ -12,8 +12,8 @@ public interface TCGroupMemberDiscovery extends GroupEventsListener {
 
   public void stop();
 
-  public void setLocalNode(Node local);
-
+  public void setupNodes(Node local, Node[] nodes);
+  
   public Node getLocalNode();
   
   public void discoveryHandler(EventContext context);

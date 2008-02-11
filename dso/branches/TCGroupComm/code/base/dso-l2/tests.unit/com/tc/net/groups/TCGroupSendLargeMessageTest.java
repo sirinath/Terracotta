@@ -36,13 +36,13 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
 
     TCGroupManagerImpl gm1 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p1,
                                                     new TCThreadGroup(new ThrowableHandler(null)));
-    gm1.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes, gm1));
+    gm1.setDiscover(new TCGroupMemberDiscoveryStatic(gm1));
     MyListener l1 = new MyListener();
     gm1.registerForMessages(GCResultMessage.class, l1);
 
     TCGroupManagerImpl gm2 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p2,
                                                     new TCThreadGroup(new ThrowableHandler(null)));
-    gm2.setDiscover(new TCGroupMemberDiscoveryStatic(allNodes, gm2));
+    gm2.setDiscover(new TCGroupMemberDiscoveryStatic(gm2));
     MyListener l2 = new MyListener();
     gm2.registerForMessages(GCResultMessage.class, l2);
 
