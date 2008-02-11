@@ -322,7 +322,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null && member.isReady()) {
       member.send(msg);
     } else {
-      throw new GroupException("Send to non-exist member of " + node);
+      throw new GroupException("Send to " + ((member == null)? "non-exist" : "not ready" ) + " member of " + node);
     }
   }
 
@@ -879,15 +879,18 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         createMember();
         if (member.isHighPriorityNode()) {
           boolean isAdded = manager.tryAddMember(member);
+          if (isAdded) member.eventFiringInProcess();
           signalToJoin(isAdded);
         }
       }
 
       public void execute(TCGroupHandshakeMessage msg) {
         boolean isOkToJoin = msg.isOkMessage();
-        if (isOkToJoin) member.eventFiringInProcess();
         if (!member.isHighPriorityNode()) {
-          if (isOkToJoin) Assert.assertTrue(manager.tryAddMember(member));
+          if (isOkToJoin) {
+            Assert.assertTrue(manager.tryAddMember(member));
+            member.eventFiringInProcess();
+          }
           signalToJoin(isOkToJoin);
         }
         if (isOkToJoin) switchToState(STATE_SUCCESS);
