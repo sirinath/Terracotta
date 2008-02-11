@@ -368,7 +368,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       throws Exception {
     TCGroupManagerImpl gm = new TCGroupManagerImpl(new NullConnectionPolicy(), nodes[localIndex].getHost(),
                                                    nodes[localIndex].getPort(), threadGroup);
-    gm.setDiscover(new TCGroupMemberDiscoveryStatic(nodes, gm));
+    gm.setDiscover(new TCGroupMemberDiscoveryStatic(gm));
 
     groupMgr[localIndex] = gm;
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());

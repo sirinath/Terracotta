@@ -126,7 +126,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
     thisNodeID = init(makeGroupNodeName(l2DSOConfig.host().getString(), groupPort), socketAddress);
     Assert.assertNotNull(thisNodeID);
-    setDiscover(new TCGroupMemberDiscoveryStatic(configSetupManager, getStageManager(), this));
+    setDiscover(new TCGroupMemberDiscoveryStatic(this));
   }
 
   /*
@@ -271,7 +271,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     } catch (IOException e) {
       throw new GroupException(e);
     }
-    discover.setLocalNode(thisNode);
+    discover.setupNodes(thisNode, allNodes);
     discover.start();
     return (getNodeID());
   }
