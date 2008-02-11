@@ -137,10 +137,10 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       }
       isOpen.set(false);
       if (disconnect) {
-        this.status.disconnect();
+        if (!this.status.isEnd()) this.status.disconnect();
         fireTransportDisconnectedEvent();
       } else {
-        this.status.closed();
+        if (!this.status.isEnd()) this.status.closed();
         fireTransportClosedEvent();
       }
     }
@@ -202,7 +202,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
    */
   public final boolean isConnected() {
     synchronized (status) {
-      return (getConnection().isConnected() && this.status.isEstablished());
+      return ((getConnection() != null) && getConnection().isConnected() && this.status.isEstablished());
     }
   }
 
