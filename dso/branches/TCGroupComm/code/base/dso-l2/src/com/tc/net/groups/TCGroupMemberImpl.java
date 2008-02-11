@@ -108,9 +108,12 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   public synchronized void eventFiringInProcess() {
     eventFiring = true;
   }
-  
-  public void abortEventFiring() {
-    notifyEventFired();
+
+  public synchronized void abortEventFiring() {
+    if (eventFiring) {
+      eventFiring = false;
+      notifyAll();
+    }
   }
 
   public synchronized void notifyEventFired() {
@@ -119,7 +122,7 @@ public class TCGroupMemberImpl implements TCGroupMember, ChannelEventListener {
   }
 
   private synchronized void waitForEventFired() {
-    while(eventFiring) {
+    while (eventFiring) {
       try {
         wait();
       } catch (InterruptedException e) {
