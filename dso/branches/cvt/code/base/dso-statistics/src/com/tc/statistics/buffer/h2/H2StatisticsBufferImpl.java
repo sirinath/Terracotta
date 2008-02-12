@@ -22,17 +22,20 @@ import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
+import com.tc.statistics.jdbc.CaptureChecksum;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
-import com.tc.statistics.jdbc.ChecksumCalculator;
-import com.tc.statistics.jdbc.CaptureChecksum;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,32 +52,51 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   
   private final static long DATABASE_STRUCTURE_CHECKSUM = 65402179L;
 
+  public final static String H2_URL_SUFFIX = "statistics-buffer";
+
   private final static String SQL_NEXT_CAPTURESESSIONID = "SELECT nextval('seq_capturesession')";
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
   private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
 
   private final StatisticsConfig config;
+  private final File lockFile;
   private final StatisticsDatabase database;
 
   private final Set listeners = new CopyOnWriteArraySet();
 
   public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) {
     Assert.assertNotNull("config", config);
+    this.database = new H2StatisticsDatabase(dbDir, H2_URL_SUFFIX);
     this.config = config;
-    database = new H2StatisticsDatabase(dbDir);
+    this.lockFile = new File(dbDir.getParentFile(), dbDir.getName()+".lck");
   }
 
   public synchronized void open() throws TCStatisticsBufferException {
     try {
-      database.open();
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsBufferDatabaseOpenErrorException(e);
-    }
+      RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
+      FileChannel channel = raf.getChannel();
+      // lock on a file for multi-vm mutexing
+      FileLock lock = channel.lock();
+      // synchronize on the interned string of the lock file for in-vm mutexing
+      synchronized (lockFile.getAbsolutePath().intern()) {
+        try {
+          try {
+            database.open();
+          } catch (TCStatisticsDatabaseException e) {
+            throw new TCStatisticsBufferDatabaseOpenErrorException(e);
+          }
 
-    install();
-    setupPreparedStatements();
-    makeAllDataConsumable();    
+          install();
+          setupPreparedStatements();
+          makeAllDataConsumable();
+        } finally {
+          lock.release();
+        }
+      }
+    } catch (IOException e) {
+      throw new TCStatisticsBufferException("Unexpected error while obtaining or releasing lock file.", e);
+    }
   }
 
   public synchronized void close() throws TCStatisticsBufferException {
@@ -86,80 +108,75 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   }
 
   protected void install() throws TCStatisticsBufferException {
-    TCStatisticsBufferInstallationErrorException previous_exception = null;
-
     try {
       database.ensureExistingConnection();
 
-      database.getConnection().setAutoCommit(false);
-
       JdbcHelper.calculateChecksum(new CaptureChecksum() {
         public void execute() throws Exception {
+          database.getConnection().setAutoCommit(false);
 
-          /*====================================================================
-            == !!! IMPORTANT !!!
-            ==
-            == Any significant change to the structure of the database
-            == should increase the version number of the database, which is
-            == stored in the DATABASE_STRUCTURE_VERSION field of this class.
-            == You will need to update the DATABASE_STRUCTURE_CHECKSUM field
-            == also since it serves as a safeguard to ensure that the version is
-            == always adapted. The correct checksum value will be given to you
-            == when a checksum mismatch is detected.
-            ====================================================================*/
+          try {
+            /*====================================================================
+              == !!! IMPORTANT !!!
+              ==
+              == Any significant change to the structure of the database
+              == should increase the version number of the database, which is
+              == stored in the DATABASE_STRUCTURE_VERSION field of this class.
+              == You will need to update the DATABASE_STRUCTURE_CHECKSUM field
+              == also since it serves as a safeguard to ensure that the version is
+              == always adapted. The correct checksum value will be given to you
+              == when a checksum mismatch is detected.
+              ====================================================================*/
 
-          database.createVersionTable();
+            database.createVersionTable();
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE TABLE IF NOT EXISTS capturesession (" +
-              "id BIGINT NOT NULL PRIMARY KEY, " +
-              "start TIMESTAMP NULL, " +
-              "stop TIMESTAMP NULL)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE TABLE IF NOT EXISTS capturesession (" +
+                "id BIGINT NOT NULL PRIMARY KEY, " +
+                "start TIMESTAMP NULL, " +
+                "stop TIMESTAMP NULL)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE SEQUENCE IF NOT EXISTS seq_consumption");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE SEQUENCE IF NOT EXISTS seq_consumption");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE TABLE IF NOT EXISTS statisticlog (" +
-              "id BIGINT NOT NULL PRIMARY KEY, " +
-              "sessionId BIGINT NOT NULL, " +
-              "agentIp VARCHAR(39) NOT NULL, " +
-              "moment TIMESTAMP NOT NULL, " +
-              "statname VARCHAR(255) NOT NULL," +
-              "statelement VARCHAR(255) NULL, " +
-              "datanumber BIGINT NULL, " +
-              "datatext TEXT NULL, " +
-              "datatimestamp TIMESTAMP NULL, " +
-              "datadecimal DECIMAL(8, 4) NULL, " +
-              "consumptionid BIGINT NULL)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE TABLE IF NOT EXISTS statisticlog (" +
+                "id BIGINT NOT NULL PRIMARY KEY, " +
+                "sessionId BIGINT NOT NULL, " +
+                "agentIp VARCHAR(39) NOT NULL, " +
+                "moment TIMESTAMP NOT NULL, " +
+                "statname VARCHAR(255) NOT NULL," +
+                "statelement VARCHAR(255) NULL, " +
+                "datanumber BIGINT NULL, " +
+                "datatext TEXT NULL, " +
+                "datatimestamp TIMESTAMP NULL, " +
+                "datadecimal DECIMAL(8, 4) NULL, " +
+                "consumptionid BIGINT NULL)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionId)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionId)");
 
-          database.getConnection().commit();
+            database.getConnection().commit();
+          } catch (Exception e) {
+            database.getConnection().rollback();
+            throw e;
+          } finally {
+            database.getConnection().setAutoCommit(true);
+          }
 
           database.checkVersion(DATABASE_STRUCTURE_VERSION, DATABASE_STRUCTURE_CHECKSUM);
         }
       });
     } catch (Exception e) {
-      previous_exception = new TCStatisticsBufferInstallationErrorException(e);
-      throw previous_exception;
-    } finally {
-      try {
-        database.getConnection().setAutoCommit(true);
-      } catch (SQLException e) {
-        if (null == previous_exception) {
-          throw new TCStatisticsBufferInstallationErrorException(e);
-        }
-      }
+        throw new TCStatisticsBufferInstallationErrorException(e);
     }
   }
 

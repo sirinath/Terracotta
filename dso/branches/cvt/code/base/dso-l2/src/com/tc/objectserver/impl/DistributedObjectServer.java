@@ -4,8 +4,6 @@
  */
 package com.tc.objectserver.impl;
 
-import org.apache.commons.io.FileUtils;
-
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -163,20 +161,11 @@ import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.statistics.beans.StatisticsEmitter;
-import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsManager;
-import com.tc.statistics.beans.StatisticsManagerMBean;
-import com.tc.statistics.buffer.StatisticsBuffer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
-import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
-import com.tc.statistics.config.StatisticsConfig;
-import com.tc.statistics.config.impl.StatisticsConfigImpl;
+import com.tc.statistics.StatisticsSubSystem;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
-import com.tc.statistics.retrieval.impl.StatisticsRetrievalRegistryImpl;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -253,10 +242,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   private ConnectionIDFactoryImpl              connectionIdFactory;
 
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
-  
-  private StatisticsBuffer                     statisticsBuffer;
-  private StatisticsEmitterMBean               statisticsEmitterMBean;
-  private StatisticsManagerMBean               statisticsManagerMBean;
+
+  private StatisticsSubSystem                  statisticsSubSystem;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -310,35 +297,11 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
-    StatisticsConfig globalStatisticsConfig = new StatisticsConfigImpl();
+    // setup the statistics subsystem
+    statisticsSubSystem = new StatisticsSubSystem();
+    statisticsSubSystem.setup(configSetupManager.commonl2Config());
 
-    // create the statistics buffer
-    File statPath = configSetupManager.commonl2Config().statisticsPath().getFile();
-    FileUtils.forceMkdir(statPath);
-    statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
-    try {
-      statisticsBuffer.open();
-    } catch (TCStatisticsBufferException sbe) {
-      throw new TCRuntimeException("Unable to open the statistics buffer", sbe);
-    }
-
-    // create the statistics emitter mbean
-    try {
-      statisticsEmitterMBean = new StatisticsEmitter(globalStatisticsConfig, statisticsBuffer);
-    } catch (NotCompliantMBeanException ncmbe) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
-                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
-    }
-
-    // setup an empty statistics retrieval registry
-    StatisticsRetrievalRegistry registry = new StatisticsRetrievalRegistryImpl();
-    try {
-      statisticsManagerMBean = new StatisticsManager(globalStatisticsConfig, registry, statisticsBuffer);
-    } catch (NotCompliantMBeanException ncmbe) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsManager.class.getName()
-                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
-    }
-    
+    // perform the DSO network config verification
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
 
     String bindAddress = l2DSOConfig.bind().getString();
@@ -750,7 +713,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
                                                                     globalTxnCounter, objMgrStats);
 
-    populateStatisticsRetrievalRegistry(registry, serverStats);
+    populateStatisticsRetrievalRegistry(serverStats);
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,
@@ -772,7 +735,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
   }
 
-  private void populateStatisticsRetrievalRegistry(StatisticsRetrievalRegistry registry, DSOGlobalServerStats serverStats) {
+  private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats) {
+    StatisticsRetrievalRegistry registry = statisticsSubSystem.getStatisticsRetrievalRegistry();
     registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
     registry.registerActionInstance(new SRAMemoryUsage());
     registry.registerActionInstance(new SRASystemProperties());
@@ -925,8 +889,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
     
     try {
-      statisticsBuffer.close();
-    } catch (TCStatisticsBufferException e) {
+      statisticsSubSystem.cleanup();
+    } catch (Throwable e) {
       logger.warn(e);
     }
 
@@ -982,7 +946,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       jmxPort = new PortChooser().chooseRandomPort();
     }
 
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsEmitterMBean, statisticsManagerMBean, configSetupManager, this, bind, jmxPort);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsSubSystem, configSetupManager, this, bind, jmxPort);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
@@ -994,9 +958,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void stopJMXServer() throws Exception {
-    if (statisticsEmitterMBean != null) {
-      statisticsEmitterMBean.disable();
-    }
+    statisticsSubSystem.disableJMX();
 
     try {
       if (l2Management != null) {

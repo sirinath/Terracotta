@@ -151,15 +151,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../dependencies/lib/je-3.2.68.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/jmxremote-1.0.1_04.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -197,15 +188,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/junit-addons-1.4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../dependencies/lib/knopflerfish-2.0.1-tc.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -296,6 +278,24 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/xmlpublic-2.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../dependencies/lib/je-3.2.70.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../dependencies/lib/knopflerfish-2.0.1-tc-20080108.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
