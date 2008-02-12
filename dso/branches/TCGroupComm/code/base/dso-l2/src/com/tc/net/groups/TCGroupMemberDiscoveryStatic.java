@@ -43,7 +43,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   public TCGroupMemberDiscoveryStatic(TCGroupManagerImpl manager) {
     this.manager = manager;
   }
-  
+
   public void setupNodes(Node local, Node[] nodes) {
     this.local = local;
     for (Node node : nodes) {
@@ -75,16 +75,16 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       stateMachine.connected();
     } catch (TCTimeoutException e) {
       stateMachine.connectTimeout();
-      logger.warn("Node:" + node + " " + e);
+      stateMachine.loggerWarn("Node:" + node + " " + e);
     } catch (UnknownHostException e) {
       stateMachine.unknownHost();
-      logger.warn("Node:" + node + " " + e);
+      stateMachine.loggerWarn("Node:" + node + " " + e);
     } catch (MaxConnectionsExceededException e) {
       stateMachine.maxConnExceed();
-      logger.warn("Node:" + node + " " + e);
+      stateMachine.loggerWarn("Node:" + node + " " + e);
     } catch (IOException e) {
       stateMachine.connetIOException();
-      logger.warn("Node:" + node + " " + e);
+      stateMachine.loggerWarn("Node:" + node + " " + e);
     }
   }
 
@@ -173,21 +173,27 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     private final DiscoveryState STATE_MEMBER_IN_GROUP = new MemberInGroupState();
 
     private DiscoveryState       current;
+    private DiscoveryState       previousBadState;
 
     private final Node           node;
     private int                  badCount;
     private long                 timestamp;
+    private long                 previousLogTimeStamp;
 
     public DiscoveryStateMachine(Node node) {
       this.node = node;
     }
 
-    public final void start() {
-      switchToState(initialState());
+    // reduce logging to about once per min
+    public void loggerWarn(String message) {
+      if (System.currentTimeMillis() > (previousLogTimeStamp + 60000)) {
+        logger.warn(message);
+        previousLogTimeStamp = System.currentTimeMillis();
+      }
     }
 
-    public void execute() {
-      current.execute();
+    public final void start() {
+      switchToState(initialState());
     }
 
     protected DiscoveryState initialState() {
@@ -216,7 +222,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     Node getNode() {
       return node;
     }
-    
+
     synchronized boolean isMemberInGroup() {
       return (current == STATE_MEMBER_IN_GROUP);
     }
@@ -241,10 +247,6 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     }
 
     synchronized void badConnect(DiscoveryState state) {
-      if (current == state) {
-        current.execute();
-        return;
-      }
       if (current == STATE_MEMBER_IN_GROUP) { return; }
       switchToState(state);
     }
@@ -286,11 +288,9 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       }
 
       public void enter() {
-        // override me if you want
-      }
-
-      public void execute() {
-        // override me if you want
+        badCount = 0;
+        previousBadState = null;
+        previousLogTimeStamp = 0;
       }
 
       public boolean isTimeToConnect() {
@@ -310,6 +310,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       public InitState() {
         super("Init");
       }
+      
+      public void enter() {
+        // do nothing
+      }
 
       public boolean isTimeToConnect() {
         return true;
@@ -322,6 +326,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     private class ConnectingState extends DiscoveryState {
       public ConnectingState() {
         super("Connecting");
+      }
+      
+      public void enter() {
+        // do nothing
       }
 
       public boolean isTimeToConnect() {
@@ -351,17 +359,18 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       }
 
       public void enter() {
-        badCount = 0;
-      }
-
-      public void execute() {
-        ++badCount;
+        if ((previousBadState == null) || (previousBadState != current)) {
+          badCount = 0;
+          previousBadState = current;
+          previousLogTimeStamp = 0;
+        } else {
+          ++badCount;
+        }
       }
 
       public boolean isTimeToConnect() {
         // check 60 times then every min
         if (badCount < 60) {
-          timestamp = System.currentTimeMillis();
           return true;
         }
         if (System.currentTimeMillis() > (timestamp + DISCOVERY_INTERVAL_MS * 60)) {
@@ -409,7 +418,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
       }
 
       public void enter() {
-        timestamp = System.currentTimeMillis();
+        if ((previousBadState == null) || (previousBadState != current)) {
+          super.enter();
+          timestamp = System.currentTimeMillis();
+        }
       }
 
       public boolean isTimeToConnect() {
