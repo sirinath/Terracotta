@@ -114,6 +114,10 @@ import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
+import com.tc.statistics.StatisticsSubSystem;
+import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -147,6 +151,7 @@ public class DistributedObjectClient extends SEDA {
   private L1Management                             l1Management;
   private TCProperties                             l1Properties;
   private DmiManager                               dmiManager;
+  private StatisticsSubSystem                      statisticsSubSystem;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -165,6 +170,12 @@ public class DistributedObjectClient extends SEDA {
     this.pauseListener = pauseListener;
   }
 
+  private void populateStatisticsRetrievalRegistry(StatisticsRetrievalRegistry registry) {
+    registry.registerActionInstance(new SRAMemoryUsage());
+    registry.registerActionInstance(new SRASystemProperties());
+    registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
+  }
+
   public void start() {
     l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
     int maxSize = 50000;
@@ -173,6 +184,10 @@ public class DistributedObjectClient extends SEDA {
     final Sequence sessionSequence = new SimpleSequence();
     final SessionManager sessionManager = new SessionManagerImpl(sessionSequence);
     final SessionProvider sessionProvider = (SessionProvider) sessionManager;
+
+    statisticsSubSystem = new StatisticsSubSystem();
+    statisticsSubSystem.setup(config.getNewCommonL1Config());
+    populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
 
     StageManager stageManager = getStageManager();
 
@@ -267,7 +282,7 @@ public class DistributedObjectClient extends SEDA {
 
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
-    l1Management = new L1Management(teh);
+    l1Management = new L1Management(teh, statisticsSubSystem);
     l1Management.start();
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
@@ -411,6 +426,12 @@ public class DistributedObjectClient extends SEDA {
   }
 
   public void stop() {
+    try {
+      statisticsSubSystem.cleanup();
+    } catch (Throwable e) {
+      logger.warn(e);
+    }
+    
     manager.stop();
   }
 
@@ -453,5 +474,4 @@ public class DistributedObjectClient extends SEDA {
   public DmiManager getDmiManager() {
     return dmiManager;
   }
-
 }

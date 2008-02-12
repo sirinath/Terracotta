@@ -4,7 +4,9 @@
  */
 package com.tc.statistics.beans;
 
-public interface StatisticsManagerMBean {
+import com.tc.management.TerracottaMBean;
+
+public interface StatisticsManagerMBean extends TerracottaMBean {
   public String[] getSupportedStatistics();
 
   public long createCaptureSession();

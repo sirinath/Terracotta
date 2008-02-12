@@ -715,7 +715,7 @@
         </xs:annotation>
       </xs:element>
       <xs:element name="statistics" type="path" minOccurs="0"
-        default="statistics">
+        default="statistics-%i">
         <xs:annotation>
           <xs:documentation>
             Where should the client store statistics
@@ -724,7 +724,7 @@
             This value undergoes parameter substitution
             before being used; thus, a value like
             'statistics-data-%h' would expand to
-            'statistics-data--banana' if running on host
+            'statistics-data-banana' if running on host
             'banana'.
 
             If this is a relative path, then it is

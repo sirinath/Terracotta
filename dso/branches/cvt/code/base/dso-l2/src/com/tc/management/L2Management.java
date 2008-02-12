@@ -15,9 +15,7 @@ import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsMBeansNames;
-import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.statistics.StatisticsSubSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,21 +55,18 @@ public class L2Management extends TerracottaManagement {
   private final TCDumper                       tcDumper;
   private final ObjectManagementMonitor        objectManagementBean;
   private final LockStatisticsMonitorMBean     lockStatistics;
-  private final StatisticsEmitterMBean         statisticsEmitter;
-  private final StatisticsManagerMBean         statisticsManager;
+  private final StatisticsSubSystem            statisticsSubSystem;
   private static final Map                     rmiRegistryMap = new HashMap();
   private final int                            jmxPort;
   private final InetAddress                    bindAddress;
 
   public L2Management(TCServerInfoMBean tcServerInfo, LockStatisticsMonitorMBean lockStatistics,
-                      StatisticsEmitterMBean statisticsEmitter, StatisticsManagerMBean statisticsManager,
-                      L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
+                      StatisticsSubSystem statisticsSubSystem, L2TVSConfigurationSetupManager configurationSetupManager, TCDumper tcDumper,
                       InetAddress bindAddr, int port) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
     this.tcServerInfo = tcServerInfo;
     this.lockStatistics = lockStatistics;
     this.configurationSetupManager = configurationSetupManager;
-    this.statisticsEmitter = statisticsEmitter;
-    this.statisticsManager = statisticsManager;
+    this.statisticsSubSystem = statisticsSubSystem;
     this.tcDumper = tcDumper;
     this.bindAddress = bindAddr;
     this.jmxPort = port;
@@ -213,8 +208,7 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.registerMBean(TCLogging.getJMXAppender().getMBean(), L2MBeanNames.LOGGER);
     mBeanServer.registerMBean(objectManagementBean, L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.registerMBean(lockStatistics, L2MBeanNames.LOCK_STATISTICS);
-    mBeanServer.registerMBean(statisticsEmitter, StatisticsMBeansNames.STATISTICS_EMITTER);
-    mBeanServer.registerMBean(statisticsManager, StatisticsMBeansNames.STATISTICS_MANAGER);
+    statisticsSubSystem.registerMBeans(mBeanServer);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.registerMBean(new L2Dumper(tcDumper), L2MBeanNames.DUMPER);
@@ -226,8 +220,7 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.unregisterMBean(L2MBeanNames.LOGGER);
     mBeanServer.unregisterMBean(L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.unregisterMBean(L2MBeanNames.LOCK_STATISTICS);
-    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_EMITTER);
-    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_MANAGER);
+    statisticsSubSystem.unregisterMBeans(mBeanServer);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
       mBeanServer.unregisterMBean(L2MBeanNames.DUMPER);

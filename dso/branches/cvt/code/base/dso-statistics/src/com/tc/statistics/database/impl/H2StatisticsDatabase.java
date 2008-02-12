@@ -8,24 +8,27 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseOpenErrorExcept
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
   private final static String H2_JDBC_DRIVER = "org.h2.Driver";
   private final static String H2_URL_PREFIX = "jdbc:h2:";
-  private final static String H2_URL_SUFFIX = "statistics";
   private final static String H2_USER = "sa";
   private final static String H2_PASSWORD = "";
 
   private final File dbDir;
+  private final String urlSuffix;
 
-  public H2StatisticsDatabase(final File dbDir) {
+  public H2StatisticsDatabase(final File dbDir, final String urlSuffix) {
     if (null == dbDir) Assert.fail("dbDir can't be null");
     if (!dbDir.exists()) Assert.fail("dbDir '" + dbDir.getAbsolutePath() + "' doesn't exist");
     if (!dbDir.isDirectory()) Assert.fail("dbDir '" + dbDir.getAbsolutePath() + "' is not a directory");
     if (!dbDir.canWrite()) Assert.fail("dbDir '" + dbDir.getAbsolutePath() + "' is not writable");
+    if (null == urlSuffix) Assert.fail("urlSuffix can't be null");
     this.dbDir = dbDir;
+    this.urlSuffix = urlSuffix;
   }
 
   public synchronized void open() throws TCStatisticsDatabaseException {
@@ -33,9 +36,10 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
   }
 
   protected void openConnection() throws TCStatisticsDatabaseException {
-    String url = H2_URL_PREFIX + new File(dbDir, H2_URL_SUFFIX).getAbsolutePath();
+    String url = H2_URL_PREFIX + new File(dbDir, urlSuffix).getAbsolutePath();
     try {
       connection = DriverManager.getConnection(url, H2_USER, H2_PASSWORD);
+      connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
       connection.setAutoCommit(true);
     } catch (SQLException e) {
       throw new TCStatisticsDatabaseOpenErrorException(url, H2_USER, H2_PASSWORD, e);

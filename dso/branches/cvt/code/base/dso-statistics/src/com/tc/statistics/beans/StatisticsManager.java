@@ -12,6 +12,7 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.util.Assert;
+import com.tc.management.AbstractTerracottaMBean;
 
 import java.util.Collection;
 import java.util.Map;
@@ -21,14 +22,14 @@ import javax.management.StandardMBean;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
-public class StatisticsManager extends StandardMBean implements StatisticsManagerMBean {
+public class StatisticsManager extends AbstractTerracottaMBean implements StatisticsManagerMBean {
   private final StatisticsConfig config;
   private final StatisticsRetrievalRegistry registry;
   private final StatisticsBuffer buffer;
   private final Map retrieverMap = new ConcurrentHashMap();
   
   public StatisticsManager(final StatisticsConfig config, final StatisticsRetrievalRegistry registry, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
-    super(StatisticsManagerMBean.class);
+    super(StatisticsManagerMBean.class, false, true);
 
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("registry", registry);
@@ -37,6 +38,9 @@ public class StatisticsManager extends StandardMBean implements StatisticsManage
     this.config = config;
     this.registry = registry;
     this.buffer = buffer;
+  }
+
+  public void reset() {
   }
 
   public String[] getSupportedStatistics() {

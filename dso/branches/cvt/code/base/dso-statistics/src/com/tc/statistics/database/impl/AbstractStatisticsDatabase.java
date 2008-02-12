@@ -14,10 +14,10 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStoreVersionErr
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseVersionCheckErrorException;
+import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
-import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.util.Assert;
 
 import java.math.BigDecimal;
@@ -103,26 +103,40 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     final Date[] created = new Date[1];
 
     try {
-      JdbcHelper.executeQuery(getConnection(), "SELECT version, created FROM dbstructureversion", new ResultSetHandler() {
-        public void useResultSet(ResultSet resultSet) throws SQLException {
-          if (resultSet.next()) {
-            version[0] = new Integer(resultSet.getInt("version"));
-            created[0] = resultSet.getTimestamp("created");
+      getConnection().setAutoCommit(false);
+      try {
+        try {
+          JdbcHelper.executeQuery(getConnection(), "SELECT version, created FROM dbstructureversion", new ResultSetHandler() {
+            public void useResultSet(ResultSet resultSet) throws SQLException {
+              if (resultSet.next()) {
+                version[0] = new Integer(resultSet.getInt("version"));
+                created[0] = resultSet.getTimestamp("created");
+              }
+            }
+          });
+        } catch (SQLException e) {
+          throw new TCStatisticsDatabaseVersionCheckErrorException("Unexpected error while checking the version.", e);
+        }
+
+        if (null == version[0]) {
+          storeCurrentVersion(currentVersion);
+        } else {
+          if (version[0].intValue() < currentVersion) {
+            throw new TCStatisticsDatabaseStructureOutdatedException(version[0].intValue(), currentVersion, created[0]);
+          } else if (version[0].intValue() > currentVersion) {
+            throw new TCStatisticsDatabaseStructureFuturedatedException(version[0].intValue(), currentVersion, created[0]);
           }
         }
-      });
+
+        getConnection().commit();
+      } catch (TCStatisticsDatabaseException e) {
+        getConnection().rollback();
+        throw e;
+      } finally {
+        getConnection().setAutoCommit(true);
+      }
     } catch (SQLException e) {
       throw new TCStatisticsDatabaseVersionCheckErrorException("Unexpected error while checking the version.", e);
-    }
-
-    if (null == version[0]) {
-      storeCurrentVersion(currentVersion);
-    } else {
-      if (version[0].intValue() < currentVersion) {
-        throw new TCStatisticsDatabaseStructureOutdatedException(version[0].intValue(), currentVersion, created[0]);
-      } else if (version[0].intValue() > currentVersion) {
-        throw new TCStatisticsDatabaseStructureFuturedatedException(version[0].intValue(), currentVersion, created[0]);
-      }
     }
   }
 

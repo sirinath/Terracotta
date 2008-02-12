@@ -19,6 +19,7 @@ import com.tc.management.exposed.TerracottaCluster;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnectionServer;
+import com.tc.statistics.StatisticsSubSystem;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.runtime.Vm;
 
@@ -53,10 +54,13 @@ public final class L1Management extends TerracottaManagement {
   private final SessionsProduct       publicSessionBean;
   private final TerracottaCluster     clusterBean;
 
-  public L1Management(final TunnelingEventHandler tunnelingHandler) {
+  private final StatisticsSubSystem   statisticsSubSystem;
+
+  public L1Management(final TunnelingEventHandler tunnelingHandler, final StatisticsSubSystem statisticsSubSystem) {
     super();
     started = new SetOnceFlag();
     this.tunnelingHandler = tunnelingHandler;
+    this.statisticsSubSystem = statisticsSubSystem;
     try {
       clientTxBean = new ClientTxMonitor();
       internalSessionBean = new SessionMonitor();
@@ -72,6 +76,7 @@ public final class L1Management extends TerracottaManagement {
 
   public synchronized void start() {
     started.set();
+
     Thread registrationThread = new Thread(new Runnable() {
 
       private final int MAX_ATTEMPTS = 60 * 5;
@@ -167,7 +172,7 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(clientTxBean, MBeanNames.CLIENT_TX_INTERNAL);
     mBeanServer.registerMBean(internalSessionBean, MBeanNames.SESSION_INTERNAL);
     mBeanServer.registerMBean(publicSessionBean, L1MBeanNames.SESSION_PRODUCT_PUBLIC);
-    mBeanServer.registerMBean(clusterBean, L1MBeanNames.CLUSTER_BEAN_PUBLIC);
+    statisticsSubSystem.registerMBeans(mBeanServer);
   }
 
   private void addJMXConnectors() {
@@ -209,5 +214,4 @@ public final class L1Management extends TerracottaManagement {
                                                                                    new Class[0]);
     return (MBeanServer) getPlatformMBeanServerMethod.invoke(null, new Object[0]);
   }
-
 }

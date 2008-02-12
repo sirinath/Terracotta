@@ -11,13 +11,11 @@ import com.tc.config.schema.dynamic.StringConfigItem;
 /**
  * Contains methods exposing DSO L2 config.
  */
-public interface NewCommonL2Config extends NewConfig {
+public interface NewCommonL2Config extends NewConfig, NewStatisticsConfig {
 
   FileConfigItem dataPath();
 
   FileConfigItem logsPath();
-  
-  FileConfigItem statisticsPath();
 
   IntConfigItem jmxPort();
 

@@ -8,10 +8,10 @@ import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
+import com.tc.statistics.jdbc.CaptureChecksum;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
-import com.tc.statistics.jdbc.CaptureChecksum;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
@@ -26,7 +26,11 @@ import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageError
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,24 +46,43 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   
   private final static long DATABASE_STRUCTURE_CHECKSUM = 4255189249L;
 
+  public final static String H2_URL_SUFFIX = "statistics-store";
+
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionId FROM statisticlog GROUP BY sessionId ORDER BY sessionId ASC";
 
   private final StatisticsDatabase database;
+  private final File lockFile;
 
   public H2StatisticsStoreImpl(final File dbDir) {
-    database = new H2StatisticsDatabase(dbDir);
+    this.database = new H2StatisticsDatabase(dbDir, H2_URL_SUFFIX);
+    this.lockFile = new File(dbDir.getParentFile(), dbDir.getName()+".lck");
   }
 
   public synchronized void open() throws TCStatisticsStoreException {
     try {
-      database.open();
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreOpenErrorException(e);
-    }
+      RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
+      FileChannel channel = raf.getChannel();
+      // lock on a file for multi-vm mutexing
+      FileLock lock = channel.lock();
+      // synchronize on the interned string of the lock file for in-vm mutexing
+      synchronized (lockFile.getAbsolutePath().intern()) {
+        try {
+          try {
+            database.open();
+          } catch (TCStatisticsDatabaseException e) {
+            throw new TCStatisticsStoreOpenErrorException(e);
+          }
 
-    install();
-    setupPreparedStatements();
+          install();
+          setupPreparedStatements();
+        } finally {
+          lock.release();
+        }
+      }
+    } catch (IOException e) {
+      throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
+    }
   }
 
   public synchronized void close() throws TCStatisticsStoreException {
@@ -71,77 +94,72 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   }
 
   protected void install() throws TCStatisticsStoreException {
-    TCStatisticsStoreInstallationErrorException previous_exception = null;
-
     try {
       database.ensureExistingConnection();
 
-      database.getConnection().setAutoCommit(false);
-
       JdbcHelper.calculateChecksum(new CaptureChecksum() {
         public void execute() throws Exception {
+          database.getConnection().setAutoCommit(false);
 
-          /*====================================================================
-            == !!! IMPORTANT !!!
-            ==
-            == Any significant change to the structure of the database
-            == should increase the version number of the database, which is
-            == stored in the DATABASE_STRUCTURE_VERSION field of this class.
-            == You will need to update the DATABASE_STRUCTURE_CHECKSUM field
-            == also since it serves as a safeguard to ensure that the version is
-            == always adapted. The correct checksum value will be given to you
-            == when a checksum mismatch is detected.
-            ====================================================================*/
+          try {
+            /*====================================================================
+              == !!! IMPORTANT !!!
+              ==
+              == Any significant change to the structure of the database
+              == should increase the version number of the database, which is
+              == stored in the DATABASE_STRUCTURE_VERSION field of this class.
+              == You will need to update the DATABASE_STRUCTURE_CHECKSUM field
+              == also since it serves as a safeguard to ensure that the version is
+              == always adapted. The correct checksum value will be given to you
+              == when a checksum mismatch is detected.
+              ====================================================================*/
 
-          database.createVersionTable();
+            database.createVersionTable();
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE SEQUENCE IF NOT EXISTS seq_statisticlog");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE TABLE IF NOT EXISTS statisticlog (" +
-              "id BIGINT NOT NULL PRIMARY KEY, " +
-              "sessionId BIGINT NOT NULL, " +
-              "agentIp VARCHAR(39) NOT NULL, " +
-              "moment TIMESTAMP NOT NULL, " +
-              "statname VARCHAR(255) NOT NULL," +
-              "statelement VARCHAR(255) NULL, " +
-              "datanumber BIGINT NULL, " +
-              "datatext TEXT NULL, " +
-              "datatimestamp TIMESTAMP NULL, " +
-              "datadecimal DECIMAL(8, 4) NULL)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE TABLE IF NOT EXISTS statisticlog (" +
+                "id BIGINT NOT NULL PRIMARY KEY, " +
+                "sessionId BIGINT NOT NULL, " +
+                "agentIp VARCHAR(39) NOT NULL, " +
+                "moment TIMESTAMP NOT NULL, " +
+                "statname VARCHAR(255) NOT NULL," +
+                "statelement VARCHAR(255) NULL, " +
+                "datanumber BIGINT NULL, " +
+                "datatext TEXT NULL, " +
+                "datatimestamp TIMESTAMP NULL, " +
+                "datadecimal DECIMAL(8, 4) NULL)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentIp)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentIp)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_statname ON statisticlog(statname)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statname ON statisticlog(statname)");
 
-          JdbcHelper.executeUpdate(database.getConnection(),
-            "CREATE INDEX IF NOT EXISTS idx_statisticlog_statelement ON statisticlog(statelement)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statelement ON statisticlog(statelement)");
 
-          database.getConnection().commit();
+            database.getConnection().commit();
+          } catch (Exception e) {
+            database.getConnection().rollback();
+            throw e;
+          } finally {
+            database.getConnection().setAutoCommit(true);
+          }
 
           database.checkVersion(DATABASE_STRUCTURE_VERSION, DATABASE_STRUCTURE_CHECKSUM);
         }
       });
     } catch (Exception e) {
-      previous_exception = new TCStatisticsStoreInstallationErrorException(e);
-      throw previous_exception;
-    } finally {
-      try {
-        database.getConnection().setAutoCommit(true);
-      } catch (SQLException e) {
-        if (null == previous_exception) {
-          throw new TCStatisticsStoreInstallationErrorException(e);
-        }
-      }
+      throw new TCStatisticsStoreInstallationErrorException(e);
     }
   }
 

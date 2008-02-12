@@ -85,7 +85,7 @@ public class H2StatisticsBufferTest extends TestCase {
   public void testOutdatedVersionCheck() throws Exception {
     buffer.close();
 
-    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir);
+    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir, H2StatisticsBufferImpl.H2_URL_SUFFIX);
     database.open();
     try {
       JdbcHelper.executeUpdate(database.getConnection(), "UPDATE dbstructureversion SET version = "+ (H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION - 1));
@@ -107,7 +107,7 @@ public class H2StatisticsBufferTest extends TestCase {
   public void testFuturedatedVersionCheck() throws Exception {
     buffer.close();
 
-    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir);
+    H2StatisticsDatabase database = new H2StatisticsDatabase(tmpDir, H2StatisticsBufferImpl.H2_URL_SUFFIX);
     database.open();
     try {
       JdbcHelper.executeUpdate(database.getConnection(), "UPDATE dbstructureversion SET version = "+ (H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION + 1));
