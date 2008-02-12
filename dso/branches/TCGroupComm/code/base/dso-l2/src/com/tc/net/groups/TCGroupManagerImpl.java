@@ -322,7 +322,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     if (member != null && member.isReady()) {
       member.send(msg);
     } else {
-      throw new GroupException("Send to " + ((member == null)? "non-exist" : "not ready" ) + " member of " + node);
+      throw new GroupException("Send to " + ((member == null) ? "non-exist" : "not ready") + " member of " + node);
     }
   }
 
@@ -473,9 +473,18 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       return;
     }
 
-    if (m == null) { throw new RuntimeException("Received message for non-exist member from "
-                                                + channel.getRemoteAddress() + " to " + channel.getLocalAddress()
-                                                + " Node: " + channelToNodeID.get(channel)); }
+    if (m == null) {
+      String errInfo = "Received message for non-exist member from " + channel.getRemoteAddress() + " to "
+                  + channel.getLocalAddress() + " Node: " + channelToNodeID.get(channel) + " msg: " + message;
+      TCGroupHandshakeStateMachine stateMachine = getHandshakeStateMachine(channel);
+      if (stateMachine != null && stateMachine .isFailureState()) {
+        // message received after node left
+        logger.warn(errInfo);
+        return;
+      } else {
+        throw new RuntimeException(errInfo);
+      }
+    }
 
     NodeIdComparable from = m.getPeerNodeID();
     MessageID requestID = message.inResponseTo();
@@ -725,6 +734,10 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     public final void start() {
       switchToState(initialState());
+    }
+    
+    public synchronized boolean isFailureState() {
+      return (current == STATE_FAILURE);
     }
 
     public void execute(TCGroupHandshakeMessage msg) {
