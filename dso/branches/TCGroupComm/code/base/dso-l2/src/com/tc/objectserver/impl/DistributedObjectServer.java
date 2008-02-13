@@ -57,6 +57,7 @@ import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
+import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
@@ -202,8 +203,10 @@ import javax.management.remote.JMXConnectorServer;
 public class DistributedObjectServer extends SEDA implements TCDumper {
   private final ConnectionPolicy               connectionPolicy;
 
-  private static final TCLogger                logger        = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                consoleLogger = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                logger                   = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger                consoleLogger            = CustomerLogging.getConsoleLogger();
+
+  private static final int                     MAX_DEFAULT_COMM_THREADS = 16;
 
   private final L2TVSConfigurationSetupManager configSetupManager;
   private final Sink                           httpSink;
@@ -256,11 +259,11 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
     this.configSetupManager = configSetupManager;
-    this.threadGroup = threadGroup;
     this.connectionPolicy = connectionPolicy;
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
     this.l2State = l2State;
+    this.threadGroup = threadGroup;
   }
 
   public void dump() {
@@ -429,8 +432,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
 
+    int numCommWorkers = getCommWorkerCount(l2Properties);
+
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy);
+                                                          connectionPolicy, numCommWorkers,
+                                                          new HealthCheckerConfigImpl(l2Properties
+                                                              .getPropertiesFor("healthCheck.l1"), "DSO Server"));
 
     final DSOApplicationEvents appEvents;
     try {
@@ -729,6 +736,11 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
+  }
+
+  private int getCommWorkerCount(TCProperties props) {
+    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
+    return props.getInt("tccom.workerthreads", def);
   }
 
   public boolean isBlocking() {
