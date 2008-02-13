@@ -3,6 +3,8 @@
  */
 package com.tc.statistics.buffer.h2;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+
 import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -44,8 +46,6 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
-
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
   public final static int DATABASE_STRUCTURE_VERSION = 1;

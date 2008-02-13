@@ -4,12 +4,10 @@
 package com.tctest.statistics;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsConsumer;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.gatherer.StatisticsGatherer;
 import com.tc.statistics.gatherer.impl.StatisticsGathererImpl;
-import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
-import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
@@ -19,9 +17,7 @@ import com.tctest.TransparentTestIface;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class StatisticsGathererConfigSampleRateTest extends TransparentTestBase {
   protected void duringRunningCluster() throws Exception {

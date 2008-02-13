@@ -32,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -305,7 +306,7 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fRefreshButton.setText("Wait...");
     fRefreshButton.setEnabled(false);
     SwingWorker worker = new SwingWorker() {
-      public Object construct() {
+      public Object construct() throws Exception {
         Collection<LockSpec> lockSpecs = fLockStats.getLockSpecs();
         fTreeTableModel = new LockTreeTableModel(lockSpecs);
         fServerLockTableModel = new ServerLockTableModel(lockSpecs);
@@ -313,6 +314,13 @@ public class LocksPanel extends XContainer implements NotificationListener {
       }
 
       public void finished() {
+        InvocationTargetException ite = getException();
+        if(ite != null) {
+          Throwable cause = ite.getCause();
+          AdminClient.getContext().log(cause != null ? cause : ite);
+          return;
+        }
+        
         fTreeTable.setTreeTableModel(fTreeTableModel);
         fTreeTable.sort();
         

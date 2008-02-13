@@ -20,6 +20,7 @@ import javax.swing.SwingConstants;
 
 public class ClientStatsPanel extends XContainer implements Poller {
   private CacheActivityPanel m_cacheActivity;
+  private RatePanel          m_pendingTxnCount;
   private RatePanel          m_txnRate;
 
   public ClientStatsPanel(ConnectionContext cc, ObjectName bean) {
@@ -27,7 +28,7 @@ public class ClientStatsPanel extends XContainer implements Poller {
 
     load((ContainerResource)acc.topRes.getComponent("ClientStatsPanel"));
 
-    m_cacheActivity = new CacheActivityPanel(cc, bean, SwingConstants.VERTICAL);
+    m_cacheActivity = new CacheActivityPanel(cc, bean, SwingConstants.HORIZONTAL);
     addPanel("Panel1", m_cacheActivity);
 
     String stat   = "TransactionRate";
@@ -37,6 +38,13 @@ public class ClientStatsPanel extends XContainer implements Poller {
     
     m_txnRate = new RatePanel(cc, bean, stat, header, xAxis, yAxis);
     addPanel("Panel2", m_txnRate);
+
+    stat   = "PendingTransactionsCount";
+    header = acc.getMessage("dso.pending.transaction.count");
+    yAxis  = acc.getMessage("dso.pending.transaction.count.range.label");
+    
+    m_pendingTxnCount = new RatePanel(cc, bean, stat, header, xAxis, yAxis);
+    addPanel("Panel3", m_pendingTxnCount);
   }
 
   private void addPanel(String parentPanelName, XContainer panel) {

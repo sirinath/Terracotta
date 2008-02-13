@@ -106,6 +106,10 @@ import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.statistics.StatisticsSubSystem;
+import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
 import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
@@ -114,10 +118,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
-import com.tc.statistics.StatisticsSubSystem;
-import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
-import com.tc.statistics.retrieval.actions.SRASystemProperties;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -282,7 +282,8 @@ public class DistributedObjectClient extends SEDA {
 
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
-    l1Management = new L1Management(teh, statisticsSubSystem);
+    l1Management = new L1Management(teh, statisticsSubSystem, runtimeLogger, manager.getInstrumentationLogger(), config
+        .rawConfigText());
     l1Management.start();
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
@@ -320,7 +321,9 @@ public class DistributedObjectClient extends SEDA {
                                                 new ClientCoordinationHandler(cluster), 1, maxSize);
     Stage lockStatisticsStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_RESPONSE_STAGE,
                                                          new LockStatisticsResponseHandler(), 1, 1);
-    final Stage lockStatisticsEnableDisableStage = stageManager.createStage(ClientConfigurationContext.LOCK_STATISTICS_ENABLE_DISABLE_STAGE, new LockStatisticsEnableDisableHandler(), 1, 1);
+    final Stage lockStatisticsEnableDisableStage = stageManager
+        .createStage(ClientConfigurationContext.LOCK_STATISTICS_ENABLE_DISABLE_STAGE,
+                     new LockStatisticsEnableDisableHandler(), 1, 1);
     lockStatManager.start(channel, lockStatisticsStage.getSink());
 
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
@@ -431,7 +434,7 @@ public class DistributedObjectClient extends SEDA {
     } catch (Throwable e) {
       logger.warn(e);
     }
-    
+
     manager.stop();
   }
 

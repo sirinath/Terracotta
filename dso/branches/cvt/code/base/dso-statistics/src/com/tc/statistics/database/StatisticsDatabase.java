@@ -4,7 +4,6 @@
 package com.tc.statistics.database;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 
 import java.sql.Connection;

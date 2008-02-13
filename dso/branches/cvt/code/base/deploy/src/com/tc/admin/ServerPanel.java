@@ -4,22 +4,40 @@
  */
 package com.tc.admin;
 
+import org.dijon.Button;
 import org.dijon.Container;
 import org.dijon.ContainerResource;
+import org.dijon.ScrollPane;
+import org.dijon.TextArea;
+import org.dijon.ToggleButton;
 
 import com.tc.admin.common.StatusRenderer;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XObjectTable;
+import com.tc.admin.common.XTree;
+import com.tc.admin.common.XTreeModel;
+import com.tc.admin.common.XTreeNode;
+import com.tc.admin.dso.ClientsHelper;
+import com.tc.admin.dso.DSOClient;
 import com.tc.config.schema.L2Info;
+import com.tc.statistics.StatisticData;
+import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
+import com.tc.util.Assert;
 
 import java.awt.Frame;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.remote.JMXConnector;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -28,6 +46,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.TableColumnModel;
 
 public class ServerPanel extends XContainer {
@@ -46,6 +66,24 @@ public class ServerPanel extends XContainer {
   private XObjectTable            m_clusterMemberTable;
   private ClusterMemberTableModel m_clusterMemberTableModel;
 
+  private TextArea                m_environmentTextArea;
+  private TextArea                m_configTextArea;
+  
+  private Button                  m_threadDumpButton;
+  private XTree                   m_threadDumpTree;
+  private XTreeModel              m_threadDumpTreeModel;
+  private TextArea                m_threadDumpTextArea;
+  private ScrollPane              m_threadDumpTextScroller;
+  private ThreadDumpTreeNode      m_lastSelectedThreadDumpTreeNode;
+  
+  private ToggleButton            m_startGatheringStatsButton;
+  private ToggleButton            m_stopGatheringStatsButton;
+  private StatisticsManagerMBean  m_statisticsManagerMBean;
+  private StatisticsEmitterMBean  m_statisticsEmitterMBean;
+  private long                    m_currentStatsSessionId;
+  private StatsEmitterListener    m_statsEmitterListener;
+  private TextArea                m_statisticsLog;
+  
   static {
     m_connectIcon = new ImageIcon(ServerPanel.class.getResource("/com/tc/admin/icons/disconnect_co.gif"));
     m_disconnectIcon = new ImageIcon(ServerPanel.class.getResource("/com/tc/admin/icons/newex_wiz.gif"));
@@ -116,10 +154,126 @@ public class ServerPanel extends XContainer {
     m_portField.setText(Integer.toString(m_serverNode.getPort()));
 
     m_shutdownButton.setAction(m_serverNode.getShutdownAction());
-    
+
     setupConnectButton();
+
+    m_environmentTextArea = (TextArea) findComponent("EnvironmentTextArea");
+    m_configTextArea = (TextArea) findComponent("ConfigTextArea");
+    
+    m_threadDumpButton = (Button) findComponent("TakeThreadDumpButton");
+    m_threadDumpButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        try {
+          ConnectionContext cc = m_serverNode.getConnectionContext();
+          DSOClient[] clients = ClientsHelper.getHelper().getClients(cc);
+          ThreadDumpEntry tde = new ThreadDumpEntry();
+
+          tde.add(m_serverNode.toString(), ServerHelper.getHelper().takeThreadDump(cc));
+          for (DSOClient client : clients) {
+            tde.add(client.getRemoteAddress(), client.getL1InfoMBean().takeThreadDump());
+          }
+          XTreeNode root = (XTreeNode) m_threadDumpTreeModel.getRoot();
+          int index = root.getChildCount();
+          root.add(tde);
+          if(index == 0) m_threadDumpTreeModel.nodeStructureChanged(root);
+          else m_threadDumpTreeModel.nodesWereInserted(root, new int[] {index});
+          m_threadDumpTreeModel.nodeStructureChanged(root);
+        } catch (Exception e) {
+          m_acc.log(e);
+        }
+      }
+    });
+
+    m_threadDumpTree = (XTree) findComponent("ThreadDumpTree");
+    m_threadDumpTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
+      public void valueChanged(TreeSelectionEvent e) {
+        if(m_lastSelectedThreadDumpTreeNode != null) {
+          m_lastSelectedThreadDumpTreeNode.setViewPosition(m_threadDumpTextScroller.getViewport().getViewPosition());
+        }
+        ThreadDumpTreeNode tdtn = (ThreadDumpTreeNode)m_threadDumpTree.getLastSelectedPathComponent();
+        if(tdtn != null) {
+          m_threadDumpTextArea.setText(tdtn.getContent());
+          final Point viewPosition = tdtn.getViewPosition();
+          if(viewPosition != null) {
+            SwingUtilities.invokeLater(new Runnable () {
+              public void run() {
+                m_threadDumpTextScroller.getViewport().setViewPosition(viewPosition);
+              }
+            });
+          }
+        }
+        m_lastSelectedThreadDumpTreeNode = tdtn;
+      }
+    });
+
+    m_threadDumpTree.setModel(m_threadDumpTreeModel = new XTreeModel());
+    m_threadDumpTree.setShowsRootHandles(true);
+
+    m_threadDumpTextArea = (TextArea) findComponent("ThreadDumpTextArea");
+    m_threadDumpTextScroller = (ScrollPane) findComponent("ThreadDumpTextScroller");
+    
+    m_startGatheringStatsButton = (ToggleButton) findComponent("StartGatheringStatsButton");
+    m_startGatheringStatsButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        m_stopGatheringStatsButton.setSelected(false);
+        if(m_statisticsManagerMBean == null) {
+          m_statisticsManagerMBean = m_serverNode.getStatisticsManagerMBean();
+          m_statisticsEmitterMBean = m_serverNode.registerStatisticsEmitterListener(m_statsEmitterListener);
+        }
+        m_currentStatsSessionId = m_statisticsManagerMBean.createCaptureSession();
+        for (String stat : m_statisticsManagerMBean.getSupportedStatistics()) {
+          m_statisticsManagerMBean.enableStatistic(m_currentStatsSessionId, stat);
+        }
+        m_statisticsEmitterMBean.enable();
+        m_statisticsManagerMBean.startCapturing(m_currentStatsSessionId);
+      }
+    });
+    m_stopGatheringStatsButton = (ToggleButton) findComponent("StopGatheringStatsButton");
+    m_stopGatheringStatsButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        m_startGatheringStatsButton.setSelected(false);
+        synchronized (m_statsEmitterListener) {
+          m_statisticsManagerMBean.stopCapturing(m_currentStatsSessionId);
+          while (!m_statsEmitterListener.getShutdown()) {
+            try {
+              m_statsEmitterListener.wait(2000);
+            } catch(InterruptedException ie) {/**/}
+          }
+        }
+        m_statisticsEmitterMBean.disable();
+        m_currentStatsSessionId = -1;
+      }
+    });
+    m_currentStatsSessionId = -1;
+    
+    m_statisticsLog = (TextArea) findComponent("StatisticsLog");
+    m_statsEmitterListener = new StatsEmitterListener();
   }
 
+  class StatsEmitterListener implements NotificationListener {
+    boolean shutdown = false;
+
+    public boolean getShutdown() {
+      return shutdown;
+    }
+
+    public void handleNotification(Notification notification, Object o) {
+      Assert.assertTrue("Expecting notification data to be a collection", o instanceof Collection);
+
+      StatisticData data = (StatisticData) notification.getUserData();
+      m_statisticsLog.append(data.toString());
+      m_statisticsLog.append("\n");
+      int length = m_statisticsLog.getDocument().getLength()-1;
+      m_statisticsLog.select(length, length);
+      if (SRAShutdownTimestamp.ACTION_NAME.equals(data.getName())) {
+        shutdown = true;
+        synchronized (this) {
+          this.notifyAll();
+        }
+      }
+    }
+  }
+  
   void setupConnectButton() {
     String label;
     Icon icon;
@@ -159,9 +313,12 @@ public class ServerPanel extends XContainer {
 
     setStatusLabel(m_acc.format("server.activated.label", new Object[]{activateTime}));
     m_acc.controller.addServerLog(m_serverNode.getConnectionContext());
-    if(!isRuntimeInfoShowing()) {
+    if (!isRuntimeInfoShowing()) {
       showRuntimeInfo();
     }
+
+    testSetEnvironment();
+    testSetConfig();
 
     m_acc.controller.setStatus(m_acc.format("server.activated.status", new Object[] {m_serverNode, activateTime}));
   }
@@ -179,13 +336,26 @@ public class ServerPanel extends XContainer {
 
     setupConnectButton();
     setStatusLabel(m_acc.format("server.started.label", new Object[] {startTime}));
-    if(!isRuntimeInfoShowing()) {
+    if (!isRuntimeInfoShowing()) {
       showRuntimeInfo();
     }
 
+    testSetEnvironment();
+    testSetConfig();
+    
     m_acc.controller.setStatus(m_acc.format("server.started.status", new Object[] {m_serverNode, startTime}));
   }
 
+  private void testSetEnvironment() {
+    if(m_environmentTextArea.getDocument().getLength() > 0) return;
+    m_environmentTextArea.setText(m_serverNode.getEnvironment());
+  }
+
+  private void testSetConfig() {
+    if(m_configTextArea.getDocument().getLength() > 0) return;
+    m_configTextArea.setText(m_serverNode.getConfig());
+  }
+  
   void passiveUninitialized() {
     m_hostField.setEditable(false);
     m_portField.setEditable(false);
@@ -194,9 +364,12 @@ public class ServerPanel extends XContainer {
 
     setupConnectButton();
     setStatusLabel(m_acc.format("server.initializing.label", new Object[] {startTime}));
-    if(!isRuntimeInfoShowing()) {
+    if (!isRuntimeInfoShowing()) {
       showRuntimeInfo();
     }
+
+    testSetEnvironment();
+    testSetConfig();
 
     m_acc.controller.setStatus(m_acc.format("server.initializing.status", new Object[] {m_serverNode, startTime}));
   }
@@ -209,9 +382,12 @@ public class ServerPanel extends XContainer {
 
     setupConnectButton();
     setStatusLabel(m_acc.format("server.standingby.label", new Object[] {startTime}));
-    if(!isRuntimeInfoShowing()) {
+    if (!isRuntimeInfoShowing()) {
       showRuntimeInfo();
     }
+
+    testSetEnvironment();
+    testSetConfig();
 
     m_acc.controller.setStatus(m_acc.format("server.standingby.status", new Object[] {m_serverNode, startTime}));
   }
@@ -240,10 +416,9 @@ public class ServerPanel extends XContainer {
   }
 
   boolean isRuntimeInfoShowing() {
-    return m_runtimeInfoPanel.isVisible() ||
-      (m_altProductInfoPanel != null && m_altProductInfoPanel.isVisible());
+    return m_runtimeInfoPanel.isVisible() || (m_altProductInfoPanel != null && m_altProductInfoPanel.isVisible());
   }
-  
+
   private void showRuntimeInfo() {
     L2Info[] clusterMembers = m_serverNode.getClusterMembers();
 
@@ -284,7 +459,7 @@ public class ServerPanel extends XContainer {
   private void hideRuntimeInfo() {
     m_clusterMemberTableModel.clear();
     m_runtimeInfoPanel.setVisible(false);
-    if(m_altProductInfoPanel != null) {
+    if (m_altProductInfoPanel != null) {
       m_altProductInfoPanel.setVisible(false);
     }
     revalidate();
@@ -306,12 +481,12 @@ public class ServerPanel extends XContainer {
 
   private class ClusterMemberListener implements ConnectionListener {
     ServerConnectionManager m_scm;
-    ConnectDialog m_cd;
-    
+    ConnectDialog           m_cd;
+
     void setServerConnectionManager(ServerConnectionManager scm) {
       m_scm = scm;
     }
-    
+
     public void handleConnection() {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
@@ -330,24 +505,27 @@ public class ServerPanel extends XContainer {
           try {
             m_scm.setJMXConnector(jmxc);
             m_scm.setAutoConnect(true);
-          } catch (IOException ioe) {/**/}
+          } catch (IOException ioe) {/**/
+          }
         }
       }
-      
+
       public void handleException() {
         final Exception error = m_cd.getError();
-        
-        m_acc.log("Failed to connect to '"+m_scm+"' ["+error.getMessage()+"]");
 
-        if(error instanceof SecurityException) {
+        m_acc.log("Failed to connect to '" + m_scm + "' [" + error.getMessage() + "]");
+
+        if (error instanceof SecurityException) {
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-              AdminClientPanel topPanel = (AdminClientPanel) ServerPanel.this.getAncestorOfClass(AdminClientPanel.class);
+              AdminClientPanel topPanel = (AdminClientPanel) ServerPanel.this
+                  .getAncestorOfClass(AdminClientPanel.class);
               Frame frame = (Frame) topPanel.getAncestorOfClass(java.awt.Frame.class);
-              String msg = "Failed to connect to '"+m_scm+"'\n\n"+error.getMessage()+"\n\nTry again to connect?";
-              
+              String msg = "Failed to connect to '" + m_scm + "'\n\n" + error.getMessage()
+                           + "\n\nTry again to connect?";
+
               int result = JOptionPane.showConfirmDialog(frame, msg, frame.getTitle(), JOptionPane.YES_NO_OPTION);
-              if(result == JOptionPane.OK_OPTION) {
+              if (result == JOptionPane.OK_OPTION) {
                 m_cd.center(frame);
                 m_cd.setVisible(true);
               }
@@ -356,7 +534,7 @@ public class ServerPanel extends XContainer {
         }
       }
     }
-  
+
     void connect() {
       AdminClientPanel topPanel = (AdminClientPanel) ServerPanel.this.getAncestorOfClass(AdminClientPanel.class);
       Frame frame = (Frame) topPanel.getAncestorOfClass(java.awt.Frame.class);
@@ -366,14 +544,14 @@ public class ServerPanel extends XContainer {
       m_cd.center(frame);
       m_cd.setVisible(true);
     }
-    
+
     public void handleException() {
-      if(m_cd != null && m_cd.isVisible()) return;
-      
+      if (m_cd != null && m_cd.isVisible()) return;
+
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           Exception e = m_scm.getConnectionException();
-          if(e instanceof SecurityException) {
+          if (e instanceof SecurityException) {
             connect();
           }
 
@@ -390,30 +568,30 @@ public class ServerPanel extends XContainer {
     ClusterMemberListener cml = new ClusterMemberListener();
     ServerConnectionManager scm = new ServerConnectionManager(clusterMember, false, cml);
     String[] creds = ServerConnectionManager.getCachedCredentials(scm);
-    
-    if(creds == null) {
+
+    if (creds == null) {
       creds = m_serverNode.getServerConnectionManager().getCredentials();
     }
-    if(creds != null) {
+    if (creds != null) {
       scm.setCredentials(creds[0], creds[1]);
     }
     cml.setServerConnectionManager(scm);
     scm.setAutoConnect(true);
-    
+
     m_clusterMemberTableModel.addClusterMember(scm);
   }
 
   ServerConnectionManager[] getClusterMembers() {
     int count = m_clusterMemberTableModel.getRowCount();
     ServerConnectionManager[] result = new ServerConnectionManager[count];
-    
-    for(int i = 0; i < count; i++) {
+
+    for (int i = 0; i < count; i++) {
       result[i] = m_clusterMemberTableModel.getClusterMemberAt(i);
     }
-    
+
     return result;
   }
-  
+
   public void tearDown() {
     super.tearDown();
 
@@ -433,3 +611,77 @@ public class ServerPanel extends XContainer {
     m_clusterMemberTableModel = null;
   }
 }
+
+abstract class ThreadDumpTreeNode extends XTreeNode {
+  private Point m_viewPosition;
+  
+  ThreadDumpTreeNode(Object userObject) {
+    super(userObject);
+  }
+  
+  void setViewPosition(Point viewPosition) {
+    m_viewPosition = viewPosition;
+  }
+  
+  Point getViewPosition() {
+    return m_viewPosition;
+  }
+  
+  abstract String getContent();
+}
+
+class ThreadDumpEntry extends ThreadDumpTreeNode {
+  private String m_content;
+  
+  ThreadDumpEntry() {
+    super(new Date());
+  }
+
+  void add(String clientAddr, String threadDump) {
+    add(new ThreadDumpElement(clientAddr, threadDump));
+  }
+
+  Date getTime() {
+    return (Date) getUserObject();
+  }
+  
+  String getContent() {
+    if(m_content != null) return m_content;
+    
+    StringBuffer sb = new StringBuffer();
+    String nl = System.getProperty("line.separator");
+    for(int i = 0; i < getChildCount(); i++) {
+      ThreadDumpElement tde = (ThreadDumpElement)getChildAt(i);
+      sb.append("---------- ");
+      sb.append(tde.getSource());
+      sb.append(" ----------");
+      sb.append(nl);
+      sb.append(nl);
+      
+      sb.append(tde.getContent());
+    }
+    return m_content = sb.toString();
+  }
+}
+
+class ThreadDumpElement extends ThreadDumpTreeNode {
+  private String m_threadDump;
+
+  ThreadDumpElement(String clientAddr, String threadDump) {
+    super(clientAddr);
+    m_threadDump = threadDump;
+  }
+
+  String getThreadDump() {
+    return m_threadDump;
+  }
+  
+  String getContent() {
+    return getThreadDump();
+  }
+  
+  String getSource() {
+    return toString();
+  }
+}
+

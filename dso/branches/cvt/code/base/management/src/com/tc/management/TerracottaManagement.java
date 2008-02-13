@@ -56,6 +56,7 @@ public abstract class TerracottaManagement {
     public static final Subsystem Tx               = new Subsystem(MANAGEMENT_RESOURCES.getTransactionSubsystem());
     public static final Subsystem Locking          = new Subsystem(MANAGEMENT_RESOURCES.getLockingSubsystem());
     public static final Subsystem ObjectManagement = new Subsystem(MANAGEMENT_RESOURCES.getObjectManagementSubsystem());
+    public static final Subsystem Logging          = new Subsystem(MANAGEMENT_RESOURCES.getLoggingSubsystem());
     public static final Subsystem Statistics       = new Subsystem(MANAGEMENT_RESOURCES.getStatisticsSubsystem());
     public static final Subsystem None             = new Subsystem(MANAGEMENT_RESOURCES.getNoneSubsystem());
 

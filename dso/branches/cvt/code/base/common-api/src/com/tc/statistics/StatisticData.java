@@ -6,13 +6,12 @@ package com.tc.statistics;
 import com.tc.exception.TCRuntimeException;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
-import java.math.BigDecimal;
 
 public class StatisticData implements Serializable {
   private static final long serialVersionUID = -5767295895871812119L;

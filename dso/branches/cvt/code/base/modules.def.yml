@@ -119,6 +119,15 @@ modules:
         - common-api
         - dso-common
         - dso-l1-api
+  - dso-statistics:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - common-api
+        - dso-common
+        - dso-common-jdk15
+        - management
   - dso-l1:
       options:
         jdk: J2SE-1.4
@@ -129,11 +138,12 @@ modules:
         - dso-common
         - dso-common-jdk15
         - dso-l1-api
+        - dso-statistics
         - management
         - thirdparty
         - thirdparty-api
   - dso-l1-jdk15:
-      options:
+      options: 
         jdk: J2SE-1.5
       dependencies:
         - aspectwerkz
@@ -219,15 +229,6 @@ modules:
         - management
         - thirdparty
         - thirdparty-api
-  - dso-statistics:
-      options:
-        jdk: J2SE-1.4
-      dependencies:
-        - common
-        - common-api
-        - dso-common
-        - dso-common-jdk15
-        - management
   - dso-l2:
       options:
         jdk: J2SE-1.5

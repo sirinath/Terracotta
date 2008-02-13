@@ -3,8 +3,6 @@
  */
 package com.tc.statistics;
 
-import org.apache.commons.io.FileUtils;
-
 import com.tc.config.schema.NewStatisticsConfig;
 import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.beans.StatisticsEmitter;
@@ -21,7 +19,6 @@ import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.impl.StatisticsRetrievalRegistryImpl;
 
 import java.io.File;
-import java.io.IOException;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;

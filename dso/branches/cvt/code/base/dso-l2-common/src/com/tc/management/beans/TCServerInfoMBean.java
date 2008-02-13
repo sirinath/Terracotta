@@ -41,4 +41,9 @@ public interface TCServerInfoMBean extends TerracottaMBean {
 
   L2Info[] getL2Info();
 
+  String takeThreadDump();
+  
+  String getEnvironment();
+  
+  String getConfig();
 }
