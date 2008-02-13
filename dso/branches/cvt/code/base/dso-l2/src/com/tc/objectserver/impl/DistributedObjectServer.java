@@ -297,10 +297,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
-    // setup the statistics subsystem
-    statisticsSubSystem = new StatisticsSubSystem();
-    statisticsSubSystem.setup(configSetupManager.commonl2Config());
-
     // perform the DSO network config verification
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
 
@@ -316,6 +312,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     if (!addressChecker.isLegalBindAddress(bind)) { throw new IOException("Invalid bind address [" + bind
                                                                           + "]. Local addresses are "
                                                                           + addressChecker.getAllLocalAddresses()); }
+
+    // setup the statistics subsystem
+    statisticsSubSystem = new StatisticsSubSystem();
+    statisticsSubSystem.setup(configSetupManager.commonl2Config());
 
     // start the JMX server
     try {
@@ -713,6 +713,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
                                                                     globalTxnCounter, objMgrStats);
 
+
+    // populate the statistics retrieval registry
     populateStatisticsRetrievalRegistry(serverStats);
 
     // XXX: yucky casts
@@ -736,11 +738,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats) {
-    StatisticsRetrievalRegistry registry = statisticsSubSystem.getStatisticsRetrievalRegistry();
-    registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
-    registry.registerActionInstance(new SRAMemoryUsage());
-    registry.registerActionInstance(new SRASystemProperties());
-    registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
+    if (statisticsSubSystem.isActive()) {
+      StatisticsRetrievalRegistry registry = statisticsSubSystem.getStatisticsRetrievalRegistry();
+      registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
+      registry.registerActionInstance(new SRAMemoryUsage());
+      registry.registerActionInstance(new SRASystemProperties());
+      registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
+    }
   }
 
   private int getCommWorkerCount(TCProperties props) {

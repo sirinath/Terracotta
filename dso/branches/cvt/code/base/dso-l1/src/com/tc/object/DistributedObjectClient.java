@@ -186,8 +186,9 @@ public class DistributedObjectClient extends SEDA {
     final SessionProvider sessionProvider = (SessionProvider) sessionManager;
 
     statisticsSubSystem = new StatisticsSubSystem();
-    statisticsSubSystem.setup(config.getNewCommonL1Config());
-    populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
+    if (statisticsSubSystem.setup(config.getNewCommonL1Config())) {
+      populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
+    }
 
     StageManager stageManager = getStageManager();
 
