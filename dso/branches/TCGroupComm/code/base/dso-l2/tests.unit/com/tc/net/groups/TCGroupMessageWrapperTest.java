@@ -36,6 +36,7 @@ import com.tc.net.protocol.tcm.TCMessageSink;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.UnsupportedMessageTypeException;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
+import com.tc.net.protocol.transport.DisabledHealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -73,9 +74,9 @@ public class TCGroupMessageWrapperTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     clientComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
-                                                new NullConnectionPolicy(), 0);
+                                                new NullConnectionPolicy(), 0, new DisabledHealthCheckerConfigImpl());
     serverComms = new CommunicationsManagerImpl(monitor, new PlainNetworkStackHarnessFactory(), null,
-                                                new NullConnectionPolicy(), 0);
+                                                new NullConnectionPolicy(), 0, new DisabledHealthCheckerConfigImpl());
   }
 
   protected void tearDown() throws Exception {
