@@ -17,6 +17,8 @@ import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.config.impl.StatisticsConfigImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.impl.StatisticsRetrievalRegistryImpl;
+import com.tc.logging.TCLogger;
+import com.tc.logging.CustomerLogging;
 
 import java.io.File;
 
@@ -27,12 +29,21 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 
 public class StatisticsSubSystem {
+  private static final TCLogger logger        = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+
   private StatisticsBuffer            statisticsBuffer;
   private StatisticsEmitterMBean      statisticsEmitterMBean;
   private StatisticsManagerMBean      statisticsManagerMBean;
   private StatisticsRetrievalRegistry statisticsRetrievalRegistry;
 
-  public void setup(final NewStatisticsConfig config) {
+  private boolean active = false;
+
+  public boolean isActive() {
+    return active;
+  }
+
+  public boolean setup(final NewStatisticsConfig config) {
     StatisticsConfig globalStatisticsConfig = new StatisticsConfigImpl();
     
     // create the statistics buffer
@@ -40,31 +51,43 @@ public class StatisticsSubSystem {
     try {
       statPath.mkdirs();
     } catch (Exception e) {
-      throw new TCRuntimeException("Unable to create the directory '"+statPath.getAbsolutePath()+"' for the statistics buffer.", e);
+      String msg = "Unable to create the directory '"+statPath.getAbsolutePath()+"' for the statistics buffer, the CVT system will not be active for this node.";
+      consoleLogger.error(msg);
+      logger.error(msg, e);
+      return false;
     }
     statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
     try {
       statisticsBuffer.open();
-    } catch (TCStatisticsBufferException sbe) {
-      throw new TCRuntimeException("Unable to open the statistics buffer", sbe);
+    } catch (TCStatisticsBufferException e) {
+      String msg = "The statistics buffer couldn't be opened at '" + statPath.getAbsolutePath() + "', you might have to adapt your tc-config.xml file to specify another statistics buffer path. Until then, the CVT system will not be active for this node.";
+      consoleLogger.error(msg);
+      logger.error(msg, e);
+      return false;
     }
+    String infoMsg = "Statistics buffer: '" + statPath.getAbsolutePath() + "'.";
+    consoleLogger.info(infoMsg);
+    logger.info(infoMsg);
 
     // create the statistics emitter mbean
     try {
       statisticsEmitterMBean = new StatisticsEmitter(globalStatisticsConfig, statisticsBuffer);
-    } catch (NotCompliantMBeanException ncmbe) {
+    } catch (NotCompliantMBeanException e) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
-                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
+                                   + " MBean; this is a programming error. Please go fix that class.", e);
     }
 
     // setup an empty statistics retrieval registry
     statisticsRetrievalRegistry = new StatisticsRetrievalRegistryImpl();
     try {
       statisticsManagerMBean = new StatisticsManager(globalStatisticsConfig, statisticsRetrievalRegistry, statisticsBuffer);
-    } catch (NotCompliantMBeanException ncmbe) {
+    } catch (NotCompliantMBeanException e) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsManager.class.getName()
-                                   + " MBean; this is a programming error. Please go fix that class.", ncmbe);
+                                   + " MBean; this is a programming error. Please go fix that class.", e);
     }
+
+    active = true;
+    return true;
   }
 
   public void registerMBeans(MBeanServer mBeanServer) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
