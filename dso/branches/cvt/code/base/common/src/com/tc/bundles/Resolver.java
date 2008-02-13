@@ -9,7 +9,6 @@ import org.osgi.framework.BundleException;
 
 import com.tc.bundles.exception.InvalidBundleManifestException;
 import com.tc.bundles.exception.MissingBundleException;
-import com.tc.bundles.Version;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -36,17 +35,17 @@ import java.util.jar.Manifest;
 
 public class Resolver {
 
-  private static final String BUNDLE_VERSION        = "Bundle-Version";
-  private static final String BUNDLE_SYMBOLICNAME   = "Bundle-SymbolicName";
+  private static final String   BUNDLE_VERSION        = "Bundle-Version";
+  private static final String   BUNDLE_SYMBOLICNAME   = "Bundle-SymbolicName";
 
-  private static final String TC_PROPERTIES_SECTION = "l1.modules";
+  private static final String   TC_PROPERTIES_SECTION = "l1.modules";
 
-  private static final String[] JAR_EXTENSIONS      = new String[] { "jar" };
-  
-  private static final TCLogger logger              = TCLogging.getLogger(Resolver.class);
+  private static final String[] JAR_EXTENSIONS        = new String[] { "jar" };
 
-  private URL[]               repositories;
-  private List                registry              = new ArrayList();
+  private static final TCLogger logger                = TCLogging.getLogger(Resolver.class);
+
+  private URL[]                 repositories;
+  private List                  registry              = new ArrayList();
 
   public Resolver(final URL[] repositories) throws BundleException {
     final List repoLocations = new ArrayList();
@@ -59,7 +58,8 @@ public class Resolver {
 
     for (int i = 0; i < repositories.length; i++) {
       if (!repositories[i].getProtocol().equalsIgnoreCase("file")) {
-        throw new BundleException(formatMessage(Message.WARN_REPOSITORY_PROTOCOL_UNSUPPORTED, new Object[] { repositories[i] }));
+        throw new BundleException(formatMessage(Message.WARN_REPOSITORY_PROTOCOL_UNSUPPORTED,
+                                                new Object[] { canonicalPath(repositories[i]) }));
       } else {
         repoLocations.add(repositories[i]);
       }
@@ -101,15 +101,15 @@ public class Resolver {
     final String version = module.getVersion();
     final String groupId = module.getGroupId();
     final URL location = resolveLocation(name, version, groupId);
-        
+
     if (location == null) {
       final String msg = fatal(Message.ERROR_BUNDLE_UNRESOLVED, new Object[] { module.getName(), module.getVersion(),
           module.getGroupId(), repositoriesToString() });
       throw new MissingBundleException(msg);
     }
-    
+
     logger.info("Resolved module " + groupId + ":" + name + ":" + version + " from " + location);
-    
+
     resolveDependencies(location);
     return location;
   }
@@ -137,45 +137,38 @@ public class Resolver {
     return urls;
   }
 
+  /**
+   */
   private Collection findJars(File rootLocation, String groupId, String name, String version) {
-    File groupLocation = new File(rootLocation, groupId.replace('.', File.separatorChar));
-    File nameLocation = new File(groupLocation, name);
-    File versionLocation = new File(nameLocation, version);
+    // sample input:
+    // rootLocation = file://repo
+    // groupId = org.foo.bar
+    // name = tim_foobar != tim-foobar (names are taken as-is, no normalization occurs)
+    // version = 1.0.0.SNAPSHOT == 1.0.0-SNAPSHOT (will be normalized to use x.x.x-q format if needed)
+    String _version = version;
+    if (version.matches("^\\p{Digit}+\\.\\p{Digit}+\\.\\p{Digit}+\\.\\p{Alnum}+$")) {
+      String[] _v = version.split("\\.");
+      _version = _v[0] + "." + _v[1] + "." + _v[2] + "-" + _v[3];
+    }
+
+    String jarName = name + "-" + _version + ".jar"; // tim_foobar-1.0.0-SNAPSHOT.jar
+    File groupLocation = new File(rootLocation, groupId.replace('.', File.separatorChar)); // file://repo/org/foo/bar
+    File nameLocation = new File(groupLocation, name); // file://repo/org/foo/bar/tim_foobar
+    File versionLocation = new File(nameLocation, _version); // file://repo/org/foo/bar/tim_foobar/1.0.0-SNAPSHOT
+    File mavenLocation = new File(versionLocation, jarName); // file://repo/org/foo/bar/tim_foobar/1.0.0-SNAPSHOT/tim_foobar-1.0.0-SNAPSHOT.jar
+    File flatLocation = new File(rootLocation, jarName); // file://repo/tim_foobar-1.0.0-SNAPSHOT.jar
     final Collection jars = new ArrayList();
 
-    File exactLocation = new File(versionLocation, name + "-" + version + ".jar");
-    if(exactLocation.exists() && exactLocation.isFile()) {
-      jars.add(exactLocation);
-    }
-    
-    if (jars.isEmpty()) {
-      if (versionLocation.isDirectory()) {
-        jars.addAll(FileUtils.listFiles(versionLocation, JAR_EXTENSIONS, false));
-      }
-    } else {
-      return jars;
-    }
+    // expect to find TIM jar file in a Maven-like organized directory
+    // using the TIM name as-is and a (possibly) massaged the version number...
+    if (mavenLocation.isFile()) // find file in file://repo/../1.0.0-SNAPSHOT/
+    jars.add(mavenLocation);
 
-    if (jars.isEmpty()) {
-      if (nameLocation.isDirectory()) {
-        jars.addAll(FileUtils.listFiles(nameLocation, JAR_EXTENSIONS, !versionLocation.isDirectory()));
-      }
-    } else {
-      return jars;
-    }
+    // also collect the TIM jar file found at the top of the repository
+    if (flatLocation.isFile()) // find file in file://repo/
+    jars.add(flatLocation);
 
-    if (jars.isEmpty()) {
-      if (groupLocation.isDirectory()) {
-        jars.addAll(FileUtils.listFiles(groupLocation, JAR_EXTENSIONS, !nameLocation.isDirectory()));
-      }
-    } else {
-      return jars;
-    }
-
-    if (jars.isEmpty() && rootLocation.isDirectory()) {
-      jars.addAll(FileUtils.listFiles(rootLocation, JAR_EXTENSIONS, !groupLocation.isDirectory()));
-    } 
-
+    // and return the list of jars
     return jars;
   }
 
@@ -188,11 +181,11 @@ public class Resolver {
       final File root = FileUtils.toFile(location);
       final File repository = new File(root, spec.getGroupId().replace('.', File.separatorChar));
       if (!repository.exists() || !repository.isDirectory()) {
-        warn(Message.WARN_REPOSITORY_UNRESOLVED, new Object[] { repository.getAbsolutePath() });
+        warn(Message.WARN_REPOSITORY_UNRESOLVED, new Object[] { canonicalPath(repository) });
         continue;
       }
 
-      final Collection jars = findJars(root, spec.getGroupId(), spec.getName(), spec.getVersion());
+      final Collection jars = findJars(root, spec.getGroupId(), spec.getName().replace('_', '-'), spec.getVersion());
       for (final Iterator j = jars.iterator(); j.hasNext();) {
         final File bundleFile = (File) j.next();
         if (!bundleFile.isFile()) {
@@ -210,7 +203,7 @@ public class Resolver {
           try {
             return bundleFile.toURL();
           } catch (MalformedURLException e) {
-            fatal(Message.ERROR_BUNDLE_MALFORMED_URL, new Object[] { bundleFile.getName() }); // should be fatal???
+            fatal(Message.ERROR_BUNDLE_MALFORMED_URL, new Object[] { bundleFile.getName() }); // should this be fatal???
             return null;
           }
         }
@@ -223,11 +216,11 @@ public class Resolver {
     final String symname = MavenToOSGi.artifactIdToSymbolicName(groupId, name);
     final String osgiVersionStr = MavenToOSGi.projectVersionToBundleVersion(version);
     Version osgiVersion = Version.parse(osgiVersionStr);
-    
-    if(logger.isDebugEnabled()) {
+
+    if (logger.isDebugEnabled()) {
       logger.debug("Resolving location of " + groupId + ":" + name + ":" + version);
     }
-    
+
     for (int i = repositories.length - 1; i >= 0; i--) {
       final String repositoryURL = repositories[i].toString() + (repositories[i].toString().endsWith("/") ? "" : "/");
       URL url = null;
@@ -238,16 +231,15 @@ public class Resolver {
         logger.warn("Ignoring bad repository URL during resolution: " + repositoryURL, e);
         continue;
       }
-      
+
       final Collection jars = findJars(FileUtils.toFile(url), groupId, name, version);
       for (final Iterator j = jars.iterator(); j.hasNext();) {
         final File jar = (File) j.next();
         final Manifest manifest = getManifest(jar);
-        
-        if(isBundleMatch(jar, manifest, symname, osgiVersion)) {
+        if (isBundleMatch(jar, manifest, symname, osgiVersion)) {
           try {
             return addToRegistry(jar.toURL(), manifest);
-          } catch(MalformedURLException e) {
+          } catch (MalformedURLException e) {
             logger.error(e.getMessage(), e);
           }
         }
@@ -256,9 +248,9 @@ public class Resolver {
     }
     return null;
   }
-  
+
   private boolean isBundleMatch(File jarFile, Manifest manifest, String bundleName, Version bundleVersion) {
-    if(logger.isDebugEnabled()) logger.debug("Checking " + jarFile + " for " + bundleName + ":" + bundleVersion);
+    if (logger.isDebugEnabled()) logger.debug("Checking " + jarFile + " for " + bundleName + ":" + bundleVersion);
 
     // ignore bad JAR files
     if (manifest == null) return false;
@@ -267,12 +259,10 @@ public class Resolver {
     if (BundleSpec.isMatchingSymbolicName(bundleName, manifest.getMainAttributes().getValue(BUNDLE_SYMBOLICNAME))) {
       final String manifestVersion = manifest.getMainAttributes().getValue(BUNDLE_VERSION);
       try {
-        if (bundleVersion.equals(Version.parse(manifestVersion))) {
-          return true;
-        }
+        if (bundleVersion.equals(Version.parse(manifestVersion))) { return true; }
       } catch (NumberFormatException e) { // thrown by parseVersion()
-        consoleLogger.warn("Bad manifest bundle version in jar='" + jarFile.getAbsolutePath() + "', version='"
-                    + manifestVersion + "'.  Skipping...", e);
+        consoleLogger.warn("Bad manifest bundle version in jar='" + canonicalPath(jarFile) + "', version='"
+                           + manifestVersion + "'.  Skipping...", e);
       }
     }
 
@@ -285,7 +275,7 @@ public class Resolver {
 
     if (defaultModulesProp == null) {
       consoleLogger.debug("No implicit modules were loaded because the l1.modules.default property "
-                   + "in tc.properties file was not set.");
+                          + "in tc.properties file was not set.");
       return;
     }
 
@@ -297,7 +287,7 @@ public class Resolver {
       }
     } else {
       consoleLogger.debug("No implicit modules were loaded because the l1.modules.default property "
-                   + "in tc.properties file was empty.");
+                          + "in tc.properties file was empty.");
     }
   }
 
@@ -305,10 +295,23 @@ public class Resolver {
     final StringBuffer repos = new StringBuffer();
     for (int j = 0; j < repositories.length; j++) {
       if (j > 0) repos.append(";");
-      repos.append(repositories[j]);
+      repos.append(canonicalPath(repositories[j]));
     }
-
     return repos.toString();
+  }
+
+  private String canonicalPath(URL url) {
+    File path = FileUtils.toFile(url);
+    if (path == null) return url.toString();
+    return canonicalPath(path);
+  }
+
+  private String canonicalPath(File path) {
+    try {
+      return path.getCanonicalPath();
+    } catch (IOException e) {
+      return path.toString();
+    }
   }
 
   private void resolveAdditionalModules() throws BundleException {
@@ -340,7 +343,7 @@ public class Resolver {
     final Manifest manifest = getManifest(location);
     if (manifest == null) {
       final String msg = fatal(Message.ERROR_BUNDLE_UNREADABLE, new Object[] { FileUtils.toFile(location).getName(),
-      FileUtils.toFile(location).getParent() });
+          canonicalPath(FileUtils.toFile(location).getParentFile()) });
       throw new InvalidBundleManifestException(msg);
     }
 
