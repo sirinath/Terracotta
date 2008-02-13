@@ -51,8 +51,13 @@ public class StatisticsSubSystem {
     try {
       statPath.mkdirs();
     } catch (Exception e) {
-      String msg = "Unable to create the directory '"+statPath.getAbsolutePath()+"' for the statistics buffer, the CVT system will not be active for this node.";
-      consoleLogger.error(msg);
+      // TODO: needs to be properly written and put in a properties file
+      String msg =
+        "\n**************************************************************************************\n"
+        + "Unable to create the directory '" + statPath.getAbsolutePath() + "' for the statistics buffer.\n"
+        + "The CVT system will not be active for this node.\n"
+        + "**************************************************************************************\n";
+      consoleLogger.error(msg, e);
       logger.error(msg, e);
       return false;
     }
@@ -60,8 +65,28 @@ public class StatisticsSubSystem {
     try {
       statisticsBuffer.open();
     } catch (TCStatisticsBufferException e) {
-      String msg = "The statistics buffer couldn't be opened at '" + statPath.getAbsolutePath() + "', you might have to adapt your tc-config.xml file to specify another statistics buffer path. Until then, the CVT system will not be active for this node.";
-      consoleLogger.error(msg);
+      // TODO: needs to be properly written and put in a properties file
+      String msg =
+        "\n**************************************************************************************\n"
+        + "The statistics buffer couldn't be opened at \n"
+        + "'" + statPath.getAbsolutePath() + "'.\n"
+        + "The CVT system will not be active for this node.\n"
+        + "\n"
+        + "A common reason for this is that you're launching several Terracotta L1\n"
+        + "clients on the same machine. The default directory for the statistics buffer\n"
+        + "uses the IP address of the machine that it runs on as the identifier.\n"
+        + "When several clients are being executed on the same machine, a typical solution\n"
+        + "to properly separate these directories is by using a JVM property at startup\n"
+        + "that is unique for each client.\n"
+        + "\n"
+        + "For example:\n"
+        + "  dso-java.sh -Dtc.node-name=node1 your.main.Class\n"
+        + "\n"
+        + "You can then adapt the tc-config.xml file so that this JVM property is picked\n"
+        + "up when the statistics directory is configured by using %(tc.node-name) in the\n"
+        + "statistics path.\n"
+        + "**************************************************************************************\n";
+      consoleLogger.error(msg, e);
       logger.error(msg, e);
       return false;
     }

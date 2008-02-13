@@ -24,13 +24,11 @@ import com.tc.statistics.store.exceptions.TCStatisticsStoreSessionIdsRetrievalEr
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.FileLockGuard;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.math.BigDecimal;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -61,25 +59,24 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
   public synchronized void open() throws TCStatisticsStoreException {
     try {
-      RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
-      FileChannel channel = raf.getChannel();
-      // lock on a file for multi-vm mutexing
-      FileLock lock = channel.lock();
-      // synchronize on the interned string of the lock file for in-vm mutexing
-      synchronized (lockFile.getAbsolutePath().intern()) {
-        try {
+      FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
+        public void execute() throws FileLockGuard.InnerException {
           try {
-            database.open();
-          } catch (TCStatisticsDatabaseException e) {
-            throw new TCStatisticsStoreOpenErrorException(e);
-          }
+            try {
+              database.open();
+            } catch (TCStatisticsDatabaseException e) {
+              throw new TCStatisticsStoreOpenErrorException(e);
+            }
 
-          install();
-          setupPreparedStatements();
-        } finally {
-          lock.release();
+            install();
+            setupPreparedStatements();
+          } catch (TCStatisticsStoreException e) {
+            throw new FileLockGuard.InnerException(e);
+          }
         }
-      }
+      });
+    } catch (FileLockGuard.InnerException e) {
+      throw (TCStatisticsStoreException)e.getInnerException();
     } catch (IOException e) {
       throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
     }
