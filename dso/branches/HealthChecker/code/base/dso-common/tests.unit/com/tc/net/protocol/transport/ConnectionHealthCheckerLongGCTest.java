@@ -150,15 +150,16 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   public long getMinScoketConnectResultTime(HealthCheckerConfig config) {
     assertNotNull(config);
     long extraTimeSecs = (config.getPingInterval() * config.getPingProbes())
-                         + (HealthCheckerSocketConnect.MAX_ASYNC_CONNECT_WAIT_CYCLE * config.getPingInterval());
+                         + (HealthCheckerSocketConnectImpl.SOCKETCONNECT_NOREPLY_MAXWAIT_CYCLE * config
+                             .getPingInterval());
     return (extraTimeSecs * 1000);
   }
 
   public long getFullExtraCheckTime(HealthCheckerConfig config) {
     assertNotNull(config);
     long extraTimeSecs = config.getPingInterval()
-                         * ((HealthCheckerSocketConnect.MAX_ASYNC_CONNECT_WAIT_CYCLE * config.getPingProbes()) * config
-                             .getMaxSocketConnectCount());
+                         * ((HealthCheckerSocketConnectImpl.SOCKETCONNECT_NOREPLY_MAXWAIT_CYCLE * config
+                             .getPingProbes()) * config.getMaxSocketConnectCount());
     return (extraTimeSecs * 1000);
   }
 

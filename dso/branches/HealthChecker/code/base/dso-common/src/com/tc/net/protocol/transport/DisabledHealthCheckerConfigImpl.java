@@ -31,7 +31,7 @@ public class DisabledHealthCheckerConfigImpl implements HealthCheckerConfig {
     throw new AssertionError("Disabled HealthChecker");
   }
 
-  public boolean doSocketConnect() {
+  public boolean isSocketConnectOnPingFail() {
     throw new AssertionError("Disabled HealthChecker");
   }
 

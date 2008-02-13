@@ -11,9 +11,6 @@ package com.tc.net.protocol.transport;
  * @author Manoj
  */
 public class ConnectionHealthCheckerContextDummyImpl implements ConnectionHealthCheckerContext {
-  public boolean doSocketConnect() {
-    throw new AssertionError("Dummy HealthChecker");
-  }
 
   public boolean receiveProbe(HealthCheckerProbeMessage message) {
     if (message.isPing()) {
@@ -23,7 +20,7 @@ public class ConnectionHealthCheckerContextDummyImpl implements ConnectionHealth
     throw new AssertionError("Dummy HealthChecker");
   }
 
-  public boolean sendProbe() {
+  public boolean probeIfAlive() {
     throw new AssertionError("Dummy HealthChecker");
   }
 

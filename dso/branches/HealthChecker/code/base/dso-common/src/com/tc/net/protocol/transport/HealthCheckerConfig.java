@@ -30,7 +30,7 @@ public interface HealthCheckerConfig {
    *  
    *  If the peer is un-responsive and not died, a grace period is given before deciding it as dead.
    */
-  boolean doSocketConnect();
+  boolean isSocketConnectOnPingFail();
   
   int getMaxSocketConnectCount();
 }
