@@ -22,10 +22,6 @@ public class ConnectionHealthCheckerContextEchoImpl implements ConnectionHealthC
     this.messageFactory = new TransportMessageFactoryImpl();
   }
 
-  public boolean doSocketConnect() {
-    throw new AssertionError("Echo HealthChecker");
-  }
-
   public boolean receiveProbe(HealthCheckerProbeMessage message) {
     if (message.isPing()) {
       HealthCheckerProbeMessage pingReplyMessage = this.messageFactory.createPingReply(transport.getConnectionId(),
@@ -37,7 +33,7 @@ public class ConnectionHealthCheckerContextEchoImpl implements ConnectionHealthC
     throw new AssertionError("Echo HealthChecker");
   }
 
-  public boolean sendProbe() {
+  public boolean probeIfAlive() {
     throw new AssertionError("Echo HealthChecker");
   }
 

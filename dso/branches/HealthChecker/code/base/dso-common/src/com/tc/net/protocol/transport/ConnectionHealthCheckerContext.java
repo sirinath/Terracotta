@@ -16,11 +16,8 @@ public interface ConnectionHealthCheckerContext {
   public void refresh();
 
   /* Probe Message send and receive */
-  public boolean sendProbe();
+  public boolean probeIfAlive();
 
   public boolean receiveProbe(HealthCheckerProbeMessage message);
-
-  /* Do Extra Health Checks other than above Probes */
-  public boolean doSocketConnect();
 
 }

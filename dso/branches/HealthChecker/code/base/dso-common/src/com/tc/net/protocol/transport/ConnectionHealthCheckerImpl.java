@@ -89,7 +89,6 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
     private final int                 pingInterval;
     private final int                 pingProbes;
     private final SetOnceFlag         stop          = new SetOnceFlag();
-    private final boolean             doSocketConnect;
     private final HealthCheckerConfig config;
     private final TCLogger            logger;
     private final TCConnectionManager connectionManager;
@@ -99,7 +98,6 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
       pingIdleTime = healthCheckerConfig.getPingIdleTime() * 1000;
       pingInterval = healthCheckerConfig.getPingInterval() * 1000;
       pingProbes = healthCheckerConfig.getPingProbes();
-      doSocketConnect = healthCheckerConfig.doSocketConnect();
       this.connectionManager = connectionManager;
       this.config = healthCheckerConfig;
 
@@ -151,13 +149,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
           ConnectionHealthCheckerContext connContext = mtb.getHealthCheckerContext();
           if ((mtb.getConnection().getIdleReceiveTime() >= this.pingIdleTime)) {
 
-            if (!connContext.sendProbe()) {
-
-              // Socket Connect check for long GC
-              if (doSocketConnect && connContext.doSocketConnect()) {
-                continue;
-              }
-
+            if (!connContext.probeIfAlive()) {
               // Conn is dead. Diconnect the transport.
               mtb.disconnect();
               connectionIterator.remove();

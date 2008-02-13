@@ -55,7 +55,7 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
     this.maxSocketConnectCount = 3; // DEFAULT
   }
 
-  public boolean doSocketConnect() {
+  public boolean isSocketConnectOnPingFail() {
     return doSocketConnect;
   }
 
