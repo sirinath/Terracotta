@@ -77,7 +77,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     this.waitTimer = waitTimer;
     this.lockStatManager = lockStatManager;
   }
-  
+
   private void recordLockRejected(ThreadID threadID) {
     lockStatManager.recordLockRejected(lockID, threadID);
   }
@@ -85,15 +85,15 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private void recordLockRequested(ThreadID threadID, String contextInfo) {
     lockStatManager.recordLockRequested(lockID, threadID, contextInfo, pendingLockRequests.size());
   }
-  
+
   private void recordLockAwarded(ThreadID threadID) {
     lockStatManager.recordLockAwarded(lockID, threadID);
   }
-  
+
   private void recordLockReleased(ThreadID threadID) {
     lockStatManager.recordLockReleased(lockID, threadID);
   }
-  
+
   private void recordLockHoppedStat(ThreadID threadID) {
     lockStatManager.recordLockHopped(lockID, threadID);
   }
@@ -107,16 +107,16 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     lock(threadID, type, null, false, contextInfo);
   }
 
-  private void lock(ThreadID threadID, int type, WaitInvocation timeout, boolean noBlock, String contextInfo) {
-    int lockType = type;
+  private void lock(ThreadID threadID, final int type, WaitInvocation timeout, boolean noBlock, String contextInfo) {
+    int effectiveType = type;
     if (LockLevel.isSynchronous(type)) {
       if (!LockLevel.isSynchronousWrite(type)) { throw new AssertionError(
                                                                           "Only Synchronous WRITE lock is supported now"); }
-      lockType = LockLevel.WRITE;
+      effectiveType = LockLevel.WRITE;
     }
-    basicLock(threadID, lockType, timeout, noBlock, contextInfo);
-    if (lockType != type) {
-      awardSynchronous(threadID, lockType);
+    basicLock(threadID, effectiveType, timeout, noBlock, contextInfo);
+    if (effectiveType != type) {
+      awardSynchronous(threadID, effectiveType);
     }
   }
 
@@ -174,13 +174,6 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
       waitLock = addToPendingLockRequest(requesterID, type, timeout, noBlock);
       if (greediness.isNotGreedy()) {
         remoteLockRequest(requesterID, type, timeout, noBlock);
-//        recordLockHoppedStat(requesterID);
-//        // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
-//        if (noBlock) {
-//          remoteLockManager.tryRequestLock(lockID, requesterID, timeout, type);
-//        } else {
-//          remoteLockManager.requestLock(lockID, requesterID, type);
-//        }
       } else {
         // If the lock already granted to another thread greedily within the same JVM and if
         // it is a tryLock request with a timeout, schedule a local timer.
@@ -214,7 +207,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     Util.selfInterruptIfNeeded(isInterrupted);
     // debug("lock - GOT IT - ", requesterID, LockLevel.toString(type));
   }
-  
+
   private void remoteLockRequest(ThreadID requesterID, int type, WaitInvocation timeout, boolean noBlock) {
     recordLockHoppedStat(requesterID);
     // debug("lock - remote requestLock ", requesterID, LockLevel.toString(type));
