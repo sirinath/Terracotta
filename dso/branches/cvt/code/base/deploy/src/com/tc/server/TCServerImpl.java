@@ -4,6 +4,7 @@
  */
 package com.tc.server;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.servlet.ServletHandler;
@@ -41,6 +42,8 @@ import com.tc.stats.DSO;
 import com.tc.stats.DSOMBean;
 import com.tc.util.Assert;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -171,6 +174,15 @@ public class TCServerImpl extends SEDA implements TCServer {
     return activateTime;
   }
 
+  public String getConfig() {
+    try {
+      InputStream is = configurationSetupManager.rawConfigFile();
+      return IOUtils.toString(is);
+    } catch(IOException ioe) {
+      return ioe.getLocalizedMessage();
+    }
+  }
+  
   public int getDSOListenPort() {
     if (dsoServer != null) { return dsoServer.getListenPort(); }
     throw new IllegalStateException("DSO Server not running");

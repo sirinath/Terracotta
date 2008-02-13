@@ -26,10 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.management.ListenerNotFoundException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
+import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
+import javax.management.NotificationBroadcaster;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -79,6 +84,44 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
     }
   }
 
+  class ProxyStandardMBean extends StandardMBean implements NotificationBroadcaster {
+    ProxyStandardMBean(Object proxy, Class interfaceClass) throws NotCompliantMBeanException {
+      super(proxy, interfaceClass);
+    }
+
+    protected String getClassName(MBeanInfo info) {
+      Object proxy = getImplementation();
+      if(proxy instanceof NotificationBroadcaster) {
+        return NotificationBroadcaster.class.getName();
+      }
+      return super.getClassName(info);
+    }
+
+    public void addNotificationListener(NotificationListener listener, NotificationFilter filter, Object handback)
+        throws IllegalArgumentException {
+      Object proxy = getImplementation();
+      if(proxy instanceof NotificationBroadcaster) {
+        ((NotificationBroadcaster)proxy).addNotificationListener(listener, filter, handback);
+      }
+    }
+
+    public MBeanNotificationInfo[] getNotificationInfo() {
+      Object proxy = getImplementation();
+      if(proxy instanceof NotificationBroadcaster) {
+        return ((NotificationBroadcaster)proxy).getNotificationInfo();
+      }
+      return new MBeanNotificationInfo[0];
+    }
+
+    public void removeNotificationListener(NotificationListener listener) throws ListenerNotFoundException {
+      Object proxy = getImplementation();
+      if(proxy instanceof NotificationBroadcaster) {
+        ((NotificationBroadcaster)proxy).removeNotificationListener(listener);
+      }
+    }
+
+  }
+  
   private void addJmxConnection(final L1ConnectionMessage msg) {
     final MessageChannel channel = msg.getChannel();
     final TCSocketAddress remoteAddress = channel != null ? channel.getRemoteAddress() : null;
@@ -119,10 +162,10 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
                   .newProxyInstance(l1MBeanServerConnection, objName, TerracottaMBean.class, false);
               ObjectName modifiedObjName = TerracottaManagement.addNodeInfo(objName, channel.getRemoteAddress());
               Class interfaceClass = Class.forName(mBeanProxy.getInterfaceClassName());
+              boolean isNotificationBroadcaster = mBeanProxy.isNotificationBroadcaster();
               Object obj = MBeanServerInvocationHandler.newProxyInstance(l1MBeanServerConnection, objName,
-                                                                         interfaceClass, mBeanProxy
-                                                                             .isNotificationBroadcaster());
-              l2MBeanServer.registerMBean(new StandardMBean(obj, interfaceClass), modifiedObjName);
+                                                                         interfaceClass, isNotificationBroadcaster);
+              l2MBeanServer.registerMBean(new ProxyStandardMBean(obj, interfaceClass), modifiedObjName);
               modifiedObjectNames.add(modifiedObjName);
             } catch (Exception e) {
               if (isConnectionException(e)) {

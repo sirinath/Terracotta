@@ -3,12 +3,11 @@
  */
 package com.tctest.statistics.store;
 
-import com.tc.statistics.StatisticData;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 
-import java.util.Date;
-import java.util.Calendar;
 import java.net.InetAddress;
+import java.util.Calendar;
+import java.util.Date;
 
 import junit.framework.TestCase;
 

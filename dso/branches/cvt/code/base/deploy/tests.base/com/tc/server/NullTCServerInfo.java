@@ -88,4 +88,15 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
     //
   }
 
+  public String takeThreadDump() {
+    return null;
+  }
+  
+  public String getEnvironment() {
+    return null;
+  }
+
+  public String getConfig() {
+    return null;
+  }
 }

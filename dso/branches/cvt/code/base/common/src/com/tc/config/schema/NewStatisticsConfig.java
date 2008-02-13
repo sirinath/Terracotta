@@ -3,9 +3,6 @@
  */
 package com.tc.config.schema;
 
-import org.apache.xmlbeans.XmlObject;
-
-import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.dynamic.FileConfigItem;
 
 public interface NewStatisticsConfig {

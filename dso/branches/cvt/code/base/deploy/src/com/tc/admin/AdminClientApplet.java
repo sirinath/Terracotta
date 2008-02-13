@@ -69,8 +69,8 @@ public class AdminClientApplet extends XApplet
     m_mainPanel.log(s);
   }
 
-  public void log(Exception e) {
-    m_mainPanel.log(e);
+  public void log(Throwable t) {
+    m_mainPanel.log(t);
   }
 
   public void setStatus(String msg) {

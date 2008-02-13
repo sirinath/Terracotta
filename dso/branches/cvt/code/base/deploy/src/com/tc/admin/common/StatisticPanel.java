@@ -29,6 +29,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.Timer;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -38,6 +39,7 @@ import javax.swing.event.ChangeListener;
 public class StatisticPanel extends XContainer implements Poller {
   protected ConnectionContext m_cc;
   protected JFreeChart        m_chart;
+  protected ChartPanel        m_chartPanel;
   protected TimeSeries        m_timeSeries;
   protected SplitPane         m_splitter;
   protected Button            m_controlsButton;
@@ -130,7 +132,7 @@ public class StatisticPanel extends XContainer implements Poller {
     });
 
     m_chart = getChart();
-    chartHolder.add(new ChartPanel(m_chart, false));
+    chartHolder.add(m_chartPanel = new ChartPanel(m_chart, false));
 
     m_controlsButton = (Button)findComponent("ControlsButton");
 
@@ -252,7 +254,7 @@ public class StatisticPanel extends XContainer implements Poller {
 
   public void setSeriesName(String name) {
     m_timeSeries.setDescription(name);
-    m_chart.setTitle(name);
+    m_chartPanel.setBorder(new TitledBorder(name));
   }
 
   public XYPlot getXYPlot() {

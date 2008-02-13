@@ -4,23 +4,22 @@
  */
 package com.tc.statistics.beans;
 
+import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+
+import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticRetrievalAction;
-import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.util.Assert;
-import com.tc.management.AbstractTerracottaMBean;
 
 import java.util.Collection;
 import java.util.Map;
 
 import javax.management.NotCompliantMBeanException;
-import javax.management.StandardMBean;
-
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 public class StatisticsManager extends AbstractTerracottaMBean implements StatisticsManagerMBean {
   private final StatisticsConfig config;

@@ -510,11 +510,11 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     m_logArea.setCaretPosition(m_logArea.getDocument().getLength() - 1);
   }
 
-  public void log(Exception e) {
+  public void log(Throwable t) {
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
 
-    e.printStackTrace(pw);
+    t.printStackTrace(pw);
     pw.close();
 
     log(sw.toString());
@@ -527,7 +527,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   public void clearStatus() {
     setStatus("");
   }
-
+ 
   public void addNotify() {
     super.addNotify();
 

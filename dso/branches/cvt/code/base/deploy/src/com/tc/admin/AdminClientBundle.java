@@ -108,6 +108,8 @@ public class AdminClientBundle extends ListResourceBundle {
 
       { "dso.transaction.rate", "Transaction Rate" },
 
+      { "dso.pending.transaction.count", "Pending Transaction Count" },
+      
       { "dso.root.retrieving", "Retrieving new DSO root..." },
 
       { "dso.root.new", "Added new DSO root: " },
@@ -144,6 +146,8 @@ public class AdminClientBundle extends ListResourceBundle {
 
       { "dso.transaction.rate.range.label", "Transactions per second" },
 
+      { "dso.pending.transaction.count.range.label", "Pending Transactions" },
+      
       { "dso.cache.activity", "Cache activity" },
 
       { "dso.cache.miss.rate", "Cache Miss Rate" },

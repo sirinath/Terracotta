@@ -9,13 +9,22 @@ import org.dijon.AbstractTreeCellRenderer;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
 import com.tc.admin.common.ComponentNode;
+import com.tc.admin.common.PollerNode;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XTreeNode;
+import com.tc.admin.dso.ClassesNode;
+import com.tc.admin.dso.ClientsNode;
 import com.tc.admin.dso.DSOHelper;
-import com.tc.admin.dso.DSONode;
+import com.tc.admin.dso.GCStatsNode;
+import com.tc.admin.dso.RootsNode;
+import com.tc.admin.dso.StatsPanel;
+import com.tc.admin.dso.locks.LocksNode;
 import com.tc.config.schema.L2Info;
 import com.tc.management.beans.L2MBeanNames;
+import com.tc.statistics.beans.StatisticsEmitterMBean;
+import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 
 import java.awt.Color;
 import java.awt.Frame;
@@ -27,8 +36,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.prefs.Preferences;
 
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationListener;
@@ -610,24 +621,22 @@ public class ServerNode extends ComponentNode
     m_serverPanel.started();
   }
 
-  SynchronizedBoolean m_tryAddingDSONode = new SynchronizedBoolean(false);
+  SynchronizedBoolean m_tryAddingChildren = new SynchronizedBoolean(false);
   
-  void tryAddDSONode() throws Exception{
-    if(m_tryAddingDSONode.get()) {
+  void tryAddChildren() throws Exception{
+    if(m_tryAddingChildren.get()) {
       return;
     }
     
     try {
-      m_tryAddingDSONode.set(true);
+      m_tryAddingChildren.set(true);
       if (getChildCount() == 0) {
         ConnectionContext cntx = getConnectionContext();
   
         if (DSOHelper.getHelper().getDSOMBean(cntx) != null) {
-          DSONode dsoNode = null;
-  
-          add(dsoNode = new DSONode(cntx));
+          addChildren(cntx);
           m_acc.controller.nodeStructureChanged(this);
-          m_acc.controller.expand(dsoNode);
+          m_acc.controller.expand(this);
         } else {
           ObjectName mbsd = cntx.queryName("JMImplementation:type=MBeanServerDelegate");
           if(mbsd != null) {
@@ -642,13 +651,29 @@ public class ServerNode extends ComponentNode
     } catch(Exception e) {
       m_acc.log(e);
     } finally {
-      m_tryAddingDSONode.set(false);
+      m_tryAddingChildren.set(false);
     }
+  }
+  
+  private void addChildren(ConnectionContext cc) throws Exception {
+    add(new RootsNode(cc));
+    add(new ClassesNode(cc));
+    try {
+      add(new LocksNode(cc));
+    } catch(Throwable t) {/**/}
+    add(new ClientsNode(cc));
+
+    StatsPanel statsPanel = new StatsPanel(cc, DSOHelper.getHelper().getDSOMBean(cc));
+    PollerNode node = new PollerNode(m_acc.getMessage("dso.all.statistics"), statsPanel);
+    statsPanel.setNode(node);
+    add(node);
+
+    add(new GCStatsNode(cc));
   }
   
   void handlePassiveUninitialized() {
     try {
-      tryAddDSONode();
+      tryAddChildren();
       m_shutdownAction.setEnabled(false);
       m_serverPanel.passiveUninitialized();
     } catch(Exception e) {
@@ -658,7 +683,7 @@ public class ServerNode extends ComponentNode
 
   void handlePassiveStandby() {
     try {
-      tryAddDSONode();
+      tryAddChildren();
       m_shutdownAction.setEnabled(true);
       m_serverPanel.passiveStandby();
     } catch (Exception e) {
@@ -668,7 +693,7 @@ public class ServerNode extends ComponentNode
 
   void handleActivation() {
     try {
-      tryAddDSONode();
+      tryAddChildren();
       m_shutdownAction.setEnabled(true);
       m_serverPanel.activated();
     } catch (Exception e) {
@@ -704,6 +729,30 @@ public class ServerNode extends ComponentNode
     return new ProductInfo(version, buildID, license, copyright);
   }
 
+  String getEnvironment() {
+    try {
+      ConnectionContext cntx = getConnectionContext();
+      ObjectName serverInfo = getServerInfo(cntx);
+
+      return cntx.getStringAttribute(serverInfo, "Environment");
+    } catch (Exception e) {
+      m_acc.log(e);
+      return e.getMessage();
+    }
+  }
+  
+  String getConfig() {
+    try {
+      ConnectionContext cntx = getConnectionContext();
+      ObjectName serverInfo = getServerInfo(cntx);
+
+      return cntx.getStringAttribute(serverInfo, "Config");
+    } catch (Exception e) {
+      m_acc.log(e);
+      return e.getMessage();
+    }
+  }
+  
   long getStartTime() {
     try {
       ConnectionContext cntx = getConnectionContext();
@@ -739,11 +788,9 @@ public class ServerNode extends ComponentNode
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
               try {
-                DSONode dsoNode = new DSONode(getConnectionContext());
-
-                add(dsoNode);
+                addChildren(getConnectionContext());
                 m_acc.controller.nodeStructureChanged(ServerNode.this);
-                m_acc.controller.expand(dsoNode);
+                m_acc.controller.expand(ServerNode.this);
                 m_acc.controller.nodeChanged(ServerNode.this);
               } catch(Exception e) {
                 // just wait for disconnect message to come in
@@ -755,6 +802,25 @@ public class ServerNode extends ComponentNode
     }
   }
 
+  StatisticsManagerMBean getStatisticsManagerMBean() {
+    ConnectionContext cc = getConnectionContext();
+    return (StatisticsManagerMBean) MBeanServerInvocationHandler
+        .newProxyInstance(cc.mbsc, StatisticsMBeansNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
+  }
+  
+  StatisticsEmitterMBean registerStatisticsEmitterListener(NotificationListener listener) {
+    ConnectionContext cc = getConnectionContext();
+    StatisticsEmitterMBean stat_emitter = (StatisticsEmitterMBean) MBeanServerInvocationHandler
+        .newProxyInstance(cc.mbsc, StatisticsMBeansNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
+    ArrayList dataList = new ArrayList();
+    try {
+      cc.mbsc.addNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener, null, dataList);
+    } catch(Exception e) {
+      throw new RuntimeException("Registering stats emitter listener", e);
+    }
+    return stat_emitter;
+  }
+  
   L2Info[] getClusterMembers() {
     ConnectionContext cc = getConnectionContext();
     L2Info[] result = null;

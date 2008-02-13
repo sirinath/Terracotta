@@ -57,6 +57,10 @@ class ManagementResources {
     return TerracottaManagement.quoteIfNecessary(resources.getString("subsystem.object-management"));
   }
 
+  String getLoggingSubsystem() {
+    return TerracottaManagement.quoteIfNecessary(resources.getString("subsystem.logging"));
+  }
+  
   String getStatisticsSubsystem() {
     return TerracottaManagement.quoteIfNecessary(resources.getString("subsystem.statistics"));
   }

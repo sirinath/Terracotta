@@ -35,7 +35,7 @@ public class ClientsNode extends ComponentNode implements NotificationListener {
       add(new ClientTreeNode(m_cc, m_clients[i]));
     }
 
-    ClientsPanel panel = new ClientsPanel(m_clients);
+    ClientsPanel panel = new ClientsPanel(cc, this, m_clients);
 
     panel.setNode(this);
     updateLabel();
@@ -44,6 +44,18 @@ public class ClientsNode extends ComponentNode implements NotificationListener {
     m_cc.addNotificationListener(dso, this);
   }
 
+  void selectClientNode(String remoteAddr) {
+    int childCount = getChildCount();
+    for(int i = 0; i < childCount; i++) {
+      ClientTreeNode ctn = (ClientTreeNode)getChildAt(i);
+      String ctnRemoteAddr = ctn.getClient().getRemoteAddress();
+      if(ctnRemoteAddr.equals(remoteAddr)) {
+        AdminClient.getContext().controller.select(ctn);
+        return;
+      }
+    }
+  }
+  
   public DSOClient[] getClients() {
     return m_clients;
   }

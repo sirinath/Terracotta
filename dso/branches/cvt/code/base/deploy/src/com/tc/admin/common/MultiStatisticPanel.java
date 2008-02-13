@@ -31,6 +31,7 @@ import javax.swing.ImageIcon;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -40,6 +41,7 @@ import javax.swing.event.ChangeListener;
 public class MultiStatisticPanel extends XContainer implements Poller {
   protected ConnectionContext m_cc;
   protected JFreeChart[]      m_charts;
+  protected ChartPanel[]      m_chartPanels;
   protected TimeSeries[]      m_timeSeries;
   protected SplitPane         m_splitter;
   protected Button            m_controlsButton;
@@ -138,9 +140,11 @@ public class MultiStatisticPanel extends XContainer implements Poller {
       }
     });
 
+    m_chartPanels = new ChartPanel[m_charts.length];
     for(int i = 0; i < m_charts.length; i++) {
-      m_charts[i] = getChart(m_timeSeries[i], labels[i], xAxis, yAxis);
-      chartHolder.add(new ChartPanel(m_charts[i], false));
+      m_charts[i] = getChart(m_timeSeries[i], xAxis, yAxis);
+      chartHolder.add(m_chartPanels[i] = new ChartPanel(m_charts[i], false));
+      m_chartPanels[i].setBorder(new TitledBorder(labels[i]));
       if(i == 0) {
         if(orientation == SwingConstants.HORIZONTAL) {
           yAxis = null;
@@ -227,10 +231,9 @@ public class MultiStatisticPanel extends XContainer implements Poller {
     return DemoChartFactory.getXYBarChart("", "", "", series);
   }
 
-  public JFreeChart getChart(TimeSeries series, String header, String xAxis, String yAxis) {
+  public JFreeChart getChart(TimeSeries series, String xAxis, String yAxis) {
     JFreeChart chart = createChart(series);
     
-    chart.setTitle(header);
     chart.getXYPlot().getDomainAxis().setLabel(xAxis);
     chart.getXYPlot().getRangeAxis().setLabel(yAxis);
     
@@ -279,6 +282,7 @@ public class MultiStatisticPanel extends XContainer implements Poller {
 
     m_cc = null;
     m_charts = null;
+    m_chartPanels = null;
     m_timeSeries = null;
     m_startButton = null;
     m_stopButton = null;

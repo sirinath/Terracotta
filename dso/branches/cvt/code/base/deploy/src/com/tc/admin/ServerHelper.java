@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
@@ -22,7 +23,7 @@ public class ServerHelper extends BaseHelper {
     ObjectName infoMBean = getServerInfoMBean(cc);
     return infoMBean != null && cc.getBooleanAttribute(infoMBean, "Shutdownable");
   }
-  
+
   public boolean isActive(ConnectionContext cc) throws Exception {
     ObjectName infoMBean = getServerInfoMBean(cc);
     return infoMBean != null && cc.getBooleanAttribute(infoMBean, "Active");
@@ -32,7 +33,7 @@ public class ServerHelper extends BaseHelper {
     ObjectName infoMBean = getServerInfoMBean(cc);
     return infoMBean != null && cc.getBooleanAttribute(infoMBean, "Started");
   }
-  
+
   public boolean isPassiveUninitialized(ConnectionContext cc) throws Exception {
     ObjectName infoMBean = getServerInfoMBean(cc);
     return infoMBean != null && cc.getBooleanAttribute(infoMBean, "PassiveUninitialized");
@@ -41,5 +42,11 @@ public class ServerHelper extends BaseHelper {
   public boolean isPassiveStandby(ConnectionContext cc) throws Exception {
     ObjectName infoMBean = getServerInfoMBean(cc);
     return infoMBean != null && cc.getBooleanAttribute(infoMBean, "PassiveStandby");
+  }
+
+  public String takeThreadDump(ConnectionContext cc) throws Exception {
+    ObjectName infoMBean = getServerInfoMBean(cc);
+    return infoMBean != null ? (String) cc.invoke(infoMBean, "takeThreadDump", new Object[0], new String[0])
+        : "no connection";
   }
 }

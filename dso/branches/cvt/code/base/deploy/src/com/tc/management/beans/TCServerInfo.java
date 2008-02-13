@@ -8,11 +8,20 @@ import com.tc.config.schema.L2Info;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.server.TCServer;
 import com.tc.util.ProductInfo;
 import com.tc.util.State;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,7 +30,9 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 
 public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean, StateChangeListener {
-  private static final boolean                 DEBUG = false;
+  private static final TCLogger                logger = TCLogging.getLogger(TCServerInfo.class);
+
+  private static final boolean                 DEBUG  = false;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
   static {
@@ -85,15 +96,14 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public boolean isShutdownable() {
     return server.canShutdown();
   }
-  
+
   /**
    * This schedules the shutdown to occur one second after we return from this call because otherwise JMX will be
    * shutdown and we'll get all sorts of other errors trying to return from this call.
    */
   public void shutdown() {
-    if(!server.canShutdown()) {
-      throw new RuntimeException("Server cannot be shutdown because it is not fully started.");
-    }
+    if (!server.canShutdown()) { throw new RuntimeException(
+                                                            "Server cannot be shutdown because it is not fully started."); }
     final Timer timer = new Timer();
     final TimerTask task = new TimerTask() {
       public void run() {
@@ -141,6 +151,68 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return server.infoForAllL2s();
   }
 
+  public String takeThreadDump() {
+    ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+    long[] threadIds = threadBean.getAllThreadIds();
+    StringBuffer sb = new StringBuffer();
+
+    sb.append(new Date().toString());
+    sb.append('\n');
+    sb.append("Full thread dump ");
+    sb.append(System.getProperty("java.vm.name"));
+    sb.append(" (");
+    sb.append(System.getProperty("java.vm.version"));
+    sb.append(' ');
+    sb.append(System.getProperty("java.vm.info"));
+    sb.append("):\n\n");
+    
+    for (ThreadInfo threadInfo : threadBean.getThreadInfo(threadIds, Integer.MAX_VALUE)) {
+      sb.append(threadInfo.toString());
+    }
+
+    String text = sb.toString();
+    logger.info(text);
+
+    return text;
+  }
+
+  public String getEnvironment() {
+    StringBuffer sb = new StringBuffer();
+    Properties env = System.getProperties();
+    Enumeration keys = env.propertyNames();
+    ArrayList<String> l = new ArrayList<String>();
+    
+    while(keys.hasMoreElements()) {
+      Object o = keys.nextElement();
+      if(o instanceof String) {
+        String key = (String)o;
+        l.add(key);
+      }
+    }
+    
+    int maxKeyLen = 0;
+    for(String key : l) {
+      maxKeyLen = Math.max(key.length(), maxKeyLen);
+    }
+    
+    for(String key : l) {
+      sb.append(key);
+      sb.append(":");
+      int spaceLen = maxKeyLen-key.length()+1;
+      for(int i = 0; i < spaceLen; i++) {
+        sb.append(" ");
+      }
+      sb.append(env.getProperty(key));
+      sb.append("\n");
+    }
+
+    return sb.toString();
+  }
+  
+  public String getConfig() {
+    return server.getConfig();
+  }
+  
   private static String makeBuildID(final ProductInfo productInfo) {
     String timeStamp = productInfo.buildTimestampAsString();
     String revision = productInfo.buildRevision();
@@ -159,10 +231,10 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public void l2StateChanged(StateChangedEvent sce) {
     State state = sce.getCurrentState();
 
-    if(state.equals(StateManager.ACTIVE_COORDINATOR)) {
+    if (state.equals(StateManager.ACTIVE_COORDINATOR)) {
       server.updateActivateTime();
     }
-    
+
     debugPrintln("*****  msg=[" + stateChangeNotificationInfo.getMsg(state) + "] attrName=["
                  + stateChangeNotificationInfo.getAttributeName(state) + "] attrType=["
                  + stateChangeNotificationInfo.getAttributeType(state) + "] stateName=[" + state.getName() + "]");
