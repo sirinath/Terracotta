@@ -6,7 +6,6 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.TCConnection;
@@ -62,9 +61,8 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     this.maxProbeCountWithoutReply = config.getPingProbes();
     this.config = config;
     this.connectionManager = connMgr;
-    this.logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ": "
+    this.logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ". "
                                       + config.getHealthCheckerName() + "(" + mtb.getConnectionId() + ")");
-    logger.setLevel(LogLevel.DEBUG); // XXX should be removed before pacheco release
     if (logger.isDebugEnabled()) logger.debug("Health monitoring agent started");
   }
 
