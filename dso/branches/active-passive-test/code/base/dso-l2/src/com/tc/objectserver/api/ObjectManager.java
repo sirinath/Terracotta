@@ -76,7 +76,7 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
   public boolean lookupObjectsFor(NodeID nodeID, ObjectManagerResultsContext context);
 
   /**
-   * The list of rootnames
+   * The list of root names
    * 
    * @return
    */
@@ -118,7 +118,8 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
 
   public void addFaultedObject(ObjectID oid, ManagedObject mo, boolean removeOnRelease);
 
-  // XXX::TODO:: This will change
   public void flushAndEvict(List objects2Flush);
+  
+  public void preFetchObjects(List oids);
 
 }

@@ -327,4 +327,8 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
+  public void preFetchObjects(List oids) {
+    throw new ImplementMe();
+  }
+
 }
