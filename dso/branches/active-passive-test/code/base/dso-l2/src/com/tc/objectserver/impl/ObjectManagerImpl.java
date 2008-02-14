@@ -257,14 +257,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     ManagedObjectReference rv = getReference(id);
 
     if (rv == null) {
-      // Request Faulting in a different stage and give back a "Referenced" proxy
-      ManagedObjectFaultingContext mofc = new ManagedObjectFaultingContext(id, context.removeOnRelease());
-      faultSink.add(mofc);
-
-      // don't account for a cache "miss" unless this was a real request
-      // originating from a client
-      stats.cacheMiss();
-      rv = addNewReference(new FaultingManagedObjectReference(id));
+      rv = initiateFaultingFor(id, context.removeOnRelease());
     } else if (rv instanceof FaultingManagedObjectReference) {
       // Check to see if the retrieve was complete and the Object is missing
       FaultingManagedObjectReference fmr = (FaultingManagedObjectReference) rv;
@@ -291,6 +284,17 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return rv;
   }
 
+  private ManagedObjectReference initiateFaultingFor(ObjectID id, boolean removeOnRelease) {
+    // Request Faulting in a different stage and give back a "Referenced" proxy
+    ManagedObjectFaultingContext mofc = new ManagedObjectFaultingContext(id, removeOnRelease);
+    faultSink.add(mofc);
+
+    // don't account for a cache "miss" unless this was a real request
+    // originating from a client
+    stats.cacheMiss();
+    return addNewReference(new FaultingManagedObjectReference(id));
+  }
+
   public synchronized void addFaultedObject(ObjectID oid, ManagedObject mo, boolean removeOnRelease) {
     FaultingManagedObjectReference fmor;
     if (mo == null) {
@@ -313,6 +317,17 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     makeUnBlocked(oid);
     postRelease();
+  }
+
+  public synchronized void preFetchObjects(List oids) {
+    for (Iterator i = oids.iterator(); i.hasNext();) {
+      ObjectID id = (ObjectID) i.next();
+      ManagedObjectReference rv = getReference(id);
+      if (rv == null) {
+        // This object is not in the cache, initiate faulting for the object
+        initiateFaultingFor(id, false);
+      }
+    }
   }
 
   private ManagedObjectReference addNewReference(ManagedObject obj, boolean isRemoveOnRelease) throws AssertionError {
