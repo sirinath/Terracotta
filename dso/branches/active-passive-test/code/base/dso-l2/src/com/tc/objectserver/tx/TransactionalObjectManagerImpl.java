@@ -79,6 +79,22 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   public void addTransactions(Collection txns) {
     sequencer.addTransactions(txns);
     txnStageCoordinator.initiateLookup();
+    preFetchObjectsFor(txns);
+  }
+
+  private void preFetchObjectsFor(Collection txns) {
+    Set oids = new HashSet(txns.size() * 10);
+    for (Iterator i = txns.iterator(); i.hasNext();) {
+      ServerTransaction txn = (ServerTransaction) i.next();
+      Set newOids = txn.getNewObjectIDs();
+      for (Iterator j = txn.getObjectIDs().iterator(); j.hasNext();) {
+        ObjectID oid = (ObjectID) j.next();
+        if (!newOids.contains(oid)) {
+          oids.add(oid);
+        }
+      }
+    }
+    if (!oids.isEmpty()) objectManager.preFetchObjects(oids);
   }
 
   // LookupHandler Method

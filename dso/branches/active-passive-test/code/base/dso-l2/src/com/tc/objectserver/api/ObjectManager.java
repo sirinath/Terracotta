@@ -120,6 +120,6 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
 
   public void flushAndEvict(List objects2Flush);
   
-  public void preFetchObjects(List oids);
+  public void preFetchObjects(Set oids);
 
 }

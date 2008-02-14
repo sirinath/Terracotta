@@ -319,15 +319,19 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     postRelease();
   }
 
-  public synchronized void preFetchObjects(List oids) {
+  public synchronized void preFetchObjects(Set oids) {
+    int count = 0;
     for (Iterator i = oids.iterator(); i.hasNext();) {
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference rv = getReference(id);
       if (rv == null) {
         // This object is not in the cache, initiate faulting for the object
+        count++;
         initiateFaultingFor(id, false);
       }
     }
+    //TODO::FIXME::Remove this logging
+    if(count != 0) logger.info("Prefetched " + count +" objects");
   }
 
   private ManagedObjectReference addNewReference(ManagedObject obj, boolean isRemoveOnRelease) throws AssertionError {

@@ -202,7 +202,7 @@ public class TestObjectManager implements ObjectManager {
     throw new ImplementMe();
   }
 
-  public void preFetchObjects(List oids) {
+  public void preFetchObjects(Set oids) {
     throw new ImplementMe();
   }
 
