@@ -201,6 +201,16 @@ public class ServerNode extends ComponentNode
     return m_connectManager.getJMXPortNumber();
   }
 
+  Integer getDSOListenPort() throws Exception {
+    return ServerHelper.getHelper().getDSOListenPort(getConnectionContext());
+  }
+  
+  String getStatsExportServletURI(long sessionId) throws Exception {
+    Integer dsoPort = getDSOListenPort();
+    Object[] args = new Object[] { getHost(), dsoPort.toString(), Long.toString(sessionId) };
+    return MessageFormat.format("http://{0}:{1}/stats-export?session={2}", args);
+  }
+  
   private void initMenu(boolean autoConnect) {
     m_popupMenu = new JPopupMenu("Server Actions");
 

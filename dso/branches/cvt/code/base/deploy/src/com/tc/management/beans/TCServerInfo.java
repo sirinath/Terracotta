@@ -151,6 +151,10 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return server.infoForAllL2s();
   }
 
+  public int getDSOListenPort() {
+    return server.getDSOListenPort();
+  }
+  
   public String takeThreadDump() {
     ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
     long[] threadIds = threadBean.getAllThreadIds();

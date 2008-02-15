@@ -40,6 +40,10 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
     return null;
   }
 
+  public int getDSOListenPort() {
+    return 0;
+  }
+  
   public long getStartTime() {
     return 0;
   }

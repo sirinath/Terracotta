@@ -42,9 +42,9 @@ import com.tc.stats.DSO;
 import com.tc.stats.DSOMBean;
 import com.tc.util.Assert;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
 import java.util.Date;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -352,6 +352,7 @@ public class TCServerImpl extends SEDA implements TCServer {
 
     createAndAddServlet(servletHandler, VersionServlet.class.getName(), "/version");
     createAndAddServlet(servletHandler, ConfigServlet.class.getName(), "/config");
+    createAndAddServlet(servletHandler, StatsExportServlet.class.getName(), "/stats-export");
 
     context.setServletHandler(servletHandler);
     httpServer.addHandler(context);

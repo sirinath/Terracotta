@@ -116,13 +116,60 @@
                   <item bottom="-1,bottom:ns" height="n" left="0,right:n" right="-1,right:ns" top="-1,top:ns" width="n" />
                 </connections>
               </container>
-              <scrollpane>
-                <textarea class="com.tc.admin.common.XTextArea" name="StatisticsLog" editable="false"/>
-              </scrollpane>
+              <tabbedpane name="StatsTabbedPane">
+                <tab title="Configuration">
+                  <container>
+                    <children>
+                      <container name="StatsConfigPanel">
+                        <border>
+                          <titled-border title="Available statistics"/>
+                        </border>
+                      </container>
+                    </children>
+                    <connections>
+                      <item bottom="-1,bottom:ns" height="n" left="-1,left:ns" right="-1,right:ns" top="-1,top:ns" width="n" />
+                    </connections>
+                  </container>
+                </tab>
+                <tab title="Monitor">
+                  <scrollpane>
+                    <textarea class="com.tc.admin.common.XTextArea" name="StatisticsLog" editable="false"/>
+                  </scrollpane>
+                </tab>
+              </tabbedpane>
+              <container>
+                <border>
+                  <titled-border title="Statistics capture sessions"/>
+                </border>
+                <children>
+                  <scrollpane>
+                    <list name="StatsSessionsList"/>
+                  </scrollpane>
+                  <container>
+                    <children>
+                      <button text="Export session" name="ExportStatsSessionButton" enabled="false"/>
+                      <button text="Clear session" name="ClearStatsSessionButton" enabled="false"/>
+                      <button text="Clear all sessions" name="ClearAllStatsSessionsButton" enabled="false"/>
+                    </children>
+                    <connections>
+                      <item bottom="1,top:n" height="n" left="-1,left:n" right="-1,right:n" top="-1,top:n" width="ns" />
+                      <item bottom="2,top:n" height="n" left="-1,left:n" right="-1,right:n" top="0,bottom:n" width="ns" />
+                      <item bottom="-1,bottom:ns" height="n" left="-1,left:n" right="-1,right:n" top="1,bottom:n" width="ns" />                      
+                    </connections>
+                  </container>
+                </children>
+                <connections>
+                  <item bottom="-1,bottom:n" height="ns" left="-1,left:n" right="1,left:n" top="-1,top:n" width="s" />
+                  <item bottom="-1,bottom:n" height="ns" left="0,right:n" right="-1,right:n" top="-1,top:n" width="n" />
+                </connections>
+              </container>
+              <item name="ExportProgressBarHolder"/>
             </children>
             <connections>
               <item bottom="1,top:0" height="n" left="-1,left:0" right="-1,right:0" top="-1,top:0" width="s" />
-              <item bottom="-1,bottom:n" height="s" left="-1,left:0" right="-1,right:0" top="0,bottom:0" width="s" />
+              <item bottom="2,top:n" height="s" left="-1,left:0" right="-1,right:0" top="0,bottom:0" width="s" />
+              <item bottom="3,top:n" height="n" left="-1,left:0" right="-1,right:0" top="1,bottom:0" width="s" />
+              <item bottom="-1,bottom:n" height="n" left="-1,left:n" right="-1,right:n" top="2,bottom:0" width="s" />              
             </connections>
           </container>
         </tab>

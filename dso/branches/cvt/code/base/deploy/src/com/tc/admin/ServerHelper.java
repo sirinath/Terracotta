@@ -49,4 +49,9 @@ public class ServerHelper extends BaseHelper {
     return infoMBean != null ? (String) cc.invoke(infoMBean, "takeThreadDump", new Object[0], new String[0])
         : "no connection";
   }
+  
+  public Integer getDSOListenPort(ConnectionContext cc) throws Exception {
+    ObjectName infoMBean = getServerInfoMBean(cc);
+    return infoMBean != null ? (Integer) cc.getAttribute(infoMBean, "DSOListenPort") : null;
+  }
 }
