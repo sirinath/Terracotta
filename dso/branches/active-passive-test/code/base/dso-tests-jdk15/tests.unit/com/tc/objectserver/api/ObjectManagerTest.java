@@ -277,9 +277,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
   }
 
-  /**
-   * 1.
-   */
+ 
   public void testPreFetchObjects() {
     config.paranoid = true;
     initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))),
