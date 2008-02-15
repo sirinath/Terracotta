@@ -123,6 +123,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   private TestTransactionalStageCoordinator  coordinator;
   private TestGlobalTransactionManager       gtxMgr;
   private TransactionalObjectManagerImpl     txObjectManager;
+  private TestSinkContext                    testFaultSinkContext;
 
   /**
    * Constructor for ObjectManagerTest.
@@ -170,8 +171,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     TestSink flushSink = new TestSink();
     this.objectManager = new ObjectManagerImpl(config, threadGroup, clientStateManager, store, cache,
                                                persistenceTransactionProvider, faultSink, flushSink);
-    new TestMOFaulter(this.objectManager, store, faultSink).start();
-    new TestMOFlusher(this.objectManager, flushSink).start();
+    testFaultSinkContext = new TestSinkContext( faultSink );
+    new TestMOFaulter(this.objectManager, store, faultSink, testFaultSinkContext).start();
+    new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
   }
 
   private void initTransactionObjectManager() {
@@ -273,6 +275,47 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     } catch (ShutdownError e) {
       // ok.
     }
+  }
+
+  /**
+   * 1.
+   */
+  public void testPreFetchObjects() {
+    config.paranoid = true;
+    initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))),
+                      new LRUEvictionPolicy(-1));
+    objectManager.setStatsListener(this.stats);
+
+    assertEquals(0, stats.getTotalRequests());
+    assertEquals(0, stats.getTotalCacheHits());
+    assertEquals(0, stats.getTotalCacheMisses());
+
+    createObjects(50, 10);
+    Set ids = makeObjectIDSet(0, 10);
+    // ThreadUtil.reallySleep(5000);
+    TestResultsContext results = new TestResultsContext(ids, Collections.EMPTY_SET);
+
+    // objectManager.preFetchObjects(ids);
+    objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
+    results.waitTillComplete();
+    objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
+
+    assertEquals(0, stats.getTotalCacheHits());
+    assertEquals(10, stats.getTotalCacheMisses());
+
+    ids = makeObjectIDSet(10, 20);
+    // ThreadUtil.reallySleep(5000);
+    results = new TestResultsContext(ids, Collections.EMPTY_SET);
+    testFaultSinkContext.preProcess(10);
+    objectManager.preFetchObjects(ids);
+    testFaultSinkContext.waitTillComplete();
+    objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
+    results.waitTillComplete();
+    objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
+
+    assertEquals(10, stats.getTotalCacheHits());
+    assertEquals(20, stats.getTotalCacheMisses());
+
   }
 
   public void testNewObjectIDs() {
@@ -666,8 +709,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectManager = new ObjectManagerImpl(config, createThreadGroup(), clientStateManager, store,
                                           new LRUEvictionPolicy(100), persistenceTransactionProvider, faultSink,
                                           flushSink);
-    new TestMOFaulter(this.objectManager, store, faultSink).start();
-    new TestMOFlusher(this.objectManager, flushSink).start();
+    new TestMOFaulter(this.objectManager, store, faultSink, new NullSinkContext()).start();
+    new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
 
     ObjectID id = new ObjectID(1);
     Set ids = new HashSet();
@@ -2226,11 +2269,13 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     private final ObjectManagerImpl  objectManager;
     private final ManagedObjectStore store;
     private final TestSink           faultSink;
+    private final SinkContext        sinkContext;
 
-    public TestMOFaulter(ObjectManagerImpl objectManager, ManagedObjectStore store, TestSink faultSink) {
+    public TestMOFaulter(ObjectManagerImpl objectManager, ManagedObjectStore store, TestSink faultSink, SinkContext sinkContext) {
       this.store = store;
       this.faultSink = faultSink;
       this.objectManager = objectManager;
+      this.sinkContext = sinkContext;
       setName("TestMOFaulter");
       setDaemon(true);
     }
@@ -2240,6 +2285,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
         try {
           ManagedObjectFaultingContext ec = (ManagedObjectFaultingContext) faultSink.take();
           objectManager.addFaultedObject(ec.getId(), store.getObjectByID(ec.getId()), ec.isRemoveOnRelease());
+          sinkContext.postProcess();
         } catch (InterruptedException e) {
           throw new AssertionError(e);
         }
@@ -2251,10 +2297,12 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     private final ObjectManagerImpl objectManager;
     private final TestSink          flushSink;
+    private final SinkContext       sinkContext;
 
-    public TestMOFlusher(ObjectManagerImpl objectManager, TestSink flushSink) {
+    public TestMOFlusher(ObjectManagerImpl objectManager, TestSink flushSink, SinkContext sinkContext) {
       this.objectManager = objectManager;
       this.flushSink = flushSink;
+      this.sinkContext = sinkContext;
       setName("TestMOFlusher");
       setDaemon(true);
     }
@@ -2264,10 +2312,61 @@ public class ObjectManagerTest extends BaseDSOTestCase {
         try {
           ManagedObjectFlushingContext ec = (ManagedObjectFlushingContext) flushSink.take();
           objectManager.flushAndEvict(ec.getObjectToFlush());
+          sinkContext.postProcess();
         } catch (InterruptedException e) {
           throw new AssertionError(e);
         }
       }
     }
   }
+
+  private static class TestSinkContext implements SinkContext {
+    private boolean     complete  = false;
+    private int sinkCount = -1;
+    private TestSink    sink;
+    
+    public TestSinkContext( TestSink sink ) {
+      this.sink = sink;
+    }
+
+    public synchronized void preProcess(int sinkCount) {
+      this.sinkCount = sinkCount;
+    }
+
+    public synchronized void waitTillComplete() {
+      while (!complete) {
+        try {
+          wait();
+        } catch (InterruptedException e) {
+          throw new AssertionError(e);
+        }
+      }
+    }
+
+    public synchronized void postProcess() {
+      sinkCount--;
+      if (sinkCount == 0) {
+        complete = true;
+        sinkCount = -1;
+        notifyAll();
+      }
+
+    }
+
+  }
+  
+  private static class NullSinkContext implements SinkContext {
+
+    public void postProcess() {
+      //do nothing
+    }
+    
+  }
+  
+  private interface SinkContext {
+    
+     void postProcess();
+   
+  }
+
 }
