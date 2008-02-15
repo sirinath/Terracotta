@@ -342,8 +342,8 @@
 
         The <module> element(s) is optional.
       -->
-      <module name="clustered-apache-struts-1.1" version="2.5.2-SNAPSHOT"/>
-      <module name="clustered-commons-collections-3.1" version="2.5.2-SNAPSHOT"/>
+      <module name="clustered-apache-struts-1.1" version="2.5.2"/>
+      <module name="clustered-commons-collections-3.1" version="2.5.2"/>
 
     </modules>
 
