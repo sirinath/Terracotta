@@ -286,23 +286,26 @@ public class ObjectManagerTest extends BaseDSOTestCase {
                       new LRUEvictionPolicy(-1));
     objectManager.setStatsListener(this.stats);
 
-    assertEquals(0, stats.getTotalRequests());
+    //first assert that no hits/misses occurred for clean stats.
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(0, stats.getTotalCacheMisses());
 
+    //create your initial objects
     createObjects(50, 10);
-    Set ids = makeObjectIDSet(0, 10);
-    // ThreadUtil.reallySleep(5000);
+    
+    //CASE 1: no preFetched objects
+    Set ids = makeObjectIDSet(0, 10);  
     TestResultsContext results = new TestResultsContext(ids, Collections.EMPTY_SET);
-
-    // objectManager.preFetchObjects(ids);
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
-
+    
+    //before no objects were prefected, we should except 0 hits and 10 misses
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(10, stats.getTotalCacheMisses());
-
+  
+    
+    //CASE 2: preFetched objects
     ids = makeObjectIDSet(10, 20);
     // ThreadUtil.reallySleep(5000);
     results = new TestResultsContext(ids, Collections.EMPTY_SET);
@@ -313,6 +316,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
 
+    //because objects where prefetched we should have 10 hits, but also 10 more
+    //misses because the prefetching gets factored in as a miss to bring the total
+    //to 20
     assertEquals(10, stats.getTotalCacheHits());
     assertEquals(20, stats.getTotalCacheMisses());
 
@@ -2327,6 +2333,10 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     
     public TestSinkContext( TestSink sink ) {
       this.sink = sink;
+    }
+    
+    public TestSink getSink() {
+      return sink;
     }
 
     public synchronized void preProcess(int sinkCount) {
