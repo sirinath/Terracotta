@@ -6,6 +6,7 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.TCConnection;
@@ -63,7 +64,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     this.connectionManager = connMgr;
     this.logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ". "
                                       + config.getHealthCheckerName() + "(" + mtb.getConnectionId() + ")");
-    if (logger.isDebugEnabled()) logger.debug("Health monitoring agent started");
+    logger.info("Health monitoring agent started");
   }
 
   /* all callers of this method are already synchronized */
@@ -137,7 +138,10 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
       }
     }
 
-    if (currentState.equals(DEAD)) { return false; }
+    if (currentState.equals(DEAD)) {
+      logger.info("is DEAD.");
+      return false;
+    }
     return true;
   }
 

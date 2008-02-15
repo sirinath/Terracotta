@@ -191,6 +191,9 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
 
     clientMsgCh.close();
     System.out.println("ClientMessasgeChannel Closed");
+    
+    System.out.println("Sleeping for " + getMinSleepTimeToConirmDeath(hcConfig));
+    ThreadUtil.reallySleep(getMinSleepTimeToConirmDeath(hcConfig));
 
     while (connHC.getTotalConnsUnderMonitor() != 0) {
       ThreadUtil.reallySleep(1000);
