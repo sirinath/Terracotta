@@ -4,18 +4,18 @@
 package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererSessionConfigSetErrorException extends TCStatisticsGathererConfigErrorException {
-  private final long sessionId;
+  private final String sessionId;
   private final String key;
   private final Object value;
 
-  public TCStatisticsGathererSessionConfigSetErrorException(final long sessionId, final String key, final Object value, final Throwable cause) {
+  public TCStatisticsGathererSessionConfigSetErrorException(final String sessionId, final String key, final Object value, final Throwable cause) {
     super("Unexpected exception while setting the config parameter '"+key+"' to value '"+value+"' for session ID '"+sessionId+".'", cause);
     this.sessionId = sessionId;
     this.key = key;
     this.value = value;
   }
 
-  public long getSessionId() {
+  public String getSessionId() {
     return sessionId;
   }
 

@@ -7,7 +7,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.management.JMXConnectorProxy;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.gatherer.StatisticsGatherer;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererAlreadyConnectedException;
@@ -36,7 +36,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   private MBeanServerConnection mbeanServerConnection = null;
   private StatisticsManagerMBean statManager = null;
   private StatisticsEmitterMBean statEmitter = null;
-  private Long sessionId = null;
+  private String sessionId = null;
   private StoreDataListener listener = null;
 
   public StatisticsGathererImpl(final StatisticsStore store) {
@@ -63,15 +63,15 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
 
     // setup the mbeans
     statManager = (StatisticsManagerMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbeanServerConnection, StatisticsMBeansNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
+        .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
 
     statEmitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbeanServerConnection, StatisticsMBeansNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
+        .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
 
     // register the statistics data listener
     try {
       listener = new StoreDataListener();
-      mbeanServerConnection.addNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener, null, null);
+      mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener, null, null);
     } catch (Exception e) {
       throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
     }
@@ -105,7 +105,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     }
 
     try {
-      mbeanServerConnection.removeNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener);
+      mbeanServerConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener);
     } catch (Exception e) {
       TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the JMX server connection.", e);
       if (exception != null) {
@@ -147,13 +147,14 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     }
   }
 
-  public void createSession() throws TCStatisticsGathererException {
+  public void createSession(final String sessionId) throws TCStatisticsGathererException {
     if (null == statManager) throw new TCStatisticsGathererConnectionRequiredException();
 
     closeSession();
 
     // create a new capturing session
-    sessionId = new Long(statManager.createCaptureSession());
+    statManager.createSession(sessionId);
+    this.sessionId = sessionId;
   }
 
   public void closeSession() throws TCStatisticsGathererException {
@@ -173,20 +174,20 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
 
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
 
-    statManager.disableAllStatistics(sessionId.longValue());
+    statManager.disableAllStatistics(sessionId);
     for (int i = 0; i < names.length; i++) {
-      statManager.enableStatistic(sessionId.longValue(), names[i]);
+      statManager.enableStatistic(sessionId, names[i]);
     }
   }
 
   public void startCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
-    statManager.startCapturing(sessionId.longValue());
+    statManager.startCapturing(sessionId);
   }
 
   public void stopCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
-    statManager.stopCapturing(sessionId.longValue());
+    statManager.stopCapturing(sessionId);
   }
 
   public void setGlobalParam(final String key, final Object value) throws TCStatisticsGathererException {
@@ -210,18 +211,18 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   public void setSessionParam(final String key, final Object value) throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     try {
-      statManager.setSessionParam(sessionId.longValue(), key, value);
+      statManager.setSessionParam(sessionId, key, value);
     } catch (Exception e) {
-      throw new TCStatisticsGathererSessionConfigSetErrorException(sessionId.longValue(), key, value, e);
+      throw new TCStatisticsGathererSessionConfigSetErrorException(sessionId, key, value, e);
     }
   }
 
   public Object getSessionParam(final String key) throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     try {
-      return statManager.getSessionParam(sessionId.longValue(), key);
+      return statManager.getSessionParam(sessionId, key);
     } catch (Exception e) {
-      throw new TCStatisticsGathererSessionConfigGetErrorException(sessionId.longValue(), key, e);
+      throw new TCStatisticsGathererSessionConfigGetErrorException(sessionId, key, e);
     }
   }
 

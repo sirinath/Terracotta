@@ -3,11 +3,11 @@
  */
 package com.tc.statistics.buffer.exceptions;
 
-public class TCStatisticsBufferStopCapturingErrorException extends TCStatisticsBufferException {
+public class TCStatisticsBufferUnknownCaptureSessionException extends TCStatisticsBufferException {
   private final String sessionId;
 
-  public TCStatisticsBufferStopCapturingErrorException(final String sessionId, final Throwable cause) {
-    super("The capture session with the cluster-wide ID '" + sessionId + "' could not be stopped.", cause);
+  public TCStatisticsBufferUnknownCaptureSessionException(final String sessionId, final Throwable cause) {
+    super("The capture session with cluster-wide ID '" + sessionId + "' couldn't be found.", cause);
     this.sessionId = sessionId;
   }
 

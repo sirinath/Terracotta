@@ -5,10 +5,10 @@ package com.tc.statistics;
 
 import com.tc.config.schema.NewStatisticsConfig;
 import com.tc.exception.TCRuntimeException;
-import com.tc.statistics.beans.StatisticsEmitter;
+import com.tc.statistics.beans.impl.StatisticsEmitterImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsMBeansNames;
-import com.tc.statistics.beans.StatisticsManager;
+import com.tc.statistics.beans.StatisticsMBeanNames;
+import com.tc.statistics.beans.impl.StatisticsManagerImpl;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
@@ -96,18 +96,18 @@ public class StatisticsSubSystem {
 
     // create the statistics emitter mbean
     try {
-      statisticsEmitterMBean = new StatisticsEmitter(globalStatisticsConfig, statisticsBuffer);
+      statisticsEmitterMBean = new StatisticsEmitterImpl(globalStatisticsConfig, statisticsBuffer);
     } catch (NotCompliantMBeanException e) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitter.class.getName()
+      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitterImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
     }
 
     // setup an empty statistics retrieval registry
     statisticsRetrievalRegistry = new StatisticsRetrievalRegistryImpl();
     try {
-      statisticsManagerMBean = new StatisticsManager(globalStatisticsConfig, statisticsRetrievalRegistry, statisticsBuffer);
+      statisticsManagerMBean = new StatisticsManagerImpl(globalStatisticsConfig, statisticsRetrievalRegistry, statisticsBuffer);
     } catch (NotCompliantMBeanException e) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsManager.class.getName()
+      throw new TCRuntimeException("Unable to construct the " + StatisticsManagerImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
     }
 
@@ -116,13 +116,13 @@ public class StatisticsSubSystem {
   }
 
   public void registerMBeans(MBeanServer mBeanServer) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
-    mBeanServer.registerMBean(statisticsEmitterMBean, StatisticsMBeansNames.STATISTICS_EMITTER);
-    mBeanServer.registerMBean(statisticsManagerMBean, StatisticsMBeansNames.STATISTICS_MANAGER);
+    mBeanServer.registerMBean(statisticsEmitterMBean, StatisticsMBeanNames.STATISTICS_EMITTER);
+    mBeanServer.registerMBean(statisticsManagerMBean, StatisticsMBeanNames.STATISTICS_MANAGER);
   }
 
   public void unregisterMBeans(MBeanServer mBeanServer) throws InstanceNotFoundException, MBeanRegistrationException {
-    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_EMITTER);
-    mBeanServer.unregisterMBean(StatisticsMBeansNames.STATISTICS_MANAGER);
+    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_EMITTER);
+    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_MANAGER);
   }
 
   public void disableJMX() throws Exception {

@@ -4,7 +4,7 @@
 package com.tc.statistics.buffer;
 
 public interface StatisticsBufferListener {
-  public void capturingStarted(long sessionId);
+  public void capturingStarted(String sessionId);
 
-  public void capturingStopped(long sessionId);
+  public void capturingStopped(String sessionId);
 }

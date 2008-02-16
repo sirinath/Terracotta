@@ -12,11 +12,11 @@ public interface StatisticsStore {
 
   public void close() throws TCStatisticsStoreException;
 
-  public long storeStatistic(StatisticData data) throws TCStatisticsStoreException;
+  public void storeStatistic(StatisticData data) throws TCStatisticsStoreException;
 
   public void retrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticsConsumer consumer) throws TCStatisticsStoreException;
 
-  public long[] getAvailableSessionIds() throws TCStatisticsStoreException;
+  public String[] getAvailableSessionIds() throws TCStatisticsStoreException;
 
-  public void clearStatistics(long sessionId) throws TCStatisticsStoreException;
+  public void clearStatistics(String sessionId) throws TCStatisticsStoreException;
 }

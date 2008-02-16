@@ -42,7 +42,7 @@ public class StatisticsRetrievalCriteriaTests extends TestCase {
 
     StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
-      .sessionId(new Long(423L))
+      .sessionId("423")
       .start(moment1)
       .stop(moment2)
       .addName("statname1")
@@ -52,7 +52,7 @@ public class StatisticsRetrievalCriteriaTests extends TestCase {
       .addElement("element2");
 
     assertEquals(InetAddress.getLocalHost().getHostAddress(), criteria.getAgentIp());
-    assertEquals(new Long(423L), criteria.getSessionId());
+    assertEquals("423", criteria.getSessionId());
     assertEquals(moment1, criteria.getStart());
     assertEquals(moment2, criteria.getStop());
     assertEquals(3, criteria.getNames().size());
@@ -79,7 +79,7 @@ public class StatisticsRetrievalCriteriaTests extends TestCase {
 
     StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
     criteria.setAgentIp(InetAddress.getLocalHost().getHostAddress());
-    criteria.setSessionId(new Long(423L));
+    criteria.setSessionId("423");
     criteria.setStart(moment1);
     criteria.setStop(moment2);
     criteria.addName("statname1");
@@ -89,7 +89,7 @@ public class StatisticsRetrievalCriteriaTests extends TestCase {
     criteria.addElement("element2");
 
     assertEquals(InetAddress.getLocalHost().getHostAddress(), criteria.getAgentIp());
-    assertEquals(new Long(423L), criteria.getSessionId());
+    assertEquals("423", criteria.getSessionId());
     assertEquals(moment1, criteria.getStart());
     assertEquals(moment2, criteria.getStop());
     assertEquals(3, criteria.getNames().size());
@@ -116,7 +116,7 @@ public class StatisticsRetrievalCriteriaTests extends TestCase {
 
     StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria()
       .agentIp(InetAddress.getLocalHost().getHostAddress())
-      .sessionId(new Long(423L))
+      .sessionId("423")
       .start(moment1)
       .stop(moment2)
       .addName("statname1")

@@ -162,6 +162,8 @@ import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsSubSystem;
+import com.tc.statistics.beans.StatisticsGatewayMBean;
+import com.tc.statistics.beans.impl.StatisticsGatewayImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
@@ -244,6 +246,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
 
   private StatisticsSubSystem                  statisticsSubSystem;
+  private StatisticsGatewayImpl                statisticsGateway;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -316,6 +319,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     // setup the statistics subsystem
     statisticsSubSystem = new StatisticsSubSystem();
     statisticsSubSystem.setup(configSetupManager.commonl2Config());
+    try {
+      statisticsGateway = new StatisticsGatewayImpl();
+    } catch (NotCompliantMBeanException e) {
+      throw new TCRuntimeException("Unable to construct the " + StatisticsGatewayImpl.class.getName()
+                                   + " MBean; this is a programming error. Please go fix that class.", e);
+    }
 
     // start the JMX server
     try {
@@ -620,10 +629,10 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                     new JMXEventsHandler(appEvents), 1, maxStageSize);
 
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
-                                                                 new ClientConnectEventHandler(), 1, maxStageSize);
+                                                                 new ClientConnectEventHandler(statisticsGateway), 1, maxStageSize);
 
     final Stage jmxRemoteDisconnectStage = stageManager
-        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(), 1,
+        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(statisticsGateway), 1,
                      maxStageSize);
 
     cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
@@ -898,6 +907,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       logger.warn(e);
     }
 
+    try {
+      statisticsGateway.cleanup();
+    } catch (Throwable e) {
+      logger.warn(e);
+    }
+
     basicStop();
   }
 
@@ -950,7 +965,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       jmxPort = new PortChooser().chooseRandomPort();
     }
 
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsSubSystem, configSetupManager, this, bind, jmxPort);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsSubSystem, statisticsGateway, configSetupManager, this, bind, jmxPort);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no

@@ -12,10 +12,11 @@ import com.tc.management.TerracottaMBean;
 import com.tc.management.TerracottaManagement;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.ClientProvider;
-import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnection;
 import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler.L1ConnectionMessage;
+import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnection;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.statistics.StatisticsGateway;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -46,6 +47,12 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.remote.generic.ConnectionClosedException;
 
 public class ClientConnectEventHandler extends AbstractEventHandler {
+
+  private final StatisticsGateway statisticsGateway;
+
+  public ClientConnectEventHandler(StatisticsGateway statisticsGateway) {
+    this.statisticsGateway = statisticsGateway;
+  }
 
   private static final class ConnectorClosedFilter implements NotificationFilter {
 
@@ -153,6 +160,9 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
           jmxConnector = JMXConnectorFactory.connect(serviceURL, environment);
 
           final MBeanServerConnection l1MBeanServerConnection = jmxConnector.getMBeanServerConnection();
+
+          statisticsGateway.addStatisticsAgent(l1MBeanServerConnection);
+
           Set mBeans = l1MBeanServerConnection.queryNames(null, TerracottaManagement.matchAllTerracottaMBeans());
           List modifiedObjectNames = new ArrayList();
           for (Iterator iter = mBeans.iterator(); iter.hasNext();) {

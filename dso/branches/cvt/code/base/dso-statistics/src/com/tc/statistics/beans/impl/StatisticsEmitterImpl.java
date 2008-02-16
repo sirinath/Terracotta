@@ -2,11 +2,12 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.statistics.beans;
+package com.tc.statistics.beans.impl;
 
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
@@ -29,9 +30,10 @@ import javax.management.Notification;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-public class StatisticsEmitter extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
-  private static final String STATISTICS_EVENT_TYPE = "tc.statistics.event";
-  private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
+public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
+  public static final String STATISTICS_EVENT_TYPE = "tc.statistics.event";
+
+  public static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
   static {
     final String[] notifTypes = new String[] { STATISTICS_EVENT_TYPE };
@@ -49,7 +51,7 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   private Timer timer = null;
   private TimerTask task = null;
 
-  public StatisticsEmitter(final StatisticsConfig config, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
+  public StatisticsEmitterImpl(final StatisticsConfig config, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
@@ -94,11 +96,11 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
   public void reset() {
   }
 
-  public void capturingStarted(final long sessionId) {
-    activeSessionIds.add(new Long(sessionId));
+  public void capturingStarted(final String sessionId) {
+    activeSessionIds.add(sessionId);
   }
 
-  public void capturingStopped(final long sessionId) {
+  public void capturingStopped(final String sessionId) {
   }
 
   private class SendStatsTask extends TimerTask {
@@ -109,10 +111,10 @@ public class StatisticsEmitter extends AbstractTerracottaMBean implements Statis
         Iterator it = activeSessionIds.iterator();
         while (it.hasNext()) {
           try {
-            buffer.consumeStatistics(((Long)it.next()).longValue(), new StatisticsConsumer() {
+            buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {
               public boolean consumeStatisticData(StatisticData data) {
                 // create the notification event
-                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitter.this, sequenceNumber.increment(), System.currentTimeMillis());
+                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitterImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
                 notification.setUserData(data);
                 sendNotification(notification);
 

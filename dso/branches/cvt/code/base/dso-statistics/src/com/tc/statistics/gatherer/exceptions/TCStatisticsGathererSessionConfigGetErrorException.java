@@ -4,16 +4,16 @@
 package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererSessionConfigGetErrorException extends TCStatisticsGathererConfigErrorException {
-  private final long sessionId;
+  private final String sessionId;
   private final String key;
 
-  public TCStatisticsGathererSessionConfigGetErrorException(final long sessionId, final String key, final Throwable cause) {
+  public TCStatisticsGathererSessionConfigGetErrorException(final String sessionId, final String key, final Throwable cause) {
     super("Unexpected exception while retrieving the config value '"+key+"' for session ID '"+sessionId+".'", cause);
     this.sessionId = sessionId;
     this.key = key;
   }
 
-  public long getSessionId() {
+  public String getSessionId() {
     return sessionId;
   }
 

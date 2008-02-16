@@ -23,7 +23,7 @@ import com.tc.admin.dso.locks.LocksNode;
 import com.tc.config.schema.L2Info;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 
 import java.awt.Color;
@@ -205,9 +205,9 @@ public class ServerNode extends ComponentNode
     return ServerHelper.getHelper().getDSOListenPort(getConnectionContext());
   }
   
-  String getStatsExportServletURI(long sessionId) throws Exception {
+  String getStatsExportServletURI(String sessionId) throws Exception {
     Integer dsoPort = getDSOListenPort();
-    Object[] args = new Object[] { getHost(), dsoPort.toString(), Long.toString(sessionId) };
+    Object[] args = new Object[] { getHost(), dsoPort.toString(), sessionId};
     return MessageFormat.format("http://{0}:{1}/stats-export?session={2}", args);
   }
   
@@ -815,16 +815,16 @@ public class ServerNode extends ComponentNode
   StatisticsManagerMBean getStatisticsManagerMBean() {
     ConnectionContext cc = getConnectionContext();
     return (StatisticsManagerMBean) MBeanServerInvocationHandler
-        .newProxyInstance(cc.mbsc, StatisticsMBeansNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
+        .newProxyInstance(cc.mbsc, StatisticsMBeanNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
   }
   
   StatisticsEmitterMBean registerStatisticsEmitterListener(NotificationListener listener) {
     ConnectionContext cc = getConnectionContext();
     StatisticsEmitterMBean stat_emitter = (StatisticsEmitterMBean) MBeanServerInvocationHandler
-        .newProxyInstance(cc.mbsc, StatisticsMBeansNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
+        .newProxyInstance(cc.mbsc, StatisticsMBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
     ArrayList dataList = new ArrayList();
     try {
-      cc.mbsc.addNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener, null, dataList);
+      cc.mbsc.addNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener, null, dataList);
     } catch(Exception e) {
       throw new RuntimeException("Registering stats emitter listener", e);
     }

@@ -4,14 +4,14 @@
 package com.tc.statistics.store.exceptions;
 
 public class TCStatisticsStoreClearStatisticsErrorException extends TCStatisticsStoreException {
-  private final long sessionId;
+  private final String sessionId;
 
-  public TCStatisticsStoreClearStatisticsErrorException(final long sessionId, final Throwable cause) {
+  public TCStatisticsStoreClearStatisticsErrorException(final String sessionId, final Throwable cause) {
     super("Unexpected error while clearing the statistics for session ID '" + sessionId +  "'.", cause);
      this.sessionId = sessionId;
    }
 
-   public long getSessionId() {
+   public String getSessionId() {
      return sessionId;
    }
 }

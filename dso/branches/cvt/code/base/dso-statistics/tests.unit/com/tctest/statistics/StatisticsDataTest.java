@@ -31,14 +31,14 @@ public class StatisticsDataTest extends TestCase {
   public void testFluentInterface() throws Exception {
     Date moment = new Date();
     StatisticData data = new StatisticData()
-      .sessionId(new Long(3984693L))
+      .sessionId("3984693")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .moment(moment)
       .name("statname")
       .element("first")
       .data(new Long(987983343L));
 
-    assertEquals(3984693L, data.getSessionId().longValue());
+    assertEquals("3984693", data.getSessionId());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
@@ -56,14 +56,14 @@ public class StatisticsDataTest extends TestCase {
   public void testSetters() throws Exception {
     Date moment = new Date();
     StatisticData data = new StatisticData();
-    data.setSessionId(new Long(3984693L));
+    data.setSessionId("3984693");
     data.setAgentIp(InetAddress.getLocalHost().getHostAddress());
     data.setMoment(moment);
     data.setName("statname");
     data.setElement("first");
     data.setData(new Long(987983343L));
 
-    assertEquals(3984693L, data.getSessionId().longValue());
+    assertEquals("3984693", data.getSessionId());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
@@ -86,7 +86,7 @@ public class StatisticsDataTest extends TestCase {
     moment.set(2008, 0, 9, 16, 25, 52);
     moment.set(Calendar.MILLISECOND, 0);
     StatisticData data = new StatisticData()
-      .sessionId(new Long(3984693L))
+      .sessionId("3984693")
       .agentIp("192.168.1.18")
       .moment(moment.getTime())
       .name("statname")

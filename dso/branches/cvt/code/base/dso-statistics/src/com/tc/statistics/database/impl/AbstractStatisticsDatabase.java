@@ -152,27 +152,27 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     }
   }
 
-  public StatisticData getStatisticsData(final ResultSet resultSet) throws SQLException {
+  public StatisticData getStatisticsData(String sessionId, final ResultSet resultSet) throws SQLException {
     StatisticData data = new StatisticData()
-      .sessionId(new Long(resultSet.getLong("sessionId")))
-      .agentIp(resultSet.getString("agentIp"))
+      .sessionId(sessionId)
+      .agentIp(resultSet.getString("agentip"))
       .moment(resultSet.getTimestamp("moment"))
-      .name(resultSet.getString("statname"))
-      .element(resultSet.getString("statelement"));
+      .name(resultSet.getString("statName"))
+      .element(resultSet.getString("statElement"));
 
-    long datanumber = resultSet.getLong("datanumber");
+    long datanumber = resultSet.getLong("dataNumber");
     if (!resultSet.wasNull()) {
       data.data(new Long(datanumber));
     } else {
-      String datatext = resultSet.getString("datatext");
+      String datatext = resultSet.getString("dataText");
       if (!resultSet.wasNull()) {
         data.data(datatext);
       } else {
-        Timestamp datatimestamp = resultSet.getTimestamp("datatimestamp");
+        Timestamp datatimestamp = resultSet.getTimestamp("dataTimestamp");
         if (!resultSet.wasNull()) {
           data.data(datatimestamp);
         } else {
-          BigDecimal datadecimal = resultSet.getBigDecimal("datadecimal");
+          BigDecimal datadecimal = resultSet.getBigDecimal("dataDecimal");
           Assert.eval("All the data elements of the statistic data were NULL, this shouldn't be possible.",
             !resultSet.wasNull());
           data.data(datadecimal);

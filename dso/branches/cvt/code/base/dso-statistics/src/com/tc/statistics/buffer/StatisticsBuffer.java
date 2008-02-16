@@ -3,24 +3,24 @@
  */
 package com.tc.statistics.buffer;
 
-import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.retrieval.StatisticsRetriever;
 
 public interface StatisticsBuffer {
   public void open() throws TCStatisticsBufferException;
 
   public void close() throws TCStatisticsBufferException;
 
-  public CaptureSession createCaptureSession() throws TCStatisticsBufferException;
+  public StatisticsRetriever createCaptureSession(String sessionId) throws TCStatisticsBufferException;
 
-  public void startCapturing(long sessionId) throws TCStatisticsBufferException;
+  public void startCapturing(String sessionId) throws TCStatisticsBufferException;
 
-  public void stopCapturing(long sessionId) throws TCStatisticsBufferException;
+  public void stopCapturing(String sessionId) throws TCStatisticsBufferException;
 
   public long storeStatistic(StatisticData data) throws TCStatisticsBufferException;
 
-  public void consumeStatistics(long sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
+  public void consumeStatistics(String sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
 
   public void addListener(StatisticsBufferListener listener);
 
