@@ -5,7 +5,6 @@ package com.tc.statistics.buffer.h2;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
-import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
@@ -20,6 +19,7 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingError
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticConsumptionErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferUnknownCaptureSessionException;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
@@ -46,17 +46,17 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
-  public final static int DATABASE_STRUCTURE_VERSION = 1;
+  public final static int DATABASE_STRUCTURE_VERSION = 2;
   
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 65402179L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 633220606L;
 
   public final static String H2_URL_SUFFIX = "statistics-buffer";
 
-  private final static String SQL_NEXT_CAPTURESESSIONID = "SELECT nextval('seq_capturesession')";
+  private final static String SQL_NEXT_LOCALSESSIONID = "SELECT nextval('seq_localsession')";
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
   private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
-
+  
   private final StatisticsConfig config;
   private final File lockFile;
   private final StatisticsDatabase database;
@@ -128,11 +128,12 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
             database.createVersionTable();
 
             JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE SEQUENCE IF NOT EXISTS seq_capturesession");
+              "CREATE SEQUENCE IF NOT EXISTS seq_localsession");
 
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE TABLE IF NOT EXISTS capturesession (" +
-                "id BIGINT NOT NULL PRIMARY KEY, " +
+                "localsessionid BIGINT NOT NULL PRIMARY KEY, " +
+                "clustersessionid VARCHAR(255) NOT NULL UNIQUE, " +
                 "start TIMESTAMP NULL, " +
                 "stop TIMESTAMP NULL)");
 
@@ -145,8 +146,8 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE TABLE IF NOT EXISTS statisticlog (" +
                 "id BIGINT NOT NULL PRIMARY KEY, " +
-                "sessionId BIGINT NOT NULL, " +
-                "agentIp VARCHAR(39) NOT NULL, " +
+                "localsessionid BIGINT NOT NULL, " +
+                "agentip VARCHAR(39) NOT NULL, " +
                 "moment TIMESTAMP NOT NULL, " +
                 "statname VARCHAR(255) NOT NULL," +
                 "statelement VARCHAR(255) NULL, " +
@@ -157,9 +158,11 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
                 "consumptionid BIGINT NULL)");
 
             JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
+              "CREATE INDEX IF NOT EXISTS idx_capturesession_clustersessionid ON capturesession(clustersessionid)");
             JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionId)");
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_localsessionid ON statisticlog(localsessionid)");
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_consumptionid ON statisticlog(consumptionid)");
 
             database.getConnection().commit();
           } catch (Exception e) {
@@ -179,7 +182,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
   private void setupPreparedStatements() throws TCStatisticsBufferException {
     try {
-      database.createPreparedStatement(SQL_NEXT_CAPTURESESSIONID);
+      database.createPreparedStatement(SQL_NEXT_LOCALSESSIONID);
       database.createPreparedStatement(SQL_NEXT_STATISTICLOGID);
       database.createPreparedStatement(SQL_NEXT_CONSUMPTIONID);
       database.createPreparedStatement(SQL_MAKE_ALL_CONSUMABLE);
@@ -196,37 +199,38 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
   }
 
-  public CaptureSession createCaptureSession() throws TCStatisticsBufferException {
+  public StatisticsRetriever createCaptureSession(final String sessionId) throws TCStatisticsBufferException {
+    Assert.assertNotNull("sessionId", sessionId);
     try {
       database.ensureExistingConnection();
 
-      final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_CAPTURESESSIONID));
+      final long local_sessionid = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_LOCALSESSIONID));
 
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO capturesession (id) VALUES (?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO capturesession (localsessionid, clustersessionid) VALUES (?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setLong(1, id);
+          statement.setLong(1, local_sessionid);
+          statement.setString(2, sessionId);
         }
       });
 
       if (row_count != 1) {
-        throw new TCStatisticsBufferCaptureSessionCreationErrorException(id);
+        throw new TCStatisticsBufferCaptureSessionCreationErrorException(sessionId, local_sessionid);
       }
 
-      StatisticsRetriever retriever = new StatisticsRetrieverImpl(config.createChild(), this, id);
-      return new CaptureSession(id, retriever);
+      return new StatisticsRetrieverImpl(config.createChild(), this, sessionId);
     } catch (Exception e) {
-      throw new TCStatisticsBufferCaptureSessionCreationErrorException(e);
+      throw new TCStatisticsBufferCaptureSessionCreationErrorException(sessionId, e);
     }
   }
 
-  public void startCapturing(final long sessionId) throws TCStatisticsBufferException {
+  public void startCapturing(final String sessionId) throws TCStatisticsBufferException {
     try {
       database.ensureExistingConnection();
 
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET start = ? WHERE id = ? AND start IS NULL", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET start = ? WHERE clustersessionid = ? AND start IS NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setTimestamp(1, new Timestamp(new Date().getTime()));
-          statement.setLong(2, sessionId);
+          statement.setString(2, sessionId);
         }
       });
 
@@ -240,23 +244,23 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
   }
 
-  private void fireCapturingStarted(final long sessionId) {
+  private void fireCapturingStarted(final String sessionId) {
     Iterator it = listeners.iterator();
     while (it.hasNext()) {
       ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
     }
   }
 
-  public void stopCapturing(final long sessionId) throws TCStatisticsBufferException {
+  public void stopCapturing(final String sessionId) throws TCStatisticsBufferException {
     try {
       database.ensureExistingConnection();
 
       fireCapturingStopped(sessionId);
 
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE id = ? AND start IS NOT NULL", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE clustersessionid = ? AND start IS NOT NULL", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setTimestamp(1, new Timestamp(new Date().getTime()));
-          statement.setLong(2, sessionId);
+          statement.setString(2, sessionId);
         }
       });
 
@@ -268,11 +272,33 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
   }
 
-  private void fireCapturingStopped(final long sessionId) {
+  private void fireCapturingStopped(final String sessionId) {
     Iterator it = listeners.iterator();
     while (it.hasNext()) {
       ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
     }
+  }
+
+  private long retrieveLocalSessionId(final String sessionId) throws SQLException, TCStatisticsBufferUnknownCaptureSessionException {
+    final long local_sessionid[] = new long[] {-1};
+    JdbcHelper.executeQuery(database.getConnection(), "SELECT localsessionid FROM capturesession WHERE clustersessionid = ?", new PreparedStatementHandler() {
+      public void setParameters(PreparedStatement statement) throws SQLException {
+        statement.setString(1, sessionId);
+      }
+    }, new ResultSetHandler() {
+      public void useResultSet(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+          local_sessionid[0] = resultSet.getLong("localsessionid");
+        }
+      }
+    });
+
+    // ensure that the local session ID was found
+    if (-1 == local_sessionid[0]) {
+      throw new TCStatisticsBufferUnknownCaptureSessionException(sessionId, null);
+    }
+
+    return local_sessionid[0];
   }
 
   public long storeStatistic(final StatisticData data) throws TCStatisticsBufferException {
@@ -284,14 +310,17 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     try {
       database.ensureExistingConnection();
 
+      // obtain the local session ID
+      final long local_sessionid = retrieveLocalSessionId(data.getSessionId());
+
       // obtain a new ID for the statistic data
       final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
 
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionId, agentIp, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, localsessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
-          statement.setLong(2, data.getSessionId().longValue());
+          statement.setLong(2, local_sessionid);
           statement.setString(3, data.getAgentIp());
           statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
           statement.setString(5, data.getName());
@@ -340,38 +369,41 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
   }
 
-  public void consumeStatistics(final long sessionId, final StatisticsConsumer consumer) throws TCStatisticsBufferException {
-    Assert.eval("sessionId must be bigger than 0", sessionId > 0);
+  public void consumeStatistics(final String sessionId, final StatisticsConsumer consumer) throws TCStatisticsBufferException {
+    Assert.assertNotNull("sessionId", sessionId);
     Assert.assertNotNull("consumer", consumer);
 
     try {
       database.ensureExistingConnection();
+
+      // obtain the local session ID
+      final long local_sessionid = retrieveLocalSessionId(sessionId);
 
       // create a unique ID for this consumption phase
       final long consumption_id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_CONSUMPTIONID));
 
       // reserve all existing statistic data with the provided session ID
       // for the consumption ID
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionId = ? WHERE consumptionId IS NULL AND sessionId = ?", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ?", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, consumption_id);
-          statement.setLong(2, sessionId);
+          statement.setLong(2, local_sessionid);
         }
       });
 
       try {
         // consume all the statistic data in this capture session
         if (row_count > 0) {
-          JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM statisticlog WHERE consumptionId = ? AND sessionId = ? ORDER BY moment ASC, id ASC", new PreparedStatementHandler() {
+          JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM statisticlog WHERE consumptionid = ? AND localsessionid = ? ORDER BY moment ASC, id ASC", new PreparedStatementHandler() {
             public void setParameters(PreparedStatement statement) throws SQLException {
               statement.setLong(1, consumption_id);
-              statement.setLong(2, sessionId);
+              statement.setLong(2, local_sessionid);
             }
           }, new ResultSetHandler() {
             public void useResultSet(ResultSet resultSet) throws SQLException {
               while (resultSet.next()) {
                 // obtain the statistics data
-                StatisticData data = database.getStatisticsData(resultSet);
+                StatisticData data = database.getStatisticsData(sessionId, resultSet);
 
                 // consume the data
                 if (!consumer.consumeStatisticData(data)) {
@@ -386,7 +418,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       } finally {
         // make the statistic data that wasn't consumed during this consumption phase
         // available again so that it can be picked up by another consumption operation
-        JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionId = NULL WHERE consumptionId = ?", new PreparedStatementHandler() {
+        JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?", new PreparedStatementHandler() {
           public void setParameters(PreparedStatement statement) throws SQLException {
             statement.setLong(1, consumption_id);
           }

@@ -4,14 +4,14 @@
 package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferStartCapturingErrorException extends TCStatisticsBufferException {
-  private final long sessionId;
+  private final String sessionId;
 
-  public TCStatisticsBufferStartCapturingErrorException(final long sessionId, final Throwable cause) {
-    super("The capture session with ID '" + sessionId + "' could not be started.", cause);
+  public TCStatisticsBufferStartCapturingErrorException(final String sessionId, final Throwable cause) {
+    super("The capture session with the cluster-wide ID '" + sessionId + "' could not be started.", cause);
     this.sessionId = sessionId;
   }
 
-  public long getSessionId() {
+  public String getSessionId() {
     return sessionId;
   }
 }

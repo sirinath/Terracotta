@@ -40,14 +40,14 @@ import java.util.Iterator;
 import java.util.List;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
-  public final static int DATABASE_STRUCTURE_VERSION = 1;
+  public final static int DATABASE_STRUCTURE_VERSION = 2;
   
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 4255189249L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 1603821120L;
 
   public final static String H2_URL_SUFFIX = "statistics-store";
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
-  private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionId FROM statisticlog GROUP BY sessionId ORDER BY sessionId ASC";
+  private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
 
   private final StatisticsDatabase database;
   private final File lockFile;
@@ -119,8 +119,8 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE TABLE IF NOT EXISTS statisticlog (" +
                 "id BIGINT NOT NULL PRIMARY KEY, " +
-                "sessionId BIGINT NOT NULL, " +
-                "agentIp VARCHAR(39) NOT NULL, " +
+                "sessionid VARCHAR(255) NOT NULL, " +
+                "agentip VARCHAR(39) NOT NULL, " +
                 "moment TIMESTAMP NOT NULL, " +
                 "statname VARCHAR(255) NOT NULL," +
                 "statelement VARCHAR(255) NULL, " +
@@ -130,10 +130,10 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "datadecimal DECIMAL(8, 4) NULL)");
 
             JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionId)");
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionid)");
 
             JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentIp)");
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentip)");
 
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
@@ -169,7 +169,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public long storeStatistic(final StatisticData data) throws TCStatisticsStoreException {
+  public void storeStatistic(final StatisticData data) throws TCStatisticsStoreException {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
@@ -182,10 +182,10 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
       
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionId, agentIp, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
-          statement.setLong(2, data.getSessionId().longValue());
+          statement.setString(2, data.getSessionId());
           statement.setString(3, data.getAgentIp());
           statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
           statement.setString(5, data.getName());
@@ -227,8 +227,6 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       if (row_count != 1) {
         throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
       }
-
-      return id;
     } catch (Exception e) {
       throw new TCStatisticsStoreStatisticStorageErrorException(data, e);
     }
@@ -242,10 +240,10 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
       List sql_where = new ArrayList();
       if (criteria.getAgentIp() != null) {
-        sql_where.add("agentIp = ?");
+        sql_where.add("agentip = ?");
       }
       if (criteria.getSessionId() != null) {
-        sql_where.add("sessionId = ?");
+        sql_where.add("sessionid = ?");
       }
       if (criteria.getStart() != null) {
         sql_where.add("moment >= ?");
@@ -288,7 +286,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
           sql.append(it.next());
         }
       }
-      sql.append(" ORDER BY sessionId ASC, moment ASC, id ASC");
+      sql.append(" ORDER BY sessionid ASC, moment ASC, id ASC");
 
       JdbcHelper.executeQuery(database.getConnection(), sql.toString(), new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
@@ -297,7 +295,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             statement.setString(param++, criteria.getAgentIp());
           }
           if (criteria.getSessionId() != null) {
-            statement.setLong(param++, criteria.getSessionId().longValue());
+            statement.setString(param++, criteria.getSessionId());
           }
           if (criteria.getStart() != null) {
             statement.setTimestamp(param++, new Timestamp(criteria.getStart().getTime()));
@@ -321,7 +319,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       }, new ResultSetHandler() {
         public void useResultSet(ResultSet resultSet) throws SQLException {
           while (resultSet.next()) {
-            StatisticData data = database.getStatisticsData(resultSet);
+            StatisticData data = database.getStatisticsData(resultSet.getString("sessionid"), resultSet);
 
             // consume the data
             if (!consumer.consumeStatisticData(data)) {
@@ -337,7 +335,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public long[] getAvailableSessionIds() throws TCStatisticsStoreException {
+  public String[] getAvailableSessionIds() throws TCStatisticsStoreException {
     final List results = new ArrayList();
     try {
       database.ensureExistingConnection();
@@ -345,7 +343,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       JdbcHelper.executeQuery(database.getPreparedStatement(SQL_GET_AVAILABLE_SESSIONIDS), new ResultSetHandler() {
         public void useResultSet(ResultSet resultSet) throws SQLException {
           while (resultSet.next()) {
-            results.add(new Long(resultSet.getLong("sessionId")));
+            results.add(resultSet.getString("sessionid"));
           }
         }
       });
@@ -355,24 +353,24 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       throw new TCStatisticsStoreSessionIdsRetrievalErrorException(e);
     }
 
-    long[] result_array = new long[results.size()];
+    String[] result_array = new String[results.size()];
     int i = 0;
     Iterator it = results.iterator();
     while (it.hasNext()) {
-      result_array[i++] = ((Long)it.next()).longValue();
+      result_array[i++] = (String)it.next();
     }
 
     return result_array;
   }
 
-  public void clearStatistics(final long sessionId) throws TCStatisticsStoreException {
+  public void clearStatistics(final String sessionId) throws TCStatisticsStoreException {
     try {
       database.ensureExistingConnection();
 
       // remove statistics, based on the provided session Id
-      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog WHERE sessionId = ?", new PreparedStatementHandler() {
+      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog WHERE sessionid = ?", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setLong(1, sessionId);
+          statement.setString(1, sessionId);
         }
       });
     } catch (Exception e) {

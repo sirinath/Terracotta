@@ -12,6 +12,7 @@ import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
+import com.tc.util.UUID;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
@@ -28,7 +29,8 @@ public class StatisticsGathererConfigSampleRateTest extends TransparentTestBase 
 
     gatherer.connect("localhost", getAdminPort());
 
-    gatherer.createSession();
+    String sessionid = UUID.getUUID().toString();
+    gatherer.createSession(sessionid);
     gatherer.enableStatistics(gatherer.getSupportedStatistics());
     gatherer.startCapturing();
     Thread.sleep(10000);
@@ -45,7 +47,9 @@ public class StatisticsGathererConfigSampleRateTest extends TransparentTestBase 
     });
 
     gatherer.setGlobalParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD, new Long(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue() / 2));
-    gatherer.createSession();
+
+    sessionid = UUID.getUUID().toString();
+    gatherer.createSession(sessionid);
     gatherer.enableStatistics(gatherer.getSupportedStatistics());
     gatherer.startCapturing();
     Thread.sleep(10000);

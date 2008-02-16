@@ -2,13 +2,13 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.statistics.beans;
+package com.tc.statistics.beans.impl;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.management.AbstractTerracottaMBean;
-import com.tc.statistics.CaptureSession;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.config.StatisticsConfig;
@@ -21,13 +21,13 @@ import java.util.Map;
 
 import javax.management.NotCompliantMBeanException;
 
-public class StatisticsManager extends AbstractTerracottaMBean implements StatisticsManagerMBean {
+public class StatisticsManagerImpl extends AbstractTerracottaMBean implements StatisticsManagerMBean {
   private final StatisticsConfig config;
   private final StatisticsRetrievalRegistry registry;
   private final StatisticsBuffer buffer;
   private final Map retrieverMap = new ConcurrentHashMap();
   
-  public StatisticsManager(final StatisticsConfig config, final StatisticsRetrievalRegistry registry, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
+  public StatisticsManagerImpl(final StatisticsConfig config, final StatisticsRetrievalRegistry registry, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsManagerMBean.class, false, true);
 
     Assert.assertNotNull("config", config);
@@ -49,45 +49,44 @@ public class StatisticsManager extends AbstractTerracottaMBean implements Statis
     return statistics;
   }
 
-  public long createCaptureSession() {
+  public void createSession(final String sessionId) {
     try {
-      CaptureSession session = buffer.createCaptureSession();
-
-      retrieverMap.put(new Long(session.getId()), session.getRetriever());
-      return session.getId();
+      StatisticsRetriever retriever = buffer.createCaptureSession(sessionId);
+      retrieverMap.put(sessionId, retriever);
     } catch (TCStatisticsBufferException e) {
       throw new RuntimeException("Unexpected error while creating a new capture session.", e);
     }
   }
 
-  public void disableAllStatistics(final long sessionId) {
+  public void disableAllStatistics(final String sessionId) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.removeAllActions();
   }
 
-  public void enableStatistic(final long sessionId, final String name) {
+  public boolean enableStatistic(final String sessionId, final String name) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     StatisticRetrievalAction action = registry.getActionInstance(name);
     if (null == action) {
-      throw new RuntimeException("Couldn't find a statistic retrieval action with the name '"+name+"' to register for capture session with ID '"+sessionId+"'.");
+      return false;
     }
     retriever.registerAction(action);
+    return true;
   }
 
-  public void startCapturing(final long sessionId) {
+  public void startCapturing(final String sessionId) {
     try {
       buffer.startCapturing(sessionId);
     } catch (TCStatisticsBufferException e) {
-      throw new RuntimeException("Error while starting the capture session with ID '"+sessionId+"'.", e);
+      throw new RuntimeException("Error while starting the capture session with cluster-wide ID '"+sessionId+"'.", e);
     }
   }
 
-  public void stopCapturing(final long sessionId) {
+  public void stopCapturing(final String sessionId) {
     try {
       buffer.stopCapturing(sessionId);
-      retrieverMap.remove(new Long(sessionId));
+      retrieverMap.remove(sessionId);
     } catch (TCStatisticsBufferException e) {
-      throw new RuntimeException("Error while stopping the capture session with ID '"+sessionId+"'.", e);
+      throw new RuntimeException("Error while stopping the capture session with cluster-wide ID '"+sessionId+"'.", e);
     }
   }
 
@@ -99,20 +98,20 @@ public class StatisticsManager extends AbstractTerracottaMBean implements Statis
     return config.getParam(key);
   }
 
-  public void setSessionParam(final long sessionId, final String key, final Object value) {
+  public void setSessionParam(final String sessionId, final String key, final Object value) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.getConfig().setParam(key, value);
   }
 
-  public Object getSessionParam(final long sessionId, final String key) {
+  public Object getSessionParam(final String sessionId, final String key) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     return retriever.getConfig().getParam(key);
   }
 
-  StatisticsRetriever obtainRetriever(final long sessionId) {
-    StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(new Long(sessionId));
+  StatisticsRetriever obtainRetriever(final String sessionId) {
+    StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(sessionId);
     if (null == retriever) {
-      throw new RuntimeException("The statistics retriever for the capture session with ID '"+sessionId+"' couldn't be found.");
+      throw new RuntimeException("The statistics retriever for the capture session with cluster-wide ID '"+sessionId+"' couldn't be found.");
     }
     return retriever;
   }

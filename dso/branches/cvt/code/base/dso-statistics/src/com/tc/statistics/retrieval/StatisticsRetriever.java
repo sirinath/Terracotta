@@ -13,7 +13,7 @@ public interface StatisticsRetriever {
 
   public void shutdown();
 
-  public long getSessionId();
+  public String getSessionId();
 
   public void removeAllActions();
 

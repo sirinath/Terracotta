@@ -13,22 +13,22 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class StatisticsRetrievalCriteria {
-  private Long sessionId = null;
+  private String sessionId = null;
   private Date start = null;
   private Date stop = null;
-  private String agentIp = null;
+  private String agentip = null;
   private Set names = null;
   private Set elements = null;
   
-  public Long getSessionId() {
+  public String getSessionId() {
     return sessionId;
   }
 
-  public void setSessionId(final Long sessionId) {
+  public void setSessionId(final String sessionId) {
     this.sessionId = sessionId;
   }
 
-  public StatisticsRetrievalCriteria sessionId(final Long sessionId) {
+  public StatisticsRetrievalCriteria sessionId(final String sessionId) {
     setSessionId(sessionId);
     return this;
   }
@@ -60,11 +60,11 @@ public class StatisticsRetrievalCriteria {
   }
 
   public String getAgentIp() {
-    return agentIp;
+    return agentip;
   }
 
-  public void setAgentIp(final String agentIp) {
-    this.agentIp = agentIp;
+  public void setAgentIp(final String agentip) {
+    this.agentip = agentip;
   }
 
   public StatisticsRetrievalCriteria agentIp(final String agentIp) {
@@ -110,8 +110,8 @@ public class StatisticsRetrievalCriteria {
     DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
     StringBuffer out = new StringBuffer("[");
 
-    out.append("agentIp = ");
-    out.append(agentIp);
+    out.append("agentip = ");
+    out.append(agentip);
     out.append("; ");
 
     out.append("sessionId = ");

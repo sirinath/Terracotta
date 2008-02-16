@@ -24,7 +24,7 @@ public interface StatisticsDatabase {
 
   public void close() throws TCStatisticsDatabaseException;
 
-  public StatisticData getStatisticsData(ResultSet resultSet) throws SQLException;
+  public StatisticData getStatisticsData(String sessionId, ResultSet resultSet) throws SQLException;
 
   public void createVersionTable() throws SQLException;
 

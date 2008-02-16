@@ -10,7 +10,7 @@ public interface StatisticsGatherer {
 
   public void disconnect() throws TCStatisticsGathererException;
 
-  public void createSession() throws TCStatisticsGathererException;
+  public void createSession(String sessionId) throws TCStatisticsGathererException;
 
   public void closeSession() throws TCStatisticsGathererException;
 

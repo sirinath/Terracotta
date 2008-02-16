@@ -36,11 +36,12 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   private Timer timer = null;
   private TimerTask task = null;
 
-  private long sessionId;
+  private String sessionId;
 
-  public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final long sessionId) {
+  public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final String sessionId) {
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
+    Assert.assertNotNull("sessionId", sessionId);
     this.config = config;
     this.buffer = buffer;
     this.sessionId = sessionId;
@@ -62,7 +63,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     actionsMap = Collections.unmodifiableMap(actions_map_construction);
   }
 
-  public long getSessionId() {
+  public String getSessionId() {
     return sessionId;
   }
 
@@ -142,7 +143,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     StatisticData[] data = action.retrieveStatisticData();
     if (data != null) {
       for (int i = 0; i < data.length; i++) {
-        data[i].setSessionId(new Long(sessionId));
+        data[i].setSessionId(sessionId);
         bufferData(data[i]);
       }
     }
@@ -177,11 +178,11 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  public void capturingStarted(final long sessionId) {
+  public void capturingStarted(final String sessionId) {
     startup();
   }
 
-  public void capturingStopped(final long sessionId) {
+  public void capturingStopped(final String sessionId) {
     shutdown();
   }
 

@@ -33,6 +33,7 @@ import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.Assert;
+import com.tc.util.UUID;
 
 import java.awt.Frame;
 import java.awt.GridLayout;
@@ -105,7 +106,7 @@ public class ServerPanel extends XContainer {
   private HashMap                 m_statsControls;
   private StatisticsManagerMBean  m_statisticsManagerMBean;
   private StatisticsEmitterMBean  m_statisticsEmitterMBean;
-  private long                    m_currentStatsSessionId;
+  private String                  m_currentStatsSessionId;
   private StatsEmitterListener    m_statsEmitterListener;
   private TextArea                m_statisticsLog;
   private Button                  m_exportStatsSessionButton;
@@ -178,7 +179,7 @@ public class ServerPanel extends XContainer {
 
     m_statsTabbedPane = (TabbedPane) findComponent("StatsTabbedPane");
 
-    m_currentStatsSessionId = -1;
+    m_currentStatsSessionId = null;
     m_statsSessionsList = (List) findComponent("StatsSessionsList");
     m_statsSessionsList.addListSelectionListener(new StatsSessionsListSelectionListener());
     m_statsSessionsList.setModel(m_statsSessionsListModel = new DefaultListModel());
@@ -282,6 +283,7 @@ public class ServerPanel extends XContainer {
   }
 
   private void testSetupStats() {
+    // fixme: this should use the statistics gatherer, not the manager and the emitter directly
     if (m_statisticsManagerMBean == null) {
       if(m_statsEmitterListener == null) { // this doesn't get torn down
         m_statsEmitterListener = new StatsEmitterListener();
@@ -322,7 +324,8 @@ public class ServerPanel extends XContainer {
       m_statisticsLog.setText("");
       m_statsTabbedPane.select("Monitor");
       m_stopGatheringStatsButton.setSelected(false);
-      m_currentStatsSessionId = m_statisticsManagerMBean.createCaptureSession();
+      m_currentStatsSessionId = UUID.getUUID().toString(); // todo: create maybe a meaningful session id?
+      m_statisticsManagerMBean.createSession(m_currentStatsSessionId);
       m_statisticsManagerMBean.disableAllStatistics(m_currentStatsSessionId);
       Iterator iter = m_statsControls.keySet().iterator();
       while (iter.hasNext()) {
@@ -352,13 +355,13 @@ public class ServerPanel extends XContainer {
       m_statisticsEmitterMBean.disable();
       m_statsSessionsListModel.addElement(new StatsSessionListItem(m_currentStatsSessionId));
       m_statsSessionsList.setSelectedIndex(m_statsSessionsListModel.getSize()-1);
-      m_currentStatsSessionId = -1;
+      m_currentStatsSessionId = null;
     }
   }
 
   class StatsSessionsListSelectionListener implements ListSelectionListener {
     public void valueChanged(ListSelectionEvent e) {
-      boolean haveSelectedSession = getSelectedSessionId() != -1;
+      boolean haveSelectedSession = getSelectedSessionId() != null;
       m_exportStatsSessionButton.setEnabled(haveSelectedSession);
       m_clearStatsSessionButton.setEnabled(haveSelectedSession);
       m_clearAllStatsSessionsButton.setEnabled(m_statsSessionsListModel.getSize()>0);      
@@ -366,13 +369,13 @@ public class ServerPanel extends XContainer {
   }
   
   class StatsSessionListItem {
-    private long fSessionId;
+    private String fSessionId;
     
-    StatsSessionListItem(long sessionId) {
+    StatsSessionListItem(String sessionId) {
       fSessionId = sessionId;
     }
     
-    long getSessionId() {
+    String getSessionId() {
       return fSessionId;
     }
     
@@ -381,9 +384,9 @@ public class ServerPanel extends XContainer {
     }
   }
   
-  long getSelectedSessionId() {
+  String getSelectedSessionId() {
     StatsSessionListItem item = (StatsSessionListItem)m_statsSessionsList.getSelectedValue();
-    return item != null ? item.getSessionId() : -1;
+    return item != null ? item.getSessionId() : null;
   }
   
   class ExportStatsSessionHandler implements ActionListener {

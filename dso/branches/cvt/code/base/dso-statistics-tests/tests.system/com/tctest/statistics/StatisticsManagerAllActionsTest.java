@@ -6,10 +6,11 @@ package com.tctest.statistics;
 import com.tc.management.JMXConnectorProxy;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsMBeansNames;
+import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
+import com.tc.util.UUID;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
@@ -27,16 +28,17 @@ public class StatisticsManagerAllActionsTest extends TransparentTestBase {
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
     StatisticsManagerMBean stat_manager = (StatisticsManagerMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbsc, StatisticsMBeansNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
+        .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_MANAGER, StatisticsManagerMBean.class, false);
     StatisticsEmitterMBean stat_emitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbsc, StatisticsMBeansNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
+        .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
 
     List data = new ArrayList();
     CollectingNotificationListener listener = new CollectingNotificationListener();
-    mbsc.addNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener, null, data);
+    mbsc.addNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener, null, data);
     stat_emitter.enable();
 
-    long sessionid = stat_manager.createCaptureSession();
+    String sessionid = UUID.getUUID().toString();
+    stat_manager.createSession(sessionid);
 
     // register all the supported statistics
     String[] statistics = stat_manager.getSupportedStatistics();
@@ -60,7 +62,7 @@ public class StatisticsManagerAllActionsTest extends TransparentTestBase {
 
     // disable the notification and detach the listener
     stat_emitter.disable();
-    mbsc.removeNotificationListener(StatisticsMBeansNames.STATISTICS_EMITTER, listener);
+    mbsc.removeNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener);
 
     // check the data
     assertTrue(data.size() > 2);

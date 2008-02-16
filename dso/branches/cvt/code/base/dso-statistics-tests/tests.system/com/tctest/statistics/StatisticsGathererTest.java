@@ -12,6 +12,7 @@ import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
+import com.tc.util.UUID;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
@@ -32,7 +33,8 @@ public class StatisticsGathererTest extends TransparentTestBase {
 
     String[] statistics = gatherer.getSupportedStatistics();
 
-    gatherer.createSession();
+    String sessionid = UUID.getUUID().toString();
+    gatherer.createSession(sessionid);
 
     gatherer.enableStatistics(statistics);
 
