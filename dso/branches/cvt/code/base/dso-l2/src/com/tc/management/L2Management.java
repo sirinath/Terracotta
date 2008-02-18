@@ -215,7 +215,9 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.registerMBean(TCLogging.getJMXAppender().getMBean(), L2MBeanNames.LOGGER);
     mBeanServer.registerMBean(objectManagementBean, L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.registerMBean(lockStatistics, L2MBeanNames.LOCK_STATISTICS);
-    statisticsSubSystem.registerMBeans(mBeanServer);
+    if (statisticsSubSystem.isActive()) {
+      statisticsSubSystem.registerMBeans(mBeanServer);
+    }
     mBeanServer.registerMBean(statisticsGateway, StatisticsMBeanNames.STATISTICS_GATEWAY);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
@@ -228,7 +230,9 @@ public class L2Management extends TerracottaManagement {
     mBeanServer.unregisterMBean(L2MBeanNames.LOGGER);
     mBeanServer.unregisterMBean(L2MBeanNames.OBJECT_MANAGEMENT);
     mBeanServer.unregisterMBean(L2MBeanNames.LOCK_STATISTICS);
-    statisticsSubSystem.unregisterMBeans(mBeanServer);
+    if (statisticsSubSystem.isActive()) {
+      statisticsSubSystem.unregisterMBeans(mBeanServer);
+    }
     mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_GATEWAY);
 
     if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
