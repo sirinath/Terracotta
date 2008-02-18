@@ -211,7 +211,9 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(clientTxBean, MBeanNames.CLIENT_TX_INTERNAL);
     mBeanServer.registerMBean(internalSessionBean, MBeanNames.SESSION_INTERNAL);
     mBeanServer.registerMBean(publicSessionBean, L1MBeanNames.SESSION_PRODUCT_PUBLIC);
-    statisticsSubSystem.registerMBeans(mBeanServer);
+    if (statisticsSubSystem.isActive()) {
+      statisticsSubSystem.registerMBeans(mBeanServer);
+    }
     mBeanServer.registerMBean(l1InfoBean, L1MBeanNames.L1INFO_PUBLIC);
     mBeanServer.registerMBean(instrumentationLoggingBean, L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     mBeanServer.registerMBean(runtimeOutputOptionsBean, L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);

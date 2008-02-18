@@ -57,7 +57,7 @@ public class StatisticsSubSystem {
         + "Unable to create the directory '" + statPath.getAbsolutePath() + "' for the statistics buffer.\n"
         + "The CVT system will not be active for this node.\n"
         + "**************************************************************************************\n";
-      consoleLogger.error(msg, e);
+      consoleLogger.error(msg);
       logger.error(msg, e);
       return false;
     }
@@ -86,7 +86,7 @@ public class StatisticsSubSystem {
         + "up when the statistics directory is configured by using %(tc.node-name) in the\n"
         + "statistics path.\n"
         + "**************************************************************************************\n";
-      consoleLogger.error(msg, e);
+      consoleLogger.error(msg);
       logger.error(msg, e);
       return false;
     }

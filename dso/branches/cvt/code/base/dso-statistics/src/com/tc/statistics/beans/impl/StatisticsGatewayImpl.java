@@ -6,8 +6,12 @@ package com.tc.statistics.beans.impl;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticsGateway;
+import com.tc.statistics.agent.StatisticsAgentConnection;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 
 import java.util.Iterator;
@@ -15,13 +19,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.NotCompliantMBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.NotificationListener;
 import javax.management.Notification;
+import javax.management.NotificationListener;
 
 public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements StatisticsGatewayMBean, StatisticsGateway, NotificationListener {
+
+  private static final TCLogger logger = TCLogging.getLogger(StatisticsGatewayImpl.class);
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
@@ -37,7 +43,12 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
 
   public synchronized void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
     StatisticsAgentConnection agent = new StatisticsAgentConnection();
-    agent.connect(mbeanServerConnection, this);
+    try {
+      agent.connect(mbeanServerConnection, this);
+    } catch (TCStatisticsAgentConnectionException e) {
+      logger.warn("Unable to add statistics agent to the gateway.", e);
+      return;
+    }
     agents.add(agent);
   }
 
@@ -47,7 +58,11 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
 
     Iterator it = old_agents.iterator();
     while (it.hasNext()) {
-      ((StatisticsAgentConnection)it.next()).disconnect();
+      try {
+        ((StatisticsAgentConnection)it.next()).disconnect();
+      } catch (TCStatisticsAgentConnectionException e) {
+        logger.warn("Unable to disconnect statistics agent from the gateway.", e);
+      }
     }
   }
 
@@ -137,6 +152,10 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
   }
 
   public Object getGlobalParam(final String key) {
+    if (0 == agents.size()) {
+      return null;
+    }
+
     Iterator it = agents.iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
@@ -145,7 +164,9 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
       }
     }
 
-    throw new RuntimeException("Can't find server agent");
+    logger.warn("Unable to find the L2 server agent, this means that there's no authoritative agent to retrieve the global parameter '" + key + "' from.");
+    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.iterator().next();
+    return agent.getGlobalParam(key);
   }
 
   public void setSessionParam(final String sessionId, final String key, final Object value) {
@@ -157,6 +178,10 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
   }
 
   public Object getSessionParam(final String sessionId, final String key) {
+    if (0 == agents.size()) {
+      return null;
+    }
+
     Iterator it = agents.iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
@@ -165,7 +190,9 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
       }
     }
 
-    throw new RuntimeException("Can't find server agent");
+    logger.warn("Unable to find the L2 server agent, this means that there's no authoritative agent to retrieve the parameter '" + key + "' from for session '" + sessionId + "'.");
+    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.iterator().next();
+    return agent.getSessionParam(sessionId, key);
   }
 
   public void handleNotification(Notification notification, Object o) {

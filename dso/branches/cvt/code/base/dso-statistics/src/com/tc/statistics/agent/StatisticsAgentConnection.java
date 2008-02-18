@@ -1,9 +1,14 @@
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
-package com.tc.statistics.beans.impl;
+package com.tc.statistics.agent;
 
 import com.tc.statistics.StatisticsManager;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionAlreadyConnectedException;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionConnectErrorException;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionDisconnectErrorException;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
+import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionToNonAgentException;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
@@ -79,9 +84,9 @@ public class StatisticsAgentConnection implements StatisticsManager {
     return statManager.getSessionParam(sessionId, key);
   }
 
-  public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) {
+  public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) throws TCStatisticsAgentConnectionException {
     Assert.assertNotNull("serverConnection", serverConnection);
-    if (statManager != null) throw new AssertionError("the agent is already connected");
+    if (statManager != null) throw new TCStatisticsAgentConnectionAlreadyConnectedException();
 
     this.serverConnection = serverConnection;
     setupManagerMBean(serverConnection);
@@ -92,16 +97,16 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       serverConnection.addNotificationListener(emitter_name, listener, null, null);
     } catch (Exception e) {
-      throw new RuntimeException("Unexpected error while registering the notification listener for statistics emitting.", e);
+      throw new TCStatisticsAgentConnectionConnectErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
     }
   }
 
-  private ObjectName setupManagerMBean(MBeanServerConnection mbeanServerConnection) {
+  private ObjectName setupManagerMBean(MBeanServerConnection mbeanServerConnection) throws TCStatisticsAgentConnectionException {
     // setup the statistics manager mbean
     try {
       ObjectName manager_name = findMBeanName(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_MANAGER);
       if (null == manager_name) {
-        throw new RuntimeException("Not an active statistics agent.");
+        throw new TCStatisticsAgentConnectionToNonAgentException();
       }
 
       statManager = (StatisticsManagerMBean)MBeanServerInvocationHandler
@@ -109,16 +114,16 @@ public class StatisticsAgentConnection implements StatisticsManager {
 
       return manager_name;
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new TCStatisticsAgentConnectionConnectErrorException("Unexpected error while finding the manager mbean of the agent.", e);
     }
   }
 
-  private ObjectName setupEmitterMBean(MBeanServerConnection mbeanServerConnection) {
+  private ObjectName setupEmitterMBean(MBeanServerConnection mbeanServerConnection) throws TCStatisticsAgentConnectionException {
     // setup the statistics emitter mbean
     try {
       ObjectName emitter_name = findMBeanName(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_EMITTER);
       if (null == emitter_name) {
-        throw new RuntimeException("Not an active statistics agent.");
+        throw new TCStatisticsAgentConnectionToNonAgentException();
       }
 
       statEmitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
@@ -126,7 +131,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
 
       return emitter_name;
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new TCStatisticsAgentConnectionException("Unexpected error while finding the emitter mbean of the agent.", e);
     }
   }
 
@@ -147,13 +152,13 @@ public class StatisticsAgentConnection implements StatisticsManager {
     return manager_name;
   }
 
-  public void disconnect() {
+  public void disconnect() throws TCStatisticsAgentConnectionException {
     if (null == statManager) throw new AssertionError("the agent is not connected");
 
     try {
       serverConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new TCStatisticsAgentConnectionDisconnectErrorException("Unexpected error while removing the notification listener for statistics emitting.", e);
     } finally {
       listener = null;
       statEmitter = null;
