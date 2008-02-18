@@ -5,7 +5,7 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
-import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.appserver.deployment.AbstractOneServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
@@ -23,7 +23,7 @@ public class SessionEventsWithTCPropsTest extends AbstractOneServerDeploymentTes
 
   public SessionEventsWithTCPropsTest() {
     // DEV-1117
-    if (AppServerFactory.getCurrentAppServerId() == AppServerFactory.WEBLOGIC) {
+    if (appServerInfo().getId() == AppServerInfo.WEBLOGIC) {
       disableAllUntil("2008-12-30");
     }
   }
@@ -33,8 +33,8 @@ public class SessionEventsWithTCPropsTest extends AbstractOneServerDeploymentTes
   }
 
   public void testListener() throws Exception {
-    if (AppServerFactory.getCurrentAppServerId() == AppServerFactory.JETTY) return;
-    
+    if (appServerInfo().getId() == AppServerInfo.JETTY) return;
+
     WebConversation wc = new WebConversation();
 
     // first, sanity check

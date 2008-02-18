@@ -43,7 +43,7 @@ public class ClientMessageTransportTest extends TCTestCase {
     this.connectionManager = new MockConnectionManager();
     this.connection = new MockTCConnection();
     this.connectionManager.setConnection(connection);
-    this.transportMessageFactory = new TransportHandshakeMessageFactoryImpl();
+    this.transportMessageFactory = new TransportMessageFactoryImpl();
     handshakeErrorHandler = new TransportHandshakeErrorHandler() {
 
       public void handleHandshakeError(TransportHandshakeErrorContext e) {
@@ -115,7 +115,7 @@ public class ClientMessageTransportTest extends TCTestCase {
   public void testConnectAndHandshakeActuallyConnected() throws Exception {
     CommunicationsManager commsMgr = new CommunicationsManagerImpl(new NullMessageMonitor(),
                                                                    new PlainNetworkStackHarnessFactory(),
-                                                                   new NullConnectionPolicy());
+                                                                   new NullConnectionPolicy(), 0);
     NetworkListener listener = commsMgr.createListener(new NullSessionManager(), new TCSocketAddress(0), true,
                                                        new DefaultConnectionIdFactory());
     listener.start(Collections.EMPTY_SET);
