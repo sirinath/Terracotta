@@ -28,7 +28,7 @@ public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements St
   private List agents = new CopyOnWriteArrayList();
 
   public StatisticsGatewayImpl() throws NotCompliantMBeanException {
-    super(StatisticsGatewayMBean.class, true, true);
+    super(StatisticsGatewayMBean.class, true, false);
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {
