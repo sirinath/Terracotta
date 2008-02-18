@@ -31,7 +31,7 @@ public class StatisticsManagerNoActionsTest extends TransparentTestBase {
         .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
 
     List data = new ArrayList();
-    CollectingNotificationListener listener = new CollectingNotificationListener();
+    CollectingNotificationListener listener = new CollectingNotificationListener(1);
     mbsc.addNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener, null, data);
     stat_emitter.enable();
 

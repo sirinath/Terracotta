@@ -32,6 +32,8 @@ import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.impl.StatisticsRetrieverImpl;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.FileLockGuard;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Random;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
   public final static int DATABASE_STRUCTURE_VERSION = 2;
@@ -63,9 +66,17 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
   private final Set listeners = new CopyOnWriteArraySet();
 
+  private static Random rand = new Random();
+
   public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) {
     Assert.assertNotNull("config", config);
-    this.database = new H2StatisticsDatabase(dbDir, H2_URL_SUFFIX);
+    final String suffix;
+    if (TCPropertiesImpl.getProperties().getBoolean("cvt.buffer.randomsuffix.enabled", false)) {
+      suffix = H2_URL_SUFFIX + "-" + rand.nextInt() + "." + System.currentTimeMillis();
+    } else {
+      suffix = H2_URL_SUFFIX;
+    }
+    this.database = new H2StatisticsDatabase(dbDir, suffix);
     this.config = config;
     this.lockFile = new File(dbDir.getParentFile(), dbDir.getName()+".lck");
   }
