@@ -54,6 +54,7 @@ import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
+import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
@@ -248,6 +249,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   private StatisticsSubSystem                  statisticsSubSystem;
   private StatisticsGatewayImpl                statisticsGateway;
 
+  private final TCThreadGroup                  threadGroup;
+
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -270,6 +273,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
     this.l2State = l2State;
+    this.threadGroup = threadGroup;
   }
 
   public void dump() {
@@ -453,7 +457,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     int numCommWorkers = getCommWorkerCount(l2Properties);
 
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
-                                                          connectionPolicy, numCommWorkers);
+                                                          connectionPolicy, numCommWorkers,
+                                                          new HealthCheckerConfigImpl(l2Properties
+                                                              .getPropertiesFor("healthCheck.l1"), "DSO Server"));
 
     final DSOApplicationEvents appEvents;
     try {
@@ -704,8 +710,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     boolean networkedHA = configSetupManager.haConfig().isNetworkedActivePassive();
     if (networkedHA) {
       logger.info("L2 Networked HA Enabled ");
-      l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, persistor.getClusterStateStore(),
-                                          objectManager, transactionManager, gtxm, channelManager, configSetupManager.haConfig(), recycler);
+      l2Coordinator = new L2HACoordinator(configSetupManager, threadGroup, consoleLogger, this, stageManager, persistor
+          .getClusterStateStore(), objectManager, transactionManager, gtxm, channelManager, configSetupManager
+          .haConfig(), recycler);
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);

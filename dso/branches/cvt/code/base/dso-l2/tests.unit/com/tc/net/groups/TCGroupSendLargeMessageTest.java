@@ -1,75 +1,61 @@
+/*
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
+ */
+
+package com.tc.net.groups;
+
 import com.tc.l2.msg.GCResultMessage;
 import com.tc.l2.msg.GCResultMessageFactory;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
+import com.tc.lang.TCThreadGroup;
+import com.tc.lang.ThrowableHandler;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.groups.GroupException;
-import com.tc.net.groups.GroupMessage;
-import com.tc.net.groups.GroupMessageListener;
-import com.tc.net.groups.Node;
-import com.tc.net.groups.NodeID;
-import com.tc.net.groups.TribesGroupManager;
+import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.ObjectID;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.PortChooser;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.util.Random;
+public class TCGroupSendLargeMessageTest extends TCTestCase {
+  private final static String LOCALHOST   = "localhost";
+  private static final long   millionOids = 1024 * 1024;
 
-public class TribesSendLargeMessageTest extends TCTestCase {
-
-  private static final TCLogger logger      = TCLogging.getLogger(TribesGroupManager.class);
-  private static short          portnum     = 0;
-  private static final long     millionOids = 1024 * 1024;
-
-  public TribesSendLargeMessageTest() {
-    // Per Ey, tribe is being replaced
-    disableAllUntil("2008-06-01");
-    
-    // use random mcast port for testing purpose.
-    useRandomMcastPort();
-  }
-
-  /*
-   * Choose a random mcast port number to avoid conflict with other LAN machines. Must be called before joinMcast.
-   */
-  public void useRandomMcastPort() {
-    if (portnum == 0) {
-      // generate a random port number
-      Random r = new Random();
-      r.setSeed(System.currentTimeMillis());
-      portnum = (short) (r.nextInt(Short.MAX_VALUE - 1025) + 1024);
-    }
-
-    TCPropertiesImpl.setProperty("l2.nha.tribes.mcast.mcastPort", String.valueOf(portnum));
-    logger.info("McastService uses random mcast port: " + portnum);
+  public TCGroupSendLargeMessageTest() {
+    //
   }
 
   public void baseTestSendingReceivingMessagesStatic(long oidsCount) throws Exception {
-    logger.info("Test with ObjectIDs size " + oidsCount);
-    TCPropertiesImpl.setProperty("l2.nha.mcast.enabled", "false");
+    System.out.println("Test with ObjectIDs size " + oidsCount);
     PortChooser pc = new PortChooser();
     final int p1 = pc.chooseRandomPort();
     final int p2 = pc.chooseRandomPort();
-    final Node[] allNodes = new Node[] { new Node("localhost", p1, TCSocketAddress.WILDCARD_IP),
-        new Node("localhost", p2, TCSocketAddress.WILDCARD_IP) };
+    final Node[] allNodes = new Node[] { new Node(LOCALHOST, p1, TCSocketAddress.WILDCARD_IP),
+        new Node(LOCALHOST, p2, TCSocketAddress.WILDCARD_IP) };
 
-    TribesGroupManager gm1 = new TribesGroupManager();
+    TCGroupManagerImpl gm1 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p1,
+                                                    new TCThreadGroup(new ThrowableHandler(null)));
+    gm1.setDiscover(new TCGroupMemberDiscoveryStatic(gm1));
     MyListener l1 = new MyListener();
     gm1.registerForMessages(GCResultMessage.class, l1);
-    NodeID n1 = gm1.join(allNodes[0], allNodes);
 
-    TribesGroupManager gm2 = new TribesGroupManager();
+    TCGroupManagerImpl gm2 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p2,
+                                                    new TCThreadGroup(new ThrowableHandler(null)));
+    gm2.setDiscover(new TCGroupMemberDiscoveryStatic(gm2));
     MyListener l2 = new MyListener();
     gm2.registerForMessages(GCResultMessage.class, l2);
+
+    NodeID n1 = gm1.join(allNodes[0], allNodes);
     NodeID n2 = gm2.join(allNodes[1], allNodes);
+
+    ThreadUtil.reallySleep(1000);
+
     assertNotEquals(n1, n2);
     checkSendingReceivingMessages(gm1, l1, gm2, l2, oidsCount);
-    gm1.stop();
-    gm2.stop();
+
+    gm1.shutdown();
+    gm2.shutdown();
   }
 
   public void testSendingReceivingMessagesStatic4M() throws Exception {
@@ -92,24 +78,7 @@ public class TribesSendLargeMessageTest extends TCTestCase {
     baseTestSendingReceivingMessagesStatic(millionOids * 40);
   }
 
-  // public void testSendingReceivingMessagesMcast() throws Exception {
-  // long oidsCount = millionOids * 5;
-  // TCPropertiesImpl.setProperty("l2.nha.mcast.enabled", "true");
-  // TribesGroupManager gm1 = new TribesGroupManager();
-  // MyListener l1 = new MyListener();
-  // gm1.registerForMessages(GCResultMessage.class, l1);
-  // NodeID n1 = gm1.join(null, null);
-  // TribesGroupManager gm2 = new TribesGroupManager();
-  // MyListener l2 = new MyListener();
-  // gm2.registerForMessages(GCResultMessage.class, l2);
-  // NodeID n2 = gm2.join(null, null);
-  // assertNotEquals(n1, n2);
-  // checkSendingReceivingMessages(gm1, l1, gm2, l2, oidsCount);
-  // gm1.stop();
-  // gm2.stop();
-  // }
-
-  private void checkSendingReceivingMessages(TribesGroupManager gm1, MyListener l1, TribesGroupManager gm2,
+  private void checkSendingReceivingMessages(TCGroupManagerImpl gm1, MyListener l1, TCGroupManagerImpl gm2,
                                              MyListener l2, long oidsCount) throws GroupException {
     ThreadUtil.reallySleep(5 * 1000);
 
