@@ -171,7 +171,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     TestSink flushSink = new TestSink();
     this.objectManager = new ObjectManagerImpl(config, threadGroup, clientStateManager, store, cache,
                                                persistenceTransactionProvider, faultSink, flushSink);
-    testFaultSinkContext = new TestSinkContext( faultSink );
+    testFaultSinkContext = new TestSinkContext();
     new TestMOFaulter(this.objectManager, store, faultSink, testFaultSinkContext).start();
     new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
   }
@@ -2325,24 +2325,15 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   }
 
   private static class TestSinkContext implements SinkContext {
-    private boolean     complete  = false;
     private int sinkCount = -1;
-    private TestSink    sink;
     
-    public TestSinkContext( TestSink sink ) {
-      this.sink = sink;
-    }
-    
-    public TestSink getSink() {
-      return sink;
-    }
 
-    public synchronized void preProcess(int sinkCount) {
-      this.sinkCount = sinkCount;
+    public synchronized void preProcess(int aSinkCount) {
+      this.sinkCount = aSinkCount;
     }
 
     public synchronized void waitTillComplete() {
-      while (!complete) {
+      while (sinkCount != 0) {
         try {
           wait();
         } catch (InterruptedException e) {
@@ -2354,7 +2345,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     public synchronized void postProcess() {
       sinkCount--;
       if (sinkCount == 0) {
-        complete = true;
         sinkCount = -1;
         notifyAll();
       }
