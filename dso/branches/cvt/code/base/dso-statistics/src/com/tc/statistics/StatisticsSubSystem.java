@@ -43,6 +43,16 @@ public class StatisticsSubSystem {
     return active;
   }
 
+  public void setDefaultAgentIp(final String defaultAgentIp) {
+    if (null == statisticsBuffer) throw new AssertionError("The statistics subsystem has to be setup before.");
+    statisticsBuffer.setDefaultAgentIp(defaultAgentIp);
+  }
+
+  public void setDefaultAgentDifferentiator(final String defaultAgentDifferentiator) {
+    if (null == statisticsBuffer) throw new AssertionError("The statistics subsystem has to be setup before.");
+    statisticsBuffer.setDefaultAgentDifferentiator(defaultAgentDifferentiator);
+  }
+
   public boolean setup(final NewStatisticsConfig config) {
     StatisticsConfig globalStatisticsConfig = new StatisticsConfigImpl();
     
@@ -61,8 +71,8 @@ public class StatisticsSubSystem {
       logger.error(msg, e);
       return false;
     }
-    statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
     try {
+      statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
       statisticsBuffer.open();
     } catch (TCStatisticsBufferException e) {
       // TODO: needs to be properly written and put in a properties file

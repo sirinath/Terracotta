@@ -40,9 +40,9 @@ import java.util.Iterator;
 import java.util.List;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
-  public final static int DATABASE_STRUCTURE_VERSION = 2;
+  public final static int DATABASE_STRUCTURE_VERSION = 3;
   
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 1603821120L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 436002553L;
 
   public final static String H2_URL_SUFFIX = "statistics-store";
 
@@ -121,6 +121,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "id BIGINT NOT NULL PRIMARY KEY, " +
                 "sessionid VARCHAR(255) NOT NULL, " +
                 "agentip VARCHAR(39) NOT NULL, " +
+                "agentdifferentiator VARCHAR(255) NULL, " +
                 "moment TIMESTAMP NOT NULL, " +
                 "statname VARCHAR(255) NOT NULL," +
                 "statelement VARCHAR(255) NULL, " +
@@ -134,6 +135,9 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentip)");
+
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentdifferentiator ON statisticlog(agentdifferentiator)");
 
             JdbcHelper.executeUpdate(database.getConnection(),
               "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
@@ -182,43 +186,48 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
       
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
           statement.setString(2, data.getSessionId());
           statement.setString(3, data.getAgentIp());
-          statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
-          statement.setString(5, data.getName());
-          if (null == data.getElement()) {
-            statement.setNull(6, Types.VARCHAR);
+          if (null == data.getAgentDifferentiator()) {
+            statement.setNull(4, Types.VARCHAR);
           } else {
-            statement.setString(6, data.getElement());
+            statement.setString(4, data.getAgentDifferentiator());
+          }
+          statement.setTimestamp(5, new Timestamp(data.getMoment().getTime()));
+          statement.setString(6, data.getName());
+          if (null == data.getElement()) {
+            statement.setNull(7, Types.VARCHAR);
+          } else {
+            statement.setString(7, data.getElement());
           }
           if (null == data.getData()) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof Number) {
-            statement.setLong(7, ((Number)data.getData()).longValue());
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof CharSequence) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setString(8, data.getData().toString());
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof Date) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setTimestamp(9, new java.sql.Timestamp(((Date)data.getData()).getTime()));
-            statement.setNull(10, Types.NUMERIC);
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
           } else if (data.getData() instanceof BigDecimal) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setBigDecimal(10, (BigDecimal)data.getData());
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setBigDecimal(11, (BigDecimal)data.getData());
+          } else if (data.getData() instanceof Number) {
+            statement.setLong(8, ((Number)data.getData()).longValue());
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
+          } else if (data.getData() instanceof CharSequence) {
+            statement.setNull(8, Types.BIGINT);
+            statement.setString(9, data.getData().toString());
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
+          } else if (data.getData() instanceof Date) {
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setTimestamp(10, new java.sql.Timestamp(((Date)data.getData()).getTime()));
+            statement.setNull(11, Types.NUMERIC);
           }
         }
       });
@@ -241,6 +250,9 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       List sql_where = new ArrayList();
       if (criteria.getAgentIp() != null) {
         sql_where.add("agentip = ?");
+      }
+      if (criteria.getAgentDifferentiator() != null) {
+        sql_where.add("agentdifferentiator = ?");
       }
       if (criteria.getSessionId() != null) {
         sql_where.add("sessionid = ?");
@@ -293,6 +305,9 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
           int param = 1;
           if (criteria.getAgentIp() != null) {
             statement.setString(param++, criteria.getAgentIp());
+          }
+          if (criteria.getAgentDifferentiator() != null) {
+            statement.setString(param++, criteria.getAgentDifferentiator());
           }
           if (criteria.getSessionId() != null) {
             statement.setString(param++, criteria.getSessionId());

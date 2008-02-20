@@ -3,9 +3,7 @@
  */
 package com.tc.statistics.gatherer.impl;
 
-import com.tc.exception.TCRuntimeException;
 import com.tc.management.JMXConnectorProxy;
-import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.gatherer.StatisticsGatherer;
@@ -25,8 +23,6 @@ import com.tc.util.Assert;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 
 public class StatisticsGathererImpl implements StatisticsGatherer {
   private final StatisticsStore store;
@@ -63,14 +59,6 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     statGateway = (StatisticsGatewayMBean)MBeanServerInvocationHandler
         .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
 
-    // register the statistics data listener
-    try {
-      listener = new StoreDataListener();
-      mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, null, null);
-    } catch (Exception e) {
-      throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
-    }
-
     // enable the statistics envoy
     statGateway.enable();
   }
@@ -87,22 +75,11 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       exception = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the capturing session '"+sessionId+"'.", e);
     }
 
-    // disable the notification and detach the listener
+    // disable the notification
     try {
       statGateway.disable();
     } catch (Exception e) {
       TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while disabling the statistics gateway.", e);
-      if (exception != null) {
-        exception.setNextException(ex);
-      } else {
-        exception = ex;
-      }
-    }
-
-    try {
-      mbeanServerConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener);
-    } catch (Exception e) {
-      TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while removing the statistics gateway notification listener.", e);
       if (exception != null) {
         exception.setNextException(ex);
       } else {
@@ -149,12 +126,27 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     // create a new capturing session
     statGateway.createSession(sessionId);
     this.sessionId = sessionId;
+
+    // register the statistics data listener
+    try {
+      listener = new StoreDataListener();
+      mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, new SessionBoundNotificationFilter(sessionId), store);
+    } catch (Exception e) {
+      throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
+    }
   }
 
   public void closeSession() throws TCStatisticsGathererException {
     if (sessionId != null) {
       stopCapturing();
       sessionId = null;
+
+      // detach the notification listener
+      try {
+        mbeanServerConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener);
+      } catch (Exception e) {
+        throw new TCStatisticsGathererCloseSessionErrorException("Unexpected error while removing the statistics gateway notification listener.", e);
+      }
     }
   }
 
@@ -217,20 +209,6 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       return statGateway.getSessionParam(sessionId, key);
     } catch (Exception e) {
       throw new TCStatisticsGathererSessionConfigGetErrorException(sessionId, key, e);
-    }
-  }
-
-  private class StoreDataListener implements NotificationListener {
-    public void handleNotification(final Notification notification, final Object o) {
-      StatisticData data = (StatisticData)notification.getUserData();
-      if (sessionId != null &&
-          data.getSessionId().equals(sessionId)) {
-        try {
-          store.storeStatistic(data);
-        } catch (TCStatisticsStoreException e) {
-          throw new TCRuntimeException(e);
-        }
-      }
     }
   }
 }

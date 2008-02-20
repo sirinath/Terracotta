@@ -232,6 +232,7 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid1 = buffer.storeStatistic(new StatisticData()
       .sessionId("someid1")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
@@ -240,6 +241,7 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid2 = buffer.storeStatistic(new StatisticData()
       .sessionId("someid1")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat")
       .data("stuff2"));
@@ -250,6 +252,7 @@ public class H2StatisticsBufferTest extends TestCase {
     long statid3 = buffer.storeStatistic(new StatisticData()
       .sessionId("someid2")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
@@ -373,6 +376,78 @@ public class H2StatisticsBufferTest extends TestCase {
     consumer4.ensureCorrectCounts(0, 30);
   }
 
+  public void testDataTypes() throws Exception {
+    buffer.createCaptureSession("sessionid1");
+    buffer.createCaptureSession("sessionid2");
+    buffer.createCaptureSession("sessionid3");
+    buffer.createCaptureSession("sessionid4");
+
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("sessionid1")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data("string"));
+
+    final Date date_data = new Date();
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("sessionid2")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(date_data));
+
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("sessionid3")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(new Long(28756L)));
+
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("sessionid4")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(new BigDecimal("6828.577")));
+
+    buffer.consumeStatistics("sessionid1", new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof String);
+          assertEquals("string", data.getData());
+          return true;
+        }
+      });
+
+    buffer.consumeStatistics("sessionid2", new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof Date);
+          assertEquals(date_data, data.getData());
+          return true;
+        }
+      });
+
+    buffer.consumeStatistics("sessionid3", new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof Long);
+          assertEquals(new Long(28756L), data.getData());
+          return true;
+        }
+      });
+
+    buffer.consumeStatistics("sessionid4", new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof BigDecimal);
+          assertEquals(0, new BigDecimal("6828.577").compareTo((BigDecimal)data.getData()));
+          return true;
+        }
+      });
+  }
+
   public void testStatisticsBufferListeners() throws Exception {
     buffer.createCaptureSession("someid1");
     TestStatisticsBufferListener listener1 = new TestStatisticsBufferListener("someid1");
@@ -421,6 +496,7 @@ public class H2StatisticsBufferTest extends TestCase {
       buffer.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
+        .agentDifferentiator("D1")
         .moment(new Date())
         .name("stat1")
         .data(new Long(i)));
@@ -429,6 +505,7 @@ public class H2StatisticsBufferTest extends TestCase {
       buffer.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
+        .agentDifferentiator("D2")
         .moment(new Date())
         .name("stat2")
         .data(String.valueOf(i)));
@@ -438,6 +515,7 @@ public class H2StatisticsBufferTest extends TestCase {
       buffer.storeStatistic(new StatisticData()
         .sessionId(sessionid2)
         .agentIp(ip)
+        .agentDifferentiator("D3")
         .moment(new Date())
         .name("stat1")
         .data(new BigDecimal(String.valueOf(i+".0"))));
@@ -492,7 +570,12 @@ public class H2StatisticsBufferTest extends TestCase {
           }
         }
         statCount1++;
-        assertEquals(((Long)data.getData()).longValue(), statCount1 + countOffset1);
+        if (data.getData() instanceof BigDecimal) {
+          assertEquals("D3", data.getAgentDifferentiator());
+        } else {
+          assertEquals("D1", data.getAgentDifferentiator());
+        }
+        assertEquals(((Number)data.getData()).longValue(), statCount1 + countOffset1);
       }
       if (data.getName().equals("stat2")) {
         if (countLimit2 > 0 &&
@@ -504,6 +587,7 @@ public class H2StatisticsBufferTest extends TestCase {
           }
         }
         statCount2++;
+        assertEquals("D2", data.getAgentDifferentiator());
         assertEquals(String.valueOf(data.getData()), String.valueOf(statCount2 + countOffset2));
       }
       return true;

@@ -156,6 +156,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     StatisticData data = new StatisticData()
       .sessionId(sessionId)
       .agentIp(resultSet.getString("agentip"))
+      .agentDifferentiator(resultSet.getString("agentdifferentiator"))
       .moment(resultSet.getTimestamp("moment"))
       .name(resultSet.getString("statName"))
       .element(resultSet.getString("statElement"));

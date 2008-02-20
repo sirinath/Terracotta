@@ -25,7 +25,7 @@ public class StatisticsDataTest extends TestCase {
 
   public void testDefaultToString() throws Exception {
     StatisticData data = new StatisticData();
-    assertEquals("[sessionId = null; agentIp = null; moment = null; name = null; element = null; data = null]", data.toString());
+    assertEquals("[sessionId = null; agentIp = null; agentDifferentiator = null; moment = null; name = null; element = null; data = null]", data.toString());
   }
 
   public void testFluentInterface() throws Exception {
@@ -33,6 +33,7 @@ public class StatisticsDataTest extends TestCase {
     StatisticData data = new StatisticData()
       .sessionId("3984693")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("blurb")
       .moment(moment)
       .name("statname")
       .element("first")
@@ -40,6 +41,7 @@ public class StatisticsDataTest extends TestCase {
 
     assertEquals("3984693", data.getSessionId());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
+    assertEquals("blurb", data.getAgentDifferentiator());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
     assertEquals("first", data.getElement());
@@ -58,6 +60,7 @@ public class StatisticsDataTest extends TestCase {
     StatisticData data = new StatisticData();
     data.setSessionId("3984693");
     data.setAgentIp(InetAddress.getLocalHost().getHostAddress());
+    data.setAgentDifferentiator("blurb");
     data.setMoment(moment);
     data.setName("statname");
     data.setElement("first");
@@ -65,6 +68,7 @@ public class StatisticsDataTest extends TestCase {
 
     assertEquals("3984693", data.getSessionId());
     assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
+    assertEquals("blurb", data.getAgentDifferentiator());
     assertEquals(moment, data.getMoment());
     assertEquals("statname", data.getName());
     assertEquals("first", data.getElement());
@@ -88,10 +92,11 @@ public class StatisticsDataTest extends TestCase {
     StatisticData data = new StatisticData()
       .sessionId("3984693")
       .agentIp("192.168.1.18")
+      .agentDifferentiator("7826")
       .moment(moment.getTime())
       .name("statname")
       .element("first")
       .data(new Long(987983343L));
-    assertEquals("[sessionId = 3984693; agentIp = 192.168.1.18; moment = 2008-01-09 16:25:52 000; name = statname; element = first; data = 987983343]", data.toString());
+    assertEquals("[sessionId = 3984693; agentIp = 192.168.1.18; agentDifferentiator = 7826; moment = 2008-01-09 16:25:52 000; name = statname; element = first; data = 987983343]", data.toString());
   }
 }

@@ -186,11 +186,6 @@ public class DistributedObjectClient extends SEDA {
     final SessionManager sessionManager = new SessionManagerImpl(sessionSequence);
     final SessionProvider sessionProvider = (SessionProvider) sessionManager;
 
-    statisticsSubSystem = new StatisticsSubSystem();
-    if (statisticsSubSystem.setup(config.getNewCommonL1Config())) {
-      populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
-    }
-
     StageManager stageManager = getStageManager();
 
     // stageManager.turnTracingOn();
@@ -284,6 +279,12 @@ public class DistributedObjectClient extends SEDA {
       logger.warn("CacheManager is Disabled");
     }
 
+    // setup statistics subsystem
+    statisticsSubSystem = new StatisticsSubSystem();
+    if (statisticsSubSystem.setup(config.getNewCommonL1Config())) {
+      populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
+    }
+    
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
     l1Management = new L1Management(teh, statisticsSubSystem, runtimeLogger, manager.getInstrumentationLogger(), config
@@ -428,6 +429,10 @@ public class DistributedObjectClient extends SEDA {
       System.exit(-1);
     }
     clientHandshakeManager.waitForHandshake();
+
+    if (statisticsSubSystem.isActive()) {
+      statisticsSubSystem.setDefaultAgentDifferentiator("L1/"+channel.channel().getChannelID().toLong());
+    }
 
     cluster.addClusterEventListener(l1Management.getTerracottaCluster());
   }

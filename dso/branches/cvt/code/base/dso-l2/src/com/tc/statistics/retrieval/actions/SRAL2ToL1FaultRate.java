@@ -40,7 +40,7 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
     // Otherwise, this data entry could be timed before the startup data event of
     // the capture session.
     Date moment = new Date();
-    return new StatisticData[] {StatisticData.buildInstanceForLocalhost(ACTION_NAME, moment, value.getCounterValue())};
+    return new StatisticData[] {StatisticData.newInstance(ACTION_NAME, moment, value.getCounterValue())};
   }
 
   public void cleanup() {

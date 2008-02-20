@@ -30,7 +30,7 @@ public class SRASystemProperties implements StatisticRetrievalAction {
     Properties properties = System.getProperties();
     try {
       properties.store(out, null);
-      return new StatisticData[] { StatisticData.buildInstanceForLocalhost(ACTION_NAME, new Date(), out.toString("ISO-8859-1")) };
+      return new StatisticData[] { StatisticData.newInstance(ACTION_NAME, new Date(), out.toString("ISO-8859-1")) };
     } catch (IOException e) {
       throw new TCRuntimeException("Unexpected error while storing the system properties.", e);
     }

@@ -19,7 +19,8 @@ public class SRAShutdownTimestampTest extends TestCase {
     StatisticData data = action.retrieveStatisticData()[0];
     Date after = new Date();
     assertEquals(SRAShutdownTimestamp.ACTION_NAME, data.getName());
-    assertEquals(InetAddress.getLocalHost().getHostAddress(), data.getAgentIp());
+    assertNull(data.getAgentIp());
+    assertNull(data.getAgentDifferentiator());
     assertTrue(before.compareTo((Date)data.getData()) <= 0);
     assertTrue(after.compareTo((Date)data.getData()) >= 0);
 
