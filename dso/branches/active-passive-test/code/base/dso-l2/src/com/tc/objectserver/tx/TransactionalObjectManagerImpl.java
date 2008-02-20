@@ -77,16 +77,17 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   // ProcessTransactionHandler Method
   public void addTransactions(Collection txns) {
+    createAndPreFetchObjectsFor(txns);
     sequencer.addTransactions(txns);
     txnStageCoordinator.initiateLookup();
-    preFetchObjectsFor(txns);
   }
 
-  private void preFetchObjectsFor(Collection txns) {
+  private void createAndPreFetchObjectsFor(Collection txns) {
     Set oids = new HashSet(txns.size() * 10);
+    Set newOids = new HashSet(txns.size() * 10);
     for (Iterator i = txns.iterator(); i.hasNext();) {
       ServerTransaction txn = (ServerTransaction) i.next();
-      Set newOids = txn.getNewObjectIDs();
+      newOids.addAll(txn.getNewObjectIDs());
       for (Iterator j = txn.getObjectIDs().iterator(); j.hasNext();) {
         ObjectID oid = (ObjectID) j.next();
         if (!newOids.contains(oid)) {
@@ -94,7 +95,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
         }
       }
     }
-    if (!oids.isEmpty()) objectManager.preFetchObjects(oids);
+    objectManager.preFetchObjectsAndCreate(oids, newOids);
   }
 
   // LookupHandler Method
@@ -386,7 +387,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       }
       if (!recalledObjects.isEmpty()) {
         logger.info("Recalling " + recalledObjects.size() + " Objects to ObjectManager");
-        objectManager.releaseAll(recalledObjects.values());
+        objectManager.releaseAllReadOnly(recalledObjects.values());
       }
     }
   }

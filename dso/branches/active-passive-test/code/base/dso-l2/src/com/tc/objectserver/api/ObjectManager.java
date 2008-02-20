@@ -38,7 +38,7 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
   /**
    * release all objects
    */
-  public void releaseAll(Collection objects);
+  public void releaseAllReadOnly(Collection objects);
 
   /**
    * release for objects that can not have changed while checked out
@@ -85,6 +85,8 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
   public Map getRootNamesToIDsMap();
 
   public void createRoot(String name, ObjectID id);
+  
+  public void createNewObjects(Set ids);
 
   public ObjectID lookupRootID(String name);
 
@@ -120,6 +122,7 @@ public interface ObjectManager extends ManagedObjectProvider, PrettyPrintable {
 
   public void flushAndEvict(List objects2Flush);
   
-  public void preFetchObjects(Set oids);
+  public void preFetchObjectsAndCreate(Set oids, Set newOids);
 
+  public ManagedObject getObjectByIDOrNull(ObjectID id);
 }

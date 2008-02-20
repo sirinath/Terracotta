@@ -291,7 +291,7 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
-  public void releaseAll(Collection objects) {
+  public void releaseAllReadOnly(Collection objects) {
     releaseAll(transactionProvider.nullTransaction(), objects);
   }
 
@@ -327,7 +327,15 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
-  public void preFetchObjects(Set oids) {
+  public void preFetchObjectsAndCreate(Set oids, Set newOids) {
+    throw new ImplementMe();
+  }
+
+  public void createNewObjects(Set ids) {
+    throw new ImplementMe();
+  }
+
+  public ManagedObject getObjectByIDOrNull(ObjectID id) {
     throw new ImplementMe();
   }
 
