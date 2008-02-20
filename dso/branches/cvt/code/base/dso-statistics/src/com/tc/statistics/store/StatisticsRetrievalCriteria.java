@@ -16,7 +16,8 @@ public class StatisticsRetrievalCriteria {
   private String sessionId = null;
   private Date start = null;
   private Date stop = null;
-  private String agentip = null;
+  private String agentIp = null;
+  private String agentDifferentiator = null;
   private Set names = null;
   private Set elements = null;
   
@@ -60,15 +61,28 @@ public class StatisticsRetrievalCriteria {
   }
 
   public String getAgentIp() {
-    return agentip;
+    return agentIp;
   }
 
   public void setAgentIp(final String agentip) {
-    this.agentip = agentip;
+    this.agentIp = agentip;
   }
 
   public StatisticsRetrievalCriteria agentIp(final String agentIp) {
     setAgentIp(agentIp);
+    return this;
+  }
+
+  public String getAgentDifferentiator() {
+    return agentDifferentiator;
+  }
+
+  public void setAgentDifferentiator(final String agentDifferentiator) {
+    this.agentDifferentiator = agentDifferentiator;
+  }
+
+  public StatisticsRetrievalCriteria agentDifferentiator(final String agentDifferentiator) {
+    setAgentDifferentiator(agentDifferentiator);
     return this;
   }
 
@@ -111,7 +125,7 @@ public class StatisticsRetrievalCriteria {
     StringBuffer out = new StringBuffer("[");
 
     out.append("agentip = ");
-    out.append(agentip);
+    out.append(agentIp);
     out.append("; ");
 
     out.append("sessionId = ");

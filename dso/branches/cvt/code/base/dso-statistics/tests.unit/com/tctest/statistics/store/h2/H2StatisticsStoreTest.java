@@ -308,9 +308,21 @@ public class H2StatisticsStoreTest extends TestCase {
       .start(before)
       .stop(after), consumer11);
     consumer11.ensureCorrectCounts(170, 50);
+
+    TestStaticticConsumer consumer12 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria()
+      .agentDifferentiator("D3")
+      .addName("stat1"), consumer12);
+    consumer12.ensureCorrectCounts(70, 0);
+
+    TestStaticticConsumer consumer13 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria()
+      .agentDifferentiator("D1")
+      .addName("stat1"), consumer13);
+    consumer13.ensureCorrectCounts(100, 0);
   }
 
-  public void testConsumeStatisticsInterruptions() throws Exception {
+  public void testRetrieveStatisticsInterruptions() throws Exception {
     String sessionid1 = "34987";
     String sessionid2 = "9367";
     populateBufferWithStatistics(sessionid1, sessionid2);
@@ -332,7 +344,7 @@ public class H2StatisticsStoreTest extends TestCase {
     consumer4.ensureCorrectCounts(100, 50);
   }
 
-  public void testConsumeStatisticsExceptions() throws Exception {
+  public void testRetrieveStatisticsExceptions() throws Exception {
     String sessionid1 = "34987";
     String sessionid2 = "9367";
     populateBufferWithStatistics(sessionid1, sessionid2);
@@ -372,6 +384,73 @@ public class H2StatisticsStoreTest extends TestCase {
       .limitWithExceptions(true);
     store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId(sessionid1), consumer4);
     consumer4.ensureCorrectCounts(100, 50);
+  }
+
+  public void testDataTypes() throws Exception {
+    store.storeStatistic(new StatisticData()
+      .sessionId("sessionid1")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data("string"));
+
+    final Date date_data = new Date();
+    store.storeStatistic(new StatisticData()
+      .sessionId("sessionid2")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(date_data));
+
+    store.storeStatistic(new StatisticData()
+      .sessionId("sessionid3")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(new Long(28756L)));
+
+    store.storeStatistic(new StatisticData()
+      .sessionId("sessionid4")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data(new BigDecimal("6828.577")));
+
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid1"), new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof String);
+          assertEquals("string", data.getData());
+          return true;
+        }
+      });
+
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid2"), new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof Date);
+          assertEquals(date_data, data.getData());
+          return true;
+        }
+      });
+
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid3"), new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof Long);
+          assertEquals(new Long(28756L), data.getData());
+          return true;
+        }
+      });
+
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid4"), new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData data) {
+          assertTrue(data.getData() instanceof BigDecimal);
+          assertEquals(0, new BigDecimal("6828.577").compareTo((BigDecimal)data.getData()));
+          return true;
+        }
+      });
   }
 
   public void testGetAvailableSessionIds() throws Exception {
@@ -444,6 +523,7 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
+        .agentDifferentiator("D1")
         .moment(new Date())
         .name("stat1")
         .element("element1")
@@ -453,6 +533,7 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
+        .agentDifferentiator("D2")
         .moment(new Date())
         .name("stat2")
         .element("element2")
@@ -463,6 +544,7 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid2)
         .agentIp(ip)
+        .agentDifferentiator("D3")
         .moment(new Date())
         .name("stat1")
         .element("element1")
@@ -512,6 +594,11 @@ public class H2StatisticsStoreTest extends TestCase {
           }
         }
         statCount1++;
+        if (data.getData() instanceof BigDecimal) {
+          assertEquals("D3", data.getAgentDifferentiator());
+        } else {
+          assertEquals("D1", data.getAgentDifferentiator());
+        }
       }
       if (data.getName().equals("stat2")) {
         if (countLimit2 > 0 &&
@@ -523,6 +610,7 @@ public class H2StatisticsStoreTest extends TestCase {
           }
         }
         statCount2++;
+        assertEquals("D2", data.getAgentDifferentiator());
       }
 
       lastDataPerSession.put(data.getSessionId(), data);
@@ -535,5 +623,4 @@ public class H2StatisticsStoreTest extends TestCase {
       assertEquals(count2, statCount2);
     }
   }
-
 }

@@ -71,7 +71,8 @@ public class SRAMemoryUsageTest extends TestCase {
     long[] values = new long[3];
     for (int i = 0; i < data.length; i++) {
       assertTrue(data[i].getName().startsWith(SRAMemoryUsage.ACTION_NAME));
-      assertEquals(InetAddress.getLocalHost().getHostAddress(), data[i].getAgentIp());
+      assertNull(data[i].getAgentIp());
+      assertNull(data[i].getAgentDifferentiator());
       assertTrue(before.compareTo(data[i].getMoment()) <= 0);
       assertTrue(after.compareTo(data[i].getMoment()) >= 0);
       switch (i) {

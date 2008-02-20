@@ -3,12 +3,8 @@
  */
 package com.tc.statistics;
 
-import com.tc.exception.TCRuntimeException;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,54 +14,50 @@ public class StatisticData implements Serializable {
 
   private String sessionId;
   private String agentIp;
+  private String agentDifferentiator;
   private Date moment;
   private String name;
   private String element;
   private Object data;
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, Long value) {
-    return _buildInstanceForLocalhost(name, moment, null, value);
+  public static StatisticData newInstance(String name, Date moment, Long value) {
+    return _newInstance(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String value) {
-    return _buildInstanceForLocalhost(name, moment, null, value);
+  public static StatisticData newInstance(String name, Date moment, String value) {
+    return _newInstance(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, Date value) {
-    return _buildInstanceForLocalhost(name, moment, null, value);
+  public static StatisticData newInstance(String name, Date moment, Date value) {
+    return _newInstance(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, BigDecimal value) {
-    return _buildInstanceForLocalhost(name, moment, null, value);
+  public static StatisticData newInstance(String name, Date moment, BigDecimal value) {
+    return _newInstance(name, moment, null, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, Long value) {
-    return _buildInstanceForLocalhost(name, moment, element, value);
+  public static StatisticData newInstance(String name, Date moment, String element, Long value) {
+    return _newInstance(name, moment, element, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, String value) {
-    return _buildInstanceForLocalhost(name, moment, element, value);
+  public static StatisticData newInstance(String name, Date moment, String element, String value) {
+    return _newInstance(name, moment, element, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, Date value) {
-    return _buildInstanceForLocalhost(name, moment, element, value);
+  public static StatisticData newInstance(String name, Date moment, String element, Date value) {
+    return _newInstance(name, moment, element, value);
   }
 
-  public static StatisticData buildInstanceForLocalhost(String name, Date moment, String element, BigDecimal value) {
-    return _buildInstanceForLocalhost(name, moment, element, value);
+  public static StatisticData newInstance(String name, Date moment, String element, BigDecimal value) {
+    return _newInstance(name, moment, element, value);
   }
 
-  private static StatisticData _buildInstanceForLocalhost(String name, Date moment, String element, Object value) {
-    try {
+  private static StatisticData _newInstance(String name, Date moment, String element, Object value) {
       return new StatisticData()
         .moment(moment)
         .name(name)
-        .agentIp(InetAddress.getLocalHost().getHostAddress())
         .element(element)
         .data(value);
-    } catch (UnknownHostException e) {
-      throw new TCRuntimeException(e);
-    }
   }
 
   public String getSessionId() {
@@ -85,22 +77,6 @@ public class StatisticData implements Serializable {
     return agentIp;
   }
 
-  public Date getMoment() {
-    return moment;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getElement() {
-    return element;
-  }
-
-  public Object getData() {
-    return data;
-  }
-
   public void setAgentIp(String agentIp) {
     this.agentIp = agentIp;
   }
@@ -108,6 +84,19 @@ public class StatisticData implements Serializable {
   public StatisticData agentIp(String agentIp) {
     setAgentIp(agentIp);
     return this;
+  }
+
+  public String getAgentDifferentiator() {
+    return agentDifferentiator;
+  }
+
+  public StatisticData agentDifferentiator(String agentDifferentiator) {
+    setAgentDifferentiator(agentDifferentiator);
+    return this;
+  }
+
+  public void setAgentDifferentiator(String agentDifferentiator) {
+    this.agentDifferentiator = agentDifferentiator;
   }
 
   public void setMoment(Date moment) {
@@ -119,6 +108,14 @@ public class StatisticData implements Serializable {
     return this;
   }
 
+  public Date getMoment() {
+    return moment;
+  }
+
+  public String getName() {
+    return name;
+  }
+
   public void setName(String name) {
     this.name = name;
   }
@@ -128,6 +125,10 @@ public class StatisticData implements Serializable {
     return this;
   }
 
+  public String getElement() {
+    return element;
+  }
+
   public void setElement(String element) {
     this.element = element;
   }
@@ -135,6 +136,10 @@ public class StatisticData implements Serializable {
   public StatisticData element(String element) {
     setElement(element);
     return this;
+  }
+
+  public Object getData() {
+    return data;
   }
 
   private void setData(Object data) {
@@ -182,6 +187,7 @@ public class StatisticData implements Serializable {
     return new StatisticData()
       .sessionId(sessionId)
       .agentIp(agentIp)
+      .agentDifferentiator(agentDifferentiator)
       .moment(moment)
       .name(name)
       .element(element)
@@ -200,6 +206,7 @@ public class StatisticData implements Serializable {
     return "["
            + "sessionId = " + sessionId + "; "
            + "agentIp = " + agentIp + "; "
+           + "agentDifferentiator = " + agentDifferentiator + "; "
            + "moment = " + (null == moment ? String.valueOf(moment): format.format(moment)) + "; "
            + "name = " + name + "; "
            + "element = " + element + "; "

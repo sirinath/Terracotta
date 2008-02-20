@@ -323,6 +323,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     // setup the statistics subsystem
     statisticsSubSystem = new StatisticsSubSystem();
     statisticsSubSystem.setup(configSetupManager.commonl2Config());
+    if (TCSocketAddress.WILDCARD_IP.equals(bindAddress) ||
+        TCSocketAddress.LOOPBACK_IP.equals(bindAddress)) {
+      statisticsSubSystem.setDefaultAgentIp(InetAddress.getLocalHost().getHostAddress());
+    } else {
+      statisticsSubSystem.setDefaultAgentIp(bind.getHostAddress());
+    }
     try {
       statisticsGateway = new StatisticsGatewayImpl();
     } catch (NotCompliantMBeanException e) {
@@ -528,6 +534,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
+
+    statisticsSubSystem.setDefaultAgentDifferentiator("L2/"+serverPort);
 
     l1Listener = communicationsManager.createListener(sessionProvider, new TCSocketAddress(bind, serverPort), true,
                                                       connectionIdFactory, httpSink);

@@ -47,11 +47,13 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Random;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class H2StatisticsBufferImpl implements StatisticsBuffer {
-  public final static int DATABASE_STRUCTURE_VERSION = 2;
+  public final static int DATABASE_STRUCTURE_VERSION = 3;
   
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 633220606L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 1001158033L;
 
   public final static String H2_URL_SUFFIX = "statistics-buffer";
 
@@ -64,11 +66,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private final File lockFile;
   private final StatisticsDatabase database;
 
+  private String defaultAgentIp;
+  private String defaultAgentDifferentiator = null;
+
   private final Set listeners = new CopyOnWriteArraySet();
 
   private static Random rand = new Random();
 
-  public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) {
+  public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) throws TCStatisticsBufferException {
     Assert.assertNotNull("config", config);
     final String suffix;
     if (TCPropertiesImpl.getProperties().getBoolean("cvt.buffer.randomsuffix.enabled", false)) {
@@ -79,6 +84,19 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     this.database = new H2StatisticsDatabase(dbDir, suffix);
     this.config = config;
     this.lockFile = new File(dbDir.getParentFile(), dbDir.getName()+".lck");
+    try {
+      this.defaultAgentIp = InetAddress.getLocalHost().getHostAddress();
+    } catch (UnknownHostException e) {
+     throw new TCStatisticsBufferException("Unexpected error while getting localhost address.", e);
+    }
+  }
+
+  public void setDefaultAgentIp(String defaultAgentIp) {
+    this.defaultAgentIp = defaultAgentIp;
+  }
+
+  public void setDefaultAgentDifferentiator(String defaultAgentDifferentiator) {
+    this.defaultAgentDifferentiator = defaultAgentDifferentiator;
   }
 
   public synchronized void open() throws TCStatisticsBufferException {
@@ -159,6 +177,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
                 "id BIGINT NOT NULL PRIMARY KEY, " +
                 "localsessionid BIGINT NOT NULL, " +
                 "agentip VARCHAR(39) NOT NULL, " +
+                "agentdifferentiator VARCHAR(255) NULL, " +
                 "moment TIMESTAMP NOT NULL, " +
                 "statname VARCHAR(255) NOT NULL," +
                 "statelement VARCHAR(255) NULL, " +
@@ -315,8 +334,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   public long storeStatistic(final StatisticData data) throws TCStatisticsBufferException {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
-    Assert.assertNotNull("agentIp property of data", data.getAgentIp());
     Assert.assertNotNull("data property of data", data.getData());
+
+    if (null == data.getAgentIp()) {
+      data.setAgentIp(defaultAgentIp);
+    }
+    if (null == data.getAgentDifferentiator()) {
+      data.setAgentDifferentiator(defaultAgentDifferentiator);
+    }
 
     try {
       database.ensureExistingConnection();
@@ -328,43 +353,48 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
 
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, localsessionid, agentip, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, localsessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
           statement.setLong(2, local_sessionid);
           statement.setString(3, data.getAgentIp());
-          statement.setTimestamp(4, new Timestamp(data.getMoment().getTime()));
-          statement.setString(5, data.getName());
-          if (null == data.getElement()) {
-            statement.setNull(6, Types.VARCHAR);
+          if (null == data.getAgentDifferentiator()) {
+            statement.setNull(4, Types.VARCHAR);
           } else {
-            statement.setString(6, data.getElement());
+            statement.setString(4, data.getAgentDifferentiator());
+          }
+          statement.setTimestamp(5, new Timestamp(data.getMoment().getTime()));
+          statement.setString(6, data.getName());
+          if (null == data.getElement()) {
+            statement.setNull(7, Types.VARCHAR);
+          } else {
+            statement.setString(7, data.getElement());
           }
           if (null == data.getData()) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof Number) {
-            statement.setLong(7, ((Number)data.getData()).longValue());
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof CharSequence) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setString(8, data.getData().toString());
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setNull(10, Types.NUMERIC);
-          } else if (data.getData() instanceof Date) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setTimestamp(9, new java.sql.Timestamp(((Date)data.getData()).getTime()));
-            statement.setNull(10, Types.NUMERIC);
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
           } else if (data.getData() instanceof BigDecimal) {
-            statement.setNull(7, Types.BIGINT);
-            statement.setNull(8, Types.VARCHAR);
-            statement.setNull(9, Types.TIMESTAMP);
-            statement.setBigDecimal(10, (BigDecimal)data.getData());
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setBigDecimal(11, (BigDecimal)data.getData());
+          } else if (data.getData() instanceof Number) {
+            statement.setLong(8, ((Number)data.getData()).longValue());
+            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
+          } else if (data.getData() instanceof CharSequence) {
+            statement.setNull(8, Types.BIGINT);
+            statement.setString(9, data.getData().toString());
+            statement.setNull(10, Types.TIMESTAMP);
+            statement.setNull(11, Types.NUMERIC);
+          } else if (data.getData() instanceof Date) {
+            statement.setNull(8, Types.BIGINT);
+            statement.setNull(9, Types.VARCHAR);
+            statement.setTimestamp(10, new java.sql.Timestamp(((Date)data.getData()).getTime()));
+            statement.setNull(11, Types.NUMERIC);
           }
         }
       });
