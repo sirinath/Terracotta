@@ -195,4 +195,8 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
   public long getVersion() {
     throw new ImplementMe();
   }
+
+  public void setIsNew(boolean newFlag) {
+    this.isNew = newFlag;
+  }
 }

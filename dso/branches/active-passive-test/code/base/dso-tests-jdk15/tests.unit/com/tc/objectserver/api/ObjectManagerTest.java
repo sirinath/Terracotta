@@ -308,7 +308,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // ThreadUtil.reallySleep(5000);
     results = new TestResultsContext(ids, Collections.EMPTY_SET);
     testFaultSinkContext.preProcess(10);
-    objectManager.preFetchObjects(ids);
+    objectManager.preFetchObjectsAndCreate(ids, null);
     testFaultSinkContext.waitTillComplete();
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
