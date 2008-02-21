@@ -9,9 +9,9 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 public class StatisticsMBeanNames {
-  public static final ObjectName STATISTICS_EMITTER;
-  public static final ObjectName STATISTICS_MANAGER;
-  public static final ObjectName STATISTICS_GATEWAY;
+  public final static ObjectName STATISTICS_EMITTER;
+  public final static ObjectName STATISTICS_MANAGER;
+  public final static ObjectName STATISTICS_GATEWAY;
 
   static {
     try {

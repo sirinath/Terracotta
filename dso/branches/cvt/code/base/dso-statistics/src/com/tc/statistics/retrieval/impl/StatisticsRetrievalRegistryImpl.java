@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.Map;
 
 public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegistry {
-  private static final TCLogger logger = CustomerLogging.getDSOGenericLogger();
+  private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
   private final Map instanceMap = new CopyOnWriteArrayMap();
 
