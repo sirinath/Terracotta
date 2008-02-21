@@ -39,6 +39,7 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
     String url = H2_URL_PREFIX + new File(dbDir, urlSuffix).getAbsolutePath();
     try {
       connection = DriverManager.getConnection(url, H2_USER, H2_PASSWORD);
+      connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
       connection.setAutoCommit(true);
     } catch (SQLException e) {
       throw new TCStatisticsDatabaseOpenErrorException(url, H2_USER, H2_PASSWORD, e);
