@@ -32,7 +32,7 @@
   <clients>
     <logs>logs/client-logs/%(webserver.log.name)</logs>
     <modules>
-      <module name="clustered-apache-struts-1.1" version="2.5.2"/>
+      <module name="clustered-apache-struts-1.1" version="2.5.3-SNAPSHOT"/>
     </modules>
   </clients>
 
