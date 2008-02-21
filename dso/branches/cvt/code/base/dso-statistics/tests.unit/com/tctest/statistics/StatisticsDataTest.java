@@ -28,6 +28,11 @@ public class StatisticsDataTest extends TestCase {
     assertEquals("[sessionId = null; agentIp = null; agentDifferentiator = null; moment = null; name = null; element = null; data = null]", data.toString());
   }
 
+  public void testDefaultToCsv() throws Exception {
+    StatisticData data = new StatisticData();
+    assertEquals(",,,,,,,,,\n", data.toCsv());
+  }
+
   public void testFluentInterface() throws Exception {
     Date moment = new Date();
     StatisticData data = new StatisticData()
@@ -97,6 +102,21 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(new Long(987983343L));
-    assertEquals("[sessionId = 3984693; agentIp = 192.168.1.18; agentDifferentiator = 7826; moment = 2008-01-09 16:25:52 000; name = statname; element = first; data = 987983343]", data.toString());
+    assertEquals("[sessionId = 3984693; agentIp = 192.168.1.18; agentDifferentiator = 7826; moment = 01/09/2008 16:25:52 000; name = statname; element = first; data = 987983343]", data.toString());
+  }
+
+  public void testToCsv() throws Exception {
+    Calendar moment = Calendar.getInstance();
+    moment.set(2008, 0, 9, 16, 25, 52);
+    moment.set(Calendar.MILLISECOND, 0);
+    StatisticData data = new StatisticData()
+      .sessionId("3984693")
+      .agentIp("192.168.1.18")
+      .agentDifferentiator("7826")
+      .moment(moment.getTime())
+      .name("statname")
+      .element("first")
+      .data(new Long(987983343L));
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",\"987983343\",,,\n", data.toCsv());
   }
 }

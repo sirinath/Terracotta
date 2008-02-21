@@ -285,24 +285,50 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   }
 
   public void stopCapturing(final String sessionId) throws TCStatisticsBufferException {
+    final boolean[] found = new boolean[] {false};
     final int row_count;
     try {
       database.ensureExistingConnection();
 
-      fireCapturingStopped(sessionId);
+      database.getConnection().setAutoCommit(false);
+      try {
 
-      row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE clustersessionid = ? AND start IS NOT NULL AND stop IS NULL", new PreparedStatementHandler() {
-        public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setTimestamp(1, new Timestamp(new Date().getTime()));
-          statement.setString(2, sessionId);
+        JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM capturesession WHERE clustersessionid = ? AND start IS NOT NULL", new PreparedStatementHandler() {
+          public void setParameters(PreparedStatement statement) throws SQLException {
+            statement.setString(1, sessionId);
+          }
+        }, new ResultSetHandler() {
+          public void useResultSet(ResultSet resultSet) throws SQLException {
+            if (resultSet.next()) {
+              found[0] = true;
+            }
+          }
+        });
+
+        if (found[0]) {
+          row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE clustersessionid = ? AND start IS NOT NULL AND stop IS NULL", new PreparedStatementHandler() {
+            public void setParameters(PreparedStatement statement) throws SQLException {
+              statement.setTimestamp(1, new Timestamp(new Date().getTime()));
+              statement.setString(2, sessionId);
+            }
+          });
+        } else {
+          row_count = 0;
         }
-      });
+      } finally {
+        database.getConnection().commit();
+        database.getConnection().setAutoCommit(true);
+      }
     } catch (Exception e) {
       throw new TCStatisticsBufferStopCapturingErrorException(sessionId, e);
     }
 
-    if (row_count != 1) {
+    if (!found[0]) {
       throw new TCStatisticsBufferStopCapturingErrorException(sessionId, null);
+    }
+
+    if (row_count > 0) {
+      fireCapturingStopped(sessionId);
     }
   }
 
