@@ -27,7 +27,7 @@ import javax.management.NotificationListener;
 
 public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements StatisticsGatewayMBean, StatisticsGateway, NotificationListener {
 
-  private static final TCLogger logger = TCLogging.getLogger(StatisticsGatewayImpl.class);
+  private final static TCLogger logger = TCLogging.getLogger(StatisticsGatewayImpl.class);
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 

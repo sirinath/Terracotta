@@ -36,8 +36,8 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet that provides a RESTful interface towards an embedded statistics gatherer
  */
 public class StatisticsGathererServlet extends RestfulServlet {
-  private static final TCLogger logger        = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+  private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
+  private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
   private volatile L2TVSConfigurationSetupManager configSetupManager;
   private volatile StatisticsStore store;

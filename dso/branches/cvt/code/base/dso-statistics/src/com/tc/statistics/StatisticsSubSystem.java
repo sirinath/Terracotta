@@ -29,8 +29,8 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 
 public class StatisticsSubSystem {
-  private static final TCLogger logger        = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+  private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
+  private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
   private StatisticsBuffer            statisticsBuffer;
   private StatisticsEmitterMBean      statisticsEmitterMBean;

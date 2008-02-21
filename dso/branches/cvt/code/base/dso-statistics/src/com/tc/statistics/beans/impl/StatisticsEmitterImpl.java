@@ -31,9 +31,9 @@ import javax.management.Notification;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
-  public static final String STATISTICS_EVENT_TYPE = "tc.statistics.event";
+  public final static String STATISTICS_EVENT_TYPE = "tc.statistics.event";
 
-  public static final MBeanNotificationInfo[] NOTIFICATION_INFO;
+  public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
 
   static {
     final String[] notifTypes = new String[] { STATISTICS_EVENT_TYPE };
