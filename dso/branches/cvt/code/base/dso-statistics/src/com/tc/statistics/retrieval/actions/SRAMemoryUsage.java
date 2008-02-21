@@ -38,9 +38,9 @@ public class SRAMemoryUsage implements StatisticRetrievalAction {
     Date moment = new Date();
     MemoryUsage usage = manager.getMemoryUsage();
     return new StatisticData[] {
-      StatisticData.newInstance(DATA_NAME_FREE, moment, new Long(usage.getFreeMemory())),
-      StatisticData.newInstance(DATA_NAME_USED, moment, new Long(usage.getUsedMemory())),
-      StatisticData.newInstance(DATA_NAME_MAX, moment, new Long(usage.getMaxMemory()))
+      new StatisticData(DATA_NAME_FREE, moment, new Long(usage.getFreeMemory())),
+      new StatisticData(DATA_NAME_USED, moment, new Long(usage.getUsedMemory())),
+      new StatisticData(DATA_NAME_MAX, moment, new Long(usage.getMaxMemory()))
     };
   }
 

@@ -23,7 +23,7 @@ public class SRAShutdownTimestamp implements StatisticRetrievalAction {
 
   public StatisticData[] retrieveStatisticData() {
     Date moment = new Date();
-    return new StatisticData[] { StatisticData.newInstance(ACTION_NAME, moment, moment) };
+    return new StatisticData[] { new StatisticData(ACTION_NAME, moment, moment) };
   }
 
   public void cleanup() {

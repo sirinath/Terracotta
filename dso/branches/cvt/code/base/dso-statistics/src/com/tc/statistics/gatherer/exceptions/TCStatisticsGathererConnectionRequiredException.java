@@ -5,6 +5,6 @@ package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererConnectionRequiredException extends TCStatisticsGathererException {
   public TCStatisticsGathererConnectionRequiredException() {
-    super("A connection need to be established before performing this operation.", null);
+    super("A connection needs to be established before performing this operation.", null);
   }
 }
