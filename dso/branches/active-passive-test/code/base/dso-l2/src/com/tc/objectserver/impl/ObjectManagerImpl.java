@@ -93,6 +93,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final Sink                           faultSink;
   private final Sink                           flushSink;
   private TransactionalObjectManager           txnObjectMgr             = new NullTransactionalObjectManager();
+  private int                                  preFetchedCount          = 0;
 
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
@@ -338,18 +339,15 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private void preFetchObjects(Set oids) {
-    int count = 0;
     for (Iterator i = oids.iterator(); i.hasNext();) {
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference rv = getReference(id);
       if (rv == null) {
         // This object is not in the cache, initiate faulting for the object
-        count++;
+        if (++preFetchedCount % 1000 == 0) logger.info("Prefetched " + preFetchedCount + " objects");
         initiateFaultingFor(id, false);
       }
     }
-    // TODO::FIXME::Remove this logging
-    if (count != 0) logger.info("Prefetched " + count + " objects");
   }
 
   private ManagedObjectReference addNewReference(ManagedObject obj, boolean isRemoveOnRelease) throws AssertionError {
