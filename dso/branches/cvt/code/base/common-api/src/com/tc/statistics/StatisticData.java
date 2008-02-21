@@ -3,11 +3,14 @@
  */
 package com.tc.statistics;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.sql.Types;
 
 public class StatisticData implements Serializable {
   private static final long serialVersionUID = -3387790670840965825L;
@@ -20,46 +23,22 @@ public class StatisticData implements Serializable {
   private String element;
   private Object data;
 
-  public static StatisticData newInstance(String name, Date moment, Long value) {
-    return _newInstance(name, moment, null, value);
+  public StatisticData() {
+  }
+  
+  public StatisticData(String name, Date moment, Object value) {
+    setName(name);
+    setMoment(moment);
+    setData(value);
   }
 
-  public static StatisticData newInstance(String name, Date moment, String value) {
-    return _newInstance(name, moment, null, value);
+  public StatisticData(String name, Date moment, String element, Object value) {
+    setName(name);
+    setMoment(moment);
+    setElement(element);
+    setData(value);
   }
-
-  public static StatisticData newInstance(String name, Date moment, Date value) {
-    return _newInstance(name, moment, null, value);
-  }
-
-  public static StatisticData newInstance(String name, Date moment, BigDecimal value) {
-    return _newInstance(name, moment, null, value);
-  }
-
-  public static StatisticData newInstance(String name, Date moment, String element, Long value) {
-    return _newInstance(name, moment, element, value);
-  }
-
-  public static StatisticData newInstance(String name, Date moment, String element, String value) {
-    return _newInstance(name, moment, element, value);
-  }
-
-  public static StatisticData newInstance(String name, Date moment, String element, Date value) {
-    return _newInstance(name, moment, element, value);
-  }
-
-  public static StatisticData newInstance(String name, Date moment, String element, BigDecimal value) {
-    return _newInstance(name, moment, element, value);
-  }
-
-  private static StatisticData _newInstance(String name, Date moment, String element, Object value) {
-      return new StatisticData()
-        .moment(moment)
-        .name(name)
-        .element(element)
-        .data(value);
-  }
-
+  
   public String getSessionId() {
     return sessionId;
   }
@@ -195,7 +174,7 @@ public class StatisticData implements Serializable {
   }
 
   public String toString() {
-    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+    DateFormat format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss SSS");
     String data_formatted;
     if (data != null &&
         data instanceof Date) {
@@ -212,5 +191,64 @@ public class StatisticData implements Serializable {
            + "element = " + element + "; "
            + "data = " + data_formatted + ""
            + "]";
+  }
+
+  private static String escapeDoubleQuotes(final String value) {
+    return StringUtils.replace(value, "\"", "\"\"");
+  }
+
+  private static void addCsvField(final StringBuffer result, final Object field, final boolean separator) {
+    if (null == field) {
+      if (separator) {
+        result.append(",");
+      }
+    } else {
+      result.append("\"");
+      result.append(escapeDoubleQuotes(String.valueOf(field)));
+      result.append("\"");
+      if (separator) {
+        result.append(",");
+      }
+    }
+  }
+
+  public String toCsv() {
+    DateFormat format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss SSS");
+
+    StringBuffer result = new StringBuffer();
+    addCsvField(result, sessionId, true);
+    addCsvField(result, agentIp, true);
+    addCsvField(result, agentDifferentiator, true);
+    addCsvField(result, (null == moment ? null : format.format(moment)), true);
+    addCsvField(result, name, true);
+    addCsvField(result, element, true);
+    if (null == data) {
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, false);
+    } else if (data instanceof BigDecimal) {
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, data, false);
+    } else if (data instanceof Number) {
+      addCsvField(result, data, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, false);
+    } else if (data instanceof CharSequence) {
+      addCsvField(result, null, true);
+      addCsvField(result, data, true);
+      addCsvField(result, null, true);
+      addCsvField(result, null, false);
+    } else if (data instanceof Date) {
+      addCsvField(result, null, true);
+      addCsvField(result, null, true);
+      addCsvField(result, (null == data ? null : format.format(data)), true);
+      addCsvField(result, null, false);
+    }
+    result.append("\n");
+    return result.toString();
   }
 }

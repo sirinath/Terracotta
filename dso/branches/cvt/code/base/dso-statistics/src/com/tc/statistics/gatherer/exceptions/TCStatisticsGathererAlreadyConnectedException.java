@@ -5,6 +5,6 @@ package com.tc.statistics.gatherer.exceptions;
 
 public class TCStatisticsGathererAlreadyConnectedException extends TCStatisticsGathererException {
   public TCStatisticsGathererAlreadyConnectedException() {
-    super("A connection need to be established before performing this operation.", null);
+    super("A connection has already been established beforehand.", null);
   }
 }

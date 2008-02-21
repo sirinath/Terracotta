@@ -179,14 +179,17 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
     Assert.assertNotNull("data property of data", data.getData());
 
+    final long id;
+    final int row_count;
+
     try {
       database.ensureExistingConnection();
 
       // obtain a new ID for the statistic data
-      final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
+      id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
       
       // insert the statistic data with the provided values
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
           statement.setString(2, data.getSessionId());
@@ -231,13 +234,13 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
           }
         }
       });
-
-      // ensure that a row was inserted
-      if (row_count != 1) {
-        throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
-      }
     } catch (Exception e) {
       throw new TCStatisticsStoreStatisticStorageErrorException(data, e);
+    }
+
+    // ensure that a row was inserted
+    if (row_count != 1) {
+      throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
     }
   }
 

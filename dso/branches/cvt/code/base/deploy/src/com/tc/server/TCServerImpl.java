@@ -353,6 +353,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     createAndAddServlet(servletHandler, VersionServlet.class.getName(), "/version");
     createAndAddServlet(servletHandler, ConfigServlet.class.getName(), "/config");
     createAndAddServlet(servletHandler, StatsExportServlet.class.getName(), "/stats-export");
+    createAndAddServlet(servletHandler, StatisticsGathererServlet.class.getName(), "/statistics-gatherer/*");
 
     context.setServletHandler(servletHandler);
     httpServer.addHandler(context);

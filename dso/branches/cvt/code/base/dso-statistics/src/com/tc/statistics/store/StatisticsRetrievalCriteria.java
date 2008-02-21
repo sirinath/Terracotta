@@ -103,6 +103,18 @@ public class StatisticsRetrievalCriteria {
     return this;
   }
 
+  public StatisticsRetrievalCriteria setNames(final String[] names) {
+    this.names = null;
+    
+    if (names != null) {
+      for (int i = 0; i < names.length; i++) {
+        addName(names[i]);
+      }
+    }
+
+    return this;
+  }
+
   public Collection getElements() {
     if (null == elements) {
       return Collections.EMPTY_SET;
@@ -120,8 +132,20 @@ public class StatisticsRetrievalCriteria {
     return this;
   }
 
+  public StatisticsRetrievalCriteria setElements(final String[] elements) {
+    this.elements = null;
+
+    if (elements != null) {
+      for (int i = 0; i < elements.length; i++) {
+        addName(elements[i]);
+      }
+    }
+
+    return this;
+  }
+
   public String toString() {
-    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+    DateFormat format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss SSS");
     StringBuffer out = new StringBuffer("[");
 
     out.append("agentip = ");
