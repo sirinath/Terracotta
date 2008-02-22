@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <sigar.version>1.5.0.0</sigar.version>
+    <sigar.version>1.5.0.1</sigar.version>
     <sigar.x86-linux>${settings.localRepository}/org/hyperic/libsigar-x86-linux/${sigar.version}</sigar.x86-linux>
     <sigar.sparc-solaris>${settings.localRepository}/org/hyperic/libsigar-sparc-solaris/${sigar.version}</sigar.sparc-solaris>
     <sigar.universal-macosx>${settings.localRepository}/org/hyperic/libsigar-universal-macosx/${sigar.version}</sigar.universal-macosx>
@@ -31,7 +31,7 @@
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>tc-compile</artifactId>
+      <artifactId>terracotta-api</artifactId>
       <version>2.6.0_cvt-SNAPSHOT</version>
     </dependency>
   </dependencies>
