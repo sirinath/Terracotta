@@ -6,28 +6,19 @@ package com.tc.server;
 
 import com.tc.config.schema.messaging.http.ConfigServlet;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
-import com.tc.logging.CustomerLogging;
-import com.tc.logging.TCLogger;
 import com.tc.net.TCSocketAddress;
-import com.tc.statistics.gatherer.StatisticsGatherer;
-import com.tc.statistics.gatherer.impl.StatisticsGathererImpl;
-import com.tc.statistics.store.StatisticsStore;
-import com.tc.statistics.store.StatisticsRetrievalCriteria;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
-import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticsGathererSubSystem;
+import com.tc.statistics.buffer.StatisticsConsumer;
+import com.tc.statistics.store.StatisticsRetrievalCriteria;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.zip.ZipOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,65 +27,57 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet that provides a RESTful interface towards an embedded statistics gatherer
  */
 public class StatisticsGathererServlet extends RestfulServlet {
-  private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
-  private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+  public static final String GATHERER_ATTRIBUTE = StatisticsGathererServlet.class.getName() + ".gatherer";
 
-  private volatile L2TVSConfigurationSetupManager configSetupManager;
-  private volatile StatisticsStore store;
-  private volatile StatisticsGatherer gatherer;
+  private L2TVSConfigurationSetupManager configSetupManager;
+  private StatisticsGathererSubSystem    system;
 
   public void init() {
     configSetupManager = (L2TVSConfigurationSetupManager)getServletContext().getAttribute(ConfigServlet.CONFIG_ATTRIBUTE);
-
-    File stat_path = configSetupManager.commonl2Config().statisticsPath().getFile();
-    store = new H2StatisticsStoreImpl(stat_path);
-    gatherer = new StatisticsGathererImpl(store);
-    String infoMsg = "Statistics store: '" + stat_path.getAbsolutePath() + "'.";
-    consoleLogger.info(infoMsg);
-    logger.info(infoMsg);
+    system = (StatisticsGathererSubSystem)getServletContext().getAttribute(GATHERER_ATTRIBUTE);
   }
 
   public void methodConnect(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    gatherer.connect(TCSocketAddress.LOOPBACK_IP, configSetupManager.commonl2Config().jmxPort().getInt());
+    system.getStatisticsGatherer().connect(TCSocketAddress.LOOPBACK_IP, configSetupManager.commonl2Config().jmxPort().getInt());
     printOk(response);
   }
 
   public void methodDisconnect(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    gatherer.disconnect();
+    system.getStatisticsGatherer().disconnect();
     printOk(response);
   }
 
   public void methodCreateSession(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String sessionid = request.getParameter("sessionId");
     if (null == sessionid) throw new IllegalArgumentException("sessionId");
-    gatherer.createSession(sessionid);
+    system.getStatisticsGatherer().createSession(sessionid);
     printOk(response);
   }
 
   public void methodCloseSession(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    gatherer.closeSession();
+    system.getStatisticsGatherer().closeSession();
     printOk(response);
   }
 
   public void methodGetSupportedStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    String[] statistics = gatherer.getSupportedStatistics();
+    String[] statistics = system.getStatisticsGatherer().getSupportedStatistics();
     print(response, statistics);
   }
 
   public void methodEnableStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String[] names = request.getParameterValues("names");
     if (null == names) throw new IllegalArgumentException("names");
-    gatherer.enableStatistics(names);
+    system.getStatisticsGatherer().enableStatistics(names);
     printOk(response);
   }
 
   public void methodStartCapturing(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    gatherer.startCapturing();
+    system.getStatisticsGatherer().startCapturing();
     printOk(response);
   }
 
   public void methodStopCapturing(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    gatherer.stopCapturing();
+    system.getStatisticsGatherer().stopCapturing();
     printOk(response);
   }
 
@@ -103,14 +86,14 @@ public class StatisticsGathererServlet extends RestfulServlet {
     String value = request.getParameter("value");
     if (null == key) throw new IllegalArgumentException("key");
     if (null == value) throw new IllegalArgumentException("value");
-    gatherer.setGlobalParam(key, value);
+    system.getStatisticsGatherer().setGlobalParam(key, value);
     printOk(response);
   }
 
   public void methodGetGlobalParam(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String key = request.getParameter("key");
     if (null == key) throw new IllegalArgumentException("key");
-    Object value = gatherer.getGlobalParam(key);
+    Object value = system.getStatisticsGatherer().getGlobalParam(key);
     print(response, value);
   }
 
@@ -119,26 +102,26 @@ public class StatisticsGathererServlet extends RestfulServlet {
     String value = request.getParameter("value");
     if (null == key) throw new IllegalArgumentException("key");
     if (null == value) throw new IllegalArgumentException("value");
-    gatherer.setSessionParam(key, value);
+    system.getStatisticsGatherer().setSessionParam(key, value);
     printOk(response);
   }
 
   public void methodGetSessionParam(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String key = request.getParameter("key");
     if (null == key) throw new IllegalArgumentException("key");
-    Object value = gatherer.getSessionParam(key);
+    Object value = system.getStatisticsGatherer().getSessionParam(key);
     print(response, value);
   }
 
   public void methodGetAvailableSessionIds(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    String[] sessionids = store.getAvailableSessionIds();
+    String[] sessionids = system.getStatisticsStore().getAvailableSessionIds();
     print(response, sessionids);
   }
 
   public void methodClearStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String sessionid = request.getParameter("sessionId");
     if (null == sessionid) throw new IllegalArgumentException("sessionId");
-    store.clearStatistics(sessionid);
+    system.getStatisticsStore().clearStatistics(sessionid);
     printOk(response);
   }
 
@@ -188,7 +171,7 @@ public class StatisticsGathererServlet extends RestfulServlet {
 
         try {
           out.write(StatisticData.CURRENT_CSV_HEADER.getBytes("UTF-8"));
-          store.retrieveStatistics(criteria, new StatisticsConsumer() {
+          system.getStatisticsStore().retrieveStatistics(criteria, new StatisticsConsumer() {
             public boolean consumeStatisticData(final StatisticData data) {
               try {
                 out.write(data.toCsv().getBytes("UTF-8"));

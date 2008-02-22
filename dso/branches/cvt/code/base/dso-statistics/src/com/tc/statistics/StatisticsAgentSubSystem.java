@@ -5,7 +5,7 @@ package com.tc.statistics;
 
 import com.tc.config.schema.NewStatisticsConfig;
 import com.tc.exception.TCRuntimeException;
-import com.tc.statistics.beans.impl.StatisticsEmitterImpl;
+import com.tc.statistics.beans.impl.StatisticsEmitterMBeanImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.impl.StatisticsManagerImpl;
@@ -28,7 +28,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 
-public class StatisticsSubSystem {
+public class StatisticsAgentSubSystem {
   private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
   private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
@@ -54,17 +54,17 @@ public class StatisticsSubSystem {
   }
 
   public boolean setup(final NewStatisticsConfig config) {
-    StatisticsConfig globalStatisticsConfig = new StatisticsConfigImpl();
+    StatisticsConfig statistics_config = new StatisticsConfigImpl();
     
     // create the statistics buffer
-    File statPath = config.statisticsPath().getFile();
+    File stat_path = config.statisticsPath().getFile();
     try {
-      statPath.mkdirs();
+      stat_path.mkdirs();
     } catch (Exception e) {
       // TODO: needs to be properly written and put in a properties file
       String msg =
         "\n**************************************************************************************\n"
-        + "Unable to create the directory '" + statPath.getAbsolutePath() + "' for the statistics buffer.\n"
+        + "Unable to create the directory '" + stat_path.getAbsolutePath() + "' for the statistics buffer.\n"
         + "The CVT system will not be active for this node.\n"
         + "**************************************************************************************\n";
       consoleLogger.error(msg);
@@ -72,14 +72,14 @@ public class StatisticsSubSystem {
       return false;
     }
     try {
-      statisticsBuffer = new H2StatisticsBufferImpl(globalStatisticsConfig, statPath);
+      statisticsBuffer = new H2StatisticsBufferImpl(statistics_config, stat_path);
       statisticsBuffer.open();
     } catch (TCStatisticsBufferException e) {
       // TODO: needs to be properly written and put in a properties file
       String msg =
         "\n**************************************************************************************\n"
         + "The statistics buffer couldn't be opened at \n"
-        + "'" + statPath.getAbsolutePath() + "'.\n"
+        + "'" + stat_path.getAbsolutePath() + "'.\n"
         + "The CVT system will not be active for this node.\n"
         + "\n"
         + "A common reason for this is that you're launching several Terracotta L1\n"
@@ -100,22 +100,22 @@ public class StatisticsSubSystem {
       logger.error(msg, e);
       return false;
     }
-    String infoMsg = "Statistics buffer: '" + statPath.getAbsolutePath() + "'.";
+    String infoMsg = "Statistics buffer: '" + stat_path.getAbsolutePath() + "'.";
     consoleLogger.info(infoMsg);
     logger.info(infoMsg);
 
     // create the statistics emitter mbean
     try {
-      statisticsEmitterMBean = new StatisticsEmitterImpl(globalStatisticsConfig, statisticsBuffer);
+      statisticsEmitterMBean = new StatisticsEmitterMBeanImpl(statistics_config, statisticsBuffer);
     } catch (NotCompliantMBeanException e) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitterImpl.class.getName()
+      throw new TCRuntimeException("Unable to construct the " + StatisticsEmitterMBeanImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
     }
 
     // setup an empty statistics retrieval registry
     statisticsRetrievalRegistry = new StatisticsRetrievalRegistryImpl();
     try {
-      statisticsManagerMBean = new StatisticsManagerImpl(globalStatisticsConfig, statisticsRetrievalRegistry, statisticsBuffer);
+      statisticsManagerMBean = new StatisticsManagerImpl(statistics_config, statisticsRetrievalRegistry, statisticsBuffer);
     } catch (NotCompliantMBeanException e) {
       throw new TCRuntimeException("Unable to construct the " + StatisticsManagerImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
@@ -125,14 +125,14 @@ public class StatisticsSubSystem {
     return true;
   }
 
-  public void registerMBeans(MBeanServer mBeanServer) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
-    mBeanServer.registerMBean(statisticsEmitterMBean, StatisticsMBeanNames.STATISTICS_EMITTER);
-    mBeanServer.registerMBean(statisticsManagerMBean, StatisticsMBeanNames.STATISTICS_MANAGER);
+  public void registerMBeans(MBeanServer server) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
+    server.registerMBean(statisticsEmitterMBean, StatisticsMBeanNames.STATISTICS_EMITTER);
+    server.registerMBean(statisticsManagerMBean, StatisticsMBeanNames.STATISTICS_MANAGER);
   }
 
-  public void unregisterMBeans(MBeanServer mBeanServer) throws InstanceNotFoundException, MBeanRegistrationException {
-    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_EMITTER);
-    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_MANAGER);
+  public void unregisterMBeans(MBeanServer server) throws InstanceNotFoundException, MBeanRegistrationException {
+    server.unregisterMBean(StatisticsMBeanNames.STATISTICS_EMITTER);
+    server.unregisterMBean(StatisticsMBeanNames.STATISTICS_MANAGER);
   }
 
   public void disableJMX() throws Exception {
@@ -142,7 +142,9 @@ public class StatisticsSubSystem {
   }
 
   public void cleanup() throws Exception {
-    statisticsBuffer.close();
+    if (statisticsBuffer != null) {
+      statisticsBuffer.close();
+    }
   }
 
   public StatisticsBuffer getStatisticsBuffer() {

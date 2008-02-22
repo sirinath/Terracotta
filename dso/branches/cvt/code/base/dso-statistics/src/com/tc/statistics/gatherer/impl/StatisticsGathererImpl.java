@@ -64,8 +64,6 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   }
 
   public void disconnect() throws TCStatisticsGathererException {
-    if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
-
     TCStatisticsGathererException exception = null;
 
     // make sure the session is closed
@@ -76,25 +74,29 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     }
 
     // disable the notification
-    try {
-      statGateway.disable();
-    } catch (Exception e) {
-      TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while disabling the statistics gateway.", e);
-      if (exception != null) {
-        exception.setNextException(ex);
-      } else {
-        exception = ex;
+    if (statGateway != null) {
+      try {
+        statGateway.disable();
+      } catch (Exception e) {
+        TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while disabling the statistics gateway.", e);
+        if (exception != null) {
+          exception.setNextException(ex);
+        } else {
+          exception = ex;
+        }
       }
     }
 
-    try {
-      proxy.close();
-    } catch (Exception e) {
-      TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the JMX proxy.", e);
-      if (exception != null) {
-        exception.setNextException(ex);
-      } else {
-        exception = ex;
+    if (proxy != null) {
+      try {
+        proxy.close();
+      } catch (Exception e) {
+        TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the JMX proxy.", e);
+        if (exception != null) {
+          exception.setNextException(ex);
+        } else {
+          exception = ex;
+        }
       }
     }
 

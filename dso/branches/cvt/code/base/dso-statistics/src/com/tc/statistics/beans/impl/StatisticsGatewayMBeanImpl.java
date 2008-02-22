@@ -25,20 +25,20 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 
-public class StatisticsGatewayImpl extends AbstractTerracottaMBean implements StatisticsGatewayMBean, StatisticsGateway, NotificationListener {
+public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implements StatisticsGatewayMBean, StatisticsGateway, NotificationListener {
 
-  private final static TCLogger logger = TCLogging.getLogger(StatisticsGatewayImpl.class);
+  private final static TCLogger logger = TCLogging.getLogger(StatisticsGatewayMBeanImpl.class);
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
   private List agents = new CopyOnWriteArrayList();
 
-  public StatisticsGatewayImpl() throws NotCompliantMBeanException {
+  public StatisticsGatewayMBeanImpl() throws NotCompliantMBeanException {
     super(StatisticsGatewayMBean.class, true, false);
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {
-    return StatisticsEmitterImpl.NOTIFICATION_INFO;
+    return StatisticsEmitterMBeanImpl.NOTIFICATION_INFO;
   }
 
   public synchronized void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
