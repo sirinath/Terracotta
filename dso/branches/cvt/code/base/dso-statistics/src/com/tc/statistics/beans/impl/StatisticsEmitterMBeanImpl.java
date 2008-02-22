@@ -4,8 +4,8 @@
  */
 package com.tc.statistics.beans.impl;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -21,8 +21,6 @@ import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.Assert;
 import com.tc.util.TCTimerImpl;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Timer;

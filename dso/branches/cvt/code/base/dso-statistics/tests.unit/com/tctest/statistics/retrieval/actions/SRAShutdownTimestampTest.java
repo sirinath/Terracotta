@@ -7,7 +7,6 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 
-import java.net.InetAddress;
 import java.util.Date;
 
 import junit.framework.TestCase;

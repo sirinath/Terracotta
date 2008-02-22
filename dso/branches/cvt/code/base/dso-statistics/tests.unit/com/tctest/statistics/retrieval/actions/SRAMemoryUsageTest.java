@@ -8,7 +8,6 @@ import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 
 import java.lang.reflect.Array;
-import java.net.InetAddress;
 import java.util.Date;
 
 import junit.framework.TestCase;
