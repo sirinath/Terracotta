@@ -12,12 +12,14 @@ public class StatisticsMBeanNames {
   public final static ObjectName STATISTICS_EMITTER;
   public final static ObjectName STATISTICS_MANAGER;
   public final static ObjectName STATISTICS_GATEWAY;
+  public final static ObjectName STATISTICS_GATHERER;
 
   static {
     try {
       STATISTICS_EMITTER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Agent, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Emitter", false);
       STATISTICS_MANAGER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Agent, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Manager", false);
-      STATISTICS_GATEWAY = TerracottaManagement.createObjectName(TerracottaManagement.Type.Server, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Gateway", true);
+      STATISTICS_GATEWAY = TerracottaManagement.createObjectName(TerracottaManagement.Type.Server, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Gateway", false);
+      STATISTICS_GATHERER = TerracottaManagement.createObjectName(TerracottaManagement.Type.Server, TerracottaManagement.Subsystem.Statistics, null, "Terracotta Statistics Gatherer", true);
     } catch (MalformedObjectNameException mone) {
       throw new RuntimeException(mone);
     } catch (NullPointerException npe) {

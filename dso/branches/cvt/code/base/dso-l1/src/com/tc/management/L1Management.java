@@ -29,7 +29,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnectionServer;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.RuntimeLogger;
-import com.tc.statistics.StatisticsSubSystem;
+import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.runtime.Vm;
 
@@ -68,14 +68,14 @@ public final class L1Management extends TerracottaManagement {
   private final RuntimeOutputOptions   runtimeOutputOptionsBean;
   private final RuntimeLogging         runtimeLoggingBean;
 
-  private final StatisticsSubSystem   statisticsSubSystem;
+  private final StatisticsAgentSubSystem statisticsAgentSubSystem;
 
-  public L1Management(final TunnelingEventHandler tunnelingHandler, final StatisticsSubSystem statisticsSubSystem, RuntimeLogger runtimeLogger,
+  public L1Management(final TunnelingEventHandler tunnelingHandler, final StatisticsAgentSubSystem statisticsAgentSubSystem, RuntimeLogger runtimeLogger,
                       InstrumentationLogger instrumentationLogger, String rawConfigText) {
     super();
     started = new SetOnceFlag();
     this.tunnelingHandler = tunnelingHandler;
-    this.statisticsSubSystem = statisticsSubSystem;
+    this.statisticsAgentSubSystem = statisticsAgentSubSystem;
     try {
       clientTxBean = new ClientTxMonitor();
       internalSessionBean = new SessionMonitor();
@@ -211,8 +211,8 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(clientTxBean, MBeanNames.CLIENT_TX_INTERNAL);
     mBeanServer.registerMBean(internalSessionBean, MBeanNames.SESSION_INTERNAL);
     mBeanServer.registerMBean(publicSessionBean, L1MBeanNames.SESSION_PRODUCT_PUBLIC);
-    if (statisticsSubSystem.isActive()) {
-      statisticsSubSystem.registerMBeans(mBeanServer);
+    if (statisticsAgentSubSystem.isActive()) {
+      statisticsAgentSubSystem.registerMBeans(mBeanServer);
     }
     mBeanServer.registerMBean(l1InfoBean, L1MBeanNames.L1INFO_PUBLIC);
     mBeanServer.registerMBean(instrumentationLoggingBean, L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);

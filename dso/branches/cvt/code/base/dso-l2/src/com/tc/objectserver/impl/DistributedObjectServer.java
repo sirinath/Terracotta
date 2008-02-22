@@ -162,9 +162,8 @@ import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.statistics.StatisticsSubSystem;
-import com.tc.statistics.beans.StatisticsGatewayMBean;
-import com.tc.statistics.beans.impl.StatisticsGatewayImpl;
+import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
@@ -246,8 +245,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
 
-  private StatisticsSubSystem                  statisticsSubSystem;
-  private StatisticsGatewayImpl                statisticsGateway;
+  private StatisticsAgentSubSystem             statisticsAgentSubSystem;
+  private StatisticsGatewayMBeanImpl           statisticsGateway;
 
   private final TCThreadGroup                  threadGroup;
 
@@ -321,18 +320,18 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                                                                           + addressChecker.getAllLocalAddresses()); }
 
     // setup the statistics subsystem
-    statisticsSubSystem = new StatisticsSubSystem();
-    statisticsSubSystem.setup(configSetupManager.commonl2Config());
+    statisticsAgentSubSystem = new StatisticsAgentSubSystem();
+    statisticsAgentSubSystem.setup(configSetupManager.commonl2Config());
     if (TCSocketAddress.WILDCARD_IP.equals(bindAddress) ||
         TCSocketAddress.LOOPBACK_IP.equals(bindAddress)) {
-      statisticsSubSystem.setDefaultAgentIp(InetAddress.getLocalHost().getHostAddress());
+      statisticsAgentSubSystem.setDefaultAgentIp(InetAddress.getLocalHost().getHostAddress());
     } else {
-      statisticsSubSystem.setDefaultAgentIp(bind.getHostAddress());
+      statisticsAgentSubSystem.setDefaultAgentIp(bind.getHostAddress());
     }
     try {
-      statisticsGateway = new StatisticsGatewayImpl();
+      statisticsGateway = new StatisticsGatewayMBeanImpl();
     } catch (NotCompliantMBeanException e) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsGatewayImpl.class.getName()
+      throw new TCRuntimeException("Unable to construct the " + StatisticsGatewayMBeanImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
     }
 
@@ -535,7 +534,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.listenPort());
     int serverPort = l2DSOConfig.listenPort().getInt();
 
-    statisticsSubSystem.setDefaultAgentDifferentiator("L2/"+serverPort);
+    statisticsAgentSubSystem.setDefaultAgentDifferentiator("L2/"+serverPort);
 
     l1Listener = communicationsManager.createListener(sessionProvider, new TCSocketAddress(bind, serverPort), true,
                                                       connectionIdFactory, httpSink);
@@ -762,8 +761,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats) {
-    if (statisticsSubSystem.isActive()) {
-      StatisticsRetrievalRegistry registry = statisticsSubSystem.getStatisticsRetrievalRegistry();
+    if (statisticsAgentSubSystem.isActive()) {
+      StatisticsRetrievalRegistry registry = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
       registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
       registry.registerActionInstance(new SRAMemoryUsage());
       registry.registerActionInstance(new SRASystemProperties());
@@ -917,7 +916,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
     
     try {
-      statisticsSubSystem.cleanup();
+      statisticsAgentSubSystem.cleanup();
     } catch (Throwable e) {
       logger.warn(e);
     }
@@ -980,7 +979,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       jmxPort = new PortChooser().chooseRandomPort();
     }
 
-    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsSubSystem, statisticsGateway, configSetupManager, this, bind, jmxPort);
+    l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsAgentSubSystem, statisticsGateway, configSetupManager, this, bind, jmxPort);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
@@ -992,7 +991,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   }
 
   private void stopJMXServer() throws Exception {
-    statisticsSubSystem.disableJMX();
+    statisticsAgentSubSystem.disableJMX();
 
     try {
       if (l2Management != null) {

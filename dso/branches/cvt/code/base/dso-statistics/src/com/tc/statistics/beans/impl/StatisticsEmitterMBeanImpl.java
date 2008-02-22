@@ -4,18 +4,21 @@
  */
 package com.tc.statistics.beans.impl;
 
-import com.tc.exception.TCRuntimeException;
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
+
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
-import com.tc.util.TCTimerImpl;
 import com.tc.util.Assert;
+import com.tc.util.TCTimerImpl;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,12 +31,12 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
-
-public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
+public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
   public final static String STATISTICS_EVENT_TYPE = "tc.statistics.event";
 
   public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
+
+  private final static TCLogger logger = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
 
   static {
     final String[] notifTypes = new String[] { STATISTICS_EVENT_TYPE };
@@ -51,7 +54,7 @@ public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements St
   private Timer timer = null;
   private TimerTask task = null;
 
-  public StatisticsEmitterImpl(final StatisticsConfig config, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
+  public StatisticsEmitterMBeanImpl(final StatisticsConfig config, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsEmitterMBean.class, true, false);
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
@@ -114,7 +117,7 @@ public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements St
             buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {
               public boolean consumeStatisticData(StatisticData data) {
                 // create the notification event
-                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitterImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
+                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
                 notification.setUserData(data);
                 sendNotification(notification);
 
@@ -128,7 +131,7 @@ public class StatisticsEmitterImpl extends AbstractTerracottaMBean implements St
               }
             });
           } catch (TCStatisticsBufferException e) {
-            throw new TCRuntimeException(e); // HACK: properly handle exception, need to investigate if it should be propagated or logged
+            logger.error("Unexpected error while emitting buffered statistics.", e);
           }
         }
       }

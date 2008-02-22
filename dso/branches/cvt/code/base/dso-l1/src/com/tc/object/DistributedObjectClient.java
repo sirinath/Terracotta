@@ -107,7 +107,7 @@ import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.statistics.StatisticsSubSystem;
+import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
@@ -152,7 +152,7 @@ public class DistributedObjectClient extends SEDA {
   private L1Management                             l1Management;
   private TCProperties                             l1Properties;
   private DmiManager                               dmiManager;
-  private StatisticsSubSystem                      statisticsSubSystem;
+  private StatisticsAgentSubSystem                 statisticsAgentSubSystem;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -280,14 +280,14 @@ public class DistributedObjectClient extends SEDA {
     }
 
     // setup statistics subsystem
-    statisticsSubSystem = new StatisticsSubSystem();
-    if (statisticsSubSystem.setup(config.getNewCommonL1Config())) {
-      populateStatisticsRetrievalRegistry(statisticsSubSystem.getStatisticsRetrievalRegistry());
+    statisticsAgentSubSystem = new StatisticsAgentSubSystem();
+    if (statisticsAgentSubSystem.setup(config.getNewCommonL1Config())) {
+      populateStatisticsRetrievalRegistry(statisticsAgentSubSystem.getStatisticsRetrievalRegistry());
     }
     
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
-    l1Management = new L1Management(teh, statisticsSubSystem, runtimeLogger, manager.getInstrumentationLogger(), config
+    l1Management = new L1Management(teh, statisticsAgentSubSystem, runtimeLogger, manager.getInstrumentationLogger(), config
         .rawConfigText());
     l1Management.start();
 
@@ -430,8 +430,8 @@ public class DistributedObjectClient extends SEDA {
     }
     clientHandshakeManager.waitForHandshake();
 
-    if (statisticsSubSystem.isActive()) {
-      statisticsSubSystem.setDefaultAgentDifferentiator("L1/"+channel.channel().getChannelID().toLong());
+    if (statisticsAgentSubSystem.isActive()) {
+      statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/"+channel.channel().getChannelID().toLong());
     }
 
     cluster.addClusterEventListener(l1Management.getTerracottaCluster());
@@ -439,7 +439,7 @@ public class DistributedObjectClient extends SEDA {
 
   public void stop() {
     try {
-      statisticsSubSystem.cleanup();
+      statisticsAgentSubSystem.cleanup();
     } catch (Throwable e) {
       logger.warn(e);
     }

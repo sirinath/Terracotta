@@ -6,7 +6,7 @@ package com.tctest.statistics.config.impl;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.config.impl.StatisticsConfigImpl;
 import com.tc.statistics.retrieval.StatisticsRetriever;
-import com.tc.statistics.beans.impl.StatisticsEmitterImpl;
+import com.tc.statistics.beans.impl.StatisticsEmitterMBeanImpl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -29,7 +29,7 @@ public class StatisticsConfigImplTest extends TestCase {
   public void testDefaultValues() throws Exception {
     StatisticsConfig config = new StatisticsConfigImpl();
     assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    assertEquals(StatisticsEmitterImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
+    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
 
     config.setParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD, new Long(Long.MAX_VALUE));
     assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
@@ -39,7 +39,7 @@ public class StatisticsConfigImplTest extends TestCase {
     config.setParam(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD, new Long(Long.MAX_VALUE));
     assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
     config.removeParam(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD);
-    assertEquals(StatisticsEmitterImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
+    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
   }
 
   public void testMappingsForAllDefaultValueKeys() throws Exception {
