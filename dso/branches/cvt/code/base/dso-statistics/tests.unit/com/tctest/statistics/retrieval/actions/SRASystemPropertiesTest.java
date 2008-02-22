@@ -8,7 +8,6 @@ import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
 
 import java.io.ByteArrayInputStream;
-import java.net.InetAddress;
 import java.util.Date;
 import java.util.Properties;
 
