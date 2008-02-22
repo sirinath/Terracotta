@@ -5,6 +5,7 @@
 package com.tc.statistics.beans.impl;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -49,7 +50,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
 
   private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
-  private final Set activeSessionIds = Collections.synchronizedSet(new HashSet());
+  private final Set activeSessionIds = new CopyOnWriteArraySet();
 
   private Timer timer = null;
   private TimerTask task = null;
