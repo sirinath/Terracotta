@@ -47,12 +47,12 @@ public class SRACpu implements StatisticRetrievalAction {
       StatisticData[] data = new StatisticData[cpuPercList.length * 6];
       for (int i = 0; i < cpuPercList.length; i++) {
         String element = ELEMENT_PREFIX + i;
-        data[i * 6] = StatisticData.buildInstanceForLocalhost(DATA_NAME_COMBINED, moment, element, new BigDecimal(format.format(cpuPercList[i].getCombined())));
-        data[i * 6 + 1] = StatisticData.buildInstanceForLocalhost(DATA_NAME_IDLE, moment, element, new BigDecimal(format.format(cpuPercList[i].getIdle())));
-        data[i * 6 + 2] = StatisticData.buildInstanceForLocalhost(DATA_NAME_NICE, moment, element, new BigDecimal(format.format(cpuPercList[i].getNice())));
-        data[i * 6 + 3] = StatisticData.buildInstanceForLocalhost(DATA_NAME_SYS, moment, element, new BigDecimal(format.format(cpuPercList[i].getSys())));
-        data[i * 6 + 4] = StatisticData.buildInstanceForLocalhost(DATA_NAME_USER, moment, element, new BigDecimal(format.format(cpuPercList[i].getUser())));
-        data[i * 6 + 5] = StatisticData.buildInstanceForLocalhost(DATA_NAME_WAIT, moment, element, new BigDecimal(format.format(cpuPercList[i].getWait())));
+        data[i * 6] = new StatisticData(DATA_NAME_COMBINED, moment, element, new BigDecimal(format.format(cpuPercList[i].getCombined())));
+        data[i * 6 + 1] = new StatisticData(DATA_NAME_IDLE, moment, element, new BigDecimal(format.format(cpuPercList[i].getIdle())));
+        data[i * 6 + 2] = new StatisticData(DATA_NAME_NICE, moment, element, new BigDecimal(format.format(cpuPercList[i].getNice())));
+        data[i * 6 + 3] = new StatisticData(DATA_NAME_SYS, moment, element, new BigDecimal(format.format(cpuPercList[i].getSys())));
+        data[i * 6 + 4] = new StatisticData(DATA_NAME_USER, moment, element, new BigDecimal(format.format(cpuPercList[i].getUser())));
+        data[i * 6 + 5] = new StatisticData(DATA_NAME_WAIT, moment, element, new BigDecimal(format.format(cpuPercList[i].getWait())));
       }
       return data;
     } catch (SigarException e) {
