@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.util.Calendar;
 import java.util.Date;
+import java.text.ParseException;
 
 import junit.framework.TestCase;
 
@@ -151,6 +152,15 @@ public class StatisticsDataTest extends TestCase {
     assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",,,,\"268.75862\"\n", data4.toCsv());
   }
 
+  public void testFromCsvUnsupportedVersion() throws Exception {
+    try {
+      StatisticData.newInstanceFromCsvLine("unknown", ",,,,,,,,,\n");
+      fail("expected exception");
+    } catch (ParseException e) {
+      // expected
+    }
+  }
+
   public void testFromCsv() throws Exception {
     Calendar moment = Calendar.getInstance();
     moment.set(2008, 0, 9, 16, 25, 52);
@@ -163,7 +173,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(new Long(987983343L));
-    assertEquals(data1.toString(), StatisticData.newInstanceFromCsvLine(data1.toCsv()).toString());
+    assertEquals(data1.toString(), StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, data1.toCsv()).toString());
     assertTrue(data1.getData() instanceof Long);
 
     StatisticData data2 = new StatisticData()
@@ -173,7 +183,7 @@ public class StatisticsDataTest extends TestCase {
       .moment(moment.getTime())
       .element("first")
       .data("t\\\next\nd\"a\\\"ta\\");
-    assertEquals(data2.toString(), StatisticData.newInstanceFromCsvLine(data2.toCsv()).toString());
+    assertEquals(data2.toString(), StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, data2.toCsv()).toString());
     assertTrue(data2.getData() instanceof String);
 
     StatisticData data3 = new StatisticData()
@@ -183,7 +193,7 @@ public class StatisticsDataTest extends TestCase {
       .moment(moment.getTime())
       .name("statname")
       .data(moment.getTime());
-    assertEquals(data3.toString(), StatisticData.newInstanceFromCsvLine(data3.toCsv()).toString());
+    assertEquals(data3.toString(), StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, data3.toCsv()).toString());
     assertTrue(data3.getData() instanceof Date);
 
     StatisticData data4 = new StatisticData()
@@ -193,7 +203,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(new BigDecimal("268.75862"));
-    assertEquals(data4.toString(), StatisticData.newInstanceFromCsvLine(data4.toCsv()).toString());
+    assertEquals(data4.toString(), StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, data4.toCsv()).toString());
     assertTrue(data4.getData() instanceof BigDecimal);
   }
 }

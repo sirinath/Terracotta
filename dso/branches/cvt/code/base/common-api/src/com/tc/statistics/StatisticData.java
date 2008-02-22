@@ -5,6 +5,8 @@ package com.tc.statistics;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.tc.util.Assert;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -15,6 +17,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StatisticData implements Serializable {
+  public final static String CURRENT_CSV_VERSION = "1.0";
+  public final static String CURRENT_CSV_HEADER = "Session ID,IP,Differentiator,Moment,Name,Element,Data Number,Data Text,Data Date,Data Decimal\n";
+
   private final static long serialVersionUID = -3387790670840965825L;
 
   private final static Pattern CSV_LINE_PATTERN = Pattern.compile(
@@ -333,43 +338,49 @@ public class StatisticData implements Serializable {
     return result;
   }
 
-  public static StatisticData newInstanceFromCsvLine(final String line) throws ParseException {
-    Matcher matcher = CSV_LINE_PATTERN.matcher(line);
-    if (!matcher.matches()) {
-      return null;
+  public static StatisticData newInstanceFromCsvLine(final String dataFormatVersion, final String line) throws ParseException {
+    Assert.assertNotNull("dataFormatVersion", dataFormatVersion);
+    
+    if (CURRENT_CSV_VERSION.equals(dataFormatVersion)) {
+      Matcher matcher = CSV_LINE_PATTERN.matcher(line);
+      if (!matcher.matches()) {
+        return null;
+      }
+
+      String moment_raw = csvGroup(matcher, 4);
+      DateFormat date_format = newDateFormatInstance();
+      Date moment = null;
+      if (moment_raw != null) {
+        moment = date_format.parse(moment_raw);
+      }
+
+      StatisticData data = new StatisticData();
+      data.setSessionId(csvGroup(matcher, 1));
+      data.setAgentIp(csvGroup(matcher, 2));
+      data.setAgentDifferentiator(csvGroup(matcher, 3));
+      data.setMoment(moment);
+      data.setName(csvGroup(matcher, 5));
+      data.setElement(csvGroup(matcher, 6));
+
+      String data_number = csvGroup(matcher, 7);
+      String data_text = csvGroup(matcher, 8);
+      String data_date = csvGroup(matcher, 9);
+      String data_bigdecimal = csvGroup(matcher, 10);
+
+      if (data_number != null) {
+        data.setData(new Long(Long.parseLong(data_number)));
+      } else if (data_text != null) {
+        data.setData(data_text);
+      } else if (data_date != null) {
+        Date date = date_format.parse(moment_raw);
+        data.setData(date);
+      } else if (data_bigdecimal != null) {
+        data.setData(new BigDecimal(data_bigdecimal));
+      }
+
+      return data;
+    } else {
+      throw new ParseException("The data format version '" + dataFormatVersion + "' is not supported.", 0);
     }
-
-    String moment_raw = csvGroup(matcher, 4);
-    DateFormat date_format = newDateFormatInstance();
-    Date moment = null;
-    if (moment_raw != null) {
-      moment = date_format.parse(moment_raw);
-    }
-
-    StatisticData data = new StatisticData();
-    data.setSessionId(csvGroup(matcher, 1));
-    data.setAgentIp(csvGroup(matcher, 2));
-    data.setAgentDifferentiator(csvGroup(matcher, 3));
-    data.setMoment(moment);
-    data.setName(csvGroup(matcher, 5));
-    data.setElement(csvGroup(matcher, 6));
-
-    String data_number = csvGroup(matcher, 7);
-    String data_text = csvGroup(matcher, 8);
-    String data_date = csvGroup(matcher, 9);
-    String data_bigdecimal = csvGroup(matcher, 10);
-
-    if (data_number != null) {
-      data.setData(new Long(Long.parseLong(data_number)));
-    } else if (data_text != null) {
-      data.setData(data_text);
-    } else if (data_date != null) {
-      Date date = date_format.parse(moment_raw);
-      data.setData(date);
-    } else if (data_bigdecimal != null) {
-      data.setData(new BigDecimal(data_bigdecimal));
-    }
-
-    return data;
   }
 }

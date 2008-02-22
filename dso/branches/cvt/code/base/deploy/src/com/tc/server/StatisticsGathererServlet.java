@@ -182,10 +182,12 @@ public class StatisticsGathererServlet extends RestfulServlet {
       try {
         if (zipstream != null) {
           final ZipEntry zipentry = new ZipEntry(filename_base + ".csv");
+          zipentry.setComment(StatisticData.CURRENT_CSV_VERSION);
           zipstream.putNextEntry(zipentry);
         }
 
         try {
+          out.write(StatisticData.CURRENT_CSV_HEADER.getBytes("UTF-8"));
           store.retrieveStatistics(criteria, new StatisticsConsumer() {
             public boolean consumeStatisticData(final StatisticData data) {
               try {
