@@ -20,7 +20,8 @@ import java.util.concurrent.CyclicBarrier;
  */
 public class HashMapValueSharedTest extends GCTestBase {
 
-  private static final int NODE_COUNT = 100;
+  private static final int THREADS_PER_NODE_COUNT = 1000;
+  private static final int NODE_COUNT = 10;
 
   protected Class getApplicationClass() {
     return HashMapValuedShareApp.class;
@@ -28,6 +29,7 @@ public class HashMapValueSharedTest extends GCTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
+    t.getTransparentAppConfig().setApplicationInstancePerClientCount(THREADS_PER_NODE_COUNT);
     t.initializeTestRunner();
   }
 
