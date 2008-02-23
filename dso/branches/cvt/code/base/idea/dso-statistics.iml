@@ -21,6 +21,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module" module-name="dso-common-jdk15" />
     <orderEntryProperties />
   </component>
 </module>
