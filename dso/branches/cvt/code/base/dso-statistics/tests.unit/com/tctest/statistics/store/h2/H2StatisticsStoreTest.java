@@ -12,6 +12,7 @@ import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
 import com.tc.test.TempDirectoryHelper;
@@ -127,11 +128,24 @@ public class H2StatisticsStoreTest extends TestCase {
   }
 
   public void testOpenClose() throws Exception {
+    TestStatisticsStoreListener listener = new TestStatisticsStoreListener();
+    store.addListener(listener);
+
     // several opens and closes are silently detected
+    assertFalse(listener.opened);
     store.open();
+    assertTrue(listener.opened);
+    listener.reset();
+    assertFalse(listener.opened);
     store.open();
+    assertTrue(listener.opened);
+    assertFalse(listener.closed);
     store.close();
+    assertTrue(listener.closed);
+    listener.reset();
+    assertFalse(listener.closed);
     store.close();
+    assertTrue(listener.closed);
   }
 
   public void testCloseUnopenedBuffer() throws Exception {
@@ -493,6 +507,9 @@ public class H2StatisticsStoreTest extends TestCase {
   }
 
   public void testClearStatistics() throws Exception {
+    TestStatisticsStoreListener listener = new TestStatisticsStoreListener();
+    store.addListener(listener);
+
     String sessionid1 = "34987";
     String sessionid2 = "9367";
 
@@ -504,13 +521,18 @@ public class H2StatisticsStoreTest extends TestCase {
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer1);
     consumer1.ensureCorrectCounts(170, 50);
 
+    assertNull(listener.sessionCleared);
     store.clearStatistics(sessionid2);
+    assertEquals(sessionid2, listener.sessionCleared);
 
     TestStaticticConsumer consumer2 = new TestStaticticConsumer();
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer2);
     consumer2.ensureCorrectCounts(100, 50);
 
+    listener.reset();
+    assertNull(listener.sessionCleared);
     store.clearStatistics(sessionid1);
+    assertEquals(sessionid1, listener.sessionCleared);
 
     TestStaticticConsumer consumer3 = new TestStaticticConsumer();
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer3);
@@ -518,6 +540,9 @@ public class H2StatisticsStoreTest extends TestCase {
   }
 
   public void testClearAllStatistics() throws Exception {
+    TestStatisticsStoreListener listener = new TestStatisticsStoreListener();
+    store.addListener(listener);
+
     String sessionid1 = "34987";
     String sessionid2 = "9367";
 
@@ -529,7 +554,9 @@ public class H2StatisticsStoreTest extends TestCase {
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer1);
     consumer1.ensureCorrectCounts(170, 50);
 
+    assertNull(listener.sessionCleared);
     store.clearAllStatistics();
+    assertTrue(listener.allSessionsCleared);
 
     TestStaticticConsumer consumer2 = new TestStaticticConsumer();
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer2);
@@ -640,6 +667,36 @@ public class H2StatisticsStoreTest extends TestCase {
     public void ensureCorrectCounts(int count1, int count2) {
       assertEquals(count1, statCount1);
       assertEquals(count2, statCount2);
+    }
+  }
+
+  private static class TestStatisticsStoreListener implements StatisticsStoreListener {
+    private boolean opened = false;
+    private boolean closed = false;
+    private String sessionCleared = null;
+    private boolean allSessionsCleared = false;
+
+    public void reset() {
+      opened = false;
+      closed = false;
+      sessionCleared = null;
+      allSessionsCleared = false;
+    }
+
+    public void opened() {
+      opened = true;
+    }
+
+    public void closed() {
+      closed = true;
+    }
+
+    public void sessionCleared(String sessionId) {
+      sessionCleared = sessionId;
+    }
+
+    public void allSessionsCleared() {
+      allSessionsCleared = true;
     }
   }
 }

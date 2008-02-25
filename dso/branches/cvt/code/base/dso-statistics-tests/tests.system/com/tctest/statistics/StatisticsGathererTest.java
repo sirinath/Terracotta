@@ -6,6 +6,7 @@ package com.tctest.statistics;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.gatherer.StatisticsGatherer;
+import com.tc.statistics.gatherer.StatisticsGathererListener;
 import com.tc.statistics.gatherer.impl.StatisticsGathererImpl;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
@@ -22,29 +23,78 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class StatisticsGathererTest extends TransparentTestBase {
+public class StatisticsGathererTest extends TransparentTestBase implements StatisticsGathererListener {
+  private volatile String listenerConnected = null;
+  private volatile String listenerDisconnected = null;
+  private volatile String listenerCapturingStarted = null;
+  private volatile String listenerCapturingStopped = null;
+  private volatile String listenerSessionCreated = null;
+  private volatile String listenerSessionClosed = null;
+
+  public void connected(String managerHostName, int managerPort) {
+    listenerConnected = managerHostName+":"+managerPort;
+  }
+
+  public void disconnected() {
+    listenerDisconnected = "true";
+  }
+
+  public void capturingStarted(String sessionId) {
+    listenerCapturingStarted = sessionId;
+  }
+
+  public void capturingStopped(String sessionId) {
+    listenerCapturingStopped = sessionId;
+  }
+
+  public void sessionCreated(String sessionId) {
+    listenerSessionCreated = sessionId;
+  }
+
+  public void sessionClosed(String sessionId) {
+    listenerSessionClosed = sessionId;
+  }
+
   protected void duringRunningCluster() throws Exception {
     File tmp_dir = makeTmpDir(getClass());
     
     StatisticsStore store = new H2StatisticsStoreImpl(tmp_dir);
     StatisticsGatherer gatherer = new StatisticsGathererImpl(store);
+    gatherer.addListener(this);
 
     assertNull(gatherer.getActiveSessionId());
 
+    assertNull(listenerConnected);
     gatherer.connect("localhost", getAdminPort());
+    assertEquals("localhost:"+getAdminPort(), listenerConnected);
 
     String[] statistics = gatherer.getSupportedStatistics();
 
-    String sessionid = UUID.getUUID().toString();
-    gatherer.createSession(sessionid);
+    String sessionid1 = UUID.getUUID().toString();
+    assertNull(listenerSessionCreated);
+    gatherer.createSession(sessionid1);
+    assertEquals(sessionid1, listenerSessionCreated);
 
-    assertEquals(sessionid, gatherer.getActiveSessionId());
+    String sessionid2 = UUID.getUUID().toString();
+    assertNull(listenerCapturingStopped);
+    assertNull(listenerSessionClosed);
+    gatherer.createSession(sessionid2);
+    assertEquals(sessionid1, listenerSessionClosed);
+    assertEquals(sessionid1, listenerCapturingStopped);
+    assertEquals(sessionid2, listenerSessionCreated);
+
+    assertEquals(sessionid2, gatherer.getActiveSessionId());
 
     gatherer.enableStatistics(statistics);
 
+    assertNull(listenerCapturingStarted);
     gatherer.startCapturing();
+    assertEquals(sessionid2, listenerCapturingStarted);
     Thread.sleep(10000);
+    listenerCapturingStopped = null;
+    assertNull(listenerCapturingStopped);
     gatherer.stopCapturing();
+    assertEquals(sessionid2, listenerCapturingStopped);
 
     Thread.sleep(5000);
 
@@ -56,7 +106,12 @@ public class StatisticsGathererTest extends TransparentTestBase {
       }
     });
 
+    listenerSessionClosed = null;
+    assertNull(listenerSessionClosed);
+    assertNull(listenerDisconnected);
     gatherer.disconnect();
+    assertEquals(sessionid2, listenerSessionClosed);
+    assertEquals("true", listenerDisconnected);
 
     assertNull(gatherer.getActiveSessionId());
 

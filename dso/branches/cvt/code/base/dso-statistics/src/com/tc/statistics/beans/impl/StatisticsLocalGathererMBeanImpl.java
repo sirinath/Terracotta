@@ -3,28 +3,77 @@
  */
 package com.tc.statistics.beans.impl;
 
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
+
 import com.tc.config.schema.NewCommonL2Config;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.TCSocketAddress;
 import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
+import com.tc.statistics.gatherer.StatisticsGathererListener;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
-import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.util.Assert;
 
+import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
 
-public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean implements StatisticsLocalGathererMBean {
+public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean implements StatisticsLocalGathererMBean, StatisticsGathererListener, StatisticsStoreListener {
+  public final static String STATISTICS_LOCALGATHERER_CONNECTED_TYPE = "tc.statistics.localgatherer.connected";
+  public final static String STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE = "tc.statistics.localgatherer.disconnected";
+  public final static String STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE = "tc.statistics.localgatherer.capturing.started";
+  public final static String STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE = "tc.statistics.localgatherer.capturing.stopped";
+  public final static String STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE = "tc.statistics.localgatherer.session.created";
+  public final static String STATISTICS_LOCALGATHERER_SESSION_CLOSED_TYPE = "tc.statistics.localgatherer.session.closed";
+  public final static String STATISTICS_LOCALGATHERER_SESSION_CLEARED_TYPE = "tc.statistics.localgatherer.session.cleared";
+  public final static String STATISTICS_LOCALGATHERER_ALLSESSIONS_CLEARED_TYPE = "tc.statistics.localgatherer.allsessions.cleared";
+  public final static String STATISTICS_LOCALGATHERER_STORE_OPENED_TYPE = "tc.statistics.localgatherer.store.opened";
+  public final static String STATISTICS_LOCALGATHERER_STORE_CLOSED_TYPE = "tc.statistics.localgatherer.store.closed";
+
+  public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
+
+  private final static TCLogger logger = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
+
+  static {
+    final String[] notifTypes = new String[] {
+      STATISTICS_LOCALGATHERER_CONNECTED_TYPE,
+      STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE,
+      STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE,
+      STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE,
+      STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE,
+      STATISTICS_LOCALGATHERER_SESSION_CLOSED_TYPE,
+      STATISTICS_LOCALGATHERER_SESSION_CLEARED_TYPE,
+      STATISTICS_LOCALGATHERER_ALLSESSIONS_CLEARED_TYPE,
+      STATISTICS_LOCALGATHERER_STORE_OPENED_TYPE,
+      STATISTICS_LOCALGATHERER_STORE_CLOSED_TYPE
+    };
+    final String name = Notification.class.getName();
+    final String description = "Each notification sent contains information about what happened with the local statistics gathering";
+    NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
+  }
+
+  private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
+
   private final StatisticsGathererSubSystem subsystem;
   private final NewCommonL2Config config;
 
   public StatisticsLocalGathererMBeanImpl(final StatisticsGathererSubSystem subsystem, final NewCommonL2Config config) throws NotCompliantMBeanException {
-    super(StatisticsLocalGathererMBean.class, false, true);
+    super(StatisticsLocalGathererMBean.class, true, true);
     Assert.assertNotNull("subsystem", subsystem);
     Assert.assertNotNull("config", config);
     this.subsystem = subsystem;
     this.config = config;
+
+    this.subsystem.getStatisticsGatherer().addListener(this);
+    this.subsystem.getStatisticsStore().addListener(this);
+  }
+
+  public MBeanNotificationInfo[] getNotificationInfo() {
+    return NOTIFICATION_INFO;
   }
 
   public void reset() {
@@ -144,5 +193,51 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     } catch (TCStatisticsStoreException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private void createAndSendNotification(final String type, final Object data) {
+    final Notification notification = new Notification(type, StatisticsLocalGathererMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
+    notification.setUserData(data);
+    sendNotification(notification);
+  }
+
+  public void connected(String managerHostName, int managerPort) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_CONNECTED_TYPE, managerHostName + ":" + managerPort);
+  }
+
+  public void disconnected() {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE, null);
+  }
+
+  public void capturingStarted(String sessionId) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE, sessionId);
+  }
+
+  public void capturingStopped(String sessionId) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE, sessionId);
+  }
+
+  public void sessionCreated(String sessionId) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE, sessionId);
+  }
+
+  public void sessionClosed(String sessionId) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_SESSION_CLOSED_TYPE, sessionId);
+  }
+
+  public void sessionCleared(String sessionId) {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_SESSION_CLEARED_TYPE, sessionId);
+  }
+
+  public void allSessionsCleared() {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_ALLSESSIONS_CLEARED_TYPE, null);
+  }
+
+  public void opened() {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_STORE_OPENED_TYPE, null);
+  }
+
+  public void closed() {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_STORE_CLOSED_TYPE, null);
   }
 }

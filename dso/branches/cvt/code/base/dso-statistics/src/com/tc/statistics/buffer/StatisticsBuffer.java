@@ -22,11 +22,11 @@ public interface StatisticsBuffer {
 
   public void consumeStatistics(String sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
 
-  public void addListener(StatisticsBufferListener listener);
-
-  public void removeListener(StatisticsBufferListener listener);
-
   public void setDefaultAgentIp(String defaultAgentIp);
 
   public void setDefaultAgentDifferentiator(String defaultAgentDifferentiator);
+
+  public void addListener(StatisticsBufferListener listener);
+
+  public void removeListener(StatisticsBufferListener listener);
 }
