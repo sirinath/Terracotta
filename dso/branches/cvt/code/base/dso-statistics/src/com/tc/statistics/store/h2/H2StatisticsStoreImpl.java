@@ -14,6 +14,7 @@ import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreClearAllStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
@@ -393,6 +394,16 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       });
     } catch (Exception e) {
       throw new TCStatisticsStoreClearStatisticsErrorException(sessionId, e);
+    }
+  }
+
+  public void clearAllStatistics() throws TCStatisticsStoreException {
+    try {
+      database.ensureExistingConnection();
+      
+      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog");
+    } catch (Exception e) {
+      throw new TCStatisticsStoreClearAllStatisticsErrorException(e);
     }
   }
 }

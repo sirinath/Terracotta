@@ -6,22 +6,24 @@ package com.tc.statistics.beans.impl;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.TCSocketAddress;
+import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
-import com.tc.statistics.gatherer.StatisticsGatherer;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
+import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.util.Assert;
 
 import javax.management.NotCompliantMBeanException;
 
 public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean implements StatisticsLocalGathererMBean {
-  private final StatisticsGatherer gatherer;
+  private final StatisticsGathererSubSystem subsystem;
   private final NewCommonL2Config config;
 
-  public StatisticsLocalGathererMBeanImpl(final StatisticsGatherer gatherer, final NewCommonL2Config config) throws NotCompliantMBeanException {
+  public StatisticsLocalGathererMBeanImpl(final StatisticsGathererSubSystem subsystem, final NewCommonL2Config config) throws NotCompliantMBeanException {
     super(StatisticsLocalGathererMBean.class, false, true);
-    Assert.assertNotNull("gatherer", gatherer);
+    Assert.assertNotNull("subsystem", subsystem);
     Assert.assertNotNull("config", config);
-    this.gatherer = gatherer;
+    this.subsystem = subsystem;
     this.config = config;
   }
 
@@ -30,7 +32,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void connect() {
     try {
-      gatherer.connect(TCSocketAddress.LOOPBACK_IP, config.jmxPort().getInt());
+      subsystem.getStatisticsGatherer().connect(TCSocketAddress.LOOPBACK_IP, config.jmxPort().getInt());
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -38,7 +40,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void disconnect() {
     try {
-      gatherer.disconnect();
+      subsystem.getStatisticsGatherer().disconnect();
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -46,7 +48,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void createSession(String sessionId) {
     try {
-      gatherer.createSession(sessionId);
+      subsystem.getStatisticsGatherer().createSession(sessionId);
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -54,7 +56,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void closeSession() {
     try {
-      gatherer.closeSession();
+      subsystem.getStatisticsGatherer().closeSession();
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -62,7 +64,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public String[] getSupportedStatistics() {
     try {
-      return gatherer.getSupportedStatistics();
+      return subsystem.getStatisticsGatherer().getSupportedStatistics();
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -70,7 +72,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void enableStatistics(String[] names) {
     try {
-      gatherer.enableStatistics(names);
+      subsystem.getStatisticsGatherer().enableStatistics(names);
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -78,7 +80,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void startCapturing() {
     try {
-      gatherer.startCapturing();
+      subsystem.getStatisticsGatherer().startCapturing();
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -86,7 +88,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void stopCapturing() {
     try {
-      gatherer.stopCapturing();
+      subsystem.getStatisticsGatherer().stopCapturing();
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -94,7 +96,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void setGlobalParam(String key, Object value) {
     try {
-      gatherer.setGlobalParam(key, value);
+      subsystem.getStatisticsGatherer().setGlobalParam(key, value);
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -102,7 +104,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public Object getGlobalParam(String key) {
     try {
-      return gatherer.getGlobalParam(key);
+      return subsystem.getStatisticsGatherer().getGlobalParam(key);
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -110,7 +112,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void setSessionParam(String key, Object value) {
     try {
-      gatherer.setSessionParam(key, value);
+      subsystem.getStatisticsGatherer().setSessionParam(key, value);
     } catch (TCStatisticsGathererException e) {
       throw new RuntimeException(e);
     }
@@ -118,8 +120,24 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public Object getSessionParam(String key) {
     try {
-      return gatherer.getSessionParam(key);
+      return subsystem.getStatisticsGatherer().getSessionParam(key);
     } catch (TCStatisticsGathererException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void clearStatistics(String sessionId) {
+    try {
+      subsystem.getStatisticsStore().clearStatistics(sessionId);
+    } catch (TCStatisticsStoreException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void clearAllStatistics() {
+    try {
+      subsystem.getStatisticsStore().clearAllStatistics();
+    } catch (TCStatisticsStoreException e) {
       throw new RuntimeException(e);
     }
   }

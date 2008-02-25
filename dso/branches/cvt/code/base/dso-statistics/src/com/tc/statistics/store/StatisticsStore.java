@@ -19,4 +19,6 @@ public interface StatisticsStore {
   public String[] getAvailableSessionIds() throws TCStatisticsStoreException;
 
   public void clearStatistics(String sessionId) throws TCStatisticsStoreException;
+
+  public void clearAllStatistics() throws TCStatisticsStoreException;
 }
