@@ -58,7 +58,7 @@ public class HashMapValueSharedTest extends GCTestBase {
     }
 
     private static String key(String valueIdent) {
-      return String.valueOf(Math.random() % 100000) + valueIdent;
+      return String.valueOf(Math.random() % 10000) + valueIdent;
     }
 
     public void run() {
