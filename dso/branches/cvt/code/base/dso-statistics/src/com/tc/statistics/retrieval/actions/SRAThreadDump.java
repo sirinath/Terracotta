@@ -7,7 +7,7 @@ package com.tc.statistics.retrieval.actions;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticType;
-import com.tc.util.ThreadDumpUtil;
+import com.tc.util.runtime.ThreadDumpUtil;
 
 import java.util.Date;
 
