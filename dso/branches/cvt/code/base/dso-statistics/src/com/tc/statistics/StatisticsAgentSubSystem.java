@@ -32,12 +32,12 @@ public class StatisticsAgentSubSystem {
   private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
   private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
-  private StatisticsBuffer            statisticsBuffer;
-  private StatisticsEmitterMBean      statisticsEmitterMBean;
-  private StatisticsManagerMBean      statisticsManagerMBean;
-  private StatisticsRetrievalRegistry statisticsRetrievalRegistry;
+  private volatile StatisticsBuffer            statisticsBuffer;
+  private volatile StatisticsEmitterMBean      statisticsEmitterMBean;
+  private volatile StatisticsManagerMBean      statisticsManagerMBean;
+  private volatile StatisticsRetrievalRegistry statisticsRetrievalRegistry;
 
-  private boolean active = false;
+  private volatile boolean active = false;
 
   public boolean isActive() {
     return active;
@@ -53,7 +53,7 @@ public class StatisticsAgentSubSystem {
     statisticsBuffer.setDefaultAgentDifferentiator(defaultAgentDifferentiator);
   }
 
-  public boolean setup(final NewStatisticsConfig config) {
+  public synchronized boolean setup(final NewStatisticsConfig config) {
     StatisticsConfig statistics_config = new StatisticsConfigImpl();
     
     // create the statistics buffer
@@ -141,7 +141,7 @@ public class StatisticsAgentSubSystem {
     }
   }
 
-  public void cleanup() throws Exception {
+  public synchronized void cleanup() throws Exception {
     if (statisticsBuffer != null) {
       statisticsBuffer.close();
     }

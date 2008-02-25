@@ -29,12 +29,16 @@ public class StatisticsGathererTest extends TransparentTestBase {
     StatisticsStore store = new H2StatisticsStoreImpl(tmp_dir);
     StatisticsGatherer gatherer = new StatisticsGathererImpl(store);
 
+    assertNull(gatherer.getActiveSessionId());
+
     gatherer.connect("localhost", getAdminPort());
 
     String[] statistics = gatherer.getSupportedStatistics();
 
     String sessionid = UUID.getUUID().toString();
     gatherer.createSession(sessionid);
+
+    assertEquals(sessionid, gatherer.getActiveSessionId());
 
     gatherer.enableStatistics(statistics);
 
@@ -53,6 +57,8 @@ public class StatisticsGathererTest extends TransparentTestBase {
     });
 
     gatherer.disconnect();
+
+    assertNull(gatherer.getActiveSessionId());
 
     // check the data
     assertTrue(data_list.size() > 2);

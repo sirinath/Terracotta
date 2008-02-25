@@ -65,8 +65,8 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private final File lockFile;
   private final StatisticsDatabase database;
 
-  private String defaultAgentIp;
-  private String defaultAgentDifferentiator = null;
+  private volatile String defaultAgentIp;
+  private volatile String defaultAgentDifferentiator = null;
 
   private final Set listeners = new CopyOnWriteArraySet();
 
@@ -98,7 +98,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     this.defaultAgentDifferentiator = defaultAgentDifferentiator;
   }
 
-  public synchronized void open() throws TCStatisticsBufferException {
+  public void open() throws TCStatisticsBufferException {
     try {
       FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
         public void execute() throws FileLockGuard.InnerException {
@@ -124,7 +124,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
   }
 
-  public synchronized void close() throws TCStatisticsBufferException {
+  public void close() throws TCStatisticsBufferException {
     try {
       database.close();
     } catch (TCStatisticsDatabaseException e) {

@@ -29,16 +29,17 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
 
   private JMXConnectorProxy proxy = null;
   private MBeanServerConnection mbeanServerConnection = null;
-  private StatisticsGatewayMBean statGateway = null;
-  private String sessionId = null;
   private StoreDataListener listener = null;
+
+  private volatile StatisticsGatewayMBean statGateway = null;
+  private volatile String sessionId = null;
 
   public StatisticsGathererImpl(final StatisticsStore store) {
     Assert.assertNotNull("store can't be null", store);
     this.store = store;
   }
 
-  public void connect(final String managerHostName, final int managerPort) throws TCStatisticsGathererException {
+  public synchronized void connect(final String managerHostName, final int managerPort) throws TCStatisticsGathererException {
     if (statGateway != null) throw new TCStatisticsGathererAlreadyConnectedException();
     
     try {
@@ -63,7 +64,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     statGateway.enable();
   }
 
-  public void disconnect() throws TCStatisticsGathererException {
+  public synchronized void disconnect() throws TCStatisticsGathererException {
     TCStatisticsGathererException exception = null;
 
     // make sure the session is closed
@@ -120,7 +121,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     }
   }
 
-  public void createSession(final String sessionId) throws TCStatisticsGathererException {
+  public synchronized void createSession(final String sessionId) throws TCStatisticsGathererException {
     if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
 
     closeSession();
@@ -138,7 +139,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     }
   }
 
-  public void closeSession() throws TCStatisticsGathererException {
+  public synchronized void closeSession() throws TCStatisticsGathererException {
     if (sessionId != null) {
       stopCapturing();
       sessionId = null;
@@ -150,6 +151,10 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
         throw new TCStatisticsGathererCloseSessionErrorException("Unexpected error while removing the statistics gateway notification listener.", e);
       }
     }
+  }
+
+  public String getActiveSessionId() {
+    return sessionId;
   }
 
   public String[] getSupportedStatistics() throws TCStatisticsGathererException {

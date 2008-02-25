@@ -31,7 +31,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
-  private List agents = new CopyOnWriteArrayList();
+  private volatile List agents = new CopyOnWriteArrayList();
 
   public StatisticsGatewayMBeanImpl() throws NotCompliantMBeanException {
     super(StatisticsGatewayMBean.class, true, false);
@@ -41,7 +41,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     return StatisticsEmitterMBeanImpl.NOTIFICATION_INFO;
   }
 
-  public synchronized void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
+  public void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
     StatisticsAgentConnection agent = new StatisticsAgentConnection();
     try {
       agent.connect(mbeanServerConnection, this);
@@ -52,7 +52,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     agents.add(agent);
   }
 
-  public synchronized void cleanup() {
+  public void cleanup() {
     List old_agents = agents;
     agents = new CopyOnWriteArrayList();
 
@@ -66,7 +66,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     }
   }
 
-  protected synchronized void enabledStateChanged() {
+  protected void enabledStateChanged() {
     Iterator it = agents.iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();

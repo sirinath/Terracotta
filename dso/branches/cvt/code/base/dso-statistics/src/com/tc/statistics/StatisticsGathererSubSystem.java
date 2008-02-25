@@ -18,16 +18,16 @@ public class StatisticsGathererSubSystem {
   private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
   private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
-  private StatisticsStore statisticsStore;
-  private StatisticsGatherer statisticsGatherer;
+  private volatile StatisticsStore statisticsStore;
+  private volatile StatisticsGatherer statisticsGatherer;
 
-  private boolean active = false;
+  private volatile boolean active = false;
 
   public boolean isActive() {
     return active;
   }
 
-  public boolean setup(final NewStatisticsConfig config) {
+  public synchronized boolean setup(final NewStatisticsConfig config) {
     // create the statistics store
     File stat_path = config.statisticsPath().getFile();
     try {
@@ -82,23 +82,7 @@ public class StatisticsGathererSubSystem {
     return true;
   }
 
-//  public void registerMBeans(MBeanServer mBeanServer) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException {
-//    mBeanServer.registerMBean(statisticsEmitterMBean, StatisticsMBeanNames.STATISTICS_EMITTER);
-//    mBeanServer.registerMBean(statisticsManagerMBean, StatisticsMBeanNames.STATISTICS_MANAGER);
-//  }
-//
-//  public void unregisterMBeans(MBeanServer mBeanServer) throws InstanceNotFoundException, MBeanRegistrationException {
-//    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_EMITTER);
-//    mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_MANAGER);
-//  }
-//
-//  public void disableJMX() throws Exception {
-//    if (statisticsEmitterMBean != null) {
-//      statisticsEmitterMBean.disable();
-//    }
-//  }
-
-  public void cleanup() throws Exception {
+  public synchronized void cleanup() throws Exception {
     if (statisticsGatherer != null) {
       statisticsGatherer.disconnect();
     }
