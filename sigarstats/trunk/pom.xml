@@ -22,6 +22,55 @@
       <groupId>org.hyperic</groupId>
       <artifactId>sigar</artifactId>
       <version>${sigar.version}</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-amd64-freebsd-6</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-amd64-linux</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-amd64-solaris</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-ppc-aix-5</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-sparc64-solaris</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-sparc-solaris</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-x86-freebsd-5</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-x86-freebsd-6</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
@@ -29,6 +78,37 @@
       <version>${sigar.version}</version>
       <type>so</type>
     </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-x86-solaris</artifactId>
+      <version>${sigar.version}</version>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar-x86-winnt</artifactId>
+      <version>${sigar.version}</version>
+      <type>dll</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar-x86-winnt</artifactId>
+      <version>${sigar.version}</version>
+      <type>lib</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-universal-macosx</artifactId>
+      <version>${sigar.version}</version>
+      <type>dylib</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-pa-hpux-11</artifactId>
+      <version>${sigar.version}</version>
+      <type>sl</type>
+    </dependency>
+
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>terracotta-api</artifactId>
@@ -92,4 +172,3 @@
   </pluginRepositories>
 
 </project>
-
