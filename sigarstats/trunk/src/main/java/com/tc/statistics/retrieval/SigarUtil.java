@@ -11,26 +11,29 @@ import java.util.Properties;
 public class SigarUtil {
   private static final String PATH_SEPARATOR = System.getProperty("path.separator");
   private static final String FILE_SEPARATOR = System.getProperty("file.separator");
+  private static final String LIBRARY_PATH_PROPERTY = "org.hyperic.sigar.path";
 
   /**
-   * Attempts to ensure that Sigar native libraries are in java.library.path.
+   * Attempts to ensure that Sigar native libraries are in the native library path.
    */
   public static void sigarInit() {
     // If it's already there, nothing to do (this would be the case with tests run from tcbuild)
-    if (isSigarInJavaLibraryPath())
+    if (isSigarInLibraryPath())
       return;
 
     // Next try the kit installation directory
     String installRoot = System.getProperty("tc.install-root");
-    if (installRoot != null && isSigarInDirectory(new File(installRoot)))
+    if (installRoot != null && isSigarInDirectory(new File(installRoot))) {
+      appendToLibraryPath(new File(installRoot));
       return;
+    }
 
-    // Otherwise, add the appropriate Maven repository directories to java.library.path
-    addMavenRepositoryToJavaLibraryPath();
+    // Otherwise, add the appropriate Maven repository directories to the native library path
+    addMavenRepositoryToLibraryPath();
   }
 
-  private static boolean isSigarInJavaLibraryPath() {
-    String[] parts = getJavaLibraryPath().split(PATH_SEPARATOR);
+  private static boolean isSigarInLibraryPath() {
+    String[] parts = getLibraryPath().split(PATH_SEPARATOR);
     for (int i = 0; i < parts.length; ++i) {
       File part = new File(parts[i]);
       if (isSigarInDirectory(part))
@@ -49,26 +52,28 @@ public class SigarUtil {
     return dir.isDirectory() && dir.list(sigarFilenameFilter).length > 0;
   }
 
-  private static String getJavaLibraryPath() {
-    return System.getProperty("java.library.path");
+  private static String getLibraryPath() {
+    String result =  System.getProperty(LIBRARY_PATH_PROPERTY);
+    if (result == null)
+      result = "";
+    return result;
   }
 
-  private static void addMavenRepositoryToJavaLibraryPath() {
+  private static void addMavenRepositoryToLibraryPath() {
     String baseLibraryName = baseLibraryName();
     if (baseLibraryName != null) {
       File m2Repository = new File(System.getProperty("user.home") +
                                    FILE_SEPARATOR + ".m2" +
                                    FILE_SEPARATOR + "repository");
-      StringBuffer buf = new StringBuffer(getJavaLibraryPath());
-      buf.append(PATH_SEPARATOR).append(m2Repository);
+      StringBuffer buf = new StringBuffer();
+      buf.append(m2Repository);
       buf.append(FILE_SEPARATOR).append("org");
       buf.append(FILE_SEPARATOR).append("hyperic");
       buf.append(FILE_SEPARATOR).append(baseLibraryName);
 
-      // FIXME: Do not hardcode version.  Instead, figure out how to retrieve it from the POM.
       buf.append(FILE_SEPARATOR).append(getSigarVersion());
 
-      System.setProperty("java.library.path", buf.toString());
+      appendToLibraryPath(new File(buf.toString()));
     }
   }
 
@@ -90,6 +95,20 @@ public class SigarUtil {
       result = "";
     }
     return result;
+  }
+
+  private static void appendToLibraryPath(File directory) {
+    if (directory != null && directory.isDirectory()) {
+      String current = System.getProperty(LIBRARY_PATH_PROPERTY);
+      String separator = PATH_SEPARATOR;
+      if (current == null) {
+        current = "";
+        separator = "";
+      }
+
+      System.setProperty(LIBRARY_PATH_PROPERTY,
+                         current + separator + directory.getAbsolutePath());
+    }
   }
 
   // Adapted from Sigar's ArchName.java
