@@ -23,9 +23,12 @@ public class SigarUtil {
 
     // Next try the kit installation directory
     String installRoot = System.getProperty("tc.install-root");
-    if (installRoot != null && isSigarInDirectory(new File(installRoot))) {
-      appendToLibraryPath(new File(installRoot));
-      return;
+    if (installRoot != null) {
+      File kitLibDirectory = new File(installRoot, "lib");
+      if (isSigarInDirectory(kitLibDirectory)) {
+        appendToLibraryPath(new File(installRoot));
+        return;
+      }
     }
 
     // Otherwise, add the appropriate Maven repository directories to the native library path
