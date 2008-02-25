@@ -43,9 +43,9 @@ import java.util.List;
 public class H2StatisticsStoreImpl implements StatisticsStore {
   public final static int DATABASE_STRUCTURE_VERSION = 3;
   
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 436002553L;
-
   public final static String H2_URL_SUFFIX = "statistics-store";
+
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 436002553L;
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";

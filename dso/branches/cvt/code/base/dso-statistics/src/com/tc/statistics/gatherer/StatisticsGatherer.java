@@ -14,6 +14,8 @@ public interface StatisticsGatherer {
 
   public void closeSession() throws TCStatisticsGathererException;
 
+  public String getActiveSessionId();
+
   public String[] getSupportedStatistics() throws TCStatisticsGathererException;
 
   public void enableStatistics(String[] names) throws TCStatisticsGathererException;

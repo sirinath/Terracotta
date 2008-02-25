@@ -30,13 +30,15 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
   private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
+  private final String sessionId;
 
-  private Map actionsMap;
+  // the structure of this map is created in a synchronized fashion in the createEmptyActionsMap
+  // method, outside of that method the map is only read and the values (which are lists) are being
+  // modified (not replaced)
+  private volatile Map actionsMap;
 
   private Timer timer = null;
   private TimerTask task = null;
-
-  private String sessionId;
 
   public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final String sessionId) {
     Assert.assertNotNull("config", config);
@@ -51,7 +53,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     createEmptyActionsMap();
   }
 
-  private void createEmptyActionsMap() {
+  private synchronized void createEmptyActionsMap() {
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();

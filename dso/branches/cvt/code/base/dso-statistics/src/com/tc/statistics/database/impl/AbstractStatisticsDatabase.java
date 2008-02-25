@@ -19,6 +19,7 @@ import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -27,14 +28,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
-  protected Connection connection;
-  protected final Map preparedStatements = new HashMap();
+  protected final Map preparedStatements = new CopyOnWriteArrayMap();
+  
+  protected volatile Connection connection;
 
   protected synchronized void open(final String driver) throws TCStatisticsDatabaseException {
     if (connection != null) return;
@@ -65,11 +66,9 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
 
     try {
       PreparedStatement stmt = connection.prepareStatement(sql);
-      synchronized (preparedStatements) {
-        PreparedStatement previous = (PreparedStatement)preparedStatements.put(sql, stmt);
-        if (previous != null) {
-          previous.close();
-        }
+      PreparedStatement previous = (PreparedStatement)preparedStatements.put(sql, stmt);
+      if (previous != null) {
+        previous.close();
       }
       return stmt;
     } catch (SQLException e) {
@@ -78,9 +77,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
   }
 
   public PreparedStatement getPreparedStatement(final String sql) {
-    synchronized (preparedStatements) {
-      return (PreparedStatement)preparedStatements.get(sql);
-    }
+    return (PreparedStatement)preparedStatements.get(sql);
   }
 
   public void createVersionTable() throws SQLException {
@@ -190,24 +187,22 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
 
     try {
       try {
-        synchronized (preparedStatements) {
-          Set entries = preparedStatements.entrySet();
-          Iterator entries_it = entries.iterator();
-          while (entries_it.hasNext()) {
-            Map.Entry entry = (Map.Entry)entries_it.next();
-            PreparedStatement stmt = (PreparedStatement)entry.getValue();
-            try {
-              stmt.close();
-            } catch (SQLException e) {
-              if (exception != null) {
-                e.setNextException(exception);
-              }
-              exception = e;
+        Set entries = preparedStatements.entrySet();
+        Iterator entries_it = entries.iterator();
+        while (entries_it.hasNext()) {
+          Map.Entry entry = (Map.Entry)entries_it.next();
+          PreparedStatement stmt = (PreparedStatement)entry.getValue();
+          try {
+            stmt.close();
+          } catch (SQLException e) {
+            if (exception != null) {
+              e.setNextException(exception);
             }
+            exception = e;
           }
-
-          preparedStatements.clear();
         }
+
+        preparedStatements.clear();
       } finally {
         connection.close();
       }

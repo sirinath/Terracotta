@@ -54,6 +54,10 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
+  public String getActiveSessionId() {
+    return subsystem.getStatisticsGatherer().getActiveSessionId();
+  }
+
   public void closeSession() {
     try {
       subsystem.getStatisticsGatherer().closeSession();

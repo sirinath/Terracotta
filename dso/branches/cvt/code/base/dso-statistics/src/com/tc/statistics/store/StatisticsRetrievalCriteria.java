@@ -12,6 +12,10 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * This is a helper class for building criteria to query for statistics in a
+ * StatisticsStore. Note that this class is <b>not thread safe</b>.
+ */
 public class StatisticsRetrievalCriteria {
   private String sessionId = null;
   private Date start = null;
