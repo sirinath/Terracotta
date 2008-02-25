@@ -31,14 +31,14 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 
 public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implements StatisticsEmitterMBean, StatisticsBufferListener {
-  public final static String STATISTICS_EVENT_TYPE = "tc.statistics.event";
+  public final static String STATISTICS_EMITTER_DATA_TYPE = "tc.statistics.emitter.data";
 
   public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
 
   private final static TCLogger logger = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
 
   static {
-    final String[] notifTypes = new String[] { STATISTICS_EVENT_TYPE };
+    final String[] notifTypes = new String[] { STATISTICS_EMITTER_DATA_TYPE };
     final String name = Notification.class.getName();
     final String description = "Each notification sent contains a Terracotta statistics event";
     NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
@@ -116,7 +116,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
             buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {
               public boolean consumeStatisticData(StatisticData data) {
                 // create the notification event
-                final Notification notification = new Notification(STATISTICS_EVENT_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
+                final Notification notification = new Notification(STATISTICS_EMITTER_DATA_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
                 notification.setUserData(data);
                 sendNotification(notification);
 

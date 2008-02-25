@@ -21,4 +21,8 @@ public interface StatisticsStore {
   public void clearStatistics(String sessionId) throws TCStatisticsStoreException;
 
   public void clearAllStatistics() throws TCStatisticsStoreException;
+
+  public void addListener(StatisticsStoreListener listener);
+
+  public void removeListener(StatisticsStoreListener listener);
 }

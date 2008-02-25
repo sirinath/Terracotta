@@ -31,4 +31,8 @@ public interface StatisticsGatherer {
   public void setSessionParam(String key, Object value) throws TCStatisticsGathererException;
 
   public Object getSessionParam(String key) throws TCStatisticsGathererException;
+
+  public void addListener(StatisticsGathererListener listener);
+
+  public void removeListener(StatisticsGathererListener listener);
 }

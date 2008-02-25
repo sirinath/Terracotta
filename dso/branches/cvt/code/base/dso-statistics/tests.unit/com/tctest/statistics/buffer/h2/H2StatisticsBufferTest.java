@@ -476,17 +476,25 @@ public class H2StatisticsBufferTest extends TestCase {
       buffer.startCapturing("sessionid");
       fail();
     } catch (TCStatisticsBufferException e) {
-      // excepted
+      // expected
     }
   }
 
-  public void testStopCapturingException() throws Exception {
-    buffer.createCaptureSession("thissessionid");
+  public void testStopCapturingPermissive() throws Exception {
+    buffer.createCaptureSession("thissessionid1");
+    buffer.stopCapturing("thissessionid1");
+    buffer.stopCapturing("thissessionid1");
+
+    buffer.createCaptureSession("thissessionid2");
+    buffer.startCapturing("thissessionid2");
+    buffer.stopCapturing("thissessionid2");
+    buffer.stopCapturing("thissessionid2");
+
     try {
-      buffer.stopCapturing("thissessionid");
-      fail();
+      buffer.stopCapturing("thissessionid3");
+      // fail
     } catch (TCStatisticsBufferException e) {
-      // excepted
+      // expected
     }
   }
 

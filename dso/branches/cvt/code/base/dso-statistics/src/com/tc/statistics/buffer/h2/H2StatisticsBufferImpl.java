@@ -70,7 +70,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
   private final Set listeners = new CopyOnWriteArraySet();
 
-  private static Random rand = new Random();
+  private static final Random rand = new Random();
 
   public H2StatisticsBufferImpl(final StatisticsConfig config, final File dbDir) throws TCStatisticsBufferException {
     Assert.assertNotNull("config", config);
@@ -277,13 +277,6 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     fireCapturingStarted(sessionId);
   }
 
-  private void fireCapturingStarted(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
-      ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
-    }
-  }
-
   public void stopCapturing(final String sessionId) throws TCStatisticsBufferException {
     final boolean[] found = new boolean[] {false};
     final int row_count;
@@ -293,7 +286,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       database.getConnection().setAutoCommit(false);
       try {
 
-        JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM capturesession WHERE clustersessionid = ? AND start IS NOT NULL", new PreparedStatementHandler() {
+        JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM capturesession WHERE clustersessionid = ?", new PreparedStatementHandler() {
           public void setParameters(PreparedStatement statement) throws SQLException {
             statement.setString(1, sessionId);
           }
@@ -329,13 +322,6 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
     if (row_count > 0) {
       fireCapturingStopped(sessionId);
-    }
-  }
-
-  private void fireCapturingStopped(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
-      ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
     }
   }
 
@@ -519,5 +505,19 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
 
     listeners.remove(listener);
+  }
+
+  private void fireCapturingStarted(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
+    }
+  }
+
+  private void fireCapturingStopped(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
+    }
   }
 }

@@ -3,10 +3,13 @@
  */
 package com.tc.statistics.gatherer.impl;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+
 import com.tc.management.JMXConnectorProxy;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.gatherer.StatisticsGatherer;
+import com.tc.statistics.gatherer.StatisticsGathererListener;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererAlreadyConnectedException;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererCloseSessionErrorException;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererConnectionRequiredException;
@@ -21,135 +24,159 @@ import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.util.Assert;
 
+import java.util.Iterator;
+import java.util.Set;
+
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 
 public class StatisticsGathererImpl implements StatisticsGatherer {
   private final StatisticsStore store;
+  private final Set listeners = new CopyOnWriteArraySet();
+
+  private volatile StatisticsGatewayMBean statGateway = null;
+  private volatile String sessionId = null;
 
   private JMXConnectorProxy proxy = null;
   private MBeanServerConnection mbeanServerConnection = null;
   private StoreDataListener listener = null;
-
-  private volatile StatisticsGatewayMBean statGateway = null;
-  private volatile String sessionId = null;
 
   public StatisticsGathererImpl(final StatisticsStore store) {
     Assert.assertNotNull("store can't be null", store);
     this.store = store;
   }
 
-  public synchronized void connect(final String managerHostName, final int managerPort) throws TCStatisticsGathererException {
-    if (statGateway != null) throw new TCStatisticsGathererAlreadyConnectedException();
-    
-    try {
-      store.open();
-    } catch (TCStatisticsStoreException e) {
-      throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while opening statistics store.", e);
+  public void connect(final String managerHostName, final int managerPort) throws TCStatisticsGathererException {
+    synchronized (this) {
+      if (statGateway != null) throw new TCStatisticsGathererAlreadyConnectedException();
+
+      try {
+        store.open();
+      } catch (TCStatisticsStoreException e) {
+        throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while opening statistics store.", e);
+      }
+
+      proxy = new JMXConnectorProxy(managerHostName, managerPort);
+      try {
+        // create the server connection
+        mbeanServerConnection = proxy.getMBeanServerConnection();
+      } catch (Exception e) {
+        throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while connecting to mbean server.", e);
+      }
+
+      // setup the mbeans
+      statGateway = (StatisticsGatewayMBean)MBeanServerInvocationHandler
+          .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
+
+      // enable the statistics envoy
+      statGateway.enable();
     }
 
-    proxy = new JMXConnectorProxy(managerHostName, managerPort);
-    try {
-      // create the server connection
-      mbeanServerConnection = proxy.getMBeanServerConnection();
-    } catch (Exception e) {
-      throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while connecting to mbean server.", e);
-    }
-
-    // setup the mbeans
-    statGateway = (StatisticsGatewayMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
-
-    // enable the statistics envoy
-    statGateway.enable();
+    fireConnected(managerHostName, managerPort);
   }
 
-  public synchronized void disconnect() throws TCStatisticsGathererException {
-    TCStatisticsGathererException exception = null;
+  public void disconnect() throws TCStatisticsGathererException {
+    synchronized (this) {
+      TCStatisticsGathererException exception = null;
 
-    // make sure the session is closed
-    try {
-      closeSession();
-    } catch (Exception e) {
-      exception = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the capturing session '"+sessionId+"'.", e);
-    }
-
-    // disable the notification
-    if (statGateway != null) {
+      // make sure the session is closed
       try {
-        statGateway.disable();
+        closeSession();
       } catch (Exception e) {
-        TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while disabling the statistics gateway.", e);
+        exception = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the capturing session '"+sessionId+"'.", e);
+      }
+
+      // disable the notification
+      if (statGateway != null) {
+        try {
+          statGateway.disable();
+        } catch (Exception e) {
+          TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while disabling the statistics gateway.", e);
+          if (exception != null) {
+            exception.setNextException(ex);
+          } else {
+            exception = ex;
+          }
+        }
+      }
+
+      if (proxy != null) {
+        try {
+          proxy.close();
+        } catch (Exception e) {
+          TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the JMX proxy.", e);
+          if (exception != null) {
+            exception.setNextException(ex);
+          } else {
+            exception = ex;
+          }
+        }
+      }
+
+      try {
+        store.close();
+      } catch (TCStatisticsStoreException e) {
+        TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the statistics store.", e);
         if (exception != null) {
           exception.setNextException(ex);
         } else {
           exception = ex;
         }
       }
-    }
 
-    if (proxy != null) {
-      try {
-        proxy.close();
-      } catch (Exception e) {
-        TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the JMX proxy.", e);
-        if (exception != null) {
-          exception.setNextException(ex);
-        } else {
-          exception = ex;
-        }
-      }
-    }
+      proxy = null;
+      listener = null;
+      statGateway = null;
 
-    try {
-      store.close();
-    } catch (TCStatisticsStoreException e) {
-      TCStatisticsGathererException ex = new TCStatisticsGathererCloseSessionErrorException("Unexpected error while closing the statistics store.", e);
       if (exception != null) {
-        exception.setNextException(ex);
-      } else {
-        exception = ex;
+        throw exception;
       }
     }
 
-    proxy = null;
-    listener = null;
-    statGateway = null;
-
-    if (exception != null) {
-      throw exception;
-    }
+    fireDisconnected();
   }
 
-  public synchronized void createSession(final String sessionId) throws TCStatisticsGathererException {
-    if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
+  public void createSession(final String sessionId) throws TCStatisticsGathererException {
+    synchronized (this) {
+      if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
 
-    closeSession();
+      closeSession();
 
-    // create a new capturing session
-    statGateway.createSession(sessionId);
-    this.sessionId = sessionId;
+      // create a new capturing session
+      statGateway.createSession(sessionId);
+      this.sessionId = sessionId;
 
-    // register the statistics data listener
-    try {
-      listener = new StoreDataListener();
-      mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, new SessionBoundNotificationFilter(sessionId), store);
-    } catch (Exception e) {
-      throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
+      // register the statistics data listener
+      try {
+        listener = new StoreDataListener();
+        mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, new SessionBoundNotificationFilter(sessionId), store);
+      } catch (Exception e) {
+        throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
+      }
     }
+
+    fireSessionCreated(sessionId);
   }
 
   public synchronized void closeSession() throws TCStatisticsGathererException {
-    if (sessionId != null) {
-      stopCapturing();
-      sessionId = null;
+    String closed_sessionid = null;
+    synchronized (this) {
+      if (sessionId != null) {
+        closed_sessionid = sessionId;
+        stopCapturing();
+        sessionId = null;
 
-      // detach the notification listener
-      try {
-        mbeanServerConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener);
-      } catch (Exception e) {
-        throw new TCStatisticsGathererCloseSessionErrorException("Unexpected error while removing the statistics gateway notification listener.", e);
+        // detach the notification listener
+        try {
+          mbeanServerConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener);
+        } catch (Exception e) {
+          throw new TCStatisticsGathererCloseSessionErrorException("Unexpected error while removing the statistics gateway notification listener.", e);
+        }
       }
+    }
+
+    if (closed_sessionid != null) {
+      fireSessionClosed(closed_sessionid);
     }
   }
 
@@ -176,11 +203,13 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   public void startCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     statGateway.startCapturing(sessionId);
+    fireCapturingStarted(sessionId);
   }
 
   public void stopCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     statGateway.stopCapturing(sessionId);
+    fireCapturingStopped(sessionId);
   }
 
   public void setGlobalParam(final String key, final Object value) throws TCStatisticsGathererException {
@@ -216,6 +245,64 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       return statGateway.getSessionParam(sessionId, key);
     } catch (Exception e) {
       throw new TCStatisticsGathererSessionConfigGetErrorException(sessionId, key, e);
+    }
+  }
+
+  public void addListener(final StatisticsGathererListener listener) {
+    if (null == listener) {
+      return;
+    }
+
+    listeners.add(listener);
+  }
+
+  public void removeListener(final StatisticsGathererListener listener) {
+    if (null == listener) {
+      return;
+    }
+
+    listeners.remove(listener);
+  }
+
+  private void fireConnected(final String managerHostName, final int managerPort) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).connected(managerHostName, managerPort);
+    }
+  }
+
+  private void fireDisconnected() {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).disconnected();
+    }
+  }
+
+  private void fireCapturingStarted(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).capturingStarted(sessionId);
+    }
+  }
+
+  private void fireCapturingStopped(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).capturingStopped(sessionId);
+    }
+  }
+
+  private void fireSessionCreated(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).sessionCreated(sessionId);
+    }
+  }
+
+  private void fireSessionClosed(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).sessionClosed(sessionId);
     }
   }
 }

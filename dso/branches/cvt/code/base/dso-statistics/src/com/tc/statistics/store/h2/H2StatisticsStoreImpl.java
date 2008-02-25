@@ -3,6 +3,8 @@
  */
 package com.tc.statistics.store.h2;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.StatisticsDatabase;
@@ -14,6 +16,7 @@ import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearAllStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
@@ -39,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
   public final static int DATABASE_STRUCTURE_VERSION = 3;
@@ -53,42 +57,52 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   private final StatisticsDatabase database;
   private final File lockFile;
 
+  private final Set listeners = new CopyOnWriteArraySet();
+
   public H2StatisticsStoreImpl(final File dbDir) {
     this.database = new H2StatisticsDatabase(dbDir, H2_URL_SUFFIX);
     this.lockFile = new File(dbDir.getParentFile(), dbDir.getName()+".lck");
   }
 
-  public synchronized void open() throws TCStatisticsStoreException {
-    try {
-      FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
-        public void execute() throws FileLockGuard.InnerException {
-          try {
+  public void open() throws TCStatisticsStoreException {
+    synchronized (this) {
+      try {
+        FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
+          public void execute() throws FileLockGuard.InnerException {
             try {
-              database.open();
-            } catch (TCStatisticsDatabaseException e) {
-              throw new TCStatisticsStoreOpenErrorException(e);
-            }
+              try {
+                database.open();
+              } catch (TCStatisticsDatabaseException e) {
+                throw new TCStatisticsStoreOpenErrorException(e);
+              }
 
-            install();
-            setupPreparedStatements();
-          } catch (TCStatisticsStoreException e) {
-            throw new FileLockGuard.InnerException(e);
+              install();
+              setupPreparedStatements();
+            } catch (TCStatisticsStoreException e) {
+              throw new FileLockGuard.InnerException(e);
+            }
           }
-        }
-      });
-    } catch (FileLockGuard.InnerException e) {
-      throw (TCStatisticsStoreException)e.getInnerException();
-    } catch (IOException e) {
-      throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
+        });
+      } catch (FileLockGuard.InnerException e) {
+        throw (TCStatisticsStoreException)e.getInnerException();
+      } catch (IOException e) {
+        throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
+      }
     }
+
+    fireOpened();
   }
 
-  public synchronized void close() throws TCStatisticsStoreException {
-    try {
-      database.close();
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreCloseErrorException(e);
+  public void close() throws TCStatisticsStoreException {
+    synchronized (this) {
+      try {
+        database.close();
+      } catch (TCStatisticsDatabaseException e) {
+        throw new TCStatisticsStoreCloseErrorException(e);
+      }
     }
+
+    fireClosed();
   }
 
   protected void install() throws TCStatisticsStoreException {
@@ -395,6 +409,8 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (Exception e) {
       throw new TCStatisticsStoreClearStatisticsErrorException(sessionId, e);
     }
+
+    fireSessionCleared(sessionId);
   }
 
   public void clearAllStatistics() throws TCStatisticsStoreException {
@@ -404,6 +420,52 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog");
     } catch (Exception e) {
       throw new TCStatisticsStoreClearAllStatisticsErrorException(e);
+    }
+
+    fireAllSessionsCleared();
+  }
+
+  public void addListener(final StatisticsStoreListener listener) {
+    if (null == listener) {
+      return;
+    }
+
+    listeners.add(listener);
+  }
+
+  public void removeListener(final StatisticsStoreListener listener) {
+    if (null == listener) {
+      return;
+    }
+
+    listeners.remove(listener);
+  }
+
+  private void fireOpened() {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsStoreListener)it.next()).opened();
+    }
+  }
+
+  private void fireClosed() {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsStoreListener)it.next()).closed();
+    }
+  }
+
+  private void fireSessionCleared(final String sessionId) {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsStoreListener)it.next()).sessionCleared(sessionId);
+    }
+  }
+
+  private void fireAllSessionsCleared() {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsStoreListener)it.next()).allSessionsCleared();
     }
   }
 }
