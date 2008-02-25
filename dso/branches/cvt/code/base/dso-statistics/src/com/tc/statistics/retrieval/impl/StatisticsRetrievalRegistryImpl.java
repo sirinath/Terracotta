@@ -48,6 +48,8 @@ public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegis
       registerActionInstance(sra_cpu_action);
     } catch (ClassNotFoundException e) {
       logger.warn("Statistic retrieval action " + sraClassName + " wasn't activated since it couldn't be found in the classpath.");
+    } catch (UnsupportedClassVersionError e) {
+      logger.warn("Statistic retrieval action " + sraClassName + " wasn't activated since it is was compiled for a later JVM : " + e.getMessage() + ".");
     } catch (Exception e) {
       throw new TCRuntimeException("Unexpected error while instantiating statistic retrieval action " + sraClassName, e);
     }

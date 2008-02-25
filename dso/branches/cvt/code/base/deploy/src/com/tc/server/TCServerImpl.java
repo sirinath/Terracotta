@@ -394,7 +394,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     DSOMBean dso = new DSO(mgmtContext, mBeanServer);
     mBeanServer.registerMBean(dso, L2MBeanNames.DSO);
     mBeanServer.registerMBean(mgmtContext.getDSOAppEventsMBean(), L2MBeanNames.DSO_APP_EVENTS);
-    StatisticsLocalGathererMBeanImpl local_gatherer = new StatisticsLocalGathererMBeanImpl(statisticsGathererSubSystem.getStatisticsGatherer(), configurationSetupManager.commonl2Config());
+    StatisticsLocalGathererMBeanImpl local_gatherer = new StatisticsLocalGathererMBeanImpl(statisticsGathererSubSystem, configurationSetupManager.commonl2Config());
     mBeanServer.registerMBean(local_gatherer, StatisticsMBeanNames.STATISTICS_GATHERER);
   }
 

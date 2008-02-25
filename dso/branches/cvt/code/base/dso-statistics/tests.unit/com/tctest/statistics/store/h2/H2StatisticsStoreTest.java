@@ -4,12 +4,12 @@
 package com.tctest.statistics.store.h2;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
+import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
@@ -515,6 +515,25 @@ public class H2StatisticsStoreTest extends TestCase {
     TestStaticticConsumer consumer3 = new TestStaticticConsumer();
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer3);
     consumer3.ensureCorrectCounts(0, 0);
+  }
+
+  public void testClearAllStatistics() throws Exception {
+    String sessionid1 = "34987";
+    String sessionid2 = "9367";
+
+    Thread.sleep(500);
+    populateBufferWithStatistics(sessionid1, sessionid2);
+    Thread.sleep(500);
+
+    TestStaticticConsumer consumer1 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer1);
+    consumer1.ensureCorrectCounts(170, 50);
+
+    store.clearAllStatistics();
+
+    TestStaticticConsumer consumer2 = new TestStaticticConsumer();
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), consumer2);
+    consumer2.ensureCorrectCounts(0, 0);
   }
 
   private void populateBufferWithStatistics(String sessionid1, String sessionid2) throws TCStatisticsStoreException, UnknownHostException {

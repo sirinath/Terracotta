@@ -30,4 +30,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
   public void setSessionParam(String key, Object value);
 
   public Object getSessionParam(String key);
+
+  public void clearStatistics(String sessionId);
+
+  public void clearAllStatistics();
 }
