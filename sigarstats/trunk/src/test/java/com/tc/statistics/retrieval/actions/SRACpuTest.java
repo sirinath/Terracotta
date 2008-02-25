@@ -97,7 +97,7 @@ public class SRACpuTest extends TestCase {
     assertEquals(cpuCount * 6, data.length);
     for (int i = 0; i < data.length; i++) {
       assertTrue(data[i].getName().startsWith(SRACpu.ACTION_NAME));
-      assertEquals(InetAddress.getLocalHost().getHostAddress(), data[i].getAgentIp());
+      assertNull(data[i].getAgentIp()); // will be filled in with default
       assertTrue(before.compareTo(data[i].getMoment()) <= 0);
       assertTrue(after.compareTo(data[i].getMoment()) >= 0);
 
