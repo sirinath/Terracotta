@@ -4,6 +4,7 @@
 package com.tctest.statistics.buffer.h2;
 
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
@@ -263,37 +264,84 @@ public class H2StatisticsBufferTest extends TestCase {
     }
   }
 
-  public void testStoreStatistics() throws Exception {
+  public void testReinitialize() throws Exception {
     buffer.createCaptureSession("someid1");
 
-    long statid1 = buffer.storeStatistic(new StatisticData()
+    buffer.storeStatistic(new StatisticData()
       .sessionId("someid1")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
-    assertEquals(1, statid1);
 
-    long statid2 = buffer.storeStatistic(new StatisticData()
+    buffer.reinitialize();
+
+    buffer.createCaptureSession("someid1");
+    final int[] count = new int[] {0};
+    buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+    assertEquals(0, count[0]);
+  }
+
+  public void testStoreStatistics() throws Exception {
+    buffer.createCaptureSession("someid1");
+
+    final int[] count = new int[] {0};
+
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("someid1")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("yummy")
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff"));
+    count[0] = 0;
+    buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+    assertEquals(1, count[0]);
+
+    buffer.storeStatistic(new StatisticData()
       .sessionId("someid1")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat")
       .data("stuff2"));
-    assertEquals(2, statid2);
+    count[0] = 0;
+    buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+    assertEquals(1, count[0]);
 
     buffer.createCaptureSession("someid2");
 
-    long statid3 = buffer.storeStatistic(new StatisticData()
+    buffer.storeStatistic(new StatisticData()
       .sessionId("someid2")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
       .agentDifferentiator("yummy")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
-    assertEquals(3, statid3);
+    count[0] = 0;
+    buffer.consumeStatistics("someid2", new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+    assertEquals(1, count[0]);
   }
 
   public void testConsumeStatisticsInvalidSessionId() throws Exception {

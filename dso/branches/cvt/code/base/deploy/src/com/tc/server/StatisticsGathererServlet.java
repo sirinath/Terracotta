@@ -47,6 +47,11 @@ public class StatisticsGathererServlet extends RestfulServlet {
     printOk(response);
   }
 
+  public void methodReinitialize(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    system.reinitialize();
+    printOk(response);
+  }
+
   public void methodCreateSession(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String sessionid = request.getParameter("sessionId");
     if (null == sessionid) throw new IllegalArgumentException("sessionId");

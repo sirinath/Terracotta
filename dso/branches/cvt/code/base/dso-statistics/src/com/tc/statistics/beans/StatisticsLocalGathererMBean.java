@@ -11,6 +11,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
 
   public void disconnect();
 
+  public void reinitialize();
+
   public void createSession(String sessionId);
 
   public void closeSession();

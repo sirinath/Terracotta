@@ -7,6 +7,7 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
@@ -55,9 +56,11 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
 
   protected final StatisticsDatabase database;
-  private final File lockFile;
 
+  private final File lockFile;
   private final Set listeners = new CopyOnWriteArraySet();
+
+  private volatile boolean open = false;
 
   public H2StatisticsStoreImpl(final File dbDir) {
     this.database = new H2StatisticsDatabase(dbDir, H2_URL_SUFFIX);
@@ -88,6 +91,8 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       } catch (IOException e) {
         throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
       }
+
+      open = true;
     }
 
     fireOpened();
@@ -100,9 +105,24 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       } catch (TCStatisticsDatabaseException e) {
         throw new TCStatisticsStoreCloseErrorException(e);
       }
+
+      open = false;
     }
 
     fireClosed();
+  }
+
+  public synchronized void reinitialize() throws TCStatisticsStoreException {
+    boolean was_open = open;
+    close();
+    try {
+      database.reinitialize();
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsStoreException("Unexpected error while reinitializing the statistics store.", e);
+    }
+    if (was_open) {
+      open();
+    }
   }
 
   protected void install() throws TCStatisticsStoreException {

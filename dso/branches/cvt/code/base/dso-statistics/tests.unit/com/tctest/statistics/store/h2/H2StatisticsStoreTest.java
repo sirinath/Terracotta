@@ -228,6 +228,26 @@ public class H2StatisticsStoreTest extends TestCase {
     }
   }
 
+  public void testReinitialize() throws Exception {
+    store.storeStatistic(new StatisticData()
+      .sessionId("376487")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff"));
+
+    store.reinitialize();
+
+    final int[] count = new int[] {0};
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+    assertEquals(0, count[0]);
+  }
+
   public void testStoreStatistics() throws Exception {
     final int[] count = new int[] {0};
     store.storeStatistic(new StatisticData()

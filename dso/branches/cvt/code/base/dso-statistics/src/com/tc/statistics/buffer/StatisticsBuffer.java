@@ -12,13 +12,15 @@ public interface StatisticsBuffer {
 
   public void close() throws TCStatisticsBufferException;
 
+  public void reinitialize() throws TCStatisticsBufferException;
+
   public StatisticsRetriever createCaptureSession(String sessionId) throws TCStatisticsBufferException;
 
   public void startCapturing(String sessionId) throws TCStatisticsBufferException;
 
   public void stopCapturing(String sessionId) throws TCStatisticsBufferException;
 
-  public long storeStatistic(StatisticData data) throws TCStatisticsBufferException;
+  public void storeStatistic(StatisticData data) throws TCStatisticsBufferException;
 
   public void consumeStatistics(String sessionId, StatisticsConsumer consumer) throws TCStatisticsBufferException;
 

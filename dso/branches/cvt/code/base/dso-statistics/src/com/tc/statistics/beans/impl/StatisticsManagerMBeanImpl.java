@@ -21,6 +21,8 @@ import com.tc.util.Assert;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 
 import javax.management.NotCompliantMBeanException;
 
@@ -45,6 +47,28 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   public void reset() {
   }
 
+  public synchronized void reinitialize() {
+    boolean was_enabled = isEnabled();
+
+    disable();
+
+    Set session_ids = retrieverMap.keySet();
+    Iterator it = session_ids.iterator();
+    while (it.hasNext()) {
+      stopCapturing((String)it.next());
+    }
+
+    try {
+      buffer.reinitialize();
+    } catch (TCStatisticsBufferException e) {
+      throw new RuntimeException("Unexpected error while reinitializing the buffer.");
+    }
+
+    if (was_enabled) {
+      enable();
+    }
+  }
+
   public String[] getSupportedStatistics() {
     Collection stats = registry.getSupportedStatistics();
     String[] statistics = new String[stats.size()];
@@ -52,7 +76,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return statistics;
   }
 
-  public void createSession(final String sessionId) {
+  public synchronized void createSession(final String sessionId) {
     try {
       StatisticsRetriever retriever = buffer.createCaptureSession(sessionId);
       retrieverMap.put(sessionId, retriever);
@@ -61,12 +85,12 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     }
   }
 
-  public void disableAllStatistics(final String sessionId) {
+  public synchronized void disableAllStatistics(final String sessionId) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.removeAllActions();
   }
 
-  public boolean enableStatistic(final String sessionId, final String name) {
+  public synchronized boolean enableStatistic(final String sessionId, final String name) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     StatisticRetrievalAction action = registry.getActionInstance(name);
     if (null == action) {
@@ -80,7 +104,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return buffer.getDefaultAgentIp()+" ("+buffer.getDefaultAgentDifferentiator()+")";
   }
 
-  public void startCapturing(final String sessionId) {
+  public synchronized void startCapturing(final String sessionId) {
     try {
       buffer.startCapturing(sessionId);
     } catch (TCStatisticsBufferStartCapturingSessionNotFoundException e) {
@@ -90,7 +114,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     }
   }
 
-  public void stopCapturing(final String sessionId) {
+  public synchronized void stopCapturing(final String sessionId) {
     try {
       buffer.stopCapturing(sessionId);
       retrieverMap.remove(sessionId);
@@ -109,12 +133,12 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return config.getParam(key);
   }
 
-  public void setSessionParam(final String sessionId, final String key, final Object value) {
+  public synchronized void setSessionParam(final String sessionId, final String key, final Object value) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.getConfig().setParam(key, value);
   }
 
-  public Object getSessionParam(final String sessionId, final String key) {
+  public synchronized Object getSessionParam(final String sessionId, final String key) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     return retriever.getConfig().getParam(key);
   }

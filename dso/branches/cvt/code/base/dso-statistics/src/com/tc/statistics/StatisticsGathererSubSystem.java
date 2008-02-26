@@ -82,6 +82,11 @@ public class StatisticsGathererSubSystem {
     return true;
   }
 
+  public synchronized void reinitialize() throws Exception {
+    statisticsGatherer.reinitialize();
+    statisticsStore.reinitialize();
+  }
+
   public synchronized void cleanup() throws Exception {
     if (statisticsGatherer != null) {
       statisticsGatherer.disconnect();
