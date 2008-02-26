@@ -30,7 +30,7 @@ public class SRACpu implements StatisticRetrievalAction {
 
   private final static String ELEMENT_PREFIX = "cpu ";
 
-  private Sigar sigar;
+  private final Sigar sigar;
 
   public SRACpu() {
     sigar = new Sigar();
@@ -47,12 +47,18 @@ public class SRACpu implements StatisticRetrievalAction {
       StatisticData[] data = new StatisticData[cpuPercList.length * 6];
       for (int i = 0; i < cpuPercList.length; i++) {
         String element = ELEMENT_PREFIX + i;
-        data[i * 6] = new StatisticData(DATA_NAME_COMBINED, moment, element, new BigDecimal(format.format(cpuPercList[i].getCombined())));
-        data[i * 6 + 1] = new StatisticData(DATA_NAME_IDLE, moment, element, new BigDecimal(format.format(cpuPercList[i].getIdle())));
-        data[i * 6 + 2] = new StatisticData(DATA_NAME_NICE, moment, element, new BigDecimal(format.format(cpuPercList[i].getNice())));
-        data[i * 6 + 3] = new StatisticData(DATA_NAME_SYS, moment, element, new BigDecimal(format.format(cpuPercList[i].getSys())));
-        data[i * 6 + 4] = new StatisticData(DATA_NAME_USER, moment, element, new BigDecimal(format.format(cpuPercList[i].getUser())));
-        data[i * 6 + 5] = new StatisticData(DATA_NAME_WAIT, moment, element, new BigDecimal(format.format(cpuPercList[i].getWait())));
+        double combined = cpuPercList[i].getCombined();
+        double idle = cpuPercList[i].getIdle();
+        double nice = cpuPercList[i].getNice();
+        double sys = cpuPercList[i].getSys();
+        double user = cpuPercList[i].getUser();
+        double wait = cpuPercList[i].getWait();
+        data[i * 6] = new StatisticData(DATA_NAME_COMBINED, moment, element, Double.isNaN(combined) || Double.isInfinite(combined) ? null : new BigDecimal(format.format(combined)));
+        data[i * 6 + 1] = new StatisticData(DATA_NAME_IDLE, moment, element, Double.isNaN(idle) || Double.isInfinite(idle) ? null : new BigDecimal(format.format(idle)));
+        data[i * 6 + 2] = new StatisticData(DATA_NAME_NICE, moment, element, Double.isNaN(nice) || Double.isInfinite(nice) ? null : new BigDecimal(format.format(nice)));
+        data[i * 6 + 3] = new StatisticData(DATA_NAME_SYS, moment, element, Double.isNaN(sys) || Double.isInfinite(sys) ? null : new BigDecimal(format.format(sys)));
+        data[i * 6 + 4] = new StatisticData(DATA_NAME_USER, moment, element, Double.isNaN(user) || Double.isInfinite(user) ? null : new BigDecimal(format.format(user)));
+        data[i * 6 + 5] = new StatisticData(DATA_NAME_WAIT, moment, element, Double.isNaN(wait) || Double.isInfinite(wait) ? null : new BigDecimal(format.format(wait)));
       }
       return data;
     } catch (SigarException e) {
@@ -66,12 +72,5 @@ public class SRACpu implements StatisticRetrievalAction {
 
   public StatisticType getType() {
     return StatisticType.SNAPSHOT;
-  }
-
-  public void cleanup() {
-    if (sigar != null) {
-      sigar.close();
-      sigar = null;
-    }
   }
 }
