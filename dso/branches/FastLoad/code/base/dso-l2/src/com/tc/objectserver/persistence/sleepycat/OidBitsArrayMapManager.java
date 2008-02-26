@@ -14,11 +14,11 @@ import java.util.Set;
 
 public interface OidBitsArrayMapManager {
 
-  public Runnable createObjectIdReader(SyncObjectIdSet set);
-
   public OperationStatus oidPut(PersistenceTransaction tx, ObjectID objectId) throws DatabaseException;
 
   public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException;
 
   public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException;
+  
+  public Thread objectIDReaderThread(SyncObjectIdSet rv);
 }

@@ -63,14 +63,10 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     }
   }
 
-  public Runnable createObjectIdReader(SyncObjectIdSet set) {
-    return (new OidObjectIdReader(set));
-  }
-
   /*
    * fast way to load object-Ids at server restart by reading them from bit array
    */
-  class OidObjectIdReader implements Runnable {
+  private class OidObjectIdReader implements Runnable {
     protected final SyncObjectIdSet set;
 
     public OidObjectIdReader(SyncObjectIdSet set) {
@@ -207,6 +203,8 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
    * Use with great care!!! Shall do db commit before next call otherwise dead lock may result.
    */
   public OperationStatus oidPut(PersistenceTransaction tx, ObjectID objectId) throws DatabaseException {
+    if(!paranoid) return OperationStatus.SUCCESS;
+    
     // care only new object ID.
     if (oidBitsArrayMap.contains(objectId)) return OperationStatus.SUCCESS;
 
@@ -250,6 +248,8 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   }
 
   public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
+    if(!paranoid) return OperationStatus.SUCCESS;
+    
     OperationStatus status = OperationStatus.SUCCESS;
     SortedSet sortedOidSet = new TreeSet();
     processForPut(oidSet, sortedOidSet);
@@ -289,6 +289,8 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
   public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet)
       throws TCDatabaseException {
+    if(!paranoid) return OperationStatus.SUCCESS;
+    
     OperationStatus status = OperationStatus.SUCCESS;
     SortedSet sortedOidSet = new TreeSet();
     processForDelete(oidSet, sortedOidSet);
@@ -497,6 +499,10 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     public void reset() {
       map.clear();
     }
+  }
+
+  public Thread objectIDReaderThread(SyncObjectIdSet rv) {
+    return new Thread(new OidObjectIdReader(rv), "OidObjectIdReaderThread");
   }
 
 }
