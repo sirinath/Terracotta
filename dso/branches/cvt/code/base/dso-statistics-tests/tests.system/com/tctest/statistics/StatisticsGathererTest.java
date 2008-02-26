@@ -25,7 +25,8 @@ import java.util.Set;
 
 public class StatisticsGathererTest extends TransparentTestBase implements StatisticsGathererListener {
   private volatile String listenerConnected = null;
-  private volatile String listenerDisconnected = null;
+  private volatile boolean listenerDisconnected = false;
+  private volatile boolean listenerInitialized = false;
   private volatile String listenerCapturingStarted = null;
   private volatile String listenerCapturingStopped = null;
   private volatile String listenerSessionCreated = null;
@@ -36,7 +37,11 @@ public class StatisticsGathererTest extends TransparentTestBase implements Stati
   }
 
   public void disconnected() {
-    listenerDisconnected = "true";
+    listenerDisconnected = true;
+  }
+
+  public void reinitialized() {
+    listenerInitialized = true;
   }
 
   public void capturingStarted(String sessionId) {
@@ -75,6 +80,20 @@ public class StatisticsGathererTest extends TransparentTestBase implements Stati
     gatherer.createSession(sessionid1);
     assertEquals(sessionid1, listenerSessionCreated);
 
+    assertFalse(listenerInitialized);
+    gatherer.reinitialize();
+    assertTrue(listenerInitialized);
+    assertEquals(sessionid1, listenerSessionClosed);
+    assertEquals(sessionid1, listenerCapturingStopped);
+
+    listenerSessionCreated = null;
+    assertNull(listenerSessionCreated);
+    gatherer.createSession(sessionid1);
+    assertEquals(sessionid1, listenerSessionCreated);
+
+    listenerSessionClosed = null;
+    listenerCapturingStopped = null;
+
     String sessionid2 = UUID.getUUID().toString();
     assertNull(listenerCapturingStopped);
     assertNull(listenerSessionClosed);
@@ -108,10 +127,10 @@ public class StatisticsGathererTest extends TransparentTestBase implements Stati
 
     listenerSessionClosed = null;
     assertNull(listenerSessionClosed);
-    assertNull(listenerDisconnected);
+    assertFalse(listenerDisconnected);
     gatherer.disconnect();
     assertEquals(sessionid2, listenerSessionClosed);
-    assertEquals("true", listenerDisconnected);
+    assertTrue(listenerDisconnected);
 
     assertNull(gatherer.getActiveSessionId());
 
