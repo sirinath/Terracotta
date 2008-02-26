@@ -767,6 +767,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       registry.registerActionInstance(new SRAMemoryUsage());
       registry.registerActionInstance(new SRASystemProperties());
       registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
+      registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpuCombined");
     }
   }
 

@@ -158,9 +158,14 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     fireSessionCreated(sessionId);
   }
 
-  public synchronized void reinitialize() throws TCStatisticsGathererException {
-    closeSession();
-    statGateway.reinitialize();
+  public void reinitialize() throws TCStatisticsGathererException {
+    synchronized (this) {
+      closeSession();
+      statGateway.reinitialize();
+      sessionId = null;
+    }
+    
+    fireReinitialized();
   }
 
   public synchronized void closeSession() throws TCStatisticsGathererException {
@@ -280,6 +285,13 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     Iterator it = listeners.iterator();
     while (it.hasNext()) {
       ((StatisticsGathererListener)it.next()).disconnected();
+    }
+  }
+
+  private void fireReinitialized() {
+    Iterator it = listeners.iterator();
+    while (it.hasNext()) {
+      ((StatisticsGathererListener)it.next()).reinitialized();
     }
   }
 

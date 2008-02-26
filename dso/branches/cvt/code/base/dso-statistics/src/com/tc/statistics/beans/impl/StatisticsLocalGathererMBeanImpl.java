@@ -25,6 +25,7 @@ import javax.management.Notification;
 public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean implements StatisticsLocalGathererMBean, StatisticsGathererListener, StatisticsStoreListener {
   public final static String STATISTICS_LOCALGATHERER_CONNECTED_TYPE = "tc.statistics.localgatherer.connected";
   public final static String STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE = "tc.statistics.localgatherer.disconnected";
+  public final static String STATISTICS_LOCALGATHERER_REINITIALIZED_TYPE = "tc.statistics.localgatherer.reinitialized";
   public final static String STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE = "tc.statistics.localgatherer.capturing.started";
   public final static String STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE = "tc.statistics.localgatherer.capturing.stopped";
   public final static String STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE = "tc.statistics.localgatherer.session.created";
@@ -42,6 +43,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     final String[] notifTypes = new String[] {
       STATISTICS_LOCALGATHERER_CONNECTED_TYPE,
       STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE,
+      STATISTICS_LOCALGATHERER_REINITIALIZED_TYPE,
       STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE,
       STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE,
       STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE,
@@ -223,6 +225,10 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
   public void disconnected() {
     createAndSendNotification(STATISTICS_LOCALGATHERER_DISCONNECTED_TYPE, null);
+  }
+
+  public void reinitialized() {
+    createAndSendNotification(STATISTICS_LOCALGATHERER_REINITIALIZED_TYPE, null);
   }
 
   public void capturingStarted(String sessionId) {

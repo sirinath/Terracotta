@@ -8,6 +8,8 @@ public interface StatisticsGathererListener {
 
   public void disconnected();
 
+  public void reinitialized();
+
   public void capturingStarted(String sessionId);
 
   public void capturingStopped(String sessionId);
