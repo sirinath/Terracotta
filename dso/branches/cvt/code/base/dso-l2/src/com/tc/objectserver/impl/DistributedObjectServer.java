@@ -168,6 +168,7 @@ import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -768,6 +769,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       registry.registerActionInstance(new SRASystemProperties());
       registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
       registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpuCombined");
+      registry.registerActionInstance(new SRAL2TransactionCount(serverStats));
     }
   }
 
