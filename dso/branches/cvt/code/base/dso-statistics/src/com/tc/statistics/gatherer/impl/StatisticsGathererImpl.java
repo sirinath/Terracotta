@@ -158,6 +158,11 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     fireSessionCreated(sessionId);
   }
 
+  public synchronized void reinitialize() throws TCStatisticsGathererException {
+    closeSession();
+    statGateway.reinitialize();
+  }
+
   public synchronized void closeSession() throws TCStatisticsGathererException {
     String closed_sessionid = null;
     synchronized (this) {

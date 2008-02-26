@@ -37,18 +37,32 @@ public class StatisticsAgentConnection implements StatisticsManager {
   private StatisticsEmitterMBean statEmitter = null;
   private NotificationListener listener = null;
 
-  public void enable() {
+  public synchronized void enable() {
     statManager.enable();
     statEmitter.enable();
   }
 
-  public void disable() {
+  public synchronized void disable() {
     statManager.disable();
     statEmitter.disable();
   }
 
   public boolean isServerAgent() {
     return isServerAgent;
+  }
+
+  public synchronized void reinitialize() {
+    synchronized (statEmitter) {
+      boolean was_emitter_enabled = statEmitter.isEnabled();
+
+      statEmitter.disable();
+
+      statManager.reinitialize();
+
+      if (was_emitter_enabled) {
+        statEmitter.enable();
+      }
+    }
   }
 
   public String[] getSupportedStatistics() {

@@ -95,6 +95,14 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
+  public void reinitialize() {
+    try {
+      subsystem.reinitialize();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public void createSession(String sessionId) {
     try {
       subsystem.getStatisticsGatherer().createSession(sessionId);

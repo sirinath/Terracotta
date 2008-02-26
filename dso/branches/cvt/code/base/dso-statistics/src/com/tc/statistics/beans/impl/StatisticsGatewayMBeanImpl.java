@@ -41,6 +41,13 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     return StatisticsEmitterMBeanImpl.NOTIFICATION_INFO;
   }
 
+  public void reinitialize() {
+    Iterator it = agents.iterator();
+    while (it.hasNext()) {
+      ((StatisticsAgentConnection)it.next()).reinitialize();
+    }
+  }
+
   public void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
     StatisticsAgentConnection agent = new StatisticsAgentConnection();
     try {

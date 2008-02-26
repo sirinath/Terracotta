@@ -3,11 +3,14 @@
  */
 package com.tc.statistics.database.impl;
 
+import org.apache.commons.io.FileUtils;
+
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseOpenErrorException;
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -29,6 +32,16 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
     if (null == urlSuffix) Assert.fail("urlSuffix can't be null");
     this.dbDir = dbDir;
     this.urlSuffix = urlSuffix;
+  }
+
+  public synchronized void reinitialize() throws TCStatisticsDatabaseException {
+    close();
+    try {
+      FileUtils.cleanDirectory(dbDir);
+    } catch (IOException e) {
+      throw new TCStatisticsDatabaseException("Unexpected error while reinitializing the H2 database at '"+dbDir.getAbsolutePath()+"'.", e);
+    }
+    open();
   }
 
   public synchronized void open() throws TCStatisticsDatabaseException {

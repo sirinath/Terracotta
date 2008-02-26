@@ -62,11 +62,12 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
   private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
-  
+
   private final StatisticsConfig config;
   private final File lockFile;
   private final StatisticsDatabase database;
 
+  private volatile boolean open = false;
   private volatile String defaultAgentIp;
   private volatile String defaultAgentDifferentiator = null;
 
@@ -108,7 +109,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     return defaultAgentDifferentiator;
   }
 
-  public void open() throws TCStatisticsBufferException {
+  public synchronized void open() throws TCStatisticsBufferException {
     try {
       FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
         public void execute() throws FileLockGuard.InnerException {
@@ -132,13 +133,30 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     } catch (IOException e) {
       throw new TCStatisticsBufferException("Unexpected error while obtaining or releasing lock file.", e);
     }
+
+    open = true;
   }
 
-  public void close() throws TCStatisticsBufferException {
+  public synchronized void close() throws TCStatisticsBufferException {
     try {
       database.close();
     } catch (TCStatisticsDatabaseException e) {
       throw new TCStatisticsBufferDatabaseCloseErrorException(e);
+    }
+    
+    open = false;
+  }
+
+  public synchronized void reinitialize() throws TCStatisticsBufferException {
+    boolean was_open = open;
+    close();
+    try {
+      database.reinitialize();
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsBufferException("Unexpected error while reinitializing the statistics buffer.", e);
+    }
+    if (was_open) {
+      open();
     }
   }
 
@@ -357,7 +375,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     return local_sessionid[0];
   }
 
-  public long storeStatistic(final StatisticData data) throws TCStatisticsBufferException {
+  public void storeStatistic(final StatisticData data) throws TCStatisticsBufferException {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
     Assert.assertNotNull("moment property of data", data.getMoment());
@@ -438,8 +456,6 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     if (row_count != 1) {
       throw new TCStatisticsBufferStatisticStorageErrorException(id, data);
     }
-
-    return id;
   }
 
   public void consumeStatistics(final String sessionId, final StatisticsConsumer consumer) throws TCStatisticsBufferException {

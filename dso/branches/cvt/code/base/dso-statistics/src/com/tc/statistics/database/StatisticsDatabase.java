@@ -18,6 +18,8 @@ public interface StatisticsDatabase {
 
   public PreparedStatement getPreparedStatement(String sql);
 
+  public void reinitialize() throws TCStatisticsDatabaseException;
+
   public void open() throws TCStatisticsDatabaseException;
 
   public void ensureExistingConnection() throws TCStatisticsDatabaseException;

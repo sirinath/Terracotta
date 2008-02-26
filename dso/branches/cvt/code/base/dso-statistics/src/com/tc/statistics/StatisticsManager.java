@@ -4,6 +4,8 @@
 package com.tc.statistics;
 
 public interface StatisticsManager {
+  public void reinitialize();
+
   public String[] getSupportedStatistics();
 
   public void createSession(String sessionId);
