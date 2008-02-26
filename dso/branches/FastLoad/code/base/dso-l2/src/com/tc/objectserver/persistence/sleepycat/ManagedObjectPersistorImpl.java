@@ -27,7 +27,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
-import com.tc.util.ObjectIDSet2;
 import com.tc.util.SyncObjectIdSet;
 import com.tc.util.SyncObjectIdSetImpl;
 import com.tc.util.sequence.MutableSequence;
@@ -102,7 +101,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     if (this.oidFastLoad) {
       this.oidManager = new OidBitsArrayMapManagerImpl(logger, paranoid, oidDB, ptp, dBCursorConfig);
     } else {
-      this.oidManager = null;
+      this.oidManager = new OriginalOidBitsArrayMapManager(logger, paranoid, objectDB, ptp, dBCursorConfig);
     }
   }
 
@@ -175,12 +174,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     SyncObjectIdSet rv = new SyncObjectIdSetImpl();
     if (paranoid) {
       rv.startPopulating();
-      Thread t;
-      if (this.oidFastLoad) {
-        t = new Thread(oidManager.createObjectIdReader(rv), "OidObjectIdReaderThread");
-      } else {
-        t = new Thread(new ObjectIdReader(rv), "ObjectIdReaderThread");
-      }
+      Thread t = oidManager.objectIDReaderThread(rv);
       t.setDaemon(true);
       t.start();
     }
@@ -268,7 +262,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     OperationStatus status = null;
     try {
       status = basicSaveObject(persistenceTransaction, managedObject);
-      if (oidFastLoad && paranoid && OperationStatus.SUCCESS.equals(status)) {
+      if (OperationStatus.SUCCESS.equals(status)) {
         status = oidManager.oidPut(persistenceTransaction, managedObject.getID());
       }
     } catch (DBException e) {
@@ -349,15 +343,13 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         }
 
         // record new object-IDs to be written to persistent store later.
-        if (oidFastLoad && paranoid) {
+        if (paranoid) {
           oidSet.add(managedObject.getID());
         }
       }
       // write all new Object-IDs to persistor
-      if (oidFastLoad && paranoid) {
-        if (!OperationStatus.SUCCESS.equals(oidManager.oidPutAll(persistenceTransaction, oidSet))) { throw new DBException(
-                                                                                                                           "Failed to save Object-IDs"); }
-      }
+      if (!OperationStatus.SUCCESS.equals(oidManager.oidPutAll(persistenceTransaction, oidSet))) { throw new DBException(
+                                                                                                                         "Failed to save Object-IDs"); }
     } catch (Throwable t) {
       throw new DBException(t);
     }
@@ -420,12 +412,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       deleteObjectByID(tx, objectId);
     }
 
-    if (oidFastLoad && paranoid) {
-      try {
-        oidManager.oidDeleteAll(tx, sortedOids);
-      } catch (TCDatabaseException de) {
-        throw new TCRuntimeException(de);
-      }
+    try {
+      oidManager.oidDeleteAll(tx, sortedOids);
+    } catch (TCDatabaseException de) {
+      throw new TCRuntimeException(de);
     }
   }
 
@@ -475,60 +465,6 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     out.println(this.getClass().getName());
     out = out.duplicateAndIndent();
     out.println("db: " + objectDB);
-  }
-
-  /*
-   * the old/slow reading object-Ids at server restart
-   */
-  class ObjectIdReader implements Runnable {
-    protected final SyncObjectIdSet set;
-
-    public ObjectIdReader(SyncObjectIdSet set) {
-      this.set = set;
-    }
-
-    public void run() {
-      Assert.assertTrue("Shall be in persistent mode to refresh Object IDs at startup", paranoid);
-
-      ObjectIDSet2 tmp = new ObjectIDSet2();
-      PersistenceTransaction tx = null;
-      Cursor cursor = null;
-      try {
-        tx = ptp.newTransaction();
-        cursor = objectDB.openCursor(pt2nt(tx), dBCursorConfig);
-        DatabaseEntry key = new DatabaseEntry();
-        DatabaseEntry value = new DatabaseEntry();
-        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
-          tmp.add(new ObjectID(Conversion.bytes2Long(key.getData())));
-        }
-      } catch (Throwable t) {
-        logger.error("Error Reading Object IDs", t);
-      } finally {
-        safeClose(cursor);
-        safeCommit(tx);
-        set.stopPopulating(tmp);
-        tmp = null;
-      }
-    }
-
-    protected void safeCommit(PersistenceTransaction tx) {
-      if (tx == null) return;
-      try {
-        tx.commit();
-      } catch (Throwable t) {
-        logger.error("Error Committing Transaction", t);
-      }
-    }
-
-    protected void safeClose(Cursor c) {
-      if (c == null) return;
-
-      try {
-        c.close();
-      } catch (Throwable e) {
-        logger.error("Error closing cursor", e);
-      }
-    }
   }
 
   // for testing purpose only
