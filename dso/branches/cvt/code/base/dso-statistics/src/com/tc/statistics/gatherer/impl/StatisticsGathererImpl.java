@@ -6,6 +6,7 @@ package com.tc.statistics.gatherer.impl;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.management.JMXConnectorProxy;
+import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.gatherer.StatisticsGatherer;
@@ -26,6 +27,8 @@ import com.tc.util.Assert;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -56,7 +59,10 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
         throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while opening statistics store.", e);
       }
 
-      proxy = new JMXConnectorProxy(managerHostName, managerPort);
+      final Map environment = new HashMap();
+      environment.put("jmx.remote.x.server.connection.timeout", new Long(Long.MAX_VALUE));
+      proxy = new JMXConnectorProxy(managerHostName, managerPort, environment);
+
       try {
         // create the server connection
         mbeanServerConnection = proxy.getMBeanServerConnection();
