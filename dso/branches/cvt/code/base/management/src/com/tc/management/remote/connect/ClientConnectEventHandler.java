@@ -152,7 +152,7 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
         ProtocolProvider.addTerracottaJmxProvider(environment);
         environment.put(ClientProvider.JMX_MESSAGE_CHANNEL, channel);
         environment.put(ClientProvider.CONNECTION_LIST, channelIdToMsgConnection);
-        environment.put("jmx.remote.x.request.timeout", "60000");
+        environment.put("jmx.remote.x.request.timeout", new Long(Long.MAX_VALUE));
         environment.put("jmx.remote.x.client.connection.check.period", new Long(0));
 
         final JMXConnector jmxConnector;
