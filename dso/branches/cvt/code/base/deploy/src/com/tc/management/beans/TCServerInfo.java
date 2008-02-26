@@ -11,16 +11,20 @@ import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
+import com.tc.runtime.JVMMemoryManager;
+import com.tc.runtime.MemoryUsage;
+import com.tc.runtime.TCRuntime;
 import com.tc.server.TCServer;
+import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.ProductInfo;
 import com.tc.util.State;
+import com.tc.util.runtime.ThreadDumpUtil;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -49,6 +53,9 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private final StateChangeNotificationInfo    stateChangeNotificationInfo;
   private long                                 nextSequenceNumber;
 
+  private final JVMMemoryManager               manager;
+  private StatisticRetrievalAction             cpuSRA;
+
   public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
     this.server = server;
@@ -58,6 +65,16 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     buildID = makeBuildID(productInfo);
     nextSequenceNumber = 1;
     stateChangeNotificationInfo = new StateChangeNotificationInfo();
+    manager = TCRuntime.getJVMMemoryManager();
+
+    try {
+      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpu");
+      if (sraCpuType != null) {
+        cpuSRA = (StatisticRetrievalAction) sraCpuType.newInstance();
+      }
+    } catch (Exception e) {
+      /**/
+    }
   }
 
   public void reset() {
@@ -154,28 +171,29 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public int getDSOListenPort() {
     return server.getDSOListenPort();
   }
-  
-  public String takeThreadDump() {
-    ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-    long[] threadIds = threadBean.getAllThreadIds();
-    StringBuffer sb = new StringBuffer();
 
-    sb.append(new Date().toString());
-    sb.append('\n');
-    sb.append("Full thread dump ");
-    sb.append(System.getProperty("java.vm.name"));
-    sb.append(" (");
-    sb.append(System.getProperty("java.vm.version"));
-    sb.append(' ');
-    sb.append(System.getProperty("java.vm.info"));
-    sb.append("):\n\n");
-    
-    for (ThreadInfo threadInfo : threadBean.getThreadInfo(threadIds, Integer.MAX_VALUE)) {
-      sb.append(threadInfo.toString());
+  public Map getStatistics() {
+    HashMap<String, Number> map = new HashMap<String, Number>();
+    MemoryUsage usage = manager.getMemoryUsage();
+
+    map.put("memory free", new Long(usage.getFreeMemory()));
+    map.put("memory used", new Long(usage.getUsedMemory()));
+    map.put("memory max", new Long(usage.getMaxMemory()));
+
+    if(cpuSRA != null) {
+      for(StatisticData sd : cpuSRA.retrieveStatisticData()) {
+        map.put(sd.getName(), (Number)sd.getData());
+      }
     }
+    
+    return map;
+  }
 
-    String text = sb.toString();
+  public String takeThreadDump(long requestMillis) {
+    String text = ThreadDumpUtil.getThreadDump();
     logger.info(text);
+
+    // TODO: if current stats session, store thread dump text at moment requestMillis.
 
     return text;
   }
@@ -185,25 +203,25 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     Properties env = System.getProperties();
     Enumeration keys = env.propertyNames();
     ArrayList<String> l = new ArrayList<String>();
-    
-    while(keys.hasMoreElements()) {
+
+    while (keys.hasMoreElements()) {
       Object o = keys.nextElement();
-      if(o instanceof String) {
-        String key = (String)o;
+      if (o instanceof String) {
+        String key = (String) o;
         l.add(key);
       }
     }
-    
+
     int maxKeyLen = 0;
-    for(String key : l) {
+    for (String key : l) {
       maxKeyLen = Math.max(key.length(), maxKeyLen);
     }
-    
-    for(String key : l) {
+
+    for (String key : l) {
       sb.append(key);
       sb.append(":");
-      int spaceLen = maxKeyLen-key.length()+1;
-      for(int i = 0; i < spaceLen; i++) {
+      int spaceLen = maxKeyLen - key.length() + 1;
+      for (int i = 0; i < spaceLen; i++) {
         sb.append(" ");
       }
       sb.append(env.getProperty(key));
@@ -212,11 +230,11 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
 
     return sb.toString();
   }
-  
+
   public String getConfig() {
     return server.getConfig();
   }
-  
+
   private static String makeBuildID(final ProductInfo productInfo) {
     String timeStamp = productInfo.buildTimestampAsString();
     String revision = productInfo.buildRevision();

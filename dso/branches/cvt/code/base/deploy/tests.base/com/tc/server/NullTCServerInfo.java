@@ -8,6 +8,8 @@ import com.tc.config.schema.L2Info;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.management.beans.TCServerInfoMBean;
 
+import java.util.Map;
+
 import javax.management.NotCompliantMBeanException;
 
 public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean {
@@ -92,7 +94,11 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
     //
   }
 
-  public String takeThreadDump() {
+  public Map getStatistics() {
+    return null;
+  }
+  
+  public String takeThreadDump(long requestMillis) {
     return null;
   }
   

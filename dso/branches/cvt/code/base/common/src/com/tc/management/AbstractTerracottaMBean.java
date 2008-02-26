@@ -66,7 +66,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
     return !notificationListeners.isEmpty();
   }
 
-  public final void addNotificationListener(final NotificationListener listener, final NotificationFilter filter,
+  public void addNotificationListener(final NotificationListener listener, final NotificationFilter filter,
                                             final Object obj) {
     notificationListeners.add(new Listener(listener, filter, obj));
   }
@@ -80,7 +80,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
     return new MBeanNotificationInfo[0];
   }
 
-  public final void removeNotificationListener(final NotificationListener listener, final NotificationFilter filter,
+  public void removeNotificationListener(final NotificationListener listener, final NotificationFilter filter,
                                                final Object obj) throws ListenerNotFoundException {
     boolean removed = false;
 
@@ -95,7 +95,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
     if (!removed) { throw new ListenerNotFoundException(); }
   }
 
-  public final void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException {
+  public void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException {
     boolean removed = false;
 
     for (Iterator i = notificationListeners.iterator(); i.hasNext();) {

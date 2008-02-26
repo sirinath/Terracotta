@@ -6,10 +6,14 @@ package com.tc.management.beans.l1;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.runtime.JVMMemoryManager;
 import com.tc.runtime.MemoryUsage;
 import com.tc.runtime.TCRuntime;
+import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.runtime.ThreadDumpUtil;
 
 import java.util.ArrayList;
@@ -21,17 +25,21 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
 
 public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
+  private static final TCLogger                logger                         = TCLogging.getLogger(L1Info.class);
 
-  private static final String STATISTICS_TYPE = "l1.statistics";
+  private static final String                  STATISTICS_TYPE                = "l1.statistics";
 
-  private static final long STATISTICS_NOTIFICATION_MILLIS = 2000;
+  private static final long                    STATISTICS_NOTIFICATION_MILLIS = 2000;
 
-  private final String rawConfigText;
+  private final String                         rawConfigText;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
@@ -42,17 +50,58 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
   }
 
-  private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
-  private final Timer statsEmitterTimer;
+  private final SynchronizedLong               sequenceNumber                 = new SynchronizedLong(0L);
+  private Timer                                statsEmitterTimer;
 
-  private final JVMMemoryManager manager;
+  private final JVMMemoryManager               manager;
+  private StatisticRetrievalAction             cpuSRA;
 
   public L1Info(String rawConfigText) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, true);
     manager = TCRuntime.getJVMMemoryManager();
-    statsEmitterTimer = new Timer();
-    statsEmitterTimer.scheduleAtFixedRate(new StatsEmitterTimerTask(), 1000, STATISTICS_NOTIFICATION_MILLIS);
     this.rawConfigText = rawConfigText;
+    try {
+      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpu");
+      if (sraCpuType != null) {
+        cpuSRA = (StatisticRetrievalAction) sraCpuType.newInstance();
+        logger.info("L1 got cpuSRA");
+      }
+    } catch (Exception e) {
+      /**/
+    }
+  }
+
+  private void testStartStatsEmitter() {
+    if (statsEmitterTimer == null && hasListeners()) {
+      statsEmitterTimer = new Timer();
+      statsEmitterTimer.scheduleAtFixedRate(new StatsEmitterTimerTask(), 1000, STATISTICS_NOTIFICATION_MILLIS);
+      logger.info("Started L1 stats emitter timer");
+    }
+  }
+  
+  private void testStopStatsEmitter() {
+    if (!hasListeners()) {
+      statsEmitterTimer.cancel();
+      statsEmitterTimer = null;
+      logger.info("Stopped L1 stats emitter timer");
+    }
+  }
+  
+  public void addNotificationListener(final NotificationListener listener, final NotificationFilter filter,
+                                      final Object obj) {
+    super.addNotificationListener(listener, filter, obj);
+//    testStartStatsEmitter();
+  }
+
+  public void removeNotificationListener(final NotificationListener listener, final NotificationFilter filter,
+                                         final Object obj) throws ListenerNotFoundException {
+    super.removeNotificationListener(listener, filter, obj);
+//    testStopStatsEmitter();
+  }
+
+  public void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException {
+    super.removeNotificationListener(listener);
+//    testStopStatsEmitter();
   }
 
   public String getEnvironment() {
@@ -64,7 +113,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     while (keys.hasMoreElements()) {
       Object o = keys.nextElement();
       if (o instanceof String) {
-        String key = (String)o;
+        String key = (String) o;
         l.add(key);
       }
     }
@@ -72,13 +121,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     int maxKeyLen = 0;
     Iterator iter = l.iterator();
     while (iter.hasNext()) {
-      String key = (String)iter.next();
+      String key = (String) iter.next();
       maxKeyLen = Math.max(key.length(), maxKeyLen);
     }
 
     iter = l.iterator();
     while (iter.hasNext()) {
-      String key = (String)iter.next();
+      String key = (String) iter.next();
       sb.append(key);
       sb.append(":");
       int spaceLen = maxKeyLen - key.length() + 1;
@@ -96,8 +145,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return rawConfigText;
   }
 
-  public String takeThreadDump() {
-    return ThreadDumpUtil.getThreadDump();
+  public String takeThreadDump(long requestMillis) {
+    String text = ThreadDumpUtil.getThreadDump();
+    logger.info(text);
+
+    // TODO: if current stats session, store thread dump text at moment requestMillis.
+
+    return text;
   }
 
   public Map getStatistics() {
@@ -108,6 +162,16 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     map.put("memory used", new Long(usage.getUsedMemory()));
     map.put("memory max", new Long(usage.getMaxMemory()));
 
+    if (cpuSRA != null) {
+      StatisticData[] statsData = cpuSRA.retrieveStatisticData();
+      if (statsData != null) {
+        for (int i = 0; i < statsData.length; i++) {
+          StatisticData sd = statsData[i];
+          map.put(sd.getName(), sd.getData());
+        }
+      }
+    }
+
     return map;
   }
 
@@ -115,14 +179,14 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     public void run() {
       if (!hasListeners()) return;
       Notification notif = new Notification(STATISTICS_TYPE, L1Info.this, sequenceNumber.increment(), System
-        .currentTimeMillis());
+          .currentTimeMillis());
       notif.setUserData(getStatistics());
       sendNotification(notif);
     }
   }
 
   public void reset() {
-     /**/
+    /**/
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {

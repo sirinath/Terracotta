@@ -18,6 +18,8 @@ public class AdminClientBundle extends ListResourceBundle {
 
       { "new.server.action.label", "New server" },
 
+      { "new.cluster.action.label", "New cluster" },
+      
       { "quit.action.label", "Quit" },
 
       { "connect.title", "Connect to JMX Server" },
@@ -116,6 +118,8 @@ public class AdminClientBundle extends ListResourceBundle {
 
       { "clients", "Clients" },
 
+      { "servers", "Servers" },
+      
       { "dso.client.retrieving", "Retrieving new DSO client..." },
 
       { "dso.client.new", "Added new DSO client: " },

@@ -56,6 +56,10 @@ public class AdminClientApplet extends XApplet
   public boolean testServerMatch(ServerNode node) {
     return m_mainPanel.testServerMatch(node);
   }
+
+  public boolean testServerMatch(ClusterNode node) {
+    return m_mainPanel.testServerMatch(node);
+  }
   
  public void updateServerPrefs() {
     m_mainPanel.updateServerPrefs();
