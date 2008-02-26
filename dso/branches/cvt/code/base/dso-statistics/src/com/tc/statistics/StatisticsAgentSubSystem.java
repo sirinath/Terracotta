@@ -8,7 +8,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.beans.impl.StatisticsEmitterMBeanImpl;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
-import com.tc.statistics.beans.impl.StatisticsManagerImpl;
+import com.tc.statistics.beans.impl.StatisticsManagerMBeanImpl;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
@@ -115,9 +115,9 @@ public class StatisticsAgentSubSystem {
     // setup an empty statistics retrieval registry
     statisticsRetrievalRegistry = new StatisticsRetrievalRegistryImpl();
     try {
-      statisticsManagerMBean = new StatisticsManagerImpl(statistics_config, statisticsRetrievalRegistry, statisticsBuffer);
+      statisticsManagerMBean = new StatisticsManagerMBeanImpl(statistics_config, statisticsRetrievalRegistry, statisticsBuffer);
     } catch (NotCompliantMBeanException e) {
-      throw new TCRuntimeException("Unable to construct the " + StatisticsManagerImpl.class.getName()
+      throw new TCRuntimeException("Unable to construct the " + StatisticsManagerMBeanImpl.class.getName()
                                    + " MBean; this is a programming error. Please go fix that class.", e);
     }
 

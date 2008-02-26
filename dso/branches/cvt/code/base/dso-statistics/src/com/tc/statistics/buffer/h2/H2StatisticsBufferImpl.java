@@ -21,6 +21,8 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticConsumptio
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferUnknownCaptureSessionException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingSessionNotFoundException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingSessionNotFoundException;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
@@ -96,6 +98,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
   public void setDefaultAgentDifferentiator(String defaultAgentDifferentiator) {
     this.defaultAgentDifferentiator = defaultAgentDifferentiator;
+  }
+
+  public String getDefaultAgentIp() {
+    return defaultAgentIp;
+  }
+
+  public String getDefaultAgentDifferentiator() {
+    return defaultAgentDifferentiator;
   }
 
   public void open() throws TCStatisticsBufferException {
@@ -271,7 +281,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
 
     if (row_count != 1) {
-      throw new TCStatisticsBufferStartCapturingErrorException(sessionId, null);
+      throw new TCStatisticsBufferStartCapturingSessionNotFoundException(sessionId);
     }
 
     fireCapturingStarted(sessionId);
@@ -317,7 +327,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     }
 
     if (!found[0]) {
-      throw new TCStatisticsBufferStopCapturingErrorException(sessionId, null);
+      throw new TCStatisticsBufferStopCapturingSessionNotFoundException(sessionId);
     }
 
     if (row_count > 0) {
