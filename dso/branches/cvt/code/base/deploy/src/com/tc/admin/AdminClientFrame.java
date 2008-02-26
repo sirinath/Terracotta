@@ -69,6 +69,10 @@ public class AdminClientFrame extends XFrame
     return m_mainPanel.testServerMatch(node);
   }
   
+  public boolean testServerMatch(ClusterNode node) {
+    return m_mainPanel.testServerMatch(node);
+  }
+  
   private Preferences getPreferences() {
     AdminClientContext acc = AdminClient.getContext();
     return acc.prefs.node("AdminClientFrame");

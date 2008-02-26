@@ -13,11 +13,14 @@ import org.dijon.SplitPane;
 import org.dijon.TextArea;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.time.Second;
 import org.jfree.data.time.TimeSeries;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
+import com.tc.admin.ThreadDumpEntry;
 import com.tc.admin.common.DemoChartFactory;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XLabel;
@@ -35,7 +38,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.prefs.Preferences;
@@ -47,49 +49,50 @@ import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 public class ClientPanel extends XContainer implements NotificationListener {
-  private DSOClient        m_client;
-  private XLabel           m_detailsLabel;
-  private Button           m_smiteButton;
+  private DSOClient                 m_client;
+  private XLabel                    m_detailsLabel;
+  private Button                    m_smiteButton;
 
-  private Button           m_threadDumpButton;
-  private SplitPane        m_threadDumpsSplitter;
-  private Integer          m_dividerLoc;
-  private DividerListener  m_dividerListener;
+  private TextArea                  m_environmentTextArea;
+  private TextArea                  m_configTextArea;
 
-  private TextArea         m_environmentTextArea;
-  private TextArea         m_configTextArea;
+  private Button                    m_threadDumpButton;
+  private SplitPane                 m_threadDumpsSplitter;
+  private Integer                   m_dividerLoc;
+  private DividerListener           m_dividerListener;
+  private List                      m_threadDumpList;
+  private DefaultListModel          m_threadDumpListModel;
+  private TextArea                  m_threadDumpTextArea;
+  private ScrollPane                m_threadDumpTextScroller;
+  private ThreadDumpEntry           m_lastSelectedEntry;
 
-  private List             m_threadDumpList;
-  private DefaultListModel m_threadDumpListModel;
-  private TextArea         m_threadDumpTextArea;
-  private ScrollPane       m_threadDumpTextScroller;
+  private CheckBox                  m_classCheckBox;
+  private CheckBox                  m_locksCheckBox;
+  private CheckBox                  m_transientRootCheckBox;
+  private CheckBox                  m_rootsCheckBox;
+  private CheckBox                  m_distributedMethodsCheckBox;
 
-  private ThreadDumpEntry  m_lastSelectedEntry;
+  private CheckBox                  m_nonPortableDumpCheckBox;
+  private CheckBox                  m_lockDebugCheckBox;
+  private CheckBox                  m_fieldChangeDebugCheckBox;
+  private CheckBox                  m_waitNotifyDebugCheckBox;
+  private CheckBox                  m_distributedMethodDebugCheckBox;
+  private CheckBox                  m_newObjectDebugCheckBox;
 
-  private CheckBox         m_classCheckBox;
-  private CheckBox         m_locksCheckBox;
-  private CheckBox         m_transientRootCheckBox;
-  private CheckBox         m_rootsCheckBox;
-  private CheckBox         m_distributedMethodsCheckBox;
+  private CheckBox                  m_autoLockDetailsCheckBox;
+  private CheckBox                  m_callerCheckBox;
+  private CheckBox                  m_fullStackCheckBox;
 
-  private CheckBox         m_nonPortableDumpCheckBox;
-  private CheckBox         m_lockDebugCheckBox;
-  private CheckBox         m_fieldChangeDebugCheckBox;
-  private CheckBox         m_waitNotifyDebugCheckBox;
-  private CheckBox         m_distributedMethodDebugCheckBox;
-  private CheckBox         m_newObjectDebugCheckBox;
+  private ActionListener            m_loggingChangeHandler;
+  private HashMap<String, CheckBox> m_loggingControlMap;
 
-  private CheckBox         m_autoLockDetailsCheckBox;
-  private CheckBox         m_callerCheckBox;
-  private CheckBox         m_fullStackCheckBox;
-
-  private ActionListener   m_loggingChangeHandler;
-
-  private HashMap<String, CheckBox>          m_controlMap;
+  private TimeSeries[]              m_memoryTimeSeries;
+  private TimeSeries[]              m_cpuTimeSeries;
 
   public ClientPanel(DSOClient client) {
     super();
@@ -115,16 +118,15 @@ public class ClientPanel extends XContainer implements NotificationListener {
       }
     });
 
-    setupMemoryPanel((Container) findComponent("MemoryPanel"));
-
     m_environmentTextArea = (TextArea) findComponent("EnvironmentTextArea");
     m_configTextArea = (TextArea) findComponent("ConfigTextArea");
 
     m_threadDumpButton = (Button) findComponent("TakeThreadDumpButton");
     m_threadDumpButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
+        long requestMillis = System.currentTimeMillis();
         try {
-          ThreadDumpEntry tde = new ThreadDumpEntry(m_client.getL1InfoMBean().takeThreadDump());
+          ThreadDumpEntry tde = new ThreadDumpEntry(m_client.getL1InfoMBean().takeThreadDump(requestMillis));
           m_threadDumpListModel.addElement(tde);
           m_threadDumpList.setSelectedIndex(m_threadDumpListModel.getSize() - 1);
         } catch (Exception e) {
@@ -178,21 +180,45 @@ public class ClientPanel extends XContainer implements NotificationListener {
     m_callerCheckBox = (CheckBox) findComponent("Caller");
     m_fullStackCheckBox = (CheckBox) findComponent("FullStack");
 
-    m_controlMap = new HashMap<String, CheckBox>();
+    m_loggingControlMap = new HashMap<String, CheckBox>();
+
+    Container memoryPanel = (Container) findComponent("MemoryPanel");
+    Container cpuPanel = (Container) findComponent("CpuPanel");
+    setupMemoryPanel(memoryPanel);
+    setupCpuPanel(cpuPanel);
 
     setClient(client);
   }
 
-  TimeSeries[] memoryTimeSeries;
-
+  private TimeSeries createTimeSeries(String name) {
+    TimeSeries ts = new TimeSeries(name, Second.class);
+    return ts;
+  }
+  
   private void setupMemoryPanel(Container memoryPanel) {
     memoryPanel.setLayout(new BorderLayout());
-    memoryTimeSeries = new TimeSeries[3];
-    memoryTimeSeries[0] = new TimeSeries("memory free", Second.class);
-    memoryTimeSeries[1] = new TimeSeries("memory max", Second.class);
-    memoryTimeSeries[2] = new TimeSeries("memory used", Second.class);
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", memoryTimeSeries);
+    m_memoryTimeSeries = new TimeSeries[3];
+    m_memoryTimeSeries[0] = createTimeSeries("memory free");
+    m_memoryTimeSeries[1] = createTimeSeries("memory max");
+    m_memoryTimeSeries[2] = createTimeSeries("memory used");
+    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
     memoryPanel.add(new ChartPanel(chart, false));
+  }
+
+  private void setupCpuPanel(Container cpuPanel) {
+    cpuPanel.setLayout(new BorderLayout());
+    m_cpuTimeSeries = new TimeSeries[6];
+    m_cpuTimeSeries[0] = createTimeSeries("cpu combined");
+    m_cpuTimeSeries[1] = createTimeSeries("cpu idle");
+    m_cpuTimeSeries[2] = createTimeSeries("cpu nice");
+    m_cpuTimeSeries[3] = createTimeSeries("cpu sys");
+    m_cpuTimeSeries[4] = createTimeSeries("cpu user");
+    m_cpuTimeSeries[5] = createTimeSeries("cpu wait");
+    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_cpuTimeSeries);
+    XYPlot plot = (XYPlot) chart.getPlot();
+    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
+    numberAxis.setRange(0.0, 1.0);
+    cpuPanel.add(new ChartPanel(chart, false));
   }
 
   public void setClient(DSOClient client) {
@@ -208,6 +234,9 @@ public class ClientPanel extends XContainer implements NotificationListener {
         l1InfoBean.addNotificationListener(this, null, null);
         m_environmentTextArea.setText(l1InfoBean.getEnvironment());
         m_configTextArea.setText(l1InfoBean.getConfig());
+
+        Timer timer = new Timer(1000, new TaskPerformer());
+        timer.start();
       }
     } catch (Exception e) {
       AdminClient.getContext().log(e);
@@ -244,9 +273,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
     } catch (Exception e) {
       AdminClient.getContext().log(e);
     }
-
-    // Timer timer = new Timer(1000, new TaskPerformer());
-    // timer.start();
   }
 
   class TaskPerformer implements ActionListener {
@@ -256,9 +282,18 @@ public class ClientPanel extends XContainer implements NotificationListener {
         if (l1InfoBean != null) {
           Map statMap = l1InfoBean.getStatistics();
 
-          memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
-          memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
-          memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
+          m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
+          m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
+          m_memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
+
+          if (statMap.containsKey("cpu combined")) {
+            m_cpuTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("cpu combined")).doubleValue());
+            m_cpuTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("cpu idle")).doubleValue());
+            m_cpuTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("cpu nice")).doubleValue());
+            m_cpuTimeSeries[3].addOrUpdate(new Second(), ((Number) statMap.get("cpu sys")).doubleValue());
+            m_cpuTimeSeries[4].addOrUpdate(new Second(), ((Number) statMap.get("cpu user")).doubleValue());
+            m_cpuTimeSeries[5].addOrUpdate(new Second(), ((Number) statMap.get("cpu wait")).doubleValue());
+          }
         }
       } catch (Exception e) {/**/
       }
@@ -296,7 +331,7 @@ public class ClientPanel extends XContainer implements NotificationListener {
     setLoggingControl(checkBox, bean);
     checkBox.putClientProperty(checkBox.getName(), bean);
     checkBox.addActionListener(m_loggingChangeHandler);
-    m_controlMap.put(checkBox.getName(), checkBox);
+    m_loggingControlMap.put(checkBox.getName(), checkBox);
   }
 
   private void setLoggingControl(CheckBox checkBox, Object bean) {
@@ -363,7 +398,7 @@ public class ClientPanel extends XContainer implements NotificationListener {
     acc.client.storePrefs();
   }
 
-  class DividerListener implements PropertyChangeListener {
+  private class DividerListener implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent pce) {
       JSplitPane splitter = (JSplitPane) pce.getSource();
       String propName = pce.getPropertyName();
@@ -386,21 +421,30 @@ public class ClientPanel extends XContainer implements NotificationListener {
   public void handleNotification(Notification notification, Object handback) {
     String type = notification.getType();
 
-    if(type.startsWith("tc.logging.")) {
-      String name = type.substring(type.lastIndexOf('.')+1);
-      CheckBox checkBox = m_controlMap.get(name);
-      if(checkBox != null) {
+    if (type.startsWith("tc.logging.")) {
+      String name = type.substring(type.lastIndexOf('.') + 1);
+      CheckBox checkBox = m_loggingControlMap.get(name);
+      if (checkBox != null) {
         checkBox.setSelected(Boolean.valueOf(notification.getMessage()));
       }
       return;
     }
-    
+
     if (type.equals("l1.statistics")) {
       Map statMap = (Map) notification.getUserData();
 
-      memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
-      memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
-      memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
+      m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
+      m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
+      m_memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
+
+      if (statMap.containsKey("cpu combined")) {
+        m_cpuTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("cpu combined")).doubleValue());
+        m_cpuTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("cpu idle")).doubleValue());
+        m_cpuTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("cpu nice")).doubleValue());
+        m_cpuTimeSeries[3].addOrUpdate(new Second(), ((Number) statMap.get("cpu sys")).doubleValue());
+        m_cpuTimeSeries[4].addOrUpdate(new Second(), ((Number) statMap.get("cpu user")).doubleValue());
+        m_cpuTimeSeries[5].addOrUpdate(new Second(), ((Number) statMap.get("cpu wait")).doubleValue());
+      }
       return;
     }
 
@@ -453,6 +497,9 @@ public class ClientPanel extends XContainer implements NotificationListener {
                 l1InfoBean.addNotificationListener(ClientPanel.this, null, null);
                 m_environmentTextArea.setText(l1InfoBean.getEnvironment());
                 m_configTextArea.setText(l1InfoBean.getConfig());
+
+                Timer timer = new Timer(1000, new TaskPerformer());
+                timer.start();
               } catch (Exception e) {
                 // just wait for disconnect to occur
               }
@@ -461,36 +508,5 @@ public class ClientPanel extends XContainer implements NotificationListener {
         }
       }
     }
-  }
-}
-
-class ThreadDumpEntry {
-  private String m_threadDumpText;
-  private Date   m_time;
-  private Point  m_viewPosition;
-
-  ThreadDumpEntry(String threadDumpText) {
-    m_threadDumpText = threadDumpText;
-    m_time = new Date();
-  }
-
-  String getThreadDumpText() {
-    return m_threadDumpText;
-  }
-
-  Date getTime() {
-    return m_time;
-  }
-
-  void setViewPosition(Point pos) {
-    m_viewPosition = pos;
-  }
-
-  Point getViewPosition() {
-    return m_viewPosition;
-  }
-
-  public String toString() {
-    return m_time.toString();
   }
 }

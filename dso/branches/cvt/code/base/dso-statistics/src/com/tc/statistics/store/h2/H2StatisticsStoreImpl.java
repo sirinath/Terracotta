@@ -54,7 +54,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
 
-  private final StatisticsDatabase database;
+  protected final StatisticsDatabase database;
   private final File lockFile;
 
   private final Set listeners = new CopyOnWriteArraySet();

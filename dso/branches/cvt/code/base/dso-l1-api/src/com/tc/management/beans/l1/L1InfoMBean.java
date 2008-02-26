@@ -10,7 +10,7 @@ import java.util.Map;
 import javax.management.NotificationEmitter;
 
 public interface L1InfoMBean extends TerracottaMBean, NotificationEmitter {
-  String takeThreadDump();
+  String takeThreadDump(long requestMillis);
   String getEnvironment();
   String getConfig();
   Map getStatistics();
