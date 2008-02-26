@@ -59,6 +59,16 @@ public class StatisticsGathererServlet extends RestfulServlet {
     printOk(response);
   }
 
+  public void methodGetActiveSessionId(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    String sessionid = system.getStatisticsGatherer().getActiveSessionId();
+    print(response, sessionid);
+  }
+
+  public void methodGetAvailableSessionIds(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    String[] sessionids = system.getStatisticsStore().getAvailableSessionIds();
+    print(response, sessionids);
+  }
+
   public void methodGetSupportedStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String[] statistics = system.getStatisticsGatherer().getSupportedStatistics();
     print(response, statistics);
@@ -111,11 +121,6 @@ public class StatisticsGathererServlet extends RestfulServlet {
     if (null == key) throw new IllegalArgumentException("key");
     Object value = system.getStatisticsGatherer().getSessionParam(key);
     print(response, value);
-  }
-
-  public void methodGetAvailableSessionIds(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
-    String[] sessionids = system.getStatisticsStore().getAvailableSessionIds();
-    print(response, sessionids);
   }
 
   public void methodClearStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {

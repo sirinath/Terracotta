@@ -3,6 +3,8 @@
  */
 package com.tc.statistics.agent;
 
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticsManager;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionAlreadyConnectedException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionConnectErrorException;
@@ -12,6 +14,7 @@ import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionToNonAgentE
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -22,8 +25,12 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.RuntimeMBeanException;
 
 public class StatisticsAgentConnection implements StatisticsManager {
+  private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
+  private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+
   private boolean isServerAgent = false;
   private MBeanServerConnection serverConnection = null;
   private StatisticsManagerMBean statManager = null;
@@ -53,19 +60,64 @@ public class StatisticsAgentConnection implements StatisticsManager {
   }
 
   public void disableAllStatistics(final String sessionId) {
-    statManager.disableAllStatistics(sessionId);
+    try {
+      statManager.disableAllStatistics(sessionId);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to disable the statistics for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public boolean enableStatistic(final String sessionId, final String name) {
-    return statManager.enableStatistic(sessionId, name);
+    try {
+      return statManager.enableStatistic(sessionId, name);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to enable the statistic '"+name+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+        return false;
+      } else {
+        throw e;
+      }
+    }
   }
 
   public void startCapturing(final String sessionId) {
-    statManager.startCapturing(sessionId);
+    try {
+      statManager.startCapturing(sessionId);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to start capturing for statistics session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public void stopCapturing(final String sessionId) {
-    statManager.stopCapturing(sessionId);
+    try {
+      statManager.stopCapturing(sessionId);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to stop capturing for statistics session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public void setGlobalParam(final String key, final Object value) {
@@ -77,11 +129,34 @@ public class StatisticsAgentConnection implements StatisticsManager {
   }
 
   public void setSessionParam(final String sessionId, final String key, final Object value) {
-    statManager.setSessionParam(sessionId, key, value);
+    try {
+      statManager.setSessionParam(sessionId, key, value);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to set the parameter '"+key+"' to '"+value+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public Object getSessionParam(final String sessionId, final String key) {
-    return statManager.getSessionParam(sessionId, key);
+    try {
+      return statManager.getSessionParam(sessionId, key);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to get the session parameter '"+key+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+        return null;
+      } else {
+        throw e;
+      }
+    }
   }
 
   public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) throws TCStatisticsAgentConnectionException {

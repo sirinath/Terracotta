@@ -26,6 +26,10 @@ public interface StatisticsBuffer {
 
   public void setDefaultAgentDifferentiator(String defaultAgentDifferentiator);
 
+  public String getDefaultAgentIp();
+
+  public String getDefaultAgentDifferentiator();
+
   public void addListener(StatisticsBufferListener listener);
 
   public void removeListener(StatisticsBufferListener listener);
