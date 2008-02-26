@@ -3,6 +3,8 @@
  */
 package com.tc.statistics.retrieval.impl;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
+
 import com.tc.exception.TCRuntimeException;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
@@ -25,8 +27,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
-
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
   private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
@@ -47,7 +47,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     this.config = config;
     this.buffer = buffer;
     this.sessionId = sessionId;
-
+    
     this.buffer.addListener(this);
 
     createEmptyActionsMap();
@@ -74,19 +74,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   }
 
   public void removeAllActions() {
-    Map old_actions_map = actionsMap;
-
-    createEmptyActionsMap();    
-
-    Iterator values_it = old_actions_map.values().iterator();
-    while (values_it.hasNext()) {
-      List previous_actions = (List)values_it.next();
-      Iterator action_it = previous_actions.iterator();
-      while (action_it.hasNext()) {
-        StatisticRetrievalAction action = (StatisticRetrievalAction)action_it.next();
-        action.cleanup();
-      }
-    }
+    createEmptyActionsMap();
   }
 
   public void registerAction(final StatisticRetrievalAction action) {
@@ -107,9 +95,10 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   }
 
   public void shutdown() {
+    this.buffer.removeListener(this);
+
     disableTimer();
     retrieveShutdownMarker();
-    cleanupActions();
   }
 
   private void retrieveStartupMarker() {
@@ -118,18 +107,6 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
   private void retrieveShutdownMarker() {
     retrieveAction(new SRAShutdownTimestamp());
-  }
-
-  private void cleanupActions() {
-    Iterator values_it = actionsMap.values().iterator();
-    while (values_it.hasNext()) {
-      List actions = (List)values_it.next();
-      Iterator action_it = actions.iterator();
-      while (action_it.hasNext()) {
-        StatisticRetrievalAction action = (StatisticRetrievalAction)action_it.next();
-        action.cleanup();
-      }
-    }
   }
 
   private void retrieveStartupStatistics() {

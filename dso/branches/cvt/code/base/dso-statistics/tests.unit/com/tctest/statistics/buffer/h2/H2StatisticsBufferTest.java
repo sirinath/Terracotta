@@ -180,7 +180,10 @@ public class H2StatisticsBufferTest extends TestCase {
 
   public void testStoreStatisticsDataNullSessionId() throws Exception {
     try {
-      buffer.storeStatistic(new StatisticData());
+      buffer.storeStatistic(new StatisticData()
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .name("name"));
       fail("expected exception");
     } catch (NullPointerException e) {
       // sessionId can't be null
@@ -189,9 +192,44 @@ public class H2StatisticsBufferTest extends TestCase {
 
   public void testStoreStatisticsDataNullAgentIp() throws Exception {
     buffer.createCaptureSession("someid");
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("someid")
+      .moment(new Date())
+      .name("name"));
+    buffer.setDefaultAgentIp(null);
     try {
       buffer.storeStatistic(new StatisticData()
-        .sessionId("someid"));
+        .sessionId("someid")
+        .moment(new Date())
+        .name("name"));
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // agentIp can't be null
+    }
+  }
+
+  public void testStoreStatisticsDataNullMoment() throws Exception {
+    buffer.createCaptureSession("someid");
+    try {
+      buffer.storeStatistic(new StatisticData()
+        .sessionId("someid")
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .name("name")
+        .data("test"));
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // agentIp can't be null
+    }
+  }
+
+  public void testStoreStatisticsDataNullName() throws Exception {
+    buffer.createCaptureSession("someid");
+    try {
+      buffer.storeStatistic(new StatisticData()
+        .sessionId("someid")
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .data("test"));
       fail("expected exception");
     } catch (NullPointerException e) {
       // agentIp can't be null
@@ -200,14 +238,11 @@ public class H2StatisticsBufferTest extends TestCase {
 
   public void testStoreStatisticsDataNullData() throws Exception {
     buffer.createCaptureSession("someid");
-    try {
-      buffer.storeStatistic(new StatisticData()
-        .sessionId("someid")
-        .agentIp(InetAddress.getLocalHost().getHostAddress()));
-      fail("expected exception");
-    } catch (NullPointerException e) {
-      // data can't be null
-    }
+    buffer.storeStatistic(new StatisticData()
+      .sessionId("someid")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("name"));
   }
 
   public void testStoreStatisticsUnopenedBuffer() throws Exception {
@@ -218,6 +253,8 @@ public class H2StatisticsBufferTest extends TestCase {
       buffer.storeStatistic(new StatisticData()
         .sessionId("someid")
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .name("name")
         .data("test"));
       fail("expected exception");
     } catch (TCStatisticsBufferException e) {

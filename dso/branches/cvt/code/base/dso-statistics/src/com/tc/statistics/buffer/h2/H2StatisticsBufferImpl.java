@@ -350,7 +350,8 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   public long storeStatistic(final StatisticData data) throws TCStatisticsBufferException {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
-    Assert.assertNotNull("data property of data", data.getData());
+    Assert.assertNotNull("moment property of data", data.getMoment());
+    Assert.assertNotNull("name property of data", data.getName());
 
     if (null == data.getAgentIp()) {
       data.setAgentIp(defaultAgentIp);
@@ -358,6 +359,8 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     if (null == data.getAgentDifferentiator()) {
       data.setAgentDifferentiator(defaultAgentDifferentiator);
     }
+    
+    Assert.assertNotNull("agentIp property of data", data.getAgentIp());
 
     final long id;
     final int row_count;

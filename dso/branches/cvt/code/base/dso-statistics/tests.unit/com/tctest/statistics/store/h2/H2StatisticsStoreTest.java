@@ -158,7 +158,10 @@ public class H2StatisticsStoreTest extends TestCase {
 
   public void testStoreStatisticsDataNullSessionId() throws Exception {
     try {
-      store.storeStatistic(new StatisticData());
+      store.storeStatistic(new StatisticData()
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .name("name"));
       fail("expected exception");
     } catch (NullPointerException e) {
       // sessionId can't be null
@@ -167,22 +170,46 @@ public class H2StatisticsStoreTest extends TestCase {
 
   public void testStoreStatisticsDataNullAgentIp() throws Exception {
     try {
-      store.storeStatistic(new StatisticData().sessionId("374938L"));
+      store.storeStatistic(new StatisticData()
+        .sessionId("374938")
+        .moment(new Date())
+        .name("name"));
       fail("expected exception");
     } catch (NullPointerException e) {
       // agentIp can't be null
     }
   }
 
-  public void testStoreStatisticsDataNullData() throws Exception {
+  public void testStoreStatisticsDataNullMoment() throws Exception {
     try {
       store.storeStatistic(new StatisticData()
         .sessionId("374938")
-        .agentIp(InetAddress.getLocalHost().getHostAddress()));
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .name("name"));
       fail("expected exception");
     } catch (NullPointerException e) {
-      // data can't be null
+      // moment can't be null
     }
+  }
+
+  public void testStoreStatisticsDataNullName() throws Exception {
+    try {
+      store.storeStatistic(new StatisticData()
+        .sessionId("374938")
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date()));
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // name can't be null
+    }
+  }
+
+  public void testStoreStatisticsDataNullData() throws Exception {
+    store.storeStatistic(new StatisticData()
+      .sessionId("342")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .moment(new Date())
+      .name("name"));
   }
 
   public void testStoreStatisticsUnopenedBuffer() throws Exception {
@@ -191,6 +218,8 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId("342")
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .name("name")
         .data("test"));
       fail("expected exception");
     } catch (TCStatisticsStoreException e) {

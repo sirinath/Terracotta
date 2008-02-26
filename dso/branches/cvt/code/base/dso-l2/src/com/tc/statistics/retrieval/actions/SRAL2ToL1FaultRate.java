@@ -17,7 +17,7 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
 
   public final static String ACTION_NAME = "l2 l1 fault";
 
-  private SampledCounter counter;
+  private final SampledCounter counter;
   
   public SRAL2ToL1FaultRate(DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
@@ -41,9 +41,5 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
     // the capture session.
     Date moment = new Date();
     return new StatisticData[] {new StatisticData(ACTION_NAME, moment, value.getCounterValue())};
-  }
-
-  public void cleanup() {
-    // nothing to clean up
   }
 }

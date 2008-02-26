@@ -171,9 +171,9 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
           data.data(datatimestamp);
         } else {
           BigDecimal datadecimal = resultSet.getBigDecimal("dataDecimal");
-          Assert.eval("All the data elements of the statistic data were NULL, this shouldn't be possible.",
-            !resultSet.wasNull());
-          data.data(datadecimal);
+          if (!resultSet.wasNull()) {
+            data.data(datadecimal);
+          }
         }
       }
     }

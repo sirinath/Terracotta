@@ -23,10 +23,6 @@ public class SRAThreadDump implements StatisticRetrievalAction {
     return StatisticType.SNAPSHOT;
   }
 
-  public void cleanup() {
-    //nothing to clean up
-  }
-
   public StatisticData[] retrieveStatisticData() {
     Date moment = new Date();
     return new StatisticData[] { new StatisticData(ACTION_NAME, moment, ThreadDumpUtil.getThreadDump()) };
