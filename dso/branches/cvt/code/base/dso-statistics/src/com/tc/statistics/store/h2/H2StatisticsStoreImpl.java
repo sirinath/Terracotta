@@ -192,7 +192,8 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
-    Assert.assertNotNull("data property of data", data.getData());
+    Assert.assertNotNull("moment property of data", data.getMoment());
+    Assert.assertNotNull("name property of data", data.getName());
 
     final long id;
     final int row_count;

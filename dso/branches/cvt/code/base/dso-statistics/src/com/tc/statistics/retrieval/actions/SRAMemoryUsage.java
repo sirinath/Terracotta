@@ -43,8 +43,4 @@ public class SRAMemoryUsage implements StatisticRetrievalAction {
       new StatisticData(DATA_NAME_MAX, moment, new Long(usage.getMaxMemory()))
     };
   }
-
-  public void cleanup() {
-    // nothing to clean up
-  }
 }

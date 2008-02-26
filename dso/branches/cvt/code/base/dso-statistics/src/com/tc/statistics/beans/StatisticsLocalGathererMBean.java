@@ -17,6 +17,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
 
   public String getActiveSessionId();
 
+  public String[] getAvailableSessionIds();
+
   public String[] getSupportedStatistics();
 
   public void enableStatistics(String[] names);

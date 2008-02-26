@@ -12,6 +12,4 @@ public interface StatisticRetrievalAction {
   public String getName();
 
   public StatisticType getType();
-
-  public void cleanup();
 }

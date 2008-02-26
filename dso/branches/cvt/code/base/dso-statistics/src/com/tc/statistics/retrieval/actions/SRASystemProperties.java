@@ -35,8 +35,4 @@ public class SRASystemProperties implements StatisticRetrievalAction {
       throw new TCRuntimeException("Unexpected error while storing the system properties.", e);
     }
   }
-
-  public void cleanup() {
-    // nothing to clean up
-  }
 }

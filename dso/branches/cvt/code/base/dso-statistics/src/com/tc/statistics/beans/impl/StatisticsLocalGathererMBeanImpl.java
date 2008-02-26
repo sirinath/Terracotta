@@ -107,6 +107,14 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     return subsystem.getStatisticsGatherer().getActiveSessionId();
   }
 
+  public String[] getAvailableSessionIds() {
+    try {
+      return subsystem.getStatisticsStore().getAvailableSessionIds();
+    } catch (TCStatisticsStoreException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public void closeSession() {
     try {
       subsystem.getStatisticsGatherer().closeSession();

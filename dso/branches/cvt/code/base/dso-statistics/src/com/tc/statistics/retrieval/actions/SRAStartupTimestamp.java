@@ -25,8 +25,4 @@ public class SRAStartupTimestamp implements StatisticRetrievalAction {
     Date moment = new Date();
     return new StatisticData[] { new StatisticData(ACTION_NAME, moment, moment) };
   }
-
-  public void cleanup() {
-    // nothing to clean up
-  }
 }
