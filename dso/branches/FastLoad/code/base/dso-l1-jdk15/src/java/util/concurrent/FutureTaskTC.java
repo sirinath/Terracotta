@@ -146,7 +146,12 @@ public class FutureTaskTC implements Future, Runnable {
     boolean innerIsDone() {
       lock.lock();
       try {
-        return ranOrCancelled(state) && proxyRunner == null;
+        boolean ranOrCancelled = ranOrCancelled(state);
+        if (DebugUtil.DEBUG) {
+          System.err.println("Client " + ManagerUtil.getClientID() + " innerIsDone -- ranOrCancelled(state): " + ranOrCancelled);
+          System.err.println("Client " + ManagerUtil.getClientID() + " innerIsDone -- proxyRunner: " + proxyRunner);
+        }
+        return ranOrCancelled && proxyRunner == null;
       } finally {
         lock.unlock();
       }
@@ -158,6 +163,9 @@ public class FutureTaskTC implements Future, Runnable {
       }
 
       lock.lock();
+      if (DebugUtil.DEBUG) {
+        System.err.println(ManagerUtil.getClientID() + " locked in innerGet");
+      }
       try {
         while (tryAcquireShared() < 0) {
           if (DebugUtil.DEBUG) {
@@ -292,6 +300,9 @@ public class FutureTaskTC implements Future, Runnable {
           try {
             managedTryReleaseShared();
           } finally {
+            if (DebugUtil.DEBUG) {
+              System.err.println(ManagerUtil.getClientID() + " returned from managedTryReleaseShared.");
+            }
             lock.unlock();
           }
         }
