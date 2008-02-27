@@ -28,6 +28,7 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
+import com.tc.statistics.store.StatisticsStoreImportListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
@@ -44,7 +45,6 @@ import java.awt.Insets;
 import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -298,35 +298,17 @@ public class ClusterVisualizerFrame extends JFrame {
   private void populateStore(InputStream in) throws Exception {
     resetStore();
 
-    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
     try {
-      boolean firstLine = true;
-      String line;
-      StringBuffer sb = new StringBuffer();
-      while ((line = reader.readLine()) != null) {
-        if (firstLine) {
-          firstLine = false;
-          continue;
+      fStore.importCsvStatistics(new InputStreamReader(in), new StatisticsStoreImportListener() {
+        public void started() {
         }
-        int len = line.length();
-        char lastChar = line.charAt(len - 1);
-        if (lastChar != ',' && lastChar != '"') {
-          sb.append(line);
-          continue;
-        } else {
-          if (sb.length() > 0) {
-            sb.append(line);
-            line = sb.toString();
-          }
+        public void imported(long count) {
         }
-        StatisticData sd = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, line);
-        if (sd != null) {
-          fStore.storeStatistic(sd);
-        } else {
-          System.err.println(line);
+        public void optimizing() {
         }
-        sb.setLength(0);
-      }
+        public void finished(long total) {
+        }
+      });
     } finally {
       SwingUtilities.invokeAndWait(new Runnable() {
         public void run() {

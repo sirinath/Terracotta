@@ -13,12 +13,15 @@ import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.StatisticsStoreListener;
+import com.tc.statistics.store.StatisticsStoreImportListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.util.TCAssertionError;
 
 import java.io.File;
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -612,9 +615,83 @@ public class H2StatisticsStoreTest extends TestCase {
     consumer2.ensureCorrectCounts(0, 0);
   }
 
-  private void populateBufferWithStatistics(String sessionid1, String sessionid2) throws TCStatisticsStoreException, UnknownHostException {
+  public void testCsvImport() throws Exception {
+    populateBufferWithStatistics("somesession1", "somesession2", 5000, 4000, 2500);
+
+    final StringBuffer txt_buffer_before = new StringBuffer();
+    final int[] count_before = new int[] {0};
+
+    final StringBuffer csv_buffer = new StringBuffer(StatisticData.CURRENT_CSV_HEADER);
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        txt_buffer_before.append(data.toString());
+        txt_buffer_before.append("\n");
+        csv_buffer.append(data.toCsv());
+        count_before[0]++;
+        return true;
+      }
+    });
+
+    store.reinitialize();
+
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        fail("The store should be empty.");
+        return true;
+      }
+    });
+
+    final boolean[] started = new boolean[] {false};
+    final long[] imported = new long[] {0};
+    final boolean[] optimizing = new boolean[] {false};
+    final long[] finished = new long[] {0};
+    Reader reader = new StringReader(csv_buffer.toString());
+    store.importCsvStatistics(reader, new StatisticsStoreImportListener() {
+      public void started() {
+        started[0] = true;
+      }
+
+      public void imported(final long count) {
+        assertTrue(imported[0] < count);
+        imported[0] = count;
+      }
+
+      public void optimizing() {
+        optimizing[0] = true;
+      }
+
+      public void finished(final long total) {
+        finished[0] = total;
+      }
+    });
+
+    assertTrue(started[0]);
+    assertEquals(11500, imported[0]);
+    assertTrue(optimizing[0]);
+    assertEquals(11500, finished[0]);
+
+    final StringBuffer txt_buffer_after = new StringBuffer();
+    final int[] count_after = new int[] {0};
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
+      public boolean consumeStatisticData(StatisticData data) {
+        txt_buffer_after.append(data.toString());
+        txt_buffer_after.append("\n");
+        count_after[0]++;
+        return true;
+      }
+    });
+    
+    assertEquals(txt_buffer_before.toString(), txt_buffer_after.toString());
+    assertEquals(count_before[0], count_after[0]);
+  }
+
+  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2) throws TCStatisticsStoreException, UnknownHostException {
+    populateBufferWithStatistics(sessionid1, sessionid2, 100, 50, 70);
+  }
+
+  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2, final int sess1stat1count, final int sess1stat2count, final int sess2stat1count) throws TCStatisticsStoreException, UnknownHostException {
     String ip = InetAddress.getLocalHost().getHostAddress();
-    for (int i = 1; i <= 100; i++) {
+    for (int i = 1; i <= sess1stat1count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
@@ -624,7 +701,7 @@ public class H2StatisticsStoreTest extends TestCase {
         .element("element1")
         .data(new Long(i)));
     }
-    for (int i = 1; i <= 50; i++) {
+    for (int i = 1; i <= sess1stat2count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
@@ -635,7 +712,7 @@ public class H2StatisticsStoreTest extends TestCase {
         .data(String.valueOf(i)));
     }
 
-    for (int i = 1; i <= 70; i++) {
+    for (int i = 1; i <= sess2stat1count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid2)
         .agentIp(ip)

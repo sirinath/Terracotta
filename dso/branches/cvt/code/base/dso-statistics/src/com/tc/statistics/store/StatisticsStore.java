@@ -7,6 +7,8 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 
+import java.io.Reader;
+
 public interface StatisticsStore {
   public void open() throws TCStatisticsStoreException;
 
@@ -23,6 +25,8 @@ public interface StatisticsStore {
   public void clearStatistics(String sessionId) throws TCStatisticsStoreException;
 
   public void clearAllStatistics() throws TCStatisticsStoreException;
+
+  public void importCsvStatistics(Reader reader, StatisticsStoreImportListener listener) throws TCStatisticsStoreException;
 
   public void addListener(StatisticsStoreListener listener);
 
