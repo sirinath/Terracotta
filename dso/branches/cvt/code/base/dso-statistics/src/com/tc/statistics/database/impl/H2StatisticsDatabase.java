@@ -31,7 +31,7 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
     if (!dbDir.canWrite()) Assert.fail("dbDir '" + dbDir.getAbsolutePath() + "' is not writable");
     if (null == urlSuffix) Assert.fail("urlSuffix can't be null");
     this.dbDir = dbDir;
-    this.urlSuffix = urlSuffix;
+    this.urlSuffix = urlSuffix+";LOG=0";
   }
 
   public synchronized void reinitialize() throws TCStatisticsDatabaseException {

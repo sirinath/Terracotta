@@ -13,7 +13,7 @@ import java.text.ParseException;
 
 import junit.framework.TestCase;
 
-public class StatisticsDataTest extends TestCase {
+public class StatisticDataTest extends TestCase {
   public void testDefaultInstantiation() throws Exception {
     StatisticData data = new StatisticData();
     assertNull(data.getSessionId());
@@ -119,7 +119,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(new Long(987983343L));
-    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",\"987983343\",,,\n", data1.toCsv());
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",\"987983343\",,,\n", data1.toCsv());
 
     StatisticData data2 = new StatisticData()
       .sessionId("3984693")
@@ -129,7 +129,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data("textdata");
-    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",,\"textdata\",,\n", data2.toCsv());
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",,\"textdata\",,\n", data2.toCsv());
 
     StatisticData data3 = new StatisticData()
       .sessionId("3984693")
@@ -139,7 +139,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(moment.getTime());
-    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",,,\"01/09/2008 16:25:52 000\",\n", data3.toCsv());
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",,,\""+moment.getTime().getTime()+"\",\n", data3.toCsv());
 
     StatisticData data4 = new StatisticData()
       .sessionId("3984693")
@@ -149,7 +149,7 @@ public class StatisticsDataTest extends TestCase {
       .name("statname")
       .element("first")
       .data(new BigDecimal("268.75862"));
-    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\"01/09/2008 16:25:52 000\",\"statname\",\"first\",,,,\"268.75862\"\n", data4.toCsv());
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",,,,\"268.75862\"\n", data4.toCsv());
   }
 
   public void testFromCsvUnsupportedVersion() throws Exception {
@@ -165,6 +165,8 @@ public class StatisticsDataTest extends TestCase {
     Calendar moment = Calendar.getInstance();
     moment.set(2008, 0, 9, 16, 25, 52);
     moment.set(Calendar.MILLISECOND, 0);
+
+    StatisticData data = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, "\"somesession1\",\"192.168.1.33\",\"D1\",\"1204117342153\",\"stat1\",\"element1\",\"1\",,,");
 
     StatisticData data1 = new StatisticData()
       .sessionId("3984693")

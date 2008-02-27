@@ -5,6 +5,8 @@ package com.tc.statistics.store.h2;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.StatisticsDatabase;
@@ -16,6 +18,7 @@ import com.tc.statistics.jdbc.PreparedStatementHandler;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
+import com.tc.statistics.store.StatisticsStoreImportListener;
 import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearAllStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
@@ -30,14 +33,17 @@ import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageError
 import com.tc.util.Assert;
 import com.tc.util.concurrent.FileLockGuard;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -49,10 +55,13 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   
   public final static String H2_URL_SUFFIX = "statistics-store";
 
+  private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
+
   private final static long DATABASE_STRUCTURE_CHECKSUM = 436002553L;
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
+  private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
   protected final StatisticsDatabase database;
 
@@ -164,23 +173,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "datatimestamp TIMESTAMP NULL, " +
                 "datadecimal DECIMAL(8, 4) NULL)");
 
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionid)");
-
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentip)");
-
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentdifferentiator ON statisticlog(agentdifferentiator)");
-
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
-
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statname ON statisticlog(statname)");
-
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statelement ON statisticlog(statelement)");
+            createStatisticLogIndexes();
 
             database.getConnection().commit();
           } catch (Exception e) {
@@ -196,6 +189,46 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (Exception e) {
       throw new TCStatisticsStoreInstallationErrorException(e);
     }
+  }
+
+  private void createStatisticLogIndexes() throws SQLException {
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_sessionid ON statisticlog(sessionid)");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentip ON statisticlog(agentip)");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_agentdifferentiator ON statisticlog(agentdifferentiator)");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_moment ON statisticlog(moment)");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statname ON statisticlog(statname)");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE INDEX IF NOT EXISTS idx_statisticlog_statelement ON statisticlog(statelement)");
+  }
+
+  private void dropStatisticLogIndexes() throws SQLException {
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_sessionid");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_agentip");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_agentdifferentiator");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_moment");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_statname");
+
+    JdbcHelper.executeUpdate(database.getConnection(),
+              "DROP INDEX IF EXISTS idx_statisticlog_statelement");
   }
 
   private void setupPreparedStatements() throws TCStatisticsStoreException {
@@ -224,49 +257,9 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
       
       // insert the statistic data with the provided values
-      row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_INSERT_STATISTICSDATA, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
-          statement.setLong(1, id);
-          statement.setString(2, data.getSessionId());
-          statement.setString(3, data.getAgentIp());
-          if (null == data.getAgentDifferentiator()) {
-            statement.setNull(4, Types.VARCHAR);
-          } else {
-            statement.setString(4, data.getAgentDifferentiator());
-          }
-          statement.setTimestamp(5, new Timestamp(data.getMoment().getTime()));
-          statement.setString(6, data.getName());
-          if (null == data.getElement()) {
-            statement.setNull(7, Types.VARCHAR);
-          } else {
-            statement.setString(7, data.getElement());
-          }
-          if (null == data.getData()) {
-            statement.setNull(8, Types.BIGINT);
-            statement.setNull(9, Types.VARCHAR);
-            statement.setNull(10, Types.TIMESTAMP);
-            statement.setNull(11, Types.NUMERIC);
-          } else if (data.getData() instanceof BigDecimal) {
-            statement.setNull(8, Types.BIGINT);
-            statement.setNull(9, Types.VARCHAR);
-            statement.setNull(10, Types.TIMESTAMP);
-            statement.setBigDecimal(11, (BigDecimal)data.getData());
-          } else if (data.getData() instanceof Number) {
-            statement.setLong(8, ((Number)data.getData()).longValue());
-            statement.setNull(9, Types.VARCHAR);
-            statement.setNull(10, Types.TIMESTAMP);
-            statement.setNull(11, Types.NUMERIC);
-          } else if (data.getData() instanceof CharSequence) {
-            statement.setNull(8, Types.BIGINT);
-            statement.setString(9, data.getData().toString());
-            statement.setNull(10, Types.TIMESTAMP);
-            statement.setNull(11, Types.NUMERIC);
-          } else if (data.getData() instanceof Date) {
-            statement.setNull(8, Types.BIGINT);
-            statement.setNull(9, Types.VARCHAR);
-            statement.setTimestamp(10, new java.sql.Timestamp(((Date)data.getData()).getTime()));
-            statement.setNull(11, Types.NUMERIC);
-          }
+          setStatisticDataParameters(statement, id, data);
         }
       });
     } catch (Exception e) {
@@ -276,6 +269,156 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     // ensure that a row was inserted
     if (row_count != 1) {
       throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
+    }
+  }
+
+  private void setStatisticDataParameters(PreparedStatement statement, long id, StatisticData data) throws SQLException {
+    statement.setLong(1, id);
+    statement.setString(2, data.getSessionId());
+    statement.setString(3, data.getAgentIp());
+    if (null == data.getAgentDifferentiator()) {
+      statement.setNull(4, Types.VARCHAR);
+    } else {
+      statement.setString(4, data.getAgentDifferentiator());
+    }
+    statement.setTimestamp(5, new Timestamp(data.getMoment().getTime()));
+    statement.setString(6, data.getName());
+    if (null == data.getElement()) {
+      statement.setNull(7, Types.VARCHAR);
+    } else {
+      statement.setString(7, data.getElement());
+    }
+    if (null == data.getData()) {
+      statement.setNull(8, Types.BIGINT);
+      statement.setNull(9, Types.VARCHAR);
+      statement.setNull(10, Types.TIMESTAMP);
+      statement.setNull(11, Types.NUMERIC);
+    } else if (data.getData() instanceof BigDecimal) {
+      statement.setNull(8, Types.BIGINT);
+      statement.setNull(9, Types.VARCHAR);
+      statement.setNull(10, Types.TIMESTAMP);
+      statement.setBigDecimal(11, (BigDecimal)data.getData());
+    } else if (data.getData() instanceof Number) {
+      statement.setLong(8, ((Number)data.getData()).longValue());
+      statement.setNull(9, Types.VARCHAR);
+      statement.setNull(10, Types.TIMESTAMP);
+      statement.setNull(11, Types.NUMERIC);
+    } else if (data.getData() instanceof CharSequence) {
+      statement.setNull(8, Types.BIGINT);
+      statement.setString(9, data.getData().toString());
+      statement.setNull(10, Types.TIMESTAMP);
+      statement.setNull(11, Types.NUMERIC);
+    } else if (data.getData() instanceof Date) {
+      statement.setNull(8, Types.BIGINT);
+      statement.setNull(9, Types.VARCHAR);
+      statement.setTimestamp(10, new Timestamp(((Date)data.getData()).getTime()));
+      statement.setNull(11, Types.NUMERIC);
+    }
+  }
+
+  public void importCsvStatistics(final Reader reader, final StatisticsStoreImportListener listener) throws TCStatisticsStoreException {
+    Assert.assertNotNull("reader", reader);
+
+    try {
+      database.ensureExistingConnection();
+    } catch (TCStatisticsDatabaseException e) {
+      throw new TCStatisticsStoreException("Database not connected.", e);
+    }
+
+    if (listener != null) {
+      listener.started();
+    }
+
+    final PreparedStatement ps_insert;
+    try {
+      ps_insert = database.getConnection().prepareStatement(SQL_INSERT_STATISTICSDATA);
+    } catch (SQLException e) {
+      throw new TCStatisticsStoreException("Error while preparing SQL statement '" + SQL_INSERT_STATISTICSDATA + "'.", e);
+    }
+
+    long count = 0L;
+    final BufferedReader buffered_reader = new BufferedReader(reader);
+    boolean first_line = true;
+    String line;
+
+    try {
+      dropStatisticLogIndexes();
+    } catch (SQLException e) {
+      throw new TCStatisticsStoreException("Error dropping the statistic log indexes.", e);
+    }
+
+    try {
+      database.getConnection().setAutoCommit(false);
+      try {
+        while ((line = buffered_reader.readLine()) != null) {
+          if (first_line) {
+            first_line = false;
+            continue;
+          }
+
+          final StatisticData data = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, line);
+          if (data != null) {
+            ps_insert.clearParameters();
+
+            final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
+            setStatisticDataParameters(ps_insert, id, data);
+            ps_insert.addBatch();
+            count++;
+
+            // notify about every 1000 inserts
+            if (listener != null &&
+                0 == count % 1000) {
+              listener.imported(count);
+            }
+
+            // execute every 5000 inserts in batch
+            if (0 == count % 5000) {
+              ps_insert.executeBatch();
+            }
+
+            // commit every 50000 entries
+            if (0 == count % 50000) {
+              database.getConnection().commit();
+            }
+          } else {
+            logger.warn("CSV line couldn't be parsed: " + line);
+          }
+        }
+
+        // excute the remaining batch inserts
+        ps_insert.executeBatch();
+        if (listener != null &&
+            count % 1000 != 0) {
+          listener.imported(count);
+        }
+      } catch (IOException e) {
+        throw new TCStatisticsStoreException("Error while reading text.", e);
+      } catch (ParseException e) {
+        throw new TCStatisticsStoreException("Error while converting from CSV.", e);
+      } finally {
+        database.getConnection().setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      throw new TCStatisticsStoreException("Error while starting the transaction.", e);
+    } finally {
+      try {
+        if (listener != null) {
+          listener.optimizing();
+        }
+
+        createStatisticLogIndexes();
+      } catch (SQLException e) {
+        logger.warn("Couldn't re-create the statistic log indexes.", e);
+      }
+      try {
+        ps_insert.close();
+      } catch (SQLException e) {
+        logger.warn("Couldn't close the prepared statement for SQL '" + SQL_INSERT_STATISTICSDATA + "'.", e);
+      }
+    }
+
+    if (listener != null) {
+      listener.finished(count);
     }
   }
 

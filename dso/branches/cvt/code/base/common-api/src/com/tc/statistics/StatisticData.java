@@ -13,30 +13,12 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class StatisticData implements Serializable {
   public final static String CURRENT_CSV_VERSION = "1.0";
   public final static String CURRENT_CSV_HEADER = "Session ID,IP,Differentiator,Moment,Name,Element,Data Number,Data Text,Data Date,Data Decimal\n";
 
   private final static long serialVersionUID = -3387790670840965825L;
-
-  private final static Pattern CSV_LINE_PATTERN = Pattern.compile(
-    "^" +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" + "," +
-    "\\s*((?:\\\".*(?:(?<=\\\\\\\\)|(?<!\\\\))\\\")|)\\s*" +
-    "$");
-  private final static Pattern CSV_ESCAPED_DOUBLE_QUOTES = Pattern.compile("(?:(?<=\\\\\\\\)|(?<!\\\\))\\\\\"");
-  private final static Pattern CSV_ESCAPED_NEWLINE = Pattern.compile("(?:(?<=\\\\\\\\)|(?<!\\\\))\\\\n");
 
   private String sessionId;
   private String agentIp;
@@ -236,7 +218,7 @@ public class StatisticData implements Serializable {
   }
 
   public String toString() {
-    DateFormat format = newDateFormatInstance();
+    DateFormat format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss SSS");
     String data_formatted;
     if (data != null &&
         data instanceof Date) {
@@ -279,13 +261,11 @@ public class StatisticData implements Serializable {
   }
 
   public String toCsv() {
-    DateFormat format = newDateFormatInstance();
-
     StringBuffer result = new StringBuffer();
     addCsvField(result, sessionId, true);
     addCsvField(result, agentIp, true);
     addCsvField(result, agentDifferentiator, true);
-    addCsvField(result, (null == moment ? null : format.format(moment)), true);
+    addCsvField(result, (null == moment ? null : new Long((moment).getTime())), true);
     addCsvField(result, name, true);
     addCsvField(result, element, true);
     if (null == data) {
@@ -311,76 +291,141 @@ public class StatisticData implements Serializable {
     } else if (data instanceof Date) {
       addCsvField(result, null, true);
       addCsvField(result, null, true);
-      addCsvField(result, (null == data ? null : format.format(data)), true);
+      addCsvField(result, (null == data ? null : new Long(((Date)data).getTime())), true);
       addCsvField(result, null, false);
     }
     result.append("\n");
     return result.toString();
   }
 
-  private static SimpleDateFormat newDateFormatInstance() {
-    return new SimpleDateFormat("MM/dd/yyyy HH:mm:ss SSS");
-  }
-
-  private static String csvGroup(final Matcher matcher, final int group) {
-    String result = matcher.group(group);
-    if (result.length() < 2) {
-      return null;
-    }
-    if (!result.startsWith("\"") || !result.endsWith("\"")) {
-      return null;
-    }
-
-    result = result.substring(1, result.length() - 1);
-    result = CSV_ESCAPED_DOUBLE_QUOTES.matcher(result).replaceAll("\"");
-    result = CSV_ESCAPED_NEWLINE.matcher(result).replaceAll("\n");
-    result = StringUtils.replace(result, "\\\\", "\\");
-    return result;
-  }
-
   public static StatisticData newInstanceFromCsvLine(final String dataFormatVersion, final String line) throws ParseException {
     Assert.assertNotNull("dataFormatVersion", dataFormatVersion);
-    
+
     if (CURRENT_CSV_VERSION.equals(dataFormatVersion)) {
-      Matcher matcher = CSV_LINE_PATTERN.matcher(line);
-      if (!matcher.matches()) {
-        return null;
+      return new StatisticDataCSVParser(line).parse();
+    } else {
+      throw new ParseException("The data format version '" + dataFormatVersion + "' is not supported.", 0);
+    }
+  }
+
+  private static class StatisticDataCSVParser {
+    private final String line;
+    private int position = 0;
+
+    public StatisticDataCSVParser(final String line) {
+      this.line = line;
+    }
+
+    private char getNextChar() {
+      if (position == line.length()) {
+        return 0;
       }
+      return line.charAt(position++);
+    }
 
-      String moment_raw = csvGroup(matcher, 4);
-      DateFormat date_format = newDateFormatInstance();
-      Date moment = null;
-      if (moment_raw != null) {
-        moment = date_format.parse(moment_raw);
+    private void setField(final StatisticData data, final int position, final String value) throws ParseException {
+      if (null == value) {
+        return;
       }
+      switch (position) {
+        case 0:
+          data.setSessionId(value);
+          break;
+        case 1:
+          data.setAgentIp(value);
+          break;
+        case 2:
+          data.setAgentDifferentiator(value);
+          break;
+        case 3:
+          data.setMoment(new Date(Long.parseLong(value)));
+          break;
+        case 4:
+          data.setName(value);
+          break;
+        case 5:
+          data.setElement(value);
+          break;
+        case 6:
+          data.setData(new Long(Long.parseLong(value)));
+          break;
+        case 7:
+          data.setData(value);
+          break;
+        case 8:
+          data.setData(new Date(Long.parseLong(value)));
+          break;
+        case 9:
+          data.setData(new BigDecimal(value));
+          break;
+      }
+    }
 
-      StatisticData data = new StatisticData();
-      data.setSessionId(csvGroup(matcher, 1));
-      data.setAgentIp(csvGroup(matcher, 2));
-      data.setAgentDifferentiator(csvGroup(matcher, 3));
-      data.setMoment(moment);
-      data.setName(csvGroup(matcher, 5));
-      data.setElement(csvGroup(matcher, 6));
+    public StatisticData parse() throws ParseException {
+      final StatisticData data = new StatisticData();
 
-      String data_number = csvGroup(matcher, 7);
-      String data_text = csvGroup(matcher, 8);
-      String data_date = csvGroup(matcher, 9);
-      String data_bigdecimal = csvGroup(matcher, 10);
+      int field_count = 0;
+      String field = null;
+      // separates into fields
+      fieldloop:
+      while (true) {
+        char ch = getNextChar();
+        switch (ch) {
+          case 0:
+          case '\n':
+          case '\r':
+            setField(data, field_count, field);
+            field = null;
+            break fieldloop;
+          case ' ':
+          case '\t':
+            continue;
+          case ',':
+            setField(data, field_count, field);
+            field = null;
+            field_count++;
+            break;
+          case '"':
+            final StringBuffer buffer = new StringBuffer();
+            synchronized (buffer) {
+              // retrieve the value of a single field
+              valueloop:
+              while (true) {
+                ch = getNextChar();
+                switch (ch) {
+                  case '\\':
+                    ch = getNextChar();
+                    switch (ch) {
+                      case 'n':
+                        buffer.append('\n');
+                        break;
+                      case '"':
+                      case '\\':
+                        buffer.append(ch);
+                        break;
+                    }
+                    break;
+                  case '"':
+                    break valueloop;
+                  default:
+                    buffer.append(ch);
+                    break;
+                }
+              }
 
-      if (data_number != null) {
-        data.setData(new Long(Long.parseLong(data_number)));
-      } else if (data_text != null) {
-        data.setData(data_text);
-      } else if (data_date != null) {
-        Date date = date_format.parse(moment_raw);
-        data.setData(date);
-      } else if (data_bigdecimal != null) {
-        data.setData(new BigDecimal(data_bigdecimal));
+              field = buffer.toString();
+              break;
+            }
+          default:
+            if (ch <= ' ') {
+              continue;
+            } else {
+              throw new ParseException("Unexpected character '" + ch + "'", position);
+            }
+        }
       }
 
       return data;
-    } else {
-      throw new ParseException("The data format version '" + dataFormatVersion + "' is not supported.", 0);
     }
   }
 }
