@@ -166,8 +166,6 @@ public class StatisticDataTest extends TestCase {
     moment.set(2008, 0, 9, 16, 25, 52);
     moment.set(Calendar.MILLISECOND, 0);
 
-    StatisticData data = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, "\"somesession1\",\"192.168.1.33\",\"D1\",\"1204117342153\",\"stat1\",\"element1\",\"1\",,,");
-
     StatisticData data1 = new StatisticData()
       .sessionId("3984693")
       .agentIp("192.168.1.18")

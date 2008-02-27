@@ -241,6 +241,7 @@ public class StatisticData implements Serializable {
     String result = value;
     result = StringUtils.replace(result, "\\", "\\\\");
     result = StringUtils.replace(result, "\"", "\\\"");
+    result = StringUtils.replace(result, "\r", "");
     result = StringUtils.replace(result, "\n", "\\n");
     return result;
   }
@@ -407,6 +408,10 @@ public class StatisticData implements Serializable {
                     break;
                   case '"':
                     break valueloop;
+                  case 0:
+                  case '\n':
+                  case '\r':
+                    return null;
                   default:
                     buffer.append(ch);
                     break;
