@@ -68,7 +68,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     manager = TCRuntime.getJVMMemoryManager();
 
     try {
-      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpu");
+      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
         cpuSRA = (StatisticRetrievalAction) sraCpuType.newInstance();
       }
@@ -173,16 +173,16 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   }
 
   public Map getStatistics() {
-    HashMap<String, Number> map = new HashMap<String, Number>();
+    HashMap<String, Object> map = new HashMap<String, Object>();
     MemoryUsage usage = manager.getMemoryUsage();
 
-    map.put("memory free", new Long(usage.getFreeMemory()));
     map.put("memory used", new Long(usage.getUsedMemory()));
     map.put("memory max", new Long(usage.getMaxMemory()));
 
     if(cpuSRA != null) {
-      for(StatisticData sd : cpuSRA.retrieveStatisticData()) {
-        map.put(sd.getName(), (Number)sd.getData());
+      StatisticData[] statsData = cpuSRA.retrieveStatisticData();
+      if (statsData != null) {
+        map.put("cpu usage", statsData);
       }
     }
     

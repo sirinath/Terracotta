@@ -548,7 +548,7 @@
 	</container>
   <container tag="DSOClientPanel">
     <children>
-      <tabbedpane>
+      <tabbedpane name="TabbedPane">
         <tab title="Details">
           <container>
             <children>

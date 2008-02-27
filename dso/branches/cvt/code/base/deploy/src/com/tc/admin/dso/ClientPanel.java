@@ -10,6 +10,7 @@ import org.dijon.ContainerResource;
 import org.dijon.List;
 import org.dijon.ScrollPane;
 import org.dijon.SplitPane;
+import org.dijon.TabbedPane;
 import org.dijon.TextArea;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -28,6 +29,7 @@ import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.management.beans.logging.InstrumentationLoggingMBean;
 import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
+import com.tc.statistics.StatisticData;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -55,6 +57,8 @@ import javax.swing.event.ListSelectionListener;
 
 public class ClientPanel extends XContainer implements NotificationListener {
   private DSOClient                 m_client;
+  
+  private TabbedPane                m_tabbedPane;
   private XLabel                    m_detailsLabel;
   private Button                    m_smiteButton;
 
@@ -92,7 +96,9 @@ public class ClientPanel extends XContainer implements NotificationListener {
   private HashMap<String, CheckBox> m_loggingControlMap;
 
   private TimeSeries[]              m_memoryTimeSeries;
+  private Container                 m_cpuPanel;
   private TimeSeries[]              m_cpuTimeSeries;
+  private Map<String, TimeSeries>   m_cpuTimeSeriesMap;
 
   public ClientPanel(DSOClient client) {
     super();
@@ -101,6 +107,8 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
     load((ContainerResource) acc.topRes.getComponent("DSOClientPanel"));
 
+    m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
+    
     m_detailsLabel = (XLabel) findComponent("DetailsLabel");
     m_smiteButton = (Button) findComponent("SmiteClientButton");
     m_smiteButton.addActionListener(new ActionListener() {
@@ -182,43 +190,41 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
     m_loggingControlMap = new HashMap<String, CheckBox>();
 
+    m_cpuPanel = (Container) findComponent("CpuPanel");
     Container memoryPanel = (Container) findComponent("MemoryPanel");
-    Container cpuPanel = (Container) findComponent("CpuPanel");
     setupMemoryPanel(memoryPanel);
-    setupCpuPanel(cpuPanel);
 
     setClient(client);
   }
 
   private TimeSeries createTimeSeries(String name) {
     TimeSeries ts = new TimeSeries(name, Second.class);
+    ts.setMaximumItemCount(50);
     return ts;
   }
-  
+
   private void setupMemoryPanel(Container memoryPanel) {
     memoryPanel.setLayout(new BorderLayout());
-    m_memoryTimeSeries = new TimeSeries[3];
-    m_memoryTimeSeries[0] = createTimeSeries("memory free");
-    m_memoryTimeSeries[1] = createTimeSeries("memory max");
-    m_memoryTimeSeries[2] = createTimeSeries("memory used");
+    m_memoryTimeSeries = new TimeSeries[2];
+    m_memoryTimeSeries[0] = createTimeSeries("memory max");
+    m_memoryTimeSeries[1] = createTimeSeries("memory used");
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
     memoryPanel.add(new ChartPanel(chart, false));
   }
 
-  private void setupCpuPanel(Container cpuPanel) {
-    cpuPanel.setLayout(new BorderLayout());
-    m_cpuTimeSeries = new TimeSeries[6];
-    m_cpuTimeSeries[0] = createTimeSeries("cpu combined");
-    m_cpuTimeSeries[1] = createTimeSeries("cpu idle");
-    m_cpuTimeSeries[2] = createTimeSeries("cpu nice");
-    m_cpuTimeSeries[3] = createTimeSeries("cpu sys");
-    m_cpuTimeSeries[4] = createTimeSeries("cpu user");
-    m_cpuTimeSeries[5] = createTimeSeries("cpu wait");
+  private void setupCpuPanel(int processorCount) {
+    m_cpuPanel.setLayout(new BorderLayout());
+    m_cpuTimeSeriesMap = new HashMap<String, TimeSeries>();
+    m_cpuTimeSeries = new TimeSeries[processorCount];
+    for (int i = 0; i < processorCount; i++) {
+      String cpuName = "cpu " + i;
+      m_cpuTimeSeriesMap.put(cpuName, m_cpuTimeSeries[i] = createTimeSeries(cpuName));
+    }
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_cpuTimeSeries);
     XYPlot plot = (XYPlot) chart.getPlot();
     NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
     numberAxis.setRange(0.0, 1.0);
-    cpuPanel.add(new ChartPanel(chart, false));
+    m_cpuPanel.add(new ChartPanel(chart, false));
   }
 
   public void setClient(DSOClient client) {
@@ -282,17 +288,28 @@ public class ClientPanel extends XContainer implements NotificationListener {
         if (l1InfoBean != null) {
           Map statMap = l1InfoBean.getStatistics();
 
-          m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
-          m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
-          m_memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
+          m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
+          m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
 
-          if (statMap.containsKey("cpu combined")) {
-            m_cpuTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("cpu combined")).doubleValue());
-            m_cpuTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("cpu idle")).doubleValue());
-            m_cpuTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("cpu nice")).doubleValue());
-            m_cpuTimeSeries[3].addOrUpdate(new Second(), ((Number) statMap.get("cpu sys")).doubleValue());
-            m_cpuTimeSeries[4].addOrUpdate(new Second(), ((Number) statMap.get("cpu user")).doubleValue());
-            m_cpuTimeSeries[5].addOrUpdate(new Second(), ((Number) statMap.get("cpu wait")).doubleValue());
+          if (m_cpuPanel != null) {
+            StatisticData[] cpuUsageData = (StatisticData[]) statMap.get("cpu usage");
+            if (cpuUsageData != null) {
+              if (m_cpuTimeSeries == null) {
+                setupCpuPanel(cpuUsageData.length);
+              }
+              for (int i = 0; i < cpuUsageData.length; i++) {
+                StatisticData cpuData = cpuUsageData[i];
+                String cpuName = cpuData.getElement();
+                TimeSeries timeSeries = m_cpuTimeSeriesMap.get(cpuName);
+                if (timeSeries != null) {
+                  timeSeries.addOrUpdate(new Second(), ((Number) cpuData.getData()).doubleValue());
+                }
+              }
+            } else {
+              // Sigar must not be available; hide cpu page
+              m_tabbedPane.remove(m_cpuPanel);
+              m_cpuPanel = null;
+            }
           }
         }
       } catch (Exception e) {/**/

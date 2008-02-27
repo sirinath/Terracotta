@@ -22,6 +22,7 @@ import com.tc.admin.common.DemoChartFactory;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.statistics.StatisticData;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -32,6 +33,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.prefs.Preferences;
 
@@ -45,32 +47,35 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 public class ServerPanel extends XContainer {
-  private AdminClientContext m_acc;
-  private ServerNode         m_serverNode;
-  private JLabel             m_serverDetailsLabel;
-  private StatusView         m_statusView;
-  private JButton            m_shutdownButton;
-  private ProductInfoPanel   m_productInfoPanel;
+  private AdminClientContext      m_acc;
+  private ServerNode              m_serverNode;
+  private JLabel                  m_serverDetailsLabel;
+  private StatusView              m_statusView;
+  private JButton                 m_shutdownButton;
+  private ProductInfoPanel        m_productInfoPanel;
 
-  private TabbedPane         m_tabbedPane;
+  private TabbedPane              m_tabbedPane;
 
-  private TextArea           m_environmentTextArea;
-  private TextArea           m_configTextArea;
+  private TextArea                m_environmentTextArea;
+  private TextArea                m_configTextArea;
 
-  private Button             m_threadDumpButton;
-  private SplitPane          m_threadDumpsSplitter;
-  private Integer            m_dividerLoc;
-  private DividerListener    m_dividerListener;
-  private List               m_threadDumpList;
-  private DefaultListModel   m_threadDumpListModel;
-  private TextArea           m_threadDumpTextArea;
-  private ScrollPane         m_threadDumpTextScroller;
-  private ThreadDumpEntry    m_lastSelectedEntry;
+  private Button                  m_threadDumpButton;
+  private SplitPane               m_threadDumpsSplitter;
+  private Integer                 m_dividerLoc;
+  private DividerListener         m_dividerListener;
+  private List                    m_threadDumpList;
+  private DefaultListModel        m_threadDumpListModel;
+  private TextArea                m_threadDumpTextArea;
+  private ScrollPane              m_threadDumpTextScroller;
+  private ThreadDumpEntry         m_lastSelectedEntry;
 
-  private TCServerInfoMBean  m_serverInfoBean;
-  private Timer              m_statsGathererTimer;
-  private TimeSeries[]       m_memoryTimeSeries;
-  private TimeSeries[]       m_cpuTimeSeries;
+  private TCServerInfoMBean       m_serverInfoBean;
+  private Timer                   m_statsGathererTimer;
+  private TimeSeries[]            m_memoryTimeSeries;
+
+  private Container               m_cpuPanel;
+  private TimeSeries[]            m_cpuTimeSeries;
+  private Map<String, TimeSeries> m_cpuTimeSeriesMap;
 
   public ServerPanel(ServerNode serverNode) {
     super(serverNode);
@@ -110,10 +115,9 @@ public class ServerPanel extends XContainer {
     m_threadDumpTextArea = (TextArea) findComponent("ThreadDumpTextArea");
     m_threadDumpTextScroller = (ScrollPane) findComponent("ThreadDumpTextScroller");
 
+    m_cpuPanel = (Container) findComponent("CpuPanel");
     Container memoryPanel = (Container) findComponent("MemoryPanel");
-    Container cpuPanel = (Container) findComponent("CpuPanel");
     setupMemoryPanel(memoryPanel);
-    setupCpuPanel(cpuPanel);
   }
 
   private TCServerInfoMBean getServerInfoBean() {
@@ -128,31 +132,34 @@ public class ServerPanel extends XContainer {
     }
   }
 
+  private TimeSeries createTimeSeries(String name) {
+    TimeSeries ts = new TimeSeries(name, Second.class);
+    ts.setMaximumItemCount(50);
+    return ts;
+  }
+
   private void setupMemoryPanel(Container memoryPanel) {
     memoryPanel.setLayout(new BorderLayout());
-    m_memoryTimeSeries = new TimeSeries[3];
-    m_memoryTimeSeries[0] = new TimeSeries("memory free", Second.class);
-    m_memoryTimeSeries[1] = new TimeSeries("memory max", Second.class);
-    m_memoryTimeSeries[2] = new TimeSeries("memory used", Second.class);
+    m_memoryTimeSeries = new TimeSeries[2];
+    m_memoryTimeSeries[0] = createTimeSeries("memory max");
+    m_memoryTimeSeries[1] = createTimeSeries("memory used");
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
     memoryPanel.add(new ChartPanel(chart, false));
   }
 
-  private void setupCpuPanel(Container cpuPanel) {
-    cpuPanel.setLayout(new BorderLayout());
-    m_cpuTimeSeries = new TimeSeries[6];
-    m_cpuTimeSeries[0] = new TimeSeries("cpu combined", Second.class);
-    m_cpuTimeSeries[1] = new TimeSeries("cpu idle", Second.class);
-    m_cpuTimeSeries[2] = new TimeSeries("cpu nice", Second.class);
-    m_cpuTimeSeries[3] = new TimeSeries("cpu sys", Second.class);
-    m_cpuTimeSeries[4] = new TimeSeries("cpu user", Second.class);
-    m_cpuTimeSeries[5] = new TimeSeries("cpu wait", Second.class);
+  private void setupCpuPanel(int processorCount) {
+    m_cpuPanel.setLayout(new BorderLayout());
+    m_cpuTimeSeriesMap = new HashMap<String, TimeSeries>();
+    m_cpuTimeSeries = new TimeSeries[processorCount];
+    for (int i = 0; i < processorCount; i++) {
+      String cpuName = "cpu " + i;
+      m_cpuTimeSeriesMap.put(cpuName, m_cpuTimeSeries[i] = createTimeSeries(cpuName));
+    }
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_cpuTimeSeries);
     XYPlot plot = (XYPlot) chart.getPlot();
     NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
     numberAxis.setRange(0.0, 1.0);
-
-    cpuPanel.add(new ChartPanel(chart, false));
+    m_cpuPanel.add(new ChartPanel(chart, false));
   }
 
   class StatisticsRetrievalAction implements ActionListener {
@@ -162,17 +169,28 @@ public class ServerPanel extends XContainer {
         if (tcServerInfoBean != null) {
           Map statMap = tcServerInfoBean.getStatistics();
 
-          m_memoryTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("memory free")).doubleValue());
-          m_memoryTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("memory max")).doubleValue());
-          m_memoryTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("memory used")).doubleValue());
+          m_memoryTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("memory max")).doubleValue());
+          m_memoryTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("memory used")).doubleValue());
 
-          if (statMap.containsKey("cpu combined")) {
-            m_cpuTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("cpu combined")).doubleValue());
-            m_cpuTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("cpu idle")).doubleValue());
-            m_cpuTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("cpu nice")).doubleValue());
-            m_cpuTimeSeries[3].addOrUpdate(new Second(), ((Number) statMap.get("cpu sys")).doubleValue());
-            m_cpuTimeSeries[4].addOrUpdate(new Second(), ((Number) statMap.get("cpu user")).doubleValue());
-            m_cpuTimeSeries[5].addOrUpdate(new Second(), ((Number) statMap.get("cpu wait")).doubleValue());
+          if (m_cpuPanel != null) {
+            StatisticData[] cpuUsageData = (StatisticData[]) statMap.get("cpu usage");
+            if (cpuUsageData != null) {
+              if (m_cpuTimeSeries == null) {
+                setupCpuPanel(cpuUsageData.length);
+              }
+              for (int i = 0; i < cpuUsageData.length; i++) {
+                StatisticData cpuData = cpuUsageData[i];
+                String cpuName = cpuData.getElement();
+                TimeSeries timeSeries = m_cpuTimeSeriesMap.get(cpuName);
+                if (timeSeries != null) {
+                  timeSeries.addOrUpdate(new Second(), ((Number) cpuData.getData()).doubleValue());
+                }
+              }
+            } else {
+              // Sigar must not be available; hide cpu page
+              m_tabbedPane.remove(m_cpuPanel);
+              m_cpuPanel = null;
+            }
           }
         }
       } catch (Exception e) {/**/

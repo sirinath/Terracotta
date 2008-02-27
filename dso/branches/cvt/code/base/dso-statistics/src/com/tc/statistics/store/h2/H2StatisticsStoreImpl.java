@@ -7,7 +7,6 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
