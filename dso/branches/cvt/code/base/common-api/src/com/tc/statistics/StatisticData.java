@@ -238,12 +238,50 @@ public class StatisticData implements Serializable {
   }
 
   private static String escapeForCsv(final String value) {
-    String result = value;
-    result = StringUtils.replace(result, "\\", "\\\\");
-    result = StringUtils.replace(result, "\"", "\\\"");
-    result = StringUtils.replace(result, "\r", "");
-    result = StringUtils.replace(result, "\n", "\\n");
-    return result;
+    char[] chars = value.toCharArray();
+    StringBuffer buffer = null;
+    int last = 0;
+    String replacement = null;
+    for (int i = 0; i < chars.length; i++) {
+      switch (chars[i]) {
+        case '\\':
+          replacement = "\\\\";
+          break;
+        case '"':
+          replacement = "\\\"";
+          break;
+        case '\r':
+          replacement = "";
+          break;
+        case '\n':
+          replacement = "\\n";
+          break;
+      }
+
+      if (replacement != null) {
+        if (null == buffer) {
+          buffer = new StringBuffer();
+        }
+
+        if (last < i) {
+          buffer.append(chars, last, i - last);
+        }
+
+        buffer.append(replacement);
+        replacement = null;
+        last = i+1;
+      }
+    }
+
+    if (null == buffer) {
+      return value;
+    }
+
+    if (last < value.length()) {
+      buffer.append(chars, last, value.length() - last);
+    }
+
+    return buffer.toString();
   }
 
   private static void addCsvField(final StringBuffer result, final Object field, final boolean separator) {

@@ -128,8 +128,8 @@ public class StatisticDataTest extends TestCase {
       .moment(moment.getTime())
       .name("statname")
       .element("first")
-      .data("textdata");
-    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",,\"textdata\",,\n", data2.toCsv());
+      .data("t\\\nex\rt\nd\"a\\\"ta\\");
+    assertEquals("\"3984693\",\"192.168.1.18\",\"7826\",\""+moment.getTime().getTime()+"\",\"statname\",\"first\",,\"t\\\\\\next\\nd\\\"a\\\\\\\"ta\\\\\",,\n", data2.toCsv());
 
     StatisticData data3 = new StatisticData()
       .sessionId("3984693")
