@@ -31,14 +31,14 @@ import java.util.Iterator;
 import java.util.Random;
 
 public class ManagedObjectPersistorImplTest extends TCTestCase {
-  private static final TCLogger        logger = TCLogging.getTestingLogger(ManagedObjectPersistorImplTest.class);
-  private ManagedObjectPersistorImpl   managedObjectPersistor;
-  private PersistentManagedObjectStore objectStore;
-  private PersistenceTransactionProvider       persistenceTransactionProvider;
-  private DBEnvironment                        env;
-  private OidBitsArrayMapManagerImpl   oidManager;
-  private final String                 OID_FAST_LOAD = "l2.objectmanager.loadObjectID.fastLoad";
-
+  private static final TCLogger          logger        = TCLogging
+                                                           .getTestingLogger(ManagedObjectPersistorImplTest.class);
+  private ManagedObjectPersistorImpl     managedObjectPersistor;
+  private PersistentManagedObjectStore   objectStore;
+  private PersistenceTransactionProvider persistenceTransactionProvider;
+  private DBEnvironment                  env;
+  private OidBitsArrayMapManagerImpl     oidManager;
+  private final String                   OID_FAST_LOAD = "l2.objectmanager.loadObjectID.fastLoad";
 
   public ManagedObjectPersistorImplTest() {
     //
@@ -48,7 +48,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     super.setUp();
     // test only with Oid fastLoad enabled
     TCPropertiesImpl.setProperty(OID_FAST_LOAD, "true");
-    assertTrue( TCPropertiesImpl.getProperties().getBoolean(OID_FAST_LOAD));
+    assertTrue(TCPropertiesImpl.getProperties().getBoolean(OID_FAST_LOAD));
     boolean paranoid = true;
     env = newDBEnvironment(paranoid);
     env.open();
@@ -60,10 +60,10 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
         .getMapsDatabase(), sleepycatCollectionFactory);
     managedObjectPersistor = new ManagedObjectPersistorImpl(logger, env.getClassCatalogWrapper().getClassCatalog(),
                                                             new SleepycatSerializationAdapterFactory(), env
-                                                                .getObjectDatabase(), env.getOidDatabase(),
-                                                            dbCursorConfig, new TestMutableSequence(), env
-                                                                .getRootDatabase(), rootDBCursorConfig,
-                                                            persistenceTransactionProvider,
+                                                                .getObjectDatabase(), env.getOidDatabase(), env
+                                                                .getOidLogDatabase(), dbCursorConfig,
+                                                            new TestMutableSequence(), env.getRootDatabase(),
+                                                            rootDBCursorConfig, persistenceTransactionProvider,
                                                             sleepycatCollectionsPersistor, env.isParanoidMode());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor);
     oidManager = managedObjectPersistor.getOidManager();

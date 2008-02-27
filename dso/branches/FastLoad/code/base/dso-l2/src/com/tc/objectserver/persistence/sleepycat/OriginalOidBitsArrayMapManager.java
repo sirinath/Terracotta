@@ -12,6 +12,7 @@ import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
+import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
@@ -42,15 +43,15 @@ public class OriginalOidBitsArrayMapManager extends SleepycatPersistorBase imple
     return new Thread(new ObjectIdReader(rv), "ObjectIdReaderThread");
   }
 
-  public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet)  {
+  public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
 
-  public OperationStatus oidPut(PersistenceTransaction tx, ObjectID objectId) {
+  public OperationStatus oidPut(PersistenceTransaction tx, ManagedObject managedObject) {
     return OperationStatus.SUCCESS;
   }
 
-  public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet)  {
+  public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
 

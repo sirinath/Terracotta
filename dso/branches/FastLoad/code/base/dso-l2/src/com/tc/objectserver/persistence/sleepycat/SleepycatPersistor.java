@@ -76,6 +76,7 @@ public class SleepycatPersistor implements Persistor {
                                                                  serializationAdapterFactory,
                                                                  env.getObjectDatabase(),
                                                                  env.getOidDatabase(),
+                                                                 env.getOidLogDatabase(),
                                                                  dbCursorConfig,
                                                                  new SleepycatSequence(
                                                                                        this.persistenceTransactionProvider,

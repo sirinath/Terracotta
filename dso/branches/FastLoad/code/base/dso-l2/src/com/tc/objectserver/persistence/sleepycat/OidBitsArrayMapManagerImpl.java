@@ -15,9 +15,11 @@ import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
+import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
+import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
@@ -33,38 +35,174 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase implements OidBitsArrayMapManager {
+  private final static byte                    LOG_ACTION_ADD           = 1;
+  private final static byte                    LOG_ACTION_DELETE        = 2;
+  private final static byte[]                  LOG_DB_VALUE_ADD         = new byte[] { LOG_ACTION_ADD };
+  private final static byte[]                  LOG_DB_VALUE_DELETE      = new byte[] { LOG_ACTION_DELETE };
+
+  private final static String                  LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
+  private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
+  private final static String                  LONGS_PER_MEMORY_ENTRY   = "longsPerMemoryEntry";
+  private final static String                  MEASURE_PERF             = "measure.performance";
+  private final static String                  CHCKPOINT_CHANGES        = "checkpoint.changes";
+  private final static String                  CHCKPOINT_TIMEPERIOD     = "checkpoint.timeperiod";
+  private final int                            CHECKPOINT_CHANGES;
+  private final int                            CHECKPOINT_PERIOD;
+  private boolean                              isMeasurePerf;
+  
   private final Database                       oidDB;
+  private final Database                       oidLogDB;
   private final TCLogger                       logger;
   private final PersistenceTransactionProvider ptp;
   private final OidBitsArrayMap                oidBitsArrayMap;
   private final CursorConfig                   oidDBCursorConfig;
   private volatile boolean                     isPopulating;
-  private final int                            BitsPerLong            = OidLongArray.BitsPerLong;
-  private final String                         LONGS_PER_DISK_ENTRY   = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
-  private final String                         LONGS_PER_MEMORY_ENTRY = "l2.objectmanager.loadObjectID.longsPerMemoryEntry";
+  private final int                            BitsPerLong              = OidLongArray.BitsPerLong;
   private final boolean                        paranoid;
+  private final AtomicInteger                  changesCount             = new AtomicInteger(0);
+  private final Thread                         oidCheckPointThread;
 
-  public OidBitsArrayMapManagerImpl(TCLogger logger, boolean paranoid, Database oidDB,
+  public OidBitsArrayMapManagerImpl(TCLogger logger, boolean paranoid, Database oidDB, Database oidLogDB,
                                     PersistenceTransactionProvider ptp, CursorConfig oidDBCursorConfig) {
     this.oidDB = oidDB;
+    this.oidLogDB = oidLogDB;
     this.logger = logger;
     this.paranoid = paranoid;
     this.ptp = ptp;
     this.oidDBCursorConfig = oidDBCursorConfig;
 
+    TCProperties loadObjProp = TCPropertiesImpl.getProperties().getPropertiesFor(LOAD_OBJECTID_PROPERTIES);
+    CHECKPOINT_CHANGES = loadObjProp.getInt(CHCKPOINT_CHANGES);
+    CHECKPOINT_PERIOD = loadObjProp.getInt(CHCKPOINT_TIMEPERIOD);
+    isMeasurePerf = loadObjProp.getBoolean(MEASURE_PERF, false);
     isPopulating = false;
     if (!this.paranoid) {
       oidBitsArrayMap = null;
+      oidCheckPointThread = null;
     } else {
-      oidBitsArrayMap = new OidBitsArrayMap(TCPropertiesImpl.getProperties().getInt(LONGS_PER_MEMORY_ENTRY),
-                                            TCPropertiesImpl.getProperties().getInt(LONGS_PER_DISK_ENTRY));
+      oidBitsArrayMap = new OidBitsArrayMap(loadObjProp.getInt(LONGS_PER_MEMORY_ENTRY), loadObjProp
+          .getInt(LONGS_PER_DISK_ENTRY));
+      oidCheckPointThread = new Thread(new OidUpdater(CHECKPOINT_PERIOD), "ObjectIDCheckPoint");
+      oidCheckPointThread.setDaemon(true);
+    }
+  }
+
+  private void incChangesCount() {
+    if (changesCount.incrementAndGet() >= CHECKPOINT_CHANGES) {
+      changesCount.set(0);
+      synchronized (oidCheckPointThread) {
+        oidCheckPointThread.notifyAll();
+      }
+    }
+  }
+
+  private void resetChangesCount() {
+    changesCount.set(0);
+  }
+
+  private OperationStatus logObjectID(PersistenceTransaction tx, ObjectID objectID, boolean isAddNewObject)
+      throws DatabaseException {
+    incChangesCount();
+    DatabaseEntry key = new DatabaseEntry();
+    key.setData(Conversion.long2Bytes(objectID.toLong()));
+    DatabaseEntry value = new DatabaseEntry();
+    byte[] action = isAddNewObject ? LOG_DB_VALUE_ADD : LOG_DB_VALUE_DELETE;
+    value.setData(action);
+    return this.oidLogDB.put(pt2nt(tx), key, value);
+  }
+
+  private OperationStatus logNewObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
+    return (logObjectID(tx, objectID, true));
+  }
+
+  private OperationStatus logDeleteObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
+    return (logObjectID(tx, objectID, false));
+  }
+
+  /*
+   * Flush out oidLogDB to bitsArray on disk. isUpdateInMemory - true, if processing left over from previous run -
+   * false, used by checkpoint to flush in-memory to disk.
+   */
+  private void oidFlushLogToBitsArray(boolean isUpdateInMemory) {
+    SortedSet<Long> sortedOnDiskOidSet = new TreeSet<Long>();
+    PersistenceTransaction tx = ptp.newTransaction();
+    CursorConfig dbCursorConfig = new CursorConfig();
+    dbCursorConfig.setReadUncommitted(true);
+    DatabaseEntry key = new DatabaseEntry();
+    DatabaseEntry value = new DatabaseEntry();
+    try {
+      Cursor cursor = oidLogDB.openCursor(pt2nt(tx), dbCursorConfig);
+      while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+        long oidValue = Conversion.bytes2Long(key.getData());
+
+        if (isUpdateInMemory) {
+          byte action = value.getData()[0];
+          switch (action) {
+            case LOG_ACTION_ADD:
+              oidBitsArrayMap.getAndSet(new ObjectID(oidValue));
+              break;
+            case LOG_ACTION_DELETE:
+              oidBitsArrayMap.getAndClr(new ObjectID(oidValue));
+              break;
+            default:
+              throw new RuntimeException("Unknow oid log action " + action);
+          }
+        }
+
+        sortedOnDiskOidSet.add(new Long(oidBitsArrayMap.oidOnDiskIndex(oidValue)));
+        cursor.delete();
+      }
+      cursor.close();
+
+      for (Long onDiskIndex : sortedOnDiskOidSet) {
+        OidLongArray bits = oidBitsArrayMap.getArrayForDisk(onDiskIndex);
+        key.setData(bits.keyToBytes());
+        value.setData(bits.arrayToBytes());
+        this.oidDB.put(pt2nt(tx), key, value);
+      }
+
+      tx.commit();
+    } catch (DatabaseException e) {
+      logger.error("Error ojectID updater " + e);
     }
   }
 
   /*
-   * fast way to load object-Ids at server restart by reading them from bit array
+   * Periodically flush oid from oidLogDB to oidDB
+   */
+  private class OidUpdater implements Runnable {
+    private final int        timeperiod;
+    private volatile boolean quit = false;
+
+    public OidUpdater(int timeperiod) {
+      this.timeperiod = timeperiod;
+    }
+
+    public void stop() {
+      quit = true;
+    }
+
+    public void run() {
+      while (!quit) {
+        synchronized (oidCheckPointThread) {
+          try {
+            oidCheckPointThread.wait(timeperiod);
+          } catch (InterruptedException e) {
+            //
+          }
+          resetChangesCount();
+          if (quit) break;
+          oidFlushLogToBitsArray(false);
+        }
+      }
+    }
+  }
+
+  /*
+   * fast way to load object-Ids at server restart by reading them from bits array
    */
   private class OidObjectIdReader implements Runnable {
     protected final SyncObjectIdSet set;
@@ -84,8 +222,8 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
         BoundedLinkedQueue queue;
         queue = new BoundedLinkedQueue(1000);
         helperThread = new Thread(new ObjectIdCreator(queue, tmp), "OidObjectIdCreatorThread");
-        helperThread.start();
         isPopulating = true;
+        helperThread.start();
         tx = ptp.newTransaction();
         cursor = oidDB.openCursor(pt2nt(tx), oidDBCursorConfig);
         DatabaseEntry key = new DatabaseEntry();
@@ -96,8 +234,12 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
         // null data to end helper thread
         queue.put(new OidLongArray(null, null));
         helperThread.join();
-        if (MeasurePerf) {
-          System.out.println("XXX done");
+
+        // process anything left in oidLogDB from previous run
+        oidFlushLogToBitsArray(true);
+
+        if (isMeasurePerf) {
+          logger.info("MeasurePerf: done");
         }
       } catch (Throwable t) {
         logger.error("Error Reading Object IDs", t);
@@ -108,6 +250,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
         set.stopPopulating(tmp);
         tmp = null;
       }
+      oidCheckPointThread.start();
     }
 
     protected void safeCommit(PersistenceTransaction tx) {
@@ -130,8 +273,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     }
   }
 
-  boolean MeasurePerf = false;
-
   public class ObjectIdCreator implements Runnable {
     ObjectIDSet2       tmp;
     BoundedLinkedQueue queue;
@@ -144,7 +285,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     }
 
     public void run() {
-      if (MeasurePerf) start_time = new Date().getTime();
+      if (isMeasurePerf) start_time = new Date().getTime();
       while (true) {
         try {
           OidLongArray entry = (OidLongArray) queue.take();
@@ -167,12 +308,12 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
         for (int i = 0; i < BitsPerLong; ++i) {
           if ((bits & bit) != 0) {
             tmp.add(new ObjectID(oid));
-            if (MeasurePerf) {
+            if (isMeasurePerf) {
               if ((++counter % 1000) == 0) {
                 long elapse_time = new Date().getTime() - start_time;
                 long avg_time = elapse_time / (counter / 1000);
-                System.out.println("XXX reading " + counter + " OIDs " + "took " + elapse_time + "ms avg(1000 objs):"
-                                   + avg_time + " ms");
+                logger.info("MeaurePerf: reading " + counter + " OIDs " + "took " + elapse_time + "ms avg(1000 objs):"
+                            + avg_time + " ms");
               }
             }
           }
@@ -202,23 +343,19 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   /*
    * Use with great care!!! Shall do db commit before next call otherwise dead lock may result.
    */
-  public OperationStatus oidPut(PersistenceTransaction tx, ObjectID objectId) throws DatabaseException {
-    if(!paranoid) return OperationStatus.SUCCESS;
-    
-    // care only new object ID.
-    if (oidBitsArrayMap.contains(objectId)) return OperationStatus.SUCCESS;
+  public OperationStatus oidPut(PersistenceTransaction tx, ManagedObject managedObject) throws DatabaseException {
+    if (!paranoid) return OperationStatus.SUCCESS;
 
-    DatabaseEntry key = new DatabaseEntry();
-    DatabaseEntry value = new DatabaseEntry();
+    // care only new object ID.
+    if (managedObject.isNew()) return OperationStatus.SUCCESS;
+
+    ObjectID objectId = managedObject.getID();
     synchronized (oidBitsArrayMap) {
       if (isPopulating) {
         syncOidBitsArrayDiskEntry(objectId);
       }
-
-      OidLongArray bits = oidBitsArrayMap.getAndSet(objectId);
-      key.setData(bits.keyToBytes());
-      value.setData(bits.arrayToBytes());
-      return this.oidDB.put(pt2nt(tx), key, value);
+      oidBitsArrayMap.getAndSet(objectId);
+      return (logNewObjectID(tx, objectId));
     }
   }
 
@@ -248,21 +385,16 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   }
 
   public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
-    if(!paranoid) return OperationStatus.SUCCESS;
-    
+    if (!paranoid) return OperationStatus.SUCCESS;
+
     OperationStatus status = OperationStatus.SUCCESS;
     SortedSet sortedOidSet = new TreeSet();
     processForPut(oidSet, sortedOidSet);
     if (!oidBitsArrayMap.oidMarkInUse(sortedOidSet)) { throw new TCDatabaseException("OidBitsArrayMap interrupted"); }
-    for (Iterator i = sortedOidSet.iterator(); i.hasNext();) {
-      DatabaseEntry key = new DatabaseEntry();
-      DatabaseEntry value = new DatabaseEntry();
-      Long keyOnDisk = (Long) i.next();
-      OidLongArray bits = oidBitsArrayMap.getArrayForDisk(keyOnDisk.longValue());
-      key.setData(bits.keyToBytes());
-      value.setData(bits.arrayToBytes());
+    for (Iterator i = oidSet.iterator(); i.hasNext();) {
+      ObjectID objectID = (ObjectID) i.next();
       try {
-        status = this.oidDB.put(pt2nt(tx), key, value);
+        status = logNewObjectID(tx, objectID);
       } catch (DatabaseException de) {
         oidBitsArrayMap.oidUnmarkInUse(sortedOidSet);
         throw new TCDatabaseException(de);
@@ -287,10 +419,9 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     }
   }
 
-  public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet)
-      throws TCDatabaseException {
-    if(!paranoid) return OperationStatus.SUCCESS;
-    
+  public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
+    if (!paranoid) return OperationStatus.SUCCESS;
+
     OperationStatus status = OperationStatus.SUCCESS;
     SortedSet sortedOidSet = new TreeSet();
     processForDelete(oidSet, sortedOidSet);
