@@ -4,7 +4,6 @@
 package com.tctest.statistics.buffer.h2;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;

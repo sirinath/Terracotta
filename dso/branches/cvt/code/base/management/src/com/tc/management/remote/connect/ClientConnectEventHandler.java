@@ -154,6 +154,7 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
         environment.put(ClientProvider.CONNECTION_LIST, channelIdToMsgConnection);
         environment.put("jmx.remote.x.request.timeout", new Long(Long.MAX_VALUE));
         environment.put("jmx.remote.x.client.connection.check.period", new Long(0));
+        environment.put("jmx.remote.x.server.connection.timeout", new Long(Long.MAX_VALUE));
 
         final JMXConnector jmxConnector;
         try {

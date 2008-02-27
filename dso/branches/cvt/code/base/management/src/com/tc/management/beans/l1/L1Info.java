@@ -61,10 +61,10 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     manager = TCRuntime.getJVMMemoryManager();
     this.rawConfigText = rawConfigText;
     try {
-      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpu");
+      Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
         cpuSRA = (StatisticRetrievalAction) sraCpuType.newInstance();
-        logger.info("L1 got cpuSRA");
+        logger.info("L1 got SRACpuCombined");
       }
     } catch (Exception e) {
       /**/
@@ -78,7 +78,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
       logger.info("Started L1 stats emitter timer");
     }
   }
-  
+
   private void testStopStatsEmitter() {
     if (!hasListeners()) {
       statsEmitterTimer.cancel();
@@ -86,22 +86,22 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
       logger.info("Stopped L1 stats emitter timer");
     }
   }
-  
+
   public void addNotificationListener(final NotificationListener listener, final NotificationFilter filter,
                                       final Object obj) {
     super.addNotificationListener(listener, filter, obj);
-//    testStartStatsEmitter();
+    // testStartStatsEmitter();
   }
 
   public void removeNotificationListener(final NotificationListener listener, final NotificationFilter filter,
                                          final Object obj) throws ListenerNotFoundException {
     super.removeNotificationListener(listener, filter, obj);
-//    testStopStatsEmitter();
+    // testStopStatsEmitter();
   }
 
   public void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException {
     super.removeNotificationListener(listener);
-//    testStopStatsEmitter();
+    // testStopStatsEmitter();
   }
 
   public String getEnvironment() {
@@ -158,17 +158,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     HashMap map = new HashMap();
     MemoryUsage usage = manager.getMemoryUsage();
 
-    map.put("memory free", new Long(usage.getFreeMemory()));
     map.put("memory used", new Long(usage.getUsedMemory()));
     map.put("memory max", new Long(usage.getMaxMemory()));
 
     if (cpuSRA != null) {
       StatisticData[] statsData = cpuSRA.retrieveStatisticData();
       if (statsData != null) {
-        for (int i = 0; i < statsData.length; i++) {
-          StatisticData sd = statsData[i];
-          map.put(sd.getName(), sd.getData());
-        }
+        map.put("cpu usage", statsData);
       }
     }
 
