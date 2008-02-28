@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.impl;
+package com.tc.objectserver.persistence.sleepycat;
 
 import com.sleepycat.je.CursorConfig;
 import com.tc.logging.TCLogger;
@@ -10,16 +10,10 @@ import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.impl.TestManagedObject;
+import com.tc.objectserver.impl.PersistentManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
-import com.tc.objectserver.persistence.impl.TestPersistenceTransactionProvider;
-import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
-import com.tc.objectserver.persistence.sleepycat.ManagedObjectPersistorImpl;
-import com.tc.objectserver.persistence.sleepycat.OidBitsArrayMapManagerImpl;
-import com.tc.objectserver.persistence.sleepycat.SleepycatCollectionFactory;
-import com.tc.objectserver.persistence.sleepycat.SleepycatCollectionsPersistor;
-import com.tc.objectserver.persistence.sleepycat.SleepycatSerializationAdapterFactory;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.SyncObjectIdSet;
@@ -31,14 +25,12 @@ import java.util.Iterator;
 import java.util.Random;
 
 public class ManagedObjectPersistorImplTest extends TCTestCase {
-  private static final TCLogger          logger        = TCLogging
-                                                           .getTestingLogger(ManagedObjectPersistorImplTest.class);
+  private static final TCLogger          logger = TCLogging.getTestingLogger(ManagedObjectPersistorImplTest.class);
   private ManagedObjectPersistorImpl     managedObjectPersistor;
   private PersistentManagedObjectStore   objectStore;
   private PersistenceTransactionProvider persistenceTransactionProvider;
   private DBEnvironment                  env;
   private OidBitsArrayMapManagerImpl     oidManager;
-  private final String                   OID_FAST_LOAD = "l2.objectmanager.loadObjectID.fastLoad";
 
   public ManagedObjectPersistorImplTest() {
     //
@@ -47,13 +39,13 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     // test only with Oid fastLoad enabled
-    TCPropertiesImpl.setProperty(OID_FAST_LOAD, "true");
-    assertTrue(TCPropertiesImpl.getProperties().getBoolean(OID_FAST_LOAD));
+    TCPropertiesImpl.setProperty(ManagedObjectPersistorImpl.OID_FAST_LOAD, "true");
+    assertTrue(TCPropertiesImpl.getProperties().getBoolean(ManagedObjectPersistorImpl.OID_FAST_LOAD));
     boolean paranoid = true;
     env = newDBEnvironment(paranoid);
     env.open();
     CursorConfig dbCursorConfig = new CursorConfig();
-    persistenceTransactionProvider = new TestPersistenceTransactionProvider();
+    persistenceTransactionProvider = new SleepycatPersistenceTransactionProvider(env.getEnvironment());
     CursorConfig rootDBCursorConfig = new CursorConfig();
     SleepycatCollectionFactory sleepycatCollectionFactory = new SleepycatCollectionFactory();
     SleepycatCollectionsPersistor sleepycatCollectionsPersistor = new SleepycatCollectionsPersistor(logger, env
@@ -66,7 +58,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
                                                             rootDBCursorConfig, persistenceTransactionProvider,
                                                             sleepycatCollectionsPersistor, env.isParanoidMode());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor);
-    oidManager = managedObjectPersistor.getOidManager();
+    oidManager = (OidBitsArrayMapManagerImpl) managedObjectPersistor.getOidManager();
   }
 
   protected void tearDown() throws Exception {
@@ -133,6 +125,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     managedObjectPersistor.saveAllObjects(ptx, objects);
     ptx.commit();
 
+    oidManager.runCheckpoint();
+
     // verify object IDs is in memory
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
@@ -152,6 +146,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.saveAllObjects(ptx, objects);
     ptx.commit();
+    
+    oidManager.runCheckpoint();
 
     int total = objects.size();
     HashSet toDelete = new HashSet();
@@ -164,6 +160,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
     ptx.commit();
+    
+    oidManager.runCheckpoint();
 
     verify(objects);
   }
@@ -178,6 +176,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.saveAllObjects(ptx, objects);
     ptx.commit();
+    
+    oidManager.runCheckpoint();
 
     HashSet objectIds = new HashSet();
     for (Iterator i = objects.iterator(); i.hasNext();) {
@@ -187,6 +187,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
     ptx.commit();
+
+    oidManager.runCheckpoint();
 
     objects.clear();
     verify(objects);
