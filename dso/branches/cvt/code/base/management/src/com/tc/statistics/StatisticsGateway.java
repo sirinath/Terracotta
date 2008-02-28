@@ -3,9 +3,12 @@
  */
 package com.tc.statistics;
 
+import com.tc.net.protocol.tcm.ChannelID;
+
 import javax.management.MBeanServerConnection;
 
 public interface StatisticsGateway  {
-  public void addStatisticsAgent(MBeanServerConnection mbeanServerConnection);
+  public void addStatisticsAgent(ChannelID channelId, MBeanServerConnection mbeanServerConnection);
+  public void removeStatisticsAgent(ChannelID channelId);
   public void cleanup();
 }

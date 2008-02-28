@@ -162,7 +162,7 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
 
           final MBeanServerConnection l1MBeanServerConnection = jmxConnector.getMBeanServerConnection();
 
-          statisticsGateway.addStatisticsAgent(l1MBeanServerConnection);
+          statisticsGateway.addStatisticsAgent(channel.getChannelID(), l1MBeanServerConnection);
 
           Set mBeans = l1MBeanServerConnection.queryNames(null, TerracottaManagement.matchAllTerracottaMBeans());
           List modifiedObjectNames = new ArrayList();
@@ -255,6 +255,8 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
         if (channelIdToJmxConnector.containsKey(channel.getChannelID())) {
           final JMXConnector jmxConnector = (JMXConnector) channelIdToJmxConnector.remove(channel.getChannelID());
           if (jmxConnector != null) {
+            statisticsGateway.removeStatisticsAgent(channel.getChannelID());
+            
             try {
               jmxConnector.close();
             } catch (IOException ioe) {

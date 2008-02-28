@@ -4,6 +4,10 @@
 package com.tc.statistics;
 
 public interface StatisticsManager {
+  public void enable();
+
+  public void disable();
+
   public void reinitialize();
 
   public String[] getSupportedStatistics();

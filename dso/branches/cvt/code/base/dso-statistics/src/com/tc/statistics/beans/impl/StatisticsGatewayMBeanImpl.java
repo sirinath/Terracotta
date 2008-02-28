@@ -3,21 +3,24 @@
  */
 package com.tc.statistics.beans.impl;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
+import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsGateway;
 import com.tc.statistics.agent.StatisticsAgentConnection;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
+import com.tc.statistics.beans.TopologyChangeHandler;
+import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -33,7 +36,8 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
 
   private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
-  private volatile List agents = new CopyOnWriteArrayList();
+  private volatile Map agents = new CopyOnWriteArrayMap();
+  private volatile TopologyChangeHandler topologyChangeHandler = null;
 
   public StatisticsGatewayMBeanImpl() throws NotCompliantMBeanException {
     super(StatisticsGatewayMBean.class, true, false);
@@ -44,13 +48,21 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void reinitialize() {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       ((StatisticsAgentConnection)it.next()).reinitialize();
     }
   }
 
-  public void addStatisticsAgent(final MBeanServerConnection mbeanServerConnection) {
+  public void setTopologyChangeHandler(final TopologyChangeHandler handler) {
+    this.topologyChangeHandler = handler;
+  }
+
+  public void clearTopologyChangeHandler() {
+    topologyChangeHandler = null;
+  }
+
+  public void addStatisticsAgent(final ChannelID channelId, final MBeanServerConnection mbeanServerConnection) {
     StatisticsAgentConnection agent = new StatisticsAgentConnection();
     try {
       agent.connect(mbeanServerConnection, this);
@@ -58,14 +70,22 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       logger.warn("Unable to add statistics agent to the gateway.", e);
       return;
     }
-    agents.add(agent);
+    
+    agents.put(channelId, agent);
+    if (topologyChangeHandler != null) {
+      topologyChangeHandler.agentAdded(agent);
+    }
+  }
+
+  public void removeStatisticsAgent(final ChannelID channelId) {
+    agents.remove(channelId);
   }
 
   public void cleanup() {
-    List old_agents = agents;
-    agents = new CopyOnWriteArrayList();
+    Map old_agents = agents;
+    agents = new CopyOnWriteArrayMap();
 
-    Iterator it = old_agents.iterator();
+    Iterator it = old_agents.values().iterator();
     while (it.hasNext()) {
       try {
         ((StatisticsAgentConnection)it.next()).disconnect();
@@ -76,7 +96,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   protected void enabledStateChanged() {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (isEnabled()) {
@@ -93,7 +113,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   public String[] getSupportedStatistics() {
     Set combinedStats = new TreeSet();
 
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       String[] agentStats = agent.getSupportedStatistics();
@@ -109,7 +129,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void createSession(final String sessionId) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.createSession(sessionId);
@@ -117,7 +137,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void disableAllStatistics(final String sessionId) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.disableAllStatistics(sessionId);
@@ -126,7 +146,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
 
   public boolean enableStatistic(final String sessionId, final String name) {
     boolean result = false;
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.enableStatistic(sessionId, name)) {
@@ -139,7 +159,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   public StatisticData[] captureStatistic(final String sessionId, final String name) {
     List result_list = new ArrayList();
 
-    Iterator agent_it = agents.iterator();
+    Iterator agent_it = agents.values().iterator();
     while (agent_it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)agent_it.next();
       StatisticData[] data = agent.captureStatistic(sessionId, name);
@@ -156,7 +176,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void startCapturing(final String sessionId) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.startCapturing(sessionId);
@@ -164,7 +184,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void stopCapturing(final String sessionId) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.stopCapturing(sessionId);
@@ -172,7 +192,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void setGlobalParam(final String key, final Object value) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.setGlobalParam(key, value);
@@ -184,7 +204,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       return null;
     }
 
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.isServerAgent()) {
@@ -193,12 +213,12 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     }
 
     logger.warn("Unable to find the L2 server agent, this means that there's no authoritative agent to retrieve the global parameter '" + key + "' from.");
-    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.iterator().next();
+    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.values().iterator().next();
     return agent.getGlobalParam(key);
   }
 
   public void setSessionParam(final String sessionId, final String key, final Object value) {
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.setSessionParam(sessionId, key, value);
@@ -210,7 +230,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       return null;
     }
 
-    Iterator it = agents.iterator();
+    Iterator it = agents.values().iterator();
     while (it.hasNext()) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.isServerAgent()) {
@@ -219,7 +239,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     }
 
     logger.warn("Unable to find the L2 server agent, this means that there's no authoritative agent to retrieve the parameter '" + key + "' from for session '" + sessionId + "'.");
-    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.iterator().next();
+    StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.values().iterator().next();
     return agent.getSessionParam(sessionId, key);
   }
 
