@@ -149,7 +149,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     NULL_TRANSACTION = TestPersistenceTransaction.NULL_TRANSACTION;
   }
 
-  private void initObjectManager() {
+  private void initObjectManager() { 
     initObjectManager(createThreadGroup());
   }
 
@@ -298,7 +298,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
     
-    //before no objects were prefected, we should except 0 hits and 10 misses
+    //before no objects were pre-fetched, we should except 0 hits and 10 misses
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(10, stats.getTotalCacheMisses());
   
@@ -308,7 +308,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // ThreadUtil.reallySleep(5000);
     results = new TestResultsContext(ids, Collections.EMPTY_SET);
     testFaultSinkContext.preProcess(10);
-    objectManager.preFetchObjectsAndCreate(ids, null);
+    objectManager.preFetchObjectsAndCreate(ids, Collections.EMPTY_SET);
     testFaultSinkContext.waitTillComplete();
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
@@ -334,7 +334,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ObjectID id2;
     ids.add((id2 = new ObjectID(2)));
     ClientID key = new ClientID(new ChannelID(0));
-
+    
+    this.objectManager.createNewObjects(ids);
+    
     TestResultsContext results = new TestResultsContext(ids, ids);
     this.objectManager.lookupObjectsFor(key, results);
     assertEquals(2, results.objects.size());
@@ -359,7 +361,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     newIDs.add(new ObjectID(3));
     newIDs.add(new ObjectID(4));
 
-    results = new TestResultsContext(ids, newIDs);
+    this.objectManager.createNewObjects(newIDs);
+    results = new TestResultsContext(ids,  newIDs);
 
     this.objectManager.lookupObjectsFor(key, results);
     assertEquals(4, results.objects.size());
@@ -388,7 +391,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ObjectID id = new ObjectID(1);
     HashSet ids = new HashSet();
     ids.add(id);
-
+    this.objectManager.createNewObjects(ids);
     TestResultsContext responseContext = new TestResultsContext(ids, ids);
     final Map lookedUpObjects = responseContext.objects;
 
@@ -439,7 +442,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     Set ids = new HashSet();
     ids.add(dateID);
-
+    this.objectManager.createNewObjects(ids);
     TestResultsContext responseContext = new TestResultsContext(ids, ids);
     final Map lookedUpObjects = responseContext.objects;
 
@@ -469,6 +472,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     Set ids = new HashSet();
     ids.add(literalID);
 
+    this.objectManager.createNewObjects(ids);
     TestResultsContext responseContext = new TestResultsContext(ids, ids);
     final Map lookedUpObjects = responseContext.objects;
 
@@ -513,6 +517,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ids.add(listID);
     ids.add(setID);
 
+    this.objectManager.createNewObjects(ids);
     TestResultsContext responseContext = new TestResultsContext(ids, ids);
     final Map lookedUpObjects = responseContext.objects;
 
@@ -721,6 +726,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ids.add(id);
     ClientID key = new ClientID(new ChannelID(0));
 
+    this.objectManager.createNewObjects(ids);
     TestResultsContext responseContext = new TestResultsContext(ids, ids);
     Map lookedUpObjects = responseContext.objects;
 
@@ -896,6 +902,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     HashSet oids = new HashSet();
     oids.add(new ObjectID(1));
 
+    this.objectManager.createNewObjects(oids);
     final TestResultsContext context = new TestResultsContext(oids, oids);
     this.objectManager.lookupObjectsFor(null, context);
     context.waitTillComplete();
@@ -1106,6 +1113,16 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     for (int i = 0; i < num; i++) {
       TestManagedObject mo = new TestManagedObject(new ObjectID(i), new ObjectID[] {});
       objectManager.createObject(mo);
+      objectStore.addNewObject(mo);
+    }
+  }
+  
+  private void createObjects(Set ids) {
+    for (Iterator iter = ids.iterator(); iter.hasNext(); ) {
+      ObjectID id = (ObjectID)iter.next();
+      TestManagedObject mo = new TestManagedObject(id, new ObjectID[] {});
+      objectManager.createObject(mo);
+      objectStore.addNewObject(mo);
     }
   }
 
@@ -2333,9 +2350,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
     public synchronized void waitTillComplete() {
-      while (sinkCount != 0) {
+      while (sinkCount > 0) {
         try {
-          wait();
+          this.wait();
         } catch (InterruptedException e) {
           throw new AssertionError(e);
         }
@@ -2346,7 +2363,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       sinkCount--;
       if (sinkCount == 0) {
         sinkCount = -1;
-        notifyAll();
+        this.notifyAll();
       }
 
     }
