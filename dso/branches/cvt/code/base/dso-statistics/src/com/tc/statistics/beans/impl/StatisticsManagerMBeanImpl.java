@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -98,6 +99,29 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     }
     retriever.registerAction(action);
     return true;
+  }
+
+  public StatisticData[] captureStatistic(final String sessionId, final String name) {
+    // obtain the retriever to make sure that the provided session ID is active
+    StatisticsRetriever retriever = obtainRetriever(sessionId);
+
+    StatisticRetrievalAction action = registry.getActionInstance(name);
+    if (null == action) {
+      return null;
+    }
+
+    StatisticData[] data = action.retrieveStatisticData();
+    if (data != null) {
+      for (int i = 0; i < data.length; i++) {
+        data[i].setSessionId(sessionId);
+        try {
+          buffer.storeStatistic(data[i]);
+        } catch (TCStatisticsBufferException e) {
+          throw new RuntimeException("Error while storing the statistic data '"+name+"' for cluster-wide ID '"+sessionId+"'.", e);
+        }
+      }
+    }
+    return data;
   }
 
   private String getNodeName() {
