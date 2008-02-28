@@ -449,7 +449,7 @@ public class StatisticData implements Serializable {
                   case 0:
                   case '\n':
                   case '\r':
-                    return null;
+                    throw new ParseException("Unexpected line ending.", position);
                   default:
                     buffer.append(ch);
                     break;
