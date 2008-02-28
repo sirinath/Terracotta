@@ -144,7 +144,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
 
     timer = new TCTimerImpl("Statistics Retriever Timer", true);
     task = new RetrieveStatsTask();
-    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
+    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
   }
 
   private synchronized void disableTimer() {

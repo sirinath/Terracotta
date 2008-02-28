@@ -4,8 +4,8 @@
 package com.tc.statistics.config;
 
 public interface StatisticsConfig {
-  public final static String  KEY_EMITTER_SCHEDULE_PERIOD = "emitter.sample.period";
-  public final static String  KEY_GLOBAL_SAMPLE_PERIOD = "global.sample.period";
+  public final static String KEY_EMITTER_FREQUENCY = "emitter.frequency";
+  public final static String KEY_GLOBAL_FREQUENCY = "global.frequency";
 
   public StatisticsConfig getParent();
 

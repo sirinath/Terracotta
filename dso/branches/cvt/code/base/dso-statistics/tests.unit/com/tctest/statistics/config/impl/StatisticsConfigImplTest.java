@@ -28,18 +28,18 @@ public class StatisticsConfigImplTest extends TestCase {
 
   public void testDefaultValues() throws Exception {
     StatisticsConfig config = new StatisticsConfigImpl();
-    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
+    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY.longValue(), config.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
+    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_FREQUENCY.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_FREQUENCY));
 
-    config.setParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD, new Long(Long.MAX_VALUE));
-    assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    config.removeParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD);
-    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
+    config.setParam(StatisticsConfig.KEY_GLOBAL_FREQUENCY, new Long(Long.MAX_VALUE));
+    assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
+    config.removeParam(StatisticsConfig.KEY_GLOBAL_FREQUENCY);
+    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY.longValue(), config.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
 
-    config.setParam(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD, new Long(Long.MAX_VALUE));
-    assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
-    config.removeParam(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD);
-    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_SCHEDULE_PERIOD.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
+    config.setParam(StatisticsConfig.KEY_EMITTER_FREQUENCY, new Long(Long.MAX_VALUE));
+    assertEquals(Long.MAX_VALUE, config.getParamLong(StatisticsConfig.KEY_EMITTER_FREQUENCY));
+    config.removeParam(StatisticsConfig.KEY_EMITTER_FREQUENCY);
+    assertEquals(StatisticsEmitterMBeanImpl.DEFAULT_FREQUENCY.longValue(), config.getParamLong(StatisticsConfig.KEY_EMITTER_FREQUENCY));
   }
 
   public void testMappingsForAllDefaultValueKeys() throws Exception {
@@ -123,12 +123,12 @@ public class StatisticsConfigImplTest extends TestCase {
     assertEquals("val1", config2b.getParam("param1"));
 
     // default params
-    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    config2a.setParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD, new Long(Long.MAX_VALUE));
-    assertEquals(Long.MAX_VALUE, config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    config2a.removeParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD);
-    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
-    config2b.setParam(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD, new Long(Long.MAX_VALUE));
-    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_SAMPLE_PERIOD));
+    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
+    config2a.setParam(StatisticsConfig.KEY_GLOBAL_FREQUENCY, new Long(Long.MAX_VALUE));
+    assertEquals(Long.MAX_VALUE, config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
+    config2a.removeParam(StatisticsConfig.KEY_GLOBAL_FREQUENCY);
+    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
+    config2b.setParam(StatisticsConfig.KEY_GLOBAL_FREQUENCY, new Long(Long.MAX_VALUE));
+    assertEquals(StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY.longValue(), config3a.getParamLong(StatisticsConfig.KEY_GLOBAL_FREQUENCY));
   }
 }
