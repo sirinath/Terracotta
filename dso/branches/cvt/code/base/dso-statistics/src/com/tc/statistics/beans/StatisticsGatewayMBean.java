@@ -5,4 +5,6 @@
 package com.tc.statistics.beans;
 
 public interface StatisticsGatewayMBean extends StatisticsManagerMBean {
+  public void setTopologyChangeHandler(TopologyChangeHandler handler);
+  public void clearTopologyChangeHandler();
 }

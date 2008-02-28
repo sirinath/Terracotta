@@ -36,6 +36,7 @@ import javax.management.MBeanServerInvocationHandler;
 public class StatisticsGathererImpl implements StatisticsGatherer {
   private final StatisticsStore store;
   private final Set listeners = new CopyOnWriteArraySet();
+  private final GathererTopologyChangeHandler topologyChangeHandler = new GathererTopologyChangeHandler();
 
   private volatile StatisticsGatewayMBean statGateway = null;
   private volatile String sessionId = null;
@@ -76,6 +77,8 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
 
       // enable the statistics envoy
       statGateway.enable();
+      topologyChangeHandler.setEnabled(true);
+      statGateway.setTopologyChangeHandler(topologyChangeHandler);
     }
 
     fireConnected(managerHostName, managerPort);
@@ -105,6 +108,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
           }
         }
       }
+      statGateway.clearTopologyChangeHandler();
 
       if (proxy != null) {
         try {
@@ -151,6 +155,8 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       // create a new capturing session
       statGateway.createSession(sessionId);
       this.sessionId = sessionId;
+      topologyChangeHandler.setSessionId(sessionId);
+      statGateway.setTopologyChangeHandler(topologyChangeHandler);
 
       // register the statistics data listener
       try {
@@ -181,6 +187,8 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
         closed_sessionid = sessionId;
         stopCapturing();
         sessionId = null;
+        topologyChangeHandler.setSessionId(sessionId);
+        statGateway.setTopologyChangeHandler(topologyChangeHandler);
 
         // detach the notification listener
         try {
@@ -219,18 +227,27 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     for (int i = 0; i < names.length; i++) {
       statGateway.enableStatistic(sessionId, names[i]);
     }
+
+    topologyChangeHandler.setEnabledStatistics(names);
+    statGateway.setTopologyChangeHandler(topologyChangeHandler);
   }
 
   public void startCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     statGateway.startCapturing(sessionId);
     fireCapturingStarted(sessionId);
+
+    topologyChangeHandler.setCapturingStarted(true);
+    statGateway.setTopologyChangeHandler(topologyChangeHandler);
   }
 
   public void stopCapturing() throws TCStatisticsGathererException {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     statGateway.stopCapturing(sessionId);
     fireCapturingStopped(sessionId);
+
+    topologyChangeHandler.setCapturingStarted(false);
+    statGateway.setTopologyChangeHandler(topologyChangeHandler);
   }
 
   public void setGlobalParam(final String key, final Object value) throws TCStatisticsGathererException {

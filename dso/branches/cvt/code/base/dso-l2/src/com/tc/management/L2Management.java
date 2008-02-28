@@ -14,6 +14,7 @@ import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
+import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.beans.StatisticsMBeanNames;
@@ -94,7 +95,7 @@ public class L2Management extends TerracottaManagement {
       mBeanServer = MBeanServerFactory.createMBeanServer();
     }
     registerMBeans();
-    statisticsGateway.addStatisticsAgent(mBeanServer);
+    statisticsGateway.addStatisticsAgent(ChannelID.NULL_ID, mBeanServer);
   }
 
   /**
