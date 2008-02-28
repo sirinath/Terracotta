@@ -91,7 +91,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   public Thread objectIDReaderThread(SyncObjectIdSet rv) {
     return new Thread(new OidObjectIdReader(rv), "OidObjectIdReaderThread");
   }
-  
+
   private void startCheckpointThread() {
     Thread t = new Thread(new CheckpointRunner(CHECKPOINT_PERIOD), "ObjectIDCheckPoint");
     t.setDaemon(true);
@@ -142,49 +142,54 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
    * Flush out oidLogDB to bitsArray on disk. isUpdateArrayInMemory -- true, if processing left over from previous run --
    * false, used by checkpoint to flush in-memory to disk.
    */
-  private void oidFlushLogToBitsArray(boolean isUpdateArrayInMemory, boolean isStopped, ObjectIDSet2 tmp) {
+  private synchronized void oidFlushLogToBitsArray(boolean isUpdateArrayInMemory, boolean isStopped, ObjectIDSet2 tmp) {
     SortedSet<Long> sortedOnDiskOidSet = new TreeSet<Long>();
     PersistenceTransaction tx = ptp.newTransaction();
-    CursorConfig dbCursorConfig = new CursorConfig();
-    dbCursorConfig.setReadUncommitted(true);
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
     int changes = 0;
     try {
-      Assert.assertNotNull(pt2nt(tx));
-      Cursor cursor = oidLogDB.openCursor(pt2nt(tx), dbCursorConfig);
-      while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+      Cursor cursor = oidLogDB.openCursor(pt2nt(tx), CursorConfig.READ_COMMITTED);
+      try {
+        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
 
-        if (isStopped) {
-          abortOnError(tx);
-          return;
-        }
-
-        long oidValue = Conversion.bytes2Long(key.getData());
-
-        if (isUpdateArrayInMemory) {
-          ObjectID objectID = new ObjectID(oidValue);
-          byte action = value.getData()[0];
-          switch (action) {
-            case LOG_ACTION_ADD:
-              oidBitsArrayMap.getAndSet(objectID);
-              tmp.add(objectID);
-              break;
-            case LOG_ACTION_DELETE:
-              oidBitsArrayMap.getAndClr(objectID);
-              tmp.remove(objectID);
-              break;
-            default:
-              throw new RuntimeException("Unknown object log action " + action);
+          if (isStopped) {
+            cursor.close();
+            cursor = null;
+            abortOnError(tx);
+            return;
           }
-        }
 
-        sortedOnDiskOidSet.add(new Long(oidBitsArrayMap.oidOnDiskIndex(oidValue)));
-        cursor.delete();
-        ++changes;
+          long oidValue = Conversion.bytes2Long(key.getData());
+
+          if (isUpdateArrayInMemory) {
+            ObjectID objectID = new ObjectID(oidValue);
+            byte action = value.getData()[0];
+            switch (action) {
+              case LOG_ACTION_ADD:
+                oidBitsArrayMap.getAndSet(objectID);
+                tmp.add(objectID);
+                break;
+              case LOG_ACTION_DELETE:
+                oidBitsArrayMap.getAndClr(objectID);
+                tmp.remove(objectID);
+                break;
+              default:
+                throw new RuntimeException("Unknown object log action " + action);
+            }
+          }
+
+          sortedOnDiskOidSet.add(new Long(oidBitsArrayMap.oidOnDiskIndex(oidValue)));
+          cursor.delete();
+          ++changes;
+        }
+      } catch (DatabaseException e) {
+        throw e;
+      } finally {
+        if (cursor != null) cursor.close();
+        cursor = null;
       }
 
-      cursor.close();
       resetChangesCount();
 
       for (Long onDiskIndex : sortedOnDiskOidSet) {
@@ -201,7 +206,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
       tx.commit();
       logger.debug("Checkpoint updated " + changes + " objectIDs");
     } catch (DatabaseException e) {
-      logger.error("Error ojectID updater " + e);
+      logger.error("Error ojectID checkpoint: " + e);
       abortOnError(tx);
     }
   }
@@ -420,7 +425,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     return (new OidLongArray(key.getData(), value.getData()));
   }
 
-  public class OidBitsArrayMap {
+  public static class OidBitsArrayMap {
     final HashMap       map;
     final int           longsPerMemUnit;
     final int           memBitsLength;
@@ -430,9 +435,9 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
     OidBitsArrayMap(int longsPerMemUnit, int longsPerDiskUnit) {
       this.longsPerMemUnit = longsPerMemUnit;
-      this.memBitsLength = longsPerMemUnit * BitsPerLong;
+      this.memBitsLength = longsPerMemUnit * OidLongArray.BitsPerLong;
       this.longsPerDiskUnit = longsPerDiskUnit;
-      this.diskBitsLength = longsPerDiskUnit * BitsPerLong;
+      this.diskBitsLength = longsPerDiskUnit * OidLongArray.BitsPerLong;
       map = new HashMap();
       inUseSet = new HashSet<Long>();
 
@@ -503,7 +508,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     private OidLongArray getArrayForDisk(OidLongArray inMemLongAry, long oid) {
       long keyOnDisk = oidOnDiskIndex(oid);
       OidLongArray onDiskAry = new OidLongArray(longsPerDiskUnit, keyOnDisk);
-      int offset = (int) (keyOnDisk % memBitsLength) / BitsPerLong;
+      int offset = (int) (keyOnDisk % memBitsLength) / OidLongArray.BitsPerLong;
       inMemLongAry.copyOut(onDiskAry, offset);
       return onDiskAry;
     }
@@ -536,7 +541,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
     public void applyDiskEntry(OidLongArray entry) {
       OidLongArray inMemArray = getBitsArray(entry.getKey());
-      int offset = (int) (entry.getKey() % memBitsLength) / BitsPerLong;
+      int offset = (int) (entry.getKey() % memBitsLength) / OidLongArray.BitsPerLong;
       inMemArray.applyIn(entry, offset);
     }
 
@@ -591,7 +596,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   void resetBitsArrayMap() {
     oidBitsArrayMap.reset();
   }
-  
+
   /*
    * for testing purpose only.
    */
