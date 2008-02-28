@@ -1143,14 +1143,18 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectManager.createRoot("root-me", new ObjectID(0));
     ManagedObject root = new TestManagedObject(new ObjectID(0), new ObjectID[] { new ObjectID(1) });
     objectManager.createObject(root);
+    this.objectStore.addNewObject(root);
 
     TestManagedObject mo1 = new TestManagedObject(new ObjectID(1), new ObjectID[] { new ObjectID(2) });
     TestManagedObject mo2 = new TestManagedObject(new ObjectID(2), new ObjectID[] { new ObjectID(3) });
     TestManagedObject mo3 = new TestManagedObject(new ObjectID(3), new ObjectID[] {});
     objectManager.createObject(mo1);
+    this.objectStore.addNewObject(mo1);
     objectManager.createObject(mo2);
+    this.objectStore.addNewObject(mo2);
     objectManager.createObject(mo3);
-
+    this.objectStore.addNewObject(mo3);
+    
     ClientID cid1 = new ClientID(new ChannelID(1));
     clientStateManager.addReference(cid1, root.getID());
     clientStateManager.addReference(cid1, mo1.getID());
@@ -1299,7 +1303,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
                                                         DmiDescriptor.EMPTY_ARRAY);
     List txns = new ArrayList();
     txns.add(stxn1);
-
+    createObjectsFromTransaction(txns);
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1349,6 +1353,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     txns.clear();
     txns.add(stxn2);
 
+    createObjectsFromTransaction(txns);
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1382,6 +1387,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     txns.clear();
     txns.add(stxn3);
 
+    createObjectsFromTransaction(txns);
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1511,6 +1517,13 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertFalse(objectManager.isReferenced(new ObjectID(3)));
 
     close(persistor, persistentMOStore);
+  }
+
+  private void createObjectsFromTransaction(List txns) {
+    for(Iterator iter = txns.iterator(); iter.hasNext(); ) {
+      ServerTransaction serverTransaction = (ServerTransaction)iter.next();
+      objectManager.createNewObjects(serverTransaction.getNewObjectIDs());
+    }
   }
 
   private static class TestArrayDNA implements DNA {
