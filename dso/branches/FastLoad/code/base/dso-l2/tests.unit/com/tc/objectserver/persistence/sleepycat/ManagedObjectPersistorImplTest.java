@@ -86,7 +86,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     for (int i = 0; i < num; i++) {
       long id = (long) r.nextInt(num * 10) + 1;
       if (ids.add(new Long(id))) {
-        ManagedObject mo = new TestManagedObject(new ObjectID(id), new ObjectID[] {});
+        ManagedObject mo = new TestManagedObject(new ObjectID(id), new ObjectID[] {}) {
+          public boolean isNew() {
+            return true;
+          }
+        };
         objects.add(mo);
       }
     }
@@ -146,7 +150,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.saveAllObjects(ptx, objects);
     ptx.commit();
-    
+
     oidManager.runCheckpoint();
 
     int total = objects.size();
@@ -160,7 +164,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
     ptx.commit();
-    
+
     oidManager.runCheckpoint();
 
     verify(objects);
@@ -176,7 +180,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
     managedObjectPersistor.saveAllObjects(ptx, objects);
     ptx.commit();
-    
+
     oidManager.runCheckpoint();
 
     HashSet objectIds = new HashSet();
