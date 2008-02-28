@@ -22,8 +22,8 @@ public class StatisticsConfigImpl implements StatisticsConfig {
   public StatisticsConfigImpl() {
     // initialize default parameters
     Map defaultParamsMap = new HashMap();
-    defaultParamsMap.put(KEY_GLOBAL_SAMPLE_PERIOD, StatisticsRetriever.DEFAULT_GLOBAL_SAMPLE_PERIOD);
-    defaultParamsMap.put(KEY_EMITTER_SCHEDULE_PERIOD, StatisticsEmitterMBeanImpl.DEFAULT_SCHEDULE_PERIOD);
+    defaultParamsMap.put(KEY_GLOBAL_FREQUENCY, StatisticsRetriever.DEFAULT_GLOBAL_FREQUENCY);
+    defaultParamsMap.put(KEY_EMITTER_FREQUENCY, StatisticsEmitterMBeanImpl.DEFAULT_FREQUENCY);
     defaultParams = Collections.unmodifiableMap(defaultParamsMap);
 
     parent = null;
