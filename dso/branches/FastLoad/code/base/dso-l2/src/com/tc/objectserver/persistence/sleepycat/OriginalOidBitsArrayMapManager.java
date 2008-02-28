@@ -11,6 +11,7 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
@@ -24,15 +25,16 @@ import com.tc.util.SyncObjectIdSet;
 import java.util.Set;
 
 public class OriginalOidBitsArrayMapManager extends SleepycatPersistorBase implements OidBitsArrayMapManager {
+  private static final TCLogger                logger = TCLogging
+                                                          .getTestingLogger(OriginalOidBitsArrayMapManager.class);
+
   private final Database                       objectDB;
-  private final TCLogger                       logger;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   dBCursorConfig;
   private final boolean                        paranoid;
 
-  public OriginalOidBitsArrayMapManager(final TCLogger logger, boolean paranoid, Database objectDB,
+  public OriginalOidBitsArrayMapManager(boolean paranoid, Database objectDB,
                                         PersistenceTransactionProvider ptp, CursorConfig dBCursorConfig) {
-    this.logger = logger;
     this.objectDB = objectDB;
     this.paranoid = paranoid;
     this.ptp = ptp;
