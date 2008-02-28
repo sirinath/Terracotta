@@ -5,6 +5,7 @@
 package com.tc.statistics.beans;
 
 import com.tc.management.TerracottaMBean;
+import com.tc.statistics.StatisticData;
 
 public interface StatisticsLocalGathererMBean extends TerracottaMBean {
   public void connect();
@@ -24,6 +25,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
   public String[] getSupportedStatistics();
 
   public void enableStatistics(String[] names);
+
+  public StatisticData[] captureStatistic(String name);
 
   public void startCapturing();
 

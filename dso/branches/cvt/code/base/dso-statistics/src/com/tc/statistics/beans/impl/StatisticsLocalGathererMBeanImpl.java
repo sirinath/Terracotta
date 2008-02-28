@@ -11,6 +11,7 @@ import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.TCSocketAddress;
 import com.tc.statistics.StatisticsGathererSubSystem;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
 import com.tc.statistics.gatherer.StatisticsGathererListener;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
@@ -105,7 +106,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public void createSession(String sessionId) {
+  public void createSession(final String sessionId) {
     try {
       subsystem.getStatisticsGatherer().createSession(sessionId);
     } catch (TCStatisticsGathererException e) {
@@ -149,6 +150,14 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
+  public StatisticData[] captureStatistic(final String name) {
+    try {
+      return subsystem.getStatisticsGatherer().captureStatistic(name);
+    } catch (TCStatisticsGathererException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public void startCapturing() {
     try {
       subsystem.getStatisticsGatherer().startCapturing();
@@ -165,7 +174,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public void setGlobalParam(String key, Object value) {
+  public void setGlobalParam(final String key, final Object value) {
     try {
       subsystem.getStatisticsGatherer().setGlobalParam(key, value);
     } catch (TCStatisticsGathererException e) {
@@ -173,7 +182,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public Object getGlobalParam(String key) {
+  public Object getGlobalParam(final String key) {
     try {
       return subsystem.getStatisticsGatherer().getGlobalParam(key);
     } catch (TCStatisticsGathererException e) {
@@ -181,7 +190,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public void setSessionParam(String key, Object value) {
+  public void setSessionParam(final String key, final Object value) {
     try {
       subsystem.getStatisticsGatherer().setSessionParam(key, value);
     } catch (TCStatisticsGathererException e) {
@@ -189,7 +198,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public Object getSessionParam(String key) {
+  public Object getSessionParam(final String key) {
     try {
       return subsystem.getStatisticsGatherer().getSessionParam(key);
     } catch (TCStatisticsGathererException e) {
@@ -197,7 +206,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
-  public void clearStatistics(String sessionId) {
+  public void clearStatistics(final String sessionId) {
     try {
       subsystem.getStatisticsStore().clearStatistics(sessionId);
     } catch (TCStatisticsStoreException e) {

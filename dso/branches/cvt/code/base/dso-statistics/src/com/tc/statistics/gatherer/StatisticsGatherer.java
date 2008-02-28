@@ -4,6 +4,7 @@
 package com.tc.statistics.gatherer;
 
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
+import com.tc.statistics.StatisticData;
 
 public interface StatisticsGatherer {
   public void connect(String managerHostName, int managerPort) throws TCStatisticsGathererException;
@@ -21,6 +22,8 @@ public interface StatisticsGatherer {
   public String[] getSupportedStatistics() throws TCStatisticsGathererException;
 
   public void enableStatistics(String[] names) throws TCStatisticsGathererException;
+
+  public StatisticData[] captureStatistic(String name) throws TCStatisticsGathererException;
 
   public void startCapturing() throws TCStatisticsGathererException;
 

@@ -5,6 +5,7 @@ package com.tc.statistics.agent;
 
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsManager;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionAlreadyConnectedException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionConnectErrorException;
@@ -98,6 +99,22 @@ public class StatisticsAgentConnection implements StatisticsManager {
         logger.warn(msg);
         consoleLogger.warn(msg);
         return false;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  public StatisticData[] captureStatistic(final String sessionId, final String name) {
+    try {
+      return statManager.captureStatistic(sessionId, name);
+    } catch (RuntimeMBeanException e) {
+      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+        String msg = "Unable to capture the statistic '"+name+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
+        logger.warn(msg);
+        consoleLogger.warn(msg);
+        return null;
       } else {
         throw e;
       }

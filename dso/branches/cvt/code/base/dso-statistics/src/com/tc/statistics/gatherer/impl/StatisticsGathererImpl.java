@@ -22,6 +22,7 @@ import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererSessionCreation
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererSessionRequiredException;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
+import com.tc.statistics.StatisticData;
 import com.tc.util.Assert;
 
 import java.util.HashMap;
@@ -202,6 +203,11 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   public String[] getSupportedStatistics() throws TCStatisticsGathererException {
     if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
     return statGateway.getSupportedStatistics();
+  }
+
+  public StatisticData[] captureStatistic(String name) throws TCStatisticsGathererException {
+    if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
+    return statGateway.captureStatistic(sessionId, name);
   }
 
   public void enableStatistics(final String[] names) throws TCStatisticsGathererException {

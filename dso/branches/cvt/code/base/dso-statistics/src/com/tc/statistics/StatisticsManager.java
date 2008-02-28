@@ -14,6 +14,8 @@ public interface StatisticsManager {
 
   public boolean enableStatistic(String sessionId, String name);
 
+  public StatisticData[] captureStatistic(String sessionId, String name);
+
   public void startCapturing(String sessionId);
 
   public void stopCapturing(String sessionId);

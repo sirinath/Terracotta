@@ -86,6 +86,21 @@ public class StatisticsGathererServlet extends RestfulServlet {
     printOk(response);
   }
 
+  public void methodCaptureStatistic(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    String name = request.getParameter("name");
+    if (null == name) throw new IllegalArgumentException("name");
+    StatisticData[] data = system.getStatisticsGatherer().captureStatistic(name);
+    response.setContentType("text/plain");
+    StringBuffer out = new StringBuffer();
+    out.append(StatisticData.CURRENT_CSV_HEADER);
+    if (data != null) {
+      for (int i = 0; i < data.length; i++) {
+        out.append(data[i].toCsv());
+      }
+    }
+    print(response, out.toString());
+  }
+
   public void methodStartCapturing(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     system.getStatisticsGatherer().startCapturing();
     printOk(response);

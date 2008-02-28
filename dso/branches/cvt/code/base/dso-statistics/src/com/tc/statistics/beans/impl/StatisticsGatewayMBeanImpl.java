@@ -9,11 +9,13 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsGateway;
 import com.tc.statistics.agent.StatisticsAgentConnection;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -131,6 +133,25 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
         result = true;
       }
     }
+    return result;
+  }
+
+  public StatisticData[] captureStatistic(final String sessionId, final String name) {
+    List result_list = new ArrayList();
+
+    Iterator agent_it = agents.iterator();
+    while (agent_it.hasNext()) {
+      StatisticsAgentConnection agent = (StatisticsAgentConnection)agent_it.next();
+      StatisticData[] data = agent.captureStatistic(sessionId, name);
+      if (data != null) {
+        for (int i = 0; i < data.length; i++) {
+          result_list.add(data[i]);
+        }
+      }
+    }
+
+    StatisticData[] result = new StatisticData[result_list.size()];
+    result_list.toArray(result);
     return result;
   }
 
