@@ -35,6 +35,7 @@ import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
+import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.session.NullSessionManager;
@@ -43,11 +44,11 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handler.ReceiveGroupMessageHandler;
 import com.tc.objectserver.handler.TCGroupHandshakeMessageHandler;
 import com.tc.objectserver.handler.TCGroupMemberDiscoveryHandler;
+import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
-import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
@@ -89,6 +90,8 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private final ConcurrentHashMap<MessageChannel, NodeIdComparable> channelToNodeID             = new ConcurrentHashMap<MessageChannel, NodeIdComparable>();
   private final ConcurrentHashMap<NodeIdComparable, TCGroupMember>  members                     = new ConcurrentHashMap<NodeIdComparable, TCGroupMember>();
   private final Timer                                               handshakeTimer              = new Timer(true);
+  private final Set<NodeID>                                         zappedSet                   = Collections
+                                                                                                    .synchronizedSet(new HashSet<NodeID>());
 
   private CommunicationsManager                                     communicationsManager;
   private NetworkListener                                           groupListener;
@@ -99,6 +102,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   private Stage                                                     receiveGroupMessageStage;
   private Stage                                                     handshakeMessageStage;
   private Stage                                                     discoveryStage;
+  private TCProperties                                              l2Properties;
 
   /*
    * Setup a communication manager which can establish channel from either sides.
@@ -160,8 +164,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
                                               new TCGroupMemberDiscoveryHandler(this), 4, maxStageSize);
 
     final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
-    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory, null,
-                                                          this.connectionPolicy);
+    l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
+    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+                                                          this.connectionPolicy,
+                                                          new HealthCheckerConfigImpl(l2Properties
+                                                              .getPropertiesFor("healthCheck.l2"), "TCGroupManager"));
 
     groupListener = communicationsManager.createListener(new NullSessionManager(), socketAddress, true,
                                                          new DefaultConnectionIdFactory());
@@ -218,9 +225,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   public void stop(long timeout) throws TCTimeoutException {
     isStopped.set(true);
     getStageManager().stopAll();
-    discover.stop();
+    discover.stop(timeout);
     groupListener.stop(timeout);
-    communicationsManager.getConnectionManager().asynchCloseAllConnections();
+    communicationsManager.shutdown();
     for (TCGroupMember m : members.values()) {
       notifyAnyPendingRequests(m);
     }
@@ -266,13 +273,14 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
 
+    // discover must be started before listener thread to avoid missing nodeJoined group events.
+    discover.setupNodes(thisNode, allNodes);
+    discover.start();
     try {
       groupListener.start(new HashSet());
     } catch (IOException e) {
       throw new GroupException(e);
     }
-    discover.setupNodes(thisNode, allNodes);
-    discover.start();
     return (getNodeID());
   }
 
@@ -475,9 +483,9 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
     if (m == null) {
       String errInfo = "Received message for non-exist member from " + channel.getRemoteAddress() + " to "
-                  + channel.getLocalAddress() + " Node: " + channelToNodeID.get(channel) + " msg: " + message;
+                       + channel.getLocalAddress() + " Node: " + channelToNodeID.get(channel) + " msg: " + message;
       TCGroupHandshakeStateMachine stateMachine = getHandshakeStateMachine(channel);
-      if (stateMachine != null && stateMachine .isFailureState()) {
+      if (stateMachine != null && stateMachine.isFailureState()) {
         // message received after node left
         logger.warn(errInfo);
         return;
@@ -544,6 +552,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
   }
 
   public void zapNode(NodeID nodeID, int type, String reason) {
+    zappedSet.add(nodeID);
     TCGroupMember m = getMember(nodeID);
     if (m == null) {
       logger.warn("Ignoring Zap node request since Member is null");
@@ -560,11 +569,11 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       } catch (GroupException e) {
         logger.error("Error sending ZapNode Request to " + nodeID + " msg = " + msg);
       }
-      logger.warn("Removing member " + m + " from group");
-      // wait a little bit, hope other end receives it
-      ThreadUtil.reallySleep(100);
-      memberDisappeared(m, false);
     }
+  }
+
+  private boolean isZappedNode(NodeID nodeID) {
+    return (zappedSet.contains(nodeID));
   }
 
   private static class GroupResponseImpl implements GroupResponse {
@@ -588,7 +597,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         GroupMessage msg = i.next();
         if (nodeID.equals(msg.messageFrom())) return msg;
       }
-      Assert.fail("Missing response message from " + nodeID);
+      logger.warn("Missing response message from " + nodeID);
       return null;
     }
 
@@ -626,6 +635,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     }
 
     public synchronized void notifyMemberDead(TCGroupMember member) {
+      logger.warn("Remove dead member from waitFor response list, dead member: " + member.getPeerNodeID());
       waitFor.remove(member.getPeerNodeID());
       notifyAll();
     }
@@ -735,7 +745,7 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
     public final void start() {
       switchToState(initialState());
     }
-    
+
     public synchronized boolean isFailureState() {
       return (current == STATE_FAILURE);
     }
@@ -862,7 +872,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
 
       public void execute(TCGroupHandshakeMessage msg) {
         setPeerNodeID(msg);
-        switchToState(STATE_TRY_ADD_MEMBER);
+        if (!manager.isZappedNode(peerNodeID)) {
+          switchToState(STATE_TRY_ADD_MEMBER);
+        } else {
+          logger.warn("Abort connecting to zapped node. " + stateInfo(current));
+          switchToState(STATE_FAILURE);
+        }
       }
 
       void setPeerNodeID(TCGroupHandshakeMessage msg) {
@@ -901,8 +916,12 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
         boolean isOkToJoin = msg.isOkMessage();
         if (!member.isHighPriorityNode()) {
           if (isOkToJoin) {
-            Assert.assertTrue(manager.tryAddMember(member));
-            member.eventFiringInProcess();
+            isOkToJoin = manager.tryAddMember(member);
+            if (isOkToJoin) {
+              member.eventFiringInProcess();
+            } else {
+              logger.warn("Unexpected bad handshake, abort connection.");
+            }
           }
           signalToJoin(isOkToJoin);
         }
@@ -967,6 +986,13 @@ public class TCGroupManagerImpl extends SEDA implements GroupManager, ChannelMan
       }
     }
 
+  }
+
+  /*
+   * for testing purpose only
+   */
+  void addZappedNode(NodeID nodeID) {
+    zappedSet.add(nodeID);
   }
 
 }

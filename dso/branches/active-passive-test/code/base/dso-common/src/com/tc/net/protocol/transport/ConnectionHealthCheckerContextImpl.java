@@ -6,7 +6,6 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
-import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.TCConnection;
@@ -15,14 +14,13 @@ import com.tc.net.core.event.TCConnectionErrorEvent;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.core.event.TCConnectionEventListener;
 import com.tc.net.protocol.NullProtocolAdaptor;
-import com.tc.util.Assert;
 import com.tc.util.State;
 
 /**
  * A HealthChecker Context takes care of sending and receiving probe signals, book-keeping, sending additional probes
  * and all the logic to monitor peers health. One Context per Transport is assigned as soon as a TC Connection is
  * Established.
- * 
+ *
  * @author Manoj
  */
 
@@ -63,10 +61,9 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     this.maxProbeCountWithoutReply = config.getPingProbes();
     this.config = config;
     this.connectionManager = connMgr;
-    this.logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ": "
+    this.logger = TCLogging.getLogger(ConnectionHealthCheckerImpl.class.getName() + ". "
                                       + config.getHealthCheckerName() + "(" + mtb.getConnectionId() + ")");
-    logger.setLevel(LogLevel.DEBUG); // XXX should be removed before pacheco release
-    if (logger.isDebugEnabled()) logger.debug("Health monitoring agent started");
+    logger.info("Health monitoring agent started");
   }
 
   /* all callers of this method are already synchronized */
@@ -88,9 +85,6 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
   }
 
   private boolean initSocketConnectProbe() {
-
-    Assert.eval(!currentState.equals(SOCKET_CONNECT));
-    Assert.eval(!currentState.equals(DEAD));
 
     // trigger the socket connect
     conn = connectionManager.createConnection(new NullProtocolAdaptor());
@@ -134,9 +128,8 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
         probeReplyNotRecievedCount.increment();
         changeState(AWAIT_PINGREPLY);
       } else if (config.isSocketConnectOnPingFail()) {
-        if (initSocketConnectProbe()) {
-          changeState(SOCKET_CONNECT);
-        } else {
+        changeState(SOCKET_CONNECT);
+        if (!initSocketConnectProbe()) {
           changeState(DEAD);
         }
       } else {
@@ -144,7 +137,10 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
       }
     }
 
-    if (currentState.equals(DEAD)) { return false; }
+    if (currentState.equals(DEAD)) {
+      logger.info("is DEAD.");
+      return false;
+    }
     return true;
   }
 
@@ -199,7 +195,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     // Async connect goes thru
     socketConnectSuccessCount++;
     if (socketConnectSuccessCount < config.getMaxSocketConnectCount()) {
-      if (logger.isDebugEnabled()) logger.debug("Peer might be in Long GC");
+      if (logger.isDebugEnabled()) logger.debug("Peer might be in Long GC.");
       initProbeCycle();
     } else {
       if (logger.isDebugEnabled()) logger.debug("Peer might be in Long GC. But its too long. No more retries");
