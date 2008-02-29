@@ -99,7 +99,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   }
 
   private void verify(Collection objects) {
-    // verify a in-memory bit crosspond to an object ID
+    // verify an in-memory bit crosspond to an object ID
     HashSet originalIds = new HashSet();
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
@@ -113,8 +113,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     oidManager.resetBitsArrayMap();
     SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs();
     idSet.snapshot(); // blocked while reading from disk
-    Collection diskIds = oidManager.bitsArrayMapToObjectID();
-    assertTrue("Wrong object IDs on disk", diskIds.equals(inMemoryIds));
+    assertTrue("Wrong object IDs on disk", idSet.containsAll(inMemoryIds));
+    assertTrue("Wrong object IDs on disk", inMemoryIds.containsAll(idSet));
 
   }
 
@@ -131,10 +131,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     oidManager.runCheckpoint();
 
+    oidManager.loadBitsArrayFromDisk();
     // verify object IDs is in memory
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
-      assertTrue("Object:" + mo.getID() + " missed in memory! ", oidManager.inMemoryContains(mo.getID()));
+      assertTrue("Object:" + mo.getID() + " missed in memory! ", oidManager.contains(mo.getID()));
     }
 
     verify(objects);

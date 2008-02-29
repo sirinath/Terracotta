@@ -47,11 +47,12 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   // property
   private final static String                  LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
   private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
-  private final static String                  LONGS_PER_MEMORY_ENTRY   = "longsPerMemoryEntry";
   private final static String                  MEASURE_PERF             = "measure.performance";                                // hidden
   private final static String                  CHCKPOINT_CHANGES        = "checkpoint.changes";
   private final static String                  CHCKPOINT_TIMEPERIOD     = "checkpoint.timeperiod";
+  private final static String                  CHCKPOINT_MAXLIMIT       = "checkpoint.maxlimit";
   private final int                            CHECKPOINT_CHANGES;
+  private final int                            CHECKPOINT_MAXLIMIT;
   private final int                            CHECKPOINT_PERIOD;
   private boolean                              isMeasurePerf;
 
@@ -60,7 +61,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   private final PersistenceTransactionProvider ptp;
   private final OidBitsArrayMap                oidBitsArrayMap;
   private final CursorConfig                   oidDBCursorConfig;
-  private volatile boolean                     isPopulating             = false;
   private final int                            BitsPerLong              = OidLongArray.BitsPerLong;
   private final boolean                        paranoid;
   private final AtomicInteger                  changesCount             = new AtomicInteger(0);
@@ -75,13 +75,13 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
     TCProperties loadObjProp = TCPropertiesImpl.getProperties().getPropertiesFor(LOAD_OBJECTID_PROPERTIES);
     CHECKPOINT_CHANGES = loadObjProp.getInt(CHCKPOINT_CHANGES);
+    CHECKPOINT_MAXLIMIT = loadObjProp.getInt(CHCKPOINT_MAXLIMIT);
     CHECKPOINT_PERIOD = loadObjProp.getInt(CHCKPOINT_TIMEPERIOD);
     isMeasurePerf = loadObjProp.getBoolean(MEASURE_PERF, false);
     if (!this.paranoid) {
       oidBitsArrayMap = null;
     } else {
-      oidBitsArrayMap = new OidBitsArrayMap(loadObjProp.getInt(LONGS_PER_MEMORY_ENTRY), loadObjProp
-          .getInt(LONGS_PER_DISK_ENTRY));
+      oidBitsArrayMap = new OidBitsArrayMap(loadObjProp.getInt(LONGS_PER_DISK_ENTRY), this.oidDB);
     }
   }
 
@@ -139,15 +139,15 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   }
 
   /*
-   * Flush out oidLogDB to bitsArray on disk. isUpdateArrayInMemory -- true, if processing left over from previous run --
-   * false, used by checkpoint to flush in-memory to disk.
+   * Flush out oidLogDB to bitsArray on disk.
    */
-  private synchronized void oidFlushLogToBitsArray(boolean isUpdateArrayInMemory, boolean isStopped, ObjectIDSet2 tmp) {
-    SortedSet<Long> sortedOnDiskOidSet = new TreeSet<Long>();
+  private synchronized void oidFlushLogToBitsArray(boolean isStopped, ObjectIDSet2 tmp, boolean isNoLimit) {
+    SortedSet<Long> sortedOnDiskIndexSet = new TreeSet<Long>();
     PersistenceTransaction tx = ptp.newTransaction();
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
     int changes = 0;
+    oidBitsArrayMap.clear();
     try {
       Cursor cursor = oidLogDB.openCursor(pt2nt(tx), CursorConfig.READ_COMMITTED);
       try {
@@ -162,26 +162,31 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
           long oidValue = Conversion.bytes2Long(key.getData());
 
-          if (isUpdateArrayInMemory) {
-            ObjectID objectID = new ObjectID(oidValue);
-            byte action = value.getData()[0];
-            switch (action) {
-              case LOG_ACTION_ADD:
-                oidBitsArrayMap.getAndSet(objectID);
-                tmp.add(objectID);
-                break;
-              case LOG_ACTION_DELETE:
-                oidBitsArrayMap.getAndClr(objectID);
-                tmp.remove(objectID);
-                break;
-              default:
-                throw new RuntimeException("Unknown object log action " + action);
-            }
+          ObjectID objectID = new ObjectID(oidValue);
+          byte action = value.getData()[0];
+          switch (action) {
+            case LOG_ACTION_ADD:
+              oidBitsArrayMap.getAndSet(objectID);
+              if ((tmp != null) && !tmp.add(objectID)) { throw new RuntimeException("Error add " + objectID); }
+              break;
+            case LOG_ACTION_DELETE:
+              oidBitsArrayMap.getAndClr(objectID);
+              if ((tmp != null) && !tmp.remove(objectID)) { throw new RuntimeException("Error remove " + objectID); }
+              break;
+            default:
+              throw new RuntimeException("Unknown object log action " + action);
           }
 
-          sortedOnDiskOidSet.add(new Long(oidBitsArrayMap.oidOnDiskIndex(oidValue)));
+          sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
           cursor.delete();
+
           ++changes;
+
+          if (!isNoLimit && (changes >= CHECKPOINT_MAXLIMIT)) {
+            cursor.close();
+            cursor = null;
+            break;
+          }
         }
       } catch (DatabaseException e) {
         throw e;
@@ -192,12 +197,12 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
       resetChangesCount();
 
-      for (Long onDiskIndex : sortedOnDiskOidSet) {
+      for (Long onDiskIndex : sortedOnDiskIndexSet) {
         if (isStopped) {
           abortOnError(tx);
           return;
         }
-        OidLongArray bits = oidBitsArrayMap.getArrayForDisk(onDiskIndex);
+        OidLongArray bits = oidBitsArrayMap.getBitsArray(onDiskIndex);
         key.setData(bits.keyToBytes());
         value.setData(bits.arrayToBytes());
         this.oidDB.put(pt2nt(tx), key, value);
@@ -208,6 +213,8 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     } catch (DatabaseException e) {
       logger.error("Error ojectID checkpoint: " + e);
       abortOnError(tx);
+    } finally {
+      oidBitsArrayMap.clear();
     }
   }
 
@@ -215,14 +222,14 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
    * Update bitsArray in memory and disk, add/delete objectIDs on tmp.
    */
   private void processPreviousRunOidLog(boolean isStopped, ObjectIDSet2 tmp) {
-    oidFlushLogToBitsArray(true, isStopped, tmp);
+    oidFlushLogToBitsArray(isStopped, tmp, true);
   }
 
   /*
    * Update bitsArray on disk only. In-memory is already up to date.
    */
   private void processCheckpoint(boolean isStopped) {
-    oidFlushLogToBitsArray(false, isStopped, null);
+    oidFlushLogToBitsArray(isStopped, null, false);
   }
 
   /*
@@ -281,12 +288,12 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
       PersistenceTransaction tx = null;
       Cursor cursor = null;
       try {
-        isPopulating = true;
         cursor = oidDB.openCursor(pt2nt(tx), oidDBCursorConfig);
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
-          makeObjectIDFromDiskArrayEntry(dbToOidBitsArray(key, value), tmp);
+          OidLongArray bitsArray = new OidLongArray(key.getData(), value.getData());
+          makeObjectIDFromBitsArray(bitsArray, tmp);
         }
 
         // process anything left in oidLogDB from previous run
@@ -300,7 +307,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
       } finally {
         safeClose(cursor);
         safeCommit(tx);
-        isPopulating = false;
         set.stopPopulating(tmp);
         tmp = null;
       }
@@ -308,11 +314,10 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
       startCheckpointThread();
     }
 
-    private void makeObjectIDFromDiskArrayEntry(OidLongArray entry, ObjectIDSet2 tmp) {
-      oidBitsArrayMap.applyDiskEntry(entry);
+    private void makeObjectIDFromBitsArray(OidLongArray entry, ObjectIDSet2 tmp) {
       long oid = entry.getKey();
       long[] ary = entry.getArray();
-      for (int j = 0; j < oidBitsArrayMap.longsPerDiskUnit; ++j) {
+      for (int j = 0; j < ary.length; ++j) {
         long bit = 1L;
         long bits = ary[j];
         for (int i = 0; i < BitsPerLong; ++i) {
@@ -353,25 +358,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     }
   }
 
-  /*
-   * Sync up in-memory bits array from persistor (disk) if exist
-   */
-  private void syncOidBitsArrayDiskEntry(ObjectID objectId) {
-    DatabaseEntry key = new DatabaseEntry();
-    DatabaseEntry value = new DatabaseEntry();
-    key.setData(oidBitsArrayMap.onDiskIndex2Bytes(objectId));
-    try {
-      if (OperationStatus.SUCCESS.equals(this.oidDB.get(null, key, value, LockMode.DEFAULT))) {
-        oidBitsArrayMap.applyDiskEntry(dbToOidBitsArray(key, value));
-      }
-    } catch (DatabaseException e) {
-      logger.error("Reading object ID " + objectId + ":" + e);
-    }
-  }
-
-  /*
-   * Use with great care!!! Shall do db commit before next call otherwise dead lock may result.
-   */
   public OperationStatus oidPut(PersistenceTransaction tx, ManagedObject managedObject) throws DatabaseException {
     if (!paranoid) return OperationStatus.SUCCESS;
 
@@ -379,11 +365,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     if (!managedObject.isNew()) return OperationStatus.SUCCESS;
 
     ObjectID objectId = managedObject.getID();
-    synchronized (oidBitsArrayMap) {
-      if (isPopulating) syncOidBitsArrayDiskEntry(objectId);
-      oidBitsArrayMap.getAndSet(objectId);
-      return (logAddObjectID(tx, objectId));
-    }
+    return (logAddObjectID(tx, objectId));
   }
 
   public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
@@ -391,8 +373,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
     OperationStatus status = OperationStatus.SUCCESS;
     for (ObjectID objectID : oidSet) {
-      if (isPopulating) syncOidBitsArrayDiskEntry(objectID);
-      oidBitsArrayMap.getAndSet(objectID);
       try {
         status = logAddObjectID(tx, objectID);
         incChangesCount();
@@ -409,7 +389,6 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
 
     OperationStatus status = OperationStatus.SUCCESS;
     for (ObjectID objectID : oidSet) {
-      oidBitsArrayMap.getAndClr(objectID);
       try {
         status = logDeleteObjectID(tx, objectID);
         incChangesCount();
@@ -421,114 +400,77 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     return (status);
   }
 
-  private OidLongArray dbToOidBitsArray(DatabaseEntry key, DatabaseEntry value) {
-    return (new OidLongArray(key.getData(), value.getData()));
-  }
-
   public static class OidBitsArrayMap {
-    final HashMap       map;
-    final int           longsPerMemUnit;
-    final int           memBitsLength;
-    final int           longsPerDiskUnit;
-    final int           diskBitsLength;
-    final HashSet<Long> inUseSet;
+    private final Database oidDB;
+    private final HashMap  map;
+    private final int      bitsLength;
+    private final int      longsPerDiskUnit;
 
-    OidBitsArrayMap(int longsPerMemUnit, int longsPerDiskUnit) {
-      this.longsPerMemUnit = longsPerMemUnit;
-      this.memBitsLength = longsPerMemUnit * OidLongArray.BitsPerLong;
+    OidBitsArrayMap(int longsPerDiskUnit, Database oidDB) {
+      this.oidDB = oidDB;
       this.longsPerDiskUnit = longsPerDiskUnit;
-      this.diskBitsLength = longsPerDiskUnit * OidLongArray.BitsPerLong;
+      this.bitsLength = longsPerDiskUnit * OidLongArray.BitsPerLong;
       map = new HashMap();
-      inUseSet = new HashSet<Long>();
-
-      Assert.assertTrue("LongsPerMemUnit must be multiple of LongsPerDiskUnit",
-                        (longsPerMemUnit % longsPerDiskUnit) == 0);
     }
 
-    public boolean oidMarkInUse(Set<Long> set) {
-      synchronized (this) {
-        while (useSetContainsAny(set)) {
-          try {
-            wait();
-          } catch (InterruptedException ex) {
-            return false;
-          }
+    public void clear() {
+      map.clear();
+    }
+
+    private Long oidIndex(long oid) {
+      return new Long(oid / bitsLength * bitsLength);
+    }
+
+    public OidLongArray getBitsArray(long oid) {
+      Long mapIndex = oidIndex(oid);
+      OidLongArray longAry = null;
+      synchronized (map) {
+        if (map.containsKey(mapIndex)) {
+          longAry = (OidLongArray) map.get(mapIndex);
         }
-        inUseSet.addAll(set);
       }
-      return true;
+      return longAry;
     }
 
-    public void oidUnmarkInUse(Set<Long> set) {
-      synchronized (this) {
-        inUseSet.removeAll(set);
-        notifyAll();
-      }
-    }
-
-    public boolean useSetContainsAny(Set set) {
-      Iterator iter = set.iterator();
-      while (iter.hasNext()) {
-        if (inUseSet.contains(iter.next())) return true;
-      }
-      return false;
-    }
-
-    public long oidOnDiskIndex(long oid) {
-      return (oid / diskBitsLength * diskBitsLength);
-    }
-
-    public byte[] onDiskIndex2Bytes(ObjectID id) {
-      return Conversion.long2Bytes(oidOnDiskIndex(id.toLong()));
-    }
-
-    public Long oidInMemIndex(long oid) {
-      return new Long(oid / memBitsLength * memBitsLength);
-    }
-
-    private OidLongArray getBitsArray(long oid) {
-      Long mapIndex = oidInMemIndex(oid);
+    private OidLongArray getOrLoadBitsArray(long oid) {
+      Long mapIndex = oidIndex(oid);
       OidLongArray longAry;
       synchronized (map) {
         if (map.containsKey(mapIndex)) {
           longAry = (OidLongArray) map.get(mapIndex);
         } else {
-          longAry = new OidLongArray(longsPerMemUnit, mapIndex.longValue());
+          longAry = readDiskEntry(oid);
+          if (longAry == null) longAry = new OidLongArray(longsPerDiskUnit, mapIndex.longValue());
           map.put(mapIndex, longAry);
         }
       }
       return longAry;
     }
 
-    public OidLongArray getArrayForDisk(long keyOnDisk) {
-      OidLongArray longAry = getBitsArray(keyOnDisk);
-      return (getArrayForDisk(longAry, keyOnDisk));
-    }
-
-    private OidLongArray getArrayForDisk(OidLongArray inMemLongAry, long oid) {
-      long keyOnDisk = oidOnDiskIndex(oid);
-      OidLongArray onDiskAry = new OidLongArray(longsPerDiskUnit, keyOnDisk);
-      int offset = (int) (keyOnDisk % memBitsLength) / OidLongArray.BitsPerLong;
-      inMemLongAry.copyOut(onDiskAry, offset);
-      return onDiskAry;
+    private OidLongArray readDiskEntry(long oid) {
+      DatabaseEntry key = new DatabaseEntry();
+      DatabaseEntry value = new DatabaseEntry();
+      key.setData(Conversion.long2Bytes(oidIndex(oid)));
+      try {
+        OperationStatus status = oidDB.get(null, key, value, LockMode.DEFAULT);
+        if (OperationStatus.SUCCESS.equals(status)) { return new OidLongArray(key.getData(), value.getData()); }
+      } catch (DatabaseException e) {
+        logger.error("Reading object ID " + oid + ":" + e);
+      }
+      return null;
     }
 
     private OidLongArray getAndModify(long oid, boolean doSet) {
-      OidLongArray longAry = getBitsArray(oid);
-      int oidInArray = (int) (oid % memBitsLength);
+      OidLongArray longAry = getOrLoadBitsArray(oid);
+      int oidInArray = (int) (oid % bitsLength);
       synchronized (longAry) {
         if (doSet) {
           longAry.setBit(oidInArray);
         } else {
           longAry.clrBit(oidInArray);
         }
-
-        // purge out array if empty
-        /*
-         * not thread safe if(!doSet) { if ((value == 0L) && longAry.isZero()) { map.remove(mapIndex); } }
-         */
-        return (getArrayForDisk(longAry, oid));
       }
+      return (longAry);
     }
 
     public OidLongArray getAndSet(ObjectID id) {
@@ -539,36 +481,56 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
       return (getAndModify(id.toLong(), false));
     }
 
-    public void applyDiskEntry(OidLongArray entry) {
-      OidLongArray inMemArray = getBitsArray(entry.getKey());
-      int offset = (int) (entry.getKey() % memBitsLength) / OidLongArray.BitsPerLong;
-      inMemArray.applyIn(entry, offset);
+    // for testing
+    void loadBitsArrayFromDisk() {
+      clear();
+      Cursor cursor = null;
+      try {
+        cursor = oidDB.openCursor(null, CursorConfig.READ_COMMITTED);
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+          OidLongArray bitsArray = new OidLongArray(key.getData(), value.getData());
+          map.put(new Long(bitsArray.getKey()), bitsArray);
+        }
+        cursor.close();
+        cursor = null;
+      } catch (DatabaseException e) {
+        throw new RuntimeException(e);
+      } finally {
+        try {
+          if (cursor != null) cursor.close();
+        } catch (DatabaseException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
 
-    public boolean contains(ObjectID id) {
+    // for testing
+    boolean contains(ObjectID id) {
       long oid = id.toLong();
-      Long mapIndex = oidInMemIndex(oid);
+      Long mapIndex = oidIndex(oid);
       synchronized (map) {
         if (map.containsKey(mapIndex)) {
           OidLongArray longAry = (OidLongArray) map.get(mapIndex);
-          return (longAry.isSet((int) oid % memBitsLength));
+          return (longAry.isSet((int) oid % bitsLength));
         }
       }
       return (false);
     }
+  }
 
-    /*
-     * for testing purpose only.
-     */
-    void reset() {
-      map.clear();
-    }
+  /*
+   * for testing purpose. Load bitsArray from disk
+   */
+  void loadBitsArrayFromDisk() {
+    oidBitsArrayMap.loadBitsArrayFromDisk();
   }
 
   /*
    * for testing purpose. Check if contains specified objectId
    */
-  boolean inMemoryContains(ObjectID objectId) {
+  boolean contains(ObjectID objectId) {
     return oidBitsArrayMap.contains(objectId);
   }
 
@@ -594,14 +556,14 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
    * for testing purpose only.
    */
   void resetBitsArrayMap() {
-    oidBitsArrayMap.reset();
+    oidBitsArrayMap.clear();
   }
 
   /*
    * for testing purpose only.
    */
   void runCheckpoint() {
-    processCheckpoint(false);
+    processPreviousRunOidLog(false, null);
   }
 
 }
