@@ -25,7 +25,6 @@ import com.tc.util.Assert;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -81,7 +80,6 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     sequencer.addTransactions(txns);
     txnStageCoordinator.initiateLookup();
   }
-  
 
   private void createAndPreFetchObjectsFor(Collection txns) {
     Set oids = new HashSet(txns.size() * 10);
@@ -96,7 +94,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
         }
       }
     }
-    objectManager.preFetchObjectsAndCreate(oids,newOids);
+    objectManager.preFetchObjectsAndCreate(oids, newOids);
   }
 
   // LookupHandler Method
@@ -107,7 +105,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       if (txn == null) break;
       ServerTransactionID stxID = txn.getServerTransactionID();
       if (gtxm.initiateApply(stxID)) {
-        lookupObjectsForApplyAndAddToSink(txn, true);
+        lookupObjectsForApplyAndAddToSink(txn);
       } else {
         // These txns are already applied, hence just sending it to the next stage.
         txnStageCoordinator.addToApplyStage(new ApplyTransactionContext(txn));
@@ -121,7 +119,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     }
   }
 
-  public synchronized void lookupObjectsForApplyAndAddToSink(ServerTransaction txn, boolean newTxn) {
+  public synchronized void lookupObjectsForApplyAndAddToSink(ServerTransaction txn) {
     Collection oids = txn.getObjectIDs();
     // log("lookupObjectsForApplyAndAddToSink(): START : " + txn.getServerTransactionID() + " : " + oids);
     Set newRequests = new HashSet();
@@ -144,8 +142,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     // TODO:: make cache and stats right
     LookupContext lookupContext = null;
     if (!newRequests.isEmpty()) {
-      lookupContext = new LookupContext(newRequests, (newTxn ? txn.getNewObjectIDs() : Collections.EMPTY_SET), txn
-          .getServerTransactionID());
+      lookupContext = new LookupContext(newRequests, txn.getNewObjectIDs(), txn.getServerTransactionID());
       if (objectManager.lookupObjectsFor(txn.getSourceID(), lookupContext)) {
         addLookedupObjects(lookupContext);
       } else {
@@ -280,7 +277,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     List copy = pendingTxnList.copy();
     for (Iterator i = copy.iterator(); i.hasNext();) {
       ServerTransaction txn = (ServerTransaction) i.next();
-      lookupObjectsForApplyAndAddToSink(txn, false);
+      lookupObjectsForApplyAndAddToSink(txn);
     }
   }
 
