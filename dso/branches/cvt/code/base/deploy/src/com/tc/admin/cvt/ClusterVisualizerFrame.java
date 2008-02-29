@@ -679,7 +679,7 @@ public class ClusterVisualizerFrame extends JFrame {
 
   private JFreeChart buildGraph(String title, List<DataDisplay> displayList, boolean multiAxis) {
     XYDataset[] xyDatasets = display2Dataset(displayList);
-    JFreeChart chart = DemoChartFactory.createXYLineChart("", "", "", xyDatasets[0], true);
+    JFreeChart chart = DemoChartFactory.createXYLineChart("", "", "", xyDatasets[0], !multiAxis);
     XYPlot plot = (XYPlot) chart.getPlot();
     ((DateAxis) plot.getDomainAxis()).setMinimumDate(fSessionInfo.fStart);
     boolean topOrLeft = true;
@@ -757,7 +757,6 @@ public class ClusterVisualizerFrame extends JFrame {
         if (cachedDisplay != null) {
           DataDisplay display = cachedDisplay.createCopy(stat);
           if (display != null) {
-            System.out.println("Copied existing display for '" + display + "'");
             displayList.add(display);
             continue;
           }
@@ -797,7 +796,6 @@ public class ClusterVisualizerFrame extends JFrame {
           if (cachedDisplay != null) {
             DataDisplay display = cachedDisplay.createCopy(node.toString());
             if (display != null) {
-              System.out.println("Copied existing display for '" + display + "'");
               displayList.add(display);
               continue;
             }
