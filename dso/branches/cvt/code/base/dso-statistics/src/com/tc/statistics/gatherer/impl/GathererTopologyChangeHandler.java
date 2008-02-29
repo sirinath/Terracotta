@@ -5,12 +5,21 @@ package com.tc.statistics.gatherer.impl;
 
 import com.tc.statistics.StatisticsManager;
 import com.tc.statistics.beans.TopologyChangeHandler;
+import com.tc.util.concurrent.CopyOnWriteArrayMap;
+
+import java.util.Map;
+import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Collections;
 
 public class GathererTopologyChangeHandler implements TopologyChangeHandler {
   private volatile boolean enabled = false;
   private volatile String sessionId = null;
   private volatile String[] enabledStatistics = null;
   private volatile boolean capturingStarted = false;
+
+  private final Map globalConfigParams = new HashMap();
+  private final Map sessionConfigParams = new HashMap();
 
   public boolean isEnabled() {
     return enabled;
@@ -25,6 +34,12 @@ public class GathererTopologyChangeHandler implements TopologyChangeHandler {
   }
 
   public void setSessionId(String sessionId) {
+    if (this.sessionId != null &&
+        !this.sessionId.equals(sessionId)) {
+      synchronized (sessionConfigParams) {
+        sessionConfigParams.clear();
+      }
+    }
     this.sessionId = sessionId;
   }
 
@@ -44,6 +59,22 @@ public class GathererTopologyChangeHandler implements TopologyChangeHandler {
     this.capturingStarted = capturingStarted;
   }
 
+  public void setGlobalConfigParam(final String key, final Object value) {
+    synchronized (globalConfigParams) {
+      globalConfigParams.put(key, value);
+    }
+  }
+
+  public void setSessionConfigParam(final String sessionId, final String key, final Object value) {
+    if (null == this.sessionId ||
+        !this.sessionId.equals(sessionId)) {
+      return;
+    }
+    synchronized (sessionConfigParams) {
+      sessionConfigParams.put(key, value);
+    }
+  }
+
   public void agentAdded(StatisticsManager agent) {
     if (enabled) {
       agent.enable();
@@ -51,8 +82,30 @@ public class GathererTopologyChangeHandler implements TopologyChangeHandler {
       agent.disable();
     }
 
+    synchronized (globalConfigParams) {
+      if (globalConfigParams.size() > 0) {
+        Iterator it = globalConfigParams.entrySet().iterator();
+        Map.Entry entry;
+        while (it.hasNext()) {
+          entry = (Map.Entry)it.next();
+          agent.setGlobalParam((String)entry.getKey(), entry.getValue());
+        }
+      }
+    }
+
     if (sessionId != null) {
       agent.createSession(sessionId);
+
+      synchronized (sessionConfigParams) {
+        if (sessionConfigParams.size() > 0) {
+          Iterator it = sessionConfigParams.entrySet().iterator();
+          Map.Entry entry;
+          while (it.hasNext()) {
+            entry = (Map.Entry)it.next();
+            agent.setSessionParam(sessionId, (String)entry.getKey(), entry.getValue());
+          }
+        }
+      }
 
       if (enabledStatistics != null) {
         agent.disableAllStatistics(sessionId);

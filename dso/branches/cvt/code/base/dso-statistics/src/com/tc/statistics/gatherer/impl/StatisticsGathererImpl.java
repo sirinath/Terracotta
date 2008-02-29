@@ -254,6 +254,9 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     if (null == statGateway) throw new TCStatisticsGathererConnectionRequiredException();
     try {
       statGateway.setGlobalParam(key, value);
+
+      topologyChangeHandler.setGlobalConfigParam(key, value);
+      statGateway.setTopologyChangeHandler(topologyChangeHandler);
     } catch (Exception e) {
       throw new TCStatisticsGathererGlobalConfigSetErrorException(key, value, e);
     }
@@ -272,6 +275,9 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     if (null == sessionId) throw new TCStatisticsGathererSessionRequiredException();
     try {
       statGateway.setSessionParam(sessionId, key, value);
+
+      topologyChangeHandler.setSessionConfigParam(sessionId, key, value);
+      statGateway.setTopologyChangeHandler(topologyChangeHandler);
     } catch (Exception e) {
       throw new TCStatisticsGathererSessionConfigSetErrorException(sessionId, key, value, e);
     }
