@@ -9,6 +9,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
@@ -37,7 +38,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -54,6 +54,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,20 +70,27 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class ClusterVisualizerFrame extends JFrame {
+  private ImportAction                             fImportAction;
+  private RetrieveAction                           fRetrieveAction;
   private JComboBox                                fSessionSelector;
+  private JPanel                                   fToolBar;
   private JSlider                                  fHeightSlider;
   private SessionInfo                              fSessionInfo;
   private JPanel                                   fBottomPanel;
@@ -90,42 +98,59 @@ public class ClusterVisualizerFrame extends JFrame {
   private JPanel                                   fGraphPanel;
   private MyStatisticsStore                        fStore;
   private Map<NodeControl, Map<String, JCheckBox>> fNodeGroups;
-  private Map<JCheckBox, Map<Node, NodeControl>>   fStatGroups;
+  private Map<StatControl, Map<Node, NodeControl>> fStatGroups;
   private Map<String, AbstractStatHandler>         fStatHandlerMap;
+  private JLabel                                   fStatusLine;
   private JProgressBar                             fProgressBar;
   private File                                     fLastDir;
+  private Map<DisplaySource, DataDisplay>          fDisplayCache;
+
+  private Dimension                                fDefaultGraphSize = new Dimension(
+                                                                                     ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH,
+                                                                                     ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT);
 
   public ClusterVisualizerFrame(String[] args) {
     super("Cluster Visualizer");
     JMenuBar menuBar = new JMenuBar();
     setJMenuBar(menuBar);
     JMenu fileMenu = new JMenu("File");
-    ImportAction importAction = new ImportAction();
-    fileMenu.add(importAction);
-    RetrieveAction retrieveAction = new RetrieveAction();
-    fileMenu.add(retrieveAction);
+    fImportAction = new ImportAction();
+    fileMenu.add(fImportAction);
+    fRetrieveAction = new RetrieveAction();
+    fileMenu.add(fRetrieveAction);
     fileMenu.addSeparator();
     ExitAction exitAction = new ExitAction();
     fileMenu.add(exitAction);
     menuBar.add(fileMenu);
 
-    JPanel toolBar = new JPanel(new FlowLayout());
-    getContentPane().add(toolBar, BorderLayout.NORTH);
-    toolBar.add(new JButton(importAction));
-    toolBar.add(new JButton(retrieveAction));
-    toolBar.add(fSessionSelector = new JComboBox());
-    toolBar.add(fHeightSlider = new JSlider(100, 600, 250));
+    fToolBar = new JPanel(new GridBagLayout());
+    getContentPane().add(fToolBar, BorderLayout.NORTH);
+    fToolBar.add(new JButton(fImportAction));
+    fToolBar.add(new JButton(fRetrieveAction));
+    fToolBar.add(fSessionSelector = new JComboBox());
+    fToolBar.add(fHeightSlider = new JSlider(100, 600, 250));
     fHeightSlider.addChangeListener(new SliderHeightListener());
     fSessionSelector.addActionListener(new SessionSelectorHandler());
     getContentPane().add(fBottomPanel = new JPanel(new BorderLayout()), BorderLayout.CENTER);
-    getContentPane().add(fProgressBar = new JProgressBar(), BorderLayout.SOUTH);
+    JPanel statusPanel = new JPanel(new BorderLayout());
+    statusPanel.setBorder(new EmptyBorder(3, 3, 3, 3));
+    statusPanel.add(fStatusLine = new JLabel());
+    statusPanel.add(fProgressBar = new JProgressBar(), BorderLayout.EAST);
+    getContentPane().add(statusPanel, BorderLayout.SOUTH);
+    fProgressBar.setIndeterminate(true);
+    fProgressBar.setVisible(false);
+    fSessionSelector.setVisible(false);
+    fHeightSlider.setVisible(false);
 
     fNodeGroups = new HashMap<NodeControl, Map<String, JCheckBox>>();
-    fStatGroups = new HashMap<JCheckBox, Map<Node, NodeControl>>();
+    fStatGroups = new HashMap<StatControl, Map<Node, NodeControl>>();
     fStatHandlerMap = new HashMap<String, AbstractStatHandler>();
     putStatHandler(new MemoryUsageHandler());
     putStatHandler(new L2toL1FaultHandler());
+    putStatHandler(new TxRateHandler());
     putStatHandler(new CPUUsageHandler());
+
+    fDisplayCache = new HashMap<DisplaySource, DataDisplay>();
 
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
   }
@@ -133,7 +158,7 @@ public class ClusterVisualizerFrame extends JFrame {
   class SliderHeightListener implements ChangeListener {
     public void stateChanged(ChangeEvent e) {
       int newHeight = fHeightSlider.getValue();
-      Dimension newDim = new Dimension(ChartPanel.DEFAULT_WIDTH, newHeight);
+      Dimension newDim = new Dimension(ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH, newHeight);
       for (Component comp : fGraphPanel.getComponents()) {
         if (comp instanceof ChartPanel) {
           ChartPanel chartPanel = (ChartPanel) comp;
@@ -147,79 +172,119 @@ public class ClusterVisualizerFrame extends JFrame {
 
   class SessionSelectorHandler implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
-      try {
-        fSessionInfo = (SessionInfo) fSessionSelector.getSelectedItem();
-        if (fSessionInfo == null) return;
-        fGraphPanel.removeAll();
-        fGraphPanel.setLayout(null);
-        setupControlPanel();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      fSessionInfo = (SessionInfo) fSessionSelector.getSelectedItem();
+      if (fSessionInfo == null) return;
+      fGraphPanel.removeAll();
+      fGraphPanel.setLayout(null);
+      fProgressBar.setVisible(true);
+      new NodeStatMappingThread().start();
     }
   }
 
-  class GenerateGraphsAction extends AbstractAction {
+  class GenerateGraphsAction extends AbstractAction implements Runnable {
+    List<NodeGroupHandler> fNodeGroupHandlers;
+    List<StatGroupHandler> fStatGroupHandlers;
+
     GenerateGraphsAction() {
       super("Generate graphs");
+    }
+
+    List<NodeGroupHandler> getNodeGroupHandlers() {
+      ArrayList<NodeGroupHandler> list = new ArrayList<NodeGroupHandler>();
+      Iterator<NodeControl> nodeIter = fNodeGroups.keySet().iterator();
+      while (nodeIter.hasNext()) {
+        NodeControl nodeControl = nodeIter.next();
+        Node node = nodeControl.getNode();
+        ArrayList<String> statList = new ArrayList<String>();
+        if (nodeControl.isSelected()) {
+          Map<String, JCheckBox> controlMap = fNodeGroups.get(nodeControl);
+          Iterator<String> statIter = controlMap.keySet().iterator();
+          while (statIter.hasNext()) {
+            String stat = statIter.next();
+            JCheckBox control = controlMap.get(stat);
+            if (control.isSelected()) {
+              statList.add(stat);
+            }
+          }
+        }
+        if (statList.size() > 0) {
+          list.add(new NodeGroupHandler(node, statList));
+        }
+      }
+      return list;
+    }
+
+    List<StatGroupHandler> getStatGroupHandlers() {
+      ArrayList<StatGroupHandler> list = new ArrayList<StatGroupHandler>();
+      Iterator<StatControl> statIter = fStatGroups.keySet().iterator();
+      while (statIter.hasNext()) {
+        JCheckBox statControl = statIter.next();
+        String stat = statControl.getName();
+        ArrayList<Node> nodeList = new ArrayList<Node>();
+        if (statControl.isSelected()) {
+          Map<Node, NodeControl> controlMap = fStatGroups.get(statControl);
+          Iterator<Node> nodeIter = controlMap.keySet().iterator();
+          while (nodeIter.hasNext()) {
+            Node node = nodeIter.next();
+            JCheckBox control = controlMap.get(node);
+            if (control.isSelected()) {
+              nodeList.add(node);
+            }
+          }
+        }
+        if (nodeList.size() > 0) {
+          list.add(new StatGroupHandler(stat, nodeList));
+        }
+      }
+      return list;
     }
 
     public void actionPerformed(ActionEvent ae) {
       fGraphPanel.removeAll();
       fGraphPanel.setLayout(new GridLayout(0, 1));
+      fProgressBar.setVisible(true);
+      setToolBarEnabled(false);
 
-      {
-        Iterator<NodeControl> nodeIter = fNodeGroups.keySet().iterator();
-        while (nodeIter.hasNext()) {
-          NodeControl nodeControl = nodeIter.next();
-          Node node = nodeControl.getNode();
-          ArrayList<String> statList = new ArrayList<String>();
-          if (nodeControl.isSelected()) {
-            Map<String, JCheckBox> controlMap = fNodeGroups.get(nodeControl);
-            Iterator<String> statIter = controlMap.keySet().iterator();
-            while (statIter.hasNext()) {
-              String stat = statIter.next();
-              JCheckBox control = controlMap.get(stat);
-              if (control.isSelected()) {
-                statList.add(stat);
-              }
-            }
-          }
-          if (statList.size() > 0) {
-            NodeGroupHandler ngh = new NodeGroupHandler(node, statList);
-            List<DataDisplay> displayList = ngh.generateDisplay();
-            JFreeChart chart = buildGraph(node.toString(), displayList, true);
-          }
-        }
+      fNodeGroupHandlers = getNodeGroupHandlers();
+      fStatGroupHandlers = getStatGroupHandlers();
+
+      Thread graphBuilderThread = new Thread(this);
+      graphBuilderThread.start();
+    }
+
+    public void run() {
+      Iterator<NodeGroupHandler> nodeGroupHandlerIter = fNodeGroupHandlers.iterator();
+      while (nodeGroupHandlerIter.hasNext()) {
+        NodeGroupHandler ngh = nodeGroupHandlerIter.next();
+        List<DataDisplay> displayList = ngh.generateDisplay();
+        buildGraphLater(ngh.fNode.toString(), displayList, true);
       }
 
-      {
-        Iterator<JCheckBox> statIter = fStatGroups.keySet().iterator();
-        while (statIter.hasNext()) {
-          JCheckBox statControl = statIter.next();
-          String stat = statControl.getName();
-          ArrayList<Node> nodeList = new ArrayList<Node>();
-          if (statControl.isSelected()) {
-            Map<Node, NodeControl> controlMap = fStatGroups.get(statControl);
-            Iterator<Node> nodeIter = controlMap.keySet().iterator();
-            while (nodeIter.hasNext()) {
-              Node node = nodeIter.next();
-              JCheckBox control = controlMap.get(node);
-              if (control.isSelected()) {
-                nodeList.add(node);
-              }
-            }
-          }
-          if (nodeList.size() > 0) {
-            StatGroupHandler sgh = new StatGroupHandler(stat, nodeList);
-            List<DataDisplay> displayList = sgh.generateDisplay();
-            JFreeChart chart = buildGraph(stat, displayList, false);
-          }
-        }
+      Iterator<StatGroupHandler> statGroupHandlerIter = fStatGroupHandlers.iterator();
+      while (statGroupHandlerIter.hasNext()) {
+        StatGroupHandler sgh = statGroupHandlerIter.next();
+        List<DataDisplay> displayList = sgh.generateDisplay();
+        buildGraphLater(sgh.fStat, displayList, false);
       }
 
-      fGraphPanel.revalidate();
-      fGraphPanel.repaint();
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          fProgressBar.setVisible(false);
+          fStatusLine.setText("");
+          fHeightSlider.setVisible(true);
+          setToolBarEnabled(true);
+        }
+      });
+    }
+
+    private void buildGraphLater(final String name, final List<DataDisplay> displayList, final boolean multiAxis) {
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          buildGraph(name, displayList, multiAxis);
+          fGraphPanel.revalidate();
+          fGraphPanel.repaint();
+        }
+      });
     }
   }
 
@@ -237,9 +302,9 @@ public class ClusterVisualizerFrame extends JFrame {
         chooser.setCurrentDirectory(fLastDir);
       }
       if (chooser.showOpenDialog(ClusterVisualizerFrame.this) != JFileChooser.APPROVE_OPTION) return;
+      setToolBarEnabled(false);
       File file = chooser.getSelectedFile();
       fLastDir = file.getParentFile();
-      fProgressBar.setIndeterminate(true);
       fProgressBar.setVisible(true);
       new Thread(new ImportRunner(file)).start();
     }
@@ -295,28 +360,45 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
+  private void setStatusLineLater(final String s) {
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        fStatusLine.setText(s);
+      }
+    });
+  }
+
   private void populateStore(InputStream in) throws Exception {
     resetStore();
 
     try {
+      fStatusLine.setText("");
       fStore.importCsvStatistics(new InputStreamReader(in), new StatisticsStoreImportListener() {
         public void started() {
         }
-        public void imported(long count) {
+
+        public void imported(final long count) {
+          setStatusLineLater("Read " + count + " entries");
         }
+
         public void optimizing() {
+          setStatusLineLater(fStatusLine.getText() + " (optimizing...)");
         }
-        public void finished(long total) {
+
+        public void finished(final long total) {
+          setStatusLineLater("Imported " + total + " entries");
         }
       });
     } finally {
-      SwingUtilities.invokeAndWait(new Runnable() {
+      SwingUtilities.invokeLater(new Runnable() {
         public void run() {
-          fProgressBar.setVisible(false);
           try {
             newStore();
           } catch (Exception e) {
             e.printStackTrace();
+          } finally {
+            fProgressBar.setVisible(false);
+            setToolBarEnabled(true);
           }
         }
       });
@@ -336,16 +418,20 @@ public class ClusterVisualizerFrame extends JFrame {
     dir.mkdir();
     fStore = new MyStatisticsStore(dir);
     fStore.open();
+
+    fDisplayCache.clear();
   }
 
   void newStore() throws Exception {
     fBottomPanel.removeAll();
     fGraphPanel = new JPanel();
-    fBottomPanel.add(new JScrollPane(fGraphPanel), BorderLayout.CENTER);
+    fBottomPanel.add(new JScrollPane(fGraphPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
 
     List<SessionInfo> sessionList = fStore.getAllSessions();
     DefaultComboBoxModel comboModel = new DefaultComboBoxModel(sessionList.toArray(new SessionInfo[0]));
     fSessionSelector.setModel(comboModel);
+    fSessionSelector.setVisible(true);
   }
 
   /**
@@ -357,9 +443,13 @@ public class ClusterVisualizerFrame extends JFrame {
     }
 
     public void actionPerformed(ActionEvent ae) {
+      String addr = (String) JOptionPane.showInputDialog(fBottomPanel, "Enter server address", getTitle(),
+                                                         JOptionPane.QUESTION_MESSAGE, null, null, "localhost:9510");
+      if (addr == null) return;
       GetMethod get = null;
       try {
-        String uri = "http://localhost:9510/statistics-gatherer/retrieveStatistics?format=txt";
+        fProgressBar.setVisible(true);
+        String uri = "http://" + addr + "/statistics-gatherer/retrieveStatistics?format=txt";
         URL url = new URL(uri);
         HttpClient httpClient = new HttpClient();
 
@@ -371,10 +461,11 @@ public class ClusterVisualizerFrame extends JFrame {
                              + " status: " + HttpStatus.getStatusText(status));
           return;
         }
-        fProgressBar.setIndeterminate(true);
-        fProgressBar.setVisible(true);
+        setToolBarEnabled(false);
         new Thread(new StreamCopierRunnable(get)).start();
       } catch (Exception e) {
+        fProgressBar.setVisible(false);
+        setToolBarEnabled(true);
         e.printStackTrace();
         if (get != null) {
           get.releaseConnection();
@@ -404,23 +495,23 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
-  private void filterStats(List<String> stats) throws Exception {
+  private void filterStats(List<String> stats) {
     if (stats.contains("memory used")) {
       Iterator<String> iter = stats.iterator();
-      while(iter.hasNext()) {
+      while (iter.hasNext()) {
         String stat = iter.next();
-        if(stat.startsWith("memory ")) {
+        if (stat.startsWith("memory ")) {
           iter.remove();
         }
       }
       stats.add("memory usage");
     }
-    
-    if(stats.contains("cpu user")) {
+
+    if (stats.contains("cpu combined")) {
       Iterator<String> iter = stats.iterator();
-      while(iter.hasNext()) {
+      while (iter.hasNext()) {
         String stat = iter.next();
-        if(stat.startsWith("cpu ")) {
+        if (stat.startsWith("cpu ")) {
           iter.remove();
         }
       }
@@ -428,10 +519,69 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
-  private void setupControlPanel() throws Exception {
-    if (fSessionInfo == null) return;
+  private void setToolBarEnabled(boolean enabled) {
+    fToolBar.setEnabled(enabled);
+    fImportAction.setEnabled(enabled);
+    fRetrieveAction.setEnabled(enabled);
+    fSessionSelector.setEnabled(enabled);
+    fHeightSlider.setEnabled(enabled);
+  }
 
+  class NodeStatMappingThread extends Thread {
+    public void run() {
+      List<Node> nodes = fSessionInfo.fNodeList;
+      Iterator<Node> nodeIter = nodes.iterator();
+      fSessionInfo.fNodeStatsMap.clear();
+      while (nodeIter.hasNext()) {
+        Node node = nodeIter.next();
+        setStatusLineLater("Getting stats for '" + node + "'");
+        List<String> nodeStats = getAvailableStatsForNode(node);
+        filterStats(nodeStats);
+        fSessionInfo.fNodeStatsMap.put(node, nodeStats);
+      }
+
+      List<String> stats = fSessionInfo.fStatList;
+      Iterator<String> statIter = stats.iterator();
+      fSessionInfo.fStatNodesMap.clear();
+      while (statIter.hasNext()) {
+        String stat = statIter.next();
+        setStatusLineLater("Getting nodes for '" + stat + "'");
+        List<Node> statNodes = getAvailableNodesForStat(stat);
+        fSessionInfo.fStatNodesMap.put(stat, statNodes);
+      }
+
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          fStatusLine.setText("");
+          setupControlPanel();
+          fProgressBar.setVisible(false);
+          setToolBarEnabled(true);
+        }
+      });
+    }
+  }
+
+  private List<String> getAvailableStatsForNode(Node node) {
+    try {
+      return fStore.getAvailableStatsForNode(fSessionInfo.fId, node);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return new ArrayList<String>();
+    }
+  }
+
+  private List<Node> getAvailableNodesForStat(String stat) {
+    try {
+      return fStore.getAvailableNodesForStat(fSessionInfo.fId, stat);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return new ArrayList<Node>();
+    }
+  }
+
+  private void setupControlPanel() {
     fControlPanel = new JPanel(new BorderLayout());
+    fControlPanel.setBorder(new EmptyBorder(3, 3, 3, 3));
     List<Node> nodes = fSessionInfo.fNodeList;
     List<String> stats = fSessionInfo.fStatList;
     Iterator<Node> nodeIter = nodes.iterator();
@@ -448,9 +598,8 @@ public class ClusterVisualizerFrame extends JFrame {
     fNodeGroups.clear();
     while (nodeIter.hasNext()) {
       Node node = nodeIter.next();
-      List<String> nodeStats = fStore.getAvailableStatsForNode(fSessionInfo.fId, node);
-      filterStats(nodeStats);
-      if (nodeStats.size() > 0) {
+      List<String> nodeStats = fSessionInfo.fNodeStatsMap.get(node);
+      if (nodeStats != null && nodeStats.size() > 0) {
         gridPanel.add(createNodeGroup(node, nodeStats), gbc);
       }
     }
@@ -459,8 +608,8 @@ public class ClusterVisualizerFrame extends JFrame {
     boolean haveCPUUsage = false;
     while (statIter.hasNext()) {
       String stat = statIter.next();
-      List<Node> statNodes = fStore.getAvailableNodesForStat(fSessionInfo.fId, stat);
-      if (statNodes.size() > 0) {
+      List<Node> statNodes = fSessionInfo.fStatNodesMap.get(stat);
+      if (statNodes != null && statNodes.size() > 0) {
         if (!haveMemoryUsage && stat.startsWith("memory ")) {
           stat = "memory usage";
           haveMemoryUsage = true;
@@ -469,11 +618,13 @@ public class ClusterVisualizerFrame extends JFrame {
           stat = "cpu usage";
           haveCPUUsage = true;
           gridPanel.add(createStatGroup(stat, statNodes), gbc);
+        } else if (stat.equals("l2 transaction count") || stat.equals("l2 l1 fault")) {
+          gridPanel.add(createStatGroup(stat, statNodes), gbc);
         }
-
       }
     }
-    fBottomPanel.add(new JScrollPane(fControlPanel), BorderLayout.WEST);
+    fBottomPanel.add(new JScrollPane(fControlPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.WEST);
     fBottomPanel.revalidate();
     fBottomPanel.repaint();
   }
@@ -482,7 +633,7 @@ public class ClusterVisualizerFrame extends JFrame {
     Map<String, JCheckBox> controlMap = new HashMap<String, JCheckBox>();
     JPanel panel = new JPanel(new GridLayout(stats.size() + 1, 1));
     Insets insets = new Insets(0, 20, 0, 0);
-    NodeControl leadControl = new NodeControl(node);
+    NodeControl leadControl = new NodeLeadControl(node);
     panel.add(leadControl);
     Iterator<String> iter = stats.iterator();
     while (iter.hasNext()) {
@@ -501,7 +652,7 @@ public class ClusterVisualizerFrame extends JFrame {
     Map<Node, NodeControl> controlMap = new HashMap<Node, NodeControl>();
     JPanel panel = new JPanel(new GridLayout(nodes.size() + 1, 1));
     Insets insets = new Insets(0, 20, 0, 0);
-    JCheckBox leadControl = new JCheckBox(stat, true);
+    StatControl leadControl = new StatLeadControl(stat);
     leadControl.setName(stat);
     panel.add(leadControl);
     Iterator<Node> iter = nodes.iterator();
@@ -553,10 +704,38 @@ public class ClusterVisualizerFrame extends JFrame {
         dd.fAxis.setTickLabelPaint(paint);
       }
     }
-    ChartPanel chartPanel = new ChartPanel(chart, false);
+    ChartPanel chartPanel = new ChartPanel(chart, true);
     chartPanel.setBorder(new TitledBorder(title));
     fGraphPanel.add(chartPanel);
+    chartPanel.setPreferredSize(fDefaultGraphSize);
     return chart;
+  }
+
+  class DisplaySource {
+    Node   fNode;
+    String fStat;
+
+    DisplaySource(Node node, String stat) {
+      fNode = node;
+      fStat = stat;
+    }
+
+    public int hashCode() {
+      HashCodeBuilder hcb = new HashCodeBuilder();
+      return hcb.append(fNode).append(fStat).toHashCode();
+    }
+
+    public boolean equals(Object other) {
+      if (other == null) return false;
+      if (!(other instanceof DisplaySource)) return false;
+      if (other == this) return true;
+      DisplaySource otherDisplaySource = (DisplaySource) other;
+      return fNode.equals(otherDisplaySource.fNode) && fStat.equals(otherDisplaySource.fStat);
+    }
+
+    public String toString() {
+      return fNode + ":" + fStat;
+    }
   }
 
   class NodeGroupHandler {
@@ -573,11 +752,24 @@ public class ClusterVisualizerFrame extends JFrame {
       Iterator<String> statIter = fStats.iterator();
       while (statIter.hasNext()) {
         String stat = statIter.next();
+        DisplaySource displaySource = new DisplaySource(fNode, stat);
+        DataDisplay cachedDisplay = fDisplayCache.get(displaySource);
+        if (cachedDisplay != null) {
+          DataDisplay display = cachedDisplay.createCopy(stat);
+          if (display != null) {
+            System.out.println("Copied existing display for '" + display + "'");
+            displayList.add(display);
+            continue;
+          }
+        }
         AbstractStatHandler handler = getStatHandler(stat);
         if (handler != null) {
           handler.setNode(fNode);
           handler.setLegend(stat);
-          displayList.add(handler.generateDisplay());
+          setStatusLineLater("Generating display for '" + displaySource + "'");
+          DataDisplay display = handler.generateDisplay();
+          displayList.add(display);
+          fDisplayCache.put(displaySource, display);
         }
       }
       return displayList;
@@ -600,9 +792,22 @@ public class ClusterVisualizerFrame extends JFrame {
         Iterator<Node> nodeIter = fNodes.iterator();
         while (nodeIter.hasNext()) {
           Node node = nodeIter.next();
+          DisplaySource displaySource = new DisplaySource(node, fStat);
+          DataDisplay cachedDisplay = fDisplayCache.get(displaySource);
+          if (cachedDisplay != null) {
+            DataDisplay display = cachedDisplay.createCopy(node.toString());
+            if (display != null) {
+              System.out.println("Copied existing display for '" + display + "'");
+              displayList.add(display);
+              continue;
+            }
+          }
           handler.setNode(node);
           handler.setLegend(node.toString());
-          displayList.add(handler.generateDisplay());
+          setStatusLineLater("Generating display for '" + displaySource + "'");
+          DataDisplay display = handler.generateDisplay();
+          displayList.add(display);
+          fDisplayCache.put(displaySource, display);
         }
       }
       return displayList;
@@ -689,7 +894,7 @@ public class ClusterVisualizerFrame extends JFrame {
 
     TimeSeries generateSeries() {
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("cpu user");
+      criteria.addName("cpu combined");
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
@@ -718,7 +923,7 @@ public class ClusterVisualizerFrame extends JFrame {
     }
 
   }
-  
+
   class L2toL1FaultHandler extends AbstractStatHandler {
     String getName() {
       return "l2 l1 fault";
@@ -745,6 +950,41 @@ public class ClusterVisualizerFrame extends JFrame {
 
     NumberAxis generateAxis() {
       NumberAxis axis = new NumberAxis("L2-L1 Fault");
+      return axis;
+    }
+
+    DataDisplay generateDisplay() {
+      DataDisplay display = new DataDisplay(new TimeSeriesCollection(generateSeries()), generateAxis());
+      return display;
+    }
+  }
+
+  class TxRateHandler extends AbstractStatHandler {
+    String getName() {
+      return "l2 transaction count";
+    }
+
+    TimeSeries generateSeries() {
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName("l2 transaction count");
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      final TimeSeries series = new TimeSeries(fLegend, Second.class);
+      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
+        public boolean consumeStatisticData(StatisticData sd) {
+          Long value = (Long) sd.getData();
+          Date moment = sd.getMoment();
+          series.addOrUpdate(new Second(moment), value);
+          return true;
+        }
+      });
+
+      return series;
+    }
+
+    NumberAxis generateAxis() {
+      NumberAxis axis = new NumberAxis("Tx Rate");
       return axis;
     }
 
@@ -785,6 +1025,76 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
+  class NodeControl extends JCheckBox {
+    Node fNode;
+
+    NodeControl(Node node) {
+      super(node.toString());
+      fNode = node;
+      setSelected(true);
+    }
+
+    Node getNode() {
+      return fNode;
+    }
+  }
+
+  class NodeLeadControl extends NodeControl implements ActionListener {
+    NodeLeadControl(Node node) {
+      super(node);
+      addActionListener(this);
+    }
+
+    public void actionPerformed(ActionEvent ae) {
+      if (fNodeGroups != null) {
+        boolean selected = isSelected();
+        Map<String, JCheckBox> statControlMap = fNodeGroups.get(this);
+        if (statControlMap != null) {
+          Iterator<String> statIter = statControlMap.keySet().iterator();
+          while (statIter.hasNext()) {
+            JCheckBox statControl = statControlMap.get(statIter.next());
+            statControl.setEnabled(selected);
+          }
+        }
+      }
+    }
+  }
+
+  class StatControl extends JCheckBox {
+    String fStat;
+
+    StatControl(String stat) {
+      super(stat);
+      fStat = stat;
+      setSelected(true);
+    }
+
+    String getStat() {
+      return fStat;
+    }
+  }
+
+  class StatLeadControl extends StatControl implements ActionListener {
+    StatLeadControl(String stat) {
+      super(stat);
+      addActionListener(this);
+    }
+
+    public void actionPerformed(ActionEvent ae) {
+      if (fStatGroups != null) {
+        boolean selected = isSelected();
+        Map<Node, NodeControl> nodeControlMap = fStatGroups.get(this);
+        if (nodeControlMap != null) {
+          Iterator<Node> nodeIter = nodeControlMap.keySet().iterator();
+          while (nodeIter.hasNext()) {
+            NodeControl nodeControl = nodeControlMap.get(nodeIter.next());
+            nodeControl.setEnabled(selected);
+          }
+        }
+      }
+    }
+  }
+
   public static void main(String[] args) throws Exception {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     ClusterVisualizerFrame frame = new ClusterVisualizerFrame(args);
@@ -803,22 +1113,21 @@ class Node {
     fName = name;
   }
 
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    return hcb.append(fIpAddr).append(fName).toHashCode();
+  }
+
+  public boolean equals(Object other) {
+    if (other == null) return false;
+    if (!(other instanceof Node)) return false;
+    if (other == this) return true;
+    Node otherNode = (Node) other;
+    return fIpAddr.equals(otherNode.fIpAddr) && fName.equals(otherNode.fName);
+  }
+
   public String toString() {
     return fIpAddr + " " + fName;
-  }
-}
-
-class NodeControl extends JCheckBox {
-  Node fNode;
-
-  NodeControl(Node node) {
-    super(node.toString());
-    fNode = node;
-    setSelected(true);
-  }
-
-  Node getNode() {
-    return fNode;
   }
 }
 
@@ -830,17 +1139,37 @@ class DataDisplay {
     fXYDataset = xyDataset;
     fAxis = axis;
   }
+
+  public DataDisplay createCopy(String name) {
+    try {
+      TimeSeries ts = ((TimeSeriesCollection) fXYDataset).getSeries(0);
+      ts.setKey(name);
+      TimeSeriesCollection tsc = new TimeSeriesCollection(ts);
+      DataDisplay dd = new DataDisplay(tsc, (NumberAxis) fAxis.clone());
+      return dd;
+    } catch (CloneNotSupportedException e) {
+      return null;
+    }
+  }
+  
+  public String toString() {
+    return ((TimeSeriesCollection) fXYDataset).getSeries(0).getKey() + ":" + fAxis.getLabel();
+  }
 }
 
 class SessionInfo {
-  String       fId;
-  Date         fStart;
-  Date         fEnd;
-  List<Node>   fNodeList;
-  List<String> fStatList;
+  String                  fId;
+  Date                    fStart;
+  Date                    fEnd;
+  List<Node>              fNodeList;
+  Map<Node, List<String>> fNodeStatsMap;
+  List<String>            fStatList;
+  Map<String, List<Node>> fStatNodesMap;
 
   SessionInfo(String id) {
     fId = id;
+    fNodeStatsMap = new HashMap<Node, List<String>>();
+    fStatNodesMap = new HashMap<String, List<Node>>();
   }
 
   public String toString() {
@@ -849,10 +1178,17 @@ class SessionInfo {
 }
 
 class MyStatisticsStore extends H2StatisticsStoreImpl {
-  private final static String SQL_GET_NODES          = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
-  private final static String SQL_GET_STATS          = "SELECT statname FROM statisticlog WHERE sessionid = ? GROUP BY statname ORDER BY statname ASC";
-  private final static String SQL_GET_STATS_FOR_NODE = "SELECT statname FROM statisticlog WHERE sessionid = ? AND agentIp = ? AND agentDifferentiator = ? GROUP BY statname ORDER BY statname ASC";
-  private final static String SQL_GET_NODES_FOR_STAT = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? AND statname = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
+  private final static String       SQL_GET_NODES          = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
+  private final static String       SQL_GET_STATS          = "SELECT statname FROM statisticlog WHERE sessionid = ? GROUP BY statname ORDER BY statname ASC";
+  private final static String       SQL_GET_STATS_FOR_NODE = "SELECT statname FROM statisticlog WHERE sessionid = ? AND agentIp = ? AND agentDifferentiator = ? GROUP BY statname ORDER BY statname ASC";
+  private final static String       SQL_GET_NODES_FOR_STAT = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? AND statname = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
+
+  private static final List<String> STATS_NON_GRATIS       = new ArrayList<String>();
+
+  static {
+    STATS_NON_GRATIS.addAll(Arrays.asList(new String[] { "startup timestamp", "shutdown timestamp",
+      "system properties", "cpu idle", "cpu nice", "cpu wait", "cpu sys", "cpu user", "memory free" }));
+  }
 
   public MyStatisticsStore(File dir) {
     super(dir);
@@ -943,9 +1279,7 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
       throw new TCStatisticsStoreException("getAvailableStats", e);
     }
 
-    results.remove("startup timestamp");
-    results.remove("shutdown timestamp");
-    results.remove("system properties");
+    results.removeAll(STATS_NON_GRATIS);
 
     return results;
   }
@@ -971,9 +1305,7 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
       throw new TCStatisticsStoreException("getAvailableStatsForNode", e);
     }
 
-    results.remove("startup timestamp");
-    results.remove("shutdown timestamp");
-    results.remove("system properties");
+    results.removeAll(STATS_NON_GRATIS);
 
     return results;
   }

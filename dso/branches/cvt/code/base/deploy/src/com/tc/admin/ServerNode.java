@@ -433,7 +433,7 @@ public class ServerNode extends ComponentNode
   }
 
   public String toString() {
-    return m_connectManager.toString();
+    return m_connectManager != null ? m_connectManager.toString() : "";
   }
 
   private class ShutdownAction extends XAbstractAction implements Runnable {

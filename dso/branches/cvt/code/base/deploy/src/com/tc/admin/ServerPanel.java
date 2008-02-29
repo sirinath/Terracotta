@@ -29,8 +29,11 @@ import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -71,6 +74,7 @@ public class ServerPanel extends XContainer {
 
   private TCServerInfoMBean       m_serverInfoBean;
   private Timer                   m_statsGathererTimer;
+  private Container               m_memoryPanel;
   private TimeSeries[]            m_memoryTimeSeries;
 
   private Container               m_cpuPanel;
@@ -115,11 +119,21 @@ public class ServerPanel extends XContainer {
     m_threadDumpTextArea = (TextArea) findComponent("ThreadDumpTextArea");
     m_threadDumpTextScroller = (ScrollPane) findComponent("ThreadDumpTextScroller");
 
+    StatPanelListener spl = new StatPanelListener();
     m_cpuPanel = (Container) findComponent("CpuPanel");
-    Container memoryPanel = (Container) findComponent("MemoryPanel");
-    setupMemoryPanel(memoryPanel);
+    m_memoryPanel = (Container) findComponent("MemoryPanel");
+    setupMemoryPanel(m_memoryPanel);
+    m_cpuPanel.addComponentListener(spl);
+    m_memoryPanel.addComponentListener(spl);    
   }
 
+  class StatPanelListener extends ComponentAdapter {
+    public void componentShown(ComponentEvent e) {
+      testStartStatsGatherer();
+      e.getComponent().removeComponentListener(this);
+    }
+  }
+  
   private TCServerInfoMBean getServerInfoBean() {
     if (m_serverInfoBean != null) return m_serverInfoBean;
 
@@ -144,6 +158,11 @@ public class ServerPanel extends XContainer {
     m_memoryTimeSeries[0] = createTimeSeries("memory max");
     m_memoryTimeSeries[1] = createTimeSeries("memory used");
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
+    XYPlot plot = (XYPlot) chart.getPlot();
+    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
+    numberAxis.setAutoRangeIncludesZero(true);
+    DecimalFormat formatter = new DecimalFormat("00.0m");
+    numberAxis.setNumberFormatOverride(formatter);
     memoryPanel.add(new ChartPanel(chart, false));
   }
 
@@ -169,8 +188,8 @@ public class ServerPanel extends XContainer {
         if (tcServerInfoBean != null) {
           Map statMap = tcServerInfoBean.getStatistics();
 
-          m_memoryTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("memory max")).doubleValue());
-          m_memoryTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("memory used")).doubleValue());
+          m_memoryTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("memory max")).longValue()/1024000d);
+          m_memoryTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("memory used")).longValue()/1024000d);
 
           if (m_cpuPanel != null) {
             StatisticData[] cpuUsageData = (StatisticData[]) statMap.get("cpu usage");
@@ -300,7 +319,7 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    testStartStatsGatherer();
+    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.activated.status", new Object[] { m_serverNode, activateTime }));
   }
@@ -320,7 +339,7 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    testStartStatsGatherer();
+    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.started.status", new Object[] { m_serverNode, startTime }));
   }
@@ -354,7 +373,7 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    testStartStatsGatherer();
+    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.initializing.status", new Object[] { m_serverNode, startTime }));
   }
@@ -369,7 +388,7 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    testStartStatsGatherer();
+    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.standingby.status", new Object[] { m_serverNode, startTime }));
   }
@@ -379,7 +398,7 @@ public class ServerPanel extends XContainer {
 
     setStatusLabel(m_acc.format("server.disconnected.label", new Object[] { startTime }));
     hideRuntimeInfo();
-    if (m_statsGathererTimer.isRunning()) {
+    if (m_statsGathererTimer != null && m_statsGathererTimer.isRunning()) {
       m_statsGathererTimer.stop();
     }
 

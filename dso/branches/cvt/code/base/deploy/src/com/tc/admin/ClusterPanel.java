@@ -12,6 +12,7 @@ import org.dijon.Button;
 import org.dijon.Container;
 import org.dijon.ContainerResource;
 import org.dijon.Item;
+import org.dijon.Label;
 import org.dijon.List;
 import org.dijon.ScrollPane;
 import org.dijon.TabbedPane;
@@ -27,6 +28,8 @@ import com.tc.statistics.beans.StatisticsLocalGathererMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererAlreadyConnectedException;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -77,6 +80,7 @@ public class ClusterPanel extends XContainer {
   private ScrollPane                   m_threadDumpTextScroller;
   private ThreadDumpTreeNode           m_lastSelectedThreadDumpTreeNode;
 
+  private StatisticsGathererListener   m_statsGathererListener;
   private ToggleButton                 m_startGatheringStatsButton;
   private ToggleButton                 m_stopGatheringStatsButton;
   private List                         m_statsSessionsList;
@@ -245,7 +249,10 @@ public class ClusterPanel extends XContainer {
       ConnectionContext cc = m_clusterNode.getConnectionContext();
       m_statisticsGathererMBean = m_clusterNode.getStatisticsGathererMBean();
       try {
-        cc.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATHERER, new StatisticsGathererListener());
+        if(m_statsGathererListener == null) {
+          m_statsGathererListener = new StatisticsGathererListener();
+        }
+        cc.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATHERER, m_statsGathererListener);
       } catch(Exception e){
         e.printStackTrace();
       }
@@ -264,9 +271,7 @@ public class ClusterPanel extends XContainer {
   }
 
   private String[] getAllSessions() {
-    // TODO: we need this
-    // return m_statisticsGathererMBean.getAllSessions();
-    return new String[] {};
+    return m_statisticsGathererMBean.getAvailableSessionIds();
   }
   
   private void gathererConnected() {
@@ -278,12 +283,40 @@ public class ClusterPanel extends XContainer {
     m_currentStatsSessionId = m_statisticsGathererMBean.getActiveSessionId();
     boolean gathering = m_currentStatsSessionId != null;
     if(gathering) {
-      AdminClient.getContext().log("Statistics session in progress ("+m_currentStatsSessionId+")");
+      m_statsGathererListener.showRecordingInProgress();
     }
     m_startGatheringStatsButton.setSelected(gathering);
   }
   
   class StatisticsGathererListener implements NotificationListener {
+    private JProgressBar fRecordProgressBar;
+    
+    JProgressBar getRecordProgressBar() {
+      if(fRecordProgressBar == null) {
+        fRecordProgressBar = new JProgressBar();
+      }
+      return fRecordProgressBar;
+    }
+    
+    private void showRecordingInProgress() {
+      Container activityArea = AdminClient.getContext().getActivityArea();
+      activityArea.setLayout(new BorderLayout());
+      activityArea.add(new Label("Recording statistics"), BorderLayout.WEST);
+      JProgressBar recordProgressBar = getRecordProgressBar();
+      activityArea.add(recordProgressBar);
+      recordProgressBar.setForeground(Color.red);
+      recordProgressBar.setIndeterminate(true);
+      activityArea.revalidate();
+      activityArea.repaint();
+    }
+    
+    private void hideRecordingInProgress() {
+      Container activityArea = AdminClient.getContext().getActivityArea();
+      activityArea.removeAll();
+      activityArea.revalidate();
+      activityArea.repaint();
+    }
+    
     public void handleNotification(Notification notification, Object handback) {
       String type = notification.getType();
       Object userData = notification.getUserData();
@@ -294,21 +327,24 @@ public class ClusterPanel extends XContainer {
       }
       
       if(type.equals("tc.statistics.localgatherer.session.created")) {
-        System.out.println("Created session: " + (String)userData);
         m_currentStatsSessionId = (String)userData;
+        return;
       }
 
       if(type.equals("tc.statistics.localgatherer.capturing.started")) {
-        System.out.println("Started session: " + (String)userData);        
+        showRecordingInProgress();
+        return;
       }
 
       if(type.equals("tc.statistics.localgatherer.capturing.stopped")) {
         String thisSession = (String)userData;
         if(m_currentStatsSessionId != null && m_currentStatsSessionId.equals(thisSession)) {
-          System.out.println("Stopped session: " + thisSession);        
           m_statsSessionsListModel.addElement(new StatsSessionListItem(thisSession));
           m_statsSessionsList.setSelectedIndex(m_statsSessionsListModel.getSize() - 1);
           m_currentStatsSessionId = null;
+
+          hideRecordingInProgress();
+          return;
         }
       }
       
@@ -319,14 +355,16 @@ public class ClusterPanel extends XContainer {
           StatsSessionListItem item = (StatsSessionListItem)m_statsSessionsListModel.elementAt(i);
           if(sessionId.equals(item.getSessionId())) {
             m_statsSessionsListModel.remove(i);
-            return;
+            break;
           }
         }
+        return;
       }
       
       if(type.equals("tc.statistics.localgatherer.allsessions.cleared")) {
         m_statsSessionsListModel.clear();
         m_currentStatsSessionId = null;
+        return;
       }
     }
   }
@@ -640,7 +678,9 @@ public class ClusterPanel extends XContainer {
     setStatusLabel(m_acc.format("server.disconnected.label", new Object[] { startTime }));
     hideRuntimeInfo();
     tearDownStats();
-
+    if(m_currentStatsSessionId != null) {
+      m_statsGathererListener.hideRecordingInProgress();
+    }
     m_acc.controller.setStatus(m_acc.format("server.disconnected.status", new Object[] { m_clusterNode, startTime }));
   }
 

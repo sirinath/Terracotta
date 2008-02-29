@@ -3,6 +3,7 @@
  */
 package com.tc.admin;
 
+import org.dijon.Container;
 import org.dijon.DictionaryResource;
 
 import com.tc.util.ResourceBundleHelper;
@@ -83,5 +84,9 @@ public class AdminClientContext {
    */
   public void setStatus(String msg) {
     controller.setStatus(msg);
+  }
+  
+  public Container getActivityArea() {
+    return controller.getActivityArea();
   }
 }

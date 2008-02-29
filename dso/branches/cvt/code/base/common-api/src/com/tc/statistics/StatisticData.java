@@ -3,8 +3,6 @@
  */
 package com.tc.statistics;
 
-import org.apache.commons.lang.StringUtils;
-
 import com.tc.util.Assert;
 
 import java.io.Serializable;
