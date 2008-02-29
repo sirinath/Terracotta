@@ -290,7 +290,16 @@
 						</tabbedpane>
 					</right>
 				</splitpane>
-				<textfield class="com.tc.admin.common.XTextField" editable="false" focusable="false" name="StatusLine"/>
+                <container>
+                  <children>
+				    <textfield class="com.tc.admin.common.XTextField" editable="false" focusable="false" name="StatusLine"/>
+                    <container name="ActivityArea"/>
+                  </children>
+      			  <connections>
+      				<item bottom="-1,top:0" height="n" left="-1,left:0" right="1,left:n" top="-1,top:0" width="s"/>
+      				<item bottom="0,bottom:s" height="n" left="0,right:n" right="-1,right:0" top="0,top:s" width="n"/>
+      			  </connections>
+                </container>
 			</children>
 			<connections>
 				<item bottom="1,top:0" height="s" left="-1,left:0" right="-1,right:0" top="-1,top:0" width="s388"/>

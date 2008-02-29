@@ -724,11 +724,11 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     add(new ClassesNode(this));
     try {
       add(m_locksNode = new LocksNode(this));
-    } catch (Throwable t) {/**/
+    } catch (Throwable t) {/* Don't get Taylor mad. */
     }
+    add(m_gcStatsNode = new GCStatsNode(this));
     add(m_serversNode = new ServersNode(this));
     add(m_clientsNode = new ClientsNode(this));
-    add(m_gcStatsNode = new GCStatsNode(this));
   }
 
   void handlePassiveUninitialized() {

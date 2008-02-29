@@ -3,6 +3,8 @@
  */
 package com.tc.admin;
 
+import org.dijon.Container;
+
 import com.tc.admin.common.XTreeNode;
 
 public interface AdminClientController {
@@ -24,4 +26,5 @@ public interface AdminClientController {
   void    updateServerPrefs();
   void    addServerLog(ConnectionContext cc);
   void    removeServerLog(ConnectionContext cc);
+  Container getActivityArea();
 }

@@ -3,11 +3,13 @@
  */
 package com.tc.admin;
 
-import java.awt.BorderLayout;
+import org.dijon.Container;
 
 import com.tc.admin.common.XApplet;
 import com.tc.admin.common.XMenuBar;
 import com.tc.admin.common.XTreeNode;
+
+import java.awt.BorderLayout;
 
 public class AdminClientApplet extends XApplet
   implements AdminClientController
@@ -91,6 +93,10 @@ public class AdminClientApplet extends XApplet
 
   public void removeServerLog(ConnectionContext cc) {
     m_mainPanel.removeServerLog(cc);
+  }
+  
+  public Container getActivityArea() {
+    return m_mainPanel.getActivityArea();
   }
   
   public void block() {/**/}

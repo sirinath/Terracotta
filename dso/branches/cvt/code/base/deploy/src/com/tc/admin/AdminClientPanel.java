@@ -111,6 +111,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   private ArrayList                   m_logListeners;
   private Icon                        m_infoIcon;
   private XTextField                  m_statusLine;
+  private Container                   m_activityArea;
   protected UndoAction                m_undoCmd;
   protected RedoAction                m_redoCmd;
   protected UndoManager               m_undoManager;
@@ -144,7 +145,8 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     m_bottomPane = (XTabbedPane) findComponent("BottomPane");
     m_logArea = (XTextArea) m_bottomPane.findComponent("LogArea");
     m_statusLine = (XTextField) findComponent("StatusLine");
-
+    m_activityArea = (Container) findComponent("ActivityArea");
+    
     m_nodeView.setLayout(new BorderLayout());
 
     m_tree.addMouseListener(new MouseAdapter() {
@@ -531,6 +533,10 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     setStatus("");
   }
 
+  public Container getActivityArea() {
+    return m_activityArea;
+  }
+  
   public void addNotify() {
     super.addNotify();
 

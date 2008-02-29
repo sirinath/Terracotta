@@ -3,6 +3,8 @@
  */
 package com.tc.admin;
 
+import org.dijon.Container;
+
 import com.tc.admin.common.XFrame;
 import com.tc.admin.common.XMenuBar;
 import com.tc.admin.common.XTreeNode;
@@ -110,6 +112,10 @@ public class AdminClientFrame extends XFrame
     m_mainPanel.clearStatus();
   }
 
+  public Container getActivityArea() {
+    return m_mainPanel.getActivityArea();
+  }
+  
   public Rectangle getDefaultBounds() {
     Toolkit               tk     = Toolkit.getDefaultToolkit();
     Dimension             size   = tk.getScreenSize();

@@ -36,6 +36,8 @@ import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Method;
@@ -57,7 +59,7 @@ import javax.swing.event.ListSelectionListener;
 
 public class ClientPanel extends XContainer implements NotificationListener {
   private DSOClient                 m_client;
-  
+
   private TabbedPane                m_tabbedPane;
   private XLabel                    m_detailsLabel;
   private Button                    m_smiteButton;
@@ -95,6 +97,8 @@ public class ClientPanel extends XContainer implements NotificationListener {
   private ActionListener            m_loggingChangeHandler;
   private HashMap<String, CheckBox> m_loggingControlMap;
 
+  private Timer                     m_statsGathererTimer;
+  private Container                 m_memoryPanel;
   private TimeSeries[]              m_memoryTimeSeries;
   private Container                 m_cpuPanel;
   private TimeSeries[]              m_cpuTimeSeries;
@@ -108,7 +112,7 @@ public class ClientPanel extends XContainer implements NotificationListener {
     load((ContainerResource) acc.topRes.getComponent("DSOClientPanel"));
 
     m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
-    
+
     m_detailsLabel = (XLabel) findComponent("DetailsLabel");
     m_smiteButton = (Button) findComponent("SmiteClientButton");
     m_smiteButton.addActionListener(new ActionListener() {
@@ -190,11 +194,30 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
     m_loggingControlMap = new HashMap<String, CheckBox>();
 
+    StatPanelListener spl = new StatPanelListener();
     m_cpuPanel = (Container) findComponent("CpuPanel");
-    Container memoryPanel = (Container) findComponent("MemoryPanel");
-    setupMemoryPanel(memoryPanel);
+    m_memoryPanel = (Container) findComponent("MemoryPanel");
+    setupMemoryPanel(m_memoryPanel);
+    m_cpuPanel.addComponentListener(spl);
+    m_memoryPanel.addComponentListener(spl);
 
     setClient(client);
+  }
+
+  private class StatPanelListener extends ComponentAdapter {
+    public void componentShown(ComponentEvent e) {
+      testStartStatsGatherer();
+      e.getComponent().removeComponentListener(this);
+    }
+  }
+
+  private void testStartStatsGatherer() {
+    if (m_statsGathererTimer == null) {
+      m_statsGathererTimer = new Timer(1000, new StatisticsRetrievalAction());
+    }
+    if (!m_statsGathererTimer.isRunning()) {
+      m_statsGathererTimer.start();
+    }
   }
 
   private TimeSeries createTimeSeries(String name) {
@@ -209,6 +232,9 @@ public class ClientPanel extends XContainer implements NotificationListener {
     m_memoryTimeSeries[0] = createTimeSeries("memory max");
     m_memoryTimeSeries[1] = createTimeSeries("memory used");
     JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
+    XYPlot plot = (XYPlot) chart.getPlot();
+    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
+    numberAxis.setAutoRangeIncludesZero(true);
     memoryPanel.add(new ChartPanel(chart, false));
   }
 
@@ -241,8 +267,8 @@ public class ClientPanel extends XContainer implements NotificationListener {
         m_environmentTextArea.setText(l1InfoBean.getEnvironment());
         m_configTextArea.setText(l1InfoBean.getConfig());
 
-        Timer timer = new Timer(1000, new TaskPerformer());
-        timer.start();
+        // Timer timer = new Timer(1000, new StatisticsRetrievalAction());
+        // timer.start();
       }
     } catch (Exception e) {
       AdminClient.getContext().log(e);
@@ -281,7 +307,7 @@ public class ClientPanel extends XContainer implements NotificationListener {
     }
   }
 
-  class TaskPerformer implements ActionListener {
+  private class StatisticsRetrievalAction implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
       try {
         L1InfoMBean l1InfoBean = m_client.getL1InfoMBean();
@@ -515,8 +541,8 @@ public class ClientPanel extends XContainer implements NotificationListener {
                 m_environmentTextArea.setText(l1InfoBean.getEnvironment());
                 m_configTextArea.setText(l1InfoBean.getConfig());
 
-                Timer timer = new Timer(1000, new TaskPerformer());
-                timer.start();
+                // Timer timer = new Timer(1000, new StatisticsRetrievalAction());
+                // timer.start();
               } catch (Exception e) {
                 // just wait for disconnect to occur
               }
@@ -525,5 +551,58 @@ public class ClientPanel extends XContainer implements NotificationListener {
         }
       }
     }
+  }
+
+  public void tearDown() {
+    if (m_statsGathererTimer != null && m_statsGathererTimer.isRunning()) {
+      m_statsGathererTimer.stop();
+    }
+
+    super.tearDown();
+
+    m_client = null;
+
+    m_tabbedPane = null;
+    m_detailsLabel = null;
+    m_smiteButton = null;
+
+    m_environmentTextArea = null;
+    m_configTextArea = null;
+
+    m_threadDumpButton = null;
+    m_threadDumpsSplitter = null;
+    m_dividerLoc = null;
+    m_dividerListener = null;
+    m_threadDumpList = null;
+    m_threadDumpListModel = null;
+    m_threadDumpTextArea = null;
+    m_threadDumpTextScroller = null;
+    m_lastSelectedEntry = null;
+
+    m_classCheckBox = null;
+    m_locksCheckBox = null;
+    m_transientRootCheckBox = null;
+    m_rootsCheckBox = null;
+    m_distributedMethodsCheckBox = null;
+    m_nonPortableDumpCheckBox = null;
+    m_lockDebugCheckBox = null;
+    m_fieldChangeDebugCheckBox = null;
+    m_waitNotifyDebugCheckBox = null;
+    m_distributedMethodDebugCheckBox = null;
+    m_newObjectDebugCheckBox = null;
+    m_autoLockDetailsCheckBox = null;
+    m_callerCheckBox = null;
+    m_fullStackCheckBox = null;
+
+    m_loggingChangeHandler = null;
+    m_loggingControlMap.clear();
+    m_loggingControlMap = null;
+
+    m_statsGathererTimer = null;
+    m_memoryPanel = null;
+    m_memoryTimeSeries = null;
+    m_cpuPanel = null;
+    m_cpuTimeSeries = null;
+    m_cpuTimeSeriesMap = null;
   }
 }
