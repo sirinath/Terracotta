@@ -30,6 +30,7 @@ import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
+import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -124,6 +125,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   private TestGlobalTransactionManager       gtxMgr;
   private TransactionalObjectManagerImpl     txObjectManager;
   private TestSinkContext                    testFaultSinkContext;
+  private long                               version = 0;
 
   /**
    * Constructor for ObjectManagerTest.
@@ -1115,15 +1117,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
   }
 
-  // private void createObjects(Set ids) {
-  // for (Iterator iter = ids.iterator(); iter.hasNext(); ) {
-  // ObjectID id = (ObjectID)iter.next();
-  // TestManagedObject mo = new TestManagedObject(id, new ObjectID[] {});
-  // objectManager.createObject(mo);
-  // objectStore.addNewObject(mo);
-  // }
-  // }
-
   public void testGCStats() {
     initObjectManager();
 
@@ -1277,7 +1270,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     this.config.paranoid = true;
     initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))), new NullCache(),
                       this.objectStore);
-    // initObjectManager();
     initTransactionObjectManager();
 
     // this should disable the gc thread.
@@ -1291,7 +1283,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      */
     Map changes = new HashMap();
 
-    changes.put(new ObjectID(1), new TestMapDNA(new ObjectID(1)));
+    changes.put(new ObjectID(1), new TestPhysicalDNA(new ObjectID(1)));
 
     ServerTransaction stxn1 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(1), new TransactionID(1),
                                                         new SequenceID(1), new LockID[0],
@@ -1301,8 +1293,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
                                                         DmiDescriptor.EMPTY_ARRAY);
     List txns = new ArrayList();
     txns.add(stxn1);
-
-    // createNewObjectFromTransaction(txns);
 
     txObjectManager.addTransactions(txns);
 
@@ -1342,7 +1332,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      * STEP 2: Dont check back Object 1 yet, make another transaction with yet another object
      */
     changes.clear();
-    changes.put(new ObjectID(2), new TestMapDNA(new ObjectID(2)));
+    changes.put(new ObjectID(2), new TestPhysicalDNA(new ObjectID(2)));
 
     ServerTransaction stxn2 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
@@ -1373,9 +1363,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      * STEP 3: Create a txn with Objects 1,2 and a new object 3
      */
     changes.clear();
-    changes.put(new ObjectID(1), new TestMapDNA(new ObjectID(1), true));
-    changes.put(new ObjectID(2), new TestMapDNA(new ObjectID(2), true));
-    changes.put(new ObjectID(3), new TestMapDNA(new ObjectID(3)));
+    changes.put(new ObjectID(1), new TestPhysicalDNA(new ObjectID(1), true));
+    changes.put(new ObjectID(2), new TestPhysicalDNA(new ObjectID(2), true));
+    changes.put(new ObjectID(3), new TestPhysicalDNA(new ObjectID(3)));
 
     ServerTransaction stxn3 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
@@ -1407,6 +1397,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      * STEP 4: Commit but not release Object 2 so even when we check object 1 back stxn3 is still pending
      */
     // Apply and initiate commit the txn for object 2
+    applyTxn(aoc);
     txObjectManager.applyTransactionComplete(stxn2.getServerTransactionID());
     acec = (ApplyCompleteEventContext) coordinator.applyCompleteSink.queue.remove(0);
     assertNotNull(acec);
@@ -1429,7 +1420,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      */
 
     // Now check back Object 1
-    objectManager.releaseAll(ptp.nullTransaction(), ctc1.getObjects());
+    PersistenceTransaction dbtxn = ptp.newTransaction();
+    objectManager.releaseAll(dbtxn, ctc1.getObjects());
+    dbtxn.commit();
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.remove(0);
@@ -1467,7 +1460,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     txObjectManager.recallCheckedoutObject(roc);
 
     // Check in Object 2 to make the GC go to paused state
-    objectManager.releaseAll(ptp.nullTransaction(), ctc2.getObjects());
+    dbtxn = ptp.newTransaction();
+    objectManager.releaseAll(dbtxn, ctc2.getObjects());
+    dbtxn.commit();
 
     cb.await();
 
@@ -1492,6 +1487,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(coordinator.applySink.queue.isEmpty());
 
     // Apply and initate commit the txn
+    applyTxn(aoc);
     txObjectManager.applyTransactionComplete(stxn3.getServerTransactionID());
     acec = (ApplyCompleteEventContext) coordinator.applyCompleteSink.queue.remove(0);
     assertNotNull(acec);
@@ -1510,7 +1506,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(objects.size() == 3);
 
     // Now check back the objects
-    objectManager.releaseAll(ptp.nullTransaction(), ctc3.getObjects());
+    dbtxn = ptp.newTransaction();
+    objectManager.releaseAll(dbtxn, ctc3.getObjects());
+    dbtxn.commit();
 
     assertEquals(0, objectManager.getCheckedOutCount());
     assertFalse(objectManager.isReferenced(new ObjectID(1)));
@@ -1524,10 +1522,11 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ServerTransaction txn = aoc.getTxn();
     Map managedObjects = aoc.getObjects();
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
-    for(Iterator i = txn.getChanges().iterator(); i.hasNext();) {
+    for (Iterator i = txn.getChanges().iterator(); i.hasNext();) {
       DNA dna = (DNA) i.next();
       ManagedObject mo = (ManagedObject) managedObjects.get(dna.getObjectID());
-      mo.apply(dna, txn.getTransactionID(), new BackReferences(), instanceMonitor, false);
+      mo.apply(new VersionizedDNAWrapper(dna, ++version), txn.getTransactionID(), new BackReferences(),
+               instanceMonitor, false);
     }
   }
 
@@ -1718,13 +1717,13 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
   private static class TestMapDNA implements DNA {
 
-    final ObjectID objectID;
+    final ObjectID  objectID;
     private boolean isDelta;
 
     TestMapDNA(ObjectID id) {
       this(id, false);
     }
-    
+
     TestMapDNA(ObjectID id, boolean isDelta) {
       this.objectID = id;
       this.isDelta = isDelta;
@@ -1937,8 +1936,14 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
   private static class TestPhysicalDNA implements DNA {
     private final ObjectID id;
+    private final boolean  isDelta;
 
     TestPhysicalDNA(ObjectID id) {
+      this(id, false);
+    }
+
+    public TestPhysicalDNA(ObjectID id, boolean isDelta) {
+      this.isDelta = isDelta;
       this.id = id;
     }
 
@@ -2043,7 +2048,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
     public boolean isDelta() {
-      return false;
+      return isDelta;
     }
   }
 
