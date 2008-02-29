@@ -6,7 +6,7 @@ package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
-import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.GenericServer;
@@ -42,8 +42,8 @@ public class SessionConfigTest extends AbstractDeploymentTest {
   private boolean              weblogicOrWebsphere;
 
   public SessionConfigTest() {
-    weblogicOrWebsphere = AppServerFactory.getCurrentAppServerId() == AppServerFactory.WEBLOGIC
-                          || AppServerFactory.getCurrentAppServerId() == AppServerFactory.WEBSPHERE;
+    weblogicOrWebsphere = appServerInfo().getId() == AppServerInfo.WEBLOGIC
+                          || appServerInfo().getId() == AppServerInfo.WEBSPHERE;
   }
 
   public static Test suite() {
@@ -83,7 +83,7 @@ public class SessionConfigTest extends AbstractDeploymentTest {
   // TrackingEnabled = false -- only applicable to Weblogic
   public void testTrackingDisabled() throws Exception {
     if (!weblogicOrWebsphere) return;
-    if (AppServerFactory.getCurrentAppServerId() != AppServerFactory.WEBLOGIC) { return; }
+    if (appServerInfo().getId() != AppServerInfo.WEBLOGIC) { return; }
     descriptors.put("wl81", "weblogic81c.xml");
     descriptors.put("wl92", "weblogic92c.xml");
     init();
@@ -100,7 +100,7 @@ public class SessionConfigTest extends AbstractDeploymentTest {
 
   // IDLength = 69 -- only applicable to Weblogic
   public void testIdLength() throws Exception {
-    if (AppServerFactory.getCurrentAppServerId() != AppServerFactory.WEBLOGIC) { return; }
+    if (appServerInfo().getId() != AppServerInfo.WEBLOGIC) { return; }
     descriptors.put("wl81", "weblogic81d.xml");
     descriptors.put("wl92", "weblogic92d.xml");
     init();
@@ -140,7 +140,7 @@ public class SessionConfigTest extends AbstractDeploymentTest {
   }
 
   public void testSessionTimeOutFromTCProperties() throws Exception {
-    if(AppServerFactory.getCurrentAppServerId() == AppServerFactory.JETTY) return;
+    if (appServerInfo().getId() == AppServerInfo.JETTY) return;
     extraServerJvmArgs.put("com.tc.session.maxidle.seconds", String.valueOf(Integer.MAX_VALUE));
     init();
     WebConversation wc = new WebConversation();
@@ -191,16 +191,16 @@ public class SessionConfigTest extends AbstractDeploymentTest {
   private void addSessionDescriptor() throws Exception {
     if (descriptors.size() == 0) return;
 
-    switch (AppServerFactory.getCurrentAppServerId()) {
-      case AppServerFactory.WEBLOGIC:
-        if (AppServerFactory.getCurrentAppServerMajorVersion().equals("8")) {
+    switch (appServerInfo().getId()) {
+      case AppServerInfo.WEBLOGIC:
+        if (appServerInfo().getMajor().equals("8")) {
           builder.addResourceFullpath(RESOURCE_ROOT, (String) descriptors.get("wl81"), "WEB-INF/weblogic.xml");
         }
-        if (AppServerFactory.getCurrentAppServerMajorVersion().equals("9")) {
+        if (appServerInfo().getMajor().equals("9")) {
           builder.addResourceFullpath(RESOURCE_ROOT, (String) descriptors.get("wl92"), "WEB-INF/weblogic.xml");
         }
         break;
-      case AppServerFactory.WEBSPHERE:
+      case AppServerInfo.WEBSPHERE:
         Was6xAppServer wasServer = (Was6xAppServer) ((GenericServer) server).getAppServer();
         wasServer.setExtraScript(TCFileUtils.getResourceFile(RESOURCE_ROOT + "/" + (String) descriptors.get("was61")));
         break;

@@ -24,6 +24,7 @@ import org.xml.sax.SAXException;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
 import com.tc.management.JMXConnectorProxy;
+import com.tc.test.AppServerInfo;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AppServer;
@@ -31,7 +32,6 @@ import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.AppServerInstallation;
 import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.util.AppServerUtil;
-import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.text.Banner;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
@@ -69,14 +69,10 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
   private ProxyBuilder                      proxyBuilder    = null;
   private File                              workingDir;
   private String                            serverInstanceName;
+  private final File                        tcConfigFile;
 
   public GenericServer(TestConfigObject config, AppServerFactory factory, AppServerInstallation installation,
-                       FileSystemPath tcConfigPath, int serverId, File tempDir) throws Exception {
-    this(config, factory, installation, new TcConfigBuilder(tcConfigPath.getFile()), serverId, tempDir);
-  }
-
-  public GenericServer(TestConfigObject config, AppServerFactory factory, AppServerInstallation installation,
-                       TcConfigBuilder tcConfigbuilder, int serverId, File tempDir) throws Exception {
+                       File tcConfigFile, int serverId, File tempDir) throws Exception {
     this.factory = factory;
     this.installation = installation;
     this.rmiRegistryPort = AppServerUtil.getPort();
@@ -84,10 +80,9 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     this.serverInstanceName = SERVER + serverId;
     this.parameters = (StandardAppServerParameters) factory.createParameters(serverInstanceName);
     this.workingDir = new File(installation.sandboxDirectory(), serverInstanceName);
+    this.tcConfigFile = tcConfigFile;
 
     File bootJarFile = new File(config.normalBootJar());
-    File tcConfigFile = new File(tempDir, "tc-config.xml");
-    tcConfigbuilder.saveToFile(tcConfigFile);
 
     if (dsoEnabled()) {
       parameters.appendSysProp("tc.base-dir", System.getProperty(TestConfigObject.TC_BASE_DIR));
@@ -102,9 +97,9 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
       parameters.appendJvmArgs("-XX:+HeapDumpOnOutOfMemoryError");
     }
 
-    int appId = AppServerFactory.getCurrentAppServerId();
+    int appId = config.appServerId();
     // glassfish fails with these options on
-    if (appId != AppServerFactory.GLASSFISH) {
+    if (appId != AppServerInfo.GLASSFISH) {
       parameters.appendSysProp("com.sun.management.jmxremote");
       parameters.appendSysProp("com.sun.management.jmxremote.authenticate", false);
       parameters.appendSysProp("com.sun.management.jmxremote.ssl", false);
@@ -126,14 +121,14 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
 
     // app server specific system props
     switch (appId) {
-      case AppServerFactory.TOMCAT:
-      case AppServerFactory.JBOSS:
+      case AppServerInfo.TOMCAT:
+      case AppServerInfo.JBOSS:
         parameters.appendJvmArgs("-Djvmroute=" + serverInstanceName);
         break;
-      case AppServerFactory.WEBSPHERE:
+      case AppServerInfo.WEBSPHERE:
         parameters.appendSysProp("javax.management.builder.initial", "");
         break;
-      case AppServerFactory.WEBLOGIC:
+      case AppServerInfo.WEBLOGIC:
         // bumped up because ContainerHibernateTest was failing with WL 9
         parameters.appendJvmArgs("-XX:MaxPermSize=128m");
         parameters.appendJvmArgs("-Xms128m -Xmx256m");
@@ -353,8 +348,7 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
     FileOutputStream fos = null;
 
     try {
-      File tempFile = File.createTempFile("tc-classpath", parameters.instanceName());
-      tempFile.deleteOnExit();
+      File tempFile = new File(installation.sandboxDirectory(), "tc-classpath." + parameters.instanceName());      
       fos = new FileOutputStream(tempFile);
 
       // XXX: total hack to make RequestCountTest pass on 1.4 VMs
@@ -398,5 +392,9 @@ public class GenericServer extends AbstractStoppable implements WebApplicationSe
       server = factory.createAppServer(installation);
     }
     return server;
+  }
+
+  public File getTcConfigFile() {
+    return tcConfigFile;
   }
 }

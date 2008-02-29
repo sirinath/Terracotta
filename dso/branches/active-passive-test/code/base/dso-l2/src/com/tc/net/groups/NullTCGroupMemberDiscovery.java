@@ -26,7 +26,7 @@ public class NullTCGroupMemberDiscovery implements TCGroupMemberDiscovery {
     return;
   }
 
-  public void stop() {
+  public void stop(long timeout) {
     return;
   }
 
@@ -39,6 +39,10 @@ public class NullTCGroupMemberDiscovery implements TCGroupMemberDiscovery {
   }
 
   public void nodeLeft(NodeID nodeID) {
+    return;
+  }
+
+  public void nodeZapped(NodeID nodeID) {
     return;
   }
 

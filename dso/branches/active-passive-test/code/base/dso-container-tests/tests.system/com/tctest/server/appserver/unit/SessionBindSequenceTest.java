@@ -5,7 +5,7 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
-import com.tc.test.server.appserver.AppServerFactory;
+import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.appserver.deployment.AbstractOneServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
@@ -50,8 +50,8 @@ public class SessionBindSequenceTest extends AbstractOneServerDeploymentTest {
     // now set exception-throwing BindingListener..
     checkResponse("OK", "action=setwithexception&key=attr2", wc);
     // ... and check if it DID NOT made it there. Since Jetty binds before announcing, value will be set
-    String expectedVal = AppServerFactory.getCurrentAppServerId() == AppServerFactory.JETTY ? "attr2" : "null";
-    checkResponse("attr2="+expectedVal, "action=get&key=attr2", wc);
+    String expectedVal = appServerInfo().getId() == AppServerInfo.JETTY ? "attr2" : "null";
+    checkResponse("attr2=" + expectedVal, "action=get&key=attr2", wc);
 
     checkCallCount("BindingListener.valueBound", 2, wc);
     checkCallCount("BindingListener.valueUnbound", 0, wc);
@@ -63,8 +63,8 @@ public class SessionBindSequenceTest extends AbstractOneServerDeploymentTest {
 
     // Jetty puts the value in the session prior to announcing to listeners and the servlet won't increment
     // the attribute value if it is already present.
-    int bslBoundCount = AppServerFactory.getCurrentAppServerId() == AppServerFactory.JETTY ? 0 : 1;
-    //  Note that attr3 will still be Unbound
+    int bslBoundCount = appServerInfo().getId() == AppServerInfo.JETTY ? 0 : 1;
+    // Note that attr3 will still be Unbound
     int bslUnboundCount = 1;
     checkCallCount("BindSequenceListener.valueBound", bslBoundCount, wc);
 
