@@ -149,7 +149,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     NULL_TRANSACTION = TestPersistenceTransaction.NULL_TRANSACTION;
   }
 
-  private void initObjectManager() { 
+  private void initObjectManager() {
     initObjectManager(createThreadGroup());
   }
 
@@ -277,33 +277,31 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
   }
 
- 
   public void testPreFetchObjects() {
     config.paranoid = true;
     initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))),
                       new LRUEvictionPolicy(-1));
     objectManager.setStatsListener(this.stats);
 
-    //first assert that no hits/misses occurred for clean stats.
+    // first assert that no hits/misses occurred for clean stats.
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(0, stats.getTotalCacheMisses());
 
-    //create your initial objects
+    // create your initial objects
     createObjects(50, 10);
-    
-    //CASE 1: no preFetched objects
-    Set ids = makeObjectIDSet(0, 10);  
+
+    // CASE 1: no preFetched objects
+    Set ids = makeObjectIDSet(0, 10);
     TestResultsContext results = new TestResultsContext(ids, Collections.EMPTY_SET);
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
-    
-    //before no objects were pre-fetched, we should except 0 hits and 10 misses
+
+    // before no objects were pre-fetched, we should except 0 hits and 10 misses
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(10, stats.getTotalCacheMisses());
-  
-    
-    //CASE 2: preFetched objects
+
+    // CASE 2: preFetched objects
     ids = makeObjectIDSet(10, 20);
     // ThreadUtil.reallySleep(5000);
     results = new TestResultsContext(ids, Collections.EMPTY_SET);
@@ -314,9 +312,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
 
-    //because objects where prefetched we should have 10 hits, but also 10 more
-    //misses because the prefetching gets factored in as a miss to bring the total
-    //to 20
+    // because objects where prefetched we should have 10 hits, but also 10 more
+    // misses because the prefetching gets factored in as a miss to bring the total
+    // to 20
     assertEquals(10, stats.getTotalCacheHits());
     assertEquals(20, stats.getTotalCacheMisses());
 
@@ -334,9 +332,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     ObjectID id2;
     ids.add((id2 = new ObjectID(2)));
     ClientID key = new ClientID(new ChannelID(0));
-    
+
     this.objectManager.createNewObjects(ids);
-    
+
     TestResultsContext results = new TestResultsContext(ids, ids);
     this.objectManager.lookupObjectsFor(key, results);
     assertEquals(2, results.objects.size());
@@ -362,7 +360,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     newIDs.add(new ObjectID(4));
 
     this.objectManager.createNewObjects(newIDs);
-    results = new TestResultsContext(ids,  newIDs);
+    results = new TestResultsContext(ids, newIDs);
 
     this.objectManager.lookupObjectsFor(key, results);
     assertEquals(4, results.objects.size());
@@ -1116,15 +1114,15 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       objectStore.addNewObject(mo);
     }
   }
-  
-  private void createObjects(Set ids) {
-    for (Iterator iter = ids.iterator(); iter.hasNext(); ) {
-      ObjectID id = (ObjectID)iter.next();
-      TestManagedObject mo = new TestManagedObject(id, new ObjectID[] {});
-      objectManager.createObject(mo);
-      objectStore.addNewObject(mo);
-    }
-  }
+
+  // private void createObjects(Set ids) {
+  // for (Iterator iter = ids.iterator(); iter.hasNext(); ) {
+  // ObjectID id = (ObjectID)iter.next();
+  // TestManagedObject mo = new TestManagedObject(id, new ObjectID[] {});
+  // objectManager.createObject(mo);
+  // objectStore.addNewObject(mo);
+  // }
+  // }
 
   public void testGCStats() {
     initObjectManager();
@@ -1154,7 +1152,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     this.objectStore.addNewObject(mo2);
     objectManager.createObject(mo3);
     this.objectStore.addNewObject(mo3);
-    
+
     ClientID cid1 = new ClientID(new ChannelID(1));
     clientStateManager.addReference(cid1, root.getID());
     clientStateManager.addReference(cid1, mo1.getID());
@@ -1279,7 +1277,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     this.config.paranoid = true;
     initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))), new NullCache(),
                       this.objectStore);
-    initObjectManager();
+    // initObjectManager();
     initTransactionObjectManager();
 
     // this should disable the gc thread.
@@ -1293,7 +1291,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      */
     Map changes = new HashMap();
 
-    changes.put(new ObjectID(1), new TestDNA(new ObjectID(1)));
+    changes.put(new ObjectID(1), new TestMapDNA(new ObjectID(1)));
 
     ServerTransaction stxn1 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(1), new TransactionID(1),
                                                         new SequenceID(1), new LockID[0],
@@ -1303,7 +1301,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
                                                         DmiDescriptor.EMPTY_ARRAY);
     List txns = new ArrayList();
     txns.add(stxn1);
-    createObjectsFromTransaction(txns);
+
+    // createNewObjectFromTransaction(txns);
+
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1320,6 +1320,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(coordinator.applySink.queue.isEmpty());
 
     // Apply and initate commit the txn
+    applyTxn(aoc);
     txObjectManager.applyTransactionComplete(stxn1.getServerTransactionID());
     ApplyCompleteEventContext acec = (ApplyCompleteEventContext) coordinator.applyCompleteSink.queue.remove(0);
     assertNotNull(acec);
@@ -1341,7 +1342,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      * STEP 2: Dont check back Object 1 yet, make another transaction with yet another object
      */
     changes.clear();
-    changes.put(new ObjectID(2), new TestDNA(new ObjectID(2)));
+    changes.put(new ObjectID(2), new TestMapDNA(new ObjectID(2)));
 
     ServerTransaction stxn2 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
@@ -1353,7 +1354,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     txns.clear();
     txns.add(stxn2);
 
-    createObjectsFromTransaction(txns);
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1373,9 +1373,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
      * STEP 3: Create a txn with Objects 1,2 and a new object 3
      */
     changes.clear();
-    changes.put(new ObjectID(1), new TestDNA(new ObjectID(1), true));
-    changes.put(new ObjectID(2), new TestDNA(new ObjectID(2), true));
-    changes.put(new ObjectID(3), new TestDNA(new ObjectID(3)));
+    changes.put(new ObjectID(1), new TestMapDNA(new ObjectID(1), true));
+    changes.put(new ObjectID(2), new TestMapDNA(new ObjectID(2), true));
+    changes.put(new ObjectID(3), new TestMapDNA(new ObjectID(3)));
 
     ServerTransaction stxn3 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
@@ -1387,7 +1387,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     txns.clear();
     txns.add(stxn3);
 
-    createObjectsFromTransaction(txns);
+    // createNewObjectFromTransaction(txns);
+
     txObjectManager.addTransactions(txns);
 
     // Lookup context should have been fired
@@ -1519,10 +1520,14 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     close(persistor, persistentMOStore);
   }
 
-  private void createObjectsFromTransaction(List txns) {
-    for(Iterator iter = txns.iterator(); iter.hasNext(); ) {
-      ServerTransaction serverTransaction = (ServerTransaction)iter.next();
-      objectManager.createNewObjects(serverTransaction.getNewObjectIDs());
+  private void applyTxn(ApplyTransactionContext aoc) {
+    ServerTransaction txn = aoc.getTxn();
+    Map managedObjects = aoc.getObjects();
+    ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
+    for(Iterator i = txn.getChanges().iterator(); i.hasNext();) {
+      DNA dna = (DNA) i.next();
+      ManagedObject mo = (ManagedObject) managedObjects.get(dna.getObjectID());
+      mo.apply(dna, txn.getTransactionID(), new BackReferences(), instanceMonitor, false);
     }
   }
 
@@ -1714,9 +1719,15 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   private static class TestMapDNA implements DNA {
 
     final ObjectID objectID;
+    private boolean isDelta;
 
     TestMapDNA(ObjectID id) {
+      this(id, false);
+    }
+    
+    TestMapDNA(ObjectID id, boolean isDelta) {
       this.objectID = id;
+      this.isDelta = isDelta;
     }
 
     public long getVersion() {
@@ -1793,7 +1804,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
     public boolean isDelta() {
-      return false;
+      return isDelta;
     }
 
   }
@@ -2305,7 +2316,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     private final TestSink           faultSink;
     private final SinkContext        sinkContext;
 
-    public TestMOFaulter(ObjectManagerImpl objectManager, ManagedObjectStore store, TestSink faultSink, SinkContext sinkContext) {
+    public TestMOFaulter(ObjectManagerImpl objectManager, ManagedObjectStore store, TestSink faultSink,
+                         SinkContext sinkContext) {
       this.store = store;
       this.faultSink = faultSink;
       this.objectManager = objectManager;
@@ -2356,14 +2368,13 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
   private static class TestSinkContext implements SinkContext {
     private int sinkCount = -1;
-    
 
     public synchronized void preProcess(int aSinkCount) {
       this.sinkCount = aSinkCount;
     }
 
     public synchronized void waitTillComplete() {
-      while (sinkCount > 0) {
+      while (sinkCount > -1) {
         try {
           this.wait();
         } catch (InterruptedException e) {
@@ -2382,19 +2393,19 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
   }
-  
+
   private static class NullSinkContext implements SinkContext {
 
     public void postProcess() {
-      //do nothing
+      // do nothing
     }
-    
+
   }
-  
+
   private interface SinkContext {
-    
-     void postProcess();
-   
+
+    void postProcess();
+
   }
 
 }
