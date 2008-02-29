@@ -250,10 +250,6 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
-  public void createObject(ManagedObject object) {
-    throw new ImplementMe();
-  }
-
   public void createRoot(String name, ObjectID id) {
     throw new ImplementMe();
   }
@@ -336,7 +332,11 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
   }
 
   public ManagedObject getObjectByIDOrNull(ObjectID id) {
-    throw new ImplementMe();
+    ManagedObject mo = getObjectByID(id);
+    if(mo != null && mo.isNew()) {
+      return null;
+    }
+    return mo;
   }
 
 }
