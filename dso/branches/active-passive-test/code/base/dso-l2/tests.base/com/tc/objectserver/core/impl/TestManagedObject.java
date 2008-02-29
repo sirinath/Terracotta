@@ -189,7 +189,7 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
 
   public void apply(DNA dna, TransactionID txnID, BackReferences includeIDs, ObjectInstanceMonitor instanceMonitor,
                     boolean ignoreIfOlderDNA) throws DNAException {
-    throw new ImplementMe();
+    //TODO: do i need to implement this?
   }
 
   public long getVersion() {

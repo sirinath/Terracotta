@@ -81,6 +81,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     sequencer.addTransactions(txns);
     txnStageCoordinator.initiateLookup();
   }
+  
 
   private void createAndPreFetchObjectsFor(Collection txns) {
     Set oids = new HashSet(txns.size() * 10);
@@ -95,7 +96,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
         }
       }
     }
-    objectManager.preFetchObjectsAndCreate(oids, newOids);
+    objectManager.preFetchObjectsAndCreate(oids,newOids);
   }
 
   // LookupHandler Method
