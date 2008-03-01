@@ -62,6 +62,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   }
 
   protected void tearDown() throws Exception {
+    oidManager.stopCheckpointRunner();
     env.close();
     super.tearDown();
   }
@@ -168,6 +169,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     oidManager.runCheckpoint();
 
+    oidManager.loadBitsArrayFromDisk();
     verify(objects);
   }
 
