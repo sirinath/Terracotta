@@ -18,9 +18,10 @@ import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
-import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.ObjectIDSet2;
 
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -274,17 +275,13 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public PrettyPrinterImpl prettyPrint(PrettyPrinterImpl out) {
     throw new ImplementMe();
   }
 
   public void releaseReadOnly(ManagedObject object) {
     this.released.add(object.getID());
     return;
-  }
-
-  public void dump() {
-    throw new ImplementMe();
   }
 
   public void releaseAllReadOnly(Collection objects) {
@@ -323,6 +320,20 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     throw new ImplementMe();
   }
 
+  public void dump(Writer writer) {
+    throw new ImplementMe();
+    
+  }
+
+  public void dumpToLogger() {
+    throw new ImplementMe();
+    
+  }
+
+  public String dump() {
+    throw new ImplementMe();
+  }
+  
   public void preFetchObjectsAndCreate(Set oids, Set newOids) {
     throw new ImplementMe();
   }
