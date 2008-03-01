@@ -62,8 +62,6 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
   private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  private final static String SQL_PREPARE_LOGSTRUCTURE_VIEW = "SELECT * FROM statisticlogstructure";
-  private final static String SQL_ANALYZE = "ANALYZE";
   private static final String SQL_CLEAR_SESSION_STATISTICS = "DELETE FROM statisticlog WHERE sessionid = ?";
   private static final String SQL_CLEAR_ALL_STATISTICS = "DELETE FROM statisticlog";
 
@@ -419,18 +417,6 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
         createStatisticLogIndexes();
       } catch (SQLException e) {
         logger.warn("Couldn't re-create the statistic log indexes.", e);
-      }
-
-      try {
-        JdbcHelper.executeQuery(database.getConnection(), SQL_ANALYZE);
-      } catch (SQLException e) {
-        logger.warn("Couldn't execute the SQL '" + SQL_ANALYZE + "'.", e);
-      }
-
-      try {
-        JdbcHelper.executeQuery(database.getConnection(), SQL_PREPARE_LOGSTRUCTURE_VIEW);
-      } catch (SQLException e) {
-        logger.warn("Couldn't execute the SQL '" + SQL_PREPARE_LOGSTRUCTURE_VIEW + "'.", e);
       }
 
       try {
