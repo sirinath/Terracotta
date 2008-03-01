@@ -139,7 +139,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
 
   private void storeCurrentVersion(final int currentVersion) throws TCStatisticsDatabaseException {
     try {
-      JdbcHelper.executeUpdate(getConnection(), "INSERT INTO dbstructureversion (version, created) VALUES (?, now())", new PreparedStatementHandler() {
+      JdbcHelper.executeUpdate(getConnection(), "INSERT INTO dbstructureversion (version, created) VALUES (?, CURRENT_TIMESTAMP)", new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setInt(1, currentVersion);
         }

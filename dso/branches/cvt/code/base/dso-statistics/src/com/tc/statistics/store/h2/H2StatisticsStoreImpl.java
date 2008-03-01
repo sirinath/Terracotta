@@ -51,17 +51,21 @@ import java.util.List;
 import java.util.Set;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
-  public final static int DATABASE_STRUCTURE_VERSION = 3;
+  public final static int DATABASE_STRUCTURE_VERSION = 4;
   
   public final static String H2_URL_SUFFIX = "statistics-store";
 
   private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 436002553L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 16124506L;
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
   private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, sessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  private final static String SQL_PREPARE_LOGSTRUCTURE_VIEW = "SELECT * FROM statisticlogstructure";
+  private final static String SQL_ANALYZE = "ANALYZE";
+  private static final String SQL_CLEAR_SESSION_STATISTICS = "DELETE FROM statisticlog WHERE sessionid = ?";
+  private static final String SQL_CLEAR_ALL_STATISTICS = "DELETE FROM statisticlog";
 
   protected final StatisticsDatabase database;
 
@@ -172,6 +176,12 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "datatext TEXT NULL, " +
                 "datatimestamp TIMESTAMP NULL, " +
                 "datadecimal DECIMAL(8, 4) NULL)");
+
+            JdbcHelper.executeUpdate(database.getConnection(),
+              "CREATE VIEW IF NOT EXISTS statisticlogstructure AS " +
+                "SELECT sessionid, agentip, agentdifferentiator, statname, statelement " +
+                  "FROM statisticlog " +
+                  "GROUP BY sessionid, agentip, agentdifferentiator, statname, statelement");
 
             createStatisticLogIndexes();
 
@@ -401,15 +411,28 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (SQLException e) {
       throw new TCStatisticsStoreException("Error while starting the transaction.", e);
     } finally {
-      try {
-        if (listener != null) {
-          listener.optimizing();
-        }
+      if (listener != null) {
+        listener.optimizing();
+      }
 
+      try {
         createStatisticLogIndexes();
       } catch (SQLException e) {
         logger.warn("Couldn't re-create the statistic log indexes.", e);
       }
+
+      try {
+        JdbcHelper.executeQuery(database.getConnection(), SQL_ANALYZE);
+      } catch (SQLException e) {
+        logger.warn("Couldn't execute the SQL '" + SQL_ANALYZE + "'.", e);
+      }
+
+      try {
+        JdbcHelper.executeQuery(database.getConnection(), SQL_PREPARE_LOGSTRUCTURE_VIEW);
+      } catch (SQLException e) {
+        logger.warn("Couldn't execute the SQL '" + SQL_PREPARE_LOGSTRUCTURE_VIEW + "'.", e);
+      }
+
       try {
         ps_insert.close();
       } catch (SQLException e) {
@@ -564,7 +587,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       database.ensureExistingConnection();
 
       // remove statistics, based on the provided session Id
-      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog WHERE sessionid = ?", new PreparedStatementHandler() {
+      JdbcHelper.executeUpdate(database.getConnection(), SQL_CLEAR_SESSION_STATISTICS, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setString(1, sessionId);
         }
@@ -580,7 +603,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     try {
       database.ensureExistingConnection();
       
-      JdbcHelper.executeUpdate(database.getConnection(), "DELETE FROM statisticlog");
+      JdbcHelper.executeUpdate(database.getConnection(), SQL_CLEAR_ALL_STATISTICS);
     } catch (Exception e) {
       throw new TCStatisticsStoreClearAllStatisticsErrorException(e);
     }

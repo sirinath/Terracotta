@@ -93,20 +93,25 @@ public abstract class JdbcHelper {
     }
   }
 
+  public static void executeQuery(final Connection connection, final String sql) throws SQLException {
+    executeQuery(connection, sql, null);
+  }
+
   public static void executeQuery(final Connection connection, final String sql, final ResultSetHandler rsHandler) throws SQLException {
     Assert.assertNotNull("connection", connection);
-    Assert.assertNotNull("rsHandler", rsHandler);
 
     appendChecksumPart(sql);
 
     Statement stmt = connection.createStatement();
     try {
       stmt.execute(sql);
-      ResultSet rs = stmt.getResultSet();
-      try {
-        rsHandler.useResultSet(rs);
-      } finally {
-        rs.close();
+      if (rsHandler != null) {
+        ResultSet rs = stmt.getResultSet();
+        try {
+          rsHandler.useResultSet(rs);
+        } finally {
+          rs.close();
+        }
       }
     } finally {
       stmt.close();

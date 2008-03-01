@@ -62,6 +62,15 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_NEXT_CONSUMPTIONID = "SELECT nextval('seq_consumption')";
   private final static String SQL_MAKE_ALL_CONSUMABLE = "UPDATE statisticlog SET consumptionid = NULL";
+  private static final String SQL_RETRIEVE_LOCAL_SESSIONID = "SELECT localsessionid FROM capturesession WHERE clustersessionid = ?";
+  private static final String SQL_RETRIEVE_CAPTURESESSION = "SELECT * FROM capturesession WHERE clustersessionid = ?";
+  private static final String SQL_STOP_CAPTURESESSION = "UPDATE capturesession SET stop = ? WHERE clustersessionid = ? AND start IS NOT NULL AND stop IS NULL";
+  private static final String SQL_CREATE_CAPTURESESSION = "INSERT INTO capturesession (localsessionid, clustersessionid) VALUES (?, ?)";
+  private static final String SQL_START_CAPTURESESSION = "UPDATE capturesession SET start = ? WHERE clustersessionid = ? AND start IS NULL";
+  private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, localsessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  private static final String SQL_MARK_FOR_CONSUMPTION = "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ?";
+  private static final String SQL_CONSUME_STATISTICDATA = "SELECT * FROM statisticlog WHERE consumptionid = ? ORDER BY moment ASC, id ASC";
+  private static final String SQL_RESET_CONSUMPTIONID = "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?";
 
   private final StatisticsConfig config;
   private final File lockFile;
@@ -266,7 +275,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       local_sessionid = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_LOCALSESSIONID));
 
-      row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO capturesession (localsessionid, clustersessionid) VALUES (?, ?)", new PreparedStatementHandler() {
+      row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_CREATE_CAPTURESESSION, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, local_sessionid);
           statement.setString(2, sessionId);
@@ -288,7 +297,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
     try {
       database.ensureExistingConnection();
 
-      row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET start = ? WHERE clustersessionid = ? AND start IS NULL", new PreparedStatementHandler() {
+      row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_START_CAPTURESESSION, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setTimestamp(1, new Timestamp(new Date().getTime()));
           statement.setString(2, sessionId);
@@ -314,7 +323,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       database.getConnection().setAutoCommit(false);
       try {
 
-        JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM capturesession WHERE clustersessionid = ?", new PreparedStatementHandler() {
+        JdbcHelper.executeQuery(database.getConnection(), SQL_RETRIEVE_CAPTURESESSION, new PreparedStatementHandler() {
           public void setParameters(PreparedStatement statement) throws SQLException {
             statement.setString(1, sessionId);
           }
@@ -327,7 +336,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
         });
 
         if (found[0]) {
-          row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE capturesession SET stop = ? WHERE clustersessionid = ? AND start IS NOT NULL AND stop IS NULL", new PreparedStatementHandler() {
+          row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_STOP_CAPTURESESSION, new PreparedStatementHandler() {
             public void setParameters(PreparedStatement statement) throws SQLException {
               statement.setTimestamp(1, new Timestamp(new Date().getTime()));
               statement.setString(2, sessionId);
@@ -355,7 +364,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
   private long retrieveLocalSessionId(final String sessionId) throws SQLException, TCStatisticsBufferUnknownCaptureSessionException {
     final long local_sessionid[] = new long[] {-1};
-    JdbcHelper.executeQuery(database.getConnection(), "SELECT localsessionid FROM capturesession WHERE clustersessionid = ?", new PreparedStatementHandler() {
+    JdbcHelper.executeQuery(database.getConnection(), SQL_RETRIEVE_LOCAL_SESSIONID, new PreparedStatementHandler() {
       public void setParameters(PreparedStatement statement) throws SQLException {
         statement.setString(1, sessionId);
       }
@@ -403,7 +412,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
 
       // insert the statistic data with the provided values
-      row_count = JdbcHelper.executeUpdate(database.getConnection(), "INSERT INTO statisticlog (id, localsessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new PreparedStatementHandler() {
+      row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_INSERT_STATISTICSDATA, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, id);
           statement.setLong(2, local_sessionid);
@@ -473,7 +482,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       // reserve all existing statistic data with the provided session ID
       // for the consumption ID
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ?", new PreparedStatementHandler() {
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_MARK_FOR_CONSUMPTION, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, consumption_id);
           statement.setLong(2, local_sessionid);
@@ -483,10 +492,9 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       try {
         // consume all the statistic data in this capture session
         if (row_count > 0) {
-          JdbcHelper.executeQuery(database.getConnection(), "SELECT * FROM statisticlog WHERE consumptionid = ? AND localsessionid = ? ORDER BY moment ASC, id ASC", new PreparedStatementHandler() {
+          JdbcHelper.executeQuery(database.getConnection(), SQL_CONSUME_STATISTICDATA, new PreparedStatementHandler() {
             public void setParameters(PreparedStatement statement) throws SQLException {
               statement.setLong(1, consumption_id);
-              statement.setLong(2, local_sessionid);
             }
           }, new ResultSetHandler() {
             public void useResultSet(ResultSet resultSet) throws SQLException {
@@ -507,7 +515,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
       } finally {
         // make the statistic data that wasn't consumed during this consumption phase
         // available again so that it can be picked up by another consumption operation
-        JdbcHelper.executeUpdate(database.getConnection(), "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?", new PreparedStatementHandler() {
+        JdbcHelper.executeUpdate(database.getConnection(), SQL_RESET_CONSUMPTIONID, new PreparedStatementHandler() {
           public void setParameters(PreparedStatement statement) throws SQLException {
             statement.setLong(1, consumption_id);
           }
