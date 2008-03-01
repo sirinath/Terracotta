@@ -78,11 +78,7 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     CHECKPOINT_MAXLIMIT = loadObjProp.getInt(CHCKPOINT_MAXLIMIT);
     CHECKPOINT_PERIOD = loadObjProp.getInt(CHCKPOINT_TIMEPERIOD);
     isMeasurePerf = loadObjProp.getBoolean(MEASURE_PERF, false);
-    if (!this.paranoid) {
-      oidBitsArrayMap = null;
-    } else {
-      oidBitsArrayMap = new OidBitsArrayMap(loadObjProp.getInt(LONGS_PER_DISK_ENTRY), this.oidDB);
-    }
+    oidBitsArrayMap = new OidBitsArrayMap(loadObjProp.getInt(LONGS_PER_DISK_ENTRY), this.oidDB);
   }
 
   /*
@@ -92,14 +88,14 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
     return new Thread(new OidObjectIdReader(rv), "OidObjectIdReaderThread");
   }
 
-  public void startCheckpointThread() {
+  public synchronized void startCheckpointThread() {
     if (checkpointThread != null) return;
     checkpointThread = new CheckpointRunner(CHECKPOINT_PERIOD);
     checkpointThread.setDaemon(true);
     checkpointThread.start();
   }
 
-  public void stopCheckpointRunner() {
+  public synchronized void stopCheckpointRunner() {
     if (checkpointThread != null) checkpointThread.quit();
   }
 
@@ -146,82 +142,95 @@ public final class OidBitsArrayMapManagerImpl extends SleepycatPersistorBase imp
   /*
    * Flush out oidLogDB to bitsArray on disk.
    */
-  private synchronized void oidFlushLogToBitsArray(StoppedFlag stoppedFlag, ObjectIDSet2 tmp, boolean isNoLimit) {
-    if (stoppedFlag.isStopped()) return;
-    SortedSet<Long> sortedOnDiskIndexSet = new TreeSet<Long>();
-    PersistenceTransaction tx = null;
-    try {
-      tx = ptp.newTransaction();
-      DatabaseEntry key = new DatabaseEntry();
-      DatabaseEntry value = new DatabaseEntry();
-      int changes = 0;
-      oidBitsArrayMap.clear();
-      Cursor cursor = oidLogDB.openCursor(pt2nt(tx), CursorConfig.READ_COMMITTED);
+  private void oidFlushLogToBitsArray(StoppedFlag stoppedFlag, ObjectIDSet2 tmp, boolean isNoLimit) {
+    synchronized (oidBitsArrayMap) {
+      if (stoppedFlag.isStopped()) return;
+      SortedSet<Long> sortedOnDiskIndexSet = new TreeSet<Long>();
+      PersistenceTransaction tx = null;
       try {
-        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+        tx = ptp.newTransaction();
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        int changes = 0;
+        oidBitsArrayMap.clear();
+        Cursor cursor = oidLogDB.openCursor(pt2nt(tx), CursorConfig.READ_COMMITTED);
+        try {
+          while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
 
+            if (stoppedFlag.isStopped()) {
+              cursor.close();
+              cursor = null;
+              abortOnError(tx);
+              return;
+            }
+
+            long oidValue = Conversion.bytes2Long(key.getData());
+
+            ObjectID objectID = new ObjectID(oidValue);
+            byte action = value.getData()[0];
+            switch (action) {
+              case LOG_ACTION_ADD:
+                oidBitsArrayMap.getAndSet(objectID);
+                if ((tmp != null) && !tmp.add(objectID)) { throw new RuntimeException("Error add " + objectID); }
+                break;
+              case LOG_ACTION_DELETE:
+                oidBitsArrayMap.getAndClr(objectID);
+                if ((tmp != null) && !tmp.remove(objectID)) { throw new RuntimeException("Error remove " + objectID); }
+                break;
+              default:
+                throw new RuntimeException("Unknown object log action " + action);
+            }
+
+            sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
+            cursor.delete();
+
+            ++changes;
+
+            if (!isNoLimit && (changes >= CHECKPOINT_MAXLIMIT)) {
+              cursor.close();
+              cursor = null;
+              break;
+            }
+          }
+        } catch (DatabaseException e) {
+          throw e;
+        } finally {
+          if (cursor != null) cursor.close();
+          cursor = null;
+        }
+
+        resetChangesCount();
+
+        for (Long onDiskIndex : sortedOnDiskIndexSet) {
           if (stoppedFlag.isStopped()) {
-            cursor.close();
-            cursor = null;
             abortOnError(tx);
             return;
           }
-
-          long oidValue = Conversion.bytes2Long(key.getData());
-
-          ObjectID objectID = new ObjectID(oidValue);
-          byte action = value.getData()[0];
-          switch (action) {
-            case LOG_ACTION_ADD:
-              oidBitsArrayMap.getAndSet(objectID);
-              if ((tmp != null) && !tmp.add(objectID)) { throw new RuntimeException("Error add " + objectID); }
-              break;
-            case LOG_ACTION_DELETE:
-              oidBitsArrayMap.getAndClr(objectID);
-              if ((tmp != null) && !tmp.remove(objectID)) { throw new RuntimeException("Error remove " + objectID); }
-              break;
-            default:
-              throw new RuntimeException("Unknown object log action " + action);
-          }
-
-          sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
-          cursor.delete();
-
-          ++changes;
-
-          if (!isNoLimit && (changes >= CHECKPOINT_MAXLIMIT)) {
-            cursor.close();
-            cursor = null;
-            break;
+          OidLongArray bits = oidBitsArrayMap.getBitsArray(onDiskIndex);
+          key.setData(bits.keyToBytes());
+          if (!bits.isZero()) {
+            value.setData(bits.arrayToBytes());
+            if (!OperationStatus.SUCCESS.equals(this.oidDB.put(pt2nt(tx), key, value))) {
+              //
+              throw new DatabaseException("Failed to update oidDB at " + onDiskIndex);
+            }
+          } else {
+            OperationStatus status = this.oidDB.delete(pt2nt(tx), key);
+            if (!OperationStatus.SUCCESS.equals(status) && !OperationStatus.NOTFOUND.equals(status)) {
+              //
+              throw new DatabaseException("Failed to delete oidDB at " + onDiskIndex);
+            }
           }
         }
+
+        tx.commit();
+        logger.debug("Checkpoint updated " + changes + " objectIDs");
       } catch (DatabaseException e) {
-        throw e;
+        logger.error("Error ojectID checkpoint: " + e);
+        abortOnError(tx);
       } finally {
-        if (cursor != null) cursor.close();
-        cursor = null;
+        oidBitsArrayMap.clear();
       }
-
-      resetChangesCount();
-
-      for (Long onDiskIndex : sortedOnDiskIndexSet) {
-        if (stoppedFlag.isStopped()) {
-          abortOnError(tx);
-          return;
-        }
-        OidLongArray bits = oidBitsArrayMap.getBitsArray(onDiskIndex);
-        key.setData(bits.keyToBytes());
-        value.setData(bits.arrayToBytes());
-        this.oidDB.put(pt2nt(tx), key, value);
-      }
-
-      tx.commit();
-      logger.debug("Checkpoint updated " + changes + " objectIDs");
-    } catch (DatabaseException e) {
-      logger.error("Error ojectID checkpoint: " + e);
-      abortOnError(tx);
-    } finally {
-      oidBitsArrayMap.clear();
     }
   }
 
