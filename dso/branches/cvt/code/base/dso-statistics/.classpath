@@ -6,8 +6,8 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-common"/>
-	<classpathentry exported="true" kind="lib" path="/dependencies/lib/h2-1.0-20071202.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/management"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/management"/>
+	<classpathentry exported="true" kind="lib" path="/dependencies/lib/h2-1.0.67.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

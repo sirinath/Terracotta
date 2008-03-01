@@ -13,16 +13,15 @@
     <orderEntry type="module" module-name="dso-common" />
     <orderEntry type="module" module-name="dso-l1-api" />
     <orderEntry type="module" module-name="management" />
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../dependencies/lib/h2-1.0-20071202.jar!/" />
+          <root url="jar://$MODULE_DIR$/../dependencies/lib/h2-1.0.67.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="dso-common-jdk15" />
     <orderEntryProperties />
   </component>
 </module>

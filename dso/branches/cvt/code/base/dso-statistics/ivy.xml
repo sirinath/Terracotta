@@ -2,6 +2,6 @@
 <ivy-module version="1.0">
   <info organisation="ibiblio" module="dso-statistics"/>
   <dependencies>
-    <dependency name="h2" rev="1.0-20071202" org="terracotta"/>
+    <dependency name="h2" rev="1.0.67" org="terracotta"/>
   </dependencies>
 </ivy-module>
