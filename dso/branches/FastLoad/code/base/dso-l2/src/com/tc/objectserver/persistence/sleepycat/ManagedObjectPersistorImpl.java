@@ -261,8 +261,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     OperationStatus status = null;
     try {
       status = basicSaveObject(persistenceTransaction, managedObject);
-      if (OperationStatus.SUCCESS.equals(status)) {
-        status = oidManager.oidPut(persistenceTransaction, managedObject);
+      if (OperationStatus.SUCCESS.equals(status) && managedObject.isNew()) {
+        status = oidManager.oidPut(persistenceTransaction, managedObject.getID());
       }
     } catch (DBException e) {
       throw e;
