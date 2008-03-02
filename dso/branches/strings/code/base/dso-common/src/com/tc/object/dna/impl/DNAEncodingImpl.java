@@ -5,13 +5,16 @@
 package com.tc.object.dna.impl;
 
 import com.tc.exception.TCRuntimeException;
-import com.tc.io.TCByteArrayOutputStream;
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.compression.Compressor;
+import com.tc.object.compression.Decompressor;
+import com.tc.object.compression.StringCompressor;
+import com.tc.object.compression.StringDecompressor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -31,7 +34,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Currency;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -91,9 +93,6 @@ public class DNAEncodingImpl implements DNAEncoding {
   private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
-  private final ClassProvider        classProvider;
-  private final byte                 policy;
-
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
   private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
 
@@ -110,12 +109,20 @@ public class DNAEncodingImpl implements DNAEncoding {
                                                                               .getInt(
                                                                                       "l1.transactionmanager.strings.compress.minSize");
 
+  
+  private final ClassProvider        classProvider;
+  private final byte                 policy;
+  private final Compressor stringCompressor;
+  private final Decompressor stringDecompressor;
+
   /**
    * Used in the Applicators. The policy is set to APPLICATOR.
    */
   public DNAEncodingImpl(ClassProvider classProvider) {
     this.classProvider = classProvider;
     this.policy = APPLICATOR;
+    this.stringCompressor = new StringCompressor();
+    this.stringDecompressor = new StringDecompressor();
   }
 
   public DNAEncodingImpl(byte policy) {
@@ -128,6 +135,8 @@ public class DNAEncodingImpl implements DNAEncoding {
     } else {
       throw new AssertionError("Policy not valid : " + policy + " : For APPLICATORS use the other contructor !");
     }
+    this.stringCompressor = new StringCompressor();
+    this.stringDecompressor = new StringDecompressor();
   }
 
   public byte getPolicy() {
@@ -244,7 +253,7 @@ public class DNAEncodingImpl implements DNAEncoding {
         String s = (String)value;
         if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
-          writeCompressedString(s, output);
+          this.stringCompressor.writeCompressed(s, output);
         } else {
           output.writeByte(TYPE_ID_STRING);
           writeString(s, output);
@@ -327,32 +336,6 @@ public class DNAEncodingImpl implements DNAEncoding {
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
-  }
-
-  private void writeCompressedString(String string, TCDataOutput output) {
-    try {
-      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
-      // Stride is 512 bytes by default, should I increase ?
-      DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
-      byte[] uncompressed = string.getBytes("UTF-8");
-      dos.write(uncompressed);
-      dos.close();
-      byte[] compressed = byteArrayOS.getInternalArray();
-      // XXX:: We are writting the original string's length so that we save a couple of copies when decompressing
-      output.writeInt(uncompressed.length);
-      writeByteArray(compressed, 0, byteArrayOS.size(), output);
-      if (STRING_COMPRESSION_LOGGING_ENABLED) {
-        logger.info("Compressed String of size : " + string.length() + " bytes : " + uncompressed.length
-                    + " to  bytes : " + compressed.length);
-      }
-    } catch (Exception e) {
-      throw new AssertionError(e);
-    }
-  }
-
-  private void writeByteArray(byte[] bytes, int offset, int length, TCDataOutput output) {
-    output.writeInt(length);
-    output.write(bytes, offset, length);
   }
 
   private void writeByteArray(byte bytes[], TCDataOutput output) {
@@ -885,12 +868,12 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readCompressedString(TCDataInput input) throws IOException {
-    int stringLength = input.readInt();
-    byte[] data = readByteArray(input);
     if (policy == APPLICATOR) {
-      return inflateCompressedString(data, stringLength);
+      return this.stringDecompressor.readCompressed(input);
     } else {
-      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringLength);
+      int stringLength = input.readInt();
+      byte[] data = readByteArray(input);
+      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringLength, this.stringDecompressor);
       return utfBytes;
     }
   }
