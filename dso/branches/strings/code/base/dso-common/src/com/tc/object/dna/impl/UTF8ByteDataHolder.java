@@ -4,6 +4,9 @@
  */
 package com.tc.object.dna.impl;
 
+import com.tc.object.compression.Decompressor;
+import com.tc.object.compression.StringDecompressor;
+
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -19,24 +22,31 @@ public class UTF8ByteDataHolder implements Serializable {
 
   private final byte[] bytes;
   private final int    uncompressedLength;
+  private final Decompressor stringDecompressor;
+  private final String encoding;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
     this.uncompressedLength = -1;
+    StringDecompressor decompressor = new StringDecompressor();
+    this.stringDecompressor = decompressor;
+    this.encoding = decompressor.getEncoding();
     try {
-      this.bytes = str.getBytes("UTF-8");
+      this.bytes = str.getBytes(this.encoding);
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
   }
 
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, -1);
+    this(b, -1, new StringDecompressor());
   }
 
-  public UTF8ByteDataHolder(byte[] b, int uncompressedLenght) {
+  public UTF8ByteDataHolder(byte[] b, int uncompressedLength, Decompressor stringDecompressor) {
     this.bytes = b;
-    this.uncompressedLength = uncompressedLenght;
+    this.uncompressedLength = uncompressedLength;
+    this.stringDecompressor = stringDecompressor;
+    this.encoding = ((StringDecompressor)stringDecompressor).getEncoding();   
   }
 
   public byte[] getBytes() {
