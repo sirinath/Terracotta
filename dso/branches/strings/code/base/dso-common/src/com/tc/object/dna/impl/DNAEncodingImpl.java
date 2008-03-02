@@ -11,6 +11,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.compression.BinaryData;
 import com.tc.object.compression.Compressor;
 import com.tc.object.compression.Decompressor;
 import com.tc.object.compression.StringCompressor;
@@ -23,7 +24,6 @@ import com.tc.util.Assert;
 
 import gnu.trove.TObjectIntHashMap;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Currency;
-import java.util.zip.InflaterInputStream;
 
 /**
  * Utility for encoding/decoding DNA
@@ -253,7 +252,7 @@ public class DNAEncodingImpl implements DNAEncoding {
         String s = (String)value;
         if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
-          this.stringCompressor.writeCompressed(s, output);
+          this.stringCompressor.compress(s).writeTo(output);
         } else {
           output.writeByte(TYPE_ID_STRING);
           writeString(s, output);
@@ -343,23 +342,6 @@ public class DNAEncodingImpl implements DNAEncoding {
     output.write(bytes);
   }
 
-  /* This method is an optimized method for writing char array when no check is needed */
-  // private void writeCharArray(char[] chars, TCDataOutput output) {
-  // output.writeInt(chars.length);
-  // for (int i = 0, n = chars.length; i < n; i++) {
-  // output.writeChar(chars[i]);
-  // }
-  // }
-  private byte[] readByteArray(TCDataInput input) throws IOException {
-    int length = input.readInt();
-    if (length >= BYTE_WARN) {
-      logger.warn("Attempting to allocate a large byte array of size: " + length);
-    }
-    byte[] array = new byte[length];
-    input.readFully(array);
-    return array;
-  }
-
   public Object decode(TCDataInput input) throws IOException, ClassNotFoundException {
     final byte type = input.readByte();
 
@@ -407,12 +389,10 @@ public class DNAEncodingImpl implements DNAEncoding {
       case TYPE_ID_STACK_TRACE_ELEMENT:
         return readStackTraceElement(input);
       case TYPE_ID_BIG_INTEGER:
-        byte[] b1 = readByteArray(input);
-        return new BigInteger(b1);
+        return new BigInteger(BinaryData.readUncompressed(input).getBytes());
       case TYPE_ID_BIG_DECIMAL:
         // char[] chars = readCharArray(input); // Unfortunately this is 1.5 specific
-        byte[] b2 = readByteArray(input);
-        return new BigDecimal(new String(b2));
+        return new BigDecimal(new String(BinaryData.readUncompressed(input).getBytes()));
 //      case TYPE_ID_URL:
 //        {
 //          String protocol = input.readString();
@@ -815,20 +795,19 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readCurrency(TCDataInput input, byte type) throws IOException {
-    byte[] data = readByteArray(input);
-    String currencyCode = new String(data, "UTF-8");
+    String currencyCode = new String(BinaryData.readUncompressed(input).getBytes(), "UTF-8");
     return Currency.getInstance(currencyCode);
   }
 
   private Object readEnum(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
-    UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
-    byte[] data = readByteArray(input);
+    UTF8ByteDataHolder name = new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
+    BinaryData data = BinaryData.readUncompressed(input);
 
     if ((policy == SERIALIZER && type == TYPE_ID_ENUM) || policy == APPLICATOR) {
       Class enumType = new ClassInstance(name, def).asClass(classProvider);
 
-      String enumName = new String(data, "UTF-8");
+      String enumName = new String(data.getBytes(), "UTF-8");
       return enumValueOf(enumType, enumName);
     } else {
       ClassInstance clazzInstance = new ClassInstance(name, def);
@@ -838,7 +817,7 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readClassLoader(TCDataInput input, byte type) throws IOException {
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
 
     if ((policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASSLOADER) || policy == APPLICATOR) {
       return new ClassLoaderInstance(def).asClassLoader(classProvider);
@@ -848,8 +827,8 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readClass(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
-    UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
+    UTF8ByteDataHolder name = new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
 
     if ((policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASS) || policy == APPLICATOR) {
       return new ClassInstance(name, def).asClass(classProvider);
@@ -859,41 +838,19 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readString(TCDataInput input, byte type) throws IOException {
-    byte[] data = readByteArray(input);
     if ((policy == SERIALIZER && type == TYPE_ID_STRING) || policy == APPLICATOR) {
-      return new String(data, "UTF-8");
+      return new String(BinaryData.readUncompressed(input).getBytes(), "UTF-8");
     } else {
-      return new UTF8ByteDataHolder(data);
+      return new UTF8ByteDataHolder(BinaryData.readUncompressed(input));
     }
   }
 
   private Object readCompressedString(TCDataInput input) throws IOException {
     if (policy == APPLICATOR) {
-      return this.stringDecompressor.readCompressed(input);
+      return this.stringDecompressor.decompress(BinaryData.readCompressed(input));
     } else {
-      int stringLength = input.readInt();
-      byte[] data = readByteArray(input);
-      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringLength, this.stringDecompressor);
+      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(BinaryData.readCompressed(input));
       return utfBytes;
-    }
-  }
-
-  public static String inflateCompressedString(byte[] data, int length) {
-    try {
-      ByteArrayInputStream bais = new ByteArrayInputStream(data);
-      InflaterInputStream iis = new InflaterInputStream(bais);
-      byte uncompressed[] = new byte[length];
-      int read;
-      int offset = 0;
-      while (length > 0 && (read = iis.read(uncompressed, offset, length)) != -1) {
-        offset += read;
-        length -= read;
-      }
-      iis.close();
-      Assert.assertEquals(0, length);
-      return new String(uncompressed, "UTF-8");
-    } catch (IOException e) {
-      throw new AssertionError(e);
     }
   }
 

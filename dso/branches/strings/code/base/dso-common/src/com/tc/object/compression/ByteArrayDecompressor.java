@@ -3,7 +3,6 @@
  */
 package com.tc.object.compression;
 
-import com.tc.io.TCDataInput;
 import com.tc.util.Assert;
 
 import java.io.ByteArrayInputStream;
@@ -12,11 +11,11 @@ import java.util.zip.InflaterInputStream;
 
 public class ByteArrayDecompressor implements Decompressor {
 
-  public Object readCompressed(TCDataInput compressedInput) {
+  public Object decompress(BinaryData compressedInput) {
     byte[] compressedData;
     try {
-      int uncompressedLength = compressedInput.readInt();
-      compressedData = readByteArray(compressedInput);
+      int uncompressedLength = compressedInput.getUncompressedLength();
+      compressedData = compressedInput.getBytes();
       return inflateCompressedData(compressedData, uncompressedLength);
     } catch (IOException e) {
       throw new AssertionError(e);
@@ -30,12 +29,12 @@ public class ByteArrayDecompressor implements Decompressor {
   // output.writeChar(chars[i]);
   // }
   // }
-  public byte[] readByteArray(TCDataInput input) throws IOException {
-    int length = input.readInt();
-    byte[] array = new byte[length];
-    input.readFully(array);
-    return array;
-  }  
+//  public byte[] readByteArray(TCDataInput input) throws IOException {
+//    int length = input.readInt();
+//    byte[] array = new byte[length];
+//    input.readFully(array);
+//    return array;
+//  }  
   
   private byte[] inflateCompressedData(byte[] data, int length) throws IOException {
     ByteArrayInputStream bais = new ByteArrayInputStream(data);

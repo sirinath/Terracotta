@@ -3,8 +3,6 @@
  */
 package com.tc.object.compression;
 
-import com.tc.io.TCDataInput;
-
 import java.io.UnsupportedEncodingException;
 
 public class StringDecompressor implements Decompressor {
@@ -18,12 +16,16 @@ public class StringDecompressor implements Decompressor {
   }
 
   public StringDecompressor(String encoding) {
-    this.encoding = encoding;
-    this.byteArrayDecompressor = new ByteArrayDecompressor();
+    this(encoding, new ByteArrayDecompressor());
   }
 
-  public Object readCompressed(TCDataInput compressedInput) {
-    byte[] uncompressedData = (byte[])this.byteArrayDecompressor.readCompressed(compressedInput);
+  public StringDecompressor(String encoding, Decompressor byteArrayDecompressor) {
+    this.encoding = encoding;
+    this.byteArrayDecompressor = byteArrayDecompressor;
+  }
+
+  public Object decompress(BinaryData data) {
+    byte[] uncompressedData = (byte[])this.byteArrayDecompressor.decompress(data);
     try {
       return new String(uncompressedData, this.encoding);
     } catch (UnsupportedEncodingException e) {

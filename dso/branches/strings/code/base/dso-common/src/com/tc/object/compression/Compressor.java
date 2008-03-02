@@ -3,10 +3,9 @@
  */
 package com.tc.object.compression;
 
-import com.tc.io.TCDataOutput;
 
 public interface Compressor {
   
-  void writeCompressed(Object object, TCDataOutput output);
+  BinaryData compress(Object object);
 
 }

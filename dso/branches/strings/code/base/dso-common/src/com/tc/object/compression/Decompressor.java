@@ -3,10 +3,8 @@
  */
 package com.tc.object.compression;
 
-import com.tc.io.TCDataInput;
-
 public interface Decompressor {
 
-  Object readCompressed(TCDataInput compressedInput);
+  Object decompress(BinaryData compressedData);
   
 }

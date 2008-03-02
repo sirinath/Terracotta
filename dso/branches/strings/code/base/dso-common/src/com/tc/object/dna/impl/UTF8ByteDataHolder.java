@@ -4,12 +4,12 @@
  */
 package com.tc.object.dna.impl;
 
+import com.tc.object.compression.BinaryData;
 import com.tc.object.compression.Decompressor;
 import com.tc.object.compression.StringDecompressor;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 /**
  * Holds byte data for strings. The main purpose of this class is to simply hold the bytes data for a String (no sense
@@ -20,37 +20,39 @@ import java.util.Arrays;
  */
 public class UTF8ByteDataHolder implements Serializable {
 
-  private final byte[] bytes;
-  private final int    uncompressedLength;
+  private final BinaryData binaryData;
   private final Decompressor stringDecompressor;
   private final String encoding;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
-    this.uncompressedLength = -1;
     StringDecompressor decompressor = new StringDecompressor();
     this.stringDecompressor = decompressor;
     this.encoding = decompressor.getEncoding();
     try {
-      this.bytes = str.getBytes(this.encoding);
+      byte[] bytes = str.getBytes(this.encoding);
+      this.binaryData = new BinaryData(bytes);
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
   }
 
-  public UTF8ByteDataHolder(byte[] b) {
-    this(b, -1, new StringDecompressor());
+  public UTF8ByteDataHolder(BinaryData binaryData) {
+    this(binaryData, new StringDecompressor());
   }
 
-  public UTF8ByteDataHolder(byte[] b, int uncompressedLength, Decompressor stringDecompressor) {
-    this.bytes = b;
-    this.uncompressedLength = uncompressedLength;
+  public UTF8ByteDataHolder(BinaryData binaryData, Decompressor stringDecompressor) {
+    this.binaryData = binaryData;
     this.stringDecompressor = stringDecompressor;
     this.encoding = ((StringDecompressor)stringDecompressor).getEncoding();   
   }
 
+  public BinaryData getBinaryData(){
+    return this.binaryData;
+  }
+  
   public byte[] getBytes() {
-    return bytes;
+    return getBinaryData().getBytes();
   }
 
   public String asString() {
@@ -58,12 +60,12 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   private String inflate() {
-    return DNAEncodingImpl.inflateCompressedString(bytes, uncompressedLength);
+    return (String)this.stringDecompressor.decompress(getBinaryData());
   }
 
   private String getString() {
     try {
-      return new String(bytes, "UTF-8");
+      return new String(getBinaryData().getBytes(), this.encoding);
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
@@ -74,27 +76,22 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   public int hashCode() {
-    int hash = isCompressed() ? 21 : 37;
-    for (int i = 0, n = bytes.length; i < n; i++) {
-      hash = 31 * hash + bytes[i++];
-    }
-    return hash;
+    return getBinaryData().hashCode();
   }
 
   public boolean equals(Object obj) {
     if (obj instanceof UTF8ByteDataHolder) {
       UTF8ByteDataHolder other = (UTF8ByteDataHolder) obj;
-      return ((uncompressedLength == other.uncompressedLength) && (Arrays.equals(this.bytes, other.bytes)) && this
-          .getClass().equals(other.getClass()));
+      return getBinaryData().equals(other.getBinaryData());
     }
     return false;
   }
 
   public boolean isCompressed() {
-    return uncompressedLength != -1;
+    return getBinaryData().isCompressed();
   }
 
   public int getUnCompressedStringLength() {
-    return uncompressedLength;
+    return getBinaryData().getUncompressedLength();
   }
 }
