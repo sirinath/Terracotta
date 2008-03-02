@@ -14,6 +14,8 @@ public class StringCompressorTest extends TestCase {
     compressor = new StringCompressor();
   }
   
-  
+  public void testFoo() throws Exception {
+    
+  }
 
 }

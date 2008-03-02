@@ -4,13 +4,12 @@
 package com.tc.object.compression;
 
 import com.tc.io.TCByteArrayOutputStream;
-import com.tc.io.TCDataOutput;
 
 import java.util.zip.DeflaterOutputStream;
 
 public class ByteArrayCompressor implements Compressor {
 
-  public void writeCompressed(Object object, TCDataOutput output) {
+  public BinaryData compress(Object object) {
     try {
       TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
       // Stride is 512 bytes by default, should I increase ?
@@ -20,16 +19,10 @@ public class ByteArrayCompressor implements Compressor {
       dos.close();
       byte[] compressed = byteArrayOS.getInternalArray();
       // XXX:: We are writting the original array's length so that we save a couple of copies when decompressing
-      output.writeInt(uncompressed.length);
-      writeByteArray(compressed, 0, byteArrayOS.size(), output);
+      return new BinaryData(compressed, uncompressed.length);
     } catch (Exception e) {
       throw new AssertionError(e);
     }
   }
 
-  private void writeByteArray(byte[] bytes, int offset, int length, TCDataOutput output) {
-    output.writeInt(length);
-    output.write(bytes, offset, length);
-  }
-  
 }

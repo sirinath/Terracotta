@@ -3,8 +3,6 @@
  */
 package com.tc.object.compression;
 
-import com.tc.io.TCDataOutput;
-
 import java.io.UnsupportedEncodingException;
 
 public class StringCompressor implements Compressor {
@@ -22,10 +20,10 @@ public class StringCompressor implements Compressor {
     this.byteArrayCompressor = new ByteArrayCompressor();
   }
   
-  public void writeCompressed(Object object, TCDataOutput output) {
+  public BinaryData compress(Object object) {
     String string = (String)object;
     try {
-      this.byteArrayCompressor.writeCompressed(string.getBytes(this.encoding), output);
+      return this.byteArrayCompressor.compress(string.getBytes(this.encoding));
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
