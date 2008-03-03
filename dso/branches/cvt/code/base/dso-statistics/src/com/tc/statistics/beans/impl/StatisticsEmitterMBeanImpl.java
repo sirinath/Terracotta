@@ -113,6 +113,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
         Iterator it = activeSessionIds.iterator();
         while (it.hasNext()) {
           try {
+            // todo: needs to support sending in batches and deferring sending until the capturing session shutdown
             buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {
               public boolean consumeStatisticData(StatisticData data) {
                 // create the notification event
