@@ -5,6 +5,6 @@ package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferDatabaseOpenErrorException extends TCStatisticsBufferException {
   public TCStatisticsBufferDatabaseOpenErrorException(final Throwable cause) {
-    super("Unexpected error while opening the H2 database.", cause);
+    super("Unexpected error while opening the buffer database.", cause);
   }
 }
