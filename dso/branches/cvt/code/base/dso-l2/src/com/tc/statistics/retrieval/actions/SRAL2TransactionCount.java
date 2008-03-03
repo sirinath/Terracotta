@@ -17,11 +17,11 @@ public class SRAL2TransactionCount implements StatisticRetrievalAction {
 
   public final static String ACTION_NAME = "l2 transaction count";
 
-  private final SampledCounter counter;
+  private final SampledCounter txnCounter;
 
   public SRAL2TransactionCount(DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
-    counter = serverStats.getTransactionCounter();
+    txnCounter = serverStats.getTransactionCounter();
   }
 
   public String getName() {
@@ -33,7 +33,7 @@ public class SRAL2TransactionCount implements StatisticRetrievalAction {
   }
 
   public StatisticData[] retrieveStatisticData() {
-    TimeStampedCounterValue value = counter.getMostRecentSample();
+    TimeStampedCounterValue value = txnCounter.getMostRecentSample();
     // todo: this might have to be changed into new Date(value.getTimestamp()),
     // which is when the actual sampling occurred, we use the 'now' timestamp at
     // the moment to make sure that the statistic data retrieval arrives in order.

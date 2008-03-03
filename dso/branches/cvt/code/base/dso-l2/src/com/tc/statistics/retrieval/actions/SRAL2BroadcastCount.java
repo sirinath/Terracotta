@@ -17,11 +17,11 @@ public class SRAL2BroadcastCount implements StatisticRetrievalAction {
 
   public static final String ACTION_NAME = "l2 broadcast count";
 
-  private final SampledCounter counter;
+  private final SampledCounter broadcastCounter;
 
   public SRAL2BroadcastCount(DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
-    counter = serverStats.getTransactionCounter();
+    broadcastCounter = serverStats.getBroadcastCounter();
   }
 
   public String getName() {
@@ -33,7 +33,7 @@ public class SRAL2BroadcastCount implements StatisticRetrievalAction {
   }
 
   public StatisticData[] retrieveStatisticData() {
-    TimeStampedCounterValue value = counter.getMostRecentSample();
+    TimeStampedCounterValue value = broadcastCounter.getMostRecentSample();
     // todo: this might have to be changed into new Date(value.getTimestamp()),
     // which is when the actual sampling occurred, we use the 'now' timestamp at
     // the moment to make sure that the statistic data retrieval arrives in order.
