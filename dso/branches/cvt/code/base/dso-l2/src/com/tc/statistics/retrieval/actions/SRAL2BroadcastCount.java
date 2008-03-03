@@ -3,32 +3,31 @@
  */
 package com.tc.statistics.retrieval.actions;
 
-import com.tc.objectserver.core.api.DSOGlobalServerStats;
-import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticType;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.TimeStampedCounterValue;
+import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.util.Assert;
 
 import java.util.Date;
 
-public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
+public class SRAL2BroadcastCount implements StatisticRetrievalAction {
 
-  public final static String ACTION_NAME = "l2 l1 fault";
+  public static final String ACTION_NAME = "l2 broadcast count";
 
   private final SampledCounter counter;
-  
-  public SRAL2ToL1FaultRate(DSOGlobalServerStats serverStats) {
+
+  public SRAL2BroadcastCount(DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
-    counter = serverStats.getObjectFaultCounter();
-    Assert.assertNotNull("counter", counter);
+    counter = serverStats.getTransactionCounter();
   }
 
   public String getName() {
     return ACTION_NAME;
   }
-  
+
   public StatisticType getType() {
     return StatisticType.SNAPSHOT;
   }

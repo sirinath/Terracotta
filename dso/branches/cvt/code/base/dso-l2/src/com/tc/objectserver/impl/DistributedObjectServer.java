@@ -169,6 +169,9 @@ import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
 import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
+import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
+import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
+import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -204,7 +207,7 @@ import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
- * 
+ *
  * @author steve
  */
 public class DistributedObjectServer extends SEDA implements TCDumper {
@@ -557,6 +560,19 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     SampledCounter globalTxnCounter = (SampledCounter) sampledCounterManager
         .createCounter(new SampledCounterConfig(1, 300, true, 0L));
 
+    SampledCounter broadcastCounter = (SampledCounter)sampledCounterManager.
+      createCounter(new SampledCounterConfig(1, 300, true, 0L));
+    SampledCounter changeCounter = (SampledCounter)sampledCounterManager.
+      createCounter(new SampledCounterConfig(1, 300, true, 0L));
+
+    SampledCounter globalObjectFaultCounter = (SampledCounter)sampledCounterManager
+      .createCounter(new SampledCounterConfig(1, 300, true, 0L));
+    SampledCounter globalObjectFlushCounter = (SampledCounter)sampledCounterManager
+      .createCounter(new SampledCounterConfig(1, 300, true, 0L));
+
+    DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
+      globalTxnCounter, objMgrStats, broadcastCounter, changeCounter);
+
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
                                                                        globalTransactionIDSequence);
     ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator, transactionStore,
@@ -603,8 +619,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
-    stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, new BroadcastChangeHandler(), 1,
-                             maxStageSize);
+    stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
+      new BroadcastChangeHandler(broadcastCounter, changeCounter), 1, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
@@ -617,10 +633,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
                              maxStageSize);
     channelManager.addEventListener(channelLifeCycleHandler);
 
-    SampledCounter globalObjectFaultCounter = (SampledCounter) sampledCounterManager
-        .createCounter(new SampledCounterConfig(1, 300, true, 0L));
-    SampledCounter globalObjectFlushCounter = (SampledCounter) sampledCounterManager
-        .createCounter(new SampledCounterConfig(1, 300, true, 0L));
     Stage objectRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE,
                                                    new ManagedObjectRequestHandler(globalObjectFaultCounter,
                                                                                    globalObjectFlushCounter,
@@ -734,9 +746,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     stageManager.startAll(context);
 
-    DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
-                                                                    globalTxnCounter, objMgrStats);
-
 
     // populate the statistics retrieval registry
     populateStatisticsRetrievalRegistry(serverStats);
@@ -770,6 +779,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
       registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpuCombined");
       registry.registerActionInstance(new SRAL2TransactionCount(serverStats));
+      registry.registerActionInstance(new SRAL2BroadcastCount(serverStats));
+      registry.registerActionInstance(new SRAL2ChangesPerBroadcast(serverStats));
+      registry.registerActionInstance(new SRAL2BroadcastPerTransaction(serverStats));
     }
   }
 
@@ -917,7 +929,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     } catch (Throwable t) {
       logger.error("Error shutting down jmx server", t);
     }
-    
+
     try {
       statisticsAgentSubSystem.cleanup();
     } catch (Throwable e) {
