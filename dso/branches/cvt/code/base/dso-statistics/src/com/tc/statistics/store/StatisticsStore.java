@@ -14,6 +14,8 @@ public interface StatisticsStore {
 
   public void close() throws TCStatisticsStoreException;
 
+  public void recreateCaches() throws TCStatisticsStoreException;
+
   public void reinitialize() throws TCStatisticsStoreException;
 
   public void storeStatistic(StatisticData data) throws TCStatisticsStoreException;

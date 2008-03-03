@@ -5,6 +5,6 @@ package com.tc.statistics.buffer.exceptions;
 
 public class TCStatisticsBufferDatabaseCloseErrorException extends TCStatisticsBufferException {
   public TCStatisticsBufferDatabaseCloseErrorException(final Throwable cause) {
-    super("Unexpected error while closing the H2 database.", cause);
+    super("Unexpected error while closing the buffer database.", cause);
   }
 }

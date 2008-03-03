@@ -5,6 +5,6 @@ package com.tc.statistics.store.exceptions;
 
 public class TCStatisticsStoreOpenErrorException extends TCStatisticsStoreException {
   public TCStatisticsStoreOpenErrorException(final Throwable cause) {
-    super("Unexpected error while opening the H2 database.", cause);
+    super("Unexpected error while opening the store database.", cause);
   }
 }

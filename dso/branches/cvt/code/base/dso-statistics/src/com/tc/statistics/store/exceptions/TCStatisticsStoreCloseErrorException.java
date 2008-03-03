@@ -5,6 +5,6 @@ package com.tc.statistics.store.exceptions;
 
 public class TCStatisticsStoreCloseErrorException extends TCStatisticsStoreException {
   public TCStatisticsStoreCloseErrorException(final Throwable cause) {
-    super("Unexpected error while closing the H2 database.", cause);
+    super("Unexpected error while closing the store database.", cause);
   }
 }

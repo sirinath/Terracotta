@@ -30,6 +30,7 @@ import com.tc.statistics.store.exceptions.TCStatisticsStoreRetrievalErrorExcepti
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSessionIdsRetrievalErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
+import com.tc.statistics.store.exceptions.TCStatisticsStoreCacheCreationErrorException;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.FileLockGuard;
 
@@ -51,13 +52,13 @@ import java.util.List;
 import java.util.Set;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
-  public final static int DATABASE_STRUCTURE_VERSION = 4;
+  public final static int DATABASE_STRUCTURE_VERSION = 5;
   
   public final static String H2_URL_SUFFIX = "statistics-store";
 
   private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 16124506L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 3035608895L;
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
@@ -175,11 +176,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "datatimestamp TIMESTAMP NULL, " +
                 "datadecimal DECIMAL(8, 4) NULL)");
 
-            JdbcHelper.executeUpdate(database.getConnection(),
-              "CREATE VIEW IF NOT EXISTS statisticlogstructure AS " +
-                "SELECT sessionid, agentip, agentdifferentiator, statname, statelement " +
-                  "FROM statisticlog " +
-                  "GROUP BY sessionid, agentip, agentdifferentiator, statname, statelement");
+            recreateCachedStatisticsStructureTable();
 
             createStatisticLogIndexes();
 
@@ -197,6 +194,25 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (Exception e) {
       throw new TCStatisticsStoreInstallationErrorException(e);
     }
+  }
+
+  public void recreateCaches() throws TCStatisticsStoreException {
+    try {
+      recreateCachedStatisticsStructureTable();
+    } catch (SQLException e) {
+      throw new TCStatisticsStoreCacheCreationErrorException(e);
+    }
+  }
+
+  private void recreateCachedStatisticsStructureTable() throws SQLException {
+    JdbcHelper.executeUpdate(database.getConnection(),
+      "DROP TABLE IF EXISTS cachedstatlogstructure");
+    
+    JdbcHelper.executeUpdate(database.getConnection(),
+      "CREATE TABLE IF NOT EXISTS cachedstatlogstructure AS " +
+        "SELECT sessionid, agentip, agentdifferentiator, statname, statelement " +
+          "FROM statisticlog " +
+          "GROUP BY sessionid, agentip, agentdifferentiator, statname, statelement");
   }
 
   private void createStatisticLogIndexes() throws SQLException {
@@ -337,93 +353,99 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       listener.started();
     }
 
-    final PreparedStatement ps_insert;
-    try {
-      ps_insert = database.getConnection().prepareStatement(SQL_INSERT_STATISTICSDATA);
-    } catch (SQLException e) {
-      throw new TCStatisticsStoreException("Error while preparing SQL statement '" + SQL_INSERT_STATISTICSDATA + "'.", e);
-    }
-
     long count = 0L;
     final BufferedReader buffered_reader = new BufferedReader(reader);
     boolean first_line = true;
     String line;
 
+    PreparedStatement ps_insert = null;
     try {
-      dropStatisticLogIndexes();
-    } catch (SQLException e) {
-      throw new TCStatisticsStoreException("Error dropping the statistic log indexes.", e);
-    }
+      ps_insert = database.getConnection().prepareStatement(SQL_INSERT_STATISTICSDATA);
 
-    try {
-      database.getConnection().setAutoCommit(false);
+
       try {
-        while ((line = buffered_reader.readLine()) != null) {
-          if (first_line) {
-            first_line = false;
-            continue;
-          }
+        dropStatisticLogIndexes();
 
-          final StatisticData data = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, line);
-          if (data != null) {
-            ps_insert.clearParameters();
+        try {
+          database.getConnection().setAutoCommit(false);
+          try {
+            while ((line = buffered_reader.readLine()) != null) {
+              if (first_line) {
+                first_line = false;
+                continue;
+              }
 
-            final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
-            setStatisticDataParameters(ps_insert, id, data);
-            ps_insert.addBatch();
-            count++;
+              final StatisticData data = StatisticData.newInstanceFromCsvLine(StatisticData.CURRENT_CSV_VERSION, line);
+              if (data != null) {
+                ps_insert.clearParameters();
 
-            // notify about every 1000 inserts
+                final long id = JdbcHelper.fetchNextSequenceValue(database.getPreparedStatement(SQL_NEXT_STATISTICLOGID));
+                setStatisticDataParameters(ps_insert, id, data);
+                ps_insert.addBatch();
+                count++;
+
+                // notify about every 1000 inserts
+                if (listener != null &&
+                    0 == count % 1000) {
+                  listener.imported(count);
+                }
+
+                // execute every 5000 inserts in batch
+                if (0 == count % 5000) {
+                  ps_insert.executeBatch();
+                }
+
+                // commit every 50000 entries
+                if (0 == count % 50000) {
+                  database.getConnection().commit();
+                }
+              } else {
+                logger.warn("CSV line couldn't be parsed: " + line);
+              }
+            }
+
+            // excute the remaining batch inserts
+            ps_insert.executeBatch();
             if (listener != null &&
-                0 == count % 1000) {
+                count % 1000 != 0) {
               listener.imported(count);
             }
-
-            // execute every 5000 inserts in batch
-            if (0 == count % 5000) {
-              ps_insert.executeBatch();
-            }
-
-            // commit every 50000 entries
-            if (0 == count % 50000) {
-              database.getConnection().commit();
-            }
-          } else {
-            logger.warn("CSV line couldn't be parsed: " + line);
+          } catch (IOException e) {
+            throw new TCStatisticsStoreException("Error while reading text.", e);
+          } catch (ParseException e) {
+            throw new TCStatisticsStoreException("Error while converting from CSV.", e);
+          } finally {
+            database.getConnection().setAutoCommit(true);
           }
+        } catch (SQLException e) {
+          throw new TCStatisticsStoreException("Error while starting the transaction.", e);
         }
-
-        // excute the remaining batch inserts
-        ps_insert.executeBatch();
-        if (listener != null &&
-            count % 1000 != 0) {
-          listener.imported(count);
-        }
-      } catch (IOException e) {
-        throw new TCStatisticsStoreException("Error while reading text.", e);
-      } catch (ParseException e) {
-        throw new TCStatisticsStoreException("Error while converting from CSV.", e);
-      } finally {
-        database.getConnection().setAutoCommit(true);
-      }
-    } catch (SQLException e) {
-      throw new TCStatisticsStoreException("Error while starting the transaction.", e);
-    } finally {
-      if (listener != null) {
-        listener.optimizing();
-      }
-
-      try {
-        createStatisticLogIndexes();
       } catch (SQLException e) {
-        logger.warn("Couldn't re-create the statistic log indexes.", e);
+        throw new TCStatisticsStoreException("Error dropping the statistic log indexes.", e);
+      } finally {
+        if (listener != null) {
+          listener.optimizing();
+        }
+
+        try {
+          createStatisticLogIndexes();
+        } catch (SQLException e) {
+          logger.warn("Couldn't re-create the statistic log indexes.", e);
+        }
       }
 
+    } catch (SQLException e) {
+      throw new TCStatisticsStoreException("Error while preparing SQL statement '" + SQL_INSERT_STATISTICSDATA + "'.", e);
+    } finally {
       try {
-        ps_insert.close();
+        if (ps_insert != null) {
+          ps_insert.close();
+        }
       } catch (SQLException e) {
         logger.warn("Couldn't close the prepared statement for SQL '" + SQL_INSERT_STATISTICSDATA + "'.", e);
       }
+
+      recreateCaches();
     }
 
     if (listener != null) {
