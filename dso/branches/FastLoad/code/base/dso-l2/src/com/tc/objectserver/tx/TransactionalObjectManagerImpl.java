@@ -16,13 +16,16 @@ import com.tc.objectserver.context.ApplyTransactionContext;
 import com.tc.objectserver.context.CommitTransactionContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RecallObjectsContext;
+import com.tc.objectserver.context.TransactionLookupContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,7 +42,7 @@ import java.util.Map.Entry;
  * This class keeps track of locally checked out objects for applys and maintain the objects to txnid mapping in the
  * server. It wraps calls going to object manager from lookup, apply, commit stages
  */
-public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
+public class TransactionalObjectManagerImpl implements TransactionalObjectManager {
 
   private static final TCLogger                logger                  = TCLogging
                                                                            .getLogger(TransactionalObjectManagerImpl.class);
@@ -76,35 +79,41 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   // ProcessTransactionHandler Method
   public void addTransactions(Collection txns) {
-    createAndPreFetchObjectsFor(txns);
-    sequencer.addTransactions(txns);
+    Collection txnLookupContexts = createAndPreFetchObjectsFor(txns);
+    sequencer.addTransactionLookupContexts(txnLookupContexts);
     txnStageCoordinator.initiateLookup();
   }
 
-  private void createAndPreFetchObjectsFor(Collection txns) {
+  private Collection createAndPreFetchObjectsFor(Collection txns) {
+    List lookupContexts  = new ArrayList(txns.size());
     Set oids = new HashSet(txns.size() * 10);
     Set newOids = new HashSet(txns.size() * 10);
     for (Iterator i = txns.iterator(); i.hasNext();) {
       ServerTransaction txn = (ServerTransaction) i.next();
-      newOids.addAll(txn.getNewObjectIDs());
-      for (Iterator j = txn.getObjectIDs().iterator(); j.hasNext();) {
-        ObjectID oid = (ObjectID) j.next();
-        if (!newOids.contains(oid)) {
-          oids.add(oid);
+      boolean initiateApply = gtxm.initiateApply(txn.getServerTransactionID());
+      if (initiateApply) {
+        newOids.addAll(txn.getNewObjectIDs());
+        for (Iterator j = txn.getObjectIDs().iterator(); j.hasNext();) {
+          ObjectID oid = (ObjectID) j.next();
+          if (!newOids.contains(oid)) {
+            oids.add(oid);
+          }
         }
       }
+      lookupContexts.add(new TransactionLookupContext(txn, initiateApply));
     }
     objectManager.preFetchObjectsAndCreate(oids, newOids);
+    return lookupContexts;
   }
 
   // LookupHandler Method
   public void lookupObjectsForTransactions() {
     processPendingIfNecessary();
     while (true) {
-      ServerTransaction txn = sequencer.getNextTxnToProcess();
-      if (txn == null) break;
-      ServerTransactionID stxID = txn.getServerTransactionID();
-      if (gtxm.initiateApply(stxID)) {
+      TransactionLookupContext lookupContext = sequencer.getNextTxnLookupContextToProcess();
+      if (lookupContext == null) break;
+      ServerTransaction txn = lookupContext.getTransaction();
+      if (lookupContext.initiateApply()) {
         lookupObjectsForApplyAndAddToSink(txn);
       } else {
         // These txns are already applied, hence just sending it to the next stage.
@@ -390,10 +399,25 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     }
   }
 
-  public void dump() {
-    PrintWriter pw = new PrintWriter(System.err);
-    new PrettyPrinter(pw).visit(this);
+ 
+  public String dump() {
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
+  }
+  
+  
+
+  public void dump(Writer writer) {
+    PrintWriter pw = new PrintWriter(writer);
+    pw.write(dump());
     pw.flush();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
   }
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
