@@ -17,11 +17,9 @@ import javax.management.NotificationListener;
 class StoreDataListener implements NotificationListener {
   public void handleNotification(final Notification notification, final Object o) {
     List data = (List)notification.getUserData();
-    System.out.println("StoreDataListener : "+data.size()+ " : "+data);
     try {
       for (Iterator it = data.iterator(); it.hasNext(); ) {
         StatisticData stat_data = (StatisticData)it.next();
-        System.out.println("StoreDataListener : "+stat_data);
         ((StatisticsStore)o).storeStatistic(stat_data);
       }
     } catch (TCStatisticsStoreException e) {
