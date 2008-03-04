@@ -16,43 +16,43 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
-import com.tc.util.Assert;
 import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.SyncObjectIdSet;
 
 import java.util.Set;
 
-public class OriginalOidBitsArrayMapManager extends SleepycatPersistorBase implements OidBitsArrayMapManager {
-  private static final TCLogger                logger = TCLogging
-                                                          .getTestingLogger(OriginalOidBitsArrayMapManager.class);
+public class ObjectIDManagerPlainImpl extends SleepycatPersistorBase implements ObjectIDManager {
+  private static final TCLogger                logger = TCLogging.getTestingLogger(ObjectIDManagerPlainImpl.class);
 
   private final Database                       objectDB;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   dBCursorConfig;
-  private final boolean                        paranoid;
 
-  public OriginalOidBitsArrayMapManager(boolean paranoid, Database objectDB,
-                                        PersistenceTransactionProvider ptp, CursorConfig dBCursorConfig) {
+  public ObjectIDManagerPlainImpl(Database objectDB, PersistenceTransactionProvider ptp,
+                                  CursorConfig dBCursorConfig) {
     this.objectDB = objectDB;
-    this.paranoid = paranoid;
     this.ptp = ptp;
     this.dBCursorConfig = dBCursorConfig;
   }
 
-  public Thread objectIDReaderThread(SyncObjectIdSet rv) {
-    return new Thread(new ObjectIdReader(rv), "ObjectIdReaderThread");
+  public Runnable getObjectIDReader(SyncObjectIdSet rv) {
+    return new ObjectIdReader(rv);
   }
 
-  public OperationStatus oidDeleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
+  public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
 
-  public OperationStatus oidPut(PersistenceTransaction tx, ObjectID objectID) {
+  public OperationStatus put(PersistenceTransaction tx, ObjectID objectID) {
     return OperationStatus.SUCCESS;
   }
 
-  public OperationStatus oidPutAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
+  public void prePutAll(Set<ObjectID> oidSet, ObjectID objectID) {
+    return;
+  }
+
+  public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
 
@@ -67,8 +67,6 @@ public class OriginalOidBitsArrayMapManager extends SleepycatPersistorBase imple
     }
 
     public void run() {
-      Assert.assertTrue("Shall be in persistent mode to refresh Object IDs at startup", paranoid);
-
       ObjectIDSet2 tmp = new ObjectIDSet2();
       PersistenceTransaction tx = null;
       Cursor cursor = null;
