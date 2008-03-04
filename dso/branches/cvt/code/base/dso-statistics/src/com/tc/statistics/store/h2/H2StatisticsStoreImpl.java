@@ -500,8 +500,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       if (sql_where.size() > 0) {
         sql.append(" WHERE ");
         boolean first = true;
-        Iterator it = sql_where.iterator();
-        while (it.hasNext()) {
+        for (Iterator it = sql_where.iterator(); it.hasNext(); ) {
           if (first) {
             first = false;
           } else {
@@ -531,14 +530,12 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             statement.setTimestamp(param++, new Timestamp(criteria.getStop().getTime()));
           }
           if (criteria.getNames().size() > 0) {
-            Iterator it = criteria.getNames().iterator();
-            while (it.hasNext()) {
+            for (Iterator it = criteria.getNames().iterator(); it.hasNext(); ) {
               statement.setString(param++, (String)it.next());
             }
           }
           if (criteria.getElements().size() > 0) {
-            Iterator it = criteria.getElements().iterator();
-            while (it.hasNext()) {
+            for (Iterator it = criteria.getElements().iterator(); it.hasNext(); ) {
               statement.setString(param++, (String)it.next());
             }
           }
@@ -582,8 +579,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
 
     String[] result_array = new String[results.size()];
     int i = 0;
-    Iterator it = results.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = results.iterator(); it.hasNext(); ) {
       result_array[i++] = (String)it.next();
     }
 
@@ -636,29 +632,25 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   }
 
   private void fireOpened() {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsStoreListener)it.next()).opened();
     }
   }
 
   private void fireClosed() {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsStoreListener)it.next()).closed();
     }
   }
 
   private void fireSessionCleared(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsStoreListener)it.next()).sessionCleared(sessionId);
     }
   }
 
   private void fireAllSessionsCleared() {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsStoreListener)it.next()).allSessionsCleared();
     }
   }

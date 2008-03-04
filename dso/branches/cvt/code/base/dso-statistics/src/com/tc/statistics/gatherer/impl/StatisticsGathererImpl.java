@@ -309,50 +309,43 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   }
 
   private void fireConnected(final String managerHostName, final int managerPort) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).connected(managerHostName, managerPort);
     }
   }
 
   private void fireDisconnected() {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).disconnected();
     }
   }
 
   private void fireReinitialized() {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).reinitialized();
     }
   }
 
   private void fireCapturingStarted(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).capturingStarted(sessionId);
     }
   }
 
   private void fireCapturingStopped(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).capturingStopped(sessionId);
     }
   }
 
   private void fireSessionCreated(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).sessionCreated(sessionId);
     }
   }
 
   private void fireSessionClosed(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsGathererListener)it.next()).sessionClosed(sessionId);
     }
   }

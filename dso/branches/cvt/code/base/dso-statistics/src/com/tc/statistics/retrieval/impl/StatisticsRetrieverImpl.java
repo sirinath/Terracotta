@@ -57,8 +57,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();
-    Iterator types_it = StatisticType.getAllTypes().iterator();
-    while (types_it.hasNext()) {
+    for (Iterator types_it = StatisticType.getAllTypes().iterator(); types_it.hasNext(); ) {
       StatisticType type = (StatisticType)types_it.next();
       actions_map_construction.put(type, new CopyOnWriteArrayList());
     }
@@ -112,8 +111,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   private void retrieveStartupStatistics() {
     List action_list = (List)actionsMap.get(StatisticType.STARTUP);
     Assert.assertNotNull("list of startup actions", action_list);
-    Iterator actions_it = action_list.iterator();
-    while (actions_it.hasNext()) {
+    for (Iterator actions_it = action_list.iterator(); actions_it.hasNext(); ) {
       retrieveAction((StatisticRetrievalAction)actions_it.next());
     }
   }
@@ -169,8 +167,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     public void run() {
       List action_list = (List)actionsMap.get(StatisticType.SNAPSHOT);
       Assert.assertNotNull("list of snapshot actions", action_list);
-      Iterator actions_it = action_list.iterator();
-      while (actions_it.hasNext()) {
+      for (Iterator actions_it = action_list.iterator(); actions_it.hasNext(); ) {
         retrieveAction((StatisticRetrievalAction)actions_it.next());
       }
     }

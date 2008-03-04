@@ -545,15 +545,13 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   }
 
   private void fireCapturingStarted(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
     }
   }
 
   private void fireCapturingStopped(final String sessionId) {
-    Iterator it = listeners.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
       ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
     }
   }

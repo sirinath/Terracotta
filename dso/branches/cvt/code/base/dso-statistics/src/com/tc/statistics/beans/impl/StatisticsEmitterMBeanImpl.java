@@ -110,8 +110,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
       boolean has_listeners = hasListeners();
       if (has_listeners
           && !activeSessionIds.isEmpty()) {
-        Iterator it = activeSessionIds.iterator();
-        while (it.hasNext()) {
+        for (Iterator it = activeSessionIds.iterator(); it.hasNext(); ) {
           try {
             // todo: needs to support sending in batches and deferring sending until the capturing session shutdown
             buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {

@@ -54,8 +54,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     disable();
 
     Set session_ids = retrieverMap.keySet();
-    Iterator it = session_ids.iterator();
-    while (it.hasNext()) {
+    for (Iterator it = session_ids.iterator(); it.hasNext(); ) {
       stopCapturing((String)it.next());
     }
 
