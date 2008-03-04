@@ -71,9 +71,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
 
   public String[] getSupportedStatistics() {
     Collection stats = registry.getSupportedStatistics();
-    String[] statistics = new String[stats.size()];
-    stats.toArray(statistics);
-    return statistics;
+    return (String[])stats.toArray(new String[stats.size()]);
   }
 
   public synchronized void createSession(final String sessionId) {

@@ -577,13 +577,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       throw new TCStatisticsStoreSessionIdsRetrievalErrorException(e);
     }
 
-    String[] result_array = new String[results.size()];
-    int i = 0;
-    for (Iterator it = results.iterator(); it.hasNext(); ) {
-      result_array[i++] = (String)it.next();
-    }
-
-    return result_array;
+    return (String[])results.toArray(new String[results.size()]);
   }
 
   public void clearStatistics(final String sessionId) throws TCStatisticsStoreException {

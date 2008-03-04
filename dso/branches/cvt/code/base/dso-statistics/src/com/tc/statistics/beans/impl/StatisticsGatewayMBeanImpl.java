@@ -118,10 +118,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       }
     }
 
-    String[] result = new String[combinedStats.size()];
-    combinedStats.toArray(result);
-
-    return result;
+    return (String[])combinedStats.toArray(new String[combinedStats.size()]);
   }
 
   public void createSession(final String sessionId) {

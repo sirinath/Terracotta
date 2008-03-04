@@ -11,8 +11,8 @@ import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotFoundExcepti
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStatementPreparationErrorException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStoreVersionErrorException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedError;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedError;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseVersionCheckErrorException;
 import com.tc.statistics.jdbc.ChecksumCalculator;
 import com.tc.statistics.jdbc.JdbcHelper;
@@ -119,9 +119,9 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
           storeCurrentVersion(currentVersion);
         } else {
           if (version[0].intValue() < currentVersion) {
-            throw new TCStatisticsDatabaseStructureOutdatedException(version[0].intValue(), currentVersion, created[0]);
+            throw new TCStatisticsDatabaseStructureOutdatedError(version[0].intValue(), currentVersion, created[0]);
           } else if (version[0].intValue() > currentVersion) {
-            throw new TCStatisticsDatabaseStructureFuturedatedException(version[0].intValue(), currentVersion, created[0]);
+            throw new TCStatisticsDatabaseStructureFuturedatedError(version[0].intValue(), currentVersion, created[0]);
           }
         }
 
