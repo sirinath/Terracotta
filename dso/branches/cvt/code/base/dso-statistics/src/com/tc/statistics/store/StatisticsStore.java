@@ -20,7 +20,7 @@ public interface StatisticsStore {
 
   public void storeStatistic(StatisticData data) throws TCStatisticsStoreException;
 
-  public void retrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticsConsumer consumer) throws TCStatisticsStoreException;
+  public void retrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticDataUser user) throws TCStatisticsStoreException;
 
   public String[] getAvailableSessionIds() throws TCStatisticsStoreException;
 

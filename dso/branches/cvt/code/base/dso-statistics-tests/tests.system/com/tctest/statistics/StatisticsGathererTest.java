@@ -4,12 +4,12 @@
 package com.tctest.statistics;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.gatherer.StatisticsGatherer;
 import com.tc.statistics.gatherer.StatisticsGathererListener;
 import com.tc.statistics.gatherer.impl.StatisticsGathererImpl;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
@@ -118,8 +118,8 @@ public class StatisticsGathererTest extends TransparentTestBase implements Stati
     Thread.sleep(5000);
 
     final List data_list = new ArrayList();
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         data_list.add(data);
         return true;
       }

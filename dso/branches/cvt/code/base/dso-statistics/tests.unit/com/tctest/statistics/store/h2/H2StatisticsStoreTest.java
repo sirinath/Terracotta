@@ -4,16 +4,16 @@
 package com.tctest.statistics.store.h2;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedError;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedError;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
-import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.StatisticsStoreImportListener;
+import com.tc.statistics.store.StatisticsStoreListener;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
 import com.tc.test.TempDirectoryHelper;
@@ -238,8 +238,8 @@ public class H2StatisticsStoreTest extends TestCase {
     store.reinitialize();
 
     final int[] count = new int[] {0};
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         count[0]++;
         return true;
       }
@@ -256,8 +256,8 @@ public class H2StatisticsStoreTest extends TestCase {
       .name("the stat")
       .data("stuff"));
     count[0] = 0;
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         count[0]++;
         return true;
       }
@@ -271,8 +271,8 @@ public class H2StatisticsStoreTest extends TestCase {
       .name("the stat")
       .data("stuff2"));
     count[0] = 0;
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         count[0]++;
         return true;
       }
@@ -286,8 +286,8 @@ public class H2StatisticsStoreTest extends TestCase {
       .name("the stat 2")
       .data("stuff3"));
     count[0] = 0;
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         count[0]++;
         return true;
       }
@@ -482,32 +482,32 @@ public class H2StatisticsStoreTest extends TestCase {
       .name("the stat")
       .data(new BigDecimal("6828.577")));
 
-    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid1"), new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid1"), new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof String);
           assertEquals("string", data.getData());
           return true;
         }
       });
 
-    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid2"), new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid2"), new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof Date);
           assertEquals(date_data, data.getData());
           return true;
         }
       });
 
-    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid3"), new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid3"), new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof Long);
           assertEquals(new Long(28756L), data.getData());
           return true;
         }
       });
 
-    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid4"), new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria().sessionId("sessionid4"), new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof BigDecimal);
           assertEquals(0, new BigDecimal("6828.577").compareTo((BigDecimal)data.getData()));
           return true;
@@ -618,8 +618,8 @@ public class H2StatisticsStoreTest extends TestCase {
     final int[] count_before = new int[] {0};
 
     final StringBuffer csv_buffer = new StringBuffer(StatisticData.CURRENT_CSV_HEADER);
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         txt_buffer_before.append(data.toString());
         txt_buffer_before.append("\n");
         csv_buffer.append(data.toCsv());
@@ -630,8 +630,8 @@ public class H2StatisticsStoreTest extends TestCase {
 
     store.reinitialize();
 
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         fail("The store should be empty.");
         return true;
       }
@@ -668,8 +668,8 @@ public class H2StatisticsStoreTest extends TestCase {
 
     final StringBuffer txt_buffer_after = new StringBuffer();
     final int[] count_after = new int[] {0};
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         txt_buffer_after.append(data.toString());
         txt_buffer_after.append("\n");
         count_after[0]++;
@@ -720,7 +720,7 @@ public class H2StatisticsStoreTest extends TestCase {
     }
   }
 
-  private class TestStaticticConsumer implements StatisticsConsumer {
+  private class TestStaticticConsumer implements StatisticDataUser {
     private int statCount1 = 0;
     private int statCount2 = 0;
 
@@ -746,7 +746,7 @@ public class H2StatisticsStoreTest extends TestCase {
       return this;
     }
 
-    public boolean consumeStatisticData(StatisticData data) {
+    public boolean useStatisticData(StatisticData data) {
       StatisticData previous = (StatisticData)lastDataPerSession.get(data.getSessionId());
       if (previous != null) {
         assertTrue(previous.getMoment().compareTo(data.getMoment()) <= 0);

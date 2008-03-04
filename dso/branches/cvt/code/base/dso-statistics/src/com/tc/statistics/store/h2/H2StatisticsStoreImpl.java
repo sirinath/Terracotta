@@ -8,7 +8,6 @@ import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
@@ -20,6 +19,7 @@ import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.StatisticsStoreImportListener;
 import com.tc.statistics.store.StatisticsStoreListener;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearAllStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
@@ -453,7 +453,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public void retrieveStatistics(final StatisticsRetrievalCriteria criteria, final StatisticsConsumer consumer) throws TCStatisticsStoreException {
+  public void retrieveStatistics(final StatisticsRetrievalCriteria criteria, final StatisticDataUser user) throws TCStatisticsStoreException {
     Assert.assertNotNull("criteria", criteria);
 
     try {
@@ -546,7 +546,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             StatisticData data = database.getStatisticsData(resultSet.getString("sessionid"), resultSet);
 
             // consume the data
-            if (!consumer.consumeStatisticData(data)) {
+            if (!user.useStatisticData(data)) {
               return;
             }
           }

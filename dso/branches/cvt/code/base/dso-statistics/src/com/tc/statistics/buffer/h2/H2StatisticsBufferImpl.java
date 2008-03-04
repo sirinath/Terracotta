@@ -17,12 +17,12 @@ import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferInstallationErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferSetupErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingErrorException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingSessionNotFoundException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticConsumptionErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStatisticStorageErrorException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingErrorException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferUnknownCaptureSessionException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingSessionNotFoundException;
 import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingSessionNotFoundException;
+import com.tc.statistics.buffer.exceptions.TCStatisticsBufferUnknownCaptureSessionException;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.database.StatisticsDatabase;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
@@ -68,6 +68,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private static final String SQL_CREATE_CAPTURESESSION = "INSERT INTO capturesession (localsessionid, clustersessionid) VALUES (?, ?)";
   private static final String SQL_START_CAPTURESESSION = "UPDATE capturesession SET start = ? WHERE clustersessionid = ? AND start IS NULL";
   private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, localsessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  private static final String SQL_MARK_FOR_CONSUMPTION_LIMIT = "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ? AND id IN (SELECT id FROM statisticlog ORDER BY moment LIMIT ?)";
   private static final String SQL_MARK_FOR_CONSUMPTION = "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ?";
   private static final String SQL_CONSUME_STATISTICDATA = "SELECT * FROM statisticlog WHERE consumptionid = ? ORDER BY moment ASC, id ASC";
   private static final String SQL_RESET_CONSUMPTIONID = "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?";
@@ -482,10 +483,14 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
 
       // reserve all existing statistic data with the provided session ID
       // for the consumption ID
-      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), SQL_MARK_FOR_CONSUMPTION, new PreparedStatementHandler() {
+      final boolean limit_consumption = consumer.getMaximumConsumedDataCount() > 0;
+      final int row_count = JdbcHelper.executeUpdate(database.getConnection(), limit_consumption ? SQL_MARK_FOR_CONSUMPTION_LIMIT : SQL_MARK_FOR_CONSUMPTION, new PreparedStatementHandler() {
         public void setParameters(PreparedStatement statement) throws SQLException {
           statement.setLong(1, consumption_id);
           statement.setLong(2, local_sessionid);
+          if (limit_consumption) {
+            statement.setLong(3, consumer.getMaximumConsumedDataCount());
+          }
         }
       });
 

@@ -24,12 +24,12 @@ import org.jfree.data.xy.XYDataset;
 
 import com.tc.admin.common.DemoChartFactory;
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.ResultSetHandler;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStoreImportListener;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
@@ -846,8 +846,8 @@ public class ClusterVisualizerFrame extends JFrame {
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
-      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           fMax = (Long) sd.getData();
           return false;
         }
@@ -859,8 +859,8 @@ public class ClusterVisualizerFrame extends JFrame {
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
-      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           Long value = (Long) sd.getData();
           Date moment = sd.getMoment();
           double d = (value / ((double) fMax));
@@ -897,8 +897,8 @@ public class ClusterVisualizerFrame extends JFrame {
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
-      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           Number value = (Number) sd.getData();
           Date moment = sd.getMoment();
           series.addOrUpdate(new Second(moment), value.doubleValue());
@@ -934,8 +934,8 @@ public class ClusterVisualizerFrame extends JFrame {
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
-      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           Long value = (Long) sd.getData();
           Date moment = sd.getMoment();
           series.addOrUpdate(new Second(moment), value);
@@ -969,8 +969,8 @@ public class ClusterVisualizerFrame extends JFrame {
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
-      safeRetrieveStatistics(criteria, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           Long value = (Long) sd.getData();
           Date moment = sd.getMoment();
           series.addOrUpdate(new Second(moment), value);
@@ -1000,7 +1000,7 @@ public class ClusterVisualizerFrame extends JFrame {
     return fStatHandlerMap.get(stat);
   }
 
-  void safeRetrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticsConsumer consumer) {
+  void safeRetrieveStatistics(StatisticsRetrievalCriteria criteria, StatisticDataUser consumer) {
     try {
       fStore.retrieveStatistics(criteria, consumer);
     } catch (Exception e) {
@@ -1212,8 +1212,8 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
       StatisticsRetrievalCriteria critera = new StatisticsRetrievalCriteria();
       critera.addName("startup timestamp");
       critera.setSessionId(id);
-      retrieveStatistics(critera, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      retrieveStatistics(critera, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           sessionInfo.fStart = sd.getMoment();
           return false;
         }
@@ -1221,8 +1221,8 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
       critera = new StatisticsRetrievalCriteria();
       critera.addName("shutdown timestamp");
       critera.setSessionId(id);
-      retrieveStatistics(critera, new StatisticsConsumer() {
-        public boolean consumeStatisticData(StatisticData sd) {
+      retrieveStatistics(critera, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
           sessionInfo.fEnd = sd.getMoment();
           return false;
         }

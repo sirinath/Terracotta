@@ -275,6 +275,7 @@ public class H2StatisticsBufferTest extends TestCase {
     buffer.createCaptureSession("someid1");
     final int[] count = new int[] {0};
     buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() { return -1;}
       public boolean consumeStatisticData(StatisticData data) {
         count[0]++;
         return true;
@@ -297,6 +298,7 @@ public class H2StatisticsBufferTest extends TestCase {
       .data("stuff"));
     count[0] = 0;
     buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() { return -1;}
       public boolean consumeStatisticData(StatisticData data) {
         count[0]++;
         return true;
@@ -313,6 +315,7 @@ public class H2StatisticsBufferTest extends TestCase {
       .data("stuff2"));
     count[0] = 0;
     buffer.consumeStatistics("someid1", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() { return -1;}
       public boolean consumeStatisticData(StatisticData data) {
         count[0]++;
         return true;
@@ -331,6 +334,7 @@ public class H2StatisticsBufferTest extends TestCase {
       .data("stuff3"));
     count[0] = 0;
     buffer.consumeStatistics("someid2", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() { return -1;}
       public boolean consumeStatisticData(StatisticData data) {
         count[0]++;
         return true;
@@ -390,6 +394,26 @@ public class H2StatisticsBufferTest extends TestCase {
     TestStaticticConsumer consumer4 = new TestStaticticConsumer();
     buffer.consumeStatistics("sessionid2", consumer4);
     consumer4.ensureCorrectCounts(0, 0);
+  }
+
+  public void testConsumeStatisticsLimit() throws Exception {
+    buffer.createCaptureSession("sessionid1");
+    buffer.createCaptureSession("sessionid2");
+    populateBufferWithStatistics("sessionid1", "sessionid2");
+
+    final int[] count = new int[] {0};
+    buffer.consumeStatistics("sessionid1", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() {
+        return 20;
+      }
+
+      public boolean consumeStatisticData(StatisticData data) {
+        count[0]++;
+        return true;
+      }
+    });
+
+    assertEquals(20, count[0]);
   }
 
   public void testConsumeStatisticsInterruptions() throws Exception {
@@ -496,6 +520,7 @@ public class H2StatisticsBufferTest extends TestCase {
       .data(new BigDecimal("6828.577")));
 
     buffer.consumeStatistics("sessionid1", new StatisticsConsumer() {
+        public long getMaximumConsumedDataCount() { return -1;}
         public boolean consumeStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof String);
           assertEquals("string", data.getData());
@@ -504,6 +529,7 @@ public class H2StatisticsBufferTest extends TestCase {
       });
 
     buffer.consumeStatistics("sessionid2", new StatisticsConsumer() {
+        public long getMaximumConsumedDataCount() { return -1;}
         public boolean consumeStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof Date);
           assertEquals(date_data, data.getData());
@@ -512,6 +538,7 @@ public class H2StatisticsBufferTest extends TestCase {
       });
 
     buffer.consumeStatistics("sessionid3", new StatisticsConsumer() {
+        public long getMaximumConsumedDataCount() { return -1;}
         public boolean consumeStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof Long);
           assertEquals(new Long(28756L), data.getData());
@@ -520,6 +547,7 @@ public class H2StatisticsBufferTest extends TestCase {
       });
 
     buffer.consumeStatistics("sessionid4", new StatisticsConsumer() {
+        public long getMaximumConsumedDataCount() { return -1;}
         public boolean consumeStatisticData(StatisticData data) {
           assertTrue(data.getData() instanceof BigDecimal);
           assertEquals(0, new BigDecimal("6828.577").compareTo((BigDecimal)data.getData()));
@@ -647,6 +675,7 @@ public class H2StatisticsBufferTest extends TestCase {
       return this;
     }
 
+    public long getMaximumConsumedDataCount() { return -1;}
     public boolean consumeStatisticData(StatisticData data) {
       if (data.getName().equals("stat1")) {
         if (countLimit1 > 0 &&

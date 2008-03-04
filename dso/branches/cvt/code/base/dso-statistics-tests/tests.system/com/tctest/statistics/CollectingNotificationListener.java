@@ -8,6 +8,8 @@ import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.Assert;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.management.Notification;
 import javax.management.NotificationListener;
@@ -27,14 +29,16 @@ public class CollectingNotificationListener implements NotificationListener {
   public void handleNotification(Notification notification, Object o) {
     Assert.assertTrue("Expecting notification data to be a collection", o instanceof Collection);
 
-    StatisticData data = (StatisticData)notification.getUserData();
-    ((Collection)o).add(data);
-    if (SRAShutdownTimestamp.ACTION_NAME.equals(data.getName())) {
-      synchronized (this) {
-        nodesToShutdown--;
-        if (0 == nodesToShutdown) {
-          shutdown = true;
-          this.notifyAll();
+    List data = (List)notification.getUserData();
+    ((Collection)o).addAll(data);
+    for (Iterator it = data.iterator(); it.hasNext(); ) {
+      if (SRAShutdownTimestamp.ACTION_NAME.equals(((StatisticData)it.next()).getName())) {
+        synchronized (this) {
+          nodesToShutdown--;
+          if (0 == nodesToShutdown) {
+            shutdown = true;
+            this.notifyAll();
+          }
         }
       }
     }
