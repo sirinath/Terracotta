@@ -179,8 +179,7 @@ public class StatisticsRetrievalCriteria {
     out.append("names = [");
     if (names != null && names.size() > 0) {
       boolean first = true;
-      Iterator it = names.iterator();
-      while (it.hasNext()) {
+      for (Iterator it = names.iterator(); it.hasNext(); ) {
         if (first) {
           first = false;
         } else {
@@ -194,8 +193,7 @@ public class StatisticsRetrievalCriteria {
     out.append("elements = [");
     if (elements != null && elements.size() > 0) {
       boolean first = true;
-      Iterator it = elements.iterator();
-      while (it.hasNext()) {
+      for (Iterator it = elements.iterator(); it.hasNext(); ) {
         if (first) {
           first = false;
         } else {

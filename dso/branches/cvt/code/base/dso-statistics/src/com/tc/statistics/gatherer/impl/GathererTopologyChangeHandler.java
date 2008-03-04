@@ -84,9 +84,8 @@ public class GathererTopologyChangeHandler implements TopologyChangeHandler {
 
     synchronized (globalConfigParams) {
       if (globalConfigParams.size() > 0) {
-        Iterator it = globalConfigParams.entrySet().iterator();
         Map.Entry entry;
-        while (it.hasNext()) {
+        for (Iterator it = globalConfigParams.entrySet().iterator(); it.hasNext(); ) {
           entry = (Map.Entry)it.next();
           agent.setGlobalParam((String)entry.getKey(), entry.getValue());
         }
@@ -98,9 +97,8 @@ public class GathererTopologyChangeHandler implements TopologyChangeHandler {
 
       synchronized (sessionConfigParams) {
         if (sessionConfigParams.size() > 0) {
-          Iterator it = sessionConfigParams.entrySet().iterator();
           Map.Entry entry;
-          while (it.hasNext()) {
+          for (Iterator it = sessionConfigParams.entrySet().iterator(); it.hasNext(); ) {
             entry = (Map.Entry)it.next();
             agent.setSessionParam(sessionId, (String)entry.getKey(), entry.getValue());
           }

@@ -48,8 +48,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void reinitialize() {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       ((StatisticsAgentConnection)it.next()).reinitialize();
     }
   }
@@ -85,8 +84,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     Map old_agents = agents;
     agents = new CopyOnWriteArrayMap();
 
-    Iterator it = old_agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = old_agents.values().iterator(); it.hasNext(); ) {
       try {
         ((StatisticsAgentConnection)it.next()).disconnect();
       } catch (TCStatisticsAgentConnectionException e) {
@@ -96,8 +94,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   protected void enabledStateChanged() {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (isEnabled()) {
         agent.enable();
@@ -113,8 +110,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   public String[] getSupportedStatistics() {
     Set combinedStats = new TreeSet();
 
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       String[] agentStats = agent.getSupportedStatistics();
       for (int i = 0; i < agentStats.length; i++) {
@@ -129,16 +125,14 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void createSession(final String sessionId) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.createSession(sessionId);
     }
   }
 
   public void disableAllStatistics(final String sessionId) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.disableAllStatistics(sessionId);
     }
@@ -146,8 +140,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
 
   public boolean enableStatistic(final String sessionId, final String name) {
     boolean result = false;
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.enableStatistic(sessionId, name)) {
         result = true;
@@ -159,8 +152,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   public StatisticData[] captureStatistic(final String sessionId, final String name) {
     List result_list = new ArrayList();
 
-    Iterator agent_it = agents.values().iterator();
-    while (agent_it.hasNext()) {
+    for (Iterator agent_it = agents.values().iterator(); agent_it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)agent_it.next();
       StatisticData[] data = agent.captureStatistic(sessionId, name);
       if (data != null) {
@@ -176,24 +168,21 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void startCapturing(final String sessionId) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.startCapturing(sessionId);
     }
   }
 
   public void stopCapturing(final String sessionId) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.stopCapturing(sessionId);
     }
   }
 
   public void setGlobalParam(final String key, final Object value) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.setGlobalParam(key, value);
     }
@@ -204,8 +193,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       return null;
     }
 
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.isServerAgent()) {
         return agent.getGlobalParam(key);
@@ -218,8 +206,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void setSessionParam(final String sessionId, final String key, final Object value) {
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       agent.setSessionParam(sessionId, key, value);
     }
@@ -230,8 +217,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       return null;
     }
 
-    Iterator it = agents.values().iterator();
-    while (it.hasNext()) {
+    for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       if (agent.isServerAgent()) {
         return agent.getSessionParam(sessionId, key);

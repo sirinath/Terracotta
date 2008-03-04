@@ -188,8 +188,7 @@ public abstract class AbstractStatisticsDatabase implements StatisticsDatabase {
     try {
       try {
         Set entries = preparedStatements.entrySet();
-        Iterator entries_it = entries.iterator();
-        while (entries_it.hasNext()) {
+        for (Iterator entries_it = entries.iterator(); entries_it.hasNext(); ) {
           Map.Entry entry = (Map.Entry)entries_it.next();
           PreparedStatement stmt = (PreparedStatement)entry.getValue();
           try {
