@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class StatisticData implements Serializable {
+  public final static StatisticData[] EMPTY_ARRAY = new StatisticData[0];
+
   public final static String CURRENT_CSV_VERSION = "1.0";
   public final static String CURRENT_CSV_HEADER = "Session ID,IP,Differentiator,Moment,Name,Element,Data Number,Data Text,Data Date,Data Decimal\n";
 

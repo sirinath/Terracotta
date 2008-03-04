@@ -117,6 +117,8 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
           throw new RuntimeException("Error while storing the statistic data '"+name+"' for cluster-wide ID '"+sessionId+"'.", e);
         }
       }
+    } else {
+      data = StatisticData.EMPTY_ARRAY;
     }
     return data;
   }

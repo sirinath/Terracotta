@@ -107,7 +107,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
       return statManager.captureStatistic(sessionId, name);
     } catch (RuntimeMBeanException e) {
       handleMissingSessionIdException(e, "Unable to capture the statistic '" + name + "'");
-      return null;
+      return StatisticData.EMPTY_ARRAY;
     }
   }
 
