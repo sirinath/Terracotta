@@ -6,8 +6,8 @@ package com.tctest.statistics.store.h2;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedException;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedError;
+import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedError;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
@@ -96,12 +96,10 @@ public class H2StatisticsStoreTest extends TestCase {
       try {
         store.open();
         fail("expected exception");
-      } catch (TCStatisticsStoreException e) {
-        assertTrue(e.getCause() instanceof TCStatisticsDatabaseStructureOutdatedException);
-        TCStatisticsDatabaseStructureOutdatedException cause = (TCStatisticsDatabaseStructureOutdatedException)e.getCause();
-        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION - 1, cause.getActualVersion());
-        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION, cause.getExpectedVersion());
-        assertNotNull(cause.getCreationDate());
+      } catch (TCStatisticsDatabaseStructureOutdatedError e) {
+        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION - 1, e.getActualVersion());
+        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION, e.getExpectedVersion());
+        assertNotNull(e.getCreationDate());
       }
     } finally {
       database.close();
@@ -118,12 +116,10 @@ public class H2StatisticsStoreTest extends TestCase {
       try {
         store.open();
         fail("expected exception");
-      } catch (TCStatisticsStoreException e) {
-        assertTrue(e.getCause() instanceof TCStatisticsDatabaseStructureFuturedatedException);
-        TCStatisticsDatabaseStructureFuturedatedException cause = (TCStatisticsDatabaseStructureFuturedatedException)e.getCause();
-        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION + 1, cause.getActualVersion());
-        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION, cause.getExpectedVersion());
-        assertNotNull(cause.getCreationDate());
+      } catch (TCStatisticsDatabaseStructureFuturedatedError e) {
+        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION + 1, e.getActualVersion());
+        assertEquals(H2StatisticsStoreImpl.DATABASE_STRUCTURE_VERSION, e.getExpectedVersion());
+        assertNotNull(e.getCreationDate());
       }
     } finally {
       database.close();

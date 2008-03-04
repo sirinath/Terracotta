@@ -29,7 +29,7 @@ import javax.management.ObjectName;
 import javax.management.RuntimeMBeanException;
 
 public class StatisticsAgentConnection implements StatisticsManager {
-  private final static TCLogger logger        = CustomerLogging.getDSOGenericLogger();
+  private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
   private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
   private boolean isServerAgent = false;
@@ -74,18 +74,22 @@ public class StatisticsAgentConnection implements StatisticsManager {
     statManager.createSession(sessionId);
   }
 
+  private void handleMissingSessionIdException(final RuntimeMBeanException e, final String msg) {
+    if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
+      UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
+      String msg_full = msg + " for session '" + ussie.getSessionId() + "' on node '" + ussie.getNodeName() + "'";
+      logger.warn(msg_full);
+      consoleLogger.warn(msg_full);
+    } else {
+      throw e;
+    }
+  }
+
   public void disableAllStatistics(final String sessionId) {
     try {
       statManager.disableAllStatistics(sessionId);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to disable the statistics for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to disable the statistics");
     }
   }
 
@@ -93,15 +97,8 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       return statManager.enableStatistic(sessionId, name);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to enable the statistic '"+name+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-        return false;
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to enable the statistic '" + name + "'");
+      return false;
     }
   }
 
@@ -109,15 +106,8 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       return statManager.captureStatistic(sessionId, name);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to capture the statistic '"+name+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-        return null;
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to capture the statistic '" + name + "'");
+      return null;
     }
   }
 
@@ -125,14 +115,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       statManager.startCapturing(sessionId);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to start capturing for statistics session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to start capturing");
     }
   }
 
@@ -140,14 +123,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       statManager.stopCapturing(sessionId);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to stop capturing for statistics session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to stop capturing");
     }
   }
 
@@ -163,14 +139,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       statManager.setSessionParam(sessionId, key, value);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to set the parameter '"+key+"' to '"+value+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to set the session parameter '" + key + "' to '" + value + "'");
     }
   }
 
@@ -178,15 +147,8 @@ public class StatisticsAgentConnection implements StatisticsManager {
     try {
       return statManager.getSessionParam(sessionId, key);
     } catch (RuntimeMBeanException e) {
-      if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
-        UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
-        String msg = "Unable to get the session parameter '"+key+"' for session '"+ussie.getSessionId()+"' on node '"+ussie.getNodeName()+"'";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
-        return null;
-      } else {
-        throw e;
-      }
+      handleMissingSessionIdException(e, "Unable to get the session parameter '" + key + "'");
+      return null;
     }
   }
 
@@ -197,7 +159,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
     this.serverConnection = serverConnection;
     setupManagerMBean(serverConnection);
     ObjectName emitter_name = setupEmitterMBean(serverConnection);
-    
+
     // register the statistics data listener
     this.listener = listener;
     try {

@@ -6,12 +6,12 @@ package com.tc.statistics.database.exceptions;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
-public class TCStatisticsDatabaseStructureOutdatedException extends TCStatisticsDatabaseVersionCheckErrorException {
+public class TCStatisticsDatabaseStructureOutdatedError extends Error {
   private final int actual;
   private final int expected;
   private final Date created;
 
-  public TCStatisticsDatabaseStructureOutdatedException(final int actual, final int expected, final Date created) {
+  public TCStatisticsDatabaseStructureOutdatedError(final int actual, final int expected, final Date created) {
     super("The structure of the database is outdated. It has version number "+actual+", while version "+expected+" was expected. It was created on "+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(created)+".", null);
     this.actual = actual;
     this.expected = expected;
