@@ -14,6 +14,7 @@ import com.tc.objectserver.impl.PersistentManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
+import com.tc.objectserver.persistence.sleepycat.ObjectIDManagerImpl.OidBitsArrayMap;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.SyncObjectIdSet;
@@ -30,7 +31,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   private PersistentManagedObjectStore   objectStore;
   private PersistenceTransactionProvider persistenceTransactionProvider;
   private DBEnvironment                  env;
-  private OidBitsArrayMapManagerImpl     oidManager;
+  private ObjectIDManagerImpl            oidManager;
 
   public ManagedObjectPersistorImplTest() {
     //
@@ -58,13 +59,17 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
                                                             rootDBCursorConfig, persistenceTransactionProvider,
                                                             sleepycatCollectionsPersistor, env.isParanoidMode());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor);
-    oidManager = (OidBitsArrayMapManagerImpl) managedObjectPersistor.getOidManager();
+    oidManager = (ObjectIDManagerImpl) managedObjectPersistor.getOibjectIDManager();
   }
 
   protected void tearDown() throws Exception {
     oidManager.stopCheckpointRunner();
     env.close();
     super.tearDown();
+  }
+
+  protected boolean cleanTempDir() {
+    return false;
   }
 
   private DBEnvironment newDBEnvironment(boolean paranoid) throws Exception {
@@ -110,8 +115,6 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     assertTrue("Wrong bits in memory were set", originalIds.containsAll(inMemoryIds));
 
     // verify on disk object IDs
-    // clear in memory arrays then read in from persistor
-    oidManager.resetBitsArrayMap();
     SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs();
     idSet.snapshot(); // blocked while reading from disk
     assertTrue("Wrong object IDs on disk", idSet.containsAll(inMemoryIds));
@@ -122,7 +125,6 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   public void testOidBitsArraySave() throws Exception {
     // wait for background retrieving persistent data
     objectStore.getAllObjectIDs();
-    oidManager.resetBitsArrayMap();
 
     // publish data
     Collection objects = createRandomObjects(15050);
@@ -132,11 +134,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     oidManager.runCheckpoint();
 
-    oidManager.loadBitsArrayFromDisk();
+    OidBitsArrayMap oidMap = oidManager.loadBitsArrayFromDisk();
     // verify object IDs is in memory
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
-      assertTrue("Object:" + mo.getID() + " missed in memory! ", oidManager.contains(mo.getID()));
+      assertTrue("Object:" + mo.getID() + " missed in memory! ", oidMap.contains(mo.getID()));
     }
 
     verify(objects);
@@ -145,7 +147,6 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   public void testOidBitsArrayDeleteHalf() throws Exception {
     // wait for background retrieving persistent data
     objectStore.getAllObjectIDs();
-    oidManager.resetBitsArrayMap();
 
     // publish data
     Collection objects = createRandomObjects(15050);
@@ -176,7 +177,6 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   public void testOidBitsArrayDeleteAll() throws Exception {
     // wait for background retrieving persistent data
     objectStore.getAllObjectIDs();
-    oidManager.resetBitsArrayMap();
 
     // publish data
     Collection objects = createRandomObjects(15050);
