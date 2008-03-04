@@ -107,8 +107,8 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
             exception = ex;
           }
         }
+        statGateway.clearTopologyChangeHandler();
       }
-      statGateway.clearTopologyChangeHandler();
 
       if (proxy != null) {
         try {
@@ -161,7 +161,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       // register the statistics data listener
       try {
         listener = new StoreDataListener();
-        mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, new SessionBoundNotificationFilter(sessionId), store);
+        mbeanServerConnection.addNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener, null, store);
       } catch (Exception e) {
         throw new TCStatisticsGathererSessionCreationErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
       }

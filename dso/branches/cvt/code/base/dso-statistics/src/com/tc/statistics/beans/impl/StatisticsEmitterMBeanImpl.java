@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
+import java.util.ArrayList;
 
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
@@ -112,13 +114,15 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
           && !activeSessionIds.isEmpty()) {
         for (Iterator it = activeSessionIds.iterator(); it.hasNext(); ) {
           try {
-            // todo: needs to support sending in batches and deferring sending until the capturing session shutdown
+            // todo: needs to support deferring sending until the capturing session shutdown
+            final List notification_data = new ArrayList();
             buffer.consumeStatistics((String)it.next(), new StatisticsConsumer() {
+              public long getMaximumConsumedDataCount() {
+                return config.getParamLong(StatisticsConfig.KEY_EMITTER_BATCH_SIZE);
+              }
+
               public boolean consumeStatisticData(StatisticData data) {
-                // create the notification event
-                final Notification notification = new Notification(STATISTICS_EMITTER_DATA_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
-                notification.setUserData(data);
-                sendNotification(notification);
+                notification_data.add(data);
 
                 // detect when a capture session has shut down and remove it
                 // from the list of active sessions
@@ -129,6 +133,11 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
                 return true;
               }
             });
+
+            // create the notification event
+            final Notification notification = new Notification(STATISTICS_EMITTER_DATA_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
+            notification.setUserData(notification_data);
+            sendNotification(notification);
           } catch (TCStatisticsBufferException e) {
             logger.error("Unexpected error while emitting buffered statistics.", e);
           }

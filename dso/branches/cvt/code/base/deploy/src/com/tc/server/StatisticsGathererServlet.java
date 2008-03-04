@@ -9,7 +9,7 @@ import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.net.TCSocketAddress;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsGathererSubSystem;
-import com.tc.statistics.buffer.StatisticsConsumer;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 
 import java.io.IOException;
@@ -196,8 +196,8 @@ public class StatisticsGathererServlet extends RestfulServlet {
 
         try {
           out.write(StatisticData.CURRENT_CSV_HEADER.getBytes("UTF-8"));
-          system.getStatisticsStore().retrieveStatistics(criteria, new StatisticsConsumer() {
-            public boolean consumeStatisticData(final StatisticData data) {
+          system.getStatisticsStore().retrieveStatistics(criteria, new StatisticDataUser() {
+            public boolean useStatisticData(final StatisticData data) {
               try {
                 out.write(data.toCsv().getBytes("UTF-8"));
               } catch (IOException e) {

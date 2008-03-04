@@ -4,11 +4,11 @@
 package com.tctest.statistics;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.gatherer.StatisticsGatherer;
 import com.tc.statistics.gatherer.impl.StatisticsGathererImpl;
 import com.tc.statistics.retrieval.StatisticsRetriever;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
@@ -39,8 +39,8 @@ public class StatisticsGathererConfigSampleRateTest extends TransparentTestBase 
     gatherer.closeSession();
 
     final List data_list1 = new ArrayList();
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         data_list1.add(data);
         return true;
       }
@@ -59,8 +59,8 @@ public class StatisticsGathererConfigSampleRateTest extends TransparentTestBase 
     gatherer.closeSession();
 
     final List data_list2 = new ArrayList();
-    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticsConsumer() {
-      public boolean consumeStatisticData(StatisticData data) {
+    store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
+      public boolean useStatisticData(StatisticData data) {
         data_list2.add(data);
         return true;
       }
