@@ -163,6 +163,7 @@ import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.agent.listeners.L2StatisticsManagerListener;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
@@ -619,8 +620,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
+    BroadcastChangeHandler broadcastChangeHandler = new BroadcastChangeHandler(broadcastCounter, changeCounter);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE,
-      new BroadcastChangeHandler(broadcastCounter, changeCounter), 1, maxStageSize);
+      broadcastChangeHandler, 1, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                              new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
@@ -749,6 +751,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     // populate the statistics retrieval registry
     populateStatisticsRetrievalRegistry(serverStats);
+
+    statisticsAgentSubSystem.getStatisticsManagerMBean().
+      addListener(
+        new L2StatisticsManagerListener(
+          statisticsAgentSubSystem.getStatisticsRetrievalRegistry(),
+          broadcastChangeHandler)
+      );
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,

@@ -7,6 +7,7 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsManager;
+import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionAlreadyConnectedException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionConnectErrorException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionDisconnectErrorException;
@@ -150,6 +151,14 @@ public class StatisticsAgentConnection implements StatisticsManager {
       handleMissingSessionIdException(e, "Unable to get the session parameter '" + key + "'");
       return null;
     }
+  }
+
+  public void addListener(StatisticsManagerListener listener) {
+    //no-op
+  }
+
+  public void removeListener(StatisticsManagerListener listener) {
+    //no-op
   }
 
   public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) throws TCStatisticsAgentConnectionException {
