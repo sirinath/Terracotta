@@ -99,10 +99,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       this.objectIDManager = new NullObjectIDManager();
     } else if (oidFastLoad) {
       // read objectIDs from compressed DB
-      this.objectIDManager = new ObjectIDManagerImpl(oidDB, oidLogDB, ptp, dBCursorConfig);
+      this.objectIDManager = new FastObjectIDManagerImpl(oidDB, oidLogDB, ptp, dBCursorConfig);
     } else {
       // read objectIDs from object DB
-      this.objectIDManager = new ObjectIDManagerPlainImpl(objectDB, ptp, dBCursorConfig);
+      this.objectIDManager = new PlainObjectIDManagerImpl(objectDB, ptp, dBCursorConfig);
     }
   }
 

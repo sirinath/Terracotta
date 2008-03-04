@@ -34,9 +34,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class ObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
+public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
   private static final TCLogger                logger                   = TCLogging
-                                                                            .getTestingLogger(ObjectIDManagerImpl.class);
+                                                                            .getTestingLogger(FastObjectIDManagerImpl.class);
 
   private final static byte                    LOG_ACTION_ADD           = 1;
   private final static byte                    LOG_ACTION_DELETE        = 2;
@@ -66,7 +66,7 @@ public final class ObjectIDManagerImpl extends SleepycatPersistorBase implements
   private final Object                         checkpointSyncObj        = new Object();
   private final Object                         objectIDUpdateSyncObj    = new Object();
 
-  public ObjectIDManagerImpl(Database oidDB, Database oidLogDB, PersistenceTransactionProvider ptp,
+  public FastObjectIDManagerImpl(Database oidDB, Database oidLogDB, PersistenceTransactionProvider ptp,
                              CursorConfig oidDBCursorConfig) {
     this.oidDB = oidDB;
     this.oidLogDB = oidLogDB;

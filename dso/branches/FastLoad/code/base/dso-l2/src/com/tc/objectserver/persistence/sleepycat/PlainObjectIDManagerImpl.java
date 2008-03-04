@@ -22,14 +22,14 @@ import com.tc.util.SyncObjectIdSet;
 
 import java.util.Set;
 
-public class ObjectIDManagerPlainImpl extends SleepycatPersistorBase implements ObjectIDManager {
-  private static final TCLogger                logger = TCLogging.getTestingLogger(ObjectIDManagerPlainImpl.class);
+public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
+  private static final TCLogger                logger = TCLogging.getTestingLogger(PlainObjectIDManagerImpl.class);
 
   private final Database                       objectDB;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   dBCursorConfig;
 
-  public ObjectIDManagerPlainImpl(Database objectDB, PersistenceTransactionProvider ptp,
+  public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp,
                                   CursorConfig dBCursorConfig) {
     this.objectDB = objectDB;
     this.ptp = ptp;

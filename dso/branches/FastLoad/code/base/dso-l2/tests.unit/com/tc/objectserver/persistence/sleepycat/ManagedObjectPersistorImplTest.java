@@ -14,7 +14,7 @@ import com.tc.objectserver.impl.PersistentManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
-import com.tc.objectserver.persistence.sleepycat.ObjectIDManagerImpl.OidBitsArrayMap;
+import com.tc.objectserver.persistence.sleepycat.FastObjectIDManagerImpl.OidBitsArrayMap;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.SyncObjectIdSet;
@@ -31,7 +31,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   private PersistentManagedObjectStore   objectStore;
   private PersistenceTransactionProvider persistenceTransactionProvider;
   private DBEnvironment                  env;
-  private ObjectIDManagerImpl            oidManager;
+  private FastObjectIDManagerImpl            oidManager;
 
   public ManagedObjectPersistorImplTest() {
     //
@@ -59,7 +59,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
                                                             rootDBCursorConfig, persistenceTransactionProvider,
                                                             sleepycatCollectionsPersistor, env.isParanoidMode());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor);
-    oidManager = (ObjectIDManagerImpl) managedObjectPersistor.getOibjectIDManager();
+    oidManager = (FastObjectIDManagerImpl) managedObjectPersistor.getOibjectIDManager();
   }
 
   protected void tearDown() throws Exception {
