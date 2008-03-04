@@ -5,10 +5,12 @@
 package com.tc.statistics.beans.impl;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.management.AbstractTerracottaMBean;
-import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -21,9 +23,9 @@ import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.util.Assert;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
 
 import javax.management.NotCompliantMBeanException;
 
@@ -32,7 +34,8 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   private final StatisticsRetrievalRegistry registry;
   private final StatisticsBuffer buffer;
   private final Map retrieverMap = new ConcurrentHashMap();
-  
+  private final Set managerListeners = new CopyOnWriteArraySet();
+
   public StatisticsManagerMBeanImpl(final StatisticsConfig config, final StatisticsRetrievalRegistry registry, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsManagerMBean.class, false, true);
 
@@ -86,6 +89,17 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   public synchronized void disableAllStatistics(final String sessionId) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.removeAllActions();
+    fireAllStatisticsDisabled(sessionId);
+  }
+
+  private void fireAllStatisticsDisabled(final String sessionId) {
+    //notify listeners about change in subscription of statistics
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).allStatisticsDisabled(sessionId);
+      }
+    }
   }
 
   public synchronized boolean enableStatistic(final String sessionId, final String name) {
@@ -95,7 +109,18 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
       return false;
     }
     retriever.registerAction(action);
+    fireStatisticEnabled(sessionId, name);
     return true;
+  }
+
+  private void fireStatisticEnabled(final String sessionId, final String name) {
+    //notify listeners about change in subscription of statistics
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).statisticEnabled(sessionId, name);
+      }
+    }
   }
 
   public StatisticData[] captureStatistic(final String sessionId, final String name) {
@@ -114,7 +139,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
         try {
           buffer.storeStatistic(data[i]);
         } catch (TCStatisticsBufferException e) {
-          throw new RuntimeException("Error while storing the statistic data '"+name+"' for cluster-wide ID '"+sessionId+"'.", e);
+          throw new RuntimeException("Error while storing the statistic data '" + name + "' for cluster-wide ID '" + sessionId + "'.", e);
         }
       }
     } else {
@@ -124,7 +149,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   private String getNodeName() {
-    return buffer.getDefaultAgentIp()+" ("+buffer.getDefaultAgentDifferentiator()+")";
+    return buffer.getDefaultAgentIp() + " (" + buffer.getDefaultAgentDifferentiator() + ")";
   }
 
   public synchronized void startCapturing(final String sessionId) {
@@ -133,7 +158,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     } catch (TCStatisticsBufferStartCapturingSessionNotFoundException e) {
       throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
     } catch (TCStatisticsBufferException e) {
-      throw new RuntimeException("Error while starting the capture session with cluster-wide ID '"+sessionId+"'.", e);
+      throw new RuntimeException("Error while starting the capture session with cluster-wide ID '" + sessionId + "'.", e);
     }
   }
 
@@ -141,10 +166,21 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     try {
       buffer.stopCapturing(sessionId);
       retrieverMap.remove(sessionId);
+      fireCapturingStopped(sessionId);
     } catch (TCStatisticsBufferStopCapturingSessionNotFoundException e) {
-      throw new UnknownStatisticsSessionIdException(getNodeName(),  e.getSessionId(), e);
+      throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
     } catch (TCStatisticsBufferException e) {
-      throw new RuntimeException("Error while stopping the capture session with cluster-wide ID '"+sessionId+"'.", e);
+      throw new RuntimeException("Error while stopping the capture session with cluster-wide ID '" + sessionId + "'.", e);
+    }
+  }
+
+  private void fireCapturingStopped(final String sessionId) {
+    //notify listeners about capturing stopped
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).capturingStopped(sessionId);
+      }
     }
   }
 
@@ -164,6 +200,20 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   public synchronized Object getSessionParam(final String sessionId, final String key) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     return retriever.getConfig().getParam(key);
+  }
+
+  public void addListener(StatisticsManagerListener listener) {
+    if (null == listener) {
+      return;
+    }
+    managerListeners.add(listener);
+  }
+
+  public void removeListener(StatisticsManagerListener listener) {
+    if (null == listener) {
+      return;
+    }
+    managerListeners.remove(listener);
   }
 
   StatisticsRetriever obtainRetriever(final String sessionId) {

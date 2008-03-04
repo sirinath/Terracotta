@@ -11,6 +11,7 @@ import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsGateway;
+import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.agent.StatisticsAgentConnection;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
@@ -222,6 +223,14 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     logger.warn("Unable to find the L2 server agent, this means that there's no authoritative agent to retrieve the parameter '" + key + "' from for session '" + sessionId + "'.");
     StatisticsAgentConnection agent = (StatisticsAgentConnection)agents.values().iterator().next();
     return agent.getSessionParam(sessionId, key);
+  }
+
+  public void addListener(StatisticsManagerListener listener) {
+     //no-op
+  }
+
+  public void removeListener(StatisticsManagerListener listener) {
+     //no-op
   }
 
   public void handleNotification(Notification notification, Object o) {
