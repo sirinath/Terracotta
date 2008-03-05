@@ -3,7 +3,7 @@
  */
 package com.tc.statistics;
 
-public interface StatisticsManager {
+public interface StatisticsManager  {
   public void enable();
 
   public void disable();
@@ -31,8 +31,4 @@ public interface StatisticsManager {
   public void setSessionParam(String sessionId, String key, Object value);
 
   public Object getSessionParam(String sessionId, String key);
-
-  public void addListener(StatisticsManagerListener listener);
-
-  public void removeListener(StatisticsManagerListener listener);
 }

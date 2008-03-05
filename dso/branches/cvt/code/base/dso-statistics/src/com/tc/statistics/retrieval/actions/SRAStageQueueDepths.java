@@ -19,7 +19,7 @@ public class SRAStageQueueDepths implements StatisticRetrievalAction {
 
   public final StageManager stageManager;
 
-  public SRAStageQueueDepths(StageManager stageManager) {
+  public SRAStageQueueDepths(final StageManager stageManager) {
     Assert.assertNotNull(stageManager);
     this.stageManager = stageManager;
   }

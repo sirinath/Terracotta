@@ -6,6 +6,7 @@ package com.tc.statistics.beans;
 
 import com.tc.management.TerracottaMBean;
 import com.tc.statistics.StatisticsManager;
+import com.tc.statistics.ObservableStatisticsManager;
 
-public interface StatisticsManagerMBean extends TerracottaMBean, StatisticsManager {
+public interface StatisticsManagerMBean extends TerracottaMBean, StatisticsManager, ObservableStatisticsManager {
 }

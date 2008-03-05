@@ -19,7 +19,7 @@ public class SRAL2BroadcastCount implements StatisticRetrievalAction {
 
   private final SampledCounter broadcastCounter;
 
-  public SRAL2BroadcastCount(DSOGlobalServerStats serverStats) {
+  public SRAL2BroadcastCount(final DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     broadcastCounter = serverStats.getBroadcastCounter();
   }

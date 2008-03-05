@@ -4,7 +4,10 @@
  */
 package com.tc.statistics.beans;
 
-public interface StatisticsGatewayMBean extends StatisticsManagerMBean {
+import com.tc.management.TerracottaMBean;
+import com.tc.statistics.StatisticsManager;
+
+public interface StatisticsGatewayMBean extends TerracottaMBean, StatisticsManager {
   public void setTopologyChangeHandler(TopologyChangeHandler handler);
   public void clearTopologyChangeHandler();
 }

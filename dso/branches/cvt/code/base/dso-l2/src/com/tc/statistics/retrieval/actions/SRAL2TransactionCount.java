@@ -19,7 +19,7 @@ public class SRAL2TransactionCount implements StatisticRetrievalAction {
 
   private final SampledCounter txnCounter;
 
-  public SRAL2TransactionCount(DSOGlobalServerStats serverStats) {
+  public SRAL2TransactionCount(final DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     txnCounter = serverStats.getTransactionCounter();
   }

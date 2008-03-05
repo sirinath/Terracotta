@@ -153,14 +153,6 @@ public class StatisticsAgentConnection implements StatisticsManager {
     }
   }
 
-  public void addListener(StatisticsManagerListener listener) {
-    //no-op
-  }
-
-  public void removeListener(StatisticsManagerListener listener) {
-    //no-op
-  }
-
   public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) throws TCStatisticsAgentConnectionException {
     Assert.assertNotNull("serverConnection", serverConnection);
     if (statManager != null) throw new TCStatisticsAgentConnectionAlreadyConnectedException();
