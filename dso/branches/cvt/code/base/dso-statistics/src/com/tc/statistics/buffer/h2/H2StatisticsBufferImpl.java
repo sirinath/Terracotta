@@ -550,14 +550,18 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   }
 
   private void fireCapturingStarted(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsBufferListener)it.next()).capturingStarted(sessionId);
+      }
     }
   }
 
   private void fireCapturingStopped(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsBufferListener)it.next()).capturingStopped(sessionId);
+      }
     }
   }
 }
