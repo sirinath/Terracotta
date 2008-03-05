@@ -37,16 +37,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
   private static final TCLogger                logger                   = TCLogging
                                                                             .getTestingLogger(FastObjectIDManagerImpl.class);
-
-  private final static byte                    LOG_ACTION_ADD           = 1;
-  private final static byte                    LOG_ACTION_DELETE        = 2;
-  private final static byte[]                  LOG_DB_VALUE_ADD         = new byte[] { LOG_ACTION_ADD };
-  private final static byte[]                  LOG_DB_VALUE_DELETE      = new byte[] { LOG_ACTION_DELETE };
-
   // property
   private final static String                  LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
   private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
-  private final static String                  MEASURE_PERF             = "measure.performance";                         // hidden
+  private final static String                  MEASURE_PERF             = "measure.performance";                             // hidden
   private final static String                  CHCKPOINT_CHANGES        = "checkpoint.changes";
   private final static String                  CHCKPOINT_TIMEPERIOD     = "checkpoint.timeperiod";
   private final static String                  CHCKPOINT_MAXLIMIT       = "checkpoint.maxlimit";
@@ -67,7 +61,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final Object                         objectIDUpdateSyncObj    = new Object();
 
   public FastObjectIDManagerImpl(Database oidDB, Database oidLogDB, PersistenceTransactionProvider ptp,
-                             CursorConfig oidDBCursorConfig) {
+                                 CursorConfig oidDBCursorConfig) {
     this.oidDB = oidDB;
     this.oidLogDB = oidLogDB;
     this.ptp = ptp;
@@ -100,8 +94,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   /*
    * changesCount: the amount of changes to trigger checkpoint.
    */
-  private void incChangesCount() {
-    if (changesCount.incrementAndGet() > checkpointChanges) {
+  private void incChangesCount(int n) {
+    if (changesCount.addAndGet(n) > checkpointChanges) {
       synchronized (checkpointSyncObj) {
         checkpointSyncObj.notifyAll();
       }
@@ -110,31 +104,44 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     }
   }
 
+  private void incChangesCount() {
+    incChangesCount(1);
+  }
+
   private void resetChangesCount() {
     changesCount.set(0);
   }
 
   /*
-   * Log the change of an ObjectID, added or deleted. Later, flush to BitArray OidDB by checkpoint thread.
+   * Log key to make log records ordered in time sequenece
    */
-  private OperationStatus logObjectID(PersistenceTransaction tx, ObjectID objectID, boolean isAdd)
-      throws DatabaseException {
+  private byte[] makeLogKey(boolean isAdd) {
+    byte[] rv = new byte[17];
+    Conversion.writeLong(System.currentTimeMillis(), rv, 0);
+    Conversion.writeLong(System.nanoTime(), rv, OidLongArray.BytesPerLong);
+    rv[OidLongArray.BytesPerLong * 2] = (byte) (isAdd ? 0 : 1);
+    return rv;
+  }
+
+  private boolean isAddOper(byte[] logKey) {
+    return (logKey[OidLongArray.BytesPerLong * 2] == 0);
+  }
+
+  /*
+   * Log the change of an ObjectID, added or deleted. Later, flush to BitsArray OidDB by checkpoint thread.
+   */
+  private OperationStatus logObjectID(PersistenceTransaction tx, byte[] oids, boolean isAdd) throws DatabaseException {
     DatabaseEntry key = new DatabaseEntry();
-    key.setData(Conversion.long2Bytes(objectID.toLong()));
+    key.setData(makeLogKey(isAdd));
     DatabaseEntry value = new DatabaseEntry();
-    byte[] action = isAdd ? LOG_DB_VALUE_ADD : LOG_DB_VALUE_DELETE;
-    value.setData(action);
-    OperationStatus rtn = this.oidLogDB.put(pt2nt(tx), key, value);
+    value.setData(oids);
+    OperationStatus rtn = this.oidLogDB.putNoOverwrite(pt2nt(tx), key, value);
     incChangesCount();
     return (rtn);
   }
 
   private OperationStatus logAddObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
-    return (logObjectID(tx, objectID, true));
-  }
-
-  private OperationStatus logDeleteObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
-    return (logObjectID(tx, objectID, false));
+    return (logObjectID(tx, Conversion.long2Bytes(objectID.toLong()), true));
   }
 
   /*
@@ -162,25 +169,22 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
               return;
             }
 
-            long oidValue = Conversion.bytes2Long(key.getData());
-
-            ObjectID objectID = new ObjectID(oidValue);
-            byte action = value.getData()[0];
-            switch (action) {
-              case LOG_ACTION_ADD:
+            boolean isAddOper = isAddOper(key.getData());
+            byte[] oids = value.getData();
+            int offset = 0;
+            while (offset < oids.length) {
+              long oidValue = Conversion.bytes2Long(oids, offset);
+              ObjectID objectID = new ObjectID(oidValue);
+              if (isAddOper) {
                 oidBitsArrayMap.getAndSet(objectID);
-                break;
-              case LOG_ACTION_DELETE:
+              } else {
                 oidBitsArrayMap.getAndClr(objectID);
-                break;
-              default:
-                throw new RuntimeException("Unknown object log action " + action);
+              }
+              sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
+              offset += OidLongArray.BytesPerLong;
+              ++changes;
             }
-
-            sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
             cursor.delete();
-
-            ++changes;
 
             if (!isNoLimit && (changes >= checkpointMaxLimit)) {
               cursor.close();
@@ -383,35 +387,34 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   public void prePutAll(Set<ObjectID> oidSet, ObjectID objectID) {
     oidSet.add(objectID);
   }
-
-  public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
-
+  
+  private OperationStatus doAll(PersistenceTransaction tx, Set<ObjectID> oidSet, boolean isAdd) throws TCDatabaseException {
     OperationStatus status = OperationStatus.SUCCESS;
+    int size = oidSet.size();
+    if (size == 0) return (status);
+
+    byte[] oids = new byte[size * OidLongArray.BytesPerLong];
+    int offset = 0;
     for (ObjectID objectID : oidSet) {
-      try {
-        status = logAddObjectID(tx, objectID);
-        incChangesCount();
-      } catch (DatabaseException de) {
-        throw new TCDatabaseException(de);
-      }
-      if (!OperationStatus.SUCCESS.equals(status)) break;
+      Conversion.writeLong(objectID.toLong(), oids, offset);
+      offset += OidLongArray.BytesPerLong;
     }
+    try {
+      status = logObjectID(tx, oids, isAdd);
+    } catch (DatabaseException de) {
+      throw new TCDatabaseException(de);
+    }
+    incChangesCount(size);
     return (status);
   }
 
-  public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
 
-    OperationStatus status = OperationStatus.SUCCESS;
-    for (ObjectID objectID : oidSet) {
-      try {
-        status = logDeleteObjectID(tx, objectID);
-        incChangesCount();
-      } catch (DatabaseException de) {
-        throw new TCDatabaseException(de);
-      }
-      if (!OperationStatus.SUCCESS.equals(status)) break;
-    }
-    return (status);
+  public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
+    return(doAll(tx, oidSet, true));
+  }
+
+  public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
+    return (doAll(tx, oidSet, false));
   }
 
   public static class OidBitsArrayMap {
