@@ -719,7 +719,6 @@ public class H2StatisticsBufferTest extends TestCase {
   private class TestStatisticsBufferListener implements StatisticsBufferListener {
     private String sessionId;
     private boolean started = false;
-
     private boolean stopped = false;
 
     public TestStatisticsBufferListener(String sessionId) {
@@ -736,11 +735,13 @@ public class H2StatisticsBufferTest extends TestCase {
 
     public void capturingStarted(String sessionId) {
       assertEquals(false, started);
+      assertEquals(false, stopped);
       assertEquals(this.sessionId, sessionId);
       started = true;
     }
 
     public void capturingStopped(String sessionId) {
+      assertEquals(true, started);
       assertEquals(false, stopped);
       assertEquals(this.sessionId, sessionId);
       stopped = true;

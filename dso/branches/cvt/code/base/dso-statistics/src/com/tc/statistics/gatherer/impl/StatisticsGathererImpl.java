@@ -309,44 +309,58 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   }
 
   private void fireConnected(final String managerHostName, final int managerPort) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).connected(managerHostName, managerPort);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).connected(managerHostName, managerPort);
+      }
     }
   }
 
   private void fireDisconnected() {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).disconnected();
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).disconnected();
+      }
     }
   }
 
   private void fireReinitialized() {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).reinitialized();
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).reinitialized();
+      }
     }
   }
 
   private void fireCapturingStarted(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).capturingStarted(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).capturingStarted(sessionId);
+      }
     }
   }
 
   private void fireCapturingStopped(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).capturingStopped(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).capturingStopped(sessionId);
+      }
     }
   }
 
   private void fireSessionCreated(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).sessionCreated(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).sessionCreated(sessionId);
+      }
     }
   }
 
   private void fireSessionClosed(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsGathererListener)it.next()).sessionClosed(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsGathererListener)it.next()).sessionClosed(sessionId);
+      }
     }
   }
 }

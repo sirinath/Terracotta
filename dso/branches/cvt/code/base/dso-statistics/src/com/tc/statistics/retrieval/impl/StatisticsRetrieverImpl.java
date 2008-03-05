@@ -28,6 +28,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
+  private final Timer timer = new TCTimerImpl("Statistics Retriever Timer", true);
+
   private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
   private final String sessionId;
@@ -37,8 +39,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   // modified (not replaced)
   private volatile Map actionsMap;
 
-  private Timer timer = null;
-  private TimerTask task = null;
+  private RetrieveStatsTask task = null;
 
   public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final String sessionId) {
     Assert.assertNotNull("config", config);
@@ -92,14 +93,13 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   public void startup() {
     retrieveStartupMarker();
     retrieveStartupStatistics();
-    enableTimer();
+    enableTimerTask();
   }
 
   public void shutdown() {
     this.buffer.removeListener(this);
 
-    disableTimer();
-    retrieveShutdownMarker();
+    disableTimerTask();
   }
 
   private void retrieveStartupMarker() {
@@ -136,24 +136,19 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     }
   }
 
-  private synchronized void enableTimer() {
-    if (timer != null &&
-        task != null) {
-      disableTimer();
+  private synchronized void enableTimerTask() {
+    if (task != null) {
+      disableTimerTask();
     }
 
-    timer = new TCTimerImpl("Statistics Retriever Timer", true);
     task = new RetrieveStatsTask();
     timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SCHEDULE_PERIOD));
   }
 
-  private synchronized void disableTimer() {
-    if (timer != null &&
-        task != null) {
-      task.cancel();
-      timer.cancel();
+  private synchronized void disableTimerTask() {
+    if (task != null) {
+      task.shutdown();
       task = null;
-      timer = null;
     }
   }
 
@@ -166,11 +161,22 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   }
 
   private class RetrieveStatsTask extends TimerTask {
+    private boolean performTaskShutdown = false;
+
+    public void shutdown() {
+      this.performTaskShutdown = true;
+    }
+
     public void run() {
       List action_list = (List)actionsMap.get(StatisticType.SNAPSHOT);
       Assert.assertNotNull("list of snapshot actions", action_list);
       for (Iterator actions_it = action_list.iterator(); actions_it.hasNext(); ) {
         retrieveAction((StatisticRetrievalAction)actions_it.next());
+      }
+
+      if (performTaskShutdown) {
+        cancel();
+        retrieveShutdownMarker();
       }
     }
   }

@@ -626,26 +626,34 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
   }
 
   private void fireOpened() {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsStoreListener)it.next()).opened();
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsStoreListener)it.next()).opened();
+      }
     }
   }
 
   private void fireClosed() {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsStoreListener)it.next()).closed();
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsStoreListener)it.next()).closed();
+      }
     }
   }
 
   private void fireSessionCleared(final String sessionId) {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsStoreListener)it.next()).sessionCleared(sessionId);
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsStoreListener)it.next()).sessionCleared(sessionId);
+      }
     }
   }
 
   private void fireAllSessionsCleared() {
-    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-      ((StatisticsStoreListener)it.next()).allSessionsCleared();
+    if (listeners.size() > 0) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        ((StatisticsStoreListener)it.next()).allSessionsCleared();
+      }
     }
   }
 }

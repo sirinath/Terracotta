@@ -11,7 +11,6 @@ import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsManagerListener;
-import com.tc.statistics.ObservableStatisticsManager;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -145,8 +144,8 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
 
   public synchronized void stopCapturing(final String sessionId) {
     try {
-      buffer.stopCapturing(sessionId);
       retrieverMap.remove(sessionId);
+      buffer.stopCapturing(sessionId);
       fireCapturingStopped(sessionId);
     } catch (TCStatisticsBufferStopCapturingSessionNotFoundException e) {
       throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
@@ -197,9 +196,8 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
 
   private void fireAllStatisticsDisabled(final String sessionId) {
     // notify listeners about change in subscription of statistics
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
+    if (managerListeners.size() > 0) {
+      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
         ((StatisticsManagerListener)iterator.next()).allStatisticsDisabled(sessionId);
       }
     }
@@ -207,19 +205,17 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
 
   private void fireStatisticEnabled(final String sessionId, final String name) {
     // notify listeners about change in subscription of statistics
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
+    if (managerListeners.size() > 0) {
+      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
         ((StatisticsManagerListener)iterator.next()).statisticEnabled(sessionId, name);
       }
     }
   }
 
   private void fireCapturingStopped(final String sessionId) {
-    //notify listeners about capturing stopped
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
+    // notify listeners about capturing stopped
+    if (managerListeners.size() > 0) {
+      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
         ((StatisticsManagerListener)iterator.next()).capturingStopped(sessionId);
       }
     }
