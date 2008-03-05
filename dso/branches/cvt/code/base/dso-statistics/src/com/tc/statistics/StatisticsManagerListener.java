@@ -5,25 +5,9 @@ package com.tc.statistics;
 
 public interface StatisticsManagerListener {
 
-  public void enabled();
-
-  public void disabled();
-
-  public void reinitialized();
-
-  public void sessionCreated(String sessionId);
-
   public void allStatisticsDisabled(String sessionId);
 
   public void statisticEnabled(String sessionId, String statisticName);
 
-  public void statisticCaptured(String sessionId, String name);
-
-  public void capturingStarted(String sessionId);
-
   public void capturingStopped(String sessionId);
-
-  public void globalParamSet(String key, Object value);
-
-  public void sessionParamSet(String sessionId, String key, Object value);
 }

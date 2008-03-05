@@ -11,6 +11,7 @@ import com.tc.management.AbstractTerracottaMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsManagerListener;
+import com.tc.statistics.ObservableStatisticsManager;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -92,16 +93,6 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     fireAllStatisticsDisabled(sessionId);
   }
 
-  private void fireAllStatisticsDisabled(final String sessionId) {
-    //notify listeners about change in subscription of statistics
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
-        ((StatisticsManagerListener)iterator.next()).allStatisticsDisabled(sessionId);
-      }
-    }
-  }
-
   public synchronized boolean enableStatistic(final String sessionId, final String name) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     StatisticRetrievalAction action = registry.getActionInstance(name);
@@ -111,16 +102,6 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     retriever.registerAction(action);
     fireStatisticEnabled(sessionId, name);
     return true;
-  }
-
-  private void fireStatisticEnabled(final String sessionId, final String name) {
-    //notify listeners about change in subscription of statistics
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
-        ((StatisticsManagerListener)iterator.next()).statisticEnabled(sessionId, name);
-      }
-    }
   }
 
   public StatisticData[] captureStatistic(final String sessionId, final String name) {
@@ -174,16 +155,6 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     }
   }
 
-  private void fireCapturingStopped(final String sessionId) {
-    //notify listeners about capturing stopped
-    if (null != managerListeners && managerListeners.size() > 0) {
-      Iterator iterator = managerListeners.iterator();
-      while (iterator.hasNext()) {
-        ((StatisticsManagerListener)iterator.next()).capturingStopped(sessionId);
-      }
-    }
-  }
-
   public void setGlobalParam(final String key, final Object value) {
     config.setParam(key, value);
   }
@@ -202,25 +173,55 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return retriever.getConfig().getParam(key);
   }
 
-  public void addListener(StatisticsManagerListener listener) {
-    if (null == listener) {
-      return;
-    }
-    managerListeners.add(listener);
-  }
-
-  public void removeListener(StatisticsManagerListener listener) {
-    if (null == listener) {
-      return;
-    }
-    managerListeners.remove(listener);
-  }
-
   StatisticsRetriever obtainRetriever(final String sessionId) {
     StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(sessionId);
     if (null == retriever) {
       throw new UnknownStatisticsSessionIdException(getNodeName(), sessionId, null);
     }
     return retriever;
+  }
+
+  public void addListener(final StatisticsManagerListener listener) {
+    if (null == listener) {
+      return;
+    }
+    managerListeners.add(listener);
+  }
+
+  public void removeListener(final StatisticsManagerListener listener) {
+    if (null == listener) {
+      return;
+    }
+    managerListeners.remove(listener);
+  }
+
+  private void fireAllStatisticsDisabled(final String sessionId) {
+    // notify listeners about change in subscription of statistics
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).allStatisticsDisabled(sessionId);
+      }
+    }
+  }
+
+  private void fireStatisticEnabled(final String sessionId, final String name) {
+    // notify listeners about change in subscription of statistics
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).statisticEnabled(sessionId, name);
+      }
+    }
+  }
+
+  private void fireCapturingStopped(final String sessionId) {
+    //notify listeners about capturing stopped
+    if (null != managerListeners && managerListeners.size() > 0) {
+      Iterator iterator = managerListeners.iterator();
+      while (iterator.hasNext()) {
+        ((StatisticsManagerListener)iterator.next()).capturingStopped(sessionId);
+      }
+    }
   }
 }

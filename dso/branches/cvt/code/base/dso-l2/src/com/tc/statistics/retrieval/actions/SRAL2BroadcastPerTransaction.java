@@ -21,7 +21,7 @@ public class SRAL2BroadcastPerTransaction implements StatisticRetrievalAction {
   private final SampledCounter txnCounter;
   private final SampledCounter broadcastCounter;
 
-  public SRAL2BroadcastPerTransaction(DSOGlobalServerStats serverStats) {
+  public SRAL2BroadcastPerTransaction(final DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     this.txnCounter = serverStats.getTransactionCounter();
     this.broadcastCounter = serverStats.getBroadcastCounter();

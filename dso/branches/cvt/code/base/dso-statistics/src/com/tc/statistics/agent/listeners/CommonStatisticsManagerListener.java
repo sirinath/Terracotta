@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAStageQueueDepths;
 
@@ -17,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
-public class CommonStatisticsManagerListener extends StatisticsManagerListenerAdapter {
+public class CommonStatisticsManagerListener implements StatisticsManagerListener {
 
   protected final StageManager stageManager;
 
@@ -27,7 +28,7 @@ public class CommonStatisticsManagerListener extends StatisticsManagerListenerAd
   protected final Map actionsUsageMap = new ConcurrentHashMap();
   protected final StatisticsRetrievalRegistry registry;
 
-  public CommonStatisticsManagerListener(StageManager stageManager, StatisticsRetrievalRegistry registry) {
+  public CommonStatisticsManagerListener(final StageManager stageManager, final StatisticsRetrievalRegistry registry) {
     this.stageManager = stageManager;
     this.registry = registry;
     Iterator actionsIterator = registry.getSupportedStatistics().iterator();
@@ -36,7 +37,7 @@ public class CommonStatisticsManagerListener extends StatisticsManagerListenerAd
     }
   }
 
-  public void statisticEnabled(String sessionId, String statisticName) {
+  public void statisticEnabled(final String sessionId, final String statisticName) {
     StatisticRetrievalAction action = registry.getActionInstance(statisticName);
     //make sure the statistic is available with the current sub-system
     if (action == null) return;
@@ -51,7 +52,7 @@ public class CommonStatisticsManagerListener extends StatisticsManagerListenerAd
   /**
    * Sub-classes overriding this method should always call super.enableStatisticCollection()
    */
-  protected void enableStatisticCollection(String statisticName) {
+  protected void enableStatisticCollection(final String statisticName) {
     StatisticRetrievalAction action = registry.getActionInstance(statisticName);
     //make sure the statistic is available with the current sub-system
     if (action == null) return;
@@ -65,7 +66,7 @@ public class CommonStatisticsManagerListener extends StatisticsManagerListenerAd
     }
   }
 
-  public void allStatisticsDisabled(String sessionId) {
+  public void allStatisticsDisabled(final String sessionId) {
     Iterator actionsIterator = actionsUsageMap.keySet().iterator();
     synchronized (actionsUsageMap) {
       while (actionsIterator.hasNext()) {
@@ -97,7 +98,7 @@ public class CommonStatisticsManagerListener extends StatisticsManagerListenerAd
     }
   }
 
-  public void capturingStopped(String sessionId) {
+  public void capturingStopped(final String sessionId) {
     //statistics agents cannot distinguish between a closeSesion() and stopCapturing() in the Gatherer:
     //statisticsGatherer has a closeSession() which in turn calls stopCapturing() on the gateway/agent
     //In an agent sub-system, when a call comes for stopCapturing(), it cannot distinguish

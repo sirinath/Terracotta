@@ -225,14 +225,6 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     return agent.getSessionParam(sessionId, key);
   }
 
-  public void addListener(StatisticsManagerListener listener) {
-     //no-op
-  }
-
-  public void removeListener(StatisticsManagerListener listener) {
-     //no-op
-  }
-
   public void handleNotification(Notification notification, Object o) {
     notification.setSequenceNumber(sequenceNumber.increment());
     sendNotification(notification);

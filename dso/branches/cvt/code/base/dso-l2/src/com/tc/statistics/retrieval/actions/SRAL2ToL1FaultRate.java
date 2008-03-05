@@ -19,7 +19,7 @@ public class SRAL2ToL1FaultRate implements StatisticRetrievalAction {
 
   private final SampledCounter counter;
   
-  public SRAL2ToL1FaultRate(DSOGlobalServerStats serverStats) {
+  public SRAL2ToL1FaultRate(final DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     counter = serverStats.getObjectFaultCounter();
     Assert.assertNotNull("counter", counter);

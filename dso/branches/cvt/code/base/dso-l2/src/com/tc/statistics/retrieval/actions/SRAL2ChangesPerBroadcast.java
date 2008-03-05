@@ -21,7 +21,7 @@ public class SRAL2ChangesPerBroadcast implements StatisticRetrievalAction {
   private final SampledCounter changeCounter;
   private final SampledCounter broadcastCounter;
 
-  public SRAL2ChangesPerBroadcast(DSOGlobalServerStats serverStats) {
+  public SRAL2ChangesPerBroadcast(final DSOGlobalServerStats serverStats) {
     Assert.assertNotNull("serverStats", serverStats);
     this.changeCounter = serverStats.getChangesCounter();
     this.broadcastCounter = serverStats.getBroadcastCounter();
