@@ -48,6 +48,8 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     this.buffer = buffer;
     this.sessionId = sessionId;
     
+    // keep at the end of the constructor to make sure that all the initialization
+    // is done before registering this instance as a listener
     this.buffer.addListener(this);
 
     createEmptyActionsMap();
