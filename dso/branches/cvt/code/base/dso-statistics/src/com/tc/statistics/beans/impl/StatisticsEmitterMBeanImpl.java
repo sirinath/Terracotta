@@ -46,11 +46,11 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
     NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
   }
 
-  private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
+  private final SynchronizedLong sequenceNumber;
 
   private final StatisticsConfig config;
   private final StatisticsBuffer buffer;
-  private final Set activeSessionIds = new CopyOnWriteArraySet();
+  private final Set activeSessionIds;
 
   private Timer timer = null;
   private TimerTask task = null;
@@ -59,8 +59,13 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
     super(StatisticsEmitterMBean.class, true, false);
     Assert.assertNotNull("config", config);
     Assert.assertNotNull("buffer", buffer);
+    sequenceNumber = new SynchronizedLong(0L);
+    activeSessionIds = new CopyOnWriteArraySet();
     this.config = config;
     this.buffer = buffer;
+
+    // keep at the end of the constructor to make sure that all the initialization
+    // is done before registering this instance as a listener
     this.buffer.addListener(this);
   }
 

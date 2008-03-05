@@ -59,7 +59,7 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     NOTIFICATION_INFO = new MBeanNotificationInfo[] { new MBeanNotificationInfo(notifTypes, name, description) };
   }
 
-  private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
+  private final SynchronizedLong sequenceNumber;
 
   private final StatisticsGathererSubSystem subsystem;
   private final NewCommonL2Config config;
@@ -68,9 +68,12 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     super(StatisticsLocalGathererMBean.class, true, true);
     Assert.assertNotNull("subsystem", subsystem);
     Assert.assertNotNull("config", config);
+    sequenceNumber = new SynchronizedLong(0L);
     this.subsystem = subsystem;
     this.config = config;
 
+    // keep at the end of the constructor to make sure that all the initialization
+    // is done before registering this instance as a listener
     this.subsystem.getStatisticsGatherer().addListener(this);
     this.subsystem.getStatisticsStore().addListener(this);
   }
