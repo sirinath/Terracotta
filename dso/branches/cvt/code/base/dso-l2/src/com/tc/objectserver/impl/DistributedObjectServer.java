@@ -166,13 +166,14 @@ import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.agent.listeners.L2StatisticsManagerListener;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
-import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
-import com.tc.statistics.retrieval.actions.SRASystemProperties;
-import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
-import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
+import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
+import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
+import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
+import com.tc.statistics.retrieval.actions.SRAStageQueueDepths;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -750,11 +751,13 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
 
     // populate the statistics retrieval registry
-    populateStatisticsRetrievalRegistry(serverStats);
+    populateStatisticsRetrievalRegistry(serverStats, getStageManager());
 
+    //note: the below line should be done after the statistics retrieval registry has been populated
     statisticsAgentSubSystem.getStatisticsManagerMBean().
       addListener(
         new L2StatisticsManagerListener(
+          stageManager,
           statisticsAgentSubSystem.getStatisticsRetrievalRegistry(),
           broadcastChangeHandler)
       );
@@ -779,7 +782,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
   }
 
-  private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats) {
+  private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats, StageManager stageManager) {
     if (statisticsAgentSubSystem.isActive()) {
       StatisticsRetrievalRegistry registry = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
       registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
@@ -791,6 +794,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       registry.registerActionInstance(new SRAL2BroadcastCount(serverStats));
       registry.registerActionInstance(new SRAL2ChangesPerBroadcast(serverStats));
       registry.registerActionInstance(new SRAL2BroadcastPerTransaction(serverStats));
+      registry.registerActionInstance(new SRAStageQueueDepths(stageManager));
     }
   }
 

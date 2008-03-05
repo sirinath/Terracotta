@@ -108,9 +108,11 @@ import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.agent.listeners.CommonStatisticsManagerListener;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.actions.SRAStageQueueDepths;
 import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
@@ -171,12 +173,13 @@ public class DistributedObjectClient extends SEDA {
     this.pauseListener = pauseListener;
   }
 
-  private void populateStatisticsRetrievalRegistry(StatisticsRetrievalRegistry registry) {
+  private void populateStatisticsRetrievalRegistry(StatisticsRetrievalRegistry registry, StageManager stageManager) {
     registry.registerActionInstance(new SRAMemoryUsage());
     registry.registerActionInstance(new SRASystemProperties());
     registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpu");
     registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRACpuCombined");
     registry.registerActionInstance("com.tc.statistics.retrieval.actions.SRAThreadDump");
+    registry.registerActionInstance(new SRAStageQueueDepths(stageManager));
   }
 
   public void start() {
@@ -284,7 +287,7 @@ public class DistributedObjectClient extends SEDA {
     // setup statistics subsystem
     statisticsAgentSubSystem = new StatisticsAgentSubSystem();
     if (statisticsAgentSubSystem.setup(config.getNewCommonL1Config())) {
-      populateStatisticsRetrievalRegistry(statisticsAgentSubSystem.getStatisticsRetrievalRegistry());
+      populateStatisticsRetrievalRegistry(statisticsAgentSubSystem.getStatisticsRetrievalRegistry(), stageManager);
     }
     
     // Set up the JMX management stuff
@@ -435,6 +438,15 @@ public class DistributedObjectClient extends SEDA {
     if (statisticsAgentSubSystem.isActive()) {
       statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/"+channel.channel().getChannelID().toLong());
     }
+
+    //note: the below line should be done after the statistics retrieval registry has been populated
+    statisticsAgentSubSystem.getStatisticsManagerMBean().
+      addListener(
+        new CommonStatisticsManagerListener(
+          stageManager,
+          statisticsAgentSubSystem.getStatisticsRetrievalRegistry()
+        )
+      );
 
     cluster.addClusterEventListener(l1Management.getTerracottaCluster());
   }
