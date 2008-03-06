@@ -19,10 +19,11 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.impl.TestManagedObject;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
-import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
+import java.io.Writer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -140,7 +141,7 @@ public class TestObjectManager implements ObjectManager {
     }
   }
 
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public PrettyPrinterImpl prettyPrint(PrettyPrinterImpl out) {
     throw new ImplementMe();
   }
 
@@ -154,11 +155,7 @@ public class TestObjectManager implements ObjectManager {
     throw new ImplementMe();
   }
 
-  public void dump() {
-    throw new ImplementMe();
-  }
-
-  public void releaseAll(Collection objects) {
+  public void releaseAllReadOnly(Collection objects) {
     releaseAll(null, objects);
   }
 
@@ -199,6 +196,32 @@ public class TestObjectManager implements ObjectManager {
   }
 
   public GarbageCollector getGarbageCollector() {
+    throw new ImplementMe();
+  }
+
+  public String dump() {
+    throw new ImplementMe();
+  }
+
+  public void dump(Writer writer) {
+    throw new ImplementMe();
+
+  }
+
+  public void dumpToLogger() {
+    throw new ImplementMe();
+
+  }
+
+  public void preFetchObjectsAndCreate(Set oids, Set newOids) {
+    //Nop
+  }
+
+  public void createNewObjects(Set ids) {
+    throw new ImplementMe();
+  }
+
+  public ManagedObject getObjectByIDOrNull(ObjectID id) {
     throw new ImplementMe();
   }
 

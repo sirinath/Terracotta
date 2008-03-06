@@ -25,6 +25,7 @@ import com.tc.objectserver.managedobject.bytecode.ClassNotCompatableException;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
@@ -42,8 +43,6 @@ import java.util.Set;
  * Responsible for maintaining the state of a shared object. Used for broadcasting new instances of an object as well as
  * having changes applied to it and keeping track of references for garbage collection. If you add fields to this object
  * that need to be serialized make sure you add them to the ManagedObjectSerializer
- *
- * @author steve TODO:: Remove Cacheable interface from this Object.
  */
 public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference, Serializable, PrettyPrintable {
   private static final TCLogger    logger                   = TCLogging.getLogger(ManagedObjectImpl.class);
@@ -57,9 +56,11 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
 
   private final static byte        INITIAL_FLAG_VALUE       = IS_DIRTY_OFFSET | IS_NEW_OFFSET;
 
+  private static final long        UNINITIALIZED_VERSION    = -1;
+
   final ObjectID                   id;
 
-  long                             version                  = -1;
+  long                             version                  = UNINITIALIZED_VERSION;
   transient ManagedObjectState     state;
 
   // TODO::Split this flag into two so that concurrency is maintained
@@ -91,7 +92,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     } else return false;
   }
 
-  void setBasicIsNew(boolean b) {
+  private void setBasicIsNew(boolean b) {
     setFlag(IS_NEW_OFFSET, b);
   }
 
@@ -119,6 +120,10 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     return basicIsNew();
   }
 
+  public void setIsNew(boolean isNew) {
+    setBasicIsNew(isNew);
+  }
+
   public boolean isDirty() {
     return basicIsDirty();
   }
@@ -141,7 +146,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
 
   public void apply(DNA dna, TransactionID txnID, BackReferences includeIDs, ObjectInstanceMonitor instanceMonitor,
                     boolean ignoreIfOlderDNA) {
-    boolean isNew = isNew();
+    boolean isInitialized = isInitialized();
     String typeName = dna.getTypeName();
     long dna_version = dna.getVersion();
     if (dna_version <= this.version) {
@@ -154,15 +159,15 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
                                  + " dna_version : " + dna_version);
       }
     }
-    if (dna.isDelta() && isNew) {
-      throw new AssertionError("Newly created Object is applied with a delta DNA ! ManagedObjectImpl = "
+    if (dna.isDelta() && isInitialized) {
+      throw new AssertionError("Uninitalized Object is applied with a delta DNA ! ManagedObjectImpl = "
                                + this.toString() + " DNA = " + dna + " TransactionID = " + txnID);
-    } else if (!dna.isDelta() && !isNew) {
+    } else if (!dna.isDelta() && !isInitialized) {
       // New DNA applied on old object - a No No for logical objects.
       throw new AssertionError("Old Object is applied with a non-delta DNA ! ManagedObjectImpl = " + this.toString()
                                + " DNA = " + dna + " TransactionID = " + txnID);
     }
-    if (isNew) {
+    if (isInitialized) {
       instanceMonitor.instanceCreated(typeName);
     }
     this.version = dna_version;
@@ -184,7 +189,12 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
       throw new DNAException(e);
     }
     setIsDirty(true);
-    setBasicIsNew(false);
+    // Not unsetting isNew() flag on apply, but rather on release
+    // setBasicIsNew(false);
+  }
+
+  private boolean isInitialized() {
+    return this.version == UNINITIALIZED_VERSION;
   }
 
   private void reinitializeState(ObjectID pid, String className, String loaderDesc, DNACursor cursor,
@@ -229,7 +239,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     // XXX: Um... this is gross.
     StringWriter writer = new StringWriter();
     PrintWriter pWriter = new PrintWriter(writer);
-    new PrettyPrinter(pWriter).visit(this);
+    new PrettyPrinterImpl(pWriter).visit(this);
     return writer.getBuffer().toString();
   }
 
