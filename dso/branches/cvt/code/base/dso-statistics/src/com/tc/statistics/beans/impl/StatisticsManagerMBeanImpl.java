@@ -5,12 +5,11 @@
 package com.tc.statistics.beans.impl;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
 import com.tc.management.AbstractTerracottaMBean;
+import com.tc.statistics.DynamicSRA;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
-import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
@@ -34,7 +33,6 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   private final StatisticsRetrievalRegistry registry;
   private final StatisticsBuffer buffer;
   private final Map retrieverMap = new ConcurrentHashMap();
-  private final Set managerListeners = new CopyOnWriteArraySet();
 
   public StatisticsManagerMBeanImpl(final StatisticsConfig config, final StatisticsRetrievalRegistry registry, final StatisticsBuffer buffer) throws NotCompliantMBeanException {
     super(StatisticsManagerMBean.class, false, true);
@@ -57,7 +55,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     disable();
 
     Set session_ids = retrieverMap.keySet();
-    for (Iterator it = session_ids.iterator(); it.hasNext(); ) {
+    for (Iterator it = session_ids.iterator(); it.hasNext();) {
       stopCapturing((String)it.next());
     }
 
@@ -89,7 +87,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   public synchronized void disableAllStatistics(final String sessionId) {
     StatisticsRetriever retriever = obtainRetriever(sessionId);
     retriever.removeAllActions();
-    fireAllStatisticsDisabled(sessionId);
+    cleanUpStatisticsCollection();
   }
 
   public synchronized boolean enableStatistic(final String sessionId, final String name) {
@@ -99,7 +97,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
       return false;
     }
     retriever.registerAction(action);
-    fireStatisticEnabled(sessionId, name);
+    enableStatisticsCollection(name);
     return true;
   }
 
@@ -146,7 +144,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     try {
       retrieverMap.remove(sessionId);
       buffer.stopCapturing(sessionId);
-      fireCapturingStopped(sessionId);
+      cleanUpStatisticsCollection();
     } catch (TCStatisticsBufferStopCapturingSessionNotFoundException e) {
       throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
     } catch (TCStatisticsBufferException e) {
@@ -180,43 +178,34 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return retriever;
   }
 
-  public void addListener(final StatisticsManagerListener listener) {
-    if (null == listener) {
+  private synchronized void enableStatisticsCollection(final String name) {
+    StatisticRetrievalAction action = registry.getActionInstance(name);
+    if (action == null) {
       return;
     }
-    managerListeners.add(listener);
-  }
-
-  public void removeListener(final StatisticsManagerListener listener) {
-    if (null == listener) {
-      return;
-    }
-    managerListeners.remove(listener);
-  }
-
-  private void fireAllStatisticsDisabled(final String sessionId) {
-    // notify listeners about change in subscription of statistics
-    if (managerListeners.size() > 0) {
-      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
-        ((StatisticsManagerListener)iterator.next()).allStatisticsDisabled(sessionId);
-      }
+    if (action instanceof DynamicSRA) {
+      ((DynamicSRA)action).enableStatisticCollection();
     }
   }
 
-  private void fireStatisticEnabled(final String sessionId, final String name) {
-    // notify listeners about change in subscription of statistics
-    if (managerListeners.size() > 0) {
-      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
-        ((StatisticsManagerListener)iterator.next()).statisticEnabled(sessionId, name);
-      }
-    }
-  }
-
-  private void fireCapturingStopped(final String sessionId) {
-    // notify listeners about capturing stopped
-    if (managerListeners.size() > 0) {
-      for (Iterator iterator = managerListeners.iterator(); iterator.hasNext(); ) {
-        ((StatisticsManagerListener)iterator.next()).capturingStopped(sessionId);
+  private synchronized void cleanUpStatisticsCollection() {
+    Collection actionNames = registry.getSupportedStatistics();
+    Set activeSessions = retrieverMap.keySet();
+    //iterate through all actions
+    for (Iterator iterator = actionNames.iterator(); iterator.hasNext();) {
+      StatisticRetrievalAction action = registry.getActionInstance((String)iterator.next());
+      if (action instanceof DynamicSRA) {
+        boolean disableCollection = true;
+        //iterate through active sessions and if no session is using the action, disable the collection
+        for (Iterator activeSessionsIterator = activeSessions.iterator(); activeSessionsIterator.hasNext();) {
+          String sessionId = (String)activeSessionsIterator.next();
+          StatisticsRetriever retriever = obtainRetriever(sessionId);
+          if (retriever.containsAction(action)) {
+            disableCollection = false;
+            break;
+          }
+        }
+        if (disableCollection) ((DynamicSRA)action).disableStatisticCollection();
       }
     }
   }

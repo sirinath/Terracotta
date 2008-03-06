@@ -3,8 +3,11 @@
  */
 package com.tc.statistics;
 
-public interface ObservableStatisticsManager {
-  public void addListener(StatisticsManagerListener listener);
+public interface DynamicSRA extends StatisticRetrievalAction {
 
-  public void removeListener(StatisticsManagerListener listener);
+  void enableStatisticCollection();
+
+  void disableStatisticCollection();
+
+  boolean isStatisticCollectionEnabled();
 }

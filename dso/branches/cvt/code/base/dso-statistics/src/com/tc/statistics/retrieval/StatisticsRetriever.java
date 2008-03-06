@@ -20,4 +20,6 @@ public interface StatisticsRetriever {
   public void registerAction(StatisticRetrievalAction action);
 
   public StatisticsConfig getConfig();
+
+  public boolean containsAction(StatisticRetrievalAction action);
 }

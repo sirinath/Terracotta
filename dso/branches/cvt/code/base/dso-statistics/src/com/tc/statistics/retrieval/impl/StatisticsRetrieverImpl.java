@@ -48,7 +48,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     this.config = config;
     this.buffer = buffer;
     this.sessionId = sessionId;
-    
+
     // keep at the end of the constructor to make sure that all the initialization
     // is done before registering this instance as a listener
     this.buffer.addListener(this);
@@ -60,7 +60,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     // initialize the map of actions that are organized according
     // to their type
     Map actions_map_construction = new HashMap();
-    for (Iterator types_it = StatisticType.getAllTypes().iterator(); types_it.hasNext(); ) {
+    for (Iterator types_it = StatisticType.getAllTypes().iterator(); types_it.hasNext();) {
       StatisticType type = (StatisticType)types_it.next();
       actions_map_construction.put(type, new CopyOnWriteArrayList());
     }
@@ -102,6 +102,17 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     disableTimerTask();
   }
 
+  public boolean containsAction(StatisticRetrievalAction action) {
+    if (null == action) return false;
+    if (null == action.getType()) return false;
+
+    List action_list = (List)actionsMap.get(action.getType());
+    if (null == action_list) {
+      return false;
+    }
+    return action_list.contains(action);
+  }
+
   private void retrieveStartupMarker() {
     retrieveAction(new SRAStartupTimestamp());
   }
@@ -113,7 +124,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   private void retrieveStartupStatistics() {
     List action_list = (List)actionsMap.get(StatisticType.STARTUP);
     Assert.assertNotNull("list of startup actions", action_list);
-    for (Iterator actions_it = action_list.iterator(); actions_it.hasNext(); ) {
+    for (Iterator actions_it = action_list.iterator(); actions_it.hasNext();) {
       retrieveAction((StatisticRetrievalAction)actions_it.next());
     }
   }
@@ -170,7 +181,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     public void run() {
       List action_list = (List)actionsMap.get(StatisticType.SNAPSHOT);
       Assert.assertNotNull("list of snapshot actions", action_list);
-      for (Iterator actions_it = action_list.iterator(); actions_it.hasNext(); ) {
+      for (Iterator actions_it = action_list.iterator(); actions_it.hasNext();) {
         retrieveAction((StatisticRetrievalAction)actions_it.next());
       }
 
