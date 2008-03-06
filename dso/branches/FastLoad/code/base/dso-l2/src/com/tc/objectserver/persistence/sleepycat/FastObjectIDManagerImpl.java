@@ -38,9 +38,9 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private static final TCLogger                logger                   = TCLogging
                                                                             .getTestingLogger(FastObjectIDManagerImpl.class);
   // property
-  private final static String                  LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
+  public final static String                   LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
   private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
-  private final static String                  MEASURE_PERF             = "measure.performance";                             // hidden
+  public final static String                   MEASURE_PERF             = "measure.performance";                             // hidden
   private final static String                  CHCKPOINT_CHANGES        = "checkpoint.changes";
   private final static String                  CHCKPOINT_TIMEPERIOD     = "checkpoint.timeperiod";
   private final static String                  CHCKPOINT_MAXLIMIT       = "checkpoint.maxlimit";
@@ -387,8 +387,9 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   public void prePutAll(Set<ObjectID> oidSet, ObjectID objectID) {
     oidSet.add(objectID);
   }
-  
-  private OperationStatus doAll(PersistenceTransaction tx, Set<ObjectID> oidSet, boolean isAdd) throws TCDatabaseException {
+
+  private OperationStatus doAll(PersistenceTransaction tx, Set<ObjectID> oidSet, boolean isAdd)
+      throws TCDatabaseException {
     OperationStatus status = OperationStatus.SUCCESS;
     int size = oidSet.size();
     if (size == 0) return (status);
@@ -408,9 +409,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     return (status);
   }
 
-
   public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
-    return(doAll(tx, oidSet, true));
+    return (doAll(tx, oidSet, true));
   }
 
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException {
