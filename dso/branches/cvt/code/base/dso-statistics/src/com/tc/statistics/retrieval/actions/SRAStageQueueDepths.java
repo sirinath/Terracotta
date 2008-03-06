@@ -46,7 +46,7 @@ public class SRAStageQueueDepths implements DynamicSRA {
     StatisticData[] data = new StatisticData[stats.length];
     for (int i = 0; i < stats.length; i++) {
       StageQueueStats stageStat = (StageQueueStats)stats[i];
-      data[i] = new StatisticData(ACTION_NAME + " : " + stageStat.getName(), moment, new Long(stageStat.getDepth()));
+      data[i] = new StatisticData(ACTION_NAME, moment, stageStat.getName(), new Long(stageStat.getDepth()));
     }
     return data;
   }
