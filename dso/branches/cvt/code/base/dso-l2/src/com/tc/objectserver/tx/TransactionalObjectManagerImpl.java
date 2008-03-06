@@ -16,16 +16,18 @@ import com.tc.objectserver.context.ApplyTransactionContext;
 import com.tc.objectserver.context.CommitTransactionContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RecallObjectsContext;
+import com.tc.objectserver.context.TransactionLookupContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -40,7 +42,7 @@ import java.util.Map.Entry;
  * This class keeps track of locally checked out objects for applys and maintain the objects to txnid mapping in the
  * server. It wraps calls going to object manager from lookup, apply, commit stages
  */
-public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
+public class TransactionalObjectManagerImpl implements TransactionalObjectManager {
 
   private static final TCLogger                logger                  = TCLogging
                                                                            .getLogger(TransactionalObjectManagerImpl.class);
@@ -77,19 +79,42 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   // ProcessTransactionHandler Method
   public void addTransactions(Collection txns) {
-    sequencer.addTransactions(txns);
+    Collection txnLookupContexts = createAndPreFetchObjectsFor(txns);
+    sequencer.addTransactionLookupContexts(txnLookupContexts);
     txnStageCoordinator.initiateLookup();
+  }
+
+  private Collection createAndPreFetchObjectsFor(Collection txns) {
+    List lookupContexts  = new ArrayList(txns.size());
+    Set oids = new HashSet(txns.size() * 10);
+    Set newOids = new HashSet(txns.size() * 10);
+    for (Iterator i = txns.iterator(); i.hasNext();) {
+      ServerTransaction txn = (ServerTransaction) i.next();
+      boolean initiateApply = gtxm.initiateApply(txn.getServerTransactionID());
+      if (initiateApply) {
+        newOids.addAll(txn.getNewObjectIDs());
+        for (Iterator j = txn.getObjectIDs().iterator(); j.hasNext();) {
+          ObjectID oid = (ObjectID) j.next();
+          if (!newOids.contains(oid)) {
+            oids.add(oid);
+          }
+        }
+      }
+      lookupContexts.add(new TransactionLookupContext(txn, initiateApply));
+    }
+    objectManager.preFetchObjectsAndCreate(oids, newOids);
+    return lookupContexts;
   }
 
   // LookupHandler Method
   public void lookupObjectsForTransactions() {
     processPendingIfNecessary();
     while (true) {
-      ServerTransaction txn = sequencer.getNextTxnToProcess();
-      if (txn == null) break;
-      ServerTransactionID stxID = txn.getServerTransactionID();
-      if (gtxm.initiateApply(stxID)) {
-        lookupObjectsForApplyAndAddToSink(txn, true);
+      TransactionLookupContext lookupContext = sequencer.getNextTxnLookupContextToProcess();
+      if (lookupContext == null) break;
+      ServerTransaction txn = lookupContext.getTransaction();
+      if (lookupContext.initiateApply()) {
+        lookupObjectsForApplyAndAddToSink(txn);
       } else {
         // These txns are already applied, hence just sending it to the next stage.
         txnStageCoordinator.addToApplyStage(new ApplyTransactionContext(txn));
@@ -103,7 +128,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     }
   }
 
-  public synchronized void lookupObjectsForApplyAndAddToSink(ServerTransaction txn, boolean newTxn) {
+  public synchronized void lookupObjectsForApplyAndAddToSink(ServerTransaction txn) {
     Collection oids = txn.getObjectIDs();
     // log("lookupObjectsForApplyAndAddToSink(): START : " + txn.getServerTransactionID() + " : " + oids);
     Set newRequests = new HashSet();
@@ -126,8 +151,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     // TODO:: make cache and stats right
     LookupContext lookupContext = null;
     if (!newRequests.isEmpty()) {
-      lookupContext = new LookupContext(newRequests, (newTxn ? txn.getNewObjectIDs() : Collections.EMPTY_SET), txn
-          .getServerTransactionID());
+      lookupContext = new LookupContext(newRequests, txn.getNewObjectIDs(), txn.getServerTransactionID());
       if (objectManager.lookupObjectsFor(txn.getSourceID(), lookupContext)) {
         addLookedupObjects(lookupContext);
       } else {
@@ -262,7 +286,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     List copy = pendingTxnList.copy();
     for (Iterator i = copy.iterator(); i.hasNext();) {
       ServerTransaction txn = (ServerTransaction) i.next();
-      lookupObjectsForApplyAndAddToSink(txn, false);
+      lookupObjectsForApplyAndAddToSink(txn);
     }
   }
 
@@ -370,15 +394,30 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       }
       if (!recalledObjects.isEmpty()) {
         logger.info("Recalling " + recalledObjects.size() + " Objects to ObjectManager");
-        objectManager.releaseAll(recalledObjects.values());
+        objectManager.releaseAllReadOnly(recalledObjects.values());
       }
     }
   }
 
-  public void dump() {
-    PrintWriter pw = new PrintWriter(System.err);
-    new PrettyPrinter(pw).visit(this);
+ 
+  public String dump() {
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
+  }
+  
+  
+
+  public void dump(Writer writer) {
+    PrintWriter pw = new PrintWriter(writer);
+    pw.write(dump());
     pw.flush();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
   }
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {

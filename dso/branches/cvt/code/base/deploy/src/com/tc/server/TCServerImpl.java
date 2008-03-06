@@ -72,7 +72,8 @@ public class TCServerImpl extends SEDA implements TCServer {
 
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final ConnectionPolicy               connectionPolicy;
-
+  
+ 
   private final StatisticsGathererSubSystem    statisticsGathererSubSystem;
 
   /**
@@ -95,6 +96,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     statisticsGathererSubSystem = new StatisticsGathererSubSystem();
     statisticsGathererSubSystem.setup(manager.commonl2Config());
   }
+  
 
   public L2Info[] infoForAllL2s() {
     String[] allKnownL2s = this.configurationSetupManager.allCurrentlyKnownServers();

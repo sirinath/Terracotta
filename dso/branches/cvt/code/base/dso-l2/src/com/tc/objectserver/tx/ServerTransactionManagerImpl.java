@@ -31,9 +31,14 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.stats.counter.Counter;
+import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.State;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,26 +49,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerTransactionManagerImpl implements ServerTransactionManager, ServerTransactionManagerMBean,
     GlobalTransactionManager {
 
-  private static final TCLogger                         logger              = TCLogging
-                                                                                .getLogger(ServerTransactionManager.class);
+  private static final TCLogger                         logger                   = TCLogging
+                                                                                     .getLogger(ServerTransactionManager.class);
 
-  private static final State                            PASSIVE_MODE        = new State("PASSIVE-MODE");
-  private static final State                            ACTIVE_MODE         = new State("ACTIVE-MODE");
+  private static final State                            PASSIVE_MODE             = new State("PASSIVE-MODE");
+  private static final State                            ACTIVE_MODE              = new State("ACTIVE-MODE");
 
   // TODO::FIXME::Change this to concurrent hashmap with top level txn accounting
-  private final Map                                     transactionAccounts = Collections
-                                                                                .synchronizedMap(new HashMap());
+  private final Map                                     transactionAccounts      = Collections
+                                                                                     .synchronizedMap(new HashMap());
   private final ClientStateManager                      stateManager;
   private final ObjectManager                           objectManager;
   private final ResentTransactionSequencer              resentTxnSequencer;
   private final TransactionAcknowledgeAction            action;
   private final LockManager                             lockManager;
-  private final List                                    rootEventListeners  = new CopyOnWriteArrayList();
-  private final List                                    txnEventListeners   = new CopyOnWriteArrayList();
+  private final List                                    rootEventListeners       = new CopyOnWriteArrayList();
+  private final List                                    txnEventListeners        = new CopyOnWriteArrayList();
   private final GlobalTransactionIDLowWaterMarkProvider lwmProvider;
 
   private final Counter                                 transactionRateCounter;
@@ -74,7 +80,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private final ServerTransactionLogger                 txnLogger;
 
-  private volatile State                                state               = PASSIVE_MODE;
+  private volatile State                                state                    = PASSIVE_MODE;
+  private final AtomicInteger                           totalPendingTransactions = new AtomicInteger(0);
 
   public ServerTransactionManagerImpl(ServerGlobalTransactionManager gtxm, TransactionStore transactionStore,
                                       LockManager lockManager, ClientStateManager stateManager,
@@ -109,11 +116,28 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void dump() {
-    StringBuffer buf = new StringBuffer("ServerTransactionManager\n");
-    buf.append("transactionAccounts: " + transactionAccounts);
-    buf.append("\n/ServerTransactionManager");
-    System.err.println(buf.toString());
+  public String dump() {
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
+  }
+
+  public void dump(Writer writer) {
+    PrintWriter pw = new PrintWriter(writer);
+    pw.write(dump());
+    pw.flush();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
+  }
+
+  public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println(getClass().getName());
+    out.indent().print("transactionAccounts: ").visit(transactionAccounts).println();
+    return out;
   }
 
   /**
@@ -228,6 +252,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private void acknowledge(NodeID waiter, TransactionID txnID) {
     final ServerTransactionID serverTxnID = new ServerTransactionID(waiter, txnID);
+    totalPendingTransactions.decrementAndGet();
     fireTransactionCompleteEvent(serverTxnID);
     if (isActive()) {
       action.acknowledgeTransaction(serverTxnID);
@@ -236,8 +261,9 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   public void acknowledgement(NodeID waiter, TransactionID txnID, NodeID waitee) {
 
-    // NOTE ::TODO Sometime you can get double notification for the same txn in server restart cases. In those cases the
-    // accounting could be messed up. The counter is set to have a min of zero to avoid ugly negative values.
+    // NOTE ::Sometime you can get double notification for the same txn in server restart cases. In those cases the
+    // accounting could be messed up. The counter is set to have a minimum bound of zero to avoid ugly negative values.
+    // @see ChannelStatsImpl
     if (isActive() && waitee.getType() == NodeID.L1_NODE_TYPE) {
       channelStats.notifyTransactionAckedFrom(waitee);
     }
@@ -310,21 +336,30 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
+  /**
+   * Earlier this method used to call releaseAll and then explicitly do a commit on the txn. But that implies that the
+   * objects are released for other lookups before it it committed to disk. This is good for performance reason but
+   * imposes a problem. The clients could read an object that has changes but it not committed to the disk yet and If
+   * the server crashes then transactions are resent and may be re-applied in the clients when it should not have
+   * re-applied. To avoid this we now commit inline before releasing the objects.
+   * 
+   * @see ObjectManagerImpl.releaseAll() for more details.
+   */
   public void commit(PersistenceTransactionProvider ptxp, Collection objects, Map newRoots,
                      Collection appliedServerTransactionIDs) {
     PersistenceTransaction ptx = ptxp.newTransaction();
-    release(ptx, objects, newRoots);
     gtxm.commitAll(ptx, appliedServerTransactionIDs);
-    ptx.commit();
+    // This call commits the transaction too.
+    objectManager.releaseAll(ptx, objects);
+    fireRootCreatedEvents(newRoots);
     committed(appliedServerTransactionIDs);
   }
 
-  private void release(PersistenceTransaction ptx, Collection objects, Map newRoots) {
-    // change done so now we can release the objects
-    objectManager.releaseAll(ptx, objects);
-
-    // NOTE: important to have released all objects in the TXN before
-    // calling this event as the listeners tries to lookup for the object and blocks
+  /**
+   * NOTE: Its important to have released all objects in the TXN before calling this event as the listeners tries to
+   * lookup for the object and blocks
+   */
+  private void fireRootCreatedEvents(Map newRoots) {
     for (Iterator i = newRoots.entrySet().iterator(); i.hasNext();) {
       Map.Entry entry = (Entry) i.next();
       fireRootCreatedEvent((String) entry.getKey(), (ObjectID) entry.getValue());
@@ -335,6 +370,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     final boolean active = isActive();
     TransactionAccount ci = getOrCreateTransactionAccount(source);
     ci.incommingTransactions(txnIDs);
+    totalPendingTransactions.addAndGet(txnIDs.size());
     for (Iterator i = txns.iterator(); i.hasNext();) {
       final ServerTransaction txn = (ServerTransaction) i.next();
       final ServerTransactionID stxnID = txn.getServerTransactionID();
@@ -347,6 +383,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
     fireIncomingTransactionsEvent(source, txnIDs);
     resentTxnSequencer.addTransactions(txns);
+  }
+
+  public int getTotalPendingTransactionsCount() {
+    return totalPendingTransactions.get();
   }
 
   private boolean isActive() {
@@ -593,5 +633,4 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
 
   }
-
 }
