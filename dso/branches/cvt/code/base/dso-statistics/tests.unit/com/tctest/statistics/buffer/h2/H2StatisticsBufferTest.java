@@ -600,7 +600,7 @@ public class H2StatisticsBufferTest extends TestCase {
 
     try {
       buffer.stopCapturing("thissessionid3");
-      // fail
+      fail();
     } catch (TCStatisticsBufferException e) {
       // expected
     }
