@@ -97,7 +97,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
       return false;
     }
     retriever.registerAction(action);
-    enableStatisticsCollection(name);
+    enableStatisticsCollection(action);
     return true;
   }
 
@@ -178,9 +178,8 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return retriever;
   }
 
-  private synchronized void enableStatisticsCollection(final String name) {
-    StatisticRetrievalAction action = registry.getActionInstance(name);
-    if (action == null) {
+  private synchronized void enableStatisticsCollection(final StatisticRetrievalAction action) {
+    if (null == action) {
       return;
     }
     if (action instanceof DynamicSRA) {
@@ -189,23 +188,25 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   private synchronized void cleanUpStatisticsCollection() {
-    Collection actionNames = registry.getSupportedStatistics();
-    Set activeSessions = retrieverMap.keySet();
-    //iterate through all actions
-    for (Iterator iterator = actionNames.iterator(); iterator.hasNext();) {
-      StatisticRetrievalAction action = registry.getActionInstance((String)iterator.next());
+    // iterate through all actions
+    for (Iterator it_sra = registry.getRegisteredActionInstances().iterator(); it_sra.hasNext();) {
+      StatisticRetrievalAction action = (StatisticRetrievalAction)it_sra.next();
+
       if (action instanceof DynamicSRA) {
         boolean disableCollection = true;
-        //iterate through active sessions and if no session is using the action, disable the collection
-        for (Iterator activeSessionsIterator = activeSessions.iterator(); activeSessionsIterator.hasNext();) {
-          String sessionId = (String)activeSessionsIterator.next();
-          StatisticsRetriever retriever = obtainRetriever(sessionId);
+
+        // iterate through active sessions and if no session is using the action, disable the collection
+        for (Iterator it_retrievers = retrieverMap.values().iterator(); it_retrievers.hasNext();) {
+          StatisticsRetriever retriever = (StatisticsRetriever)it_retrievers.next();
           if (retriever.containsAction(action)) {
             disableCollection = false;
             break;
           }
         }
-        if (disableCollection) ((DynamicSRA)action).disableStatisticCollection();
+
+        if (disableCollection) {
+          ((DynamicSRA)action).disableStatisticCollection();
+        }
       }
     }
   }

@@ -27,6 +27,10 @@ public class StatisticsRetrievalRegistryImpl implements StatisticsRetrievalRegis
     return Collections.unmodifiableSet(instanceMap.keySet());
   }
 
+  public Collection getRegisteredActionInstances() {
+    return Collections.unmodifiableCollection(instanceMap.values());
+  }
+
   public StatisticRetrievalAction getActionInstance(final String name) {
     if (null == name) {
       return null;

@@ -11,6 +11,8 @@ public interface StatisticsRetrievalRegistry {
   public void removeAllActionInstances();
 
   public Collection getSupportedStatistics();
+
+  public Collection getRegisteredActionInstances();
   
   public StatisticRetrievalAction getActionInstance(String name);
 
