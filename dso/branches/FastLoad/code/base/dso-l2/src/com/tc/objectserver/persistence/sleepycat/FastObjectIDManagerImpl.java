@@ -116,7 +116,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
    * Log key to make log records ordered in time sequenece
    */
   private byte[] makeLogKey(boolean isAdd) {
-    byte[] rv = new byte[17];
+    byte[] rv = new byte[OidLongArray.BytesPerLong * 2 + 1];
     Conversion.writeLong(System.currentTimeMillis(), rv, 0);
     Conversion.writeLong(System.nanoTime(), rv, OidLongArray.BytesPerLong);
     rv[OidLongArray.BytesPerLong * 2] = (byte) (isAdd ? 0 : 1);
