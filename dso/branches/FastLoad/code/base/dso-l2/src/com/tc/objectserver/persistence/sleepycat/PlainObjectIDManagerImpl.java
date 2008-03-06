@@ -16,6 +16,8 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.SyncObjectIdSet;
@@ -28,12 +30,16 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
   private final Database                       objectDB;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   dBCursorConfig;
+  private final boolean                        isMeasurePerf;
 
   public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp,
                                   CursorConfig dBCursorConfig) {
     this.objectDB = objectDB;
     this.ptp = ptp;
     this.dBCursorConfig = dBCursorConfig;
+    
+    TCProperties loadObjProp = TCPropertiesImpl.getProperties().getPropertiesFor(FastObjectIDManagerImpl.LOAD_OBJECTID_PROPERTIES);
+    isMeasurePerf = loadObjProp.getBoolean(FastObjectIDManagerImpl.MEASURE_PERF, false);
   }
 
   public Runnable getObjectIDReader(SyncObjectIdSet rv) {
@@ -61,12 +67,15 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
    */
   private class ObjectIdReader implements Runnable {
     protected final SyncObjectIdSet set;
+    long startTime;
 
     public ObjectIdReader(SyncObjectIdSet set) {
       this.set = set;
     }
 
     public void run() {
+      if (isMeasurePerf) startTime = System.currentTimeMillis();
+      int counter = 0;
       ObjectIDSet2 tmp = new ObjectIDSet2();
       PersistenceTransaction tx = null;
       Cursor cursor = null;
@@ -77,6 +86,15 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
         DatabaseEntry value = new DatabaseEntry();
         while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
           tmp.add(new ObjectID(Conversion.bytes2Long(key.getData())));
+          if (isMeasurePerf && ((++counter % 1000) == 0)) {
+            long elapse_time = System.currentTimeMillis() - startTime;
+            long avg_time = elapse_time / (counter / 1000);
+            logger.info("MeasurePerf: reading " + counter + " OIDs took " + elapse_time + "ms avg(1000 objs):"
+                        + avg_time + " ms");
+          }
+        }
+        if (isMeasurePerf) {
+          logger.info("MeasurePerf: done");
         }
       } catch (Throwable t) {
         logger.error("Error Reading Object IDs", t);
