@@ -136,12 +136,13 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     DatabaseEntry value = new DatabaseEntry();
     value.setData(oids);
     OperationStatus rtn = this.oidLogDB.putNoOverwrite(pt2nt(tx), key, value);
-    incChangesCount();
     return (rtn);
   }
 
   private OperationStatus logAddObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
-    return (logObjectID(tx, Conversion.long2Bytes(objectID.toLong()), true));
+    OperationStatus status =  logObjectID(tx, Conversion.long2Bytes(objectID.toLong()), true);
+    if (OperationStatus.SUCCESS.equals(status)) incChangesCount();
+    return (status);
   }
 
   /*
