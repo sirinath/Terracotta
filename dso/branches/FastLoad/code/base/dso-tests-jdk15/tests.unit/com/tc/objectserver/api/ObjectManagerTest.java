@@ -2337,6 +2337,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           ManagedObjectFaultingContext ec = (ManagedObjectFaultingContext) faultSink.take();
           objectManager.addFaultedObject(ec.getId(), store.getObjectByID(ec.getId()), ec.isRemoveOnRelease());
           sinkContext.postProcess();
+
         } catch (InterruptedException e) {
           throw new AssertionError(e);
         }
@@ -2379,7 +2380,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
     public synchronized void waitTillComplete() {
-      while (sinkCount > -1) {
+      while (sinkCount > 0) {
         try {
           this.wait();
         } catch (InterruptedException e) {
@@ -2391,7 +2392,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     public synchronized void postProcess() {
       sinkCount--;
       if (sinkCount == 0) {
-        sinkCount = -1;
         this.notifyAll();
       }
 
