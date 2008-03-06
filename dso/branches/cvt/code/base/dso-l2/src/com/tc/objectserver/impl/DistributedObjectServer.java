@@ -163,7 +163,6 @@ import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
-import com.tc.statistics.agent.listeners.L2StatisticsManagerListener;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
@@ -752,15 +751,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     // populate the statistics retrieval registry
     populateStatisticsRetrievalRegistry(serverStats, getStageManager());
-
-    //note: the below line should be done after the statistics retrieval registry has been populated
-    statisticsAgentSubSystem.getStatisticsManagerMBean().
-      addListener(
-        new L2StatisticsManagerListener(
-          stageManager,
-          statisticsAgentSubSystem.getStatisticsRetrievalRegistry(),
-          broadcastChangeHandler)
-      );
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,

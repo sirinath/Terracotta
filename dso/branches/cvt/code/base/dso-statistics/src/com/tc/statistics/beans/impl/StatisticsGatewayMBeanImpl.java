@@ -11,7 +11,6 @@ import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsGateway;
-import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.agent.StatisticsAgentConnection;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionException;
 import com.tc.statistics.beans.StatisticsGatewayMBean;

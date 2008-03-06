@@ -7,7 +7,6 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsManager;
-import com.tc.statistics.StatisticsManagerListener;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionAlreadyConnectedException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionConnectErrorException;
 import com.tc.statistics.agent.exceptions.TCStatisticsAgentConnectionDisconnectErrorException;

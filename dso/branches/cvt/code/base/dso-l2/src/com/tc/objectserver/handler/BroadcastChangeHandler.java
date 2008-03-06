@@ -47,35 +47,10 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
   private SampledCounter broadcastCounter;
   private SampledCounter changeCounter;
 
-  private volatile boolean broadcastCounterEnabled = false;
-  private volatile boolean changeCounterEnabled = false;
-
 
   public BroadcastChangeHandler(SampledCounter broadcastCounter, SampledCounter changeCounter) {
     this.broadcastCounter = broadcastCounter;
     this.changeCounter = changeCounter;
-  }
-
-  public boolean isBroadcastCounterEnabled() {
-    return broadcastCounterEnabled;
-  }
-
-  public void setBroadcastCounterEnabled(boolean broadcastCounterEnabled) {
-    this.broadcastCounterEnabled = broadcastCounterEnabled;
-    if (!broadcastCounterEnabled) {
-      broadcastCounter.setValue(0L);
-    }
-  }
-
-  public boolean isChangeCounterEnabled() {
-    return changeCounterEnabled;
-  }
-
-  public void setChangeCounterEnabled(boolean changeCounterEnabled) {
-    this.changeCounterEnabled = changeCounterEnabled;
-    if (!changeCounterEnabled) {
-      changeCounter.setValue(0L);
-    }
   }
 
   public void handleEvent(EventContext context) {
@@ -125,12 +100,8 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
 
         responseMessage.send();
 
-        if (broadcastCounterEnabled && null != broadcastCounter) {
-          broadcastCounter.increment();
-        }
-        if (changeCounterEnabled && null != changeCounter) {
-          changeCounter.increment(prunedChanges.size());
-        }
+        broadcastCounter.increment();
+        changeCounter.increment(prunedChanges.size());
       }
     }
     transactionManager.broadcasted(committerID, txnID);
