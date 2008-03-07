@@ -473,6 +473,9 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
 
     m_connectException = e;
     if (msg != null && m_clusterPanel != null) {
+      if(!isAutoConnect()) {
+        m_clusterPanel.setupConnectButton();
+      }
       m_clusterPanel.setStatusLabel(msg);
     }
     m_acc.controller.nodeChanged(ClusterNode.this);
@@ -622,6 +625,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
         }
       }
 
+      m_connectAction.setEnabled(!autoConnect);
       m_connectManager.setAutoConnect(autoConnect);
       m_clusterPanel.setupConnectButton();
       m_acc.controller.updateServerPrefs();
