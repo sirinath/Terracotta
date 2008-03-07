@@ -68,7 +68,7 @@ public class H2StatisticsBufferImpl implements StatisticsBuffer {
   private static final String SQL_CREATE_CAPTURESESSION = "INSERT INTO capturesession (localsessionid, clustersessionid) VALUES (?, ?)";
   private static final String SQL_START_CAPTURESESSION = "UPDATE capturesession SET start = ? WHERE clustersessionid = ? AND start IS NULL";
   private final static String SQL_INSERT_STATISTICSDATA = "INSERT INTO statisticlog (id, localsessionid, agentip, agentdifferentiator, moment, statname, statelement, datanumber, datatext, datatimestamp, datadecimal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  private static final String SQL_MARK_FOR_CONSUMPTION_LIMIT = "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ? AND id IN (SELECT id FROM statisticlog ORDER BY moment LIMIT ?)";
+  private static final String SQL_MARK_FOR_CONSUMPTION_LIMIT = "MERGE INTO statisticlog(id, consumptionid) KEY(id) SELECT id, ? FROM statisticlog WHERE consumptionid IS NULL AND localsessionid = ? ORDER BY moment LIMIT ?";
   private static final String SQL_MARK_FOR_CONSUMPTION = "UPDATE statisticlog SET consumptionid = ? WHERE consumptionid IS NULL AND localsessionid = ?";
   private static final String SQL_CONSUME_STATISTICDATA = "SELECT * FROM statisticlog WHERE consumptionid = ? ORDER BY moment ASC, id ASC";
   private static final String SQL_RESET_CONSUMPTIONID = "UPDATE statisticlog SET consumptionid = NULL WHERE consumptionid = ?";
