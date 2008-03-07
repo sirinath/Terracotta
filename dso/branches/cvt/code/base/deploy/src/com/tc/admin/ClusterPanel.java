@@ -788,8 +788,6 @@ public class ClusterPanel extends XContainer {
       showProductInfo();
     }
 
-    // testSetupStats();
-
     m_acc.controller.setStatus(m_acc.format("server.started.status", new Object[] { m_clusterNode, startTime }));
   }
 
@@ -805,8 +803,6 @@ public class ClusterPanel extends XContainer {
       showProductInfo();
     }
 
-    // testSetupStats();
-
     m_acc.controller.setStatus(m_acc.format("server.initializing.status", new Object[] { m_clusterNode, startTime }));
   }
 
@@ -821,8 +817,6 @@ public class ClusterPanel extends XContainer {
     if (!isProductInfoShowing()) {
       showProductInfo();
     }
-
-    // testSetupStats();
 
     m_acc.controller.setStatus(m_acc.format("server.standingby.status", new Object[] { m_clusterNode, startTime }));
   }
