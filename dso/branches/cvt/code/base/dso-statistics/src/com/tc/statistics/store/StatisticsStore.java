@@ -4,7 +4,6 @@
 package com.tc.statistics.store;
 
 import com.tc.statistics.StatisticData;
-import com.tc.statistics.buffer.StatisticsConsumer;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 
 import java.io.Reader;

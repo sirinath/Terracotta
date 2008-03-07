@@ -11,7 +11,8 @@ import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.management.beans.logging.InstrumentationLoggingMBean;
 import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
-import com.tc.stats.statistics.CountStatistic;
+import com.tc.stats.DSOClientMBean;
+import com.tc.stats.statistics.Statistic;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -25,18 +26,20 @@ import javax.management.ObjectName;
 public class DSOClient {
   private ConnectionContext       cc;
   private ObjectName              bean;
-  private String                  channelID;
+  private DSOClientMBean          delegate;
+  private long                    channelID;
   private String                  remoteAddress;
   private String                  host;
   private Integer                 port;
   protected PropertyChangeSupport changeHelper;
 
-  private static final String     CHANNEL_ID_PROPERTY = "channelID";
-
   public DSOClient(ConnectionContext cc, ObjectName bean) {
     this.cc = cc;
     this.bean = bean;
-    this.channelID = bean.getKeyProperty(CHANNEL_ID_PROPERTY);
+    this.delegate = (DSOClientMBean) MBeanServerInvocationHandler.newProxyInstance(cc.mbsc, bean, DSOClientMBean.class,
+                                                                                   true);
+    channelID = delegate.getChannelID().toLong();
+    remoteAddress = delegate.getRemoteAddress();
     changeHelper = new PropertyChangeSupport(this);
   }
 
@@ -44,19 +47,11 @@ public class DSOClient {
     return bean;
   }
 
-  public String getChannelID() {
+  public long getChannelID() {
     return channelID;
   }
 
   public String getRemoteAddress() {
-    if (remoteAddress == null) {
-      try {
-        remoteAddress = (String) cc.getAttribute(bean, "RemoteAddress");
-      } catch (Exception e) {
-        AdminClient.getContext().log(e);
-      }
-    }
-
     return remoteAddress;
   }
 
@@ -92,7 +87,6 @@ public class DSOClient {
   public void refresh() {
     try {
       cc.invoke(bean, "refresh", new Object[] {}, new String[] {});
-
       changeHelper.firePropertyChange(new PropertyChangeEvent(this, null, null, null));
     } catch (Exception e) {
       AdminClient.getContext().log(e);
@@ -103,50 +97,14 @@ public class DSOClient {
     return getRemoteAddress();
   }
 
-  public CountStatistic getObjectFlushRate() {
-    try {
-      return (CountStatistic) cc.getAttribute(bean, "ObjectFlushRate");
-    } catch (Exception e) {
-      AdminClient.getContext().log(e);
-    }
-
-    return null;
-  }
-
-  public CountStatistic getObjectFaultRate() {
-    try {
-      return (CountStatistic) cc.getAttribute(bean, "ObjectFaultRate");
-    } catch (Exception e) {
-      AdminClient.getContext().log(e);
-    }
-
-    return null;
-  }
-
-  public CountStatistic getTransactionRate() {
-    try {
-      return (CountStatistic) cc.getAttribute(bean, "TransactionRate");
-    } catch (Exception e) {
-      AdminClient.getContext().log(e);
-    }
-
-    return null;
-  }
-
-  public CountStatistic getPendingTransactionsCount() {
-    try {
-      return (CountStatistic) cc.getAttribute(bean, "PendingTransactionsCount");
-    } catch (Exception e) {
-      AdminClient.getContext().log(e);
-    }
-
-    return null;
+  public Statistic[] getStatistics(String[] names) {
+    return delegate.getStatistics(names);
   }
 
   void addNotificationListener(ObjectName on, NotificationListener listener) throws Exception {
     cc.addNotificationListener(on, listener);
   }
-  
+
   private void addRegistrationListener(NotificationListener listener) throws Exception {
     ObjectName mbsd = cc.queryName("JMImplementation:type=MBeanServerDelegate");
     if (mbsd != null) {
@@ -248,13 +206,9 @@ public class DSOClient {
   }
 
   public void killClient() {
-    try {
-      cc.invoke(bean, "killClient", new Object[0], new String[0]);
-    } catch (Exception e) {
-      AdminClient.getContext().log(e);
-    }
+    delegate.killClient();
   }
-  
+
   public void addPropertyChangeListener(PropertyChangeListener listener) {
     changeHelper.addPropertyChangeListener(listener);
   }

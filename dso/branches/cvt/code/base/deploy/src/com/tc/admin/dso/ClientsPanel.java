@@ -18,7 +18,6 @@ import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.RangeType;
 import org.jfree.data.category.DefaultCategoryDataset;
 
-import com.tc.admin.AdminClient;
 import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.XContainer;
 import com.tc.stats.counter.Counter;
@@ -69,8 +68,7 @@ public class ClientsPanel extends XContainer {
             m_timer.start();
           }
         } catch (Exception e) {
-          AdminClient.getContext().log(e);
-          stopTimer();
+          /* JMX Connection has probably been dropped.  Wait for tearDown to start timer. */
         }
       }
     });

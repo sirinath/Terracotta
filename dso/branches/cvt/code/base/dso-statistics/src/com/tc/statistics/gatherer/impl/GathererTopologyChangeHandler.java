@@ -5,12 +5,10 @@ package com.tc.statistics.gatherer.impl;
 
 import com.tc.statistics.StatisticsManager;
 import com.tc.statistics.beans.TopologyChangeHandler;
-import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
-import java.util.Map;
-import java.util.Iterator;
 import java.util.HashMap;
-import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
 
 public class GathererTopologyChangeHandler implements TopologyChangeHandler {
   private volatile boolean enabled = false;

@@ -12,39 +12,74 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.annotations.XYImageAnnotation;
+import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.axis.AxisLocation;
+import org.jfree.chart.axis.AxisSpace;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.entity.ChartEntity;
+import org.jfree.chart.entity.EntityCollection;
+import org.jfree.chart.entity.XYAnnotationEntity;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.labels.XYToolTipGenerator;
+import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.RangeType;
 import org.jfree.data.time.Second;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.time.TimeSeriesDataItem;
 import org.jfree.data.xy.XYDataset;
+import org.jfree.ui.RectangleAnchor;
+import org.jfree.ui.TextAnchor;
 
-import com.tc.admin.common.DemoChartFactory;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.ResultSetHandler;
+import com.tc.statistics.retrieval.actions.SRACpu;
+import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
+import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
+import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
+import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
+import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
+import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
+import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
+import com.tc.statistics.retrieval.actions.SRAStageQueueDepths;
+import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
+import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.actions.SRAThreadDump;
+import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStoreImportListener;
-import com.tc.statistics.store.StatisticDataUser;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
 import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
 import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Paint;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -53,6 +88,7 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -60,6 +96,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -68,9 +105,11 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
@@ -78,10 +117,13 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -89,6 +131,7 @@ import javax.swing.event.ChangeListener;
 public class ClusterVisualizerFrame extends JFrame {
   private ImportAction                             fImportAction;
   private RetrieveAction                           fRetrieveAction;
+  private SessionInfo[]                            fSessions;
   private JComboBox                                fSessionSelector;
   private JPanel                                   fToolBar;
   private JSlider                                  fHeightSlider;
@@ -110,7 +153,7 @@ public class ClusterVisualizerFrame extends JFrame {
                                                                                      ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT);
 
   public ClusterVisualizerFrame(String[] args) {
-    super("Cluster Visualizer");
+    super("Terracotta Cluster Visualizer");
     JMenuBar menuBar = new JMenuBar();
     setJMenuBar(menuBar);
     JMenu fileMenu = new JMenu("File");
@@ -132,6 +175,11 @@ public class ClusterVisualizerFrame extends JFrame {
     fHeightSlider.addChangeListener(new SliderHeightListener());
     fSessionSelector.addActionListener(new SessionSelectorHandler());
     getContentPane().add(fBottomPanel = new JPanel(new BorderLayout()), BorderLayout.CENTER);
+    fBottomPanel.setBorder(LineBorder.createBlackLineBorder());
+    fGraphPanel = new JPanel();
+    fGraphPanel.setLayout(new GridLayout(0, 1));
+    fBottomPanel.add(new JScrollPane(fGraphPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
     JPanel statusPanel = new JPanel(new BorderLayout());
     statusPanel.setBorder(new EmptyBorder(3, 3, 3, 3));
     statusPanel.add(fStatusLine = new JLabel());
@@ -147,8 +195,12 @@ public class ClusterVisualizerFrame extends JFrame {
     fStatHandlerMap = new HashMap<String, AbstractStatHandler>();
     putStatHandler(new MemoryUsageHandler());
     putStatHandler(new L2toL1FaultHandler());
+    putStatHandler(new L2BroadcastHandler());
+    putStatHandler(new L2BroadcastsPerTxHandler());
+    putStatHandler(new L2ChangesPerBroadcastHandler());
     putStatHandler(new TxRateHandler());
     putStatHandler(new CPUUsageHandler());
+    putStatHandler(new StageQueueDepthsHandler());
 
     fDisplayCache = new HashMap<DisplaySource, DataDisplay>();
 
@@ -170,18 +222,23 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
-  class SessionSelectorHandler implements ActionListener {
+  private void handleSessionSelection() {
+    fSessionInfo = (SessionInfo) fSessionSelector.getSelectedItem();
+    if (fSessionInfo == null) return;
+    fGraphPanel.removeAll();
+    fGraphPanel.revalidate();
+    fGraphPanel.repaint();
+    fProgressBar.setVisible(true);
+    new NodeStatMappingThread().start();
+  }
+
+  private class SessionSelectorHandler implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
-      fSessionInfo = (SessionInfo) fSessionSelector.getSelectedItem();
-      if (fSessionInfo == null) return;
-      fGraphPanel.removeAll();
-      fGraphPanel.setLayout(null);
-      fProgressBar.setVisible(true);
-      new NodeStatMappingThread().start();
+      handleSessionSelection();
     }
   }
 
-  class GenerateGraphsAction extends AbstractAction implements Runnable {
+  private class GenerateGraphsAction extends AbstractAction implements Runnable {
     List<NodeGroupHandler> fNodeGroupHandlers;
     List<StatGroupHandler> fStatGroupHandlers;
 
@@ -241,7 +298,7 @@ public class ClusterVisualizerFrame extends JFrame {
 
     public void actionPerformed(ActionEvent ae) {
       fGraphPanel.removeAll();
-      fGraphPanel.setLayout(new GridLayout(0, 1));
+      fGraphPanel.setBorder(LineBorder.createGrayLineBorder());
       fProgressBar.setVisible(true);
       setToolBarEnabled(false);
 
@@ -257,14 +314,18 @@ public class ClusterVisualizerFrame extends JFrame {
       while (nodeGroupHandlerIter.hasNext()) {
         NodeGroupHandler ngh = nodeGroupHandlerIter.next();
         List<DataDisplay> displayList = ngh.generateDisplay();
-        buildGraphLater(ngh.fNode.toString(), displayList, true);
+        if (displayList.size() > 0) {
+          buildNodeGraphLater(ngh.fNode.toString(), displayList, ngh.fThreadDumps);
+        }
       }
 
       Iterator<StatGroupHandler> statGroupHandlerIter = fStatGroupHandlers.iterator();
       while (statGroupHandlerIter.hasNext()) {
         StatGroupHandler sgh = statGroupHandlerIter.next();
         List<DataDisplay> displayList = sgh.generateDisplay();
-        buildGraphLater(sgh.fStat, displayList, false);
+        if (displayList.size() > 0) {
+          buildStatGraphLater(sgh.fStat, displayList);
+        }
       }
 
       SwingUtilities.invokeLater(new Runnable() {
@@ -277,10 +338,21 @@ public class ClusterVisualizerFrame extends JFrame {
       });
     }
 
-    private void buildGraphLater(final String name, final List<DataDisplay> displayList, final boolean multiAxis) {
+    private void buildNodeGraphLater(final String name, final List<DataDisplay> displayList,
+                                     final List<StatisticData> threadDumps) {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
-          buildGraph(name, displayList, multiAxis);
+          buildNodeGraph(name, displayList, threadDumps);
+          fGraphPanel.revalidate();
+          fGraphPanel.repaint();
+        }
+      });
+    }
+
+    private void buildStatGraphLater(final String name, final List<DataDisplay> displayList) {
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          buildStatGraph(name, displayList);
           fGraphPanel.revalidate();
           fGraphPanel.repaint();
         }
@@ -372,9 +444,9 @@ public class ClusterVisualizerFrame extends JFrame {
     resetStore();
 
     try {
-      fStatusLine.setText("");
       fStore.importCsvStatistics(new InputStreamReader(in), new StatisticsStoreImportListener() {
         public void started() {
+          fStatusLine.setText("");
         }
 
         public void imported(final long count) {
@@ -398,6 +470,7 @@ public class ClusterVisualizerFrame extends JFrame {
             e.printStackTrace();
           } finally {
             fProgressBar.setVisible(false);
+            informAvailableSessions();
             setToolBarEnabled(true);
           }
         }
@@ -405,11 +478,33 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
+  private void informAvailableSessions() {
+    // If there's only a single session, prepare to view it.
+    if (fSessions.length == 1) {
+      handleSessionSelection();
+    } else {
+      JPanel panel = new JPanel(new GridBagLayout());
+      GridBagConstraints gbc = new GridBagConstraints();
+      gbc.gridx = 0;
+      gbc.anchor = GridBagConstraints.NORTHWEST;
+      panel.add(new JLabel("Select session to view:"), gbc);
+      JList list = new JList(fSessions);
+      panel.add(new JScrollPane(list), gbc);
+      list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+      int answer = JOptionPane.showConfirmDialog(ClusterVisualizerFrame.this, panel, getTitle(),
+                                                 JOptionPane.OK_CANCEL_OPTION);
+      if (answer == JOptionPane.OK_OPTION) {
+        SessionInfo session = (SessionInfo) list.getSelectedValue();
+        fSessionSelector.setSelectedItem(session);
+      }
+    }
+  }
+
   void resetStore() throws Exception {
     if (fStore != null) {
       fStore.close();
     }
-    File dir = new File("C:/temp/retrieve-store");
+    File dir = new File(System.getProperty("java.io.tmpdir"), "tc-stats-store");
     try {
       FileUtils.deleteDirectory(dir);
     } catch (Exception e) {
@@ -423,13 +518,12 @@ public class ClusterVisualizerFrame extends JFrame {
   }
 
   void newStore() throws Exception {
-    fBottomPanel.removeAll();
-    fGraphPanel = new JPanel();
-    fBottomPanel.add(new JScrollPane(fGraphPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
-
+    fGraphPanel.removeAll();
+    fGraphPanel.revalidate();
+    fGraphPanel.repaint();
     List<SessionInfo> sessionList = fStore.getAllSessions();
-    DefaultComboBoxModel comboModel = new DefaultComboBoxModel(sessionList.toArray(new SessionInfo[0]));
+    fSessions = sessionList.toArray(new SessionInfo[0]);
+    DefaultComboBoxModel comboModel = new DefaultComboBoxModel(fSessions);
     fSessionSelector.setModel(comboModel);
     fSessionSelector.setVisible(true);
   }
@@ -443,7 +537,7 @@ public class ClusterVisualizerFrame extends JFrame {
     }
 
     public void actionPerformed(ActionEvent ae) {
-      String addr = (String) JOptionPane.showInputDialog(fBottomPanel, "Enter server address", getTitle(),
+      String addr = (String) JOptionPane.showInputDialog(fBottomPanel, "Enter server address:", getTitle(),
                                                          JOptionPane.QUESTION_MESSAGE, null, null, "localhost:9510");
       if (addr == null) return;
       GetMethod get = null;
@@ -496,7 +590,7 @@ public class ClusterVisualizerFrame extends JFrame {
   }
 
   private void filterStats(List<String> stats) {
-    if (stats.contains("memory used")) {
+    if (stats.contains(SRAMemoryUsage.DATA_NAME_USED)) {
       Iterator<String> iter = stats.iterator();
       while (iter.hasNext()) {
         String stat = iter.next();
@@ -504,10 +598,10 @@ public class ClusterVisualizerFrame extends JFrame {
           iter.remove();
         }
       }
-      stats.add("memory usage");
+      stats.add(SRAMemoryUsage.ACTION_NAME);
     }
 
-    if (stats.contains("cpu combined")) {
+    if (stats.contains(SRACpu.DATA_NAME_COMBINED)) {
       Iterator<String> iter = stats.iterator();
       while (iter.hasNext()) {
         String stat = iter.next();
@@ -534,7 +628,7 @@ public class ClusterVisualizerFrame extends JFrame {
       fSessionInfo.fNodeStatsMap.clear();
       while (nodeIter.hasNext()) {
         Node node = nodeIter.next();
-        setStatusLineLater("Getting stats for '" + node + "'");
+        setStatusLineLater("Determining stats for '" + node + "'");
         List<String> nodeStats = getAvailableStatsForNode(node);
         filterStats(nodeStats);
         fSessionInfo.fNodeStatsMap.put(node, nodeStats);
@@ -545,7 +639,7 @@ public class ClusterVisualizerFrame extends JFrame {
       fSessionInfo.fStatNodesMap.clear();
       while (statIter.hasNext()) {
         String stat = statIter.next();
-        setStatusLineLater("Getting nodes for '" + stat + "'");
+        setStatusLineLater("Determining which nodes have '" + stat + "'");
         List<Node> statNodes = getAvailableNodesForStat(stat);
         fSessionInfo.fStatNodesMap.put(stat, statNodes);
       }
@@ -580,8 +674,14 @@ public class ClusterVisualizerFrame extends JFrame {
   }
 
   private void setupControlPanel() {
-    fControlPanel = new JPanel(new BorderLayout());
-    fControlPanel.setBorder(new EmptyBorder(3, 3, 3, 3));
+    if (fControlPanel == null) {
+      fControlPanel = new JPanel(new BorderLayout());
+      fControlPanel.setBorder(new EmptyBorder(3, 3, 3, 3));
+      fBottomPanel.add(new JScrollPane(fControlPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.WEST);
+    } else {
+      fControlPanel.removeAll();
+    }
     List<Node> nodes = fSessionInfo.fNodeList;
     List<String> stats = fSessionInfo.fStatList;
     Iterator<Node> nodeIter = nodes.iterator();
@@ -611,22 +711,20 @@ public class ClusterVisualizerFrame extends JFrame {
       List<Node> statNodes = fSessionInfo.fStatNodesMap.get(stat);
       if (statNodes != null && statNodes.size() > 0) {
         if (!haveMemoryUsage && stat.startsWith("memory ")) {
-          stat = "memory usage";
+          stat = SRAMemoryUsage.ACTION_NAME;
           haveMemoryUsage = true;
           gridPanel.add(createStatGroup(stat, statNodes), gbc);
         } else if (!haveCPUUsage && stat.startsWith("cpu ")) {
           stat = "cpu usage";
           haveCPUUsage = true;
           gridPanel.add(createStatGroup(stat, statNodes), gbc);
-        } else if (stat.equals("l2 transaction count") || stat.equals("l2 l1 fault")) {
+        } else if (!fStore.isNonGratis(stat)) {
           gridPanel.add(createStatGroup(stat, statNodes), gbc);
         }
       }
     }
-    fBottomPanel.add(new JScrollPane(fControlPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.WEST);
-    fBottomPanel.revalidate();
-    fBottomPanel.repaint();
+    fControlPanel.revalidate();
+    fControlPanel.repaint();
   }
 
   private Container createNodeGroup(Node node, List<String> stats) {
@@ -667,48 +765,111 @@ public class ClusterVisualizerFrame extends JFrame {
     return panel;
   }
 
-  private XYDataset[] display2Dataset(List<DataDisplay> displayList) {
-    Iterator<DataDisplay> iter = displayList.iterator();
-    List<XYDataset> list = new ArrayList<XYDataset>();
-    while (iter.hasNext()) {
-      DataDisplay dd = iter.next();
-      list.add(dd.fXYDataset);
-    }
-    return list.toArray(new XYDataset[0]);
-  }
-
-  private JFreeChart buildGraph(String title, List<DataDisplay> displayList, boolean multiAxis) {
-    XYDataset[] xyDatasets = display2Dataset(displayList);
-    JFreeChart chart = DemoChartFactory.createXYLineChart("", "", "", xyDatasets[0], !multiAxis);
-    XYPlot plot = (XYPlot) chart.getPlot();
-    ((DateAxis) plot.getDomainAxis()).setMinimumDate(fSessionInfo.fStart);
+  private JFreeChart buildNodeGraph(String title, List<DataDisplay> displayList, List<StatisticData> threadDumps) {
     boolean topOrLeft = true;
+    DateAxis timeAxis = new DateAxis("");
+    timeAxis.setLowerMargin(0.02);
+    timeAxis.setUpperMargin(0.02);
+    XYPlot plot = new XYPlot(null, timeAxis, null, null);
+    XYToolTipGenerator toolTipGenerator = StandardXYToolTipGenerator.getTimeSeriesInstance();
     for (int i = 0; i < displayList.size(); i++) {
       DataDisplay dd = displayList.get(i);
-      plot.setDataset(i, xyDatasets[i]);
-      if (i == 0 || multiAxis) {
-        plot.setRangeAxis(i, dd.fAxis);
-        if (!multiAxis) {
-          dd.fAxis.setLabel("");
-        }
-      }
+      plot.setDataset(i, dd.fXYDataset);
+      plot.setRangeAxis(i, dd.fAxis);
       XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, false);
+      renderer.setBaseToolTipGenerator(toolTipGenerator);
       plot.setRenderer(i, renderer);
       Paint paint = renderer.lookupSeriesPaint(i);
       renderer.setSeriesPaint(0, paint);
-      if (multiAxis) {
-        plot.setRangeAxisLocation(i, topOrLeft ? AxisLocation.TOP_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT);
-        topOrLeft = topOrLeft ? false : true;
-        plot.mapDatasetToRangeAxis(i, i);
-        dd.fAxis.setLabelPaint(paint);
-        dd.fAxis.setTickLabelPaint(paint);
-      }
+      plot.setRangeAxisLocation(i, topOrLeft ? AxisLocation.TOP_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT);
+      topOrLeft = !topOrLeft;
+      plot.mapDatasetToRangeAxis(i, i);
+      dd.fAxis.setTickLabelPaint(Color.black);
+      dd.fAxis.setAxisLinePaint(paint);
+      dd.fAxis.setAxisLineStroke(new BasicStroke(2.0f));
+      dd.fAxis.setTickMarkPaint(paint);
     }
-    ChartPanel chartPanel = new ChartPanel(chart, true);
+
+    Iterator<StatisticData> threadDumpIter = threadDumps.iterator();
+    while (threadDumpIter.hasNext()) {
+      StatisticData threadDump = threadDumpIter.next();
+      Date moment = threadDump.getMoment();
+      String text = (String) threadDump.getData();
+      ThreadDumpImageAnnotation annotation = new ThreadDumpImageAnnotation(text, moment);
+      plot.addAnnotation(annotation);
+    }
+
+    JFreeChart chart = new JFreeChart("", JFreeChart.DEFAULT_TITLE_FONT, plot, true);
+    final ChartPanel chartPanel = new ChartPanel(chart, false);
     chartPanel.setBorder(new TitledBorder(title));
     fGraphPanel.add(chartPanel);
+    chartPanel.addMouseListener(new MouseAdapter() {
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          ChartEntity ce = chartPanel.getEntityForPoint(e.getX(), e.getY());
+          if (ce != null) {
+            if (ce instanceof ThreadDumpAnnotationEntity) {
+              showThreadDump(((ThreadDumpAnnotationEntity) ce).fText);
+            }
+          }
+        }
+      }
+    });
     chartPanel.setPreferredSize(fDefaultGraphSize);
+    AxisSpace rangeAxisSpace = new AxisSpace();
+    rangeAxisSpace.setLeft(150);
+    rangeAxisSpace.setRight(150);
+    plot.setFixedRangeAxisSpace(rangeAxisSpace);
     return chart;
+  }
+
+  private JFreeChart buildStatGraph(String title, List<DataDisplay> displayList) {
+    DateAxis timeAxis = new DateAxis("");
+    timeAxis.setLowerMargin(0.02);
+    timeAxis.setUpperMargin(0.02);
+    XYPlot plot = new XYPlot(null, timeAxis, null, null);
+    XYToolTipGenerator toolTipGenerator = StandardXYToolTipGenerator.getTimeSeriesInstance();
+    for (int i = 0; i < displayList.size(); i++) {
+      DataDisplay dd = displayList.get(i);
+      plot.setDataset(i, dd.fXYDataset);
+      if (i == 0) {
+        plot.setRangeAxis(i, dd.fAxis);
+        dd.fAxis.setLabel("");
+        dd.fAxis.setTickLabelPaint(Color.black);
+        dd.fAxis.setAxisLinePaint(Color.black);
+        dd.fAxis.setAxisLineStroke(new BasicStroke());
+        dd.fAxis.setTickMarkPaint(Color.black);
+      }
+      XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, false);
+      renderer.setBaseToolTipGenerator(toolTipGenerator);
+      plot.setRenderer(i, renderer);
+      Paint paint = renderer.lookupSeriesPaint(i);
+      renderer.setSeriesPaint(0, paint);
+    }
+
+    JFreeChart chart = new JFreeChart("", JFreeChart.DEFAULT_TITLE_FONT, plot, true);
+    final ChartPanel chartPanel = new ChartPanel(chart, false);
+    chartPanel.setBorder(new TitledBorder(title));
+    fGraphPanel.add(chartPanel);
+
+    chartPanel.setPreferredSize(fDefaultGraphSize);
+    AxisSpace rangeAxisSpace = new AxisSpace();
+    rangeAxisSpace.setLeft(150);
+    rangeAxisSpace.setRight(150);
+    plot.setFixedRangeAxisSpace(rangeAxisSpace);
+    return chart;
+  }
+
+  private void showThreadDump(String text) {
+    JTextArea textArea = new JTextArea(text);
+    JScrollPane scrollPane = new JScrollPane(textArea);
+    JDialog dialog = new JDialog(this, getTitle());
+    dialog.getContentPane().add(scrollPane);
+    textArea.setRows(20);
+    textArea.setColumns(80);
+    dialog.pack();
+    dialog.setLocationRelativeTo(null);
+    dialog.setVisible(true);
   }
 
   class DisplaySource {
@@ -739,22 +900,40 @@ public class ClusterVisualizerFrame extends JFrame {
   }
 
   class NodeGroupHandler {
-    Node fNode;
-    List fStats;
+    Node                fNode;
+    List<String>        fStats;
+    List<StatisticData> fThreadDumps;
 
     NodeGroupHandler(Node node, List<String> stats) {
       fNode = node;
       fStats = stats;
     }
 
+    private List<StatisticData> getThreadDumps() {
+      final List<StatisticData> list = new ArrayList<StatisticData>();
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName(SRAThreadDump.ACTION_NAME);
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
+          list.add(sd);
+          return true;
+        }
+      });
+      return list;
+    }
+
     List<DataDisplay> generateDisplay() {
+      fThreadDumps = getThreadDumps();
       ArrayList<DataDisplay> displayList = new ArrayList<DataDisplay>();
       Iterator<String> statIter = fStats.iterator();
       while (statIter.hasNext()) {
         String stat = statIter.next();
         DisplaySource displaySource = new DisplaySource(fNode, stat);
         DataDisplay cachedDisplay = fDisplayCache.get(displaySource);
-        if (cachedDisplay != null) {
+        if (false && cachedDisplay != null) {
           DataDisplay display = cachedDisplay.createCopy(stat);
           if (display != null) {
             displayList.add(display);
@@ -767,8 +946,10 @@ public class ClusterVisualizerFrame extends JFrame {
           handler.setLegend(stat);
           setStatusLineLater("Generating display for '" + displaySource + "'");
           DataDisplay display = handler.generateDisplay();
-          displayList.add(display);
-          fDisplayCache.put(displaySource, display);
+          if (display.fXYDataset.getSeriesCount() > 0) {
+            displayList.add(display);
+            fDisplayCache.put(displaySource, display);
+          }
         }
       }
       return displayList;
@@ -793,7 +974,7 @@ public class ClusterVisualizerFrame extends JFrame {
           Node node = nodeIter.next();
           DisplaySource displaySource = new DisplaySource(node, fStat);
           DataDisplay cachedDisplay = fDisplayCache.get(displaySource);
-          if (cachedDisplay != null) {
+          if (false && cachedDisplay != null) {
             DataDisplay display = cachedDisplay.createCopy(node.toString());
             if (display != null) {
               displayList.add(display);
@@ -804,8 +985,10 @@ public class ClusterVisualizerFrame extends JFrame {
           handler.setLegend(node.toString());
           setStatusLineLater("Generating display for '" + displaySource + "'");
           DataDisplay display = handler.generateDisplay();
-          displayList.add(display);
-          fDisplayCache.put(displaySource, display);
+          if (display.fXYDataset.getSeriesCount() > 0) {
+            displayList.add(display);
+            fDisplayCache.put(displaySource, display);
+          }
         }
       }
       return displayList;
@@ -826,7 +1009,7 @@ public class ClusterVisualizerFrame extends JFrame {
 
     abstract String getName();
 
-    abstract TimeSeries generateSeries();
+    abstract TimeSeriesCollection generateTimeSeriesCollection();
 
     abstract DataDisplay generateDisplay();
 
@@ -840,9 +1023,9 @@ public class ClusterVisualizerFrame extends JFrame {
       return "memory usage";
     }
 
-    TimeSeries generateSeries() {
+    TimeSeriesCollection generateTimeSeriesCollection() {
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("memory max");
+      criteria.addName(SRAMemoryUsage.DATA_NAME_MAX);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
@@ -854,7 +1037,7 @@ public class ClusterVisualizerFrame extends JFrame {
       });
 
       criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("memory used");
+      criteria.addName(SRAMemoryUsage.DATA_NAME_USED);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
@@ -863,13 +1046,15 @@ public class ClusterVisualizerFrame extends JFrame {
         public boolean useStatisticData(StatisticData sd) {
           Long value = (Long) sd.getData();
           Date moment = sd.getMoment();
-          double d = (value / ((double) fMax));
-          series.addOrUpdate(new Second(moment), d);
+          if (value != null && moment != null) {
+            double d = (value / ((double) fMax));
+            series.addOrUpdate(new Second(moment), d);
+          }
           return true;
         }
       });
 
-      return series;
+      return new TimeSeriesCollection(series);
     }
 
     NumberAxis generateAxis() {
@@ -879,34 +1064,108 @@ public class ClusterVisualizerFrame extends JFrame {
     }
 
     DataDisplay generateDisplay() {
-      DataDisplay display = new DataDisplay(new TimeSeriesCollection(generateSeries()), generateAxis());
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
       return display;
     }
 
   }
 
+  class StageQueueDepthsHandler extends AbstractStatHandler {
+    String getName() {
+      return SRAStageQueueDepths.ACTION_NAME;
+    }
+
+    TimeSeriesCollection generateTimeSeriesCollection() {
+      final TimeSeriesCollection result = new TimeSeriesCollection();
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName(SRAStageQueueDepths.ACTION_NAME);
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      final Map<String, TimeSeries> seriesMap = new HashMap<String, TimeSeries>();
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
+          Number value = (Number) sd.getData();
+          Date moment = sd.getMoment();
+          if (moment != null && value != null) {
+            String element = sd.getElement();
+            TimeSeries series = seriesMap.get(element);
+            if(series == null) {
+              seriesMap.put(element, series = new TimeSeries(element, Second.class));
+              result.addSeries(series);
+            }
+            series.addOrUpdate(new Second(moment), value.longValue());
+          }
+          return true;
+        }
+      });
+
+      int seriesCount = result.getSeriesCount();
+      for(int i = seriesCount-1; i >= 0 ; i--) {
+        TimeSeries series = result.getSeries(i);
+        int itemCount = series.getItemCount();
+        boolean foundData = false;
+        for(int j = 0; j < itemCount; j++) {
+          TimeSeriesDataItem item = series.getDataItem(j);
+          if(item.getValue().doubleValue() > 0.0) {
+            foundData = true;
+            break;
+          }
+        }
+        if(!foundData) {
+          result.removeSeries(i);
+        }
+      }
+      
+      return result;
+    }
+ 
+    NumberAxis generateAxis() {
+      NumberAxis axis = new NumberAxis("SEDA Queue Depths");
+      axis.setRangeType(RangeType.POSITIVE);
+      axis.setNumberFormatOverride(new DecimalFormat("0.0"));
+      return axis;
+    }
+
+    DataDisplay generateDisplay() {
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
+      return display;
+    }
+
+  }
+  
   class CPUUsageHandler extends AbstractStatHandler {
     String getName() {
       return "cpu usage";
     }
 
-    TimeSeries generateSeries() {
+    TimeSeriesCollection generateTimeSeriesCollection() {
+      final TimeSeriesCollection result = new TimeSeriesCollection();
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("cpu combined");
+      criteria.addName(SRACpu.DATA_NAME_COMBINED);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
-      final TimeSeries series = new TimeSeries(fLegend, Second.class);
+      final Map<String, TimeSeries> seriesMap = new HashMap<String, TimeSeries>();
       safeRetrieveStatistics(criteria, new StatisticDataUser() {
         public boolean useStatisticData(StatisticData sd) {
           Number value = (Number) sd.getData();
           Date moment = sd.getMoment();
-          series.addOrUpdate(new Second(moment), value.doubleValue());
+          if (moment != null && value != null) {
+            String element = sd.getElement();
+            String key = fNode.fIpAddr+":"+element;
+            TimeSeries series = seriesMap.get(key);
+            if(series == null) {
+              seriesMap.put(key, series = new TimeSeries(fNode.fIpAddr+"("+element+")", Second.class));
+              result.addSeries(series);
+            }
+            series.addOrUpdate(new Second(moment), value.doubleValue());
+          }
           return true;
         }
       });
 
-      return series;
+      return result;
     }
 
     NumberAxis generateAxis() {
@@ -916,7 +1175,7 @@ public class ClusterVisualizerFrame extends JFrame {
     }
 
     DataDisplay generateDisplay() {
-      DataDisplay display = new DataDisplay(new TimeSeriesCollection(generateSeries()), generateAxis());
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
       return display;
     }
 
@@ -924,70 +1183,194 @@ public class ClusterVisualizerFrame extends JFrame {
 
   class L2toL1FaultHandler extends AbstractStatHandler {
     String getName() {
-      return "l2 l1 fault";
+      return SRAL2ToL1FaultRate.ACTION_NAME;
     }
 
-    TimeSeries generateSeries() {
+    TimeSeriesCollection generateTimeSeriesCollection() {
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("l2 l1 fault");
+      criteria.addName(SRAL2ToL1FaultRate.ACTION_NAME);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
       safeRetrieveStatistics(criteria, new StatisticDataUser() {
         public boolean useStatisticData(StatisticData sd) {
-          Long value = (Long) sd.getData();
+          Number value = (Number) sd.getData();
           Date moment = sd.getMoment();
-          series.addOrUpdate(new Second(moment), value);
+          if (value != null && moment != null) {
+            series.addOrUpdate(new Second(moment), value);
+          }
           return true;
         }
       });
 
-      return series;
+      return new TimeSeriesCollection(series);
     }
 
     NumberAxis generateAxis() {
       NumberAxis axis = new NumberAxis("L2-L1 Fault");
+      axis.setRangeType(RangeType.POSITIVE);
+      axis.setNumberFormatOverride(new DecimalFormat("0.0"));
       return axis;
     }
 
     DataDisplay generateDisplay() {
-      DataDisplay display = new DataDisplay(new TimeSeriesCollection(generateSeries()), generateAxis());
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
+      return display;
+    }
+  }
+
+  class L2BroadcastHandler extends AbstractStatHandler {
+    String getName() {
+      return SRAL2BroadcastCount.ACTION_NAME;
+    }
+
+    TimeSeriesCollection generateTimeSeriesCollection() {
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName(SRAL2BroadcastCount.ACTION_NAME);
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      final TimeSeries series = new TimeSeries(fLegend, Second.class);
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
+          Number value = (Number) sd.getData();
+          Date moment = sd.getMoment();
+          if (value != null && moment != null) {
+            series.addOrUpdate(new Second(moment), value);
+          }
+          return true;
+        }
+      });
+
+      return new TimeSeriesCollection(series);
+    }
+
+    NumberAxis generateAxis() {
+      NumberAxis axis = new NumberAxis("L2 Broadcasts");
+      axis.setRangeType(RangeType.POSITIVE);
+      axis.setNumberFormatOverride(new DecimalFormat("0.0"));
+      return axis;
+    }
+
+    DataDisplay generateDisplay() {
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
+      return display;
+    }
+  }
+
+  class L2BroadcastsPerTxHandler extends AbstractStatHandler {
+    String getName() {
+      return SRAL2BroadcastPerTransaction.ACTION_NAME;
+    }
+
+    TimeSeriesCollection generateTimeSeriesCollection() {
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName(SRAL2BroadcastPerTransaction.ACTION_NAME);
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      final TimeSeries series = new TimeSeries(fLegend, Second.class);
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
+          Number value = (Number) sd.getData();
+          Date moment = sd.getMoment();
+          if (value != null && moment != null) {
+            series.addOrUpdate(new Second(moment), value);
+          }
+          return true;
+        }
+      });
+
+      return new TimeSeriesCollection(series);
+    }
+
+    NumberAxis generateAxis() {
+      NumberAxis axis = new NumberAxis("L2 Broadcasts/txn");
+      axis.setRangeType(RangeType.POSITIVE);
+      axis.setNumberFormatOverride(new DecimalFormat("0.0"));
+      return axis;
+    }
+
+    DataDisplay generateDisplay() {
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
+      return display;
+    }
+  }
+
+  class L2ChangesPerBroadcastHandler extends AbstractStatHandler {
+    String getName() {
+      return SRAL2ChangesPerBroadcast.ACTION_NAME;
+    }
+
+    TimeSeriesCollection generateTimeSeriesCollection() {
+      StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
+      criteria.addName(SRAL2ChangesPerBroadcast.ACTION_NAME);
+      criteria.setAgentIp(fNode.fIpAddr);
+      criteria.setAgentDifferentiator(fNode.fName);
+      criteria.setSessionId(fSessionInfo.fId);
+      final TimeSeries series = new TimeSeries(fLegend, Second.class);
+      safeRetrieveStatistics(criteria, new StatisticDataUser() {
+        public boolean useStatisticData(StatisticData sd) {
+          Number value = (Number) sd.getData();
+          Date moment = sd.getMoment();
+          if (value != null && moment != null) {
+            series.addOrUpdate(new Second(moment), value);
+          }
+          return true;
+        }
+      });
+
+      return new TimeSeriesCollection(series);
+    }
+
+    NumberAxis generateAxis() {
+      NumberAxis axis = new NumberAxis("L2 Changes/Broadcast");
+      axis.setRangeType(RangeType.POSITIVE);
+      axis.setNumberFormatOverride(new DecimalFormat("0.0"));
+      return axis;
+    }
+
+    DataDisplay generateDisplay() {
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
       return display;
     }
   }
 
   class TxRateHandler extends AbstractStatHandler {
     String getName() {
-      return "l2 transaction count";
+      return SRAL2TransactionCount.ACTION_NAME;
     }
 
-    TimeSeries generateSeries() {
+    TimeSeriesCollection generateTimeSeriesCollection() {
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName("l2 transaction count");
+      criteria.addName(SRAL2TransactionCount.ACTION_NAME);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
       final TimeSeries series = new TimeSeries(fLegend, Second.class);
       safeRetrieveStatistics(criteria, new StatisticDataUser() {
         public boolean useStatisticData(StatisticData sd) {
-          Long value = (Long) sd.getData();
+          Number value = (Number) sd.getData();
           Date moment = sd.getMoment();
-          series.addOrUpdate(new Second(moment), value);
+          if (value != null && moment != null) {
+            series.addOrUpdate(new Second(moment), value);
+          }
           return true;
         }
       });
 
-      return series;
+      return new TimeSeriesCollection(series);
     }
 
     NumberAxis generateAxis() {
       NumberAxis axis = new NumberAxis("Tx Rate");
+      axis.setRangeType(RangeType.POSITIVE);
       return axis;
     }
 
     DataDisplay generateDisplay() {
-      DataDisplay display = new DataDisplay(new TimeSeriesCollection(generateSeries()), generateAxis());
+      DataDisplay display = new DataDisplay(generateTimeSeriesCollection(), generateAxis());
       return display;
     }
   }
@@ -1015,7 +1398,17 @@ public class ClusterVisualizerFrame extends JFrame {
 
     public void actionPerformed(ActionEvent ae) {
       try {
-        fStore.close();
+        if (fStore != null) {
+          fStore.close();
+        }
+
+        Preferences prefs = Preferences.userNodeForPackage(ClusterVisualizerFrame.class);
+        Preferences locationPrefs = prefs.node("bounds");
+        locationPrefs.putInt("x", getX());
+        locationPrefs.putInt("y", getY());
+        locationPrefs.putInt("width", getWidth());
+        locationPrefs.putInt("height", getHeight());
+        locationPrefs.flush();
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -1093,11 +1486,42 @@ public class ClusterVisualizerFrame extends JFrame {
     }
   }
 
+  private static Rectangle getDefaultBounds() {
+    Toolkit tk = Toolkit.getDefaultToolkit();
+    Dimension size = tk.getScreenSize();
+    GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    GraphicsDevice device = env.getDefaultScreenDevice();
+    GraphicsConfiguration config = device.getDefaultConfiguration();
+    Insets insets = tk.getScreenInsets(config);
+
+    size.width -= (insets.left + insets.right);
+    size.height -= (insets.top + insets.bottom);
+
+    int width = (int) (size.width * 0.75f);
+    int height = (int) (size.height * 0.66f);
+
+    // center
+    int x = size.width / 2 - width / 2;
+    int y = size.height / 2 - height / 2;
+
+    return new Rectangle(x, y, width, height);
+  }
+
   public static void main(String[] args) throws Exception {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     ClusterVisualizerFrame frame = new ClusterVisualizerFrame(args);
-    frame.setSize(new Dimension(700, 650));
-    frame.setLocationRelativeTo(null);
+    Preferences prefs = Preferences.userNodeForPackage(ClusterVisualizerFrame.class);
+    Preferences locationPrefs = prefs.node("bounds");
+    Rectangle bounds = new Rectangle();
+    if (locationPrefs != null) {
+      bounds.x = locationPrefs.getInt("x", 0);
+      bounds.y = locationPrefs.getInt("y", 0);
+      bounds.width = locationPrefs.getInt("width", 800);
+      bounds.height = locationPrefs.getInt("height", 700);
+    } else {
+      bounds = getDefaultBounds();
+    }
+    frame.setBounds(bounds);
     frame.setVisible(true);
   }
 }
@@ -1149,7 +1573,7 @@ class DataDisplay {
       return null;
     }
   }
-  
+
   public String toString() {
     return ((TimeSeriesCollection) fXYDataset).getSeries(0).getKey() + ":" + fAxis.getLabel();
   }
@@ -1175,21 +1599,85 @@ class SessionInfo {
   }
 }
 
+class ThreadDumpImageAnnotation extends XYImageAnnotation {
+  String       fText;
+  Date         fMoment;
+  static Image fImage;
+
+  static {
+    URL url = ThreadDumpImageAnnotation.class.getResource("/com/tc/admin/icons/jspbrkpt_obj.gif");
+    fImage = Toolkit.getDefaultToolkit().getImage(url);
+  }
+
+  ThreadDumpImageAnnotation(String text, Date moment) {
+    super(moment.getTime(), 0, fImage, RectangleAnchor.BOTTOM);
+    fText = text;
+    fMoment = moment;
+    setToolTipText("Thread dump");
+  }
+
+  protected void addEntity(PlotRenderingInfo info, Shape hotspot, int rendererIndex, String toolTipText, String urlText) {
+    if (info == null) { return; }
+    EntityCollection entities = info.getOwner().getEntityCollection();
+    if (entities == null) { return; }
+    ThreadDumpAnnotationEntity entity = new ThreadDumpAnnotationEntity(hotspot, rendererIndex, toolTipText, urlText);
+    entities.add(entity);
+    entity.fText = fText;
+  }
+}
+
+class ThreadDumpTextAnnotation extends XYTextAnnotation {
+  String fText;
+  Date   fMoment;
+
+  ThreadDumpTextAnnotation(String text, Date moment) {
+    super("thread dump", moment.getTime(), 0);
+    fText = text;
+    fMoment = moment;
+    setRotationAngle(Math.PI / 2.0);
+    setTextAnchor(TextAnchor.BOTTOM_CENTER);
+    setToolTipText("Thread dump");
+  }
+
+  protected void addEntity(PlotRenderingInfo info, Shape hotspot, int rendererIndex, String toolTipText, String urlText) {
+    if (info == null) { return; }
+    EntityCollection entities = info.getOwner().getEntityCollection();
+    if (entities == null) { return; }
+    ThreadDumpAnnotationEntity entity = new ThreadDumpAnnotationEntity(hotspot, rendererIndex, toolTipText, urlText);
+    entities.add(entity);
+    entity.fText = fText;
+  }
+}
+
+class ThreadDumpAnnotationEntity extends XYAnnotationEntity {
+  String fText;
+
+  ThreadDumpAnnotationEntity(Shape hotspot, int rendererIndex, String toolTipText, String urlText) {
+    super(hotspot, rendererIndex, toolTipText, urlText);
+  }
+}
+
 class MyStatisticsStore extends H2StatisticsStoreImpl {
-  private final static String       SQL_GET_NODES          = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
-  private final static String       SQL_GET_STATS          = "SELECT statname FROM statisticlog WHERE sessionid = ? GROUP BY statname ORDER BY statname ASC";
-  private final static String       SQL_GET_STATS_FOR_NODE = "SELECT statname FROM statisticlog WHERE sessionid = ? AND agentIp = ? AND agentDifferentiator = ? GROUP BY statname ORDER BY statname ASC";
-  private final static String       SQL_GET_NODES_FOR_STAT = "SELECT agentIp, agentDifferentiator FROM statisticlog WHERE sessionid = ? AND statname = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
+  private final static String       SQL_GET_NODES          = "SELECT agentIp, agentDifferentiator FROM cachedstatlogstructure WHERE sessionid = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
+  private final static String       SQL_GET_STATS          = "SELECT statname FROM cachedstatlogstructure WHERE sessionid = ? GROUP BY statname ORDER BY statname ASC";
+  private final static String       SQL_GET_STATS_FOR_NODE = "SELECT statname FROM cachedstatlogstructure WHERE sessionid = ? AND agentIp = ? AND agentDifferentiator = ? GROUP BY statname ORDER BY statname ASC";
+  private final static String       SQL_GET_NODES_FOR_STAT = "SELECT agentIp, agentDifferentiator FROM cachedstatlogstructure WHERE sessionid = ? AND statname = ? GROUP BY agentIp, agentDifferentiator ORDER BY agentIp ASC";
 
   private static final List<String> STATS_NON_GRATIS       = new ArrayList<String>();
 
   static {
-    STATS_NON_GRATIS.addAll(Arrays.asList(new String[] { "startup timestamp", "shutdown timestamp",
-      "system properties", "cpu idle", "cpu nice", "cpu wait", "cpu sys", "cpu user", "memory free" }));
+    STATS_NON_GRATIS.addAll(Arrays.asList(new String[] { SRAStartupTimestamp.ACTION_NAME,
+      SRAShutdownTimestamp.ACTION_NAME, SRASystemProperties.ACTION_NAME, SRAThreadDump.ACTION_NAME,
+      SRACpu.DATA_NAME_IDLE, SRACpu.DATA_NAME_NICE, SRACpu.DATA_NAME_WAIT, SRACpu.DATA_NAME_SYS, SRACpu.DATA_NAME_USER,
+      SRAMemoryUsage.DATA_NAME_FREE, SRAMemoryUsage.DATA_NAME_MAX }));
   }
 
   public MyStatisticsStore(File dir) {
     super(dir);
+  }
+
+  public boolean isNonGratis(String stat) {
+    return STATS_NON_GRATIS.contains(stat);
   }
 
   public synchronized void open() throws TCStatisticsStoreException {
@@ -1210,7 +1698,7 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
     for (String id : ids) {
       final SessionInfo sessionInfo = new SessionInfo(id);
       StatisticsRetrievalCriteria critera = new StatisticsRetrievalCriteria();
-      critera.addName("startup timestamp");
+      critera.addName(SRAStartupTimestamp.ACTION_NAME);
       critera.setSessionId(id);
       retrieveStatistics(critera, new StatisticDataUser() {
         public boolean useStatisticData(StatisticData sd) {
@@ -1219,7 +1707,7 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
         }
       });
       critera = new StatisticsRetrievalCriteria();
-      critera.addName("shutdown timestamp");
+      critera.addName(SRAShutdownTimestamp.ACTION_NAME);
       critera.setSessionId(id);
       retrieveStatistics(critera, new StatisticDataUser() {
         public boolean useStatisticData(StatisticData sd) {
