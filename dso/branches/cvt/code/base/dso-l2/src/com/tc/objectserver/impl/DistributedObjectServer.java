@@ -4,6 +4,9 @@
  */
 package com.tc.objectserver.impl;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -203,9 +206,6 @@ import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
-
-import bsh.EvalError;
-import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -875,8 +875,16 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
   }
 
+  /**
+   * Since this is accessed via JMX and l1Listener isn't initialed when a secondary
+   * is waiting on the lock file, use the config value unless the special value 0
+   * is specified for use in the tests to get a random port.
+   */
   public int getListenPort() {
-    return this.l1Listener.getBindPort();
+    NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
+    int configValue = l2DSOConfig.listenPort().getInt();
+    int listenerValue = this.l1Listener != null ? this.l1Listener.getBindPort() : 0;
+    return configValue == 0 ? listenerValue : configValue;
   }
 
   public InetAddress getListenAddr() {

@@ -63,6 +63,9 @@ public class ServerNode extends ComponentNode
 {
   private AdminClientContext      m_acc;
   private ServerConnectionManager m_connectManager;
+  private String                  m_host;
+  private int                     m_jmxPort;
+  private Integer                 m_dsoPort;
   private Exception               m_connectException;
   private TCServerInfoMBean       m_serverInfoBean;
   private ProductInfo             m_productInfo;
@@ -80,7 +83,12 @@ public class ServerNode extends ComponentNode
     super();
 
     m_acc = AdminClient.getContext();
+    m_host = host;
+    m_jmxPort = jmxPort;
+    
     setRenderer(new ServerNodeTreeCellRenderer());
+    initMenu(autoConnect);
+    setComponent(m_serverPanel = new ServerPanel(this));
     AutoConnectionListener acl = new AutoConnectionListener();
     m_connectManager = new ServerConnectionManager(host, jmxPort, autoConnect, acl);
     if(autoConnect) {
@@ -89,8 +97,6 @@ public class ServerNode extends ComponentNode
         m_connectManager.setCredentials(creds[0], creds[1]);
       }
     }
-    initMenu(autoConnect);
-    setComponent(m_serverPanel = new ServerPanel(this));
   }
 
   /**
@@ -166,23 +172,35 @@ public class ServerNode extends ComponentNode
   }
 
   void setHost(String host) {
-    m_connectManager.setHostname(host);
+    m_connectManager.setHostname(m_host = host);
   }
 
   public String getHost() {
-    return m_connectManager.getHostname();
+    return m_host;
   }
 
   void setPort(int port) {
-    m_connectManager.setJMXPortNumber(port);
+    m_connectManager.setJMXPortNumber(m_jmxPort = port);
   }
 
   public int getPort() {
-    return m_connectManager.getJMXPortNumber();
+    return m_jmxPort;
   }
 
-  public Integer getDSOListenPort() throws Exception {
-    return ServerHelper.getHelper().getDSOListenPort(getConnectionContext());
+  public Integer getDSOListenPort() {
+    if(m_dsoPort != null) return m_dsoPort;
+    try {
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      m_dsoPort = serverInfo != null ? serverInfo.getDSOListenPort() : -1;
+    } catch(Exception e) {
+      // connection was probably dropped.  Wait for disconnect message.
+      AdminClient.getContext().log(e);
+    }
+    return m_dsoPort;
+  }
+  
+  private void testGetDSOListenPort() {
+    if(m_dsoPort == null) getDSOListenPort();
   }
   
   String getStatsExportServletURI(String sessionId) throws Exception {
@@ -383,9 +401,6 @@ public class ServerNode extends ComponentNode
   }
 
   void disconnect() {
-    m_serverInfoBean = null;
-    m_productInfo = null;
-    
     String msg = m_acc.getMessage("disconnecting.from");
     MessageFormat form = new MessageFormat(msg);
     Object[] args = new Object[] { this };
@@ -459,6 +474,7 @@ public class ServerNode extends ComponentNode
   }
 
   void handleStarting() {
+    testGetDSOListenPort();
     m_acc.controller.nodeChanged(ServerNode.this);
     m_shutdownAction.setEnabled(false);
     m_serverPanel.started();
@@ -514,6 +530,7 @@ public class ServerNode extends ComponentNode
   }
   
   void handlePassiveUninitialized() {
+    testGetDSOListenPort();
     try {
       tryAddChildren();
       m_shutdownAction.setEnabled(false);
@@ -524,6 +541,7 @@ public class ServerNode extends ComponentNode
   }
 
   void handlePassiveStandby() {
+    testGetDSOListenPort();
     try {
       tryAddChildren();
       m_shutdownAction.setEnabled(true);
@@ -534,6 +552,7 @@ public class ServerNode extends ComponentNode
   }
 
   void handleActivation() {
+    testGetDSOListenPort();
     try {
       tryAddChildren();
       m_shutdownAction.setEnabled(true);
@@ -678,7 +697,14 @@ public class ServerNode extends ComponentNode
     return result != null ? result : new L2Info[0];
   }
 
+  private void resetBeanProxies() {
+    m_serverInfoBean = null;
+    m_productInfo = null;
+  }
+  
   void handleDisconnect() {
+    resetBeanProxies();
+
     for (int i = getChildCount() - 1; i >= 0; i--) {
       ((XTreeNode) getChildAt(i)).tearDown();
       remove(i);
