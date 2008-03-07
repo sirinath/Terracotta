@@ -24,6 +24,7 @@ import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.OidLongArray;
 import com.tc.util.SyncObjectIdSet;
+import com.tc.util.sequence.MutableSequence;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
   private static final TCLogger                logger                   = TCLogging
                                                                             .getTestingLogger(FastObjectIDManagerImpl.class);
+  private final static int                     SEQUENCE_BATCH_SIZE      = 2000;
   // property
   public final static String                   LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
   private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
@@ -59,9 +61,12 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final CheckpointRunner               checkpointThread;
   private final Object                         checkpointSyncObj        = new Object();
   private final Object                         objectIDUpdateSyncObj    = new Object();
+  private final MutableSequence                sequence;
+  private long                                 nextSequence;
+  private long                                 endSequence;
 
   public FastObjectIDManagerImpl(Database oidDB, Database oidLogDB, PersistenceTransactionProvider ptp,
-                                 CursorConfig oidDBCursorConfig) {
+                                 CursorConfig oidDBCursorConfig, MutableSequence sequence) {
     this.oidDB = oidDB;
     this.oidLogDB = oidLogDB;
     this.ptp = ptp;
@@ -73,6 +78,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     checkpointPeriod = loadObjProp.getInt(CHCKPOINT_TIMEPERIOD);
     longsPerDiskEntry = loadObjProp.getInt(LONGS_PER_DISK_ENTRY);
     isMeasurePerf = loadObjProp.getBoolean(MEASURE_PERF, false);
+
+    this.sequence = sequence;
+    nextSequence = this.sequence.nextBatch(SEQUENCE_BATCH_SIZE);
+    endSequence = nextSequence + SEQUENCE_BATCH_SIZE;
 
     // start checkpoint thread
     checkpointThread = new CheckpointRunner(checkpointPeriod);
@@ -112,19 +121,26 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     changesCount.set(0);
   }
 
+  private synchronized long nextSeqID() {
+    if (nextSequence == endSequence) {
+      nextSequence = this.sequence.nextBatch(SEQUENCE_BATCH_SIZE);
+      endSequence = nextSequence + SEQUENCE_BATCH_SIZE;
+    }
+    return(nextSequence++);
+  }
+
   /*
    * Log key to make log records ordered in time sequenece
    */
   private byte[] makeLogKey(boolean isAdd) {
-    byte[] rv = new byte[OidLongArray.BytesPerLong * 2 + 1];
-    Conversion.writeLong(System.currentTimeMillis(), rv, 0);
-    Conversion.writeLong(System.nanoTime(), rv, OidLongArray.BytesPerLong);
-    rv[OidLongArray.BytesPerLong * 2] = (byte) (isAdd ? 0 : 1);
+    byte[] rv = new byte[OidLongArray.BytesPerLong  + 1];
+    Conversion.writeLong(nextSeqID(), rv, 0);
+    rv[OidLongArray.BytesPerLong] = (byte) (isAdd ? 0 : 1);
     return rv;
   }
 
   private boolean isAddOper(byte[] logKey) {
-    return (logKey[OidLongArray.BytesPerLong * 2] == 0);
+    return (logKey[OidLongArray.BytesPerLong] == 0);
   }
 
   /*
@@ -140,7 +156,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   }
 
   private OperationStatus logAddObjectID(PersistenceTransaction tx, ObjectID objectID) throws DatabaseException {
-    OperationStatus status =  logObjectID(tx, Conversion.long2Bytes(objectID.toLong()), true);
+    OperationStatus status = logObjectID(tx, Conversion.long2Bytes(objectID.toLong()), true);
     if (OperationStatus.SUCCESS.equals(status)) incChangesCount();
     return (status);
   }

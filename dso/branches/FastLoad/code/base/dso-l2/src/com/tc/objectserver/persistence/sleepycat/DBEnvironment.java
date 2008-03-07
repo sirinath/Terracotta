@@ -42,6 +42,7 @@ public class DBEnvironment {
   private static final String              OBJECT_DB_NAME               = "objects";
   private static final String              OID_DB_NAME                  = "oids";
   private static final String              OID_LOG_DB_NAME              = "oidLogs";
+  private static final String              OID_LOG_SEQUENCE_NAME        = "oidLogSequence";
 
   private static final String              CLIENTID_SEQUENCE_NAME       = "clientids";
   private static final String              CLIENT_STATE_DB_NAME         = "clientstates";
@@ -152,6 +153,7 @@ public class DBEnvironment {
       newDatabase(env, OBJECT_DB_NAME);
       newDatabase(env, OID_DB_NAME);
       newDatabase(env, OID_LOG_DB_NAME);
+      newDatabase(env, OID_LOG_SEQUENCE_NAME);
       newDatabase(env, ROOT_DB_NAME);
 
       newDatabase(env, CLIENTID_SEQUENCE_NAME);
@@ -270,6 +272,11 @@ public class DBEnvironment {
     return (Database) databasesByName.get(OID_LOG_DB_NAME);
   }
 
+  public synchronized Database getOidLogSequeneceDB() throws TCDatabaseException {
+    assertOpen();
+    return (Database) databasesByName.get(OID_LOG_SEQUENCE_NAME);
+  }
+  
   public synchronized ClassCatalogWrapper getClassCatalogWrapper() throws TCDatabaseException {
     assertOpen();
     return catalog;
@@ -284,7 +291,7 @@ public class DBEnvironment {
     assertOpen();
     return (Database) databasesByName.get(OBJECTID_SEQUENCE_NAME);
   }
-
+  
   public Database getClientStateDatabase() throws TCDatabaseException {
     assertOpen();
     return (Database) databasesByName.get(CLIENT_STATE_DB_NAME);

@@ -80,9 +80,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, Database objectDB,
-                                    Database oidDB, Database oidLogDB, CursorConfig dBCursorConfig,
-                                    MutableSequence objectIDSequence, Database rootDB, CursorConfig rootDBCursorConfig,
-                                    PersistenceTransactionProvider ptp,
+                                    Database oidDB, Database oidLogDB, Database oidLogSeqDB,
+                                    CursorConfig dBCursorConfig, MutableSequence objectIDSequence, Database rootDB,
+                                    CursorConfig rootDBCursorConfig, PersistenceTransactionProvider ptp,
                                     SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid) {
     this.logger = logger;
     this.classCatalog = classCatalog;
@@ -99,7 +99,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       this.objectIDManager = new NullObjectIDManager();
     } else if (oidFastLoad) {
       // read objectIDs from compressed DB
-      this.objectIDManager = new FastObjectIDManagerImpl(oidDB, oidLogDB, ptp, dBCursorConfig);
+      MutableSequence sequence = new SleepycatSequence(this.ptp, logger, 1, 1000, oidLogSeqDB);
+      this.objectIDManager = new FastObjectIDManagerImpl(oidDB, oidLogDB, ptp, dBCursorConfig, sequence);
     } else {
       // read objectIDs from object DB
       this.objectIDManager = new PlainObjectIDManagerImpl(objectDB, ptp, dBCursorConfig);
@@ -347,7 +348,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         }
       }
       if (!OperationStatus.SUCCESS.equals(objectIDManager.putAll(persistenceTransaction, oidSet))) { throw new DBException(
-                                                                                                                              "Failed to save Object-IDs"); }
+                                                                                                                           "Failed to save Object-IDs"); }
     } catch (Throwable t) {
       throw new DBException(t);
     }

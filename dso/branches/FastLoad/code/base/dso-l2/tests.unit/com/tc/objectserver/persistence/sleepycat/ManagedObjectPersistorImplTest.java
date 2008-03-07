@@ -31,7 +31,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   private PersistentManagedObjectStore   objectStore;
   private PersistenceTransactionProvider persistenceTransactionProvider;
   private DBEnvironment                  env;
-  private FastObjectIDManagerImpl            oidManager;
+  private FastObjectIDManagerImpl        oidManager;
 
   public ManagedObjectPersistorImplTest() {
     //
@@ -54,9 +54,10 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     managedObjectPersistor = new ManagedObjectPersistorImpl(logger, env.getClassCatalogWrapper().getClassCatalog(),
                                                             new SleepycatSerializationAdapterFactory(), env
                                                                 .getObjectDatabase(), env.getOidDatabase(), env
-                                                                .getOidLogDatabase(), dbCursorConfig,
-                                                            new TestMutableSequence(), env.getRootDatabase(),
-                                                            rootDBCursorConfig, persistenceTransactionProvider,
+                                                                .getOidLogDatabase(), env.getOidLogSequeneceDB(),
+                                                            dbCursorConfig, new TestMutableSequence(), env
+                                                                .getRootDatabase(), rootDBCursorConfig,
+                                                            persistenceTransactionProvider,
                                                             sleepycatCollectionsPersistor, env.isParanoidMode());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor);
     oidManager = (FastObjectIDManagerImpl) managedObjectPersistor.getOibjectIDManager();
