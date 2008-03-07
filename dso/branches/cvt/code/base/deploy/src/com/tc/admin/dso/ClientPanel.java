@@ -12,38 +12,26 @@ import org.dijon.ScrollPane;
 import org.dijon.SplitPane;
 import org.dijon.TabbedPane;
 import org.dijon.TextArea;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.data.time.Second;
-import org.jfree.data.time.TimeSeries;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
 import com.tc.admin.ThreadDumpEntry;
-import com.tc.admin.common.DemoChartFactory;
+import com.tc.admin.common.PropertyTable;
+import com.tc.admin.common.PropertyTableModel;
 import com.tc.admin.common.XContainer;
-import com.tc.admin.common.XLabel;
 import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.management.beans.logging.InstrumentationLoggingMBean;
 import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
-import com.tc.statistics.StatisticData;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.prefs.Preferences;
 
 import javax.management.MBeanServerNotification;
@@ -53,16 +41,17 @@ import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class ClientPanel extends XContainer implements NotificationListener {
   private DSOClient                 m_client;
+  private L1InfoMBean               m_l1InfoBean;
 
   private TabbedPane                m_tabbedPane;
-  private XLabel                    m_detailsLabel;
-  private Button                    m_smiteButton;
+  private PropertyTable             m_propertyTable;
+  private Button                    m_disconnectButton;
 
   private TextArea                  m_environmentTextArea;
   private TextArea                  m_configTextArea;
@@ -97,30 +86,30 @@ public class ClientPanel extends XContainer implements NotificationListener {
   private ActionListener            m_loggingChangeHandler;
   private HashMap<String, CheckBox> m_loggingControlMap;
 
-  private Timer                     m_statsGathererTimer;
-  private Container                 m_memoryPanel;
-  private TimeSeries[]              m_memoryTimeSeries;
-  private Container                 m_cpuPanel;
-  private TimeSeries[]              m_cpuTimeSeries;
-  private Map<String, TimeSeries>   m_cpuTimeSeriesMap;
+  private ClientRuntimeStatsPanel   m_runtimeStatsPanel;
 
   public ClientPanel(DSOClient client) {
     super();
 
     AdminClientContext acc = AdminClient.getContext();
 
-    load((ContainerResource) acc.topRes.getComponent("DSOClientPanel"));
+    load((ContainerResource) acc.topRes.getComponent("ClientPanel"));
 
     m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
 
-    m_detailsLabel = (XLabel) findComponent("DetailsLabel");
-    m_smiteButton = (Button) findComponent("SmiteClientButton");
-    m_smiteButton.addActionListener(new ActionListener() {
+    m_propertyTable = (PropertyTable) findComponent("ClientInfoTable");
+    DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+    m_propertyTable.setDefaultRenderer(Long.class, renderer);
+    m_propertyTable.setDefaultRenderer(Integer.class, renderer);
+    m_propertyTable.getAncestorOfClass(ScrollPane.class).setBackground(m_propertyTable.getBackground());
+    
+    m_disconnectButton = (Button) findComponent("DisconnectClientButton");
+    m_disconnectButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
             String msg = MessageFormat.format("Are you sure you want to terminate {0}?", m_client);
-            int answer = JOptionPane.showConfirmDialog(m_smiteButton, msg, "Terracotta AdminConsole",
+            int answer = JOptionPane.showConfirmDialog(m_disconnectButton, msg, "Terracotta AdminConsole",
                                                        JOptionPane.YES_NO_OPTION);
             if (answer == JOptionPane.YES_OPTION) {
               m_client.killClient();
@@ -138,7 +127,7 @@ public class ClientPanel extends XContainer implements NotificationListener {
       public void actionPerformed(ActionEvent ae) {
         long requestMillis = System.currentTimeMillis();
         try {
-          ThreadDumpEntry tde = new ThreadDumpEntry(m_client.getL1InfoMBean().takeThreadDump(requestMillis));
+          ThreadDumpEntry tde = new ThreadDumpEntry(m_l1InfoBean.takeThreadDump(requestMillis));
           m_threadDumpListModel.addElement(tde);
           m_threadDumpList.setSelectedIndex(m_threadDumpListModel.getSize() - 1);
         } catch (Exception e) {
@@ -194,81 +183,24 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
     m_loggingControlMap = new HashMap<String, CheckBox>();
 
-    StatPanelListener spl = new StatPanelListener();
-    m_cpuPanel = (Container) findComponent("CpuPanel");
-    m_memoryPanel = (Container) findComponent("MemoryPanel");
-    setupMemoryPanel(m_memoryPanel);
-    m_cpuPanel.addComponentListener(spl);
-    m_memoryPanel.addComponentListener(spl);
-
+    m_runtimeStatsPanel = (ClientRuntimeStatsPanel) findComponent("RuntimeStatsPanel");
+    m_runtimeStatsPanel.setClientPanel(this);
+    
     setClient(client);
-  }
-
-  private class StatPanelListener extends ComponentAdapter {
-    public void componentShown(ComponentEvent e) {
-      testStartStatsGatherer();
-      e.getComponent().removeComponentListener(this);
-    }
-  }
-
-  private void testStartStatsGatherer() {
-    if (m_statsGathererTimer == null) {
-      m_statsGathererTimer = new Timer(1000, new StatisticsRetrievalAction());
-    }
-    if (!m_statsGathererTimer.isRunning()) {
-      m_statsGathererTimer.start();
-    }
-  }
-
-  private TimeSeries createTimeSeries(String name) {
-    TimeSeries ts = new TimeSeries(name, Second.class);
-    ts.setMaximumItemCount(50);
-    return ts;
-  }
-
-  private void setupMemoryPanel(Container memoryPanel) {
-    memoryPanel.setLayout(new BorderLayout());
-    m_memoryTimeSeries = new TimeSeries[2];
-    m_memoryTimeSeries[0] = createTimeSeries("memory max");
-    m_memoryTimeSeries[1] = createTimeSeries("memory used");
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
-    XYPlot plot = (XYPlot) chart.getPlot();
-    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
-    numberAxis.setAutoRangeIncludesZero(true);
-    memoryPanel.add(new ChartPanel(chart, false));
-  }
-
-  private void setupCpuPanel(int processorCount) {
-    m_cpuPanel.setLayout(new BorderLayout());
-    m_cpuTimeSeriesMap = new HashMap<String, TimeSeries>();
-    m_cpuTimeSeries = new TimeSeries[processorCount];
-    for (int i = 0; i < processorCount; i++) {
-      String cpuName = "cpu " + i;
-      m_cpuTimeSeriesMap.put(cpuName, m_cpuTimeSeries[i] = createTimeSeries(cpuName));
-    }
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_cpuTimeSeries);
-    XYPlot plot = (XYPlot) chart.getPlot();
-    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
-    numberAxis.setRange(0.0, 1.0);
-    m_cpuPanel.add(new ChartPanel(chart, false));
   }
 
   public void setClient(DSOClient client) {
     m_client = client;
 
-    String details = "<html><table border=1 cellspacing=0 cellpadding=3><tr><td>Host:</td<td>{0}</td></tr><tr><td>Port:</td><td>{1}</td></tr><tr><td>Channel:</td><td>{2}</td></tr></table></html>";
-    m_detailsLabel.setText(MessageFormat.format(details, client.getHost(), Integer.toString(client.getPort()), client
-        .getChannelID()));
+    String[] fields = {"Host", "Port", "ChannelID"};
+    m_propertyTable.setModel(new PropertyTableModel(client, fields, fields));
 
     try {
-      L1InfoMBean l1InfoBean = client.getL1InfoMBean(this);
-      if (l1InfoBean != null) {
-        l1InfoBean.addNotificationListener(this, null, null);
-        m_environmentTextArea.setText(l1InfoBean.getEnvironment());
-        m_configTextArea.setText(l1InfoBean.getConfig());
-
-        // Timer timer = new Timer(1000, new StatisticsRetrievalAction());
-        // timer.start();
+      m_l1InfoBean = client.getL1InfoMBean(this);
+      if (m_l1InfoBean != null) {
+        m_l1InfoBean.addNotificationListener(this, null, null);
+        m_environmentTextArea.setText(m_l1InfoBean.getEnvironment());
+        m_configTextArea.setText(m_l1InfoBean.getConfig());
       }
     } catch (Exception e) {
       AdminClient.getContext().log(e);
@@ -304,42 +236,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
       }
     } catch (Exception e) {
       AdminClient.getContext().log(e);
-    }
-  }
-
-  private class StatisticsRetrievalAction implements ActionListener {
-    public void actionPerformed(ActionEvent evt) {
-      try {
-        L1InfoMBean l1InfoBean = m_client.getL1InfoMBean();
-        if (l1InfoBean != null) {
-          Map statMap = l1InfoBean.getStatistics();
-
-          m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
-          m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
-
-          if (m_cpuPanel != null) {
-            StatisticData[] cpuUsageData = (StatisticData[]) statMap.get("cpu usage");
-            if (cpuUsageData != null) {
-              if (m_cpuTimeSeries == null) {
-                setupCpuPanel(cpuUsageData.length);
-              }
-              for (int i = 0; i < cpuUsageData.length; i++) {
-                StatisticData cpuData = cpuUsageData[i];
-                String cpuName = cpuData.getElement();
-                TimeSeries timeSeries = m_cpuTimeSeriesMap.get(cpuName);
-                if (timeSeries != null) {
-                  timeSeries.addOrUpdate(new Second(), ((Number) cpuData.getData()).doubleValue());
-                }
-              }
-            } else {
-              // Sigar must not be available; hide cpu page
-              m_tabbedPane.remove(m_cpuPanel);
-              m_cpuPanel = null;
-            }
-          }
-        }
-      } catch (Exception e) {/**/
-      }
     }
   }
 
@@ -473,24 +369,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
       return;
     }
 
-    if (type.equals("l1.statistics")) {
-      Map statMap = (Map) notification.getUserData();
-
-      m_memoryTimeSeries[0].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory free")));
-      m_memoryTimeSeries[1].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory max")));
-      m_memoryTimeSeries[2].addOrUpdate(new Second(), Double.valueOf((Long) statMap.get("memory used")));
-
-      if (statMap.containsKey("cpu combined")) {
-        m_cpuTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("cpu combined")).doubleValue());
-        m_cpuTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("cpu idle")).doubleValue());
-        m_cpuTimeSeries[2].addOrUpdate(new Second(), ((Number) statMap.get("cpu nice")).doubleValue());
-        m_cpuTimeSeries[3].addOrUpdate(new Second(), ((Number) statMap.get("cpu sys")).doubleValue());
-        m_cpuTimeSeries[4].addOrUpdate(new Second(), ((Number) statMap.get("cpu user")).doubleValue());
-        m_cpuTimeSeries[5].addOrUpdate(new Second(), ((Number) statMap.get("cpu wait")).doubleValue());
-      }
-      return;
-    }
-
     if (notification instanceof MBeanServerNotification) {
       MBeanServerNotification mbsn = (MBeanServerNotification) notification;
 
@@ -536,13 +414,10 @@ public class ClientPanel extends XContainer implements NotificationListener {
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
               try {
-                L1InfoMBean l1InfoBean = m_client.getL1InfoMBean();
-                l1InfoBean.addNotificationListener(ClientPanel.this, null, null);
-                m_environmentTextArea.setText(l1InfoBean.getEnvironment());
-                m_configTextArea.setText(l1InfoBean.getConfig());
-
-                // Timer timer = new Timer(1000, new StatisticsRetrievalAction());
-                // timer.start();
+                m_l1InfoBean = m_client.getL1InfoMBean();
+                m_l1InfoBean.addNotificationListener(ClientPanel.this, null, null);
+                m_environmentTextArea.setText(m_l1InfoBean.getEnvironment());
+                m_configTextArea.setText(m_l1InfoBean.getConfig());
               } catch (Exception e) {
                 // just wait for disconnect to occur
               }
@@ -553,18 +428,20 @@ public class ClientPanel extends XContainer implements NotificationListener {
     }
   }
 
+  L1InfoMBean getL1InfoBean() {
+    return m_l1InfoBean;
+  }
+  
   public void tearDown() {
-    if (m_statsGathererTimer != null && m_statsGathererTimer.isRunning()) {
-      m_statsGathererTimer.stop();
-    }
+    m_runtimeStatsPanel.tearDown();
 
     super.tearDown();
 
     m_client = null;
 
     m_tabbedPane = null;
-    m_detailsLabel = null;
-    m_smiteButton = null;
+    m_propertyTable = null;
+    m_disconnectButton = null;
 
     m_environmentTextArea = null;
     m_configTextArea = null;
@@ -598,11 +475,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
     m_loggingControlMap.clear();
     m_loggingControlMap = null;
 
-    m_statsGathererTimer = null;
-    m_memoryPanel = null;
-    m_memoryTimeSeries = null;
-    m_cpuPanel = null;
-    m_cpuTimeSeries = null;
-    m_cpuTimeSeriesMap = null;
+    m_runtimeStatsPanel = null;
   }
 }

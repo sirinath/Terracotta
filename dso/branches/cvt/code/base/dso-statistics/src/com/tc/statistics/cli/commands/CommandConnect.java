@@ -3,7 +3,6 @@
  */
 package com.tc.statistics.cli.commands;
 
-import com.tc.statistics.cli.CliCommand;
 import com.tc.statistics.cli.GathererConnection;
 import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererAlreadyConnectedException;
 

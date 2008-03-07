@@ -10,57 +10,45 @@ import org.dijon.List;
 import org.dijon.ScrollPane;
 import org.dijon.SplitPane;
 import org.dijon.TabbedPane;
-import org.dijon.TextArea;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.data.time.Second;
-import org.jfree.data.time.TimeSeries;
 
-import com.tc.admin.common.DemoChartFactory;
+import com.tc.admin.common.PropertyTable;
+import com.tc.admin.common.PropertyTableModel;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
+import com.tc.admin.common.XTextArea;
 import com.tc.management.beans.TCServerInfoMBean;
-import com.tc.statistics.StatisticData;
+import com.tc.stats.DSOMBean;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.text.DecimalFormat;
-import java.text.MessageFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.prefs.Preferences;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class ServerPanel extends XContainer {
   private AdminClientContext      m_acc;
   private ServerNode              m_serverNode;
-  private JLabel                  m_serverDetailsLabel;
+  private DSOMBean                m_dsoBean;
+  private PropertyTable           m_propertyTable;
+  
   private StatusView              m_statusView;
   private JButton                 m_shutdownButton;
   private ProductInfoPanel        m_productInfoPanel;
 
   private TabbedPane              m_tabbedPane;
 
-  private TextArea                m_environmentTextArea;
-  private TextArea                m_configTextArea;
+  private XTextArea               m_environmentTextArea;
+  private XTextArea               m_configTextArea;
 
   private Button                  m_threadDumpButton;
   private SplitPane               m_threadDumpsSplitter;
@@ -68,18 +56,13 @@ public class ServerPanel extends XContainer {
   private DividerListener         m_dividerListener;
   private List                    m_threadDumpList;
   private DefaultListModel        m_threadDumpListModel;
-  private TextArea                m_threadDumpTextArea;
+  private XTextArea               m_threadDumpTextArea;
   private ScrollPane              m_threadDumpTextScroller;
   private ThreadDumpEntry         m_lastSelectedEntry;
 
   private TCServerInfoMBean       m_serverInfoBean;
-  private Timer                   m_statsGathererTimer;
-  private Container               m_memoryPanel;
-  private TimeSeries[]            m_memoryTimeSeries;
 
-  private Container               m_cpuPanel;
-  private TimeSeries[]            m_cpuTimeSeries;
-  private Map<String, TimeSeries> m_cpuTimeSeriesMap;
+  private ServerRuntimeStatsPanel m_runtimeStatsPanel;
 
   public ServerPanel(ServerNode serverNode) {
     super(serverNode);
@@ -89,7 +72,13 @@ public class ServerPanel extends XContainer {
 
     load((ContainerResource) m_acc.topRes.getComponent("ServerPanel"));
 
-    m_serverDetailsLabel = (JLabel) findComponent("ServerDetailsLabel");
+    m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
+
+    m_propertyTable = (PropertyTable) findComponent("ServerInfoTable");
+    DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+    m_propertyTable.setDefaultRenderer(Long.class, renderer);
+    m_propertyTable.setDefaultRenderer(Integer.class, renderer);
+    
     m_statusView = (StatusView) findComponent("StatusIndicator");
     m_shutdownButton = (JButton) findComponent("ShutdownButton");
     m_productInfoPanel = (ProductInfoPanel) findComponent("ProductInfoPanel");
@@ -99,9 +88,8 @@ public class ServerPanel extends XContainer {
 
     m_shutdownButton.setAction(m_serverNode.getShutdownAction());
 
-    m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
-    m_environmentTextArea = (TextArea) findComponent("EnvironmentTextArea");
-    m_configTextArea = (TextArea) findComponent("ConfigTextArea");
+    m_environmentTextArea = (XTextArea) findComponent("EnvironmentTextArea");
+    m_configTextArea = (XTextArea) findComponent("ConfigTextArea");
 
     m_threadDumpButton = (Button) findComponent("TakeThreadDumpButton");
     m_threadDumpButton.addActionListener(new ThreadDumpButtonHandler());
@@ -113,28 +101,14 @@ public class ServerPanel extends XContainer {
     m_threadDumpList = (List) findComponent("ThreadDumpList");
     m_threadDumpList.setModel(m_threadDumpListModel = new DefaultListModel());
     m_threadDumpList.addListSelectionListener(new ThreadDumpListSelectionListener());
-    m_threadDumpTextArea = (TextArea) findComponent("ThreadDumpTextArea");
+    m_threadDumpTextArea = (XTextArea) findComponent("ThreadDumpTextArea");
     m_threadDumpTextScroller = (ScrollPane) findComponent("ThreadDumpTextScroller");
 
-    m_threadDumpTextArea = (TextArea) findComponent("ThreadDumpTextArea");
-    m_threadDumpTextScroller = (ScrollPane) findComponent("ThreadDumpTextScroller");
-
-    StatPanelListener spl = new StatPanelListener();
-    m_cpuPanel = (Container) findComponent("CpuPanel");
-    m_memoryPanel = (Container) findComponent("MemoryPanel");
-    setupMemoryPanel(m_memoryPanel);
-    m_cpuPanel.addComponentListener(spl);
-    m_memoryPanel.addComponentListener(spl);    
+    m_runtimeStatsPanel = (ServerRuntimeStatsPanel) findComponent("RuntimeStatsPanel");
+    m_runtimeStatsPanel.setServerPanel(this);
   }
 
-  class StatPanelListener extends ComponentAdapter {
-    public void componentShown(ComponentEvent e) {
-      testStartStatsGatherer();
-      e.getComponent().removeComponentListener(this);
-    }
-  }
-  
-  private TCServerInfoMBean getServerInfoBean() {
+  TCServerInfoMBean getServerInfoBean() {
     if (m_serverInfoBean != null) return m_serverInfoBean;
 
     try {
@@ -146,75 +120,11 @@ public class ServerPanel extends XContainer {
     }
   }
 
-  private TimeSeries createTimeSeries(String name) {
-    TimeSeries ts = new TimeSeries(name, Second.class);
-    ts.setMaximumItemCount(50);
-    return ts;
-  }
-
-  private void setupMemoryPanel(Container memoryPanel) {
-    memoryPanel.setLayout(new BorderLayout());
-    m_memoryTimeSeries = new TimeSeries[2];
-    m_memoryTimeSeries[0] = createTimeSeries("memory max");
-    m_memoryTimeSeries[1] = createTimeSeries("memory used");
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_memoryTimeSeries);
-    XYPlot plot = (XYPlot) chart.getPlot();
-    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
-    numberAxis.setAutoRangeIncludesZero(true);
-    DecimalFormat formatter = new DecimalFormat("00.0m");
-    numberAxis.setNumberFormatOverride(formatter);
-    memoryPanel.add(new ChartPanel(chart, false));
-  }
-
-  private void setupCpuPanel(int processorCount) {
-    m_cpuPanel.setLayout(new BorderLayout());
-    m_cpuTimeSeriesMap = new HashMap<String, TimeSeries>();
-    m_cpuTimeSeries = new TimeSeries[processorCount];
-    for (int i = 0; i < processorCount; i++) {
-      String cpuName = "cpu " + i;
-      m_cpuTimeSeriesMap.put(cpuName, m_cpuTimeSeries[i] = createTimeSeries(cpuName));
+  DSOMBean getDSOBean() {
+    if (m_dsoBean == null) {
+      m_dsoBean = m_serverNode.getDSOBean();
     }
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", m_cpuTimeSeries);
-    XYPlot plot = (XYPlot) chart.getPlot();
-    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
-    numberAxis.setRange(0.0, 1.0);
-    m_cpuPanel.add(new ChartPanel(chart, false));
-  }
-
-  class StatisticsRetrievalAction implements ActionListener {
-    public void actionPerformed(ActionEvent evt) {
-      try {
-        TCServerInfoMBean tcServerInfoBean = getServerInfoBean();
-        if (tcServerInfoBean != null) {
-          Map statMap = tcServerInfoBean.getStatistics();
-
-          m_memoryTimeSeries[0].addOrUpdate(new Second(), ((Number) statMap.get("memory max")).longValue()/1024000d);
-          m_memoryTimeSeries[1].addOrUpdate(new Second(), ((Number) statMap.get("memory used")).longValue()/1024000d);
-
-          if (m_cpuPanel != null) {
-            StatisticData[] cpuUsageData = (StatisticData[]) statMap.get("cpu usage");
-            if (cpuUsageData != null) {
-              if (m_cpuTimeSeries == null) {
-                setupCpuPanel(cpuUsageData.length);
-              }
-              for (int i = 0; i < cpuUsageData.length; i++) {
-                StatisticData cpuData = cpuUsageData[i];
-                String cpuName = cpuData.getElement();
-                TimeSeries timeSeries = m_cpuTimeSeriesMap.get(cpuName);
-                if (timeSeries != null) {
-                  timeSeries.addOrUpdate(new Second(), ((Number) cpuData.getData()).doubleValue());
-                }
-              }
-            } else {
-              // Sigar must not be available; hide cpu page
-              m_tabbedPane.remove(m_cpuPanel);
-              m_cpuPanel = null;
-            }
-          }
-        }
-      } catch (Exception e) {/**/
-      }
-    }
+    return m_dsoBean;
   }
 
   class ThreadDumpButtonHandler implements ActionListener {
@@ -319,7 +229,6 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.activated.status", new Object[] { m_serverNode, activateTime }));
   }
@@ -339,7 +248,6 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.started.status", new Object[] { m_serverNode, startTime }));
   }
@@ -354,15 +262,6 @@ public class ServerPanel extends XContainer {
     m_configTextArea.setText(m_serverNode.getConfig());
   }
 
-  private void testStartStatsGatherer() {
-    if (m_statsGathererTimer == null) {
-      m_statsGathererTimer = new Timer(1000, new StatisticsRetrievalAction());
-    }
-    if (!m_statsGathererTimer.isRunning()) {
-      m_statsGathererTimer.start();
-    }
-  }
-
   void passiveUninitialized() {
     String startTime = new Date().toString();
 
@@ -373,7 +272,6 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.initializing.status", new Object[] { m_serverNode, startTime }));
   }
@@ -388,7 +286,6 @@ public class ServerPanel extends XContainer {
 
     testSetEnvironment();
     testSetConfig();
-    //testStartStatsGatherer();
 
     m_acc.controller.setStatus(m_acc.format("server.standingby.status", new Object[] { m_serverNode, startTime }));
   }
@@ -398,9 +295,7 @@ public class ServerPanel extends XContainer {
 
     setStatusLabel(m_acc.format("server.disconnected.label", new Object[] { startTime }));
     hideRuntimeInfo();
-    if (m_statsGathererTimer != null && m_statsGathererTimer.isRunning()) {
-      m_statsGathererTimer.stop();
-    }
+    m_runtimeStatsPanel.stopMonitoringRuntimeStats();
 
     m_acc.controller.removeServerLog(m_serverNode.getConnectionContext());
     m_acc.controller.setStatus(m_acc.format("server.disconnected.status", new Object[] { m_serverNode, startTime }));
@@ -429,10 +324,16 @@ public class ServerPanel extends XContainer {
     return m_productInfoPanel.isVisible();
   }
 
+  /**
+   * The fields listed below are on ProductNode. If those methods change, so will these fields need to change.
+   * PropertyTable uses reflection to access values to display.
+   * TODO: i18n
+   */
   private void showProductInfo() {
-    String details = "<html><table border=1 cellspacing=0 cellpadding=3><tr><td>Host:</td<td>{0}</td></tr><tr><td>Port:</td><td>{1}</td></tr></table></html>";
-    m_serverDetailsLabel.setText(MessageFormat.format(details, m_serverNode.getHost(), Integer.toString(m_serverNode
-        .getPort())));
+    String[] fields = { "Host", "Port", "DSOListenPort", "ProductVersion", "ProductBuildID", "ProductLicense" };
+    String[] headings = { "Host", "JMX port", "DSO port", "Version", "Build", "License" };
+    m_propertyTable.setModel(new PropertyTableModel(m_serverNode, fields, headings));
+
     m_productInfoPanel.init(m_serverNode.getProductInfo());
     m_productInfoPanel.setVisible(true);
     setTabbedPaneEnabled(true);
@@ -455,10 +356,12 @@ public class ServerPanel extends XContainer {
 
     m_statusView.tearDown();
     m_productInfoPanel.tearDown();
+    m_runtimeStatsPanel.tearDown();
 
     m_acc = null;
     m_serverNode = null;
     m_statusView = null;
     m_productInfoPanel = null;
+    m_runtimeStatsPanel = null;
   }
 }

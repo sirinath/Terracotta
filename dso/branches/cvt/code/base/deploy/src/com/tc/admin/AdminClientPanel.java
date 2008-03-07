@@ -34,7 +34,6 @@ import com.tc.admin.common.XMenuBar;
 import com.tc.admin.common.XMenuItem;
 import com.tc.admin.common.XRootNode;
 import com.tc.admin.common.XTabbedPane;
-import com.tc.admin.common.XTextArea;
 import com.tc.admin.common.XTextField;
 import com.tc.admin.common.XTreeModel;
 import com.tc.admin.common.XTreeNode;
@@ -107,7 +106,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   private Integer                     m_leftDivLoc;
   private DividerListener             m_dividerListener;
   private XTabbedPane                 m_bottomPane;
-  private XTextArea                   m_logArea;
+  private LogPane                     m_logArea;
   private ArrayList                   m_logListeners;
   private Icon                        m_infoIcon;
   private XTextField                  m_statusLine;
@@ -143,7 +142,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     m_tree = (NavTree) findComponent("Tree");
     m_nodeView = (XContainer) findComponent("NodeView");
     m_bottomPane = (XTabbedPane) findComponent("BottomPane");
-    m_logArea = (XTextArea) m_bottomPane.findComponent("LogArea");
+    m_logArea = (LogPane) m_bottomPane.findComponent("LogArea");
     m_statusLine = (XTextField) findComponent("StatusLine");
     m_activityArea = (Container) findComponent("ActivityArea");
     
@@ -346,13 +345,13 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   }
 
   public void remove(XTreeNode node) {
+    XTreeNode origNode = node;
     XTreeModel model = (XTreeModel) m_tree.getModel();
     XTreeNode parent = (XTreeNode) node.getParent();
     int index = parent.getIndex(node);
     TreePath nodePath = new TreePath(node.getPath());
     TreePath selPath = m_tree.getSelectionPath();
 
-    node.tearDown();
     model.removeNodeFromParent(node);
 
     if (nodePath.isDescendant(selPath)) {
@@ -366,6 +365,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
       m_tree.setSelectionPath(new TreePath(node.getPath()));
     }
+    origNode.tearDown();
   }
 
   public void nodeStructureChanged(XTreeNode node) {
@@ -581,6 +581,33 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     }
   }
 
+   /**
+    * Returns true if quit should proceed.
+    */
+   private boolean testWarnCurrentRecordingSessions() {
+     XTreeModel model = (XTreeModel) m_tree.getModel();
+     XTreeNode root = (XTreeNode) model.getRoot();
+     int count = root.getChildCount();
+     boolean currentlyRecording = false;
+     
+     for(int i = 0; i < count; i++) {
+       ClusterNode clusterNode = (ClusterNode) root.getChildAt(i);
+       if(clusterNode.haveActiveRecordingSession()) {
+         currentlyRecording = true;
+         break;
+       }
+     }
+     
+     if(currentlyRecording) {
+       String msg = "There are active statistic recording sessions.  Quit anyway?";
+       Frame frame = (Frame) getAncestorOfClass(Frame.class);
+       int answer = JOptionPane.showConfirmDialog(this, msg, frame.getTitle(), JOptionPane.OK_CANCEL_OPTION);
+       return answer == JOptionPane.OK_OPTION;
+     }
+
+     return true;
+   }
+   
   class QuitAction extends XAbstractAction {
     QuitAction() {
       super(getBundleString("quit.action.label"));
@@ -589,7 +616,9 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     }
 
     public void actionPerformed(ActionEvent ae) {
-      System.exit(0);
+      if(testWarnCurrentRecordingSessions()) {
+        System.exit(0);
+      }
     }
   }
 

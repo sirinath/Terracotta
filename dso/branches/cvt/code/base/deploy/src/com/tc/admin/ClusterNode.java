@@ -60,6 +60,7 @@ import javax.swing.SwingUtilities;
 
 public class ClusterNode extends ComponentNode implements ConnectionListener, NotificationListener {
   private AdminClientContext      m_acc;
+  private String                  m_baseLabel;
   private ServerConnectionManager m_connectManager;
   private Exception               m_connectException;
   private ClusterPanel            m_clusterPanel;
@@ -72,7 +73,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   private DeleteAction            m_deleteAction;
   private AutoConnectAction       m_autoConnectAction;
   private JCheckBoxMenuItem       m_autoConnectMenuItem;
-  private ShutdownAction          m_shutdownAction;
 
   private RootsNode               m_rootsNode;
   private LocksNode               m_locksNode;
@@ -96,6 +96,8 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   ClusterNode(final String host, final int jmxPort, final boolean autoConnect) {
     super();
 
+    setLabel(m_baseLabel = "Terracotta cluster");
+    
     m_acc = AdminClient.getContext();
     // setRenderer(new ServerNodeTreeCellRenderer());
     AutoConnectionListener acl = new AutoConnectionListener();
@@ -127,13 +129,15 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_connectManager.tearDown();
     m_connectManager = newConnectionManager;
 
-    setComponent(m_clusterPanel = new ClusterPanel(this));
+    m_clusterPanel.reinitialize();
     m_clusterPanel.activated();
 
     m_rootsNode.newConnectionContext();
     m_locksNode.newConnectionContext();
     m_gcStatsNode.newConnectionContext();
     m_clientsNode.newConnectionContext();
+    
+    m_acc.controller.nodeChanged(ClusterNode.this);
   }
 
   /**
@@ -208,6 +212,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     return m_connectManager.getConnectionContext();
   }
 
+  String getBaseLabel() {
+    return m_baseLabel;
+  }
+  
   void setHost(String host) {
     m_connectManager.setHostname(host);
   }
@@ -239,7 +247,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
 
     m_connectAction = new ConnectAction();
     m_disconnectAction = new DisconnectAction();
-    m_shutdownAction = new ShutdownAction();
     m_deleteAction = new DeleteAction();
     m_autoConnectAction = new AutoConnectAction();
 
@@ -265,8 +272,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
               try {
                 Thread.sleep(2000);
               } catch (InterruptedException ie) {
-                ie.printStackTrace();
-                System.exit(0);
                 // let's hope it never comes to this
               }
             }
@@ -281,16 +286,11 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_popupMenu.add(m_connectAction);
     m_popupMenu.add(m_disconnectAction);
     m_popupMenu.add(new JSeparator());
-    m_popupMenu.add(m_shutdownAction);
     m_popupMenu.add(m_deleteAction);
     m_popupMenu.add(new JSeparator());
 
     m_popupMenu.add(m_autoConnectMenuItem = new JCheckBoxMenuItem(m_autoConnectAction));
     m_autoConnectMenuItem.setSelected(autoConnect);
-  }
-
-  ShutdownAction getShutdownAction() {
-    return m_shutdownAction;
   }
 
   void setVersionMismatchDialog(JDialog dialog) {
@@ -540,10 +540,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     prefs.putBoolean(AUTO_CONNECT, isAutoConnect());
   }
 
-  public String toString() {
-    return "Terracotta cluster";
-  }
-
   private class ConnectAction extends XAbstractAction {
     ConnectAction() {
       super("Connect", ServersHelper.getHelper().getConnectIcon());
@@ -571,23 +567,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     public void actionPerformed(ActionEvent ae) {
       m_userDisconnecting = true;
       disconnect();
-    }
-  }
-
-  private class ShutdownAction extends XAbstractAction implements Runnable {
-    ShutdownAction() {
-      super("Shutdown", ServersHelper.getHelper().getShutdownIcon());
-
-      setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, MENU_SHORTCUT_KEY_MASK, true));
-      setEnabled(false);
-    }
-
-    public void run() {
-      shutdown();
-    }
-
-    public void actionPerformed(ActionEvent ae) {
-      SwingUtilities.invokeLater(this);
     }
   }
 
@@ -682,7 +661,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   void handleStarting() {
     if (tryFindActive()) { return; }
     m_acc.controller.nodeChanged(ClusterNode.this);
-    m_shutdownAction.setEnabled(false);
     m_clusterPanel.started();
   }
 
@@ -734,7 +712,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   void handlePassiveUninitialized() {
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(false);
       m_clusterPanel.passiveUninitialized();
     } catch (Exception e) {
       // just wait for disconnect message to come in
@@ -744,7 +721,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   void handlePassiveStandby() {
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(true);
       m_clusterPanel.passiveStandby();
     } catch (Exception e) {
       // just wait for disconnect message to come in
@@ -754,7 +730,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   void handleActivation() {
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(true);
       m_clusterPanel.activated();
     } catch (Exception e) {
       e.printStackTrace();
@@ -869,6 +844,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
         .newProxyInstance(cc.mbsc, StatisticsMBeanNames.STATISTICS_GATHERER, StatisticsLocalGathererMBean.class, true);
   }
 
+  boolean haveActiveRecordingSession() {
+    return m_clusterPanel.haveActiveRecordingSession();
+  }
+  
   L2Info[] getClusterMembers() {
     ConnectionContext cc = getConnectionContext();
     L2Info[] result = null;
@@ -949,7 +928,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
       remove(i);
     }
 
-    m_shutdownAction.setEnabled(false);
     m_clusterPanel.disconnected();
     m_acc.controller.nodeStructureChanged(ClusterNode.this);
     m_acc.controller.select(this);
@@ -1041,6 +1019,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     return tde;
   }
 
+  void notifyChanged() {
+    nodeChanged();
+  }
+
   public void tearDown() {
     if (m_connectDialog != null) {
       m_connectDialog.tearDown();
@@ -1054,7 +1036,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_popupMenu = null;
     m_connectAction = null;
     m_disconnectAction = null;
-    m_shutdownAction = null;
     m_deleteAction = null;
     m_autoConnectAction = null;
 

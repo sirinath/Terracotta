@@ -9,17 +9,17 @@ import org.dijon.AbstractTreeCellRenderer;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
 import com.tc.admin.common.ComponentNode;
-import com.tc.admin.common.PollerNode;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XTreeNode;
 import com.tc.admin.dso.DSOHelper;
-import com.tc.admin.dso.StatsPanel;
 import com.tc.config.schema.L2Info;
 import com.tc.management.beans.L2MBeanNames;
+import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
+import com.tc.stats.DSOMBean;
 
 import java.awt.Color;
 import java.awt.Frame;
@@ -64,6 +64,8 @@ public class ServerNode extends ComponentNode
   private AdminClientContext      m_acc;
   private ServerConnectionManager m_connectManager;
   private Exception               m_connectException;
+  private TCServerInfoMBean       m_serverInfoBean;
+  private ProductInfo             m_productInfo;
   private ServerPanel             m_serverPanel;
   private ConnectDialog           m_connectDialog;
   private JDialog                 m_versionMismatchDialog;
@@ -167,7 +169,7 @@ public class ServerNode extends ComponentNode
     m_connectManager.setHostname(host);
   }
 
-  String getHost() {
+  public String getHost() {
     return m_connectManager.getHostname();
   }
 
@@ -175,11 +177,11 @@ public class ServerNode extends ComponentNode
     m_connectManager.setJMXPortNumber(port);
   }
 
-  int getPort() {
+  public int getPort() {
     return m_connectManager.getJMXPortNumber();
   }
 
-  Integer getDSOListenPort() throws Exception {
+  public Integer getDSOListenPort() throws Exception {
     return ServerHelper.getHelper().getDSOListenPort(getConnectionContext());
   }
   
@@ -381,6 +383,9 @@ public class ServerNode extends ComponentNode
   }
 
   void disconnect() {
+    m_serverInfoBean = null;
+    m_productInfo = null;
+    
     String msg = m_acc.getMessage("disconnecting.from");
     MessageFormat form = new MessageFormat(msg);
     Object[] args = new Object[] { this };
@@ -413,10 +418,10 @@ public class ServerNode extends ComponentNode
 
   void doShutdown() {
     try {
-      ConnectionContext cntx = getConnectionContext();
-      ObjectName serverInfo = getServerInfo(cntx);
-
-      cntx.invoke(serverInfo, "shutdown", new Object[] {}, new String[] {});
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      if(serverInfo != null) {
+        serverInfo.shutdown();
+      }
     } catch (ConnectionClosedException ignore) {
       /* expected */
     } catch (Exception e) {
@@ -459,6 +464,17 @@ public class ServerNode extends ComponentNode
     m_serverPanel.started();
   }
 
+  DSOMBean getDSOBean() {
+    try {
+      ConnectionContext cc = getConnectionContext();
+      ObjectName objectName = DSOHelper.getHelper().getDSOMBean(cc);
+      if(objectName == null) return null;
+      return (DSOMBean) MBeanServerInvocationHandler.newProxyInstance(cc.mbsc, objectName, DSOMBean.class, true);
+    } catch (Exception ioe) {
+      return null;
+    }
+  }
+  
   SynchronizedBoolean m_tryAddingChildren = new SynchronizedBoolean(false);
   
   void tryAddChildren() throws Exception{
@@ -494,10 +510,7 @@ public class ServerNode extends ComponentNode
   }
   
   private void addChildren(ConnectionContext cc) throws Exception {
-    StatsPanel statsPanel = new StatsPanel(cc, DSOHelper.getHelper().getDSOMBean(cc));
-    PollerNode node = new PollerNode(m_acc.getMessage("dso.all.statistics"), statsPanel);
-    statsPanel.setNode(node);
-    add(node);
+    // There are no longer any children.  Leaving in case someone changes their mind.
   }
   
   void handlePassiveUninitialized() {
@@ -530,40 +543,48 @@ public class ServerNode extends ComponentNode
     }
   }
 
-  static ObjectName getServerInfo(ConnectionContext cntx) throws Exception {
-    return ServerHelper.getHelper().getServerInfoMBean(cntx);
+  TCServerInfoMBean getServerInfoBean() throws Exception {
+    if(m_serverInfoBean != null) return m_serverInfoBean;
+    m_serverInfoBean = ServerHelper.getHelper().getServerInfoBean(getConnectionContext());
+    return m_serverInfoBean;
   }
 
   public ProductInfo getProductInfo() {
-    ProductInfo info;
-
+    if(m_productInfo != null) return m_productInfo;
+    
     try {
-      info = getProductInfo(getConnectionContext());
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+
+      String version = serverInfo.getVersion();
+      String buildID = serverInfo.getBuildID();
+      String license = serverInfo.getDescriptionOfCapabilities();
+      String copyright = serverInfo.getCopyright();
+
+      m_productInfo = new ProductInfo(version, buildID, license, copyright);
     } catch (Exception e) {
       m_acc.log(e);
-      info = new ProductInfo();
+      m_productInfo = new ProductInfo();
     }
 
-    return info;
+    return m_productInfo;
   }
 
-  public static ProductInfo getProductInfo(ConnectionContext cntx) throws Exception {
-    ObjectName serverInfo = getServerInfo(cntx);
-
-    String version = cntx.getStringAttribute(serverInfo, "Version");
-    String buildID = cntx.getStringAttribute(serverInfo, "BuildID");
-    String license = cntx.getStringAttribute(serverInfo, "DescriptionOfCapabilities");
-    String copyright = cntx.getStringAttribute(serverInfo, "Copyright");
-
-    return new ProductInfo(version, buildID, license, copyright);
+  public String getProductVersion() {
+    return getProductInfo().getVersion();
+  }
+  
+  public String getProductBuildID() {
+    return getProductInfo().getBuildID();
   }
 
+  public String getProductLicense() {
+    return getProductInfo().getLicense();
+  }
+  
   String getEnvironment() {
     try {
-      ConnectionContext cntx = getConnectionContext();
-      ObjectName serverInfo = getServerInfo(cntx);
-
-      return cntx.getStringAttribute(serverInfo, "Environment");
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      return serverInfo.getEnvironment();
     } catch (Exception e) {
       m_acc.log(e);
       return e.getMessage();
@@ -572,10 +593,8 @@ public class ServerNode extends ComponentNode
   
   String getConfig() {
     try {
-      ConnectionContext cntx = getConnectionContext();
-      ObjectName serverInfo = getServerInfo(cntx);
-
-      return cntx.getStringAttribute(serverInfo, "Config");
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      return serverInfo.getConfig();
     } catch (Exception e) {
       m_acc.log(e);
       return e.getMessage();
@@ -584,10 +603,8 @@ public class ServerNode extends ComponentNode
   
   long getStartTime() {
     try {
-      ConnectionContext cntx = getConnectionContext();
-      ObjectName serverInfo = getServerInfo(cntx);
-
-      return cntx.getLongAttribute(serverInfo, "StartTime");
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      return serverInfo.getStartTime();
     } catch (Exception e) {
       m_acc.log(e);
       return 0L;
@@ -596,10 +613,8 @@ public class ServerNode extends ComponentNode
 
   long getActivateTime() {
     try {
-      ConnectionContext cntx = getConnectionContext();
-      ObjectName serverInfo = getServerInfo(cntx);
-
-      return cntx.getLongAttribute(serverInfo, "ActivateTime");
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      return serverInfo.getActivateTime();
     } catch (Exception e) {
       m_acc.log(e);
       return 0L;
@@ -651,11 +666,11 @@ public class ServerNode extends ComponentNode
   }
   
   L2Info[] getClusterMembers() {
-    ConnectionContext cc = getConnectionContext();
     L2Info[] result = null;
 
     try {
-      result = (L2Info[]) cc.getAttribute(getServerInfo(cc), "L2Info");
+      TCServerInfoMBean serverInfo = getServerInfoBean();
+      result = serverInfo.getL2Info();
     } catch (Exception e) {
       m_acc.log(e);
     }
