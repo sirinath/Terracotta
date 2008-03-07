@@ -76,7 +76,7 @@ public class ClientsPanel extends XContainer {
 
   private void initAllPendingRequestsGraph() {
     m_dataSet = new DefaultCategoryDataset();
-    JFreeChart chart = ChartFactory.createBarChart("", "", "", m_dataSet, PlotOrientation.VERTICAL, true, true, false);
+    JFreeChart chart = ChartFactory.createBarChart("", "", "", m_dataSet, PlotOrientation.VERTICAL, false, true, false);
     CategoryPlot plot = (CategoryPlot) chart.getPlot();
 
     // set the range axis to display integers only...

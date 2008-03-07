@@ -78,6 +78,14 @@ public class ServerConnectionManager implements NotificationListener {
     setL2Info(l2Info);
   }
 
+  public void setConnectionListener(ConnectionListener listener) {
+    m_connectListener = listener;
+  }
+  
+  public ConnectionListener getConnectionListener() {
+    return m_connectListener;
+  }
+  
   public L2Info getL2Info() {
     return m_l2Info;
   }
@@ -370,6 +378,10 @@ public class ServerConnectionManager implements NotificationListener {
     return m_connectException;
   }
 
+  public boolean testIsActive() {
+    return internalIsActive();
+  }
+  
   public boolean isActive() {
     return m_active;
   }
@@ -538,6 +550,8 @@ public class ServerConnectionManager implements NotificationListener {
   }
 
   public void tearDown() {
+    Thread.dumpStack();
+    
     cancelActiveServices();
 
     m_l2Info = null;

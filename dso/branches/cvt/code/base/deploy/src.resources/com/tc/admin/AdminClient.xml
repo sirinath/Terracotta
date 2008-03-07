@@ -90,9 +90,7 @@
   </container>
   <container tag="RuntimeStatsPanel">
     <children>
-      <scrollpane>
-        <container name="ChartsPanel"/>
-      </scrollpane>
+      <container name="ChartsPanel"/>
       <container>
         <children>
           <button image-uri="/com/tc/admin/icons/clear_co.gif" name="ClearSamplesButton" tip="Clear samples" />

@@ -106,6 +106,8 @@ public class ServerPanel extends XContainer {
 
     m_runtimeStatsPanel = (ServerRuntimeStatsPanel) findComponent("RuntimeStatsPanel");
     m_runtimeStatsPanel.setServerPanel(this);
+    
+    hideRuntimeInfo();    
   }
 
   TCServerInfoMBean getServerInfoBean() {
@@ -333,7 +335,8 @@ public class ServerPanel extends XContainer {
     String[] fields = { "Host", "Port", "DSOListenPort", "ProductVersion", "ProductBuildID", "ProductLicense" };
     String[] headings = { "Host", "JMX port", "DSO port", "Version", "Build", "License" };
     m_propertyTable.setModel(new PropertyTableModel(m_serverNode, fields, headings));
-
+    m_propertyTable.getAncestorOfClass(ScrollPane.class).setVisible(true);
+    
     m_productInfoPanel.init(m_serverNode.getProductInfo());
     m_productInfoPanel.setVisible(true);
     setTabbedPaneEnabled(true);
@@ -343,6 +346,8 @@ public class ServerPanel extends XContainer {
   }
 
   private void hideRuntimeInfo() {
+    m_propertyTable.setModel(new PropertyTableModel());
+    m_propertyTable.getAncestorOfClass(ScrollPane.class).setVisible(false);
     m_productInfoPanel.setVisible(false);
     m_tabbedPane.setSelectedIndex(0);
     m_tabbedPane.setEnabled(false);
