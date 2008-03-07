@@ -39,7 +39,7 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.jdbc.ResultSetHandler;
-import com.tc.statistics.retrieval.actions.SRACpu;
+import com.tc.statistics.retrieval.actions.SRACpuConstants;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
 import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
@@ -601,7 +601,7 @@ public class ClusterVisualizerFrame extends JFrame {
       stats.add(SRAMemoryUsage.ACTION_NAME);
     }
 
-    if (stats.contains(SRACpu.DATA_NAME_COMBINED)) {
+    if (stats.contains(SRACpuConstants.DATA_NAME_COMBINED)) {
       Iterator<String> iter = stats.iterator();
       while (iter.hasNext()) {
         String stat = iter.next();
@@ -1142,7 +1142,7 @@ public class ClusterVisualizerFrame extends JFrame {
     TimeSeriesCollection generateTimeSeriesCollection() {
       final TimeSeriesCollection result = new TimeSeriesCollection();
       StatisticsRetrievalCriteria criteria = new StatisticsRetrievalCriteria();
-      criteria.addName(SRACpu.DATA_NAME_COMBINED);
+      criteria.addName(SRACpuConstants.DATA_NAME_COMBINED);
       criteria.setAgentIp(fNode.fIpAddr);
       criteria.setAgentDifferentiator(fNode.fName);
       criteria.setSessionId(fSessionInfo.fId);
@@ -1668,7 +1668,7 @@ class MyStatisticsStore extends H2StatisticsStoreImpl {
   static {
     STATS_NON_GRATIS.addAll(Arrays.asList(new String[] { SRAStartupTimestamp.ACTION_NAME,
       SRAShutdownTimestamp.ACTION_NAME, SRASystemProperties.ACTION_NAME, SRAThreadDump.ACTION_NAME,
-      SRACpu.DATA_NAME_IDLE, SRACpu.DATA_NAME_NICE, SRACpu.DATA_NAME_WAIT, SRACpu.DATA_NAME_SYS, SRACpu.DATA_NAME_USER,
+      SRACpuConstants.DATA_NAME_IDLE, SRACpuConstants.DATA_NAME_NICE, SRACpuConstants.DATA_NAME_WAIT, SRACpuConstants.DATA_NAME_SYS, SRACpuConstants.DATA_NAME_USER,
       SRAMemoryUsage.DATA_NAME_FREE, SRAMemoryUsage.DATA_NAME_MAX }));
   }
 
