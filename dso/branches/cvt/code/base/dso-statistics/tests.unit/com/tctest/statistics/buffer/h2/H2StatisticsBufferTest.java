@@ -401,19 +401,33 @@ public class H2StatisticsBufferTest extends TestCase {
     buffer.createCaptureSession("sessionid2");
     populateBufferWithStatistics("sessionid1", "sessionid2");
 
-    final int[] count = new int[] {0};
+    final int[] count1 = new int[] {0};
     buffer.consumeStatistics("sessionid1", new StatisticsConsumer() {
       public long getMaximumConsumedDataCount() {
         return 20;
       }
 
       public boolean consumeStatisticData(StatisticData data) {
-        count[0]++;
+        count1[0]++;
         return true;
       }
     });
 
-    assertEquals(20, count[0]);
+    assertEquals(20, count1[0]);
+
+    final int[] count2 = new int[] {0};
+    buffer.consumeStatistics("sessionid1", new StatisticsConsumer() {
+      public long getMaximumConsumedDataCount() {
+        return 2000;
+      }
+
+      public boolean consumeStatisticData(StatisticData data) {
+        count2[0]++;
+        return true;
+      }
+    });
+
+    assertEquals(130, count2[0]);
   }
 
   public void testConsumeStatisticsInterruptions() throws Exception {
