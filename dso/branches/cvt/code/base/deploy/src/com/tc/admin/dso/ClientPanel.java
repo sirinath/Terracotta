@@ -30,7 +30,6 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Method;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.prefs.Preferences;
 
@@ -38,7 +37,6 @@ import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.swing.DefaultListModel;
-import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
@@ -51,7 +49,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
   private TabbedPane                m_tabbedPane;
   private PropertyTable             m_propertyTable;
-  private Button                    m_disconnectButton;
 
   private TextArea                  m_environmentTextArea;
   private TextArea                  m_configTextArea;
@@ -103,22 +100,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
     m_propertyTable.setDefaultRenderer(Integer.class, renderer);
     m_propertyTable.getAncestorOfClass(ScrollPane.class).setBackground(m_propertyTable.getBackground());
     
-    m_disconnectButton = (Button) findComponent("DisconnectClientButton");
-    m_disconnectButton.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        SwingUtilities.invokeLater(new Runnable() {
-          public void run() {
-            String msg = MessageFormat.format("Are you sure you want to terminate {0}?", m_client);
-            int answer = JOptionPane.showConfirmDialog(m_disconnectButton, msg, "Terracotta AdminConsole",
-                                                       JOptionPane.YES_NO_OPTION);
-            if (answer == JOptionPane.YES_OPTION) {
-              m_client.killClient();
-            }
-          }
-        });
-      }
-    });
-
     m_environmentTextArea = (TextArea) findComponent("EnvironmentTextArea");
     m_configTextArea = (TextArea) findComponent("ConfigTextArea");
 
@@ -441,7 +422,6 @@ public class ClientPanel extends XContainer implements NotificationListener {
 
     m_tabbedPane = null;
     m_propertyTable = null;
-    m_disconnectButton = null;
 
     m_environmentTextArea = null;
     m_configTextArea = null;

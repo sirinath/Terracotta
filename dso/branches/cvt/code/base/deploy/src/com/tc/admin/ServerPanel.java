@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.prefs.Preferences;
 
 import javax.swing.DefaultListModel;
-import javax.swing.JButton;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
@@ -42,7 +41,6 @@ public class ServerPanel extends XContainer {
   private PropertyTable           m_propertyTable;
   
   private StatusView              m_statusView;
-  private JButton                 m_shutdownButton;
   private ProductInfoPanel        m_productInfoPanel;
 
   private TabbedPane              m_tabbedPane;
@@ -80,13 +78,10 @@ public class ServerPanel extends XContainer {
     m_propertyTable.setDefaultRenderer(Integer.class, renderer);
     
     m_statusView = (StatusView) findComponent("StatusIndicator");
-    m_shutdownButton = (JButton) findComponent("ShutdownButton");
     m_productInfoPanel = (ProductInfoPanel) findComponent("ProductInfoPanel");
 
     m_statusView.setLabel("Not connected");
     m_productInfoPanel.setVisible(false);
-
-    m_shutdownButton.setAction(m_serverNode.getShutdownAction());
 
     m_environmentTextArea = (XTextArea) findComponent("EnvironmentTextArea");
     m_configTextArea = (XTextArea) findComponent("ConfigTextArea");
