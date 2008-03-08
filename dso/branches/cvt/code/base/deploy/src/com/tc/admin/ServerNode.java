@@ -73,7 +73,6 @@ public class ServerNode extends ComponentNode
   private ConnectDialog           m_connectDialog;
   private JDialog                 m_versionMismatchDialog;
   private JPopupMenu              m_popupMenu;
-  private ShutdownAction          m_shutdownAction;
 
   ServerNode() {
     this(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT, ConnectionContext.DEFAULT_AUTO_CONNECT);
@@ -211,11 +210,7 @@ public class ServerNode extends ComponentNode
   
   private void initMenu(boolean autoConnect) {
     m_popupMenu = new JPopupMenu("Server Actions");
-    m_popupMenu.add(m_shutdownAction = new ShutdownAction());
-  }
-  
-  ShutdownAction getShutdownAction() {
-    return m_shutdownAction;
+
   }
   
   void setVersionMismatchDialog(JDialog dialog) {
@@ -476,7 +471,6 @@ public class ServerNode extends ComponentNode
   void handleStarting() {
     testGetDSOListenPort();
     m_acc.controller.nodeChanged(ServerNode.this);
-    m_shutdownAction.setEnabled(false);
     m_serverPanel.started();
   }
 
@@ -533,7 +527,6 @@ public class ServerNode extends ComponentNode
     testGetDSOListenPort();
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(false);
       m_serverPanel.passiveUninitialized();
     } catch(Exception e) {
       // just wait for disconnect message to come in
@@ -544,7 +537,6 @@ public class ServerNode extends ComponentNode
     testGetDSOListenPort();
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(true);
       m_serverPanel.passiveStandby();
     } catch (Exception e) {
       // just wait for disconnect message to come in
@@ -555,7 +547,6 @@ public class ServerNode extends ComponentNode
     testGetDSOListenPort();
     try {
       tryAddChildren();
-      m_shutdownAction.setEnabled(true);
       m_serverPanel.activated();
     } catch (Exception e) {
       // just wait for disconnect message to come in
@@ -710,7 +701,6 @@ public class ServerNode extends ComponentNode
       remove(i);
     }
 
-    m_shutdownAction.setEnabled(false);
     m_serverPanel.disconnected();
     m_acc.controller.nodeStructureChanged(ServerNode.this);
     m_acc.controller.select(this);
@@ -781,7 +771,6 @@ public class ServerNode extends ComponentNode
     m_serverPanel = null;
     m_connectDialog = null;
     m_popupMenu = null;
-    m_shutdownAction = null;
 
     super.tearDown();
   }
