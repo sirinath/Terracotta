@@ -12,7 +12,6 @@ import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
 import com.tc.object.ObjectID;
 import com.tc.object.bytecode.MockClassProvider;
-import com.tc.object.compression.BinaryData;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 
@@ -259,9 +258,7 @@ public class DNAEncodingTest extends TestCase {
     DNAEncoding encoding = getApplicatorEncoding();
     encoding.encode("timmy", output);
     UTF8ByteDataHolder orgUTF;
-    byte[] bytes = "teck".getBytes("UTF-8");
-    BinaryData binaryData = new BinaryData(bytes);
-    encoding.encode((orgUTF = new UTF8ByteDataHolder(binaryData)), output);
+    encoding.encode((orgUTF = new UTF8ByteDataHolder("teck".getBytes("UTF-8"))), output);
 
     TCByteBuffer[] data = output.toArray();
 
@@ -270,7 +267,7 @@ public class DNAEncodingTest extends TestCase {
     UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input);
     assertTrue(Arrays.equals("timmy".getBytes("UTF-8"), decoded.getBytes()));
     decoded = (UTF8ByteDataHolder) encoding.decode(input);
-    assertTrue(Arrays.equals(bytes, decoded.getBytes()));
+    assertTrue(Arrays.equals("teck".getBytes("UTF-8"), decoded.getBytes()));
     assertEquals(0, input.available());
 
     encoding = getApplicatorEncoding();
