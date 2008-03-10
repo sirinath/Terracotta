@@ -14,7 +14,6 @@ import com.tc.statistics.StatisticType;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.Date;
 import java.util.Locale;
 
 public class SRACpu implements StatisticRetrievalAction, SRACpuConstants {
@@ -28,7 +27,6 @@ public class SRACpu implements StatisticRetrievalAction, SRACpuConstants {
   }
 
   public StatisticData[] retrieveStatisticData() {
-    Date moment = new Date();
     try {
       NumberFormat format = NumberFormat.getNumberInstance(Locale.US);
       format.setGroupingUsed(false);
@@ -44,12 +42,12 @@ public class SRACpu implements StatisticRetrievalAction, SRACpuConstants {
         double sys = cpuPercList[i].getSys();
         double user = cpuPercList[i].getUser();
         double wait = cpuPercList[i].getWait();
-        data[i * 6] = new StatisticData(DATA_NAME_COMBINED, moment, element, Double.isNaN(combined) || Double.isInfinite(combined) ? null : new BigDecimal(format.format(combined)));
-        data[i * 6 + 1] = new StatisticData(DATA_NAME_IDLE, moment, element, Double.isNaN(idle) || Double.isInfinite(idle) ? null : new BigDecimal(format.format(idle)));
-        data[i * 6 + 2] = new StatisticData(DATA_NAME_NICE, moment, element, Double.isNaN(nice) || Double.isInfinite(nice) ? null : new BigDecimal(format.format(nice)));
-        data[i * 6 + 3] = new StatisticData(DATA_NAME_SYS, moment, element, Double.isNaN(sys) || Double.isInfinite(sys) ? null : new BigDecimal(format.format(sys)));
-        data[i * 6 + 4] = new StatisticData(DATA_NAME_USER, moment, element, Double.isNaN(user) || Double.isInfinite(user) ? null : new BigDecimal(format.format(user)));
-        data[i * 6 + 5] = new StatisticData(DATA_NAME_WAIT, moment, element, Double.isNaN(wait) || Double.isInfinite(wait) ? null : new BigDecimal(format.format(wait)));
+        data[i * 6] = new StatisticData(DATA_NAME_COMBINED, element, Double.isNaN(combined) || Double.isInfinite(combined) ? null : new BigDecimal(format.format(combined)));
+        data[i * 6 + 1] = new StatisticData(DATA_NAME_IDLE, element, Double.isNaN(idle) || Double.isInfinite(idle) ? null : new BigDecimal(format.format(idle)));
+        data[i * 6 + 2] = new StatisticData(DATA_NAME_NICE, element, Double.isNaN(nice) || Double.isInfinite(nice) ? null : new BigDecimal(format.format(nice)));
+        data[i * 6 + 3] = new StatisticData(DATA_NAME_SYS, element, Double.isNaN(sys) || Double.isInfinite(sys) ? null : new BigDecimal(format.format(sys)));
+        data[i * 6 + 4] = new StatisticData(DATA_NAME_USER, element, Double.isNaN(user) || Double.isInfinite(user) ? null : new BigDecimal(format.format(user)));
+        data[i * 6 + 5] = new StatisticData(DATA_NAME_WAIT, element, Double.isNaN(wait) || Double.isInfinite(wait) ? null : new BigDecimal(format.format(wait)));
       }
       return data;
     } catch (SigarException e) {
