@@ -21,6 +21,8 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   private static final String GET_VALUE_METHOD = ByteCodeUtil.fieldGetterMethod("value");
   private static final String COMPRESSED_FIELD_NAME = "__tc_compressed";
   
+  private volatile transient boolean __tc_compressed;
+  
   private final VmVersion vmVersion;
   private final boolean   portableStringBuffer;
   private final boolean   isAzul;
