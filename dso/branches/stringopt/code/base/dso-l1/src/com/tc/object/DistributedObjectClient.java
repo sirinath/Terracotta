@@ -49,7 +49,6 @@ import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.event.DmiManager;
 import com.tc.object.event.DmiManagerImpl;
 import com.tc.object.field.TCFieldFactory;
@@ -249,7 +248,7 @@ public class DistributedObjectClient extends SEDA {
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
-        .getCommitTransactionMessageFactory(), new DNAEncodingImpl(classProvider, compressedStringManager));
+        .getCommitTransactionMessageFactory(), new ApplicatorDNAEncodingImpl(classProvider, compressedStringManager));
 
     rtxManager = new RemoteTransactionManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
