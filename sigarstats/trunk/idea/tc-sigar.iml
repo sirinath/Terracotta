@@ -10,6 +10,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module" module-name="common-api" />
     <orderEntry type="module" module-name="dso-statistics" />
+    <orderEntry type="module" module-name="dso-statistics-api" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
