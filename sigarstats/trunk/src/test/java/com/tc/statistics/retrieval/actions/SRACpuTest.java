@@ -8,11 +8,9 @@ import org.hyperic.sigar.Sigar;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.SigarUtil;
-import com.tc.statistics.retrieval.actions.SRACpu;
 
-import java.net.InetAddress;
-import java.util.Date;
 import java.math.BigDecimal;
+import java.util.Date;
 
 import junit.framework.TestCase;
 
