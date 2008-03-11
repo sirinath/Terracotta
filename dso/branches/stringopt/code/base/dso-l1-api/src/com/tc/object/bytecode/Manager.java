@@ -5,6 +5,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.cluster.ClusterEventListener;
+import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
@@ -468,8 +469,9 @@ public interface Manager {
    * Add a compressed string to the manager for later decompression
    * @param string The string instance
    * @param compressedData The compressed data for this string for later decompression
+   * @param uncompresedLength The size of the uncompressed byte[]
    */
-  public void addCompressedString(String string, byte[] compressedData);
+  public void addCompressedString(String string, byte[] compressedData, int uncompressedLength);
   
   
   /**

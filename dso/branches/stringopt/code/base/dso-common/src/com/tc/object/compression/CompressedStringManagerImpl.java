@@ -13,23 +13,49 @@ public class CompressedStringManagerImpl implements CompressedStringManager {
   // TODO - switch to IdentityWeakHashMap
   private final Map compressedStrings = new IdentityHashMap();
   
-  public void addCompressedString(String string, byte[] data) {
+  public void addCompressedString(String string, byte[] data, int uncompressedLength) {
     synchronized(compressedStrings) {
-      compressedStrings.put(string, data);
+      compressedStrings.put(string, new CompressedStringData(data, uncompressedLength));
     }
   }
 
   public char[] decompressString(String string) {
 System.out.println("\nDecompressing...");    
     synchronized(compressedStrings) {
-      byte[] data = (byte[]) compressedStrings.get(string);
+      CompressedStringData data = (CompressedStringData) compressedStrings.get(string);
       Assert.assertNotNull(data);
 
-    // TODO
+      // TODO
+      
       compressedStrings.remove(string);
 
-return null;
+      // TODO
+      return null;
     }
+  }
+  
+  
+  /**
+   * Just a wrapper for the byte[] and uncompressed byte[] length for 
+   * string data.
+   */
+  private static class CompressedStringData {
+    private byte[] data;
+    private int uncompressedLength;
+    
+    CompressedStringData(byte[] data, int uncompressedLength) {
+      this.data = data;
+      this.uncompressedLength = uncompressedLength;
+    }
+
+    public byte[] getData() {
+      return data;
+    }
+
+    public int getUncompressedLength() {
+      return uncompressedLength;
+    }
+    
   }
 }
 
