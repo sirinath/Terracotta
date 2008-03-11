@@ -29,12 +29,12 @@ import java.util.List;
  */
 public class ClientMessageTransport extends MessageTransportBase {
   // it was 2 minutes timeout, reduce to 10 sec
-  private static final long                 SYN_ACK_TIMEOUT = 10000;
+  public static final long                  TRANSPORT_HANDSHAKE_SYNACK_TIMEOUT = 10000;
   private final ClientConnectionEstablisher connectionEstablisher;
-  private boolean                           wasOpened       = false;
+  private boolean                           wasOpened                          = false;
   private TCFuture                          waitForSynAckResult;
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
-  private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
+  private final SynchronizedBoolean         isOpening                          = new SynchronizedBoolean(false);
 
   /**
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
@@ -47,7 +47,8 @@ public class ClientMessageTransport extends MessageTransportBase {
                                 TransportHandshakeMessageFactory messageFactory,
                                 WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
 
-    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false,  TCLogging.getLogger(ClientMessageTransport.class));
+    super(MessageTransportState.STATE_START, handshakeErrorHandler, messageFactory, false, TCLogging
+        .getLogger(ClientMessageTransport.class));
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
     this.connectionEstablisher = clientConnectionEstablisher;
   }
@@ -86,13 +87,16 @@ public class ClientMessageTransport extends MessageTransportBase {
         Assert.eval(!this.connectionId.isNull());
         isOpen.set(true);
         sendAck();
-        NetworkStackID nid =  new NetworkStackID(this.connectionId.getChannelID());
+        NetworkStackID nid = new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
-        return(nid);
+        return (nid);
       } catch (TCTimeoutException e) {
+        // DEV-1320
+        clearConnection();
         status.reset();
         throw e;
       } catch (IOException e) {
+        clearConnection();
         status.reset();
         throw e;
       } finally {
@@ -123,6 +127,13 @@ public class ClientMessageTransport extends MessageTransportBase {
     synchronized (status) {
       if (status.isSynSent()) {
         handleSynAck(message);
+        message.recycle();
+        return;
+      }
+
+      if (!status.isEstablished()) {
+        logger.info(message.toString());
+        logger.warn("Ignoring the message received for an Un-Established Connection");
         message.recycle();
         return;
       }
@@ -176,7 +187,7 @@ public class ClientMessageTransport extends MessageTransportBase {
 
   private SynAckMessage waitForSynAck() throws TCTimeoutException {
     try {
-      SynAckMessage synAck = (SynAckMessage) waitForSynAckResult.get(SYN_ACK_TIMEOUT);
+      SynAckMessage synAck = (SynAckMessage) waitForSynAckResult.get(TRANSPORT_HANDSHAKE_SYNACK_TIMEOUT);
       return synAck;
     } catch (InterruptedException e) {
       throw new TCRuntimeException(e);
@@ -208,10 +219,10 @@ public class ClientMessageTransport extends MessageTransportBase {
   }
 
   void reconnect(TCConnection connection) throws Exception {
-    
+
     // don't do reconnect if open is still going on
-    if(!wasOpened) return;
-    
+    if (!wasOpened) return;
+
     Assert.eval(!isConnected());
     wireNewConnection(connection);
     try {
