@@ -5,7 +5,7 @@ package com.tc.object.compression;
 
 public interface CompressedStringManager {
 
-  void addCompressedString(String string, byte[] data);
+  void addCompressedString(String string, byte[] compressedData, int uncompressedLength);
 
   char[] decompressString(String string);
 

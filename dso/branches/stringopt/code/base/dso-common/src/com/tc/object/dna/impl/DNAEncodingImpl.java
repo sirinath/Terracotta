@@ -336,7 +336,7 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private void writeCompressedString(String string, TCDataOutput output) {
-    try {
+    try {      
       TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
       // Stride is 512 bytes by default, should I increase ?
       DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
@@ -344,9 +344,14 @@ public class DNAEncodingImpl implements DNAEncoding {
       dos.write(uncompressed);
       dos.close();
       byte[] compressed = byteArrayOS.getInternalArray();
-      // XXX:: We are writting the original string's length so that we save a couple of copies when decompressing
+      // XXX:: We are writing the original string's uncompressed byte[] length so that we save a couple of copies when decompressing
       output.writeInt(uncompressed.length);
       writeByteArray(compressed, 0, byteArrayOS.size(), output);
+      
+      // write string metadata so we can avoid decompression on later L1s
+      output.writeInt(string.length());
+      output.writeInt(string.hashCode());
+
       if (STRING_COMPRESSION_LOGGING_ENABLED) {
         logger.info("Compressed String of size : " + string.length() + " bytes : " + uncompressed.length
                     + " to  bytes : " + compressed.length);
@@ -891,12 +896,24 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readCompressedString(TCDataInput input) throws IOException {
-    int stringLength = input.readInt();
+    int stringUncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
+
     if (policy == APPLICATOR) {
-      return inflateCompressedString(data, stringLength);
+      int stringLength = input.readInt();
+      int stringHash = input.readInt();
+      
+      try {
+        Constructor c = String.class.getDeclaredConstructor(new Class[] { Integer.TYPE, Integer.TYPE });
+        String s = (String) c.newInstance(new Object[] { new Integer(stringLength), new Integer(stringHash) });
+        this.compressedStringManager.addCompressedString(s, data, stringUncompressedByteLength);
+        return s;
+      } catch (Exception e) {
+        throw Assert.failure(e.getMessage(), e);
+      }
+    
     } else {
-      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringLength);
+      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength);
       return utfBytes;
     }
   }

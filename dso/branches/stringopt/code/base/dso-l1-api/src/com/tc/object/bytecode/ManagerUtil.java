@@ -988,9 +988,10 @@ public class ManagerUtil {
    * Add a compressed string to the manager for later decompression
    * @param string The string instance
    * @param compressedData The compressed data for this string for later decompression
+   * @param uncompressedLength The length of the uncompressed byte[]
    */
-  public static void addCompressedString(String string, byte[] compressedData) {
-    getManager().addCompressedString(string, compressedData);
+  public static void addCompressedString(String string, byte[] compressedData, int uncompressedLength) {
+    getManager().addCompressedString(string, compressedData, uncompressedLength);
   }
 
   /**
