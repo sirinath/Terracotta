@@ -286,7 +286,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       this.connectionId = ConnectionID.NULL_ID;
       conn.removeListener(this);
       clearAddressCache();
-      conn = null;
+      this.connection = null;
     }
   }
 
