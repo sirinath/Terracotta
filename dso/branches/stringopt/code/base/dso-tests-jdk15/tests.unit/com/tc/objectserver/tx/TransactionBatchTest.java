@@ -6,12 +6,12 @@ package com.tc.objectserver.tx;
 
 import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.object.ApplicatorDNAEncodingImpl;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.compression.CompressedStringManagerImpl;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.DefaultGlobalTransactionIDGenerator;
 import com.tc.object.gtx.GlobalTransactionIDGenerator;
@@ -40,7 +40,7 @@ import junit.framework.TestCase;
 
 public class TransactionBatchTest extends TestCase {
 
-  private DNAEncoding                         encoding = new DNAEncodingImpl(new MockClassProvider(), new CompressedStringManagerImpl());
+  private DNAEncoding                         encoding = new ApplicatorDNAEncodingImpl(new MockClassProvider(), new CompressedStringManagerImpl());
 
   private TransactionBatchWriter              writer;
   private TestCommitTransactionMessageFactory messageFactory;

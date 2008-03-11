@@ -19,7 +19,6 @@ import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.field.TCFieldFactory;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.ClassUtils;
@@ -47,7 +46,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
     this.fieldFactory = fieldFactory;
     this.config = config;
     this.classProvider = classProvider;
-    this.encoding = new DNAEncodingImpl(classProvider, compressedStringManager);
+    this.encoding = new ApplicatorDNAEncodingImpl(classProvider, compressedStringManager);
   }
 
   public TCClass getOrCreate(Class clazz, ClientObjectManager objectManager) {
@@ -83,7 +82,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
         } catch (SecurityException e) {
           throw new TCRuntimeException(e);
         } catch (NoSuchMethodException e) {
-          c = null;
+          // c is already null
         }
         if (c != null) { return clazz; }
       }

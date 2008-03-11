@@ -12,7 +12,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -92,9 +91,8 @@ public class DNAEncodingImpl implements DNAEncoding {
   private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
-  private final ClassProvider        classProvider;
-  private final byte                 policy;
-  private final CompressedStringManager compressedStringManager;
+  protected final ClassProvider        classProvider;
+  protected final byte                 policy;
 
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
   private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
@@ -112,14 +110,9 @@ public class DNAEncodingImpl implements DNAEncoding {
                                                                               .getInt(
                                                                                       "l1.transactionmanager.strings.compress.minSize");
   
-  /**
-   * Used in the Applicators. The policy is set to APPLICATOR.
-   */
-  public DNAEncodingImpl(ClassProvider classProvider, CompressedStringManager compressedStringManager) {
+  public DNAEncodingImpl(byte policy, ClassProvider classProvider) {
+    this.policy = policy;
     this.classProvider = classProvider;
-    this.policy = APPLICATOR;
-    this.compressedStringManager = compressedStringManager;
-    
   }
 
   public DNAEncodingImpl(byte policy) {
@@ -132,12 +125,6 @@ public class DNAEncodingImpl implements DNAEncoding {
     } else {
       throw new AssertionError("Policy not valid : " + policy + " : For APPLICATORS use the other contructor !");
     }
-    
-    this.compressedStringManager = null;
-  }
-
-  public byte getPolicy() {
-    return this.policy;
   }
 
   public void encodeClassLoader(ClassLoader value, TCDataOutput output) {
@@ -378,7 +365,7 @@ public class DNAEncodingImpl implements DNAEncoding {
   // output.writeChar(chars[i]);
   // }
   // }
-  private byte[] readByteArray(TCDataInput input) throws IOException {
+  protected byte[] readByteArray(TCDataInput input) throws IOException {
     int length = input.readInt();
     if (length >= BYTE_WARN) {
       logger.warn("Attempting to allocate a large byte array of size: " + length);
@@ -853,7 +840,7 @@ public class DNAEncodingImpl implements DNAEncoding {
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
     byte[] data = readByteArray(input);
 
-    if ((policy == SERIALIZER && type == TYPE_ID_ENUM) || policy == APPLICATOR) {
+    if (useStringEnumRead(type)) {
       Class enumType = new ClassInstance(name, def).asClass(classProvider);
 
       String enumName = new String(data, "UTF-8");
@@ -864,22 +851,30 @@ public class DNAEncodingImpl implements DNAEncoding {
       return new EnumInstance(clazzInstance, enumName);
     }
   }
+  
+  protected boolean useStringEnumRead(byte type) {
+    return (policy == SERIALIZER && type == TYPE_ID_ENUM);
+  }
 
   private Object readClassLoader(TCDataInput input, byte type) throws IOException {
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
-    if ((policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASSLOADER) || policy == APPLICATOR) {
+    if (useClassProvider(type)) {
       return new ClassLoaderInstance(def).asClassLoader(classProvider);
     } else {
       return new ClassLoaderInstance(def);
     }
+  }
+  
+  protected boolean useClassProvider(byte type) {
+    return (policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASSLOADER);
   }
 
   private Object readClass(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
-    if ((policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASS) || policy == APPLICATOR) {
+    if (useClassProvider(type)) {
       return new ClassInstance(name, def).asClass(classProvider);
     } else {
       return new ClassInstance(name, def);
@@ -888,34 +883,23 @@ public class DNAEncodingImpl implements DNAEncoding {
 
   private Object readString(TCDataInput input, byte type) throws IOException {
     byte[] data = readByteArray(input);
-    if ((policy == SERIALIZER && type == TYPE_ID_STRING) || policy == APPLICATOR) {
+    if (useUTF8String(type)) {
       return new String(data, "UTF-8");
     } else {
       return new UTF8ByteDataHolder(data);
     }
   }
+  
+  protected boolean useUTF8String(byte type) {
+    return (policy == SERIALIZER && type == TYPE_ID_STRING);
+  }
 
-  private Object readCompressedString(TCDataInput input) throws IOException {
+  protected Object readCompressedString(TCDataInput input) throws IOException {
     int stringUncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
 
-    if (policy == APPLICATOR) {
-      int stringLength = input.readInt();
-      int stringHash = input.readInt();
-      
-      try {
-        Constructor c = String.class.getDeclaredConstructor(new Class[] { Integer.TYPE, Integer.TYPE });
-        String s = (String) c.newInstance(new Object[] { new Integer(stringLength), new Integer(stringHash) });
-        this.compressedStringManager.addCompressedString(s, data, stringUncompressedByteLength);
-        return s;
-      } catch (Exception e) {
-        throw Assert.failure(e.getMessage(), e);
-      }
-    
-    } else {
-      UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength);
-      return utfBytes;
-    }
+    UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength);
+    return utfBytes;
   }
 
   public static String inflateCompressedString(byte[] data, int length) {
