@@ -12,6 +12,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -93,6 +94,7 @@ public class DNAEncodingImpl implements DNAEncoding {
 
   private final ClassProvider        classProvider;
   private final byte                 policy;
+  private final CompressedStringManager compressedStringManager;
 
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
   private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
@@ -109,13 +111,15 @@ public class DNAEncodingImpl implements DNAEncoding {
                                                                               .getProperties()
                                                                               .getInt(
                                                                                       "l1.transactionmanager.strings.compress.minSize");
-
+  
   /**
    * Used in the Applicators. The policy is set to APPLICATOR.
    */
-  public DNAEncodingImpl(ClassProvider classProvider) {
+  public DNAEncodingImpl(ClassProvider classProvider, CompressedStringManager compressedStringManager) {
     this.classProvider = classProvider;
     this.policy = APPLICATOR;
+    this.compressedStringManager = compressedStringManager;
+    
   }
 
   public DNAEncodingImpl(byte policy) {
@@ -128,6 +132,8 @@ public class DNAEncodingImpl implements DNAEncoding {
     } else {
       throw new AssertionError("Policy not valid : " + policy + " : For APPLICATORS use the other contructor !");
     }
+    
+    this.compressedStringManager = null;
   }
 
   public byte getPolicy() {

@@ -907,4 +907,11 @@ public class ManagerImpl implements Manager {
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
   }
 
+  public void addCompressedString(String string, byte[] compressedData) {
+    dso.getCompressedStringManager().addCompressedString(string, compressedData);
+  }
+  
+  public char[] decompressString(String string) {
+    return dso.getCompressedStringManager().decompressString(string);
+  }
 }

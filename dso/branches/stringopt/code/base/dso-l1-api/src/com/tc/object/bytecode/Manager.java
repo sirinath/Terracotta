@@ -464,4 +464,19 @@ public interface Manager {
    */
   public boolean isFieldPortableByOffset(Object pojo, long fieldOffset);
 
+  /**
+   * Add a compressed string to the manager for later decompression
+   * @param string The string instance
+   * @param compressedData The compressed data for this string for later decompression
+   */
+  public void addCompressedString(String string, byte[] compressedData);
+  
+  
+  /**
+   * For the string instance, look up it's compressed data and return the 
+   * decompressed char[] to put in the String.
+   * @param string The string instance to decompress
+   * @return The decompressed char[] for this string
+   */
+  public char[] decompressString(String string);
 }

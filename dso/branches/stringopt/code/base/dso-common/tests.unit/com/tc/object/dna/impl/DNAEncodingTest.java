@@ -12,6 +12,7 @@ import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
 import com.tc.object.ObjectID;
 import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.compression.CompressedStringManagerImpl;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 
@@ -70,7 +71,7 @@ public class DNAEncodingTest extends TestCase {
   }
 
   private DNAEncoding getApplicatorEncoding() {
-    return new DNAEncodingImpl(classProvider);
+    return new DNAEncodingImpl(classProvider, new CompressedStringManagerImpl());
   }
 
   public void testNonPrimitiveArrays() throws Exception {

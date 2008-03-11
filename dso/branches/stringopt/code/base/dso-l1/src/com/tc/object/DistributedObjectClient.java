@@ -47,6 +47,7 @@ import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.ClockEvictionPolicy;
+import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.event.DmiManager;
@@ -158,6 +159,7 @@ public class DistributedObjectClient extends SEDA {
   private DmiManager                               dmiManager;
   private StatisticsAgentSubSystem                 statisticsAgentSubSystem;
   private boolean                                  createDedicatedMBeanServer = false;
+  private CompressedStringManager                  compressedStringManager;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -246,7 +248,7 @@ public class DistributedObjectClient extends SEDA {
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
-        .getCommitTransactionMessageFactory(), new DNAEncodingImpl(classProvider));
+        .getCommitTransactionMessageFactory(), new DNAEncodingImpl(classProvider, compressedStringManager));
 
     rtxManager = new RemoteTransactionManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
@@ -271,7 +273,7 @@ public class DistributedObjectClient extends SEDA {
     BatchSequence sequence = new BatchSequence(remoteIDProvider, 50000);
     ObjectIDProvider idProvider = new ObjectIDProviderImpl(sequence);
 
-    TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider);
+    TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, compressedStringManager);
     TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
     ToggleableReferenceManager toggleRefMgr = new ToggleableReferenceManager();
@@ -502,5 +504,9 @@ public class DistributedObjectClient extends SEDA {
 
   public StatisticsAgentSubSystem getStatisticsAgentSubSystem() {
     return statisticsAgentSubSystem;
+  }
+  
+  public CompressedStringManager getCompressedStringManager() {
+    return compressedStringManager;
   }
 }

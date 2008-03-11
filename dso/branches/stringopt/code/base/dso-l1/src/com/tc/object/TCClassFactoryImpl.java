@@ -15,6 +15,7 @@ import com.tc.object.applicator.FileApplicator;
 import com.tc.object.applicator.LiteralTypesApplicator;
 import com.tc.object.applicator.PhysicalApplicator;
 import com.tc.object.applicator.ProxyApplicator;
+import com.tc.object.compression.CompressedStringManager;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.dna.api.DNAEncoding;
@@ -42,11 +43,11 @@ public class TCClassFactoryImpl implements TCClassFactory {
   private final ClassProvider         classProvider;
   private final DNAEncoding           encoding;
 
-  public TCClassFactoryImpl(TCFieldFactory fieldFactory, DSOClientConfigHelper config, ClassProvider classProvider) {
+  public TCClassFactoryImpl(TCFieldFactory fieldFactory, DSOClientConfigHelper config, ClassProvider classProvider, CompressedStringManager compressedStringManager) {
     this.fieldFactory = fieldFactory;
     this.config = config;
     this.classProvider = classProvider;
-    this.encoding = new DNAEncodingImpl(classProvider);
+    this.encoding = new DNAEncodingImpl(classProvider, compressedStringManager);
   }
 
   public TCClass getOrCreate(Class clazz, ClientObjectManager objectManager) {
