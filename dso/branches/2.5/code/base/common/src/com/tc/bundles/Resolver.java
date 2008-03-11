@@ -139,8 +139,6 @@ public class Resolver {
     return urls;
   }
 
-  /**
-   */
   private Collection findJars(File rootLocation, String groupId, String name, String version) {
     // sample input:
     //  rootLocation = file://repo
@@ -344,8 +342,8 @@ public class Resolver {
   private void resolveDependencies(final URL location) throws BundleException {
     final Manifest manifest = getManifest(location);
     if (manifest == null) {
-      final String msg = formatMessage(Message.ERROR_BUNDLE_UNREADABLE, new Object[] { FileUtils.toFile(location).getName(),
-      canonicalPath(FileUtils.toFile(location).getParentFile()) });
+      final String msg = formatMessage(Message.ERROR_BUNDLE_UNREADABLE, new Object[] {
+          FileUtils.toFile(location).getName(), canonicalPath(FileUtils.toFile(location).getParentFile()) });
       fatal(msg);
       throw new InvalidBundleManifestException(msg);
     }
