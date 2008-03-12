@@ -49,6 +49,8 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
       String s = (String) c.newInstance(new Object[] { Boolean.TRUE, compressedChars, new Integer(stringLength), new Integer(stringHash) });
       
       if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
+        //force decompress then intern
+        s.getChars(0, 1, new char[1], 0);
         return s.intern();
       } else {
         return s;
