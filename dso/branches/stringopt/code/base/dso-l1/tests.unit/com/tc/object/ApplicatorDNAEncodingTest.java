@@ -209,39 +209,45 @@ public class ApplicatorDNAEncodingTest extends TestCase {
   }
   
   public void testCompressedStringDecoding() throws Exception {
-    TCByteBufferOutputStream output = new TCByteBufferOutputStream();
-
-    DNAEncoding encoding = getApplicatorEncoding();
     String bigString = getBigString(100000);
-    encoding.encode(bigString, output);
 
+    // Encode string using applicator encoding into data
+    DNAEncoding applicatorEncoding = getApplicatorEncoding();
+    TCByteBufferOutputStream output = new TCByteBufferOutputStream();
+    applicatorEncoding.encode(bigString, output);
     TCByteBuffer[] data = output.toArray();
-    
 
-    encoding = getStorageEncoder();
+    // Decode string from data using storage encoding (into UTF8ByteDataHolder) into decoded
+    DNAEncoding storageEncoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
     
     assertTrue(decoded.isCompressed());
-    assertEquals(bigString.getBytes("UTF-8").length, decoded.getUnCompressedStringLength());
+    assertEquals(bigString.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
     System.err.println("Compressed String length = " + decoded.getBytes().length) ;
+    assertEquals(bigString.length(), decoded.getStringLength());
+    assertEquals(bigString.hashCode(), decoded.getStringHash());
     assertEquals(bigString, decoded.asString());
     
+    // Encode UTF8ByteDataHolder into data2 using storage encoding
     output = new TCByteBufferOutputStream();
-    encoding.encode(decoded, output);
+    storageEncoding.encode(decoded, output);
     TCByteBuffer[] data2 = output.toArray();
+    
+    // Decode UTF8ByteDataHolder from data2 into decoded2 using storage encoding
     input = new TCByteBufferInputStream(data2);
-    UTF8ByteDataHolder decoded2 = (UTF8ByteDataHolder) encoding.decode(input);
+    UTF8ByteDataHolder decoded2 = (UTF8ByteDataHolder) storageEncoding.decode(input);
     assertEquals(decoded, decoded2);
     
-    encoding = getApplicatorEncoding();
+    // Decode from original data using applicator encoding into str
     input = new TCByteBufferInputStream(data);
-    String str = (String) encoding.decode(input);
+    String str = (String) applicatorEncoding.decode(input);
     assertEquals(bigString, str);
 
+    // Decode from data2 using applicator encoding into str2
     input = new TCByteBufferInputStream(data2);
-    str = (String) encoding.decode(input);
-    assertEquals(bigString, str);
+    String str2 = (String) applicatorEncoding.decode(input);
+    assertEquals(bigString, str2);
     
   }
 
