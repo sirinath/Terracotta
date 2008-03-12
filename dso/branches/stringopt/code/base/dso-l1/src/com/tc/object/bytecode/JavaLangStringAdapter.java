@@ -18,12 +18,13 @@ import com.tc.util.runtime.VmVersion;
 
 public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
-  private static final String GET_VALUE_METHOD = ByteCodeUtil.fieldGetterMethod("value");
+  private static final String GET_VALUE_METHOD      = ByteCodeUtil.fieldGetterMethod("value");
+  private static final String INTERN_FIELD_NAME     = ByteCodeUtil.TC_FIELD_PREFIX + "interned";
   private static final String COMPRESSED_FIELD_NAME = "__tc_compressed";
-  
-  private final VmVersion vmVersion;
-  private final boolean   portableStringBuffer;
-  private final boolean   isAzul;
+
+  private final VmVersion     vmVersion;
+  private final boolean       portableStringBuffer;
+  private final boolean       isAzul;
 
   public JavaLangStringAdapter(ClassVisitor cv, VmVersion vmVersion, boolean portableStringBuffer, boolean isAzul) {
     super(cv);
@@ -31,15 +32,20 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     this.portableStringBuffer = portableStringBuffer;
     this.isAzul = isAzul;
   }
-  
+
+  public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangStringIntern" });
+    super.visit(version, access, name, signature, superName, interfaces);
+  }
+
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-    
+
     if ("getBytes".equals(name) && "(II[BI)V".equals(desc)) {
       mv = rewriteGetBytes(mv);
     } else if ("<init>".equals(name) && "(Ljava/lang/StringBuffer;)V".equals(desc)) {
-      if (vmVersion.isJDK14() && portableStringBuffer) { 
-        mv = rewriteStringBufferConstructor(mv); 
+      if (vmVersion.isJDK14() && portableStringBuffer) {
+        mv = rewriteStringBufferConstructor(mv);
       }
     } else if ("getChars".equals(name) && "(II[CI)V".equals(desc)) {
       // make formatter sane
@@ -51,7 +57,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
       mv = new RewriteGetCharsCallsAdapter(mv);
     }
 
-    if(mv != null) {
+    if (mv != null) {
       mv = new DecompressCharsAdapter(mv);
     }
 
@@ -59,8 +65,8 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-    if("value".equals(name)) {
-      // Remove final modifier and add volatile on char[] value 
+    if ("value".equals(name)) {
+      // Remove final modifier and add volatile on char[] value
       return super.visitField(ACC_PRIVATE + ACC_VOLATILE, "value", "[C", null, null);
     } else {
       return super.visitField(access, name, desc, signature, value);
@@ -70,17 +76,48 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   public void visitEnd() {
     addCompressionField();
     addCompressedConstructor();
-    
+
     addGetValueMethod();
     addFastGetChars();
+
+    addStringInternTCNature();
     super.visitEnd();
   }
 
+  private void addStringInternTCNature() {
+    // private boolean $__tc_interned;
+    super.visitField(ACC_PRIVATE, INTERN_FIELD_NAME, "Z", null, null);
+
+    // public String __tc_intern(String) - TC version of String.intern()
+    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "intern", "()Ljava/lang/String;",
+                                         null, null);
+    mv.visitCode();
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "intern", "()Ljava/lang/String;");
+    mv.visitVarInsn(ASTORE, 1);
+    mv.visitVarInsn(ALOAD, 1);
+    mv.visitInsn(ICONST_1);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", INTERN_FIELD_NAME, "Z");
+    mv.visitVarInsn(ALOAD, 1);
+    mv.visitInsn(ARETURN);
+    mv.visitMaxs(2, 2);
+    mv.visitEnd();
+
+    // public Boolean __tc_isInterned() - implementation of JavaLangStringIntern Interface
+    mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "isInterned", "()Z", null, null);
+    mv.visitCode();
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", INTERN_FIELD_NAME, "Z");
+    mv.visitInsn(IRETURN);
+    mv.visitMaxs(0, 0);
+    mv.visitEnd();
+  }
+
   private void addCompressionField() {
-    // private volatile boolean __tc_compressed      = false;
+    // private volatile boolean __tc_compressed = false;
     super.visitField(ACC_PRIVATE + ACC_VOLATILE + ACC_TRANSIENT, COMPRESSED_FIELD_NAME, "Z", null, null);
   }
-  
+
   private void addCompressedConstructor() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "<init>", "(II)V", null, null);
     mv.visitCode();
@@ -125,7 +162,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitMaxs(2, 3);
     mv.visitEnd();
   }
-  
+
   private void addGetValueMethod() {
     // ACC_PRIVATE?
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.fieldGetterMethod("value"), "()[C", null, null);
@@ -142,7 +179,9 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLineNumber(40, l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "decompressString", "(Ljava/lang/String;)[C");
+    mv
+        .visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "decompressString",
+                         "(Ljava/lang/String;)[C");
     mv.visitFieldInsn(PUTFIELD, "java/lang/String", "value", "[C");
     Label l3 = new Label();
     mv.visitLabel(l3);
@@ -161,7 +200,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitMaxs(2, 1);
     mv.visitEnd();
   }
-    
+
   private void addFastGetChars() {
     // Called by the unmanaged paths of StringBuffer, StringBuilder, etc. Also called it strategic places where the
     // target char[] is known (or assumed) to be non-shared
@@ -169,7 +208,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
-//    mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+    // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
     if (!isAzul) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/lang/String", "offset", "I");
@@ -194,19 +233,19 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     if (isAzul) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
-//      mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+      // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ILOAD, 2);
       mv.visitVarInsn(ALOAD, 0);
-//      mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+      // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
       mv.visitInsn(ARRAYLENGTH);
       mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
       mv.visitInsn(RETURN);
     } else {
       mv.visitVarInsn(ALOAD, 0);
-//      mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+      // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/lang/String", "offset", "I");
@@ -233,7 +272,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 2);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
-//    mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+    // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
     mv.visitFieldInsn(PUTFIELD, "java/lang/String", "value", "[C");
     if (!isAzul) {
       mv.visitVarInsn(ALOAD, 0);
@@ -265,7 +304,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     }
 
     mv.visitVarInsn(ALOAD, 0);
-//    mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+    // mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", GET_VALUE_METHOD, "()[C");
     mv.visitMethodInsn(INVOKESTATIC, JavaLangArrayHelpers.CLASS, "javaLangStringGetBytes", isAzul ? "(II[BI[C)V"
         : "(II[BIII[C)V");
@@ -321,6 +360,5 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
       }
     }
   }
-  
-}
 
+}

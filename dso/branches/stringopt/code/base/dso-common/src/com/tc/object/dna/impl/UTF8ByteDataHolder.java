@@ -17,8 +17,9 @@ import java.util.Arrays;
  */
 public class UTF8ByteDataHolder implements Serializable {
 
-  private final byte[] bytes;
-  private final int    uncompressedLength;
+  private final byte[]  bytes;
+  private final boolean interned;
+  private final int     uncompressedLength;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
@@ -28,15 +29,21 @@ public class UTF8ByteDataHolder implements Serializable {
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
+    this.interned = false;
   }
 
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, -1);
+    this(b, -1, false);
   }
 
-  public UTF8ByteDataHolder(byte[] b, int uncompressedLenght) {
+  public UTF8ByteDataHolder(byte[] b, boolean interned) {
+    this(b, -1, interned);
+  }
+
+  public UTF8ByteDataHolder(byte[] b, int uncompressedLenght, boolean interned) {
     this.bytes = b;
     this.uncompressedLength = uncompressedLenght;
+    this.interned = interned;
   }
 
   public byte[] getBytes() {
@@ -45,6 +52,10 @@ public class UTF8ByteDataHolder implements Serializable {
 
   public String asString() {
     return (isCompressed() ? inflate() : getString());
+  }
+
+  public boolean isInterned() {
+    return this.interned;
   }
 
   private String inflate() {
