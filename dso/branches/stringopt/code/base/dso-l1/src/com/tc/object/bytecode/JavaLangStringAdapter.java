@@ -20,7 +20,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
   private static final String GET_VALUE_METHOD      = ByteCodeUtil.fieldGetterMethod("value");
   private static final String INTERN_FIELD_NAME     = ByteCodeUtil.TC_FIELD_PREFIX + "interned";
-  private static final String COMPRESSED_FIELD_NAME = "__tc_compressed";
+  private static final String COMPRESSED_FIELD_NAME = ByteCodeUtil.TC_FIELD_PREFIX + "compressed";
 
   private final VmVersion     vmVersion;
   private final boolean       portableStringBuffer;
@@ -114,7 +114,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   private void addCompressionField() {
-    // private volatile boolean __tc_compressed = false;
+    // private volatile boolean $__tc_compressed = false;
     super.visitField(ACC_PRIVATE + ACC_VOLATILE + ACC_TRANSIENT, COMPRESSED_FIELD_NAME, "Z", null, null);
   }
 
@@ -131,7 +131,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLineNumber(12, l1);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_1);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "__tc_compressed", "Z");
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     Label l2 = new Label();
     mv.visitLabel(l2);
     mv.visitLineNumber(13, l2);
@@ -171,7 +171,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLabel(l0);
     mv.visitLineNumber(39, l0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/lang/String", "__tc_compressed", "Z");
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     Label l1 = new Label();
     mv.visitJumpInsn(IFEQ, l1);
     Label l2 = new Label();
@@ -188,7 +188,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLineNumber(41, l3);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_0);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "__tc_compressed", "Z");
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     mv.visitLabel(l1);
     mv.visitLineNumber(43, l1);
     mv.visitVarInsn(ALOAD, 0);
