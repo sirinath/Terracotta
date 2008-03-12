@@ -37,6 +37,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.geronimo.GeronimoLoaderNaming;
 import com.tc.hibernate.HibernateProxyInstance;
 import com.tc.ibatis.IBatisAccessPlanInstance;
+import com.tc.io.TCByteArrayOutputStream;
 import com.tc.jboss.JBossLoaderNaming;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.NullTCLogger;
@@ -48,6 +49,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
+import com.tc.object.StringCompressionUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
@@ -493,6 +495,8 @@ public class BootJarTool {
       loadTerracottaClass(ClusterEventListener.class.getName());
       loadTerracottaClass(OverrideCheck.class.getName());
       loadTerracottaClass(JavaLangStringIntern.class.getName());
+      loadTerracottaClass(StringCompressionUtil.class.getName());
+      loadTerracottaClass(TCByteArrayOutputStream.class.getName());
 
       // These classes need to be specified as literal in order to prevent
       // the static block of IdentityWeakHashMap from executing during generating
@@ -1128,7 +1132,7 @@ public class BootJarTool {
 
     loadTerracottaClass("com.tc.object.applicator.TCURL");
     loadTerracottaClass("com.tc.object.bytecode.TCMapEntry");
-
+    
     // DEV-116; Some of these probably should'nt be in the boot jar
     loadTerracottaClass("com.tc.exception.ImplementMe");
     loadTerracottaClass("com.tc.exception.TCClassNotFoundException");
