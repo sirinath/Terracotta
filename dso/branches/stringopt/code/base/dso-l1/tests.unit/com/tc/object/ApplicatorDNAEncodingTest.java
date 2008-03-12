@@ -27,7 +27,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-public class ApplicatorDNAEncodingTest extends BaseDSOTestCase {
+import junit.framework.TestCase;
+
+public class ApplicatorDNAEncodingTest extends TestCase {
 
   Random        rnd           = new Random();
   ClassProvider classProvider = new MockClassProvider();
