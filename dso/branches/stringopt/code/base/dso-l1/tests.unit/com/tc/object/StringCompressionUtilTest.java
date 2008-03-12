@@ -3,25 +3,16 @@
  */
 package com.tc.object;
 
-import com.tc.io.TCByteArrayOutputStream;
 
-import java.util.zip.DeflaterOutputStream;
 
 import junit.framework.TestCase;
 
-public class ByteToCharTest extends TestCase {
-
-  private ByteToChar byteToChar;
-  
-  protected void setUp() throws Exception {
-    super.setUp();
-    byteToChar = new ByteToChar();
-  }
+public class StringCompressionUtilTest extends TestCase {
 
   public void testWithCompression() throws Exception {
     String test = getTestString();
-    byte[] compressed = compressString(test);
-    char[] chars = byteToChar.toCharArray(compressed);
+    byte[] compressed = StringCompressionUtil.compressString(test);
+    char[] chars = StringCompressionUtil.toCharArray(compressed);
     String compressedString = new String(chars);
     assertTrue(compressedString.length() < test.length());
   }
@@ -36,10 +27,10 @@ public class ByteToCharTest extends TestCase {
   }
   
   private void helpTestConvertTwoBytesToExpectedChar(byte firstByte, byte secondByte, char expected){
-    char[] result = byteToChar.toCharArray(new byte[]{firstByte, secondByte});
-    assertEquals(1, result.length);
-    assertEquals((int)expected, (int) result[0]);
-    assertEquals(expected, result[0]);
+    char[] result = StringCompressionUtil.toCharArray(new byte[]{firstByte, secondByte});
+    assertEquals(2, result.length);
+    //assertEquals((int)expected, (int) result[1]);
+    assertEquals(expected, result[1]);
   }
   
   public void testRoundtripOddNumberOfBytes() throws Exception {
@@ -64,8 +55,8 @@ public class ByteToCharTest extends TestCase {
   }
   
   private void helpTestRoundtrip(byte[] bytes) {
-    char[] c = byteToChar.toCharArray(bytes);
-    byte[] b = byteToChar.toByteArray(c, bytes.length);
+    char[] c = StringCompressionUtil.toCharArray(bytes);
+    byte[] b = StringCompressionUtil.toByteArray(c, bytes.length);
     assertEquals(bytes.length, b.length);
     for(int i=0; i<bytes.length; i++) {
       assertEquals("Mismatch in index " + i, bytes[i], b[i]);
@@ -79,20 +70,5 @@ public class ByteToCharTest extends TestCase {
       sb.append(i);
     }
     return sb.toString();
-  }
-
-  private byte[] compressString(String string) {
-    try {      
-      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
-      // Stride is 512 bytes by default, should I increase ?
-      DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
-      byte[] uncompressed = string.getBytes("UTF-8");
-      dos.write(uncompressed);
-      dos.close();
-      byte[] compressed = byteArrayOS.getInternalArray();
-      return compressed;
-    } catch (Exception e) {
-      throw new AssertionError(e);
-    }
   }
 }
