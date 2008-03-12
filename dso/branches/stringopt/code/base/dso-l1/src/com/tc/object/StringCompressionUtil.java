@@ -5,14 +5,33 @@ package com.tc.object;
 
 import com.tc.io.TCByteArrayOutputStream;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
+/**
+ * Utilities to compress/decompress a UTF-8 String
+ */
 public class StringCompressionUtil {
 
   static final char COMPRESSION_FLAG = '\uC0FF'; //get it? "cough"!  illegal in UTF-8
   
-  public static char[] decompressCompressedChars(char[] compressedString, int uncompressedLength){
-    return decompressString(toByteArray(compressedString, uncompressedLength));
+  public static byte[] decompressCompressedChars(char[] compressedString, int uncompressedLength){
+    if (isCompressed(compressedString)){
+      return decompressString(toByteArray(compressedString, uncompressedLength), uncompressedLength);
+    }
+    return null;
+  }
+  
+  public static boolean isCompressed(char[] compressedString) {
+    //Give it the "cough" test, heh heh
+    return (compressedString.length > 0 && COMPRESSION_FLAG == compressedString[0]);
+  }
+
+  public static char[] compressToChars(byte[] uncompressedString){
+    byte[] compressed = compressString(uncompressedString);
+    return toCharArray(compressed);
   }
   
   public static char[] toCharArray(byte[] bytes) {
@@ -39,6 +58,7 @@ public class StringCompressionUtil {
     byte[] bytes = new byte[originalLength];
     
     int byteIndex = 0;
+    //skip the first char since it is just the compression flag
     for(int i=1; i<chars.length; i++) {
       int anInt = chars[i];
       bytes[byteIndex++] = (byte)(anInt>>8);
@@ -49,12 +69,11 @@ public class StringCompressionUtil {
     return bytes;
   }
 
-  public static byte[] compressString(String string) {
+  public static byte[] compressString(byte[] uncompressed) {
     try {      
       TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
       // Stride is 512 bytes by default, should I increase ?
       DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
-      byte[] uncompressed = string.getBytes("UTF-8");
       dos.write(uncompressed);
       dos.close();
       byte[] compressed = byteArrayOS.getInternalArray();
@@ -64,8 +83,22 @@ public class StringCompressionUtil {
     }
   }
   
-  public static char[] decompressString(byte[] compressedString){
-    return null;
+  public static byte[] decompressString(byte[] compressedString, int uncompressedLength){
+    try {
+      ByteArrayInputStream bais = new ByteArrayInputStream(compressedString);
+      InflaterInputStream iis = new InflaterInputStream(bais);
+      byte uncompressed[] = new byte[uncompressedLength];
+      int read;
+      int offset = 0;
+      while (uncompressedLength > 0 && (read = iis.read(uncompressed, offset, uncompressedLength)) != -1) {
+        offset += read;
+        uncompressedLength -= read;
+      }
+      iis.close();
+      return uncompressed;
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
   }
 
 }

@@ -5,18 +5,12 @@ package com.tc.object;
 
 
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 public class StringCompressionUtilTest extends TestCase {
 
-  public void testWithCompression() throws Exception {
-    String test = getTestString();
-    byte[] compressed = StringCompressionUtil.compressString(test);
-    char[] chars = StringCompressionUtil.toCharArray(compressed);
-    String compressedString = new String(chars);
-    assertTrue(compressedString.length() < test.length());
-  }
-  
   public void testConvertTwoBytesToExpectedChar() throws Exception {
     helpTestConvertTwoBytesToExpectedChar((byte)-1,(byte) -1, '\uFFFF');
     helpTestConvertTwoBytesToExpectedChar((byte)-1,(byte) 0x7F, '\uFF7F');
@@ -29,7 +23,6 @@ public class StringCompressionUtilTest extends TestCase {
   private void helpTestConvertTwoBytesToExpectedChar(byte firstByte, byte secondByte, char expected){
     char[] result = StringCompressionUtil.toCharArray(new byte[]{firstByte, secondByte});
     assertEquals(2, result.length);
-    //assertEquals((int)expected, (int) result[1]);
     assertEquals(expected, result[1]);
   }
   
@@ -52,6 +45,34 @@ public class StringCompressionUtilTest extends TestCase {
         break;
       }
     }
+  }
+  
+  public void testDoNotDecompressAlreadyDecompressedString() throws Exception {
+    String test = "foo";
+    char[] testChars = new char[test.length()];
+    test.getChars(0, test.length(), testChars, 0);
+    assertNull(StringCompressionUtil.decompressCompressedChars(testChars, test.length()));
+  }
+  
+  public void testDoNotDecompressEmptyString() throws Exception {
+    String test = "";
+    char[] testChars = new char[test.length()];
+    test.getChars(0, test.length(), testChars, 0);
+    assertNull(StringCompressionUtil.decompressCompressedChars(testChars, test.length()));
+  }  
+  
+  public void testDecompressCompressedString() throws Exception {
+    String test = getTestString();
+    byte[] testBytes = test.getBytes("UTF-8");
+    char[] testChars = new char[test.length()];
+    test.getChars(0, test.length(), testChars, 0);    
+    
+    char[] compressedChars = StringCompressionUtil.compressToChars(testBytes);
+    
+    assertTrue(compressedChars.length < testChars.length);
+    
+    byte[] uncompressed = StringCompressionUtil.decompressCompressedChars(compressedChars, test.length());
+    assertTrue(Arrays.equals(testBytes, uncompressed));
   }
   
   private void helpTestRoundtrip(byte[] bytes) {
