@@ -266,8 +266,10 @@ public class DNAEncodingImpl implements DNAEncoding {
         if (utfBytes.isCompressed()) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
           output.writeByte(stringbytesInterned);
-          output.writeInt(utfBytes.getUnCompressedStringLength());
+          output.writeInt(utfBytes.getUncompressedStringLength());
           writeByteArray(utfBytes.getBytes(), output);
+          output.writeInt(utfBytes.getStringLength());
+          output.writeInt(utfBytes.getStringHash());
         } else {
           output.writeByte(TYPE_ID_STRING_BYTES);
           output.writeByte(stringbytesInterned);
@@ -933,9 +935,15 @@ public class DNAEncodingImpl implements DNAEncoding {
     byte isInterned = input.readByte();
     int stringUncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
+    
+    int stringLength = input.readInt();
+    int stringHash = input.readInt();
 
     UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength,
-                                                         (isInterned == STRING_TYPE_INTERNED));
+                                                         (isInterned == STRING_TYPE_INTERNED),
+                                                         stringLength, stringHash);
+    
+    
     return utfBytes;
   }
 

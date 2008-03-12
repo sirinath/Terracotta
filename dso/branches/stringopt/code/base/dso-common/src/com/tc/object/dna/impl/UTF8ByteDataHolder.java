@@ -19,31 +19,49 @@ public class UTF8ByteDataHolder implements Serializable {
 
   private final byte[]  bytes;
   private final boolean interned;
-  private final int     uncompressedLength;
+
+  // Used only in case of compressed string
+  private final int     uncompressedLength;   // of original byte[], not original String
+  private final int     originalStringLength;
+  private final int     originalStringHash;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
-    this.uncompressedLength = -1;
     try {
       this.bytes = str.getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
+    
     this.interned = false;
+    this.uncompressedLength = -1;
+    this.originalStringLength = -1;
+    this.originalStringHash = -1;
   }
 
+  /**
+   * Just byte data
+   */
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, -1, false);
+    this(b, -1, false, -1, -1);
   }
 
+  /**
+   * For a possibly interned, non-compressed string
+   */
   public UTF8ByteDataHolder(byte[] b, boolean interned) {
-    this(b, -1, interned);
+    this(b, -1, interned, -1, -1);
   }
 
-  public UTF8ByteDataHolder(byte[] b, int uncompressedLenght, boolean interned) {
+  /**
+   * For a possibly interned compressed string
+   */
+  public UTF8ByteDataHolder(byte[] b, int uncompressedLength, boolean interned, int originalStringLength, int originalStringHash) {
     this.bytes = b;
-    this.uncompressedLength = uncompressedLenght;
+    this.uncompressedLength = uncompressedLength;
     this.interned = interned;
+    this.originalStringLength = originalStringLength;
+    this.originalStringHash = originalStringHash;
   }
 
   public byte[] getBytes() {
@@ -95,7 +113,15 @@ public class UTF8ByteDataHolder implements Serializable {
     return uncompressedLength != -1;
   }
 
-  public int getUnCompressedStringLength() {
+  public int getUncompressedStringLength() {
     return uncompressedLength;
+  }
+  
+  public int getStringLength() { 
+    return this.originalStringLength;
+  }
+  
+  public int getStringHash() {
+    return this.originalStringHash;
   }
 }
