@@ -18,33 +18,59 @@ public class ByteToCharTest extends TestCase {
     byteToChar = new ByteToChar();
   }
 
-  public void testSimple() throws Exception {
-    
+  public void testWithCompression() throws Exception {
     String test = getTestString();
-    byte[] uncompressed = test.getBytes();
     byte[] compressed = compressString(test);
-//    System.out.println("uncompressed length " + uncompressed.length + ", hashCode " + uncompressed.hashCode());
-//    System.out.println("compressed length " + compressed.length + ", hashCode " + compressed.hashCode());
-    
-    char[] chars = byteToChar.convert(compressed);
-    
+    char[] chars = byteToChar.toCharArray(compressed);
     String compressedString = new String(chars);
-//    System.out.println("<!><!><!><!> "+compressedString + ", chars length " + chars.length);
-//    System.out.println("uncompressed length " + test.length() + ", hashCode " + test.hashCode());
-//    System.out.println("compressed length " + compressedString.length() + ", hashCode " + compressedString.hashCode());
     assertTrue(compressedString.length() < test.length());
   }
   
-  public void testRoundTrip() throws Exception {
-    helpAssert((byte)0xF, (byte)0xF, (char)0xFF);
-    helpAssert((byte)0xD, (byte)0xF, (char)0xDF);
+  public void testConvertTwoBytesToExpectedChar() throws Exception {
+    helpTestConvertTwoBytesToExpectedChar((byte)-1,(byte) -1, '\uFFFF');
+    helpTestConvertTwoBytesToExpectedChar((byte)-1,(byte) 0x7F, '\uFF7F');
+    helpTestConvertTwoBytesToExpectedChar((byte)1,(byte) 1, '\u0101');
+    helpTestConvertTwoBytesToExpectedChar((byte)0,(byte) 0, '\u0000');
+    helpTestConvertTwoBytesToExpectedChar((byte)-1,(byte) 0, '\uFF00');
+    helpTestConvertTwoBytesToExpectedChar((byte)0x80,(byte) 0x80, '\u8080');
   }
   
-  private void helpAssert(byte firstByte, byte secondByte, char expected){
-    char[] result = byteToChar.convert(new byte[]{firstByte, secondByte});
+  private void helpTestConvertTwoBytesToExpectedChar(byte firstByte, byte secondByte, char expected){
+    char[] result = byteToChar.toCharArray(new byte[]{firstByte, secondByte});
     assertEquals(1, result.length);
+    assertEquals((int)expected, (int) result[0]);
     assertEquals(expected, result[0]);
   }
+  
+  public void testRoundtripOddNumberOfBytes() throws Exception {
+    helpTestRoundtrip(new byte[]{-1,-1,-1});
+  }
+  
+  public void testRoundtrip() {
+    helpTestRoundtrip(new byte[] {} );
+    for(byte a=Byte.MIN_VALUE; ; a++) {
+      for(byte b=Byte.MIN_VALUE; ; b++) {
+        byte[] test = new byte[] { a, b};
+        //System.out.println("Testing { " + (int)a + ", " + (int)b + " }");
+        helpTestRoundtrip(test);
+        if (b==Byte.MAX_VALUE){
+          break;
+        }
+      }
+      if (a==Byte.MAX_VALUE){
+        break;
+      }
+    }
+  }
+  
+  private void helpTestRoundtrip(byte[] bytes) {
+    char[] c = byteToChar.toCharArray(bytes);
+    byte[] b = byteToChar.toByteArray(c, bytes.length);
+    assertEquals(bytes.length, b.length);
+    for(int i=0; i<bytes.length; i++) {
+      assertEquals("Mismatch in index " + i, bytes[i], b[i]);
+    }
+  }  
   
   private String getTestString() {
     StringBuffer sb = new StringBuffer();
