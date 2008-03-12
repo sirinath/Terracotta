@@ -6,7 +6,6 @@ package com.tc.object;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.object.bytecode.MockClassProvider;
-import com.tc.object.compression.CompressedStringManagerImpl;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.field.TCFieldFactory;
 
@@ -72,7 +71,7 @@ public class TraverserTest extends BaseDSOTestCase {
 
     public TestPortableObjectProvider() throws ConfigurationSetupException {
       DSOClientConfigHelper config = configHelper();
-      cf = new TCClassFactoryImpl(new TCFieldFactory(config), config, new MockClassProvider(), new CompressedStringManagerImpl());
+      cf = new TCClassFactoryImpl(new TCFieldFactory(config), config, new MockClassProvider());
     }
 
     public TraversedReferences getPortableObjects(Class clazz, Object start, TraversedReferences addTo) {
