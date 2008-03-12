@@ -68,6 +68,7 @@ import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
 import com.tc.object.bytecode.JavaLangReflectProxyClassAdapter;
 import com.tc.object.bytecode.JavaLangStringAdapter;
+import com.tc.object.bytecode.JavaLangStringIntern;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
 import com.tc.object.bytecode.JavaNetURLAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierDebugClassAdapter;
@@ -491,6 +492,7 @@ public class BootJarTool {
       loadTerracottaClass(TCProperties.class.getName());
       loadTerracottaClass(ClusterEventListener.class.getName());
       loadTerracottaClass(OverrideCheck.class.getName());
+      loadTerracottaClass(JavaLangStringIntern.class.getName());
 
       // These classes need to be specified as literal in order to prevent
       // the static block of IdentityWeakHashMap from executing during generating

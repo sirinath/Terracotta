@@ -12,6 +12,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.JavaLangStringIntern;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -86,13 +87,16 @@ public class DNAEncodingImpl implements DNAEncoding {
   private static final byte          TYPE_ID_ENUM_HOLDER                  = 23;
   private static final byte          TYPE_ID_CURRENCY                     = 24;
   private static final byte          TYPE_ID_STRING_COMPRESSED            = 25;
-//  private static final byte          TYPE_ID_URL                          = 26;
+  // private static final byte TYPE_ID_URL = 26;
 
   private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
-  protected final ClassProvider        classProvider;
-  protected final byte                 policy;
+  public static final byte           STRING_TYPE_INTERNED                 = 1;
+  public static final byte           STRING_TYPE_NON_INTERNED             = 2;
+
+  protected final ClassProvider      classProvider;
+  protected final byte               policy;
 
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
   private static final ClassProvider LOCAL_PROVIDER                       = new LocalClassProvider();
@@ -109,7 +113,7 @@ public class DNAEncodingImpl implements DNAEncoding {
                                                                               .getProperties()
                                                                               .getInt(
                                                                                       "l1.transactionmanager.strings.compress.minSize");
-  
+
   public DNAEncodingImpl(byte policy, ClassProvider classProvider) {
     this.policy = policy;
     this.classProvider = classProvider;
@@ -234,23 +238,39 @@ public class DNAEncodingImpl implements DNAEncoding {
         output.writeShort(((Short) value).shortValue());
         break;
       case LiteralValues.STRING:
-        String s = (String)value;
+        String s = (String) value;
+        byte stringInterned = STRING_TYPE_NON_INTERNED;
+
+        if (isInterned(s)) {
+          stringInterned = STRING_TYPE_INTERNED;
+        }
+
         if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
+          output.writeByte(stringInterned); // want to overload this byte ??
           writeCompressedString(s, output);
         } else {
           output.writeByte(TYPE_ID_STRING);
+          output.writeByte(stringInterned);
           writeString(s, output);
         }
         break;
       case LiteralValues.STRING_BYTES:
         UTF8ByteDataHolder utfBytes = (UTF8ByteDataHolder) value;
+        byte stringbytesInterned = STRING_TYPE_NON_INTERNED;
+
+        if (utfBytes.isInterned()) {
+          stringbytesInterned = STRING_TYPE_INTERNED;
+        }
+
         if (utfBytes.isCompressed()) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
+          output.writeByte(stringbytesInterned);
           output.writeInt(utfBytes.getUnCompressedStringLength());
           writeByteArray(utfBytes.getBytes(), output);
         } else {
           output.writeByte(TYPE_ID_STRING_BYTES);
+          output.writeByte(stringbytesInterned);
           writeByteArray(utfBytes.getBytes(), output);
         }
         break;
@@ -274,17 +294,17 @@ public class DNAEncodingImpl implements DNAEncoding {
       case LiteralValues.ARRAY:
         encodeArray(value, output);
         break;
-//      case LiteralValues.URL:
-//        {
-//          URL url = (URL)value;
-//          output.writeByte(TYPE_ID_URL);
-//          output.writeString(url.getProtocol());
-//          output.writeString(url.getHost());
-//          output.writeInt(url.getPort());
-//          output.writeString(url.getFile());
-//          output.writeString(url.getRef());
-//        }
-//        break;
+      // case LiteralValues.URL:
+      // {
+      // URL url = (URL)value;
+      // output.writeByte(TYPE_ID_URL);
+      // output.writeString(url.getProtocol());
+      // output.writeString(url.getHost());
+      // output.writeInt(url.getPort());
+      // output.writeString(url.getFile());
+      // output.writeString(url.getRef());
+      // }
+      // break;
       default:
         throw Assert.failure("Illegal type (" + type + "):" + value);
     }
@@ -314,6 +334,14 @@ public class DNAEncodingImpl implements DNAEncoding {
     writeByteArray(value.getLoaderDef().getBytes(), output);
   }
 
+  private boolean isInterned(Object str) {
+    if ((str instanceof JavaLangStringIntern) && (((JavaLangStringIntern) str).__tc_isInterned())) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   private void writeString(String string, TCDataOutput output) {
     try {
       writeByteArray(string.getBytes("UTF-8"), output);
@@ -323,7 +351,7 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private void writeCompressedString(String string, TCDataOutput output) {
-    try {      
+    try {
       TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
       // Stride is 512 bytes by default, should I increase ?
       DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
@@ -331,10 +359,11 @@ public class DNAEncodingImpl implements DNAEncoding {
       dos.write(uncompressed);
       dos.close();
       byte[] compressed = byteArrayOS.getInternalArray();
-      // XXX:: We are writing the original string's uncompressed byte[] length so that we save a couple of copies when decompressing
+      // XXX:: We are writing the original string's uncompressed byte[] length so that we save a couple of copies when
+      // decompressing
       output.writeInt(uncompressed.length);
       writeByteArray(compressed, 0, byteArrayOS.size(), output);
-      
+
       // write string metadata so we can avoid decompression on later L1s
       output.writeInt(string.length());
       output.writeInt(string.hashCode());
@@ -428,18 +457,18 @@ public class DNAEncodingImpl implements DNAEncoding {
         // char[] chars = readCharArray(input); // Unfortunately this is 1.5 specific
         byte[] b2 = readByteArray(input);
         return new BigDecimal(new String(b2));
-//      case TYPE_ID_URL:
-//        {
-//          String protocol = input.readString();
-//          String host = input.readString();
-//          int port = input.readInt();
-//          String file = input.readString();
-//          String ref = input.readString();
-//          if (ref != null) {
-//            file = file+"#"+ref;
-//          }
-//          return new URL(protocol, host, port, file);
-//        }
+        // case TYPE_ID_URL:
+        // {
+        // String protocol = input.readString();
+        // String host = input.readString();
+        // int port = input.readInt();
+        // String file = input.readString();
+        // String ref = input.readString();
+        // if (ref != null) {
+        // file = file+"#"+ref;
+        // }
+        // return new URL(protocol, host, port, file);
+        // }
       default:
         throw Assert.failure("Illegal type (" + type + ")");
     }
@@ -851,7 +880,7 @@ public class DNAEncodingImpl implements DNAEncoding {
       return new EnumInstance(clazzInstance, enumName);
     }
   }
-  
+
   protected boolean useStringEnumRead(byte type) {
     return (policy == SERIALIZER && type == TYPE_ID_ENUM);
   }
@@ -865,7 +894,7 @@ public class DNAEncodingImpl implements DNAEncoding {
       return new ClassLoaderInstance(def);
     }
   }
-  
+
   protected boolean useClassProvider(byte type) {
     return (policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASSLOADER);
   }
@@ -882,23 +911,31 @@ public class DNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readString(TCDataInput input, byte type) throws IOException {
+    byte isInterned = input.readByte();
     byte[] data = readByteArray(input);
     if (useUTF8String(type)) {
-      return new String(data, "UTF-8");
+      if (isInterned == STRING_TYPE_INTERNED) {
+        String temp = new String(data, "UTF-8");
+        return temp.intern();
+      } else {
+        return new String(data, "UTF-8");
+      }
     } else {
-      return new UTF8ByteDataHolder(data);
+      return new UTF8ByteDataHolder(data, (isInterned == STRING_TYPE_INTERNED));
     }
   }
-  
+
   protected boolean useUTF8String(byte type) {
     return (policy == SERIALIZER && type == TYPE_ID_STRING);
   }
 
   protected Object readCompressedString(TCDataInput input) throws IOException {
+    byte isInterned = input.readByte();
     int stringUncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
 
-    UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength);
+    UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength,
+                                                         (isInterned == STRING_TYPE_INTERNED));
     return utfBytes;
   }
 
