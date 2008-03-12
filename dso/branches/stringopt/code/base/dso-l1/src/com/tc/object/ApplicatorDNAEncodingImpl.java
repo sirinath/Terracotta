@@ -25,7 +25,7 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
     return true;
   }
 
-  protected boolean useClassProvider(byte type) {
+  protected boolean useClassProvider(byte type, byte typeToCheck) {
     return true;
   }
 

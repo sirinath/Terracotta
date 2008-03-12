@@ -888,22 +888,22 @@ public class DNAEncodingImpl implements DNAEncoding {
   private Object readClassLoader(TCDataInput input, byte type) throws IOException {
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
-    if (useClassProvider(type)) {
+    if (useClassProvider(type, TYPE_ID_JAVA_LANG_CLASSLOADER)) {
       return new ClassLoaderInstance(def).asClassLoader(classProvider);
     } else {
       return new ClassLoaderInstance(def);
     }
   }
 
-  protected boolean useClassProvider(byte type) {
-    return (policy == SERIALIZER && type == TYPE_ID_JAVA_LANG_CLASSLOADER);
+  protected boolean useClassProvider(byte type, byte typeToCheck) {
+    return (policy == SERIALIZER && type == typeToCheck);
   }
 
   private Object readClass(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
-    if (useClassProvider(type)) {
+    if (useClassProvider(type, TYPE_ID_JAVA_LANG_CLASS)) {
       return new ClassInstance(name, def).asClass(classProvider);
     } else {
       return new ClassInstance(name, def);
