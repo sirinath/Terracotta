@@ -119,85 +119,100 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   private void addCompressedConstructor() {
-    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "<init>", "(II)V", null, null);
+    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "<init>", "(Z[CII)V", null, null);
     mv.visitCode();
     Label l0 = new Label();
     mv.visitLabel(l0);
-    mv.visitLineNumber(11, l0);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
     Label l1 = new Label();
     mv.visitLabel(l1);
-    mv.visitLineNumber(12, l1);
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitInsn(ICONST_1);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
-    Label l2 = new Label();
-    mv.visitLabel(l2);
-    mv.visitLineNumber(13, l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_0);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "offset", "I");
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");
+    Label l2 = new Label();
+    mv.visitLabel(l2);
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitVarInsn(ALOAD, 2);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "value", "[C");
     Label l3 = new Label();
     mv.visitLabel(l3);
-    mv.visitLineNumber(14, l3);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitVarInsn(ILOAD, 1);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "count", "I");
+    mv.visitVarInsn(ILOAD, 4);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");
     Label l4 = new Label();
     mv.visitLabel(l4);
-    mv.visitLineNumber(15, l4);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitVarInsn(ILOAD, 2);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");
+    mv.visitVarInsn(ILOAD, 3);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "count", "I");
     Label l5 = new Label();
     mv.visitLabel(l5);
-    mv.visitLineNumber(16, l5);
-    mv.visitInsn(RETURN);
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitVarInsn(ILOAD, 1);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     Label l6 = new Label();
     mv.visitLabel(l6);
-    mv.visitLocalVariable("this", "Ljava/lang/String;", null, l0, l6, 0);
-    mv.visitLocalVariable("length", "I", null, l0, l6, 1);
-    mv.visitLocalVariable("hash", "I", null, l0, l6, 2);
-    mv.visitMaxs(2, 3);
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitInsn(ICONST_0);
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", INTERN_FIELD_NAME, "Z");
+    Label l7 = new Label();
+    mv.visitLabel(l7);
+    if (!isAzul) {
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitInsn(ICONST_0);
+      mv.visitFieldInsn(PUTFIELD, "java/lang/String", "offset", "I");
+    }    
+    Label l8 = new Label();
+    mv.visitLabel(l8);
+    mv.visitInsn(RETURN);
+    Label l9 = new Label();
+    mv.visitLabel(l9);
+    mv.visitLocalVariable("this", "Ljava/lang/String;", null, l0, l9, 0);
+    mv.visitLocalVariable("compressed", "Z", null, l0, l9, 1);
+    mv.visitLocalVariable("compressedData", "[C", null, l0, l9, 2);
+    mv.visitLocalVariable("uncompressedLength", "I", null, l0, l9, 3);
+    mv.visitLocalVariable("hashCode", "I", null, l0, l9, 4);
+    mv.visitMaxs(2, 5);
     mv.visitEnd();
   }
 
   private void addGetValueMethod() {
     // ACC_PRIVATE?
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.fieldGetterMethod("value"), "()[C", null, null);
+    //mv = cw.visitMethod(ACC_PRIVATE, "__tc_getvalue", "()[C", null, null);
     mv.visitCode();
     Label l0 = new Label();
     mv.visitLabel(l0);
     mv.visitLineNumber(39, l0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", "$__tc_compressed", "Z");
     Label l1 = new Label();
     mv.visitJumpInsn(IFEQ, l1);
     Label l2 = new Label();
     mv.visitLabel(l2);
-    mv.visitLineNumber(40, l2);
+    mv.visitLineNumber(41, l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 0);
-    mv
-        .visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "decompressString",
-                         "(Ljava/lang/String;)[C");
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", "count", "I");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/StringCompressionUtil", "decompressCompressedChars", "([CI)[C");
     mv.visitFieldInsn(PUTFIELD, "java/lang/String", "value", "[C");
     Label l3 = new Label();
     mv.visitLabel(l3);
-    mv.visitLineNumber(41, l3);
+    mv.visitLineNumber(42, l3);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_0);
-    mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
+    mv.visitFieldInsn(PUTFIELD, "java/lang/String", "$__tc_compressed", "Z");
     mv.visitLabel(l1);
-    mv.visitLineNumber(43, l1);
+    mv.visitLineNumber(44, l1);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
     mv.visitInsn(ARETURN);
     Label l4 = new Label();
     mv.visitLabel(l4);
     mv.visitLocalVariable("this", "Ljava/lang/String;", null, l0, l4, 0);
-    mv.visitMaxs(2, 1);
+    mv.visitMaxs(3, 1);
     mv.visitEnd();
   }
 
