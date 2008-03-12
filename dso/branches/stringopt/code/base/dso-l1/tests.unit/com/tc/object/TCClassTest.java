@@ -5,7 +5,6 @@
 package com.tc.object;
 
 import com.tc.object.bytecode.MockClassProvider;
-import com.tc.object.compression.CompressedStringManagerImpl;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.field.TCFieldFactory;
 
@@ -16,7 +15,7 @@ public class TCClassTest extends BaseDSOTestCase {
     DSOClientConfigHelper config = configHelper();
     TCFieldFactory fieldFactory = new TCFieldFactory(config);
     ClientObjectManager objectManager = new TestClientObjectManager();
-    TCClassFactory classFactory = new TCClassFactoryImpl(fieldFactory, config, new MockClassProvider(), new CompressedStringManagerImpl());
+    TCClassFactory classFactory = new TCClassFactoryImpl(fieldFactory, config, new MockClassProvider());
     TCClass tcc1 = new TCClassImpl(fieldFactory, classFactory, objectManager, TCClassTest.class, null, "", null, false,
                                    false, null, null, false);
     assertFalse(tcc1.isIndexed());

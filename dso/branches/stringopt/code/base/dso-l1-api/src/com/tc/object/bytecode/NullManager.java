@@ -267,12 +267,4 @@ public final class NullManager implements Manager {
     return instrumentationLogger;
   }
 
-  public void addCompressedString(String string, byte[] compressedData, int uncompressedLength) {
-    throw new UnsupportedOperationException();
-  }
-
-  public char[] decompressString(String string) {
-    throw new UnsupportedOperationException();
-  }
-
 }
