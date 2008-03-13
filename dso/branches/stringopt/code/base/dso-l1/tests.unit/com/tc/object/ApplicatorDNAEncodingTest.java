@@ -10,6 +10,7 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
+import com.tc.object.bytecode.JavaLangStringIntern;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
@@ -209,13 +210,37 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     return rv;
   }
 
+  public void testUncompressedInternedStringDecoding() throws Exception {
+    String littleString = new String("abc");
+    littleString = intern(littleString);
+    helpTestStringEncodingDecoding(littleString, false, true);
+  }
+  
+  private String intern(Object str) {
+    return ((JavaLangStringIntern)str).__tc_intern();
+  }
+
+  public void testUncompressedStringDecoding() throws Exception {
+    String littleString = new String("abc");
+    helpTestStringEncodingDecoding(littleString, false, false);
+  }
+  
   public void testCompressedStringDecoding() throws Exception {
     String bigString = getBigString(100000);
+    helpTestStringEncodingDecoding(bigString, true, false);
+  }
+  
+  public void testCompressedInternedStringDecoding() throws Exception {
+    String bigString = getBigString(100000);
+    bigString = intern(bigString);
+    helpTestStringEncodingDecoding(bigString, true, true);
+  }
 
+  public void helpTestStringEncodingDecoding(String s, boolean compressed, boolean interned) throws Exception {
     // Encode string using applicator encoding into data
     DNAEncoding applicatorEncoding = getApplicatorEncoding();
     TCByteBufferOutputStream output = new TCByteBufferOutputStream();
-    applicatorEncoding.encode(bigString, output);
+    applicatorEncoding.encode(s, output);
     TCByteBuffer[] data = output.toArray();
 
     // Decode string from data using storage encoding (into UTF8ByteDataHolder) into decoded
@@ -223,12 +248,15 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
     UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
 
-    assertTrue(decoded.isCompressed());
-    assertEquals(bigString.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
-    System.err.println("Compressed String length = " + decoded.getBytes().length);
-    assertEquals(bigString.length(), decoded.getStringLength());
-    assertEquals(bigString.hashCode(), decoded.getStringHash());
-    assertEquals(bigString, decoded.asString());
+    assertEquals(compressed, decoded.isCompressed());
+    if(compressed) {
+      assertEquals(s.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
+      System.err.println("Compressed String length = " + decoded.getBytes().length);
+      assertEquals(s.length(), decoded.getStringLength());
+      assertEquals(s.hashCode(), decoded.getStringHash());
+    }
+    assertEquals(interned, decoded.isInterned());
+    assertEquals(s, decoded.asString());
 
     // Encode UTF8ByteDataHolder into data2 using storage encoding
     output = new TCByteBufferOutputStream();
@@ -243,12 +271,12 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     // Decode from original data using applicator encoding into str
     input = new TCByteBufferInputStream(data);
     String str = (String) applicatorEncoding.decode(input);
-    assertEquals(bigString, str);
+    assertEquals(s, str);
 
     // Decode from data2 using applicator encoding into str2
     input = new TCByteBufferInputStream(data2);
     String str2 = (String) applicatorEncoding.decode(input);
-    assertEquals(bigString, str2);
+    assertEquals(s, str2);
 
   }
 
