@@ -69,6 +69,7 @@ import com.tc.object.bytecode.HashtableClassAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
 import com.tc.object.bytecode.JavaLangReflectProxyClassAdapter;
+import com.tc.object.bytecode.JavaLangString;
 import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringIntern;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
@@ -494,6 +495,7 @@ public class BootJarTool {
       loadTerracottaClass(TCProperties.class.getName());
       loadTerracottaClass(ClusterEventListener.class.getName());
       loadTerracottaClass(OverrideCheck.class.getName());
+      loadTerracottaClass(JavaLangString.class.getName());
       loadTerracottaClass(JavaLangStringIntern.class.getName());
       loadTerracottaClass(StringCompressionUtil.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());

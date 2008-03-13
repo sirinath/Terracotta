@@ -34,7 +34,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangStringIntern" });
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangString", "com/tc/object/bytecode/JavaLangStringIntern" });
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
@@ -79,9 +79,32 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
     addGetValueMethod();
     addFastGetChars();
-
+    addStringTCMethods();
     addStringInternTCNature();
     super.visitEnd();
+  }
+
+  private void addStringTCMethods() {
+    
+    // public boolean __tc_isCompressed()
+    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "isCompressed", "()Z",
+                                         null, null);
+    mv.visitCode();
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, "java/lang/String", "$__tc_compressed", "Z");
+    mv.visitInsn(IRETURN);
+    mv.visitMaxs(1, 1);
+    mv.visitEnd();
+    
+    // public void __tc_decompress
+    mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "decompress", "()V", null, null);
+    mv.visitCode();
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/String", "__tc_getvalue", "()[C");
+    mv.visitInsn(POP);
+    mv.visitInsn(RETURN);
+    mv.visitMaxs(1, 1);
+    mv.visitEnd();    
   }
 
   private void addStringInternTCNature() {
