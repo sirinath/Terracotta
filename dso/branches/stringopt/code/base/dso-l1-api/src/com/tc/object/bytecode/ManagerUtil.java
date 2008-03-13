@@ -14,6 +14,7 @@ import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.properties.TCProperties;
+import com.tc.util.Assert;
 
 import java.lang.reflect.Field;
 
@@ -199,7 +200,7 @@ public class ManagerUtil {
   public static void beginLock(String lockID, int type) {
     getManager().beginLock(lockID, type);
   }
-  
+
   /**
    * Begin lock
    * 
@@ -338,9 +339,8 @@ public class ManagerUtil {
 
   /**
    * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
-   * more intelligent prefetching is possible at the L2.
-   * 
-   * XXX::FIXME:: This method is not called lookupObject() coz ManagerHelperFactory doesn't allow method overloading.
+   * more intelligent prefetching is possible at the L2. XXX::FIXME:: This method is not called lookupObject() coz
+   * ManagerHelperFactory doesn't allow method overloading.
    * 
    * @param id Object identifier of the object we are looking up
    * @param parentContext Object identifier of the parent object
@@ -481,7 +481,7 @@ public class ManagerUtil {
   public static void monitorEnter(Object obj, int type) {
     getManager().monitorEnter(obj, type);
   }
-  
+
   /**
    * Enter synchronized monitor
    * 
@@ -924,7 +924,6 @@ public class ManagerUtil {
    * @param destPos Start in dest
    * @param length Number of items to copy
    * @param tcDest TCObject for dest array
-   * 
    */
   public static void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length, TCObject tco) {
     ArrayManager.charArrayCopy(src, srcPos, dest, destPos, length, tco);
@@ -973,15 +972,44 @@ public class ManagerUtil {
   public static int getSessionLockType(String appName) {
     return ClassProcessorHelper.getSessionLockType(appName);
   }
-  
+
   /**
    * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
+   * 
    * @param pojo Object
    * @param fieldOffset The index
-   * @return true if the field is portable and false otherwise 
+   * @return true if the field is portable and false otherwise
    */
   public static boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
     return getManager().isFieldPortableByOffset(pojo, fieldOffset);
+  }
+
+  /**
+   * Check whether the String is interned. Adapted java.lang.String has a method to query this.
+   * 
+   * @param string Object
+   * @return true if the string is interned
+   */
+  public static boolean isInterned(Object str) {
+    if ((str instanceof JavaLangStringIntern) && (((JavaLangStringIntern) str).__tc_isInterned())) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Invoke String method __tc_intern (adapted) - kind of hack to avoid using reflection
+   * 
+   * @param string object
+   * @return string interned
+   */
+  public static String intern(Object str) {
+    if (str instanceof JavaLangStringIntern) {
+      return ((JavaLangStringIntern) str).__tc_intern();
+    } else {
+      throw Assert.failure("Expected to call JavaLangStringIntern.__tc_intern() on a String");
+    }
   }
 
 }

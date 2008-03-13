@@ -5,7 +5,7 @@
 package com.tc.object;
 
 import com.tc.io.TCDataInput;
-import com.tc.object.bytecode.JavaLangStringIntern;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
@@ -66,7 +66,7 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
       if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
         //force decompress then intern
         s.getChars(0, 1, new char[1], 0);
-        return intern(s);
+        return ManagerUtil.intern(s);
       } else {
         return s;
       }
@@ -74,13 +74,4 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
       throw Assert.failure(e.getMessage(), e);
     }
   }
-
-  private String intern(Object str) {
-    if (str instanceof JavaLangStringIntern) {
-      return ((JavaLangStringIntern)str).__tc_intern();
-    } else {
-      throw Assert.failure("Expected to call JavaLangStringIntern.__tc_intern() on a String");
-    }
-  }
-
 }

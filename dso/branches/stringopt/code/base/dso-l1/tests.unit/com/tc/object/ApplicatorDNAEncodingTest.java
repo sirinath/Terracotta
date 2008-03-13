@@ -10,6 +10,7 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;
@@ -50,7 +51,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     assertTrue(Arrays.equals(b, (byte[]) encoding.decode(input)));
 
-    assertEquals(0, input.available());  
+    assertEquals(0, input.available());
   }
 
   public void testNonPrimitiveArrays2() throws Exception {
@@ -207,7 +208,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     }
     return rv;
   }
-  
+
   public void testCompressedStringDecoding() throws Exception {
     String bigString = getBigString(100000);
 
@@ -221,24 +222,24 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     DNAEncoding storageEncoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
     UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
-    
+
     assertTrue(decoded.isCompressed());
     assertEquals(bigString.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
-    System.err.println("Compressed String length = " + decoded.getBytes().length) ;
+    System.err.println("Compressed String length = " + decoded.getBytes().length);
     assertEquals(bigString.length(), decoded.getStringLength());
     assertEquals(bigString.hashCode(), decoded.getStringHash());
     assertEquals(bigString, decoded.asString());
-    
+
     // Encode UTF8ByteDataHolder into data2 using storage encoding
     output = new TCByteBufferOutputStream();
     storageEncoding.encode(decoded, output);
     TCByteBuffer[] data2 = output.toArray();
-    
+
     // Decode UTF8ByteDataHolder from data2 into decoded2 using storage encoding
     input = new TCByteBufferInputStream(data2);
     UTF8ByteDataHolder decoded2 = (UTF8ByteDataHolder) storageEncoding.decode(input);
     assertEquals(decoded, decoded2);
-    
+
     // Decode from original data using applicator encoding into str
     input = new TCByteBufferInputStream(data);
     String str = (String) applicatorEncoding.decode(input);
@@ -248,13 +249,13 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     input = new TCByteBufferInputStream(data2);
     String str2 = (String) applicatorEncoding.decode(input);
     assertEquals(bigString, str2);
-    
+
   }
 
   private String getBigString(int length) {
     String sample = "mold for Big String";
     StringBuffer sb = new StringBuffer();
-    while(sb.length() < length) {
+    while (sb.length() < length) {
       sb.append(sample);
     }
     return sb.toString();
@@ -292,6 +293,76 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     assertEquals("timmy", str);
     decoded = (UTF8ByteDataHolder) encoding.decode(input);
     assertEquals(orgUTF, decoded);
+    assertEquals(0, input.available());
+  }
+
+  public void testStringInternAdaptedFlags() {
+    String str1 = new String("Simran");
+    UTF8ByteDataHolder utf8Holder;
+    String str2;
+
+    str2 = ManagerUtil.intern(str1);
+    assertTrue(ManagerUtil.isInterned(str2));
+
+    utf8Holder = new UTF8ByteDataHolder(str2);
+    assertTrue(utf8Holder.isInterned());
+  }
+
+  public void testStringInternDecode() throws Exception {
+    TCByteBufferOutputStream output = new TCByteBufferOutputStream();
+    DNAEncoding encoding = getApplicatorEncoding();
+
+    String orgStr = new String("Life is a interned Circle");
+    String str = ManagerUtil.intern(orgStr);
+    encoding.encode(str, output);
+
+    String temp = new String("May be, life is a interned Triangle");
+    str = ManagerUtil.intern(temp);
+    UTF8ByteDataHolder orgUTF = new UTF8ByteDataHolder(str);
+    encoding.encode(orgUTF, output);
+
+    String orgNonIntStr = new String("But, life is not a straight line for sure");
+    encoding.encode(orgNonIntStr, output);
+
+    TCByteBuffer[] data = output.toArray();
+
+    encoding = getStorageEncoder();
+    TCByteBufferInputStream input = new TCByteBufferInputStream(data);
+    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    assertTrue(decoded.isInterned());
+    assertTrue(Arrays.equals(orgStr.getBytes("UTF-8"), decoded.getBytes()));
+    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    assertTrue(decoded.isInterned());
+    assertTrue(Arrays.equals(orgUTF.getBytes(), decoded.getBytes()));
+    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    assertFalse(decoded.isInterned());
+    assertTrue(Arrays.equals(orgNonIntStr.getBytes("UTF-8"), decoded.getBytes()));
+    assertEquals(0, input.available());
+
+    encoding = getApplicatorEncoding();
+    input = new TCByteBufferInputStream(data);
+    str = (String) encoding.decode(input);
+    assertEquals(orgStr, str);
+    assertTrue(ManagerUtil.isInterned(str));
+    str = (String) encoding.decode(input);
+    assertEquals(orgUTF.asString(), str);
+    assertTrue(ManagerUtil.isInterned(str));
+    str = (String) encoding.decode(input);
+    assertEquals(orgNonIntStr, str);
+    assertFalse(ManagerUtil.isInterned(str));
+    assertEquals(0, input.available());
+
+    encoding = getSerializerEncoder();
+    input = new TCByteBufferInputStream(data);
+    str = (String) encoding.decode(input);
+    assertEquals(orgStr, str);
+    assertTrue(ManagerUtil.isInterned(str));
+    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    assertEquals(orgUTF, decoded);
+    assertTrue(decoded.isInterned());
+    str = (String) encoding.decode(input);
+    assertEquals(orgNonIntStr, str);
+    assertFalse(ManagerUtil.isInterned(str));
     assertEquals(0, input.available());
   }
 
