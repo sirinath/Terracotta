@@ -12,7 +12,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.bytecode.JavaLangStringIntern;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -241,7 +241,7 @@ public class DNAEncodingImpl implements DNAEncoding {
         String s = (String) value;
         byte stringInterned = STRING_TYPE_NON_INTERNED;
 
-        if (isInterned(s)) {
+        if (ManagerUtil.isInterned(s)) {
           stringInterned = STRING_TYPE_INTERNED;
         }
 
@@ -334,14 +334,6 @@ public class DNAEncodingImpl implements DNAEncoding {
   private void writeClassInstance(ClassInstance value, TCDataOutput output) {
     writeByteArray(value.getName().getBytes(), output);
     writeByteArray(value.getLoaderDef().getBytes(), output);
-  }
-
-  private boolean isInterned(Object str) {
-    if ((str instanceof JavaLangStringIntern) && (((JavaLangStringIntern) str).__tc_isInterned())) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   private void writeString(String string, TCDataOutput output) {
