@@ -151,8 +151,12 @@ public abstract class PhysicalManagedObjectState extends AbstractManagedObjectSt
   protected abstract void writeObject(ObjectOutput out) throws IOException;
 
   public void dehydrate(ObjectID objectID, DNAWriter writer) {
+    ObjectID parentID = getParentID();
+    if (!parentID.isNull()) {
+      writer.setParentObjectID(parentID);
+
+    }
     basicDehydrate(writer);
-    writer.setParentObjectID(getParentID());
   }
 
   public String toString() {

@@ -29,7 +29,7 @@ public class VersionizedDNAWrapperTest extends TestCase {
     final ObjectID id = new ObjectID(1);
     final ObjectID pid = new ObjectID(2);
     final String type = getClass().getName();
-    final int arrayLen = 42;
+
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
     DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
@@ -37,12 +37,12 @@ public class VersionizedDNAWrapperTest extends TestCase {
     PhysicalAction action1 = new PhysicalAction("class.field1", new Integer(1), false);
     LogicalAction action2 = new LogicalAction(12, new Object[] { "key", "value" });
     PhysicalAction action3 = new PhysicalAction("class.field2", new ObjectID(3), true);
+    dnaWriter.setParentObjectID(pid);
     dnaWriter.addPhysicalAction(action1.getFieldName(), action1.getObject());
     dnaWriter.addLogicalAction(action2.getMethod(), action2.getParameters());
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
-    dnaWriter.setParentObjectID(pid);
-    dnaWriter.setArrayLength(arrayLen);
-    dnaWriter.finalizeDNA(true);
+    dnaWriter.markSectionEnd();
+    dnaWriter.finalizeHeader();
 
     TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
     DNAImpl dna = createDNAImpl(serializer, true);
@@ -54,7 +54,7 @@ public class VersionizedDNAWrapperTest extends TestCase {
     try {
       vdna.getCursor().reset();
       assertTrue(false);
-    } catch(UnsupportedOperationException use) {
+    } catch (UnsupportedOperationException use) {
       // this is expected
     }
 

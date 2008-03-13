@@ -16,10 +16,15 @@ public class ObjectDNAImplTest extends DNAImplTest {
   private long version = 69;
 
   public void testSerializeDeserialize() throws Exception {
-    super.testSerializeDeserialize();
+    super.serializeDeserialize(true);
     assertEquals(version, dna.getVersion());
   }
 
+  public void testSerializeDeserialize2() throws Exception {
+    super.serializeDeserialize(false);
+    assertEquals(version, dna.getVersion());
+  }
+  
   protected void assertOverridable() {
     assertFalse(dna.isDelta());
   }

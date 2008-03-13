@@ -4,48 +4,93 @@
  */
 package com.tc.object.dna.impl;
 
+import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCByteBufferOutputStream.Mark;
 import com.tc.object.ObjectID;
-import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.dna.api.DNAWriter;
+import com.tc.util.Assert;
 import com.tc.util.Conversion;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class DNAWriterImpl implements DNAWriter {
 
-  private static final long              NULL_ID       = ObjectID.NULL_ID.toLong();
+  private static final int               UNINITIALIZED_LENGTH = -1;
 
   private final TCByteBufferOutputStream output;
   private final Mark                     headerMark;
-  private final Mark                     parentIdMark;
-  private final Mark                     arrayLengthMark;
   private final ObjectStringSerializer   serializer;
   private final DNAEncoding              encoding;
-  private int                            actionCount   = 0;
+  private final List                     appenders            = new ArrayList(5);
+
+  private byte                           flags                = 0;
+  private int                            firstLength          = UNINITIALIZED_LENGTH;
+  private int                            totalLength          = UNINITIALIZED_LENGTH;
+  private int                            lastStreamPos        = UNINITIALIZED_LENGTH;
+  private int                            actionCount          = 0;
+  private boolean                        contiguous           = true;
 
   public DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
                        ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc) {
+    this(output, id, className, serializer, encoding, loaderDesc, DNA.NULL_VERSION);
+  }
+
+  protected DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
+                          ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, long version) {
     this.output = output;
     this.encoding = encoding;
+    this.serializer = serializer;
 
     this.headerMark = output.mark();
-    output.writeInt(-1); // reserve 4 bytes for total length of this DNA
-    output.writeInt(-1); // reserve 4 bytes for # of actions
-    output.writeBoolean(true);
+    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for total length of this DNA
+    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for # of actions
+    output.writeByte(flags);
     output.writeLong(id.toLong());
-    this.parentIdMark = output.mark();
-    output.writeLong(NULL_ID); // reserve 8 bytes for the parent object ID
-    this.serializer = serializer;
     serializer.writeString(output, className);
     serializer.writeString(output, loaderDesc);
-    this.arrayLengthMark = output.mark();
-    output.writeInt(-1); // reserve 4 bytes for array length
+
+    if (version != DNA.NULL_VERSION) {
+      flags = Conversion.setFlag(flags, DNA.HAS_VERSION, true);
+      output.writeLong(version);
+    }
+  }
+
+  public DNAWriter createAppender() {
+    if (contiguous) {
+      contiguous &= (output.getBytesWritten() == lastStreamPos);
+    }
+    Appender appender = new Appender(this, output);
+    appenders.add(appender);
+    return appender;
+  }
+
+  public boolean isContiguous() {
+    return contiguous;
+  }
+
+  public void markSectionEnd() {
+    if (lastStreamPos != UNINITIALIZED_LENGTH) { throw new IllegalStateException("lastStreamPos=" + lastStreamPos); }
+    if (totalLength != UNINITIALIZED_LENGTH) { throw new IllegalStateException("totalLength=" + totalLength); }
+    lastStreamPos = output.getBytesWritten();
+    firstLength = totalLength = output.getBytesWritten() - headerMark.getPosition();
+  }
+
+  private void appenderSectionEnd(int appenderLength) {
+    if (contiguous) {
+      lastStreamPos = output.getBytesWritten();
+    }
+    totalLength += appenderLength;
   }
 
   public void addLogicalAction(int method, Object[] parameters) {
     actionCount++;
     output.writeByte(DNAEncodingImpl.LOGICAL_ACTION_TYPE);
-    output.writeInt(method);
+    output.writeInt(method); // XXX: use a short instead?
     output.writeByte(parameters.length);
 
     for (int i = 0; i < parameters.length; i++) {
@@ -123,20 +168,136 @@ public class DNAWriterImpl implements DNAWriter {
     encoding.encode(value, output);
   }
 
-  public void finalizeDNA(boolean isDelta) {
-    int totalLength = this.output.getBytesWritten() - this.headerMark.getPosition();
+  public void finalizeHeader() {
     byte[] lengths = new byte[9];
     Conversion.writeInt(totalLength, lengths, 0);
     Conversion.writeInt(actionCount, lengths, 4);
-    lengths[8] = isDelta ? (byte) 1 : (byte) 0;
+    lengths[8] = flags;
     this.headerMark.write(lengths);
   }
 
   public void setParentObjectID(ObjectID id) {
-    this.parentIdMark.write(Conversion.long2Bytes(id.toLong()));
+    checkVariableHeaderEmpty();
+    flags = Conversion.setFlag(flags, DNA.HAS_PARENT_ID, true);
+    output.writeLong(id.toLong());
   }
 
   public void setArrayLength(int length) {
-    this.arrayLengthMark.write(Conversion.int2Bytes(length));
+    checkVariableHeaderEmpty();
+    flags = Conversion.setFlag(flags, DNA.HAS_ARRAY_LENGTH, true);
+    output.writeInt(length);
   }
+
+  private void checkVariableHeaderEmpty() {
+    Assert.assertEquals(0, actionCount);
+    Assert.assertFalse(Conversion.getFlag(flags, DNA.HAS_PARENT_ID));
+    Assert.assertFalse(Conversion.getFlag(flags, DNA.HAS_ARRAY_LENGTH));
+  }
+
+  public int getActionCount() {
+    return actionCount;
+  }
+
+  public void copyTo(TCByteBufferOutput dest) {
+    headerMark.copyTo(dest, firstLength);
+    for (Iterator i = appenders.iterator(); i.hasNext();) {
+      Appender appender = (Appender) i.next();
+      appender.copyTo(dest);
+    }
+  }
+
+  public void setDelta(boolean value) {
+    flags = Conversion.setFlag(flags, DNA.IS_DELTA, value);
+  }
+
+  private static class Appender implements DNAWriter {
+    private final DNAWriterImpl            parent;
+    private final TCByteBufferOutputStream output;
+    private final Mark                     startMark;
+    private int                            appendSectionLength = UNINITIALIZED_LENGTH;
+
+    Appender(DNAWriterImpl parent, TCByteBufferOutputStream output) {
+      this.parent = parent;
+      this.output = output;
+      this.startMark = output.mark();
+    }
+
+    public void addArrayElementAction(int index, Object value) {
+      parent.addArrayElementAction(index, value);
+    }
+
+    public void addClassLoaderAction(String classLoaderFieldName, ClassLoader value) {
+      parent.addClassLoaderAction(classLoaderFieldName, value);
+    }
+
+    public void addEntireArray(Object value) {
+      parent.addEntireArray(value);
+    }
+
+    public void addLiteralValue(Object value) {
+      parent.addLiteralValue(value);
+    }
+
+    public void addLogicalAction(int method, Object[] parameters) {
+      parent.addLogicalAction(method, parameters);
+    }
+
+    public void addPhysicalAction(String fieldName, Object value, boolean canBeReferenced) {
+      parent.addPhysicalAction(fieldName, value, canBeReferenced);
+    }
+
+    public void addPhysicalAction(String fieldName, Object value) {
+      parent.addPhysicalAction(fieldName, value);
+    }
+
+    public void addSubArrayAction(int start, Object array, int length) {
+      parent.addSubArrayAction(start, array, length);
+    }
+
+    public void finalizeDNA(boolean isDeltaDNA, int actionCount, int totalLength) {
+      throw new UnsupportedOperationException();
+    }
+
+    public void finalizeDNA(boolean isDeltaDNA) {
+      throw new UnsupportedOperationException();
+    }
+
+    public int getActionCount() {
+      throw new UnsupportedOperationException();
+    }
+
+    public void setArrayLength(int length) {
+      throw new UnsupportedOperationException();
+    }
+
+    public void setParentObjectID(ObjectID id) {
+      throw new UnsupportedOperationException();
+    }
+
+    public DNAWriter createAppender() {
+      throw new UnsupportedOperationException();
+    }
+
+    public boolean isContiguous() {
+      return parent.isContiguous();
+    }
+
+    public void markSectionEnd() {
+      appendSectionLength = output.getBytesWritten() - startMark.getPosition();
+      parent.appenderSectionEnd(appendSectionLength);
+    }
+
+    public void copyTo(TCByteBufferOutput dest) {
+      startMark.copyTo(dest, appendSectionLength);
+    }
+
+    public void finalizeHeader() {
+      throw new UnsupportedOperationException();
+    }
+
+    public void setDelta(boolean isDelta) {
+      // ignored -- the parent's setting is the one that matters
+    }
+  }
+
 }
