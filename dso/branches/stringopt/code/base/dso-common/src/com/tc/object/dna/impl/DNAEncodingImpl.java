@@ -105,7 +105,7 @@ public class DNAEncodingImpl implements DNAEncoding {
                                                                               .getProperties()
                                                                               .getBoolean(
                                                                                           "l1.transactionmanager.strings.compress.enabled");
-  private static final boolean       STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
+  protected static final boolean       STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getBoolean(
                                                                                           "l1.transactionmanager.strings.compress.logging.enabled");

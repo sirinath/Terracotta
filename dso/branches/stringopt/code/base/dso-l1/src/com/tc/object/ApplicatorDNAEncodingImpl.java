@@ -5,6 +5,8 @@
 package com.tc.object;
 
 import com.tc.io.TCDataInput;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
@@ -16,7 +18,8 @@ import java.lang.reflect.Constructor;
 public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
 
   private static final Constructor COMPRESSED_STRING_CONSTRUCTOR;
-  
+  private static final TCLogger      logger                               = TCLogging.getLogger(ApplicatorDNAEncodingImpl.class);
+
   static { 
     try {
       COMPRESSED_STRING_CONSTRUCTOR = String.class.getDeclaredConstructor(new Class[] { Boolean.TYPE, char[].class, Integer.TYPE, Integer.TYPE });
@@ -62,10 +65,18 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
       
       // Construct new string with the compressed char[] in it
       String s = (String) COMPRESSED_STRING_CONSTRUCTOR.newInstance(new Object[] { Boolean.TRUE, compressedChars, new Integer(stringLength), new Integer(stringHash) });
+
+      if (STRING_COMPRESSION_LOGGING_ENABLED) {
+        logger.info("Read compressed String of compressed size : " + compressedChars.length + ", uncompressed size : " + stringLength
+                    + ", hash code : " + stringHash);
+      }      
       
       if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
         //force decompress then intern
         s.getChars(0, 1, new char[1], 0);
+        if (STRING_COMPRESSION_LOGGING_ENABLED) {
+          logger.info("Decompressing and interning string.");
+        }      
         return ManagerUtil.intern(s);
       } else {
         return s;
