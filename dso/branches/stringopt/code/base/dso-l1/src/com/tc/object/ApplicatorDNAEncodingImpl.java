@@ -5,24 +5,21 @@
 package com.tc.object;
 
 import com.tc.io.TCDataInput;
-import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.object.bytecode.JavaLangStringIntern;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
 
   private static final Constructor COMPRESSED_STRING_CONSTRUCTOR;
-  private static final Method NEW_INTERN_METHOD;
   
   static { 
     try {
       COMPRESSED_STRING_CONSTRUCTOR = String.class.getDeclaredConstructor(new Class[] { Boolean.TYPE, char[].class, Integer.TYPE, Integer.TYPE });
-      NEW_INTERN_METHOD = String.class.getDeclaredMethod(ByteCodeUtil.TC_METHOD_PREFIX + "intern", new Class[] { });
     } catch(Exception e) {
       // should never happen if run with instrumented boot jar
       throw Assert.failure(e.getMessage(), e);
@@ -69,12 +66,20 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
       if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
         //force decompress then intern
         s.getChars(0, 1, new char[1], 0);
-        return NEW_INTERN_METHOD.invoke(s, new Object[0]);
+        return intern(s);
       } else {
         return s;
       }
     } catch (Exception e) {
       throw Assert.failure(e.getMessage(), e);
+    }
+  }
+
+  private String intern(Object str) {
+    if (str instanceof JavaLangStringIntern) {
+      return ((JavaLangStringIntern)str).__tc_intern();
+    } else {
+      throw Assert.failure("Expected to call JavaLangStringIntern.__tc_intern() on a String");
     }
   }
 

@@ -16,4 +16,10 @@ public interface JavaLangStringIntern {
    */
   public boolean __tc_isInterned();
 
+  /**
+   * Call intern and mark the String instance as interned.
+   * 
+   * @return Interned string
+   */
+  public String __tc_intern();
 }
