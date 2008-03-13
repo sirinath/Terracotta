@@ -7,13 +7,13 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferCaptureSessionCreationErrorException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferCaptureSessionCreationErrorException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
 import com.tc.statistics.config.impl.StatisticsConfigImpl;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseNotReadyException;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureFuturedatedError;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseStructureOutdatedError;
+import com.tc.statistics.database.exceptions.StatisticsDatabaseNotReadyException;
+import com.tc.statistics.database.exceptions.StatisticsDatabaseStructureFuturedatedError;
+import com.tc.statistics.database.exceptions.StatisticsDatabaseStructureOutdatedError;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.JdbcHelper;
 import com.tc.statistics.retrieval.StatisticsRetriever;
@@ -107,7 +107,7 @@ public class H2StatisticsBufferTest extends TestCase {
       try {
         buffer.open();
         fail("expected exception");
-      } catch (TCStatisticsDatabaseStructureOutdatedError e) {
+      } catch (StatisticsDatabaseStructureOutdatedError e) {
         assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION - 1, e.getActualVersion());
         assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION, e.getExpectedVersion());
         assertNotNull(e.getCreationDate());
@@ -127,7 +127,7 @@ public class H2StatisticsBufferTest extends TestCase {
       try {
         buffer.open();
         fail("expected exception");
-      } catch (TCStatisticsDatabaseStructureFuturedatedError e) {
+      } catch (StatisticsDatabaseStructureFuturedatedError e) {
         assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION + 1, e.getActualVersion());
         assertEquals(H2StatisticsBufferImpl.DATABASE_STRUCTURE_VERSION, e.getExpectedVersion());
         assertNotNull(e.getCreationDate());
@@ -158,9 +158,9 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.createCaptureSession("theid");
       fail("expected exception");
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       // expected
-      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
+      assertTrue(e.getCause() instanceof StatisticsDatabaseNotReadyException);
     }
   }
 
@@ -183,7 +183,7 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.createCaptureSession("theid1");
       fail("expected exception");
-    } catch (TCStatisticsBufferCaptureSessionCreationErrorException e) {
+    } catch (StatisticsBufferCaptureSessionCreationErrorException e) {
       // sessionId can't be null
     }
   }
@@ -267,9 +267,9 @@ public class H2StatisticsBufferTest extends TestCase {
         .name("name")
         .data("test"));
       fail("expected exception");
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       // expected
-      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
+      assertTrue(e.getCause() instanceof StatisticsDatabaseNotReadyException);
     }
   }
 
@@ -382,9 +382,9 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.consumeStatistics("someid1", new TestStaticticConsumer());
       fail("expected exception");
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       // expected
-      assertTrue(e.getCause() instanceof TCStatisticsDatabaseNotReadyException);
+      assertTrue(e.getCause() instanceof StatisticsDatabaseNotReadyException);
     }
   }
 
@@ -603,6 +603,22 @@ public class H2StatisticsBufferTest extends TestCase {
 
     assertTrue(listener1.isStarted());
     assertTrue(listener1.isStopped());
+
+    assertFalse(listener1.isClosed());
+    assertFalse(listener2.isClosed());
+
+    buffer.close();
+
+    assertTrue(listener1.isClosed());
+    assertTrue(listener2.isClosed());
+
+    assertFalse(listener1.isOpened());
+    assertFalse(listener2.isOpened());
+
+    buffer.open();
+
+    assertTrue(listener1.isOpened());
+    assertTrue(listener2.isOpened());
   }
 
   public void testStartCapturingException() throws Exception {
@@ -611,7 +627,7 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.startCapturing("sessionid");
       fail();
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       // expected
     }
   }
@@ -629,12 +645,12 @@ public class H2StatisticsBufferTest extends TestCase {
     try {
       buffer.stopCapturing("thissessionid3");
       fail();
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       // expected
     }
   }
 
-  private void populateBufferWithStatistics(String sessionid1, String sessionid2) throws TCStatisticsBufferException, UnknownHostException {
+  private void populateBufferWithStatistics(String sessionid1, String sessionid2) throws StatisticsBufferException, UnknownHostException {
     String ip = InetAddress.getLocalHost().getHostAddress();
     for (int i = 1; i <= 100; i++) {
       buffer.storeStatistic(new StatisticData()
@@ -748,6 +764,8 @@ public class H2StatisticsBufferTest extends TestCase {
     private String sessionId;
     private boolean started = false;
     private boolean stopped = false;
+    private boolean opened = false;
+    private boolean closed = false;
 
     public TestStatisticsBufferListener(String sessionId) {
       this.sessionId = sessionId;
@@ -759,6 +777,14 @@ public class H2StatisticsBufferTest extends TestCase {
 
     public boolean isStopped() {
       return stopped;
+    }
+
+    public boolean isOpened() {
+      return opened;
+    }
+
+    public boolean isClosed() {
+      return closed;
     }
 
     public void capturingStarted(String sessionId) {
@@ -773,6 +799,14 @@ public class H2StatisticsBufferTest extends TestCase {
       assertEquals(false, stopped);
       assertEquals(this.sessionId, sessionId);
       stopped = true;
+    }
+
+    public void opened() {
+      opened = true;
+    }
+
+    public void closed() {
+      closed = true;
     }
   }
 }

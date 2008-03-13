@@ -20,6 +20,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import javax.swing.Timer;
@@ -31,13 +33,13 @@ public class AdminClient extends ApplicationManager {
 
   private static final String PREF_FILE = ".AdminClient.xml";
 
-//  static {
-//    Logger.getLogger("javax.management.remote.generic").setLevel(Level.OFF);
-//    Logger.getLogger("javax.management.remote.misc").setLevel(Level.OFF);
-//    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
-//    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
-//    Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
-//  }
+  static {
+    Logger.getLogger("javax.management.remote.generic").setLevel(Level.OFF);
+    Logger.getLogger("javax.management.remote.misc").setLevel(Level.OFF);
+    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
+    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
+    Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
+  }
   
   protected AdminClient() {
     super("AdminClient");
@@ -55,6 +57,7 @@ public class AdminClient extends ApplicationManager {
     m_cntx.prefs = loadPrefs();
     m_cntx.topRes = loadTopRes();
     m_cntx.bundleHelper = new ResourceBundleHelper(getClass());
+    m_cntx.nodeFactory = AbstractNodeFactory.getFactory();
 
     if(!Boolean.getBoolean("com.tc.ui.java-icon")) {
       setIconImage(new Image(getBytes("/com/tc/admin/icons/logo_small.gif")));

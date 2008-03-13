@@ -4,6 +4,9 @@
  */
 package com.tc.objectserver.impl;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -164,10 +167,12 @@ import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
+import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
+import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
 import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
@@ -176,6 +181,7 @@ import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
 import com.tc.statistics.retrieval.actions.SRAStageQueueDepths;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
+import com.tc.statistics.retrieval.actions.SRADistributedGC;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -206,15 +212,12 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
 
-import bsh.EvalError;
-import bsh.Interpreter;
-
 /**
  * Startup and shutdown point. Builds and starts the server
- * 
+ *
  * @author steve
  */
-public class DistributedObjectServer extends SEDA implements TCDumper {
+public class DistributedObjectServer implements TCDumper {
   private final ConnectionPolicy               connectionPolicy;
 
   private static final TCLogger                logger                   = CustomerLogging.getDSOGenericLogger();
@@ -253,23 +256,24 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
   private LockStatisticsMonitorMBean           lockStatisticsMBean;
 
-  private StatisticsAgentSubSystem             statisticsAgentSubSystem;
+  private StatisticsAgentSubSystemImpl         statisticsAgentSubSystem;
   private StatisticsGatewayMBeanImpl           statisticsGateway;
 
   private final TCThreadGroup                  threadGroup;
 
+  private final SEDA                           seda;
+
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
-    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State());
+    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State(),
+         new SEDA(threadGroup));
 
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean,
-                                 L2State l2State) {
-    super(threadGroup);
-
+                                 L2State l2State, SEDA seda) {
     // This assertion is here because we want to assume that all threads spawned by the server (including any created in
     // 3rd party libs) inherit their thread group from the current thread . Consider this before removing the assertion.
     // Even in tests, we probably don't want different thread group configurations
@@ -281,6 +285,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     this.tcServerInfoMBean = tcServerInfoMBean;
     this.l2State = l2State;
     this.threadGroup = threadGroup;
+    this.seda = seda;
   }
 
   public void dump() {
@@ -377,7 +382,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     int maxStageSize = 5000;
 
-    StageManager stageManager = getStageManager();
+    StageManager stageManager = seda.getStageManager();
     SessionManager sessionManager = new NullSessionManager();
     SessionProvider sessionProvider = (SessionProvider) sessionManager;
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
@@ -519,11 +524,11 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     ObjectManagerConfig objectManagerConfig = new ObjectManagerConfig(gcInterval * 1000, gcEnabled, verboseGC,
                                                                       persistent, objManagerProperties
                                                                           .getInt("deleteBatchSize"));
-    objectManager = new ObjectManagerImpl(objectManagerConfig, getThreadGroup(), clientStateManager, objectStore,
+    objectManager = new ObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore,
                                           swapCache, persistenceTransactionProvider, faultManagedObjectStage.getSink(),
                                           flushManagedObjectStage.getSink());
     objectManager.setStatsListener(objMgrStats);
-    objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, verboseGC));
+    objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, verboseGC, statisticsAgentSubSystem));
     managedObjectChangeListenerProvider.setListener(objectManager);
 
     l2Management.findObjectManagementMonitorMBean()
@@ -531,7 +536,8 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
-      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties), getThreadGroup(), statisticsAgentSubSystem);
+      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties), threadGroup,
+                                      statisticsAgentSubSystem);
       if (logger.isDebugEnabled()) {
         logger.debug("CacheManager Enabled : " + cacheManager);
       }
@@ -773,7 +779,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     stageManager.startAll(context);
 
     // populate the statistics retrieval registry
-    populateStatisticsRetrievalRegistry(serverStats, getStageManager());
+    populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager());
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,
@@ -808,6 +814,9 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       registry.registerActionInstance(new SRAL2ChangesPerBroadcast(serverStats));
       registry.registerActionInstance(new SRAL2BroadcastPerTransaction(serverStats));
       registry.registerActionInstance(new SRAStageQueueDepths(stageManager));
+      registry.registerActionInstance(new SRACacheObjectsEvictRequest());
+      registry.registerActionInstance(new SRACacheObjectsEvicted());
+      registry.registerActionInstance(new SRADistributedGC());
     }
   }
 
@@ -898,14 +907,20 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
   public int getListenPort() {
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
     int configValue = l2DSOConfig.listenPort().getInt();
-    int listenerValue = this.l1Listener != null ? this.l1Listener.getBindPort() : 0;
-    return configValue == 0 ? listenerValue : configValue;
+    if (configValue != 0) { return configValue; }
+    if (this.l1Listener != null) {
+      try {
+        return this.l1Listener.getBindPort();
+      } catch (IllegalStateException ise) {/**/
+      }
+    }
+    return -1;
   }
 
   public InetAddress getListenAddr() {
     return this.l1Listener.getBindAddress();
   }
- 
+
   public synchronized void stop() {
     try {
       if (lockManager != null) lockManager.stop();
@@ -913,7 +928,7 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       logger.error(e);
     }
 
-    getStageManager().stopAll();
+    seda.getStageManager().stopAll();
 
     if (l1Listener != null) {
       try {
@@ -958,12 +973,6 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
     }
 
     try {
-      stopJMXServer();
-    } catch (Throwable t) {
-      logger.error("Error shutting down jmx server", t);
-    }
-
-    try {
       statisticsAgentSubSystem.cleanup();
     } catch (Throwable e) {
       logger.warn(e);
@@ -973,6 +982,12 @@ public class DistributedObjectServer extends SEDA implements TCDumper {
       statisticsGateway.cleanup();
     } catch (Throwable e) {
       logger.warn(e);
+    }
+
+    try {
+      stopJMXServer();
+    } catch (Throwable t) {
+      logger.error("Error shutting down jmx server", t);
     }
 
     basicStop();

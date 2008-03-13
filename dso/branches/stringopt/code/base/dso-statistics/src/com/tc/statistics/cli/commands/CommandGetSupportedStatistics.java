@@ -12,7 +12,8 @@ public class CommandGetSupportedStatistics extends AbstractCliCommand {
 
   public void execute(final GathererConnection connection, final String[] arguments) {
     String[] stats = connection.getGatherer().getSupportedStatistics();
-    if (0 == stats.length) {
+    if (null == stats ||
+        0 == stats.length) {
       System.out.println("> Couldn't find any supported statistics");
     } else {
       for (int i = 0; i < stats.length; i++) {

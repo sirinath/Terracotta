@@ -7,17 +7,19 @@ package com.tc.statistics.beans.impl;
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.management.AbstractTerracottaMBean;
+import com.tc.statistics.AgentStatisticsManager;
 import com.tc.statistics.DynamicSRA;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
-import com.tc.statistics.AgentStatisticsManager;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 import com.tc.statistics.beans.exceptions.UnknownStatisticsSessionIdException;
 import com.tc.statistics.buffer.StatisticsBuffer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStartCapturingSessionNotFoundException;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferStopCapturingSessionNotFoundException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferStartCapturingSessionNotFoundException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferStopCapturingSessionNotFoundException;
 import com.tc.statistics.config.StatisticsConfig;
+import com.tc.statistics.exceptions.AgentStatisticsManagerException;
+import com.tc.statistics.exceptions.StatisticDataInjectionErrorException;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.util.Assert;
@@ -27,9 +29,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 
 import javax.management.NotCompliantMBeanException;
 
@@ -66,7 +68,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
 
     try {
       buffer.reinitialize();
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       throw new RuntimeException("Unexpected error while reinitializing the buffer.");
     }
 
@@ -84,7 +86,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     try {
       StatisticsRetriever retriever = buffer.createCaptureSession(sessionId);
       retrieverMap.put(sessionId, retriever);
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       throw new RuntimeException("Unexpected error while creating a new capture session.", e);
     }
   }
@@ -123,7 +125,7 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
         data[i].setMoment(moment);
         try {
           buffer.storeStatistic(data[i]);
-        } catch (TCStatisticsBufferException e) {
+        } catch (StatisticsBufferException e) {
           throw new RuntimeException("Error while storing the statistic data '" + name + "' for cluster-wide ID '" + sessionId + "'.", e);
         }
       }
@@ -133,16 +135,12 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return data;
   }
 
-  private String getNodeName() {
-    return buffer.getDefaultAgentIp() + " (" + buffer.getDefaultAgentDifferentiator() + ")";
-  }
-
   public synchronized void startCapturing(final String sessionId) {
     try {
       buffer.startCapturing(sessionId);
-    } catch (TCStatisticsBufferStartCapturingSessionNotFoundException e) {
-      throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferStartCapturingSessionNotFoundException e) {
+      throw new UnknownStatisticsSessionIdException(buffer.getDefaultNodeName(), e.getSessionId(), e);
+    } catch (StatisticsBufferException e) {
       throw new RuntimeException("Error while starting the capture session with cluster-wide ID '" + sessionId + "'.", e);
     }
   }
@@ -152,9 +150,9 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
       retrieverMap.remove(sessionId);
       buffer.stopCapturing(sessionId);
       cleanUpStatisticsCollection();
-    } catch (TCStatisticsBufferStopCapturingSessionNotFoundException e) {
-      throw new UnknownStatisticsSessionIdException(getNodeName(), e.getSessionId(), e);
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferStopCapturingSessionNotFoundException e) {
+      throw new UnknownStatisticsSessionIdException(buffer.getDefaultNodeName(), e.getSessionId(), e);
+    } catch (StatisticsBufferException e) {
       throw new RuntimeException("Error while stopping the capture session with cluster-wide ID '" + sessionId + "'.", e);
     }
   }
@@ -177,16 +175,16 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return retriever.getConfig().getParam(key);
   }
 
-  public List getActiveSessionsForAction(String actionName) {
+  public Collection getActiveSessionIDsForAction(final String actionName) {
     return getActiveSessionsForAction(registry.getActionInstance(actionName));
   }
 
-  public List getActiveSessionsForAction(StatisticRetrievalAction action) {
-    if (action == null) return Collections.EMPTY_LIST;
-    List sessions = new ArrayList();
+  private Collection getActiveSessionsForAction(final StatisticRetrievalAction action) {
+    if (null == action) return Collections.EMPTY_LIST;
+    final List sessions = new ArrayList();
     synchronized (this) {
-      for (Iterator activeSessionsIterator = retrieverMap.keySet().iterator(); activeSessionsIterator.hasNext();) {
-        String sessionId = (String)activeSessionsIterator.next();
+      for (Iterator it = retrieverMap.keySet().iterator(); it.hasNext();) {
+        String sessionId = (String)it.next();
         StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(sessionId);
         if (retriever.containsAction(action)) {
           sessions.add(sessionId);
@@ -196,10 +194,23 @@ public class StatisticsManagerMBeanImpl extends AbstractTerracottaMBean implemen
     return Collections.unmodifiableList(sessions);
   }
 
+  public void injectStatisticData(final String sessionId, final StatisticData data) throws AgentStatisticsManagerException {
+    if (!retrieverMap.containsKey(sessionId)) {
+      throw new StatisticDataInjectionErrorException(sessionId, data, new UnknownStatisticsSessionIdException(buffer.getDefaultNodeName(), sessionId, null));
+    }
+    
+    try {
+      data.setSessionId(sessionId);
+      buffer.storeStatistic(data);
+    } catch (StatisticsBufferException e) {
+      throw new StatisticDataInjectionErrorException(sessionId, data, e);
+    }
+  }
+
   StatisticsRetriever obtainRetriever(final String sessionId) {
     StatisticsRetriever retriever = (StatisticsRetriever)retrieverMap.get(sessionId);
     if (null == retriever) {
-      throw new UnknownStatisticsSessionIdException(getNodeName(), sessionId, null);
+      throw new UnknownStatisticsSessionIdException(buffer.getDefaultNodeName(), sessionId, null);
     }
     return retriever;
   }

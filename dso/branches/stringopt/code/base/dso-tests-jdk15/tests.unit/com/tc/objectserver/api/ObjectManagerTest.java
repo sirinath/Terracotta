@@ -82,6 +82,7 @@ import com.tc.objectserver.tx.ServerTransactionImpl;
 import com.tc.objectserver.tx.TestTransactionalStageCoordinator;
 import com.tc.objectserver.tx.TransactionSequencer;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
+import com.tc.statistics.mock.NullStatisticsAgentSubSystem;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterImpl;
@@ -1133,7 +1134,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // objMgr.gc() happens
     this.config.myGCThreadSleepTime = -1;
 
-    GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManager, clientStateManager, true);
+    GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManager, clientStateManager, true, new NullStatisticsAgentSubSystem());
     objectManager.setGarbageCollector(gc);
     objectManager.start();
 

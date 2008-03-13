@@ -6,12 +6,15 @@ package com.tc.statistics.retrieval.impl;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticType;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferException;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.StatisticsRetriever;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
@@ -20,15 +23,19 @@ import com.tc.util.Assert;
 import com.tc.util.TCTimerImpl;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Date;
 
 public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsBufferListener {
+  public final static int DEFAULT_NOTIFICATION_INTERVAL = 5;
+
+  private final static TCLogger logger = TCLogging.getLogger(StatisticsRetrieverImpl.class);
+
   private final Timer timer = new TCTimerImpl("Statistics Retriever Timer", true);
 
   private final StatisticsConfig config;
@@ -40,7 +47,8 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   // modified (not replaced)
   private volatile Map actionsMap;
 
-  private RetrieveStatsTask task = null;
+  private LogRetrievalInProcessTask infoTask = null;
+  private RetrieveStatsTask statsTask = null;
 
   public StatisticsRetrieverImpl(final StatisticsConfig config, final StatisticsBuffer buffer, final String sessionId) {
     Assert.assertNotNull("config", config);
@@ -87,6 +95,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     List action_list = (List)actionsMap.get(action.getType());
     if (null == action_list) {
       Assert.fail("the actionsMap doesn't contain an entry for the statistic type '" + action.getType() + "'");
+      return;
     }
     action_list.add(action);
   }
@@ -94,13 +103,13 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   public void startup() {
     retrieveStartupMarker();
     retrieveStartupStatistics();
-    enableTimerTask();
+    enableTimerTasks();
   }
 
   public void shutdown() {
-    this.buffer.removeListener(this);
+    buffer.removeListener(this);
 
-    disableTimerTask();
+    disableTimerTasks();
   }
 
   public boolean containsAction(StatisticRetrievalAction action) {
@@ -145,32 +154,52 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
   private void bufferData(final StatisticData data) {
     try {
       buffer.storeStatistic(data);
-    } catch (TCStatisticsBufferException e) {
+    } catch (StatisticsBufferException e) {
       throw new TCRuntimeException(e);
     }
   }
 
-  private synchronized void enableTimerTask() {
-    if (task != null) {
-      disableTimerTask();
+  private synchronized void enableTimerTasks() {
+    if (statsTask != null ||
+        infoTask != null) {
+      disableTimerTasks();
     }
 
-    task = new RetrieveStatsTask();
-    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_GLOBAL_SCHEDULE_PERIOD));
+    infoTask = new LogRetrievalInProcessTask();
+    timer.scheduleAtFixedRate(infoTask, 0, TCPropertiesImpl.getProperties().getInt("cvt.retriever.notification.interval", DEFAULT_NOTIFICATION_INTERVAL) * 1000);
+
+    statsTask = new RetrieveStatsTask();
+    timer.scheduleAtFixedRate(statsTask, 0, config.getParamLong(StatisticsConfig.KEY_RETRIEVER_SCHEDULE_INTERVAL));
   }
 
-  private synchronized void disableTimerTask() {
-    if (task != null) {
-      task.shutdown();
-      task = null;
+  private synchronized void disableTimerTasks() {
+    if (statsTask != null) {
+      statsTask.shutdown();
+      statsTask = null;
+    }
+
+    if (infoTask != null) {
+      infoTask.shutdown();
+      infoTask = null;
     }
   }
 
   public void capturingStarted(final String sessionId) {
-    startup();
+    if (sessionId.equals(this.sessionId)) {
+      startup();
+    }
   }
 
   public void capturingStopped(final String sessionId) {
+    if (sessionId.equals(this.sessionId)) {
+      shutdown();
+    }
+  }
+
+  public void opened() {
+  }
+
+  public void closed() {
     shutdown();
   }
 
@@ -178,7 +207,7 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
     private boolean performTaskShutdown = false;
 
     public void shutdown() {
-      this.performTaskShutdown = true;
+      performTaskShutdown = true;
     }
 
     public void run() {
@@ -191,6 +220,29 @@ public class StatisticsRetrieverImpl implements StatisticsRetriever, StatisticsB
       if (performTaskShutdown) {
         cancel();
         retrieveShutdownMarker();
+      }
+    }
+  }
+
+  private class LogRetrievalInProcessTask extends TimerTask {
+    private final long start;
+
+    private volatile boolean shutdown = false;
+
+    private LogRetrievalInProcessTask() {
+      start = System.currentTimeMillis();
+      logger.info("Statistics retrieval is STARTING for session ID '" + sessionId + "' on node '" + buffer.getDefaultNodeName() + "'.");
+    }
+
+    public void shutdown() {
+      shutdown = true;
+      logger.info("Statistics retrieval has STOPPED for session ID '" + sessionId + "' on node '" + buffer.getDefaultNodeName() + "' after running for " + ((System.currentTimeMillis() - start) / 1000) + " seconds.");
+      this.cancel();
+    }
+
+    public void run() {
+      if (!shutdown) {
+        logger.info("Statistics retrieval in PROCESS for session ID '" + sessionId + "' on node '" + buffer.getDefaultNodeName() + "' for " + ((System.currentTimeMillis() - start) / 1000) + " seconds.");
       }
     }
   }
