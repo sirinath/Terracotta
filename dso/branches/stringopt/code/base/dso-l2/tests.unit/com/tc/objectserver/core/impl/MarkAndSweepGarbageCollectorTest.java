@@ -18,6 +18,7 @@ import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
+import com.tc.statistics.mock.NullStatisticsAgentSubSystem;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.ObjectIDSet2;
 
@@ -71,7 +72,7 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     super.setUp();
     this.managed = new HashMap();
 
-    this.collector = new MarkAndSweepGarbageCollector(this, new TestClientStateManager(), false);
+    this.collector = new MarkAndSweepGarbageCollector(this, new TestClientStateManager(), false, new NullStatisticsAgentSubSystem());
     this.lookedUp = new HashSet();
     this.released = new HashSet();
     this.root1 = createObject(8);

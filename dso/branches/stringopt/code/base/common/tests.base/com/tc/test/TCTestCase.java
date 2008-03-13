@@ -210,6 +210,8 @@ public class TCTestCase extends TestCase {
 
     long delay = junitTimeout - timeoutThreshold;
 
+    System.err.println("Timeout task is scheduled to run in " + (delay / 1000) + " seconds");
+
     timeoutTimer.schedule(new TimerTask() {
       public void run() {
         timeoutCallback();

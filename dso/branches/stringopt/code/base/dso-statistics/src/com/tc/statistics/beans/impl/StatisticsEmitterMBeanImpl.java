@@ -15,18 +15,18 @@ import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
-import com.tc.statistics.buffer.exceptions.TCStatisticsBufferException;
+import com.tc.statistics.buffer.exceptions.StatisticsBufferException;
 import com.tc.statistics.config.StatisticsConfig;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.util.Assert;
 import com.tc.util.TCTimerImpl;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.List;
-import java.util.ArrayList;
 
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
@@ -89,7 +89,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
 
     timer = new TCTimerImpl("Statistics Emitter Timer", true);
     task = new SendStatsTask();
-    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_PERIOD));
+    timer.scheduleAtFixedRate(task, 0, config.getParamLong(StatisticsConfig.KEY_EMITTER_SCHEDULE_INTERVAL));
   }
 
   private synchronized void disableTimer() {
@@ -110,6 +110,12 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void capturingStopped(final String sessionId) {
+  }
+
+  public void opened() {
+  }
+
+  public void closed() {
   }
 
   private class SendStatsTask extends TimerTask {
@@ -143,7 +149,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
             final Notification notification = new Notification(STATISTICS_EMITTER_DATA_TYPE, StatisticsEmitterMBeanImpl.this, sequenceNumber.increment(), System.currentTimeMillis());
             notification.setUserData(notification_data);
             sendNotification(notification);
-          } catch (TCStatisticsBufferException e) {
+          } catch (StatisticsBufferException e) {
             logger.error("Unexpected error while emitting buffered statistics.", e);
           }
         }

@@ -10,7 +10,7 @@ import com.tc.logging.TCLogger;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.database.StatisticsDatabase;
-import com.tc.statistics.database.exceptions.TCStatisticsDatabaseException;
+import com.tc.statistics.database.exceptions.StatisticsDatabaseException;
 import com.tc.statistics.database.impl.H2StatisticsDatabase;
 import com.tc.statistics.jdbc.CaptureChecksum;
 import com.tc.statistics.jdbc.JdbcHelper;
@@ -21,23 +21,24 @@ import com.tc.statistics.store.StatisticsRetrievalCriteria;
 import com.tc.statistics.store.StatisticsStore;
 import com.tc.statistics.store.StatisticsStoreImportListener;
 import com.tc.statistics.store.StatisticsStoreListener;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreCacheCreationErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreClearAllStatisticsErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreClearStatisticsErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreCloseErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreInstallationErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreOpenErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreRetrievalErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreSessionIdsRetrievalErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreSetupErrorException;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreStatisticStorageErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreCacheCreationErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreClearAllStatisticsErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreClearStatisticsErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreCloseErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreException;
+import com.tc.statistics.store.exceptions.StatisticsStoreInstallationErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreOpenErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreRetrievalErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreSessionIdsRetrievalErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreSetupErrorException;
+import com.tc.statistics.store.exceptions.StatisticsStoreStatisticStorageErrorException;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.FileLockGuard;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -52,15 +53,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class H2StatisticsStoreImpl implements StatisticsStore {
-  public final static int DATABASE_STRUCTURE_VERSION = 5;
+  public final static int DATABASE_STRUCTURE_VERSION = 6;
   
   public final static String H2_URL_SUFFIX = "statistics-store";
 
   private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
-  private final static long DATABASE_STRUCTURE_CHECKSUM = 3035608895L;
+  private final static long DATABASE_STRUCTURE_CHECKSUM = 2820643252L;
 
   private final static String SQL_NEXT_STATISTICLOGID = "SELECT nextval('seq_statisticlog')";
   private final static String SQL_GET_AVAILABLE_SESSIONIDS = "SELECT sessionid FROM statisticlog GROUP BY sessionid ORDER BY sessionid ASC";
@@ -90,7 +93,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     this.lockFile = new File(dbDir, suffix+"-tc.lck");
   }
 
-  public void open() throws TCStatisticsStoreException {
+  public void open() throws StatisticsStoreException {
     synchronized (this) {
       try {
         FileLockGuard.guard(lockFile, new FileLockGuard.Guarded() {
@@ -98,21 +101,21 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
             try {
               try {
                 database.open();
-              } catch (TCStatisticsDatabaseException e) {
-                throw new TCStatisticsStoreOpenErrorException(e);
+              } catch (StatisticsDatabaseException e) {
+                throw new StatisticsStoreOpenErrorException(e);
               }
 
               install();
               setupPreparedStatements();
-            } catch (TCStatisticsStoreException e) {
+            } catch (StatisticsStoreException e) {
               throw new FileLockGuard.InnerException(e);
             }
           }
         });
       } catch (FileLockGuard.InnerException e) {
-        throw (TCStatisticsStoreException)e.getInnerException();
+        throw (StatisticsStoreException)e.getInnerException();
       } catch (IOException e) {
-        throw new TCStatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
+        throw new StatisticsStoreException("Unexpected error while obtaining or releasing lock file.", e);
       }
 
       open = true;
@@ -121,12 +124,12 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     fireOpened();
   }
 
-  public void close() throws TCStatisticsStoreException {
+  public void close() throws StatisticsStoreException {
     synchronized (this) {
       try {
         database.close();
-      } catch (TCStatisticsDatabaseException e) {
-        throw new TCStatisticsStoreCloseErrorException(e);
+      } catch (StatisticsDatabaseException e) {
+        throw new StatisticsStoreCloseErrorException(e);
       }
 
       open = false;
@@ -135,20 +138,20 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     fireClosed();
   }
 
-  public synchronized void reinitialize() throws TCStatisticsStoreException {
+  public synchronized void reinitialize() throws StatisticsStoreException {
     boolean was_open = open;
     close();
     try {
       database.reinitialize();
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreException("Unexpected error while reinitializing the statistics store.", e);
+    } catch (StatisticsDatabaseException e) {
+      throw new StatisticsStoreException("Unexpected error while reinitializing the statistics store.", e);
     }
     if (was_open) {
       open();
     }
   }
 
-  protected void install() throws TCStatisticsStoreException {
+  protected void install() throws StatisticsStoreException {
     try {
       database.ensureExistingConnection();
 
@@ -184,7 +187,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
                 "statname VARCHAR(255) NOT NULL," +
                 "statelement VARCHAR(255) NULL, " +
                 "datanumber BIGINT NULL, " +
-                "datatext TEXT NULL, " +
+                "datatext LONGVARCHAR NULL, " +
                 "datatimestamp TIMESTAMP NULL, " +
                 "datadecimal DECIMAL(8, 4) NULL)");
 
@@ -204,15 +207,15 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
         }
       });
     } catch (Exception e) {
-      throw new TCStatisticsStoreInstallationErrorException(e);
+      throw new StatisticsStoreInstallationErrorException(e);
     }
   }
 
-  public void recreateCaches() throws TCStatisticsStoreException {
+  public void recreateCaches() throws StatisticsStoreException {
     try {
       recreateCachedStatisticsStructureTable();
     } catch (SQLException e) {
-      throw new TCStatisticsStoreCacheCreationErrorException(e);
+      throw new StatisticsStoreCacheCreationErrorException(e);
     }
   }
 
@@ -267,16 +270,16 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
               "DROP INDEX IF EXISTS idx_statisticlog_statelement");
   }
 
-  private void setupPreparedStatements() throws TCStatisticsStoreException {
+  private void setupPreparedStatements() throws StatisticsStoreException {
     try {
       database.createPreparedStatement(SQL_NEXT_STATISTICLOGID);
       database.createPreparedStatement(SQL_GET_AVAILABLE_SESSIONIDS);
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreSetupErrorException(e);
+    } catch (StatisticsDatabaseException e) {
+      throw new StatisticsStoreSetupErrorException(e);
     }
   }
 
-  public void storeStatistic(final StatisticData data) throws TCStatisticsStoreException {
+  public void storeStatistic(final StatisticData data) throws StatisticsStoreException {
     Assert.assertNotNull("data", data);
     Assert.assertNotNull("sessionId property of data", data.getSessionId());
     Assert.assertNotNull("agentIp property of data", data.getAgentIp());
@@ -299,12 +302,12 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
         }
       });
     } catch (Exception e) {
-      throw new TCStatisticsStoreStatisticStorageErrorException(data, e);
+      throw new StatisticsStoreStatisticStorageErrorException(data, e);
     }
 
     // ensure that a row was inserted
     if (row_count != 1) {
-      throw new TCStatisticsStoreStatisticStorageErrorException(id, data, null);
+      throw new StatisticsStoreStatisticStorageErrorException(id, data, null);
     }
   }
 
@@ -352,13 +355,13 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public void importCsvStatistics(final Reader reader, final StatisticsStoreImportListener listener) throws TCStatisticsStoreException {
+  public void importCsvStatistics(final Reader reader, final StatisticsStoreImportListener listener) throws StatisticsStoreException {
     Assert.assertNotNull("reader", reader);
 
     try {
       database.ensureExistingConnection();
-    } catch (TCStatisticsDatabaseException e) {
-      throw new TCStatisticsStoreException("Database not connected.", e);
+    } catch (StatisticsDatabaseException e) {
+      throw new StatisticsStoreException("Database not connected.", e);
     }
 
     if (listener != null) {
@@ -423,17 +426,17 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
               listener.imported(count);
             }
           } catch (IOException e) {
-            throw new TCStatisticsStoreException("Error while reading text.", e);
+            throw new StatisticsStoreException("Error while reading text.", e);
           } catch (ParseException e) {
-            throw new TCStatisticsStoreException("Error while converting from CSV.", e);
+            throw new StatisticsStoreException("Error while converting from CSV.", e);
           } finally {
             database.getConnection().setAutoCommit(true);
           }
         } catch (SQLException e) {
-          throw new TCStatisticsStoreException("Error while starting the transaction.", e);
+          throw new StatisticsStoreException("Error while starting the transaction.", e);
         }
       } catch (SQLException e) {
-        throw new TCStatisticsStoreException("Error dropping the statistic log indexes.", e);
+        throw new StatisticsStoreException("Error dropping the statistic log indexes.", e);
       } finally {
         if (listener != null) {
           listener.optimizing();
@@ -447,7 +450,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
       }
 
     } catch (SQLException e) {
-      throw new TCStatisticsStoreException("Error while preparing SQL statement '" + SQL_INSERT_STATISTICSDATA + "'.", e);
+      throw new StatisticsStoreException("Error while preparing SQL statement '" + SQL_INSERT_STATISTICSDATA + "'.", e);
     } finally {
       try {
         if (ps_insert != null) {
@@ -465,7 +468,7 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     }
   }
 
-  public void retrieveStatistics(final StatisticsRetrievalCriteria criteria, final StatisticDataUser user) throws TCStatisticsStoreException {
+  public void retrieveStatistics(final StatisticsRetrievalCriteria criteria, final StatisticDataUser user) throws StatisticsStoreException {
     Assert.assertNotNull("criteria", criteria);
 
     try {
@@ -567,11 +570,65 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      throw new TCStatisticsStoreRetrievalErrorException(criteria, e);
+      throw new StatisticsStoreRetrievalErrorException(criteria, e);
     }
   }
 
-  public String[] getAvailableSessionIds() throws TCStatisticsStoreException {
+  public void retrieveStatisticsAsCsvStream(final OutputStream os, final String filenameBase, final StatisticsRetrievalCriteria criteria, final boolean textformat) throws StatisticsStoreException {
+    final OutputStream out;
+
+    try {
+      try {
+        final ZipOutputStream zipstream;
+        if (textformat) {
+          zipstream = null;
+          out = os;
+        } else {
+          zipstream = new ZipOutputStream(os);
+          zipstream.setLevel(9);
+          zipstream.setMethod(ZipOutputStream.DEFLATED);
+          out = zipstream;
+        }
+
+        try {
+          if (zipstream != null) {
+            final ZipEntry zipentry = new ZipEntry(filenameBase + ".csv");
+            zipentry.setComment(StatisticData.CURRENT_CSV_VERSION);
+            zipstream.putNextEntry(zipentry);
+          }
+
+          try {
+            out.write(StatisticData.CURRENT_CSV_HEADER.getBytes("UTF-8"));
+            retrieveStatistics(criteria, new StatisticDataUser() {
+              public boolean useStatisticData(final StatisticData data) {
+                try {
+                  out.write(data.toCsv().getBytes("UTF-8"));
+                } catch (IOException e) {
+                  // should never happen
+                  throw new RuntimeException(e);
+                }
+                return true;
+              }
+            });
+          } finally {
+            if (zipstream != null) {
+              zipstream.closeEntry();
+            }
+          }
+        } finally {
+          if (zipstream != null) {
+            zipstream.close();
+          }
+        }
+      } finally {
+        os.close();
+      }
+    } catch (IOException e) {
+      throw new StatisticsStoreRetrievalErrorException(criteria, e);
+    }
+  }
+
+  public String[] getAvailableSessionIds() throws StatisticsStoreException {
     final List results = new ArrayList();
     try {
       database.ensureExistingConnection();
@@ -586,13 +643,13 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      throw new TCStatisticsStoreSessionIdsRetrievalErrorException(e);
+      throw new StatisticsStoreSessionIdsRetrievalErrorException(e);
     }
 
     return (String[])results.toArray(new String[results.size()]);
   }
 
-  public void clearStatistics(final String sessionId) throws TCStatisticsStoreException {
+  public void clearStatistics(final String sessionId) throws StatisticsStoreException {
     try {
       database.ensureExistingConnection();
 
@@ -603,19 +660,19 @@ public class H2StatisticsStoreImpl implements StatisticsStore {
         }
       });
     } catch (Exception e) {
-      throw new TCStatisticsStoreClearStatisticsErrorException(sessionId, e);
+      throw new StatisticsStoreClearStatisticsErrorException(sessionId, e);
     }
 
     fireSessionCleared(sessionId);
   }
 
-  public void clearAllStatistics() throws TCStatisticsStoreException {
+  public void clearAllStatistics() throws StatisticsStoreException {
     try {
       database.ensureExistingConnection();
       
       JdbcHelper.executeUpdate(database.getConnection(), SQL_CLEAR_ALL_STATISTICS);
     } catch (Exception e) {
-      throw new TCStatisticsStoreClearAllStatisticsErrorException(e);
+      throw new StatisticsStoreClearAllStatisticsErrorException(e);
     }
 
     fireAllSessionsCleared();

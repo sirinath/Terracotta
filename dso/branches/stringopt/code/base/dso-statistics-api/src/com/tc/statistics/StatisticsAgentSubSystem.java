@@ -3,40 +3,34 @@
  */
 package com.tc.statistics;
 
-import com.tc.config.schema.NewStatisticsConfig;
-import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.statistics.beans.StatisticsEmitterMBean;
-import com.tc.statistics.beans.StatisticsManagerMBean;
 
-import javax.management.MBeanServer;
-import javax.management.MBeanRegistrationException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-
+/**
+ * This interface provides high-level access to the CVT sub-system that is
+ * used for each gatherer.
+ */
 public interface StatisticsAgentSubSystem {
-  boolean isActive();
+  /**
+   * Indicates whether the sub-system is active.
+   *
+   * @return {@code true} when the sub-system is active; or
+   * {@code false} otherwise
+   */
+  public boolean isActive();
 
-  void setDefaultAgentIp(String defaultAgentIp);
+  /**
+   * Returns the {@link StatisticsRetrievalRegistry} that is used by this
+   * agent sub-system.
+   *
+   * @return the requested retrieval registry
+   */
+  public StatisticsRetrievalRegistry getStatisticsRetrievalRegistry();
 
-  void setDefaultAgentDifferentiator(String defaultAgentDifferentiator);
-
-  boolean setup(NewStatisticsConfig config);
-
-  void registerMBeans(MBeanServer server) throws MBeanRegistrationException, NotCompliantMBeanException, InstanceAlreadyExistsException;
-
-  void unregisterMBeans(MBeanServer server) throws InstanceNotFoundException, MBeanRegistrationException;
-
-  StatisticsBuffer getStatisticsBuffer();
-
-  StatisticsEmitterMBean getStatisticsEmitterMBean();
-
-  StatisticsManagerMBean getStatisticsManagerMBean();
-
-  StatisticsRetrievalRegistry getStatisticsRetrievalRegistry();
-
-  void disableJMX() throws Exception;
-
-  void cleanup() throws Exception;
+  /**
+   * Returns the {@link AgentStatisticsManager} that is used by this agent
+   * sub-system.
+   *
+   * @return the requested manager
+   */
+  public AgentStatisticsManager getStatisticsManager();
 }

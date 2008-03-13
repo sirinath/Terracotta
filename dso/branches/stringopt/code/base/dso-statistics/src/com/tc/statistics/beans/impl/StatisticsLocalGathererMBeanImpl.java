@@ -6,17 +6,15 @@ package com.tc.statistics.beans.impl;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.config.schema.NewCommonL2Config;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.net.TCSocketAddress;
-import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
 import com.tc.statistics.gatherer.StatisticsGathererListener;
-import com.tc.statistics.gatherer.exceptions.TCStatisticsGathererException;
+import com.tc.statistics.gatherer.exceptions.StatisticsGathererException;
 import com.tc.statistics.store.StatisticsStoreListener;
-import com.tc.statistics.store.exceptions.TCStatisticsStoreException;
+import com.tc.statistics.store.exceptions.StatisticsStoreException;
 import com.tc.util.Assert;
 
 import javax.management.MBeanNotificationInfo;
@@ -25,8 +23,6 @@ import javax.management.Notification;
 
 public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean implements StatisticsLocalGathererMBean, StatisticsGathererListener, StatisticsStoreListener {
   public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
-
-  private final static TCLogger logger = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
 
   static {
     final String[] notifTypes = new String[] {
@@ -62,8 +58,10 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
 
     // keep at the end of the constructor to make sure that all the initialization
     // is done before registering this instance as a listener
-    this.subsystem.getStatisticsGatherer().addListener(this);
-    this.subsystem.getStatisticsStore().addListener(this);
+    if (this.subsystem.isActive()) {
+      this.subsystem.getStatisticsGatherer().addListener(this);
+      this.subsystem.getStatisticsStore().addListener(this);
+    }
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {
@@ -74,22 +72,34 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
   }
 
   public void connect() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+    
     try {
       subsystem.getStatisticsGatherer().connect(TCSocketAddress.LOOPBACK_IP, config.jmxPort().getInt());
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void disconnect() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().disconnect();
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void reinitialize() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.reinitialize();
     } catch (Exception e) {
@@ -98,117 +108,177 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
   }
 
   public void createSession(final String sessionId) {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().createSession(sessionId);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public String getActiveSessionId() {
+    if (!subsystem.isActive()) {
+      return null;
+    }
+
     return subsystem.getStatisticsGatherer().getActiveSessionId();
   }
 
   public String[] getAvailableSessionIds() {
+    if (!subsystem.isActive()) {
+      return new String[0];
+    }
+
     try {
       return subsystem.getStatisticsStore().getAvailableSessionIds();
-    } catch (TCStatisticsStoreException e) {
+    } catch (StatisticsStoreException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void closeSession() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().closeSession();
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public String[] getSupportedStatistics() {
+    if (!subsystem.isActive()) {
+      return new String[0];
+    }
+
     try {
       return subsystem.getStatisticsGatherer().getSupportedStatistics();
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void enableStatistics(String[] names) {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().enableStatistics(names);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public StatisticData[] captureStatistic(final String name) {
+    if (!subsystem.isActive()) {
+      return new StatisticData[0];
+    }
+
     try {
       return subsystem.getStatisticsGatherer().captureStatistic(name);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void startCapturing() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().startCapturing();
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void stopCapturing() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().stopCapturing();
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void setGlobalParam(final String key, final Object value) {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().setGlobalParam(key, value);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public Object getGlobalParam(final String key) {
+    if (!subsystem.isActive()) {
+      return null;
+    }
+
     try {
       return subsystem.getStatisticsGatherer().getGlobalParam(key);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void setSessionParam(final String key, final Object value) {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsGatherer().setSessionParam(key, value);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public Object getSessionParam(final String key) {
+    if (!subsystem.isActive()) {
+      return null;
+    }
+
     try {
       return subsystem.getStatisticsGatherer().getSessionParam(key);
-    } catch (TCStatisticsGathererException e) {
+    } catch (StatisticsGathererException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void clearStatistics(final String sessionId) {
+    if (!subsystem.isActive()) {
+      return;
+    }
+    
     try {
       subsystem.getStatisticsStore().clearStatistics(sessionId);
-    } catch (TCStatisticsStoreException e) {
+    } catch (StatisticsStoreException e) {
       throw new RuntimeException(e);
     }
   }
 
   public void clearAllStatistics() {
+    if (!subsystem.isActive()) {
+      return;
+    }
+
     try {
       subsystem.getStatisticsStore().clearAllStatistics();
-    } catch (TCStatisticsStoreException e) {
+    } catch (StatisticsStoreException e) {
       throw new RuntimeException(e);
     }
   }

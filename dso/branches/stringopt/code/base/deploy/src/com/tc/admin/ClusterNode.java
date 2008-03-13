@@ -13,7 +13,7 @@ import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XTreeNode;
 import com.tc.admin.dso.ClassesNode;
-import com.tc.admin.dso.ClientTreeNode;
+import com.tc.admin.dso.ClientNode;
 import com.tc.admin.dso.ClientsNode;
 import com.tc.admin.dso.DSOClient;
 import com.tc.admin.dso.DSOHelper;
@@ -115,9 +115,13 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
       }
     }
     initMenu(autoConnect);
-    setComponent(m_clusterPanel = new ClusterPanel(this));
+    setComponent(m_clusterPanel = createClusterPanel());
   }
 
+  protected ClusterPanel createClusterPanel() {
+    return new ClusterPanel(this);
+  }
+  
   void handleNewActive(ServerConnectionManager scm) {
     String[] creds = ServerConnectionManager.getCachedCredentials(scm);
     if (creds != null) {
@@ -753,19 +757,39 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   private void addChildren(ConnectionContext cc) throws Exception {
-    add(m_rootsNode = new RootsNode(this));
+    add(m_rootsNode = createRootsNode());
     add(new ClassesNode(this));
     try {
-      add(m_locksNode = new LocksNode(this));
+      add(m_locksNode = createLocksNode());
     } catch (Throwable t) {
       // Need a more specific exception but this means we're trying to connect to an
       // older version of the server, that doesn't have the LockMonitorMBean we expect.
     }
-    add(m_gcStatsNode = new GCStatsNode(this));
-    add(m_serversNode = new ServersNode(this));
-    add(m_clientsNode = new ClientsNode(this));
+    add(m_gcStatsNode = createGCStatsNode());
+    add(m_serversNode = createServersNode());
+    add(m_clientsNode = createClientsNode());
   }
 
+  protected RootsNode createRootsNode() throws Exception {
+    return new RootsNode(this);
+  }
+  
+  protected GCStatsNode createGCStatsNode() throws Exception {
+    return new GCStatsNode(this);
+  }
+  
+  protected LocksNode createLocksNode() throws Exception {
+    return new LocksNode(this);
+  }
+  
+  protected ServersNode createServersNode() {
+    return  new ServersNode(this);
+  }
+  
+  protected ClientsNode createClientsNode() throws Exception {
+    return new ClientsNode(this);
+  }
+  
   void handlePassiveUninitialized() {
     try {
       tryAddChildren();
@@ -1072,7 +1096,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
 
     int clientCount = m_clientsNode.getChildCount();
     for (int i = 0; i < clientCount; i++) {
-      ClientTreeNode clientNode = (ClientTreeNode) m_clientsNode.getChildAt(i);
+      ClientNode clientNode = (ClientNode) m_clientsNode.getChildAt(i);
       DSOClient client = clientNode.getClient();
       try {
         L1InfoMBean l1Info = client.getL1InfoMBean();
