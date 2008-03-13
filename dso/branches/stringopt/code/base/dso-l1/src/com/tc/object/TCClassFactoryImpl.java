@@ -41,11 +41,11 @@ public class TCClassFactoryImpl implements TCClassFactory {
   private final ClassProvider         classProvider;
   private final DNAEncoding           encoding;
 
-  public TCClassFactoryImpl(TCFieldFactory fieldFactory, DSOClientConfigHelper config, ClassProvider classProvider) {
+  public TCClassFactoryImpl(TCFieldFactory fieldFactory, DSOClientConfigHelper config, ClassProvider classProvider, DNAEncoding dnaEncoding) {
     this.fieldFactory = fieldFactory;
     this.config = config;
     this.classProvider = classProvider;
-    this.encoding = new ApplicatorDNAEncodingImpl(classProvider);
+    this.encoding = dnaEncoding;
   }
 
   public TCClass getOrCreate(Class clazz, ClientObjectManager objectManager) {

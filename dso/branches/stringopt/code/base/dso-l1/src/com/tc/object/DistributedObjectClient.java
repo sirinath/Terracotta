@@ -48,6 +48,7 @@ import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.event.DmiManager;
 import com.tc.object.event.DmiManagerImpl;
 import com.tc.object.field.TCFieldFactory;
@@ -249,8 +250,9 @@ public class DistributedObjectClient extends SEDA {
 
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
+    DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
-        .getCommitTransactionMessageFactory(), new ApplicatorDNAEncodingImpl(classProvider));
+        .getCommitTransactionMessageFactory(), encoding);
 
     rtxManager = new RemoteTransactionManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
@@ -275,7 +277,7 @@ public class DistributedObjectClient extends SEDA {
     BatchSequence sequence = new BatchSequence(remoteIDProvider, 50000);
     ObjectIDProvider idProvider = new ObjectIDProviderImpl(sequence);
 
-    TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider);
+    TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, encoding);
     TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
     ToggleableReferenceManager toggleRefMgr = new ToggleableReferenceManager();
