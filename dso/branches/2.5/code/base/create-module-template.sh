@@ -101,7 +101,7 @@ EOF
   <parent>
     <artifactId>parent</artifactId>
     <groupId>org.terracotta</groupId>
-    <version>2.5.3-SNAPSHOT</version>
+    <version>2.5.4-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>*** MODULE NAME ***</artifactId>
