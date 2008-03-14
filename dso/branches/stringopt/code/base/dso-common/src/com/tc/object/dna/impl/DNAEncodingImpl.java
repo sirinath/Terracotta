@@ -12,12 +12,12 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.StringUtil;
 
 import gnu.trove.TObjectIntHashMap;
 
@@ -241,7 +241,7 @@ public class DNAEncodingImpl implements DNAEncoding {
         String s = (String) value;
         byte stringInterned = STRING_TYPE_NON_INTERNED;
 
-        if (ManagerUtil.isInterned(s)) {
+        if (StringUtil.isInterned(s)) {
           stringInterned = STRING_TYPE_INTERNED;
         }
 

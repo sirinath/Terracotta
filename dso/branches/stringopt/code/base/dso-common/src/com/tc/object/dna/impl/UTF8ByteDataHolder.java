@@ -4,7 +4,7 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.util.StringUtil;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -35,7 +35,7 @@ public class UTF8ByteDataHolder implements Serializable {
       throw new AssertionError(e);
     }
 
-    if (ManagerUtil.isInterned(str)) {
+    if (StringUtil.isInterned(str)) {
       this.interned = true;
     } else {
       this.interned = false;

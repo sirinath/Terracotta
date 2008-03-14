@@ -239,6 +239,7 @@ public class TestConfigObject {
 
   public String getL2StartupJavaHome() {
     String result = this.properties.getProperty(L2_STARTUP_JAVA_HOME);
+    result = null;
     if (result == null && Vm.isJDK15Compliant()) {
       result = System.getProperty("java.home");
     }

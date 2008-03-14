@@ -10,14 +10,13 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
-import com.tc.object.bytecode.JavaLangStringIntern;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.util.StringUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -212,14 +211,10 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
   public void testUncompressedInternedStringDecoding() throws Exception {
     String littleString = new String("abc");
-    littleString = intern(littleString);
+    littleString = StringUtil.intern(littleString);
     helpTestStringEncodingDecoding(littleString, false, true);
   }
   
-  private String intern(Object str) {
-    return ((JavaLangStringIntern)str).__tc_intern();
-  }
-
   public void testUncompressedStringDecoding() throws Exception {
     String littleString = new String("abc");
     helpTestStringEncodingDecoding(littleString, false, false);
@@ -232,7 +227,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
   
   public void testCompressedInternedStringDecoding() throws Exception {
     String bigString = getBigString(100000);
-    bigString = intern(bigString);
+    bigString = StringUtil.intern(bigString);
     helpTestStringEncodingDecoding(bigString, true, true);
   }
 
@@ -329,8 +324,8 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     UTF8ByteDataHolder utf8Holder;
     String str2;
 
-    str2 = ManagerUtil.intern(str1);
-    assertTrue(ManagerUtil.isInterned(str2));
+    str2 = StringUtil.intern(str1);
+    assertTrue(StringUtil.isInterned(str2));
 
     utf8Holder = new UTF8ByteDataHolder(str2);
     assertTrue(utf8Holder.isInterned());
@@ -341,11 +336,11 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     DNAEncoding encoding = getApplicatorEncoding();
 
     String orgStr = new String("Life is a interned Circle");
-    String str = ManagerUtil.intern(orgStr);
+    String str = StringUtil.intern(orgStr);
     encoding.encode(str, output);
 
     String temp = new String("May be, life is a interned Triangle");
-    str = ManagerUtil.intern(temp);
+    str = StringUtil.intern(temp);
     UTF8ByteDataHolder orgUTF = new UTF8ByteDataHolder(str);
     encoding.encode(orgUTF, output);
 
@@ -371,26 +366,26 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     input = new TCByteBufferInputStream(data);
     str = (String) encoding.decode(input);
     assertEquals(orgStr, str);
-    assertTrue(ManagerUtil.isInterned(str));
+    assertTrue(StringUtil.isInterned(str));
     str = (String) encoding.decode(input);
     assertEquals(orgUTF.asString(), str);
-    assertTrue(ManagerUtil.isInterned(str));
+    assertTrue(StringUtil.isInterned(str));
     str = (String) encoding.decode(input);
     assertEquals(orgNonIntStr, str);
-    assertFalse(ManagerUtil.isInterned(str));
+    assertFalse(StringUtil.isInterned(str));
     assertEquals(0, input.available());
 
     encoding = getSerializerEncoder();
     input = new TCByteBufferInputStream(data);
     str = (String) encoding.decode(input);
     assertEquals(orgStr, str);
-    assertTrue(ManagerUtil.isInterned(str));
+    assertTrue(StringUtil.isInterned(str));
     decoded = (UTF8ByteDataHolder) encoding.decode(input);
     assertEquals(orgUTF, decoded);
     assertTrue(decoded.isInterned());
     str = (String) encoding.decode(input);
     assertEquals(orgNonIntStr, str);
-    assertFalse(ManagerUtil.isInterned(str));
+    assertFalse(StringUtil.isInterned(str));
     assertEquals(0, input.available());
   }
 
