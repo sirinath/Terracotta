@@ -34,7 +34,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangString", "com/tc/object/bytecode/JavaLangStringIntern" });
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangString", "com/tc/lang/JavaLangStringIntern" });
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
