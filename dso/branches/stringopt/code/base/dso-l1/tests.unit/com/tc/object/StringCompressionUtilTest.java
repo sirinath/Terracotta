@@ -5,7 +5,10 @@ package com.tc.object;
 
 
 
+import com.tc.io.TCByteArrayOutputStream;
+
 import java.util.Arrays;
+import java.util.zip.DeflaterOutputStream;
 
 import junit.framework.TestCase;
 
@@ -61,13 +64,32 @@ public class StringCompressionUtilTest extends TestCase {
     assertNull(StringCompressionUtil.decompressCompressedChars(testChars, test.length()));
   }  
   
+  public static char[] compressToChars(byte[] uncompressedString){
+    byte[] compressed = compressString(uncompressedString);
+    return StringCompressionUtil.toCharArray(compressed);
+  }
+  
+  public static byte[] compressString(byte[] uncompressed) {
+    try {      
+      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
+      // Stride is 512 bytes by default, should I increase ?
+      DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
+      dos.write(uncompressed);
+      dos.close();
+      byte[] compressed = byteArrayOS.getInternalArray();
+      return compressed;
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
+  }
+  
   public void testDecompressCompressedString() throws Exception {
     String test = getTestString();
     byte[] testBytes = test.getBytes("UTF-8");
     char[] testChars = new char[test.length()];
     test.getChars(0, test.length(), testChars, 0);    
     
-    char[] compressedChars = StringCompressionUtil.compressToChars(testBytes);
+    char[] compressedChars = compressToChars(testBytes);
     
     assertTrue(compressedChars.length < testChars.length);
     

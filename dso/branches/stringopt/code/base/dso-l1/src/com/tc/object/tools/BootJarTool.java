@@ -37,7 +37,6 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.geronimo.GeronimoLoaderNaming;
 import com.tc.hibernate.HibernateProxyInstance;
 import com.tc.ibatis.IBatisAccessPlanInstance;
-import com.tc.io.TCByteArrayOutputStream;
 import com.tc.jboss.JBossLoaderNaming;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.NullTCLogger;
@@ -496,7 +495,6 @@ public class BootJarTool {
       loadTerracottaClass(OverrideCheck.class.getName());
       loadTerracottaClass(JavaLangStringTC.class.getName());
       loadTerracottaClass(StringCompressionUtil.class.getName());
-      loadTerracottaClass(TCByteArrayOutputStream.class.getName());
 
       // These classes need to be specified as literal in order to prevent
       // the static block of IdentityWeakHashMap from executing during generating

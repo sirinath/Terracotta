@@ -209,6 +209,15 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     return rv;
   }
 
+//  public void testCompressedUnicodeDecoding() throws Exception { 
+//    String example = new String("Hallo, verrückte Welt!");
+//    StringBuffer big = new StringBuffer();
+//    for(int i=0; i<1000; i++) {
+//      big.append(example);
+//    }
+//    helpTestStringEncodingDecoding(big.toString(), true, false);
+//  }
+  
   public void testUncompressedInternedStringDecoding() throws Exception {
     String littleString = new String("abc");
     littleString = StringTCUtil.intern(littleString);
