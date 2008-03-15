@@ -3,11 +3,8 @@
  */
 package com.tc.object;
 
-import com.tc.io.TCByteArrayOutputStream;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -29,11 +26,6 @@ public class StringCompressionUtil {
     return (compressedString.length > 0 && COMPRESSION_FLAG == compressedString[0]);
   }
 
-  public static char[] compressToChars(byte[] uncompressedString){
-    byte[] compressed = compressString(uncompressedString);
-    return toCharArray(compressed);
-  }
-  
   public static char[] toCharArray(byte[] bytes) {
     
     int remainder = bytes.length%2;
@@ -69,20 +61,6 @@ public class StringCompressionUtil {
     return bytes;
   }
 
-  public static byte[] compressString(byte[] uncompressed) {
-    try {      
-      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
-      // Stride is 512 bytes by default, should I increase ?
-      DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
-      dos.write(uncompressed);
-      dos.close();
-      byte[] compressed = byteArrayOS.getInternalArray();
-      return compressed;
-    } catch (Exception e) {
-      throw new AssertionError(e);
-    }
-  }
-  
   public static byte[] decompressString(byte[] compressedString, int uncompressedLength){
     try {
       ByteArrayInputStream bais = new ByteArrayInputStream(compressedString);

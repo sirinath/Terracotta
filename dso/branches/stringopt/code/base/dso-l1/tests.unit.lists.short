@@ -3,8 +3,9 @@ ClientObjectManagerTest
 ClientLockManagerTest
 ClientTransactionManagerTest
 DNAImplTest
-ObjectDNAImplTest
-RemoteTransactionManagerTest
 HashMapTCTest
 ModulesLoaderTest
+ObjectDNAImplTest
+RemoteTransactionManagerTest
+StringCompressionUtilTest
 VersionizedDNAWrapperTest
