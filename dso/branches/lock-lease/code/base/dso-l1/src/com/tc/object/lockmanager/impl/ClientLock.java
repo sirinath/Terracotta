@@ -103,7 +103,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     return isHeldBy(threadID, lockType);
   }
   
-  private void debug(String str) {
+  private static void debug(String str) {
     //System.err.println(str);
   }
 
@@ -564,7 +564,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
                                       + level + ", requesterID: " + threadID + "]");
       }
       debug(lockID + " level: " + level + " " + threadID + " is greedy: " + LockLevel.isGreedy(level));
-      Thread.dumpStack();
+      //Thread.dumpStack();
       if (LockLevel.isGreedy(level)) {
         Assert.assertEquals(threadID, ThreadID.VM_ID);
         // A Greedy lock is issued by the server. From now on client handles all lock awards until
@@ -784,7 +784,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     // debug("recallCommit() - BEGIN - ", "");
     if (greediness.isRecallInProgress()) {
       debug("recallCommit for lock " + lockID);
-      Thread.dumpStack();
+      //Thread.dumpStack();
 
       if (recallTimer != null) {
         recallTimer.cancel();
@@ -798,7 +798,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     } else {
       logger.debug(lockID + " : recallCommit() : skipping as the state is not RECALL_IN_PROGRESS !");
       debug("recallCommit for lock " + lockID + " recall is not in progress");
-      Thread.dumpStack();
+      //Thread.dumpStack();
     }
   }
 
@@ -939,7 +939,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
                          + " canProceedWithRecallOnLease map.size: " + map.size()
                          + " pendingRequestsOtherThanHolders: " + pendingRequestsOtherThanHolders + " "
                          + System.identityHashCode(this));
-      Thread.dumpStack();
+      //Thread.dumpStack();
       if (leaseTime) {
         return (map.size() == 0) && !pendingRequestsOtherThanHolders;
       } else {
@@ -1509,8 +1509,10 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     void add(int l) {
       this.level |= l;
       debug("Adding to greediness: " + l);
-      Thread.dumpStack();
-      state = GREEDY;
+      //Thread.dumpStack();
+      if (state != GREEDY_LEASE) {
+        state = GREEDY;
+      }
     }
 
     int getLevel() {
