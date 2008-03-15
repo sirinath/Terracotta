@@ -27,7 +27,8 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   private final boolean       isAzul;
   private final boolean       isIBM;
 
-  public JavaLangStringAdapter(ClassVisitor cv, VmVersion vmVersion, boolean portableStringBuffer, boolean isAzul, boolean isIBM) {
+  public JavaLangStringAdapter(ClassVisitor cv, VmVersion vmVersion, boolean portableStringBuffer, boolean isAzul,
+                               boolean isIBM) {
     super(cv);
     this.vmVersion = vmVersion;
     this.portableStringBuffer = portableStringBuffer;
@@ -36,7 +37,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangString", "com/tc/lang/JavaLangStringIntern" });
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangStringTC" });
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
@@ -68,7 +69,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     if ("value".equals(name)) {
-      // Remove final modifier and add volatile on char[] value.  We will need to modify
+      // Remove final modifier and add volatile on char[] value. We will need to modify
       // this field when decompressing a string value.
       return super.visitField(ACC_PRIVATE + ACC_VOLATILE, "value", "[C", null, null);
     } else {
@@ -88,17 +89,16 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   private void addStringTCMethods() {
-    
+
     // public boolean __tc_isCompressed()
-    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "isCompressed", "()Z",
-                                         null, null);
+    MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "isCompressed", "()Z", null, null);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/String", "$__tc_compressed", "Z");
     mv.visitInsn(IRETURN);
     mv.visitMaxs(1, 1);
     mv.visitEnd();
-    
+
     // public void __tc_decompress
     mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "decompress", "()V", null, null);
     mv.visitCode();
@@ -107,12 +107,12 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitInsn(POP);
     mv.visitInsn(RETURN);
     mv.visitMaxs(1, 1);
-    mv.visitEnd();    
+    mv.visitEnd();
   }
 
   private void addStringInternTCNature() {
     // private boolean $__tc_interned;
-    super.visitField(ACC_PRIVATE, INTERN_FIELD_NAME, "Z", null, null);
+    super.visitField(ACC_PRIVATE + ACC_VOLATILE + ACC_TRANSIENT, INTERN_FIELD_NAME, "Z", null, null);
 
     // public String __tc_intern(String) - TC version of String.intern()
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, ByteCodeUtil.TC_METHOD_PREFIX + "intern", "()Ljava/lang/String;",
@@ -155,7 +155,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLabel(l1);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_0);
-    if(isIBM) {   // IBM named theirs "hashCode" while Sun, etc use "hash"
+    if (isIBM) { // IBM named theirs "hashCode" while Sun, etc use "hash"
       mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hashCode", "I");
     } else {
       mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");
@@ -169,10 +169,10 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLabel(l3);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ILOAD, 4);
-    if(isIBM) {   // IBM named theirs "hashCode" while Sun,etc use "hash"
+    if (isIBM) { // IBM named theirs "hashCode" while Sun,etc use "hash"
       mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hashCode", "I");
     } else {
-      mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");      
+      mv.visitFieldInsn(PUTFIELD, "java/lang/String", "hash", "I");
     }
     Label l4 = new Label();
     mv.visitLabel(l4);
@@ -195,7 +195,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
       mv.visitFieldInsn(PUTFIELD, "java/lang/String", "offset", "I");
-    }    
+    }
     Label l8 = new Label();
     mv.visitLabel(l8);
     mv.visitInsn(RETURN);
@@ -205,7 +205,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitLocalVariable("compressed", "Z", null, l0, l9, 1);
     mv.visitLocalVariable("compressedData", "[C", null, l0, l9, 2);
     mv.visitLocalVariable("uncompressedLength", "I", null, l0, l9, 3);
-    if(isIBM) {
+    if (isIBM) {
       mv.visitLocalVariable("hashCode", "I", null, l0, l9, 4);
     } else {
       mv.visitLocalVariable("hash", "I", null, l0, l9, 4);
@@ -215,21 +215,22 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   /**
-  private char[] __tc_getvalue(){
-    if ($__tc_compressed){
-      byte[] uncompressed = StringCompressionUtil.decompressCompressedChars(value, count);
-      if (uncompressed != null){
-        try {
-          value = StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length);
-        } catch (UnsupportedEncodingException e) {
-          //should never happen
-        }
-        $__tc_compressed=false;
-      }
-    }
-    return value;
-  }
+   * private char[] __tc_getvalue() { 
+   *    if ($__tc_compressed){ 
+   *      byte[] uncompressed = StringCompressionUtil.decompressCompressedChars(value, count); 
+   *      if (uncompressed != null) { 
+   *        try { 
+   *            value =  StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length); 
+   *        } catch (UnsupportedEncodingException e) {
+   *            //should never happen 
+   *        } 
+   *      $__tc_compressed=false; 
+   *      } 
+   *    } 
+   *    return value; 
+   * }
    */
+  
   private void addGetValueMethod() {
     MethodVisitor mv = super.visitMethod(ACC_PRIVATE, ByteCodeUtil.fieldGetterMethod("value"), "()[C", null, null);
     mv.visitCode();

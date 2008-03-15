@@ -7,11 +7,10 @@ package com.tc.object;
 import com.tc.io.TCDataInput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.bytecode.JavaLangString;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
-import com.tc.util.StringUtil;
+import com.tc.util.StringTCUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -78,8 +77,8 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
         if (STRING_COMPRESSION_LOGGING_ENABLED) {
           logger.info("Decompressing and interning string.");
         }
-        decompress(s);
-        return StringUtil.intern(s);
+        StringTCUtil.decompress(s);
+        return StringTCUtil.intern(s);
       } else {
         return s;
       }
@@ -88,9 +87,4 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
     }
   }
 
-  private void decompress(Object string) {
-    if (string instanceof JavaLangString) {
-      ((JavaLangString) string).__tc_decompress();
-    }
-  }
 }
