@@ -16,7 +16,7 @@ import com.tc.object.dna.impl.ClassInstance;
 import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.util.StringUtil;
+import com.tc.util.StringTCUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -211,23 +211,23 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
   public void testUncompressedInternedStringDecoding() throws Exception {
     String littleString = new String("abc");
-    littleString = StringUtil.intern(littleString);
+    littleString = StringTCUtil.intern(littleString);
     helpTestStringEncodingDecoding(littleString, false, true);
   }
-  
+
   public void testUncompressedStringDecoding() throws Exception {
     String littleString = new String("abc");
     helpTestStringEncodingDecoding(littleString, false, false);
   }
-  
+
   public void testCompressedStringDecoding() throws Exception {
     String bigString = getBigString(100000);
     helpTestStringEncodingDecoding(bigString, true, false);
   }
-  
+
   public void testCompressedInternedStringDecoding() throws Exception {
     String bigString = getBigString(100000);
-    bigString = StringUtil.intern(bigString);
+    bigString = StringTCUtil.intern(bigString);
     helpTestStringEncodingDecoding(bigString, true, true);
   }
 
@@ -244,7 +244,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
 
     assertEquals(compressed, decoded.isCompressed());
-    if(compressed) {
+    if (compressed) {
       assertEquals(s.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
       System.err.println("Compressed String length = " + decoded.getBytes().length);
       assertEquals(s.length(), decoded.getStringLength());
@@ -324,8 +324,8 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     UTF8ByteDataHolder utf8Holder;
     String str2;
 
-    str2 = StringUtil.intern(str1);
-    assertTrue(StringUtil.isInterned(str2));
+    str2 = StringTCUtil.intern(str1);
+    assertTrue(StringTCUtil.isInterned(str2));
 
     utf8Holder = new UTF8ByteDataHolder(str2);
     assertTrue(utf8Holder.isInterned());
@@ -336,11 +336,11 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     DNAEncoding encoding = getApplicatorEncoding();
 
     String orgStr = new String("Life is a interned Circle");
-    String str = StringUtil.intern(orgStr);
+    String str = StringTCUtil.intern(orgStr);
     encoding.encode(str, output);
 
     String temp = new String("May be, life is a interned Triangle");
-    str = StringUtil.intern(temp);
+    str = StringTCUtil.intern(temp);
     UTF8ByteDataHolder orgUTF = new UTF8ByteDataHolder(str);
     encoding.encode(orgUTF, output);
 
@@ -366,26 +366,26 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     input = new TCByteBufferInputStream(data);
     str = (String) encoding.decode(input);
     assertEquals(orgStr, str);
-    assertTrue(StringUtil.isInterned(str));
+    assertTrue(StringTCUtil.isInterned(str));
     str = (String) encoding.decode(input);
     assertEquals(orgUTF.asString(), str);
-    assertTrue(StringUtil.isInterned(str));
+    assertTrue(StringTCUtil.isInterned(str));
     str = (String) encoding.decode(input);
     assertEquals(orgNonIntStr, str);
-    assertFalse(StringUtil.isInterned(str));
+    assertFalse(StringTCUtil.isInterned(str));
     assertEquals(0, input.available());
 
     encoding = getSerializerEncoder();
     input = new TCByteBufferInputStream(data);
     str = (String) encoding.decode(input);
     assertEquals(orgStr, str);
-    assertTrue(StringUtil.isInterned(str));
+    assertTrue(StringTCUtil.isInterned(str));
     decoded = (UTF8ByteDataHolder) encoding.decode(input);
     assertEquals(orgUTF, decoded);
     assertTrue(decoded.isInterned());
     str = (String) encoding.decode(input);
     assertEquals(orgNonIntStr, str);
-    assertFalse(StringUtil.isInterned(str));
+    assertFalse(StringTCUtil.isInterned(str));
     assertEquals(0, input.available());
   }
 

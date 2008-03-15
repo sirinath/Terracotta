@@ -39,7 +39,6 @@ import com.tc.hibernate.HibernateProxyInstance;
 import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.io.TCByteArrayOutputStream;
 import com.tc.jboss.JBossLoaderNaming;
-import com.tc.lang.JavaLangStringIntern;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
@@ -70,8 +69,8 @@ import com.tc.object.bytecode.HashtableClassAdapter;
 import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
 import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
 import com.tc.object.bytecode.JavaLangReflectProxyClassAdapter;
-import com.tc.object.bytecode.JavaLangString;
 import com.tc.object.bytecode.JavaLangStringAdapter;
+import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
 import com.tc.object.bytecode.JavaNetURLAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierDebugClassAdapter;
@@ -495,8 +494,7 @@ public class BootJarTool {
       loadTerracottaClass(TCProperties.class.getName());
       loadTerracottaClass(ClusterEventListener.class.getName());
       loadTerracottaClass(OverrideCheck.class.getName());
-      loadTerracottaClass(JavaLangString.class.getName());
-      loadTerracottaClass(JavaLangStringIntern.class.getName());
+      loadTerracottaClass(JavaLangStringTC.class.getName());
       loadTerracottaClass(StringCompressionUtil.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
 

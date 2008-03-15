@@ -4,8 +4,6 @@
  */
 package com.tc.util;
 
-import com.tc.lang.JavaLangStringIntern;
-
 import java.util.Arrays;
 
 /**
@@ -264,33 +262,4 @@ public class StringUtil {
   public static final String getNonNull(String s) {
     return getNonNull(s, EMPTY);
   }
-
-  /**
-   * Check whether the String is interned. Adapted java.lang.String has a method to query this.
-   * 
-   * @param string Object
-   * @return true if the string is interned
-   */
-  public static boolean isInterned(Object str) {
-    if ((str instanceof JavaLangStringIntern) && (((JavaLangStringIntern) str).__tc_isInterned())) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
-   * Invoke String method __tc_intern (adapted) - kind of hack to avoid using reflection
-   * 
-   * @param string object
-   * @return string interned
-   */
-  public static String intern(Object str) {
-    if (str instanceof JavaLangStringIntern) {
-      return ((JavaLangStringIntern) str).__tc_intern();
-    } else {
-      throw Assert.failure("Expected to call JavaLangStringIntern.__tc_intern() on a String");
-    }
-  }
-
 }

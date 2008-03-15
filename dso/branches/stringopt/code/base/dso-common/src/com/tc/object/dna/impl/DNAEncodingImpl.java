@@ -17,7 +17,7 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
-import com.tc.util.StringUtil;
+import com.tc.util.StringTCUtil;
 
 import gnu.trove.TObjectIntHashMap;
 
@@ -241,7 +241,7 @@ public class DNAEncodingImpl implements DNAEncoding {
         String s = (String) value;
         byte stringInterned = STRING_TYPE_NON_INTERNED;
 
-        if (StringUtil.isInterned(s)) {
+        if (StringTCUtil.isInterned(s)) {
           stringInterned = STRING_TYPE_INTERNED;
         }
 
