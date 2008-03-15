@@ -416,7 +416,7 @@ public class Lock {
     Holder holder = awardAndRespond(clientTx, txn.getId().getClientThreadID(), greedyLevel, lockResponseSink);
     holder.setSink(lockResponseSink);
     debug(lockID + " grant to " + holder.getNodeID() + " level: " + holder.getLockLevel());
-    Thread.dumpStack();
+    //Thread.dumpStack();
     greedyHolders.put(ch, holder);
     clearWaitingOn(txn);
   }
@@ -449,7 +449,7 @@ public class Lock {
 
   private void recallWithLease(int recallLevel) {
     debug("Recalling " + lockID + " level " + recallLevel + " recalled: " + recalled);
-    Thread.dumpStack();
+    //Thread.dumpStack();
     if (recalled) { return; }
     recordLockHoppedStat();
     for (Iterator i = greedyHolders.values().iterator(); i.hasNext();) {
