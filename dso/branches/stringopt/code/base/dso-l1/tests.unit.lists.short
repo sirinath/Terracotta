@@ -2,6 +2,9 @@ ApplicatorDNAEncodingTest
 ClientObjectManagerTest
 ClientLockManagerTest
 ClientTransactionManagerTest
+DNAImplTest
+ObjectDNAImplTest
 RemoteTransactionManagerTest
 HashMapTCTest
 ModulesLoaderTest
+VersionizedDNAWrapperTest
