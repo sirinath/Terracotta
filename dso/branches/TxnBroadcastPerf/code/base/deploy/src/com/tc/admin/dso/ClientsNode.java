@@ -1,0 +1,178 @@
+/*
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ */
+package com.tc.admin.dso;
+
+import com.tc.admin.AdminClient;
+import com.tc.admin.AdminClientContext;
+import com.tc.admin.ClusterNode;
+import com.tc.admin.ConnectionContext;
+import com.tc.admin.common.ComponentNode;
+import com.tc.admin.common.XTreeModel;
+import com.tc.admin.common.XTreeNode;
+import com.tc.stats.DSOMBean;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import javax.management.Notification;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.swing.SwingUtilities;
+
+public class ClientsNode extends ComponentNode implements NotificationListener {
+  private ClusterNode m_clusterNode;
+  private ConnectionContext m_cc;
+  private DSOClient[] m_clients;
+
+  public ClientsNode(ClusterNode clusterNode) throws Exception {
+    super();
+    m_clusterNode = clusterNode;
+    init();
+  }
+
+  private void init() throws Exception {
+    removeAllChildren();
+    
+    m_cc = m_clusterNode.getConnectionContext();
+    ObjectName dso = DSOHelper.getHelper().getDSOMBean(m_cc);
+    m_clients = ClientsHelper.getHelper().getClients(m_cc);
+
+    for (int i = 0; i < m_clients.length; i++) {
+      add(createClientNode(m_cc, m_clients[i]));
+    }
+
+    ClientsPanel panel = createClientsPanel(m_cc, this, m_clients);
+    panel.setNode(this);
+    updateLabel();
+    setComponent(panel);
+
+    m_cc.addNotificationListener(dso, this);
+  }
+  
+  protected ClientNode createClientNode(ConnectionContext cc, DSOClient client) {
+    return new ClientNode(cc, client);
+  }
+  
+  protected ClientsPanel createClientsPanel(ConnectionContext cc, ClientsNode clientsNode, DSOClient[] clients) {
+    return new ClientsPanel(cc, this, clients);
+  }
+  
+  public void newConnectionContext() {
+    try {
+      init();
+    } catch(Exception e) {/**/}
+  }
+  
+  void selectClientNode(String remoteAddr) {
+    int childCount = getChildCount();
+    for (int i = 0; i < childCount; i++) {
+      ClientNode ctn = (ClientNode) getChildAt(i);
+      String ctnRemoteAddr = ctn.getClient().getRemoteAddress();
+      if (ctnRemoteAddr.equals(remoteAddr)) {
+        AdminClient.getContext().controller.select(ctn);
+        return;
+      }
+    }
+  }
+
+  public DSOClient[] getClients() {
+    return m_clients;
+  }
+
+  private boolean haveClient(ObjectName objectName) {
+    if (m_clients == null) return false;
+    for (DSOClient client : m_clients) {
+      if (client.getObjectName().equals(objectName)) { return true; }
+    }
+    return false;
+  }
+
+  public void handleNotification(final Notification notice, final Object handback) {
+    String type = notice.getType();
+
+    if (DSOMBean.CLIENT_ATTACHED.equals(type) || DSOMBean.CLIENT_DETACHED.equals(type)) {
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          internalHandleNotification(notice, handback);
+          updateLabel();
+        }
+      });
+    }
+  }
+
+  private void updateLabel() {
+    setLabel(AdminClient.getContext().getMessage("clients") + " (" + getChildCount() + ")");
+    nodeChanged();
+  }
+
+  private void internalHandleNotification(Notification notice, Object handback) {
+    String type = notice.getType();
+
+    if (DSOMBean.CLIENT_ATTACHED.equals(type)) {
+      AdminClientContext acc = AdminClient.getContext();
+      acc.setStatus(acc.getMessage("dso.client.retrieving"));
+
+      ObjectName clientObjectName = (ObjectName) notice.getSource();
+      if (haveClient(clientObjectName)) return;
+
+      DSOClient client = new DSOClient(m_cc, clientObjectName);
+      ArrayList<DSOClient> list = new ArrayList<DSOClient>(Arrays.asList(m_clients));
+
+      list.add(client);
+      m_clients = list.toArray(new DSOClient[0]);
+
+      ClientNode ctn = new ClientNode(m_cc, client);
+      XTreeModel model = getModel();
+      if (model != null) {
+        model.insertNodeInto(ctn, this, getChildCount());
+      } else {
+        add(ctn);
+      }
+
+      ((ClientsPanel) getComponent()).add(client);
+
+      acc.setStatus(acc.getMessage("dso.client.new") + client);
+    } else if (DSOMBean.CLIENT_DETACHED.equals(type)) {
+      AdminClientContext acc = AdminClient.getContext();
+
+      acc.setStatus(acc.getMessage("dso.client.detaching"));
+
+      int nodeIndex = -1;
+      ObjectName clientObjectName = (ObjectName) notice.getSource();
+      ArrayList<DSOClient> list = new ArrayList<DSOClient>(Arrays.asList(m_clients));
+      DSOClient client = null;
+
+      for (int i = 0; i < list.size(); i++) {
+        client = list.get(i);
+
+        if (client.getObjectName().equals(clientObjectName)) {
+          list.remove(client);
+          m_clients = list.toArray(new DSOClient[] {});
+          nodeIndex = i;
+          break;
+        }
+      }
+
+      if (nodeIndex != -1) {
+        acc.controller.remove((XTreeNode) getChildAt(nodeIndex));
+        ((ClientsPanel) getComponent()).remove(client);
+      }
+
+      acc.setStatus(acc.getMessage("dso.client.detached") + client);
+    }
+  }
+
+  public void tearDown() {
+    try {
+      ObjectName dso = DSOHelper.getHelper().getDSOMBean(m_cc);
+      if (dso != null) {
+        m_cc.removeNotificationListener(dso, this);
+      }
+    } catch (Exception e) {/**/
+    }
+    m_clients = null;
+
+    super.tearDown();
+  }
+}
