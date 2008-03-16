@@ -8,6 +8,7 @@ import com.tc.statistics.store.exceptions.StatisticsStoreException;
 
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.Writer;
 
 public interface StatisticsStore {
   public void open() throws StatisticsStoreException;
@@ -24,6 +25,8 @@ public interface StatisticsStore {
 
   public String[] getAvailableSessionIds() throws StatisticsStoreException;
 
+  public String[] getAvailableAgentDifferentiators(String sessionId) throws StatisticsStoreException;
+
   public void clearStatistics(String sessionId) throws StatisticsStoreException;
 
   public void clearAllStatistics() throws StatisticsStoreException;
@@ -31,6 +34,8 @@ public interface StatisticsStore {
   public void importCsvStatistics(Reader reader, StatisticsStoreImportListener listener) throws StatisticsStoreException;
 
   public void retrieveStatisticsAsCsvStream(OutputStream os, String filenameBase, StatisticsRetrievalCriteria criteria, boolean textformat) throws StatisticsStoreException;
+
+  public void aggregateStatisticsData(Writer writer, String sessionId, String agentDifferentiator, String[] names, String[] elements, Long interval) throws StatisticsStoreException;
 
   public void addListener(StatisticsStoreListener listener);
 

@@ -12,6 +12,7 @@ import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.store.StatisticsRetrievalCriteria;
 
 import java.io.OutputStream;
+import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -68,6 +69,13 @@ public class StatisticsGathererServlet extends RestfulServlet {
   public void methodGetAvailableSessionIds(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     String[] sessionids = system.getStatisticsStore().getAvailableSessionIds();
     print(response, sessionids);
+  }
+
+  public void methodGetAvailableAgentDifferentiators(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    String sessionid = request.getParameter("sessionId");
+    if (null == sessionid) throw new IllegalArgumentException("sessionId");
+    String[] result = system.getStatisticsStore().getAvailableAgentDifferentiators(sessionid);
+    print(response, result);
   }
 
   public void methodGetSupportedStatistics(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
@@ -175,5 +183,20 @@ public class StatisticsGathererServlet extends RestfulServlet {
 
     OutputStream os = response.getOutputStream();
     system.getStatisticsStore().retrieveStatisticsAsCsvStream(os, filename_base, criteria, textformat);
+  }
+
+  public void methodAggregateStatisticsData(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
+    response.setContentType("text/plain");
+    response.setStatus(HttpServletResponse.SC_OK);
+
+    Long interval = null;
+    String interval_string = request.getParameter("interval");
+    if (interval_string != null) {
+      interval = new Long(interval_string);
+    }
+
+    Writer writer = response.getWriter();
+    system.getStatisticsStore().aggregateStatisticsData(writer, request.getParameter("sessionId"), request.getParameter("agentDifferentiator"), request.getParameterValues("names"), request.getParameterValues("elements"), interval);
+    writer.close();
   }
 }
