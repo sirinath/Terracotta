@@ -20,6 +20,10 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
+import com.tc.stats.counter.CounterManager;
+import com.tc.stats.counter.CounterManagerImpl;
+import com.tc.stats.counter.sampled.SampledCounter;
+import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.util.SequenceGenerator;
 import com.tc.util.SequenceID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
@@ -54,8 +58,15 @@ public class RemoteTransactionManagerTest extends TestCase {
     batchFactory = new TestTransactionBatchFactory();
     batchAccounting = new TransactionBatchAccounting();
     lockAccounting = new LockAccounting();
+    CounterManager sampledCounterManager = new CounterManagerImpl();
+    SampledCounter numTransactionCounter = (SampledCounter)sampledCounterManager
+      .createCounter(new SampledCounterConfig(1, 900, true, 0L));
+    SampledCounter numBatchesCounter = (SampledCounter)sampledCounterManager
+      .createCounter(new SampledCounterConfig(1, 900, true, 0L));
+    SampledCounter outstandingBatchCounter = (SampledCounter)sampledCounterManager
+      .createCounter(new SampledCounterConfig(1, 900, true, 0L));;
     manager = new RemoteTransactionManagerImpl(logger, batchFactory, batchAccounting, lockAccounting,
-                                               new NullSessionManager(), new MockChannel());
+                                               new NullSessionManager(), new MockChannel(), outstandingBatchCounter, numTransactionCounter, numBatchesCounter);
     number = new SynchronizedInt(0);
     error = new SynchronizedRef(null);
     threads = new HashMap();

@@ -5,21 +5,17 @@ package com.tctest.statistics;
 
 import com.tc.management.JMXConnectorProxy;
 import com.tc.statistics.StatisticData;
+import com.tc.statistics.StatisticType;
 import com.tc.statistics.beans.StatisticsGatewayMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
-import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
-import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
 import com.tc.statistics.retrieval.actions.SRAShutdownTimestamp;
 import com.tc.statistics.retrieval.actions.SRAStartupTimestamp;
-import com.tc.statistics.retrieval.actions.SRAThreadDump;
 import com.tc.util.UUID;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -30,7 +26,7 @@ public class StatisticsGatewayAllActionsTest extends TransparentTestBase {
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
     StatisticsGatewayMBean stat_gateway = (StatisticsGatewayMBean)MBeanServerInvocationHandler
-        .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
+      .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
 
     List<StatisticData> data = new ArrayList<StatisticData>();
     CollectingNotificationListener listener = new CollectingNotificationListener(StatisticsGatewayAllActionsTestApp.NODE_COUNT + 1);
@@ -41,15 +37,10 @@ public class StatisticsGatewayAllActionsTest extends TransparentTestBase {
     stat_gateway.createSession(sessionid);
 
     // register all the supported statistics
-    int non_triggered_actions = 0;
     String[] statistics = stat_gateway.getSupportedStatistics();
     for (String statistic : statistics) {
       stat_gateway.enableStatistic(sessionid, statistic);
-      if (!SRAThreadDump.ACTION_NAME.equals(statistic) &&
-          !SRACacheObjectsEvicted.ACTION_NAME.equals(statistic) &&
-          !SRACacheObjectsEvictRequest.ACTION_NAME.equals(statistic)) {
-        non_triggered_actions++;
-      }
+      assertTrue(StatisticType.getAllTypes().contains(StatisticType.getType(stat_gateway.getStatisticType(statistic))));
     }
 
     // start capturing
@@ -74,16 +65,10 @@ public class StatisticsGatewayAllActionsTest extends TransparentTestBase {
     assertTrue(data.size() > 2);
     assertEquals(SRAStartupTimestamp.ACTION_NAME, data.get(0).getName());
     assertEquals(SRAShutdownTimestamp.ACTION_NAME, data.get(data.size() - 1).getName());
-    Set<String> received_data_names = new HashSet<String>();
-    for (int i = 1; i < data.size() - 1; i++) {
-      StatisticData stat_data = data.get(i);
-      if (!SRAStartupTimestamp.ACTION_NAME.equals(stat_data.getName()) &&
-          !SRAShutdownTimestamp.ACTION_NAME.equals(stat_data.getName())) {
-        received_data_names.add(stat_data.getName());
-      }
-    }
-    // check that there's at least one data element name per registered statistic
-    assertTrue(received_data_names.size() > non_triggered_actions);
+    // we can't check the statistics that we've received since there are
+    // statistics that do not have data until there are some transaction
+    // between the L1 and L2.
+    // e.g. SRAMessages, SRAL2FaultsFromDisk, SRADistributedGC
   }
 
   protected Class getApplicationClass() {

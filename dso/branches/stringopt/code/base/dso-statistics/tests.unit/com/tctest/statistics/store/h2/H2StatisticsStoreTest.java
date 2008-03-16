@@ -3,6 +3,8 @@
  */
 package com.tctest.statistics.store.h2;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.database.exceptions.StatisticsDatabaseNotReadyException;
 import com.tc.statistics.database.exceptions.StatisticsDatabaseStructureFuturedatedError;
@@ -19,10 +21,12 @@ import com.tc.statistics.store.h2.H2StatisticsStoreImpl;
 import com.tc.test.TempDirectoryHelper;
 import com.tc.util.TCAssertionError;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -173,6 +177,7 @@ public class H2StatisticsStoreTest extends TestCase {
     try {
       store.storeStatistic(new StatisticData()
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .agentDifferentiator("L1/0")
         .moment(new Date())
         .name("name"));
       fail("expected exception");
@@ -185,6 +190,7 @@ public class H2StatisticsStoreTest extends TestCase {
     try {
       store.storeStatistic(new StatisticData()
         .sessionId("374938")
+        .agentDifferentiator("L1/0")
         .moment(new Date())
         .name("name"));
       fail("expected exception");
@@ -193,11 +199,25 @@ public class H2StatisticsStoreTest extends TestCase {
     }
   }
 
+  public void testStoreStatisticsDataNullAgentDifferentiator() throws Exception {
+    try {
+      store.storeStatistic(new StatisticData()
+        .sessionId("374938")
+        .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .moment(new Date())
+        .name("name"));
+      fail("expected exception");
+    } catch (NullPointerException e) {
+      // agentDifferentiator can't be null
+    }
+  }
+
   public void testStoreStatisticsDataNullMoment() throws Exception {
     try {
       store.storeStatistic(new StatisticData()
         .sessionId("374938")
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .agentDifferentiator("L1/0")
         .name("name"));
       fail("expected exception");
     } catch (NullPointerException e) {
@@ -210,6 +230,7 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId("374938")
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .agentDifferentiator("L1/0")
         .moment(new Date()));
       fail("expected exception");
     } catch (NullPointerException e) {
@@ -221,6 +242,7 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("342")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("name"));
   }
@@ -231,6 +253,7 @@ public class H2StatisticsStoreTest extends TestCase {
       store.storeStatistic(new StatisticData()
         .sessionId("342")
         .agentIp(InetAddress.getLocalHost().getHostAddress())
+        .agentDifferentiator("L1/0")
         .moment(new Date())
         .name("name")
         .data("test"));
@@ -245,6 +268,7 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("376487")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
@@ -266,6 +290,7 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("376487")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
@@ -281,6 +306,7 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("376487")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat")
       .data("stuff2"));
@@ -296,6 +322,7 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("2232")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
@@ -387,7 +414,7 @@ public class H2StatisticsStoreTest extends TestCase {
 
     TestStaticticConsumer consumer12 = new TestStaticticConsumer();
     store.retrieveStatistics(new StatisticsRetrievalCriteria()
-      .agentDifferentiator("D3")
+      .agentDifferentiator("D2")
       .addName("stat1"), consumer12);
     consumer12.ensureCorrectCounts(70, 0);
 
@@ -533,30 +560,35 @@ public class H2StatisticsStoreTest extends TestCase {
     store.storeStatistic(new StatisticData()
       .sessionId("376487")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat")
       .data("stuff"));
     store.storeStatistic(new StatisticData()
       .sessionId("12")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
     store.storeStatistic(new StatisticData()
       .sessionId("376487")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat")
       .data("stuff2"));
     store.storeStatistic(new StatisticData()
       .sessionId("2232")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
     store.storeStatistic(new StatisticData()
       .sessionId("12")
       .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
       .moment(new Date())
       .name("the stat 2")
       .data("stuff3"));
@@ -566,6 +598,57 @@ public class H2StatisticsStoreTest extends TestCase {
     assertEquals("12", sessionids[0]);
     assertEquals("2232", sessionids[1]);
     assertEquals("376487", sessionids[2]);
+  }
+
+  public void testGetAvailableAgentDifferentiators() throws Exception {
+    store.storeStatistic(new StatisticData()
+      .sessionId("376487")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff"));
+    store.storeStatistic(new StatisticData()
+      .sessionId("12")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/2")
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+    store.storeStatistic(new StatisticData()
+      .sessionId("376487")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/0")
+      .moment(new Date())
+      .name("the stat")
+      .data("stuff2"));
+    store.storeStatistic(new StatisticData()
+      .sessionId("2232")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/1")
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+    store.storeStatistic(new StatisticData()
+      .sessionId("12")
+      .agentIp(InetAddress.getLocalHost().getHostAddress())
+      .agentDifferentiator("L1/1")
+      .moment(new Date())
+      .name("the stat 2")
+      .data("stuff3"));
+
+    String[] agentdifferentiators1 = store.getAvailableAgentDifferentiators("376487");
+    assertEquals(1, agentdifferentiators1.length);
+    assertEquals("L1/0", agentdifferentiators1[0]);
+
+    String[] agentdifferentiators2 = store.getAvailableAgentDifferentiators("2232");
+    assertEquals(1, agentdifferentiators2.length);
+    assertEquals("L1/1", agentdifferentiators2[0]);
+
+    String[] agentdifferentiators3 = store.getAvailableAgentDifferentiators("12");
+    assertEquals(2, agentdifferentiators3.length);
+    assertEquals("L1/1", agentdifferentiators3[0]);
+    assertEquals("L1/2", agentdifferentiators3[1]);
   }
 
   public void testClearStatistics() throws Exception {
@@ -625,22 +708,57 @@ public class H2StatisticsStoreTest extends TestCase {
     consumer2.ensureCorrectCounts(0, 0);
   }
 
+  public void testAggregateStatisticsData() throws Exception {
+    populateBufferWithStatistics("somesession1", "somesession2", 10, 8, 4, 6);
+
+    StringWriter writer1 = new StringWriter();
+    store.aggregateStatisticsData(writer1, "somesession1", "D1", new String[] {"stat1","stat2"}, null, null);
+    String result1 = writer1.getBuffer().toString();
+    String[] result1b = StringUtils.split(result1, '\n');
+    assertEquals(result1b.length, 1);
+    assertEquals(",1,2,3,4,5,6,7,8,9,10", result1.substring(result1.indexOf(',')));
+
+    StringWriter writer2 = new StringWriter();
+    store.aggregateStatisticsData(writer2, "somesession2", "D2", new String[] {"stat1","stat2"}, null, null);
+    String result2 = writer2.getBuffer().toString();
+    String[] result2b = StringUtils.split(result2, '\n');
+    assertEquals(result2b.length, 2);
+    assertEquals(",1.0000,2.0000,3.0000,4.0000", result2b[0].substring(result2b[0].indexOf(',')));
+    int index_comma = result2b[1].indexOf(',');
+    long moment = Long.parseLong(result2b[1].substring(0, index_comma));
+    assertEquals(moment+","+(moment+1)+","+(moment+2)+","+(moment+3)+","+(moment+4)+","+(moment+5)+","+(moment+6), result2b[1]);
+
+    StringWriter writer3 = new StringWriter();
+    store.aggregateStatisticsData(writer3, "somesession1", "D1", new String[] {"stat1","stat2"}, null, new Long(3000));
+    String result3 = writer3.getBuffer().toString();
+    assertTrue(result3.length() > 0);
+
+    Thread.sleep(3500);
+
+    StringWriter writer4 = new StringWriter();
+    store.aggregateStatisticsData(writer4, "somesession1", "D1", new String[] {"stat1","stat2"}, null, new Long(3000));
+    String result4 = writer4.getBuffer().toString();
+    assertTrue(0 == result4.length());
+  }
+
   public void testCsvImport() throws Exception {
-    populateBufferWithStatistics("somesession1", "somesession2", 5000, 4000, 2500);
+    populateBufferWithStatistics("somesession1", "somesession2", 5000, 4000, 2500, 2000);
 
     final StringBuffer txt_buffer_before = new StringBuffer();
     final int[] count_before = new int[] {0};
 
-    final StringBuffer csv_buffer = new StringBuffer(StatisticData.CURRENT_CSV_HEADER);
     store.retrieveStatistics(new StatisticsRetrievalCriteria(), new StatisticDataUser() {
       public boolean useStatisticData(StatisticData data) {
         txt_buffer_before.append(data.toString());
         txt_buffer_before.append("\n");
-        csv_buffer.append(data.toCsv());
         count_before[0]++;
         return true;
       }
     });
+    
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    store.retrieveStatisticsAsCsvStream(os, "", new StatisticsRetrievalCriteria(), true);
+    String csv_buffer = os.toString("UTF-8");
 
     store.reinitialize();
 
@@ -676,9 +794,9 @@ public class H2StatisticsStoreTest extends TestCase {
     });
 
     assertTrue(started[0]);
-    assertEquals(11500, imported[0]);
+    assertEquals(13500, imported[0]);
     assertTrue(optimizing[0]);
-    assertEquals(11500, finished[0]);
+    assertEquals(13500, finished[0]);
 
     final StringBuffer txt_buffer_after = new StringBuffer();
     final int[] count_after = new int[] {0};
@@ -695,42 +813,58 @@ public class H2StatisticsStoreTest extends TestCase {
     assertEquals(count_before[0], count_after[0]);
   }
 
-  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2) throws StatisticsStoreException, UnknownHostException {
-    populateBufferWithStatistics(sessionid1, sessionid2, 100, 50, 70);
+  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2) throws StatisticsStoreException, UnknownHostException, InterruptedException {
+    populateBufferWithStatistics(sessionid1, sessionid2, 100, 50, 70, 0);
   }
 
-  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2, final int sess1stat1count, final int sess1stat2count, final int sess2stat1count) throws StatisticsStoreException, UnknownHostException {
+  private void populateBufferWithStatistics(final String sessionid1, final String sessionid2, final int sess1stat1count, final int sess1stat2count, final int sess2stat1count, final int sess2stat2count) throws StatisticsStoreException, UnknownHostException, InterruptedException {
     String ip = InetAddress.getLocalHost().getHostAddress();
+    Date date1 = new Date();
     for (int i = 1; i <= sess1stat1count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
         .agentDifferentiator("D1")
-        .moment(new Date())
+        .moment(date1)
         .name("stat1")
         .element("element1")
         .data(new Long(i)));
     }
+    Thread.sleep(10);
+    Date date2 = new Date();
     for (int i = 1; i <= sess1stat2count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid1)
         .agentIp(ip)
         .agentDifferentiator("D2")
-        .moment(new Date())
+        .moment(date2)
         .name("stat2")
         .element("element2")
         .data(String.valueOf(i)));
     }
-
+    Thread.sleep(10);
+    Date date3 = new Date();
     for (int i = 1; i <= sess2stat1count; i++) {
       store.storeStatistic(new StatisticData()
         .sessionId(sessionid2)
         .agentIp(ip)
-        .agentDifferentiator("D3")
-        .moment(new Date())
+        .agentDifferentiator("D2")
+        .moment(date3)
         .name("stat1")
         .element("element1")
         .data(new BigDecimal(String.valueOf(i+".0"))));
+    }
+    Thread.sleep(10);
+    Date date4 = new Date();
+    for (int i = 1; i <= sess2stat2count; i++) {
+      store.storeStatistic(new StatisticData()
+        .sessionId(sessionid2)
+        .agentIp(ip)
+        .agentDifferentiator("D2")
+        .moment(date4)
+        .name("stat2")
+        .element("element1")
+        .data(new Date(date4.getTime()+i)));
     }
   }
 
@@ -777,7 +911,7 @@ public class H2StatisticsStoreTest extends TestCase {
         }
         statCount1++;
         if (data.getData() instanceof BigDecimal) {
-          assertEquals("D3", data.getAgentDifferentiator());
+          assertEquals("D2", data.getAgentDifferentiator());
         } else {
           assertEquals("D1", data.getAgentDifferentiator());
         }
