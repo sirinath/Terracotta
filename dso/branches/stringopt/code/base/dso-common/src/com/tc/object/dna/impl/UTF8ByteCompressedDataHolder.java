@@ -26,7 +26,7 @@ public class UTF8ByteCompressedDataHolder extends UTF8ByteDataHolder {
   }
 
   private String inflate() {
-    return DNAEncodingImpl.inflateCompressedString(getBytes(), uncompressedLength);
+    return BaseDNAEncodingImpl.inflateCompressedString(getBytes(), uncompressedLength);
   }
 
   public String asString() {

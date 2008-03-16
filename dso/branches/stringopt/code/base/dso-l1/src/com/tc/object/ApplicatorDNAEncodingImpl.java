@@ -7,7 +7,7 @@ package com.tc.object;
 import com.tc.io.TCDataInput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.dna.impl.DNAEncodingImpl;
+import com.tc.object.dna.impl.BaseDNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
 import com.tc.util.StringTCUtil;
@@ -15,7 +15,7 @@ import com.tc.util.StringTCUtil;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 
-public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
+public class ApplicatorDNAEncodingImpl extends BaseDNAEncodingImpl {
 
   private static final Constructor COMPRESSED_STRING_CONSTRUCTOR;
   private static final TCLogger    logger = TCLogging.getLogger(ApplicatorDNAEncodingImpl.class);
@@ -34,7 +34,7 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
    * Used in the Applicators. The policy is set to APPLICATOR.
    */
   public ApplicatorDNAEncodingImpl(ClassProvider classProvider) {
-    super(APPLICATOR, classProvider);
+    super(classProvider);
   }
 
   protected boolean useStringEnumRead(byte type) {
@@ -69,7 +69,7 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
                   + stringLength + ", hash code : " + stringHash);
     }
 
-    if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
+    if (isInterned == BaseDNAEncodingImpl.STRING_TYPE_INTERNED) {
       if (STRING_COMPRESSION_LOGGING_ENABLED) {
         logger.info("Decompressing and interning string.");
       }

@@ -13,7 +13,8 @@ import com.tc.io.serializer.TCObjectInputStream;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;
-import com.tc.object.dna.impl.DNAEncodingImpl;
+import com.tc.object.dna.impl.SerializerDNAEncodingImpl;
+import com.tc.object.dna.impl.StorageDNAEncodingImpl;
 import com.tc.object.dna.impl.UTF8ByteCompressedDataHolder;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.loaders.ClassProvider;
@@ -401,11 +402,11 @@ public class ApplicatorDNAEncodingTest extends TestCase {
   }
 
   private DNAEncoding getStorageEncoder() {
-    return new DNAEncodingImpl(DNAEncoding.STORAGE);
+    return new StorageDNAEncodingImpl();
   }
 
   private DNAEncoding getSerializerEncoder() {
-    return new DNAEncodingImpl(DNAEncoding.SERIALIZER);
+    return new SerializerDNAEncodingImpl();
   }
 
   public void testClassExpand() throws Exception {

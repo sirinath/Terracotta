@@ -25,7 +25,7 @@ public class DNAEncodingTest extends TestCase {
 //  }
 
   private DNAEncoding getSerializerEncoder() {
-    return new DNAEncodingImpl(DNAEncoding.SERIALIZER);
+    return new SerializerDNAEncodingImpl();
   }
 
   public void testClassSerialize() throws Exception {
