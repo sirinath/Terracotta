@@ -60,28 +60,30 @@ public class ApplicatorDNAEncodingImpl extends DNAEncodingImpl {
     int stringLength = input.readInt();
     int stringHash = input.readInt();
 
-    try {
-      // Pack byte[] into char[] (still compressed)
-      char[] compressedChars = StringCompressionUtil.toCharArray(data);
+    // Pack byte[] into char[] (still compressed)
+    char[] compressedChars = StringCompressionUtil.toCharArray(data);
+    
+    String s = constructCompressedString(compressedChars, stringLength, stringHash);
+    if (STRING_COMPRESSION_LOGGING_ENABLED) {
+      logger.info("Read compressed String of compressed size : " + compressedChars.length + ", uncompressed size : "
+                  + stringLength + ", hash code : " + stringHash);
+    }
 
-      // Construct new string with the compressed char[] in it
-      String s = (String) COMPRESSED_STRING_CONSTRUCTOR.newInstance(new Object[] { Boolean.TRUE, compressedChars,
-          new Integer(stringLength), new Integer(stringHash) });
-
+    if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
       if (STRING_COMPRESSION_LOGGING_ENABLED) {
-        logger.info("Read compressed String of compressed size : " + compressedChars.length + ", uncompressed size : "
-                    + stringLength + ", hash code : " + stringHash);
+        logger.info("Decompressing and interning string.");
       }
-
-      if (isInterned == DNAEncodingImpl.STRING_TYPE_INTERNED) {
-        if (STRING_COMPRESSION_LOGGING_ENABLED) {
-          logger.info("Decompressing and interning string.");
-        }
-        StringTCUtil.decompress(s);
-        return StringTCUtil.intern(s);
-      } else {
-        return s;
-      }
+      StringTCUtil.decompress(s);
+      return StringTCUtil.intern(s);
+    } else {
+      return s;
+    }
+  }
+  
+  private String constructCompressedString(char[] compressedChars, int stringLength, int stringHash) {
+    try {
+      return(String) COMPRESSED_STRING_CONSTRUCTOR.newInstance(new Object[] { Boolean.TRUE, compressedChars,
+          new Integer(stringLength), new Integer(stringHash) });
     } catch (Exception e) {
       throw Assert.failure(e.getMessage(), e);
     }
