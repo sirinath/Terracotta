@@ -35,6 +35,7 @@ import gnu.trove.TIntStack;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -104,7 +105,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   }
   
   private static void debug(String str) {
-    //System.err.println(str);
+    System.err.println((new Date(System.currentTimeMillis())).toString()+str);
   }
 
   public void lock(ThreadID threadID, int lockType, String contextInfo) {

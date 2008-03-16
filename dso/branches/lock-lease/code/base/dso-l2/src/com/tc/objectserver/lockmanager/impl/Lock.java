@@ -37,6 +37,7 @@ import com.tc.util.Assert;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -271,7 +272,7 @@ public class Lock {
     if ((getHoldersCount() == 0) || ((!hasPending()) && ((requestedLockLevel == LockLevel.READ) && this.isRead()))) {
       // (0, 1) uncontended or additional read lock
       if (isPolicyGreedy() && ((requestedLockLevel == LockLevel.READ) || (getWaiterCount() == 0))) {
-        debug(lockID + " award greedily " + txn.getId().getClientThreadID());
+        debug(lockID + " award greedily " + txn.getId().getNodeID() + " " + txn.getId().getClientThreadID());
         awardGreedyAndRespond(txn, requestedLockLevel, lockResponseSink);
       } else {
         debug(lockID + " award non greedily " + txn.getId().getClientThreadID());
@@ -282,7 +283,7 @@ public class Lock {
       // (2) queue request
       debug(lockID + " " + txn.getId().getClientThreadID() + " should recall " + greedyHolders);
       if (isPolicyGreedy() && hasGreedyHolders()) {
-        recallWithLease(requestedLockLevel);
+        recallWithLease(requestedLockLevel, false);
       }
       if (!holdsGreedyLock(txn)) {
         queueRequest(txn, requestedLockLevel, lockResponseSink, noBlock, timeout, waitTimer, callback);
@@ -401,7 +402,7 @@ public class Lock {
     if (!isNull() && newPolicy != lockPolicy) {
       this.lockPolicy = newPolicy;
       if (!isPolicyGreedy()) {
-        recallWithLease(LockLevel.WRITE);
+        recallWithLease(LockLevel.WRITE, false);
       }
     }
   }
@@ -415,9 +416,9 @@ public class Lock {
     checkAndClearStateOnGreedyAward(txn.getId().getClientThreadID(), ch, requestedLockLevel);
     Holder holder = awardAndRespond(clientTx, txn.getId().getClientThreadID(), greedyLevel, lockResponseSink);
     holder.setSink(lockResponseSink);
-    debug(lockID + " grant to " + holder.getNodeID() + " level: " + holder.getLockLevel());
-    //Thread.dumpStack();
     greedyHolders.put(ch, holder);
+    debug(lockID + " grant to " + holder.getNodeID() + " greedily level: " + holder.getLockLevel() + " " + greedyHolders);
+    Thread.dumpStack();
     clearWaitingOn(txn);
   }
 
@@ -435,27 +436,31 @@ public class Lock {
   }
 
   // XXX temporary hack ...
-  private void grantRequestWithLease(Request request) {
+  private void grantRequestWithLease(Request request, boolean forced) {
     grantGreedyRequest(request);
-    if (pendingLockRequests.size() > 0) {
-      recallWithLease(request.getLockLevel());
-    }
+    recallWithLease(request, forced);
     // debug("grantRequest() - BEGIN -", request);
     // ServerThreadContext threadContext = request.getThreadContext();
     // awardGreedyWithLease(threadContext, threadContext.getId().getClientThreadID(), request.getLockLevel(),
     // request.getLockResponseSink());
     // clearWaitingOn(threadContext);
   }
+  
+  private void recallWithLease(Request request, boolean forced) {
+    if (pendingLockRequests.size() > 0) {
+      recallWithLease(request.getLockLevel(), forced);
+    }
+  }
 
-  private void recallWithLease(int recallLevel) {
-    debug("Recalling " + lockID + " level " + recallLevel + " recalled: " + recalled);
+  private void recallWithLease(int recallLevel, boolean forced) {
+    debug("Recalling " + lockID + " level " + recallLevel + " recalled: " + recalled + " greedy holders: " + greedyHolders);
     //Thread.dumpStack();
-    if (recalled) { return; }
+    if (!forced && recalled) { return; }
     recordLockHoppedStat();
     for (Iterator i = greedyHolders.values().iterator(); i.hasNext();) {
       Holder holder = (Holder) i.next();
-      debug("Recalling " + lockID + " level " + recallLevel + " from holder: " + holder.getThreadContext().getId().getNodeID());
-      // debug("recall() - issued for -", holder);
+      //debug("Recalling " + lockID + " level " + recallLevel + " from holder: " + holder.getThreadContext().getId().getNodeID());
+      debug(lockID + "  recall() - issued for - " + holder + " recalllevel: " + recallLevel);
       holder.getSink().add(
                            createLockRecallWithLeaseResponseContext(holder.getLockID(), holder.getThreadContext()
                                .getId(), recallLevel));
@@ -513,7 +518,7 @@ public class Lock {
     pendingLockRequests.put(txn, request);
 
     if (isPolicyGreedy() && hasGreedyHolders()) {
-      recallWithLease(request.getLockLevel());
+      recallWithLease(request.getLockLevel(), false);
     }
   }
 
@@ -845,7 +850,7 @@ public class Lock {
               } else {
                 // grantRequest(request);
                 if (getWaiterCount() == 0) {
-                  grantRequestWithLease(request);
+                  grantRequestWithLease(request, false);
                 } else {
                   grantRequest(request);
                 }
@@ -921,11 +926,12 @@ public class Lock {
 
   synchronized boolean recallCommit(ServerThreadContext threadContext) {
     // debug("recallCommit() - BEGIN -", threadContext);
+    debug(lockID + " recallCommit: " + threadContext.getId().getNodeID() + " " + recalled);
     Assert.assertTrue(isGreedyRequest(threadContext));
     boolean issueRecall = !recalled;
     removeCurrentHold(threadContext);
     if (issueRecall) {
-      recallWithLease(LockLevel.WRITE);
+      recallWithLease(LockLevel.WRITE, false);
     }
     if (recalled == false) { return nextPending(); }
     return false;
@@ -948,7 +954,6 @@ public class Lock {
     // debug("awardAllReads() - BEGIN -");
     List pendingReadLockRequests = new ArrayList(pendingLockRequests.size());
     boolean hasPendingWrites = false;
-    boolean hasPendingWritesFromSameClient = false;
     Set pendingWritesClient = new HashSet();
 
     for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
@@ -988,9 +993,10 @@ public class Lock {
         // grantRequestWithLease(request);
         // }
         if (!holdsGreedyLock(tid)) {
-          grantRequestWithLease(request);
+          grantRequestWithLease(request, true);
         } else {
           clearWaitingOn(tid);
+          //forceRecallWithLease(request);
         }
       }
     }
@@ -1164,6 +1170,6 @@ public class Lock {
   // }
 
   public void debug(String str) {
-    //System.err.println(str);
+    System.err.println(new Date(System.currentTimeMillis()).toString() + str);
   }
 }
