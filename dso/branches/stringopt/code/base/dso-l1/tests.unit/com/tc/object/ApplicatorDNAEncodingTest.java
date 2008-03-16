@@ -14,6 +14,7 @@ import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;
 import com.tc.object.dna.impl.DNAEncodingImpl;
+import com.tc.object.dna.impl.UTF8ByteCompressedDataHolder;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.StringTCUtil;
@@ -252,12 +253,13 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
     UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
 
-    assertEquals(compressed, decoded.isCompressed());
     if (compressed) {
-      assertEquals(s.getBytes("UTF-8").length, decoded.getUncompressedStringLength());
-      System.err.println("Compressed String length = " + decoded.getBytes().length);
-      assertEquals(s.length(), decoded.getStringLength());
-      assertEquals(s.hashCode(), decoded.getStringHash());
+      assertTrue(decoded instanceof UTF8ByteCompressedDataHolder);
+      UTF8ByteCompressedDataHolder compressedDecoded = (UTF8ByteCompressedDataHolder)decoded;
+      assertEquals(s.getBytes("UTF-8").length, compressedDecoded.getUncompressedStringLength());
+      System.err.println("Compressed String length = " + compressedDecoded.getBytes().length);
+      assertEquals(s.length(), compressedDecoded.getStringLength());
+      assertEquals(s.hashCode(), compressedDecoded.getStringHash());
     }
     assertEquals(interned, decoded.isInterned());
     assertEquals(s, decoded.asString());

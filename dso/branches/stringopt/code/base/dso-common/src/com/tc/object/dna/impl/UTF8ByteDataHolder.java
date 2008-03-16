@@ -22,11 +22,6 @@ public class UTF8ByteDataHolder implements Serializable {
   private final byte[]  bytes;
   private final boolean interned;
 
-  // Used only in case of compressed string
-  private final int     uncompressedLength;  // of original byte[], not original String
-  private final int     originalStringLength;
-  private final int     originalStringHash;
-
   // Used for tests
   public UTF8ByteDataHolder(String str) {
     try {
@@ -40,36 +35,21 @@ public class UTF8ByteDataHolder implements Serializable {
     } else {
       this.interned = false;
     }
-
-    this.uncompressedLength = -1;
-    this.originalStringLength = -1;
-    this.originalStringHash = -1;
   }
 
   /**
    * Just byte data
    */
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, -1, false, -1, -1);
+    this(b, false);
   }
 
   /**
    * For a possibly interned, non-compressed string
    */
   public UTF8ByteDataHolder(byte[] b, boolean interned) {
-    this(b, -1, interned, -1, -1);
-  }
-
-  /**
-   * For a possibly interned compressed string
-   */
-  public UTF8ByteDataHolder(byte[] b, int uncompressedLength, boolean interned, int originalStringLength,
-                            int originalStringHash) {
     this.bytes = b;
-    this.uncompressedLength = uncompressedLength;
     this.interned = interned;
-    this.originalStringLength = originalStringLength;
-    this.originalStringHash = originalStringHash;
   }
 
   public byte[] getBytes() {
@@ -77,15 +57,11 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   public String asString() {
-    return (isCompressed() ? inflate() : getString());
+    return getString();
   }
 
   public boolean isInterned() {
     return this.interned;
-  }
-
-  private String inflate() {
-    return DNAEncodingImpl.inflateCompressedString(bytes, uncompressedLength);
   }
 
   private String getString() {
@@ -101,7 +77,11 @@ public class UTF8ByteDataHolder implements Serializable {
   }
 
   public int hashCode() {
-    int hash = isCompressed() ? 21 : 37;
+    return computeHashCode(37);
+  } 
+  
+  protected int computeHashCode(int seed) {
+    int hash = seed;
     for (int i = 0, n = bytes.length; i < n; i++) {
       hash = 31 * hash + bytes[i++];
     }
@@ -111,25 +91,9 @@ public class UTF8ByteDataHolder implements Serializable {
   public boolean equals(Object obj) {
     if (obj instanceof UTF8ByteDataHolder) {
       UTF8ByteDataHolder other = (UTF8ByteDataHolder) obj;
-      return ((uncompressedLength == other.uncompressedLength) && (Arrays.equals(this.bytes, other.bytes)) && this
-          .getClass().equals(other.getClass()));
+      return (Arrays.equals(this.bytes, other.bytes)) && this.getClass().equals(other.getClass());
     }
     return false;
   }
 
-  public boolean isCompressed() {
-    return uncompressedLength != -1;
-  }
-
-  public int getUncompressedStringLength() {
-    return uncompressedLength;
-  }
-
-  public int getStringLength() {
-    return this.originalStringLength;
-  }
-
-  public int getStringHash() {
-    return this.originalStringHash;
-  }
 }

@@ -258,24 +258,30 @@ public class DNAEncodingImpl implements DNAEncoding {
       case LiteralValues.STRING_BYTES:
         UTF8ByteDataHolder utfBytes = (UTF8ByteDataHolder) value;
         byte stringbytesInterned = STRING_TYPE_NON_INTERNED;
-
         if (utfBytes.isInterned()) {
           stringbytesInterned = STRING_TYPE_INTERNED;
         }
 
-        if (utfBytes.isCompressed()) {
-          output.writeByte(TYPE_ID_STRING_COMPRESSED);
-          output.writeByte(stringbytesInterned);
-          output.writeInt(utfBytes.getUncompressedStringLength());
-          writeByteArray(utfBytes.getBytes(), output);
-          output.writeInt(utfBytes.getStringLength());
-          output.writeInt(utfBytes.getStringHash());
-        } else {
-          output.writeByte(TYPE_ID_STRING_BYTES);
-          output.writeByte(stringbytesInterned);
-          writeByteArray(utfBytes.getBytes(), output);
-        }
+        output.writeByte(TYPE_ID_STRING_BYTES);
+        output.writeByte(stringbytesInterned);
+        writeByteArray(utfBytes.getBytes(), output);
         break;
+      case LiteralValues.STRING_BYTES_COMPRESSED:
+        UTF8ByteCompressedDataHolder utfCompressedBytes = (UTF8ByteCompressedDataHolder) value;
+        byte interned = STRING_TYPE_NON_INTERNED;
+
+        if (utfCompressedBytes.isInterned()) {
+          interned = STRING_TYPE_INTERNED;
+        }
+
+        output.writeByte(TYPE_ID_STRING_COMPRESSED);
+        output.writeByte(interned);
+        output.writeInt(utfCompressedBytes.getUncompressedStringLength());
+        writeByteArray(utfCompressedBytes.getBytes(), output);
+        output.writeInt(utfCompressedBytes.getStringLength());
+        output.writeInt(utfCompressedBytes.getStringHash());
+        break;
+        
       case LiteralValues.OBJECT_ID:
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
@@ -931,12 +937,9 @@ public class DNAEncodingImpl implements DNAEncoding {
     int stringLength = input.readInt();
     int stringHash = input.readInt();
 
-    UTF8ByteDataHolder utfBytes = new UTF8ByteDataHolder(data, stringUncompressedByteLength,
-                                                         (isInterned == STRING_TYPE_INTERNED),
-                                                         stringLength, stringHash);
-    
-    
-    return utfBytes;
+    return new UTF8ByteCompressedDataHolder(data, (isInterned == STRING_TYPE_INTERNED),
+                                            stringUncompressedByteLength,
+                                            stringLength, stringHash);
   }
 
   public static String inflateCompressedString(byte[] data, int length) {
