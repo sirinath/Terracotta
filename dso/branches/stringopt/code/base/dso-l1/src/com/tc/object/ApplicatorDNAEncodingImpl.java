@@ -50,7 +50,7 @@ public class ApplicatorDNAEncodingImpl extends BaseDNAEncodingImpl {
   }
 
   protected Object readCompressedString(TCDataInput input) throws IOException {
-    byte isInterned = input.readByte();
+    boolean isInterned = input.readBoolean();
 
     // read uncompressed byte[] length, but don't actually need it for this use case
     input.readInt();
@@ -62,14 +62,14 @@ public class ApplicatorDNAEncodingImpl extends BaseDNAEncodingImpl {
 
     // Pack byte[] into char[] (still compressed)
     char[] compressedChars = StringCompressionUtil.toCharArray(data);
-    
+
     String s = constructCompressedString(compressedChars, stringLength, stringHash);
     if (STRING_COMPRESSION_LOGGING_ENABLED) {
       logger.info("Read compressed String of compressed size : " + compressedChars.length + ", uncompressed size : "
                   + stringLength + ", hash code : " + stringHash);
     }
 
-    if (isInterned == BaseDNAEncodingImpl.STRING_TYPE_INTERNED) {
+    if (isInterned) {
       if (STRING_COMPRESSION_LOGGING_ENABLED) {
         logger.info("Decompressing and interning string.");
       }
@@ -79,7 +79,7 @@ public class ApplicatorDNAEncodingImpl extends BaseDNAEncodingImpl {
       return s;
     }
   }
-  
+
   private String constructCompressedString(char[] compressedChars, int stringLength, int stringHash) {
     try {
       return(String) COMPRESSED_STRING_CONSTRUCTOR.newInstance(new Object[] { Boolean.TRUE, compressedChars,

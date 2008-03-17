@@ -61,44 +61,42 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
   static final byte                  SUB_ARRAY_ACTION_TYPE                = 7;
 
   private static final LiteralValues literalValues                        = new LiteralValues();
-  private static final TCLogger      logger                               = TCLogging.getLogger(BaseDNAEncodingImpl.class);
+  private static final TCLogger      logger                               = TCLogging
+                                                                              .getLogger(BaseDNAEncodingImpl.class);
 
-  protected static final byte          TYPE_ID_REFERENCE                    = 1;
-  protected static final byte          TYPE_ID_BOOLEAN                      = 2;
-  protected static final byte          TYPE_ID_BYTE                         = 3;
-  protected static final byte          TYPE_ID_CHAR                         = 4;
-  protected static final byte          TYPE_ID_DOUBLE                       = 5;
-  protected static final byte          TYPE_ID_FLOAT                        = 6;
-  protected static final byte          TYPE_ID_INT                          = 7;
-  protected static final byte          TYPE_ID_LONG                         = 10;
-  protected static final byte          TYPE_ID_SHORT                        = 11;
-  protected static final byte          TYPE_ID_STRING                       = 12;
-  protected static final byte          TYPE_ID_STRING_BYTES                 = 13;
-  protected static final byte          TYPE_ID_ARRAY                        = 14;
-  protected static final byte          TYPE_ID_JAVA_LANG_CLASS              = 15;
-  protected static final byte          TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
-  protected static final byte          TYPE_ID_BIG_INTEGER                  = 17;
-  protected static final byte          TYPE_ID_STACK_TRACE_ELEMENT          = 18;
-  protected static final byte          TYPE_ID_BIG_DECIMAL                  = 19;
-  protected static final byte          TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
-  protected static final byte          TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
-  protected static final byte          TYPE_ID_ENUM                         = 22;
-  protected static final byte          TYPE_ID_ENUM_HOLDER                  = 23;
-  protected static final byte          TYPE_ID_CURRENCY                     = 24;
-  protected static final byte          TYPE_ID_STRING_COMPRESSED            = 25;
+  protected static final byte        TYPE_ID_REFERENCE                    = 1;
+  protected static final byte        TYPE_ID_BOOLEAN                      = 2;
+  protected static final byte        TYPE_ID_BYTE                         = 3;
+  protected static final byte        TYPE_ID_CHAR                         = 4;
+  protected static final byte        TYPE_ID_DOUBLE                       = 5;
+  protected static final byte        TYPE_ID_FLOAT                        = 6;
+  protected static final byte        TYPE_ID_INT                          = 7;
+  protected static final byte        TYPE_ID_LONG                         = 10;
+  protected static final byte        TYPE_ID_SHORT                        = 11;
+  protected static final byte        TYPE_ID_STRING                       = 12;
+  protected static final byte        TYPE_ID_STRING_BYTES                 = 13;
+  protected static final byte        TYPE_ID_ARRAY                        = 14;
+  protected static final byte        TYPE_ID_JAVA_LANG_CLASS              = 15;
+  protected static final byte        TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
+  protected static final byte        TYPE_ID_BIG_INTEGER                  = 17;
+  protected static final byte        TYPE_ID_STACK_TRACE_ELEMENT          = 18;
+  protected static final byte        TYPE_ID_BIG_DECIMAL                  = 19;
+  protected static final byte        TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
+  protected static final byte        TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
+  protected static final byte        TYPE_ID_ENUM                         = 22;
+  protected static final byte        TYPE_ID_ENUM_HOLDER                  = 23;
+  protected static final byte        TYPE_ID_CURRENCY                     = 24;
+  protected static final byte        TYPE_ID_STRING_COMPRESSED            = 25;
   // protected static final byte TYPE_ID_URL = 26;
 
   private static final byte          ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte          ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
-  public static final byte           STRING_TYPE_INTERNED                 = 1;
-  public static final byte           STRING_TYPE_NON_INTERNED             = 2;
-
   private static final boolean       STRING_COMPRESSION_ENABLED           = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getBoolean(
                                                                                           "l1.transactionmanager.strings.compress.enabled");
-  protected static final boolean       STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
+  protected static final boolean     STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getBoolean(
                                                                                           "l1.transactionmanager.strings.compress.logging.enabled");
@@ -221,49 +219,49 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
         break;
       case LiteralValues.STRING:
         String s = (String) value;
-        byte stringInterned = STRING_TYPE_NON_INTERNED;
+        boolean stringInterned = false;
 
         if (StringTCUtil.isInterned(s)) {
-          stringInterned = STRING_TYPE_INTERNED;
+          stringInterned = true;
         }
 
         if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
-          output.writeByte(stringInterned); // want to overload this byte ??
+          output.writeBoolean(stringInterned);
           writeCompressedString(s, output);
         } else {
           output.writeByte(TYPE_ID_STRING);
-          output.writeByte(stringInterned);
+          output.writeBoolean(stringInterned);
           writeString(s, output);
         }
         break;
       case LiteralValues.STRING_BYTES:
         UTF8ByteDataHolder utfBytes = (UTF8ByteDataHolder) value;
-        byte stringbytesInterned = STRING_TYPE_NON_INTERNED;
+        boolean stringbytesInterned = false;
         if (utfBytes.isInterned()) {
-          stringbytesInterned = STRING_TYPE_INTERNED;
+          stringbytesInterned = true;
         }
 
         output.writeByte(TYPE_ID_STRING_BYTES);
-        output.writeByte(stringbytesInterned);
+        output.writeBoolean(stringbytesInterned);
         writeByteArray(utfBytes.getBytes(), output);
         break;
       case LiteralValues.STRING_BYTES_COMPRESSED:
         UTF8ByteCompressedDataHolder utfCompressedBytes = (UTF8ByteCompressedDataHolder) value;
-        byte interned = STRING_TYPE_NON_INTERNED;
+        boolean interned = false;
 
         if (utfCompressedBytes.isInterned()) {
-          interned = STRING_TYPE_INTERNED;
+          interned = true;
         }
 
         output.writeByte(TYPE_ID_STRING_COMPRESSED);
-        output.writeByte(interned);
+        output.writeBoolean(interned);
         output.writeInt(utfCompressedBytes.getUncompressedStringLength());
         writeByteArray(utfCompressedBytes.getBytes(), output);
         output.writeInt(utfCompressedBytes.getStringLength());
         output.writeInt(utfCompressedBytes.getStringHash());
         break;
-        
+
       case LiteralValues.OBJECT_ID:
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
@@ -889,33 +887,31 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
   }
 
   private Object readString(TCDataInput input, byte type) throws IOException {
-    byte isInterned = input.readByte();
+    boolean isInterned = input.readBoolean();
     byte[] data = readByteArray(input);
     if (useUTF8String(type)) {
-      if (isInterned == STRING_TYPE_INTERNED) {
+      if (isInterned) {
         String temp = new String(data, "UTF-8");
         return temp.intern();
       } else {
         return new String(data, "UTF-8");
       }
     } else {
-      return new UTF8ByteDataHolder(data, (isInterned == STRING_TYPE_INTERNED));
+      return new UTF8ByteDataHolder(data, isInterned);
     }
   }
 
   protected abstract boolean useUTF8String(byte type);
 
   protected Object readCompressedString(TCDataInput input) throws IOException {
-    byte isInterned = input.readByte();
+    boolean isInterned = input.readBoolean();
     int stringUncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
-    
+
     int stringLength = input.readInt();
     int stringHash = input.readInt();
 
-    return new UTF8ByteCompressedDataHolder(data, (isInterned == STRING_TYPE_INTERNED),
-                                            stringUncompressedByteLength,
-                                            stringLength, stringHash);
+    return new UTF8ByteCompressedDataHolder(data, isInterned, stringUncompressedByteLength, stringLength, stringHash);
   }
 
   public static String inflateCompressedString(byte[] data, int length) {

@@ -17,23 +17,20 @@ public class StringTCUtil {
    * @param string Object
    * @return true if the string is interned
    */
-  public static boolean isInterned(Object str) {
-    if ((str instanceof JavaLangStringTC) && (((JavaLangStringTC) str).__tc_isInterned())) {
-      return true;
-    } else {
-      return false;
-    }
+  public static boolean isInterned(Object string) {
+    if ((string instanceof JavaLangStringTC)) { return ((JavaLangStringTC) string).__tc_isInterned(); }
+    return false;
   }
 
   /**
    * Invoke String method __tc_intern
    * 
-   * @param string object
+   * @param string Object
    * @return string interned
    */
-  public static String intern(Object str) {
-    if (str instanceof JavaLangStringTC) {
-      return ((JavaLangStringTC) str).__tc_intern();
+  public static String intern(Object string) {
+    if (string instanceof JavaLangStringTC) {
+      return ((JavaLangStringTC) string).__tc_intern();
     } else {
       throw Assert.failure("Expected to call JavaLangStringIntern.__tc_intern() on a String");
     }
@@ -41,11 +38,15 @@ public class StringTCUtil {
 
   /**
    * Invoke String method __tc_decompress
+   * 
+   * @param string Object
    */
 
   public static void decompress(Object string) {
     if (string instanceof JavaLangStringTC) {
       ((JavaLangStringTC) string).__tc_decompress();
+    } else {
+      throw Assert.failure("Expected to call JavaLangStringIntern.__tc_decompress() on a String");
     }
   }
 
