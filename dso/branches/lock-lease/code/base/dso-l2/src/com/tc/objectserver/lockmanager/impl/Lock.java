@@ -117,6 +117,7 @@ public class Lock {
     return lrc;
   }
 
+  private final static boolean debug = TCPropertiesImpl.getProperties().getBoolean("l2.lock.debug", false);
   private final static int LOCK_LEASE_TIME = TCPropertiesImpl.getProperties().getInt("l2.lock.leaseTimeInMillis", 500);
 
   static LockResponseContext createLockAwardWithLeaseResponseContext(LockID lockID, ServerThreadID threadID, int level) {
@@ -418,7 +419,7 @@ public class Lock {
     holder.setSink(lockResponseSink);
     greedyHolders.put(ch, holder);
     debug(lockID + " grant to " + holder.getNodeID() + " greedily level: " + holder.getLockLevel() + " " + greedyHolders);
-    Thread.dumpStack();
+    dumpStack();
     clearWaitingOn(txn);
   }
 
@@ -453,7 +454,7 @@ public class Lock {
 
   private void recallWithLease(int recallLevel) {
     debug("Recalling " + lockID + " level " + recallLevel + " recalled: " + recalled + " greedy holders: " + greedyHolders);
-    //Thread.dumpStack();
+    dumpStack();
     if (recalled) { return; }
     recordLockHoppedStat();
     for (Iterator i = greedyHolders.values().iterator(); i.hasNext();) {
@@ -1185,6 +1186,14 @@ public class Lock {
   // }
 
   private void debug(String str) {
-    System.err.println(new Date(System.currentTimeMillis()).toString() + " " + str);
+    if (debug) {
+      System.err.println(new Date(System.currentTimeMillis()).toString() + " " + str);
+    }
+  }
+  
+  private void dumpStack() {
+    if (debug) {
+      Thread.dumpStack();
+    }
   }
 }
