@@ -436,7 +436,7 @@ public class Lock {
   }
 
   // XXX temporary hack ...
-  private void grantRequestWithLease(Request request, boolean forced) {
+  private void grantRequestWithLease(Request request) {
     grantGreedyRequest(request);
     // debug("grantRequest() - BEGIN -", request);
     // ServerThreadContext threadContext = request.getThreadContext();
@@ -856,11 +856,11 @@ public class Lock {
                   && (getWaiterCount() == 0)) {
                 // debug("nextPending() - Giving GREEDY WRITE request -", request);
                 grantGreedyRequest(request);
-                recallIfPending(request.getLockLevel());
               } else {
                 // grantRequest(request);
                 if (getWaiterCount() == 0) {
-                  grantRequestWithLease(request, false);
+                  grantRequestWithLease(request);
+                  recallIfPending(request.getLockLevel());
                 } else {
                   grantRequest(request);
                 }
@@ -1004,7 +1004,7 @@ public class Lock {
         // grantRequestWithLease(request);
         // }
         if (!holdsGreedyLock(tid)) {
-          grantRequestWithLease(request, true);
+          grantRequestWithLease(request);
           requireRecall = true;
         } else {
           clearWaitingOn(tid);
