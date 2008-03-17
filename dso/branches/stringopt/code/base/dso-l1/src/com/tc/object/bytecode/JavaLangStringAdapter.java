@@ -222,7 +222,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
    *        try { 
    *            value =  StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length); 
    *        } catch (UnsupportedEncodingException e) {
-   *            throw new AssertionError(e); 
+   *            throw new AssertionError(); 
    *        } 
    *      $__tc_compressed=false; 
    *      } 
