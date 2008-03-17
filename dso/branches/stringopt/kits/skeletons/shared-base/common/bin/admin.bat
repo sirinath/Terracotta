@@ -11,8 +11,8 @@ set TC_INSTALL_DIR=%~d0%~p0..
 FOR %%i IN ("%TC_INSTALL_DIR%") DO SET TC_INSTALL_DIR=%%~fsi
 
 if not defined JAVA_HOME set JAVA_HOME="%TC_INSTALL_DIR%\jre"
-if defined JAVA_HOME set JAVA_HOME="%JAVA_HOME:%"=%"
-if not exist %JAVA_HOME%" set JAVA_HOME=%TC_INSTALL_DIR%\jre
+if defined JAVA_HOME set JAVA_HOME="%JAVA_HOME:"=%"
+if not exist %JAVA_HOME% set JAVA_HOME=%TC_INSTALL_DIR%\jre
 FOR %%i IN (%JAVA_HOME%) DO SET JAVA_HOME=%%~fsi
 
 set CLASSPATH=%TC_INSTALL_DIR%\lib\tc.jar
