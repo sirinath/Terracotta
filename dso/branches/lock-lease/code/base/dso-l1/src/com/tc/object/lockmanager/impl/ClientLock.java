@@ -25,6 +25,7 @@ import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.lockmanager.api.WaitTimer;
 import com.tc.object.lockmanager.api.WaitTimerCallback;
 import com.tc.object.tx.WaitInvocation;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
@@ -104,8 +105,17 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     return isHeldBy(threadID, lockType);
   }
   
+  private final static boolean debug = TCPropertiesImpl.getProperties().getBoolean("l1.lock.debug", false);
   private static void debug(String str) {
-    System.err.println((new Date(System.currentTimeMillis())).toString()+str);
+    if (debug) {
+      System.err.println((new Date(System.currentTimeMillis())).toString()+str);
+    }
+  }
+  
+  private static void dumpStack() {
+    if (debug) {
+      Thread.dumpStack();
+    }
   }
 
   public void lock(ThreadID threadID, int lockType, String contextInfo) {
@@ -565,7 +575,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
                                       + level + ", requesterID: " + threadID + "]");
       }
       debug(lockID + " level: " + level + " " + threadID + " is greedy: " + LockLevel.isGreedy(level));
-      //Thread.dumpStack();
+      //dumpStack();
       if (LockLevel.isGreedy(level)) {
         Assert.assertEquals(threadID, ThreadID.VM_ID);
         // A Greedy lock is issued by the server. From now on client handles all lock awards until
@@ -785,7 +795,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     // debug("recallCommit() - BEGIN - ", "");
     if (greediness.isRecallInProgress()) {
       debug("recallCommit for lock " + lockID);
-      //Thread.dumpStack();
+      //dumpStack();
 
       if (recallTimer != null) {
         recallTimer.cancel();
@@ -799,7 +809,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     } else {
       logger.debug(lockID + " : recallCommit() : skipping as the state is not RECALL_IN_PROGRESS !");
       debug("recallCommit for lock " + lockID + " recall is not in progress");
-      //Thread.dumpStack();
+      //dumpStack();
     }
   }
 
@@ -940,7 +950,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
                          + " canProceedWithRecallOnLease map.size: " + map.size()
                          + " pendingRequestsOtherThanHolders: " + pendingRequestsOtherThanHolders + " "
                          + System.identityHashCode(this));
-      //Thread.dumpStack();
+      //dumpStack();
       if (leaseTime) {
         return (map.size() == 0) && !pendingRequestsOtherThanHolders;
       } else {
@@ -1510,7 +1520,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     void add(int l) {
       this.level |= l;
       debug("Adding to greediness: " + l);
-      //Thread.dumpStack();
+      //dumpStack();
       if (state != GREEDY_LEASE) {
         state = GREEDY;
       }
@@ -1525,6 +1535,8 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     }
 
     void recall(int rlevel) {
+      debug("performing recall " + state);
+      dumpStack();
       Assert.assertTrue(state == GREEDY);
       this.recallLevel |= rlevel;
       state = RECALLED;
