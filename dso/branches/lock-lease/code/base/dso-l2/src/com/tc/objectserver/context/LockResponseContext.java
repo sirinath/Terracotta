@@ -20,14 +20,14 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public class LockResponseContext implements EventContext {
-  
-  private static final int     LEASE_ETERNAL      = -1;
 
-  public static final int      LOCK_AWARD         = 1;
-  public static final int      LOCK_RECALL        = 2;
-  public static final int      LOCK_WAIT_TIMEOUT  = 3;
-  public static final int      LOCK_INFO          = 4;
-  public static final int      LOCK_NOT_AWARDED   = 5;
+  private static final int     LOCK_NO_LEASE     = -1;
+
+  public static final int      LOCK_AWARD        = 1;
+  public static final int      LOCK_RECALL       = 2;
+  public static final int      LOCK_WAIT_TIMEOUT = 3;
+  public static final int      LOCK_INFO         = 4;
+  public static final int      LOCK_NOT_AWARDED  = 5;
 
   private final LockID         lockID;
   private final ThreadID       threadID;
@@ -35,26 +35,28 @@ public class LockResponseContext implements EventContext {
   private final NodeID         nodeID;
   private final int            responseType;
   private final GlobalLockInfo globalLockInfo;
-  private int            leaseTimeInMs = LEASE_ETERNAL;
+  private int                  leaseTimeInMs     = LOCK_NO_LEASE;
 
   public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID, int level, int lockRequestQueueLength,
                              Collection greedyHolders, Collection holders, Collection waiters, int type) {
     this(lockID, nodeID, threadID, level, new GlobalLockInfo(lockID, level, lockRequestQueueLength,
                                                              getGlobalLockHolderInfo(greedyHolders),
                                                              getGlobalLockHolderInfo(holders),
-                                                             getGlobalLockWaiterInfo(lockID, waiters)), type, LEASE_ETERNAL);
+                                                             getGlobalLockWaiterInfo(lockID, waiters)), type,
+         LOCK_NO_LEASE);
   }
 
   public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, int level, int type) {
-    this(lockID, nodeID, sourceID, level, null, type, LEASE_ETERNAL);
+    this(lockID, nodeID, sourceID, level, null, type, LOCK_NO_LEASE);
   }
-  
+
   public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, int level, int type, int leaseTimeInMs) {
     this(lockID, nodeID, sourceID, level, null, type, leaseTimeInMs);
   }
-  
-  public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, int level, int type, int traceDepth, int gatherInterval) {
-    this(lockID, nodeID, sourceID, level, null, type, LEASE_ETERNAL);
+
+  public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, int level, int type, int traceDepth,
+                             int gatherInterval) {
+    this(lockID, nodeID, sourceID, level, null, type, LOCK_NO_LEASE);
   }
 
   private LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, int level,
@@ -89,17 +91,9 @@ public class LockResponseContext implements EventContext {
   public int getLockLevel() {
     return level;
   }
-  
-  public int getAwardLeaseTime() {
-    return this.leaseTimeInMs;
-  }
 
   public GlobalLockInfo getGlobalLockInfo() {
     return globalLockInfo;
-  }
-  
-  public boolean isAwardEternal() {
-    return this.leaseTimeInMs == LEASE_ETERNAL;
   }
 
   public boolean isLockAward() {
@@ -120,6 +114,10 @@ public class LockResponseContext implements EventContext {
 
   public boolean isLockNotAwarded() {
     return (this.responseType == LOCK_NOT_AWARDED);
+  }
+  
+  public int getAwardLeaseTime() {
+    return this.leaseTimeInMs;
   }
 
   public String toString() {

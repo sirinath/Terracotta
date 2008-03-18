@@ -36,7 +36,7 @@ public class LockResponseHandler extends AbstractEventHandler {
     if (msg.isLockAward()) {
       lockManager.awardLock(msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
     } else if (msg.isLockRecall()) {
-      if (msg.isAwardEternal()) {
+      if (!msg.isAwardOnLease()) {
         lockManager.recall(msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
       } else {
         lockManager.recall(msg.getLockID(), msg.getThreadID(), msg.getLockLevel(), msg.getAwardLeaseTime());
