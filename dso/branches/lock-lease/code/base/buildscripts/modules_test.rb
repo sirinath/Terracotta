@@ -301,7 +301,12 @@ class SubtreeTestRun
         @use_dso_boot_jar = buildconfig['include-dso-boot-jar'] =~ /^\s*true\s*$/i
         @needs_dso_boot_jar = @use_dso_boot_jar || (buildconfig['build-dso-boot-jar'] =~ /^\s*true\s*$/i)
         @timeout = (@config_source["test_timeout"] || buildconfig["timeout"] || DEFAULT_TEST_TIMEOUT_SECONDS.to_s).to_i * 1000
-
+        
+        # add 10m to timeout if running on slow mo Solaris
+        if @build_environment.os_type(:nice) =~ /Solaris/
+          @timeout += (10 * 60 * 1000) 
+        end
+        
         @extra_jvmargs = @config_source.as_array('jvmargs') || []
         if buildconfig['jvmargs']
           jvmargs = buildconfig['jvmargs'].split(/\s*,\s*/)
@@ -444,6 +449,7 @@ class SubtreeTestRun
         # stuff) and write them.
         @cwd = @testrun_results.temp_dir(@subtree)
         @classpath = @subtree.classpath(@build_results, :full, :runtime)
+        @sysproperties['tc.classpath'] = @build_module.subtree('src').classpath(@build_results, :full, :runtime)
 
         # This is *quite* important. If something goes really wrong with a test, to the point where it
         # crashes, doesn't even get started, hangs hard-core, or otherwise can't write out its result
