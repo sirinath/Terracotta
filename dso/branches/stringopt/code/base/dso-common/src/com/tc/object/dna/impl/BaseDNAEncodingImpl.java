@@ -5,13 +5,14 @@
 package com.tc.object.dna.impl;
 
 import com.tc.exception.TCRuntimeException;
-import com.tc.io.TCByteArrayOutputStream;
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.compression.CompressedData;
+import com.tc.object.compression.StringCompressionUtil;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.properties.TCPropertiesImpl;
@@ -31,7 +32,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Currency;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -331,32 +331,26 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
   }
 
   private void writeCompressedString(String string, TCDataOutput output) {
-    try {
-      TCByteArrayOutputStream byteArrayOS = new TCByteArrayOutputStream(4096);
-      // Stride is 512 bytes by default, should I increase ?
-      DeflaterOutputStream dos = new DeflaterOutputStream(byteArrayOS);
-      byte[] uncompressed = string.getBytes("UTF-8");
-      dos.write(uncompressed);
-      dos.close();
-      byte[] compressed = byteArrayOS.getInternalArray();
-      // XXX:: We are writing the original string's uncompressed byte[] length so that we save a couple of copies when
-      // decompressing
-      output.writeInt(uncompressed.length);
-      writeByteArray(compressed, 0, byteArrayOS.size(), output);
+    byte[] uncompressed = StringCompressionUtil.stringToUncompressedBin(string);
+    CompressedData compressedInfo = StringCompressionUtil.compressBin(uncompressed);
+    byte[] compressed = compressedInfo.getCompressedData();
+    int compressedSize = compressedInfo.getCompressedSize();
+    
+    // XXX:: We are writing the original string's uncompressed byte[] length so that we save a couple of copies when
+    // decompressing
+    output.writeInt(uncompressed.length);
+    writeByteArray(compressed, 0, compressedSize, output);
 
-      // write string metadata so we can avoid decompression on later L1s
-      output.writeInt(string.length());
-      output.writeInt(string.hashCode());
+    // write string metadata so we can avoid decompression on later L1s
+    output.writeInt(string.length());
+    output.writeInt(string.hashCode());
 
-      if (STRING_COMPRESSION_LOGGING_ENABLED) {
-        logger.info("Compressed String of size : " + string.length() + " bytes : " + uncompressed.length
-                    + " to  bytes : " + compressed.length);
-      }
-    } catch (Exception e) {
-      throw new AssertionError(e);
+    if (STRING_COMPRESSION_LOGGING_ENABLED) {
+      logger.info("Compressed String of size : " + string.length() + " bytes : " + uncompressed.length
+                  + " to  bytes : " + compressed.length);
     }
   }
-
+  
   private void writeByteArray(byte[] bytes, int offset, int length, TCDataOutput output) {
     output.writeInt(length);
     output.write(bytes, offset, length);
