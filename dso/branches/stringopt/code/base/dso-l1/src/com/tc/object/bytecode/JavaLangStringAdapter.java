@@ -217,12 +217,13 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   /**
    * private char[] __tc_getvalue() { 
    *    if ($__tc_compressed){ 
-   *      byte[] uncompressed = StringCompressionUtil.decompressCompressedChars(value, count); 
+   *      byte[] uncompressed = StringCompressionUtil.unpackAndDecompress(value); 
    *      if (uncompressed != null) { 
    *        try { 
    *            value =  StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length); 
    *        } catch (UnsupportedEncodingException e) {
-   *            throw new AssertionError(); 
+   *            //NOTE: Java 1.4 AssertionError does not have a constructor taking a (Throwable)
+   *            throw new AssertionError(e.getMessage()); 
    *        } 
    *      $__tc_compressed=false; 
    *      } 
@@ -230,7 +231,6 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
    *    return value; 
    * }
    */
-  
   private void addGetValueMethod() {
     MethodVisitor mv = super.visitMethod(ACC_PRIVATE, GET_VALUE_METHOD, "()[C", null, null);
     mv.visitCode();
@@ -240,23 +240,25 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     mv.visitTryCatchBlock(l0, l1, l2, "java/io/UnsupportedEncodingException");
     Label l3 = new Label();
     mv.visitLabel(l3);
+    mv.visitLineNumber(14, l3);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     Label l4 = new Label();
     mv.visitJumpInsn(IFEQ, l4);
     Label l5 = new Label();
     mv.visitLabel(l5);
+    mv.visitLineNumber(15, l5);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, "java/lang/String", "count", "I");
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/StringCompressionUtil", "decompressCompressedChars", "([CI)[B");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/compression/StringCompressionUtil", "unpackAndDecompress", "([C)[B");
     mv.visitVarInsn(ASTORE, 1);
     Label l6 = new Label();
     mv.visitLabel(l6);
+    mv.visitLineNumber(16, l6);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitJumpInsn(IFNULL, l4);
     mv.visitLabel(l0);
+    mv.visitLineNumber(18, l0);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitLdcInsn("UTF-8");
     mv.visitVarInsn(ALOAD, 1);
@@ -269,26 +271,34 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     Label l7 = new Label();
     mv.visitJumpInsn(GOTO, l7);
     mv.visitLabel(l2);
+    mv.visitLineNumber(19, l2);
     mv.visitVarInsn(ASTORE, 2);
     Label l8 = new Label();
     mv.visitLabel(l8);
+    mv.visitLineNumber(20, l8);
     mv.visitTypeInsn(NEW, "java/lang/AssertionError");
     mv.visitInsn(DUP);
-    //NOTE: Java 1.4 AssertionError does not have a constructor taking a (Throwable)
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/AssertionError", "<init>", "()V");
+    mv.visitVarInsn(ALOAD, 2);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/UnsupportedEncodingException", "getMessage", "()Ljava/lang/String;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/AssertionError", "<init>", "(Ljava/lang/Object;)V");
     mv.visitInsn(ATHROW);
     mv.visitLabel(l7);
+    mv.visitLineNumber(22, l7);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitInsn(ICONST_0);
     mv.visitFieldInsn(PUTFIELD, "java/lang/String", COMPRESSED_FIELD_NAME, "Z");
     mv.visitLabel(l4);
+    mv.visitLineNumber(25, l4);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/String", "value", "[C");
     mv.visitInsn(ARETURN);
     Label l9 = new Label();
     mv.visitLabel(l9);
+    mv.visitLocalVariable("this", "Ljava/lang/String;", null, l3, l9, 0);
+    mv.visitLocalVariable("uncompressed", "[B", null, l6, l4, 1);
+    mv.visitLocalVariable("e", "Ljava/io/UnsupportedEncodingException;", null, l8, l7, 2);
     mv.visitMaxs(5, 3);
-    mv.visitEnd();    
+    mv.visitEnd();
   }
 
   private void addFastGetChars() {

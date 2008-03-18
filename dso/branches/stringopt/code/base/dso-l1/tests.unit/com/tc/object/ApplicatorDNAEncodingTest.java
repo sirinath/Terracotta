@@ -10,6 +10,7 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
+import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;
@@ -210,15 +211,19 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     }
     return rv;
   }
-
-//  public void testCompressedUnicodeDecoding() throws Exception { 
-//    String example = new String("Hallo, verrückte Welt!");
-//    StringBuffer big = new StringBuffer();
-//    for(int i=0; i<1000; i++) {
-//      big.append(example);
-//    }
-//    helpTestStringEncodingDecoding(big.toString(), true, false);
-//  }
+  
+  public void testUnicodeChars() throws Exception {
+    StringBuffer str = new StringBuffer();
+    for(int i=0; i<100; i++) {
+      str.append('\u7aba');
+      str.append('\ucabb');
+      str.append('\uffcf');
+      str.append('\ufeb5');
+      str.append('\ud0e6');
+      str.append('\u204b');
+    }
+    helpTestStringEncodingDecoding(str.toString(), true, false);
+  }
   
   public void testUncompressedInternedStringDecoding() throws Exception {
     String littleString = new String("abc");

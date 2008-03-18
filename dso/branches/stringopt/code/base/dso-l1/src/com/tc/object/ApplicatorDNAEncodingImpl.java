@@ -7,6 +7,8 @@ package com.tc.object;
 import com.tc.io.TCDataInput;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.object.compression.CompressedData;
+import com.tc.object.compression.StringCompressionUtil;
 import com.tc.object.dna.impl.BaseDNAEncodingImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
@@ -52,16 +54,14 @@ public class ApplicatorDNAEncodingImpl extends BaseDNAEncodingImpl {
   protected Object readCompressedString(TCDataInput input) throws IOException {
     boolean isInterned = input.readBoolean();
 
-    // read uncompressed byte[] length, but don't actually need it for this use case
-    input.readInt();
-
+    int uncompressedByteLength = input.readInt();
     byte[] data = readByteArray(input);
 
     int stringLength = input.readInt();
     int stringHash = input.readInt();
 
     // Pack byte[] into char[] (still compressed)
-    char[] compressedChars = StringCompressionUtil.toCharArray(data);
+    char[] compressedChars = StringCompressionUtil.packCompressed(new CompressedData(data, uncompressedByteLength));
 
     String s = constructCompressedString(compressedChars, stringLength, stringHash);
     if (STRING_COMPRESSION_LOGGING_ENABLED) {
