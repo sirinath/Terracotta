@@ -43,10 +43,13 @@
         <option name="SPACE_WITHIN_ARRAY_INITIALIZER_BRACES" value="true" />
         <option name="SPACE_AFTER_TYPE_CAST" value="false" />
         <option name="SPACE_BEFORE_ARRAY_INITIALIZER_LBRACE" value="true" />
+        <option name="GENERATE_FINAL_LOCALS" value="true" />
+        <option name="GENERATE_FINAL_PARAMETERS" value="true" />
         <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
         <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
         <option name="IMPORT_LAYOUT_TABLE">
           <value>
+            <package name="" withSubpackages="true" />
             <package name="EDU" withSubpackages="true" />
             <emptyLine />
             <package name="org" withSubpackages="true" />
@@ -57,9 +60,11 @@
             <emptyLine />
             <package name="javax" withSubpackages="true" />
             <emptyLine />
-            <package name="" withSubpackages="true" />
+            <package name="bsh" withSubpackages="true" />
+            <emptyLine />
           </value>
         </option>
+        <option name="OPTIMIZE_IMPORTS_ON_THE_FLY" value="true" />
         <option name="ADD_UNAMBIGIOUS_IMPORTS_ON_THE_FLY" value="true" />
         <option name="METHOD_CALL_CHAIN_WRAP" value="5" />
         <option name="KEEP_SIMPLE_BLOCKS_IN_ONE_LINE" value="true" />
@@ -215,7 +220,12 @@
         </inspection_tool>
       </profile>
     </profiles>
-    <list size="0" />
+    <list size="4">
+      <item index="0" class="java.lang.String" itemvalue="SERVER PROBLEM" />
+      <item index="1" class="java.lang.String" itemvalue="INFO" />
+      <item index="2" class="java.lang.String" itemvalue="WARNING" />
+      <item index="3" class="java.lang.String" itemvalue="ERROR" />
+    </list>
   </component>
   <component name="JavacSettings">
     <option name="DEBUGGING_INFO" value="true" />
@@ -442,6 +452,7 @@
       <module fileurl="file://$PROJECT_DIR$/simulator.iml" filepath="$PROJECT_DIR$/simulator.iml" />
       <module fileurl="file://$PROJECT_DIR$/spring-config.iml" filepath="$PROJECT_DIR$/spring-config.iml" />
       <module fileurl="file://$PROJECT_DIR$/standard-config.iml" filepath="$PROJECT_DIR$/standard-config.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../../tc-sigar/idea/tc-sigar.iml" filepath="$PROJECT_DIR$/../../../../tc-sigar/idea/tc-sigar.iml" />
       <module fileurl="file://$PROJECT_DIR$/tcbuild.iml" filepath="$PROJECT_DIR$/tcbuild.iml" />
       <module fileurl="file://$PROJECT_DIR$/thirdparty.iml" filepath="$PROJECT_DIR$/thirdparty.iml" />
       <module fileurl="file://$PROJECT_DIR$/thirdparty-api.iml" filepath="$PROJECT_DIR$/thirdparty-api.iml" />

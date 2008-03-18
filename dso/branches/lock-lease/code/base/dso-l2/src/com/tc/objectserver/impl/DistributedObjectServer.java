@@ -176,6 +176,7 @@ import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
 import com.tc.statistics.retrieval.actions.SRAL2ChangesPerBroadcast;
 import com.tc.statistics.retrieval.actions.SRAL2FaultsFromDisk;
+import com.tc.statistics.retrieval.actions.SRAL2PendingTransactions;
 import com.tc.statistics.retrieval.actions.SRAL2ToL1FaultRate;
 import com.tc.statistics.retrieval.actions.SRAL2TransactionCount;
 import com.tc.statistics.retrieval.actions.SRAMemoryUsage;
@@ -785,7 +786,7 @@ public class DistributedObjectServer implements TCDumper {
     stageManager.startAll(context);
 
     // populate the statistics retrieval registry
-    populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager(), mm, managedObjectFaultHandler);
+    populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager(), mm, managedObjectFaultHandler, transactionManager);
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,
@@ -807,9 +808,10 @@ public class DistributedObjectServer implements TCDumper {
     }
   }
 
-  private void populateStatisticsRetrievalRegistry(DSOGlobalServerStats serverStats, StageManager stageManager,
-                                                   MessageMonitor messageMonitor,
-                                                   ManagedObjectFaultHandler managedObjectFaultHandler) {
+  private void populateStatisticsRetrievalRegistry(final DSOGlobalServerStats serverStats, final StageManager stageManager,
+                                                   final MessageMonitor messageMonitor,
+                                                   final ManagedObjectFaultHandler managedObjectFaultHandler,
+                                                   final ServerTransactionManagerImpl transactionManager){
     if (statisticsAgentSubSystem.isActive()) {
       StatisticsRetrievalRegistry registry = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
       registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
@@ -831,6 +833,7 @@ public class DistributedObjectServer implements TCDumper {
       registry.registerActionInstance(new SRAMessages(messageMonitor));
       registry.registerActionInstance(new SRAL2FaultsFromDisk(managedObjectFaultHandler));
       registry.registerActionInstance(new SRAL1ToL2FlushRate(serverStats));
+      registry.registerActionInstance(new SRAL2PendingTransactions(transactionManager));
     }
   }
 
