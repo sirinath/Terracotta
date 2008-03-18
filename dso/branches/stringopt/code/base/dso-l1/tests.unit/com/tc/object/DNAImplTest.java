@@ -16,6 +16,7 @@ import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.DNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.util.Assert;
 
 import java.util.Arrays;
 
@@ -26,14 +27,18 @@ public class DNAImplTest extends TestCase {
   protected DNAImpl dna;
 
   public void testParentID() throws Exception {
-    serializeDeserialize(true);
+    serializeDeserialize(true, false);
   }
 
   public void testArrayLength() throws Exception {
-    serializeDeserialize(false);
+    serializeDeserialize(false, false);
+  }
+  
+  public void testDelta() throws Exception {
+    serializeDeserialize(false, true);
   }
 
-  protected void serializeDeserialize(boolean parentID) throws Exception {
+  protected void serializeDeserialize(boolean parentID, boolean isDelta) throws Exception {
     TCByteBufferOutputStream out = new TCByteBufferOutputStream();
 
     final ObjectID id = new ObjectID(1);
@@ -44,7 +49,7 @@ public class DNAImplTest extends TestCase {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
     DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
-    DNAWriter dnaWriter = createDNAWriter(out, id, type, serializer, encoding, "loader description");
+    DNAWriter dnaWriter = createDNAWriter(out, id, type, serializer, encoding, isDelta);
     PhysicalAction action1 = new PhysicalAction("class.field1", new Integer(1), false);
     LogicalAction action2 = new LogicalAction(12, new Object[] { "key", "value" });
     PhysicalAction action3 = new PhysicalAction("class.field2", new ObjectID(3), true);
@@ -57,7 +62,6 @@ public class DNAImplTest extends TestCase {
     dnaWriter.addPhysicalAction(action1.getFieldName(), action1.getObject());
     dnaWriter.addLogicalAction(action2.getMethod(), action2.getParameters());
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
-    dnaWriter.setDelta(getIsDelta());
     dnaWriter.markSectionEnd();
     dnaWriter.finalizeHeader();
 
@@ -94,16 +98,13 @@ public class DNAImplTest extends TestCase {
       assertTrue(dna.hasLength());
       assertEquals(arrayLen, dna.getArraySize());
     }
-    assertEquals(type, dna.getTypeName());
-    assertOverridable();
-  }
-
-  protected boolean getIsDelta() {
-    return true;
-  }
-
-  protected void assertOverridable() {
-    assertTrue(dna.isDelta());
+    
+    Assert.assertEquals(isDelta, dna.isDelta());
+    
+    if(! isDelta) {
+      assertEquals(type, dna.getTypeName());
+      assertEquals("loader description", dna.getDefiningLoaderDescription());
+    }
   }
 
   protected DNAImpl createDNAImpl(ObjectStringSerializer serializer, boolean b) {
@@ -111,8 +112,8 @@ public class DNAImplTest extends TestCase {
   }
 
   protected DNAWriter createDNAWriter(TCByteBufferOutputStream out, ObjectID id, String type,
-                                      ObjectStringSerializer serializer, DNAEncoding encoding, String string) {
-    return new DNAWriterImpl(out, id, type, serializer, encoding, "loader description");
+                                      ObjectStringSerializer serializer, DNAEncoding encoding, boolean isDelta) {
+    return new DNAWriterImpl(out, id, type, serializer, encoding, "loader description", isDelta);
   }
 
   private void compareAction(LogicalAction expect, LogicalAction actual) {

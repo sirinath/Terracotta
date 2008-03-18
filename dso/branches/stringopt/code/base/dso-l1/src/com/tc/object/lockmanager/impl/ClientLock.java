@@ -45,7 +45,6 @@ import java.util.TimerTask;
 import java.util.Map.Entry;
 
 class ClientLock implements WaitTimerCallback, LockFlushCallback {
-
   private static final TCLogger       logger                   = TCLogging.getLogger(ClientLock.class);
 
   private static final State          RUNNING                  = new State("RUNNING");
@@ -66,6 +65,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private long                        timeUsed                 = System.currentTimeMillis();
   private final ClientLockStatManager lockStatManager;
   private final String                lockObjectType;
+  private TimerTask                   recallTimer;
 
   ClientLock(LockID lockID, String lockObjectType, RemoteLockManager remoteLockManager, WaitTimer waitTimer,
              ClientLockStatManager lockStatManager) {
@@ -184,10 +184,10 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
           // XXX::Greedy upgrades are not done for a reason.
           // debug("lock - calling RECALL ", requesterID, LockLevel.toString(type));
           greediness.recall(lockType);
-        }
-        if (canProceedWithRecall()) {
-          greediness.startRecallCommit();
-          action.addAction(Action.RECALL_COMMIT);
+          if (canProceedWithRecall(ThreadID.NULL_ID)) {
+            greediness.startRecallCommit();
+            action.addAction(Action.RECALL_COMMIT);
+          }
         }
       }
     }
@@ -431,12 +431,29 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     // debug("recall() - BEGIN - ", LockLevel.toString(interestedLevel));
     if (greediness.isGreedy()) {
       greediness.recall(interestedLevel);
-      if (canProceedWithRecall()) {
+      if (canProceedWithRecall(ThreadID.NULL_ID)) {
         greediness.startRecallCommit();
         if (isTransactionsForLockFlushed(callback)) {
           // debug("recall() - recall commit - ", LockLevel.toString(interestedLevel));
           recallCommit();
         }
+      }
+    }
+  }
+
+  public synchronized void recall(int interestedLevel, LockFlushCallback callback, int leaseTimeInMs) {
+    // debug("recall() - BEGIN - ", LockLevel.toString(interestedLevel));
+    if (greediness.isGreedy()) {
+      greediness.recall(interestedLevel);
+      greediness.greedyLease();
+      if (canProceedWithRecall(ThreadID.NULL_ID)) {
+        greediness.startRecallCommit();
+        if (isTransactionsForLockFlushed(callback)) {
+          // debug("recall() - recall commit - ", LockLevel.toString(interestedLevel));
+          recallCommit();
+        }
+      } else {
+        scheduleLockLeaseTimer(callback, leaseTimeInMs);
       }
     }
   }
@@ -473,6 +490,23 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     synchronized (rejectedLockRequesterIDs) {
       rejectedLockRequesterIDs.add(threadID);
     }
+  }
+
+  private synchronized void scheduleLockLeaseTimer(final LockFlushCallback callback, int leaseTimeInMs) {
+    WaitInvocation leaseWait = new WaitInvocation(leaseTimeInMs);
+    recallTimer = waitTimer.scheduleTimer(new WaitTimerCallback() {
+      public void waitTimeout(Object callbackObject) {
+        synchronized (ClientLock.this) {
+          greediness.leaseTimeout();
+          if (greediness.isRecalled() && canProceedWithRecall(ThreadID.NULL_ID)) {
+            greediness.startRecallCommit();
+            if (isTransactionsForLockFlushed(callback)) {
+              recallCommit();
+            }
+          }
+        }
+      }
+    }, leaseWait, null);
   }
 
   /**
@@ -702,6 +736,9 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   private synchronized void recallCommit() {
     // debug("recallCommit() - BEGIN - ", "");
     if (greediness.isRecallInProgress()) {
+      if (recallTimer != null) {
+        recallTimer.cancel();
+      }
       greediness.recallComplete();
       cancelTimers();
       // Attach the pending lock requests and tryLock requests to the recall commit message.
@@ -809,16 +846,16 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
   /*
    * @see ClientLock.addRecalledHolders();
    */
-  private synchronized boolean canProceedWithRecall() {
-    return canProceedWithRecall(ThreadID.NULL_ID);
-  }
-
   private synchronized boolean canProceedWithRecall(ThreadID threadID) {
+    boolean pendingRequestsOtherThanHolders = false;
+
     if (greediness.isRecalled()) {
       Map map = addRecalledHoldersTo(new HashMap());
       if (threadID != ThreadID.NULL_ID) {
         map.remove(threadID);
       }
+
+      pendingRequestsOtherThanHolders = (map.size() == 0 ? pendingLockRequests.size() > 0 : false);
       for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext() && map.size() != 0;) {
         Object o = i.next();
         if (isOnlyWaitLockRequest(o)) {
@@ -827,10 +864,19 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
         }
         if (o instanceof LockRequest) {
           LockRequest lr = (LockRequest) o;
-          map.remove(lr.threadID());
+          if (map.remove(lr.threadID()) == null) {
+            if (greediness.isGreedyLease()) {
+              pendingRequestsOtherThanHolders = true;
+              break;
+            }
+          }
         }
       }
-      return (map.size() == 0);
+      if (greediness.isGreedyLease()) {
+        return (map.size() == 0) && !pendingRequestsOtherThanHolders;
+      } else {
+        return (map.size() == 0);
+      }
     }
     return false;
   }
@@ -883,6 +929,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
         return true;
       } else if (LockLevel.isRead(level) && greediness.isRead()) {
         // (4)
+
         return true;
       }
     }
@@ -1274,7 +1321,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
       /*
        * server_level is not changed to NIL_LOCK_LEVEL even though the server will release the lock as we need to know
        * what state we were holding before wait on certain scenarios like server crash etc.
-       *
+       * 
        * @see ClientLockManager.notified
        */
       return this.server_level;
@@ -1353,6 +1400,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     private static final State NOT_GREEDY         = new State("NOT GREEDY");
     private static final State GREEDY             = new State("GREEDY");
     private static final State RECALLED           = new State("RECALLED");
+    private static final State ON_GREEDY_LEASE    = new State("GREEDY LEASE");
     private static final State RECALL_IN_PROGRESS = new State("RECALL IN PROGRESS");
 
     private int                level              = LockLevel.NIL_LOCK_LEVEL;
@@ -1361,7 +1409,9 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
 
     void add(int l) {
       this.level |= l;
-      state = GREEDY;
+      if (state != ON_GREEDY_LEASE) {
+        state = GREEDY;
+      }
     }
 
     int getLevel() {
@@ -1373,8 +1423,15 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     }
 
     void recall(int rlevel) {
-      Assert.assertTrue(state == GREEDY);
+      Assert.assertTrue(state == GREEDY || state == ON_GREEDY_LEASE);
       this.recallLevel |= rlevel;
+      if (state == GREEDY) {
+        state = RECALLED;
+      }
+    }
+
+    void leaseTimeout() {
+      Assert.assertTrue(state == ON_GREEDY_LEASE);
       state = RECALLED;
     }
 
@@ -1395,7 +1452,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     }
 
     boolean isGreedy() {
-      return (state == GREEDY);
+      return (state == GREEDY) || (state == ON_GREEDY_LEASE);
     }
 
     // XXX:: Note that isNotGreedy() != (!isGreedy())
@@ -1409,15 +1466,24 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
     }
 
     boolean isRecalled() {
-      return (state == RECALLED);
+      return (state == RECALLED) || (state == ON_GREEDY_LEASE);
     }
 
     boolean isRecallInProgress() {
       return (state == RECALL_IN_PROGRESS);
     }
 
-    void startRecallCommit() {
+    void greedyLease() {
       Assert.assertTrue(state == RECALLED);
+      state = ON_GREEDY_LEASE;
+    }
+
+    boolean isGreedyLease() {
+      return (state == ON_GREEDY_LEASE);
+    }
+
+    void startRecallCommit() {
+      Assert.assertTrue(state == RECALLED || state == ON_GREEDY_LEASE);
       state = RECALL_IN_PROGRESS;
     }
 
