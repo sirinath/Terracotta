@@ -10,7 +10,6 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
-import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.ClassInstance;

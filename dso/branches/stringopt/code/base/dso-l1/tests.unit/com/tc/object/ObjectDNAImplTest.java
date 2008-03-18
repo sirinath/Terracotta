@@ -15,31 +15,23 @@ public class ObjectDNAImplTest extends DNAImplTest {
 
   private long version = 69;
 
-  public void testSerializeDeserialize() throws Exception {
-    super.serializeDeserialize(true);
+  public void testParentID() throws Exception {
+    super.serializeDeserialize(true, false);
     assertEquals(version, dna.getVersion());
   }
 
-  public void testSerializeDeserialize2() throws Exception {
-    super.serializeDeserialize(false);
+  public void testArrayLength() throws Exception {
+    super.serializeDeserialize(false, false);
     assertEquals(version, dna.getVersion());
   }
   
-  protected void assertOverridable() {
-    assertFalse(dna.isDelta());
-  }
-
-  protected boolean getIsDelta() {
-    return false;
-  }
-
   protected DNAImpl createDNAImpl(ObjectStringSerializer serializer, boolean b) {
     return new ObjectDNAImpl(serializer, b);
   }
 
   protected DNAWriter createDNAWriter(TCByteBufferOutputStream out, ObjectID id, String type,
-                                      ObjectStringSerializer serializer, DNAEncoding encoding, String string) {
-    return new ObjectDNAWriterImpl(out, id, type, serializer, encoding, "loader description", version);
+                                      ObjectStringSerializer serializer, DNAEncoding encoding, boolean isDelta) {
+    return new ObjectDNAWriterImpl(out, id, type, serializer, encoding, "loader description", version, isDelta);
   }
 
 }
