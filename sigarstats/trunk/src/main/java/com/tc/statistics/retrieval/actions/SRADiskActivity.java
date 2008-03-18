@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * This statistic gives the disk activity going on in the system
- *
+ * <p/>
  * It contains {@link StatisticData} with the following elements:
  * <ul>
  * <li>bytes read</li>
@@ -27,7 +27,7 @@ import java.util.List;
  * <li>writes</li>
  */
 public class SRADiskActivity implements StatisticRetrievalAction {
-  
+
   public final static String ACTION_NAME = "disk activity";
   public static final String ELEMENT_BYTES_READ = "bytes read";
   public static final String ELEMENT_BYTES_WRITTEN = "bytes written";
@@ -49,11 +49,17 @@ public class SRADiskActivity implements StatisticRetrievalAction {
 
       FileSystem[] list = sigar.getFileSystemList();
       for (int i = 0; i < list.length; i++) {
-        FileSystemUsage usage = sigar.getFileSystemUsage(list[i].getDirName());
-        bytesRead += usage.getDiskReadBytes();
-        bytesWrite += usage.getDiskWriteBytes();
-        reads += usage.getDiskReads();
-        writes += usage.getDiskWrites();
+        try {
+          FileSystemUsage usage = sigar.getFileSystemUsage(list[i].getDirName());
+          bytesRead += usage.getDiskReadBytes();
+          bytesWrite += usage.getDiskWriteBytes();
+          reads += usage.getDiskReads();
+          writes += usage.getDiskWrites();
+        } catch (SigarException e) {
+          //ignore
+          //e.g. on win32 D:\ fails with "Device not ready"
+          //if there is no cd in the drive.
+        }
       }
       List data = new ArrayList();
       data.add(new StatisticData(ACTION_NAME, ELEMENT_BYTES_READ, new Long(bytesRead)));
@@ -74,5 +80,25 @@ public class SRADiskActivity implements StatisticRetrievalAction {
 
   public StatisticType getType() {
     return StatisticType.SNAPSHOT;
+  }
+
+  public static void main(String[] args) {
+    final SRADiskActivity sra = new SRADiskActivity();
+    new Thread(new Runnable() {
+      public void run() {
+        while (true) {
+          StatisticData[] data = sra.retrieveStatisticData();
+          for (int i = 0; i < data.length; i++) {
+            StatisticData statisticData = data[i];
+            System.out.println(statisticData.toString());
+          }
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+          }
+        }
+      }
+    }).start();
   }
 }
