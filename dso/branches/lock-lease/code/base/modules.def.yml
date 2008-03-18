@@ -120,6 +120,7 @@ modules:
         - common
         - common-api
         - dso-common
+        - dso-statistics-api
   - management:
       options:
         jdk: J2SE-1.4
@@ -995,6 +996,8 @@ module-groups:
     - dso-alt-boot-jar-tests
     - dso-tests-jdk15
     - dso-crash-tests
+    - dso-statistics
+    - dso-statistics-tests
     - management
     - dso-memory-datastore
   framework:
