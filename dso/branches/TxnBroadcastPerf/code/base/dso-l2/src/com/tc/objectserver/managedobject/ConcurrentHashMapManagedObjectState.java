@@ -7,9 +7,9 @@ package com.tc.objectserver.managedobject;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -22,13 +22,12 @@ import java.util.Set;
  * state for maps
  */
 public class ConcurrentHashMapManagedObjectState extends PartialMapManagedObjectState {
-  private static final String SEGMENT_MASK_FIELD_NAME  = "java.util.concurrent.ConcurrentHashMap.segmentMask";
-  private static final String SEGMENT_SHIFT_FIELD_NAME = "java.util.concurrent.ConcurrentHashMap.segmentShift";
-  private static final String SEGMENT_FIELD_NAME       = "java.util.concurrent.ConcurrentHashMap.segments";
+  public static final String SEGMENT_MASK_FIELD_NAME  = "segmentMask";
+  public static final String SEGMENT_SHIFT_FIELD_NAME = "segmentShift";
 
-  private Object              segmentMask;
-  private Object              segmentShift;
-  private ObjectID[]          segments                 = null;
+  private Object             segmentMask;
+  private Object             segmentShift;
+  private ObjectID[]         segments                 = null;
 
   private ConcurrentHashMapManagedObjectState(ObjectInput in) throws IOException {
     super(in);
@@ -39,7 +38,6 @@ public class ConcurrentHashMapManagedObjectState extends PartialMapManagedObject
   }
 
   public void apply(ObjectID objectID, DNACursor cursor, BackReferences includeIDs) throws IOException {
-    int segmentIndex = 0;
     while (cursor.next()) {
       Object action = cursor.getAction();
       if (action instanceof LogicalAction) {
@@ -47,35 +45,29 @@ public class ConcurrentHashMapManagedObjectState extends PartialMapManagedObject
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
         applyMethod(objectID, includeIDs, method, params);
-      } else if (action instanceof LiteralAction) {
-        LiteralAction literalAction = (LiteralAction) action;
-        segments = new ObjectID[((Integer) literalAction.getObject()).intValue()];
       } else if (action instanceof PhysicalAction) {
         PhysicalAction physicalAction = (PhysicalAction) action;
-        boolean updateSegment = updateReference(objectID, physicalAction.getFieldName(), physicalAction.getObject(),
-                                                segmentIndex, includeIDs);
-        if (updateSegment) {
-          segmentIndex++;
+        if (physicalAction.isEntireArray()) {
+          initalizeSegments(objectID, (Object[]) physicalAction.getObject(), includeIDs);
+        } else {
+          String fieldName = physicalAction.getFieldName();
+          if (SEGMENT_MASK_FIELD_NAME.equals(fieldName)) {
+            segmentMask = physicalAction.getObject();
+          } else if (SEGMENT_SHIFT_FIELD_NAME.equals(fieldName)) {
+            segmentShift = physicalAction.getObject();
+          }
         }
       }
     }
   }
 
-  private boolean updateReference(ObjectID objectID, String fieldName, Object value, int segmentIndex,
-                                  BackReferences includeIDs) {
-    if (SEGMENT_MASK_FIELD_NAME.equals(fieldName)) {
-      segmentMask = value;
-      return false;
-    } else if (SEGMENT_SHIFT_FIELD_NAME.equals(fieldName)) {
-      segmentShift = value;
-      return false;
-    } else if ((SEGMENT_FIELD_NAME + segmentIndex).equals(fieldName)) {
-      segments[segmentIndex] = (ObjectID) value;
-      getListener().changed(objectID, null, segments[segmentIndex]);
-      includeIDs.addBackReference(segments[segmentIndex], objectID);
-      return true;
-    } else {
-      return false;
+  private void initalizeSegments(ObjectID objectID, Object[] array, BackReferences includeIDs) {
+    Assert.assertNull(segments);
+    segments = new ObjectID[array.length];
+    for (int i = 0; i < array.length; i++) {
+      segments[i] = (ObjectID) array[i];
+      getListener().changed(objectID, null, segments[i]);
+      includeIDs.addBackReference(segments[i], objectID);
     }
   }
 
@@ -96,73 +88,28 @@ public class ConcurrentHashMapManagedObjectState extends PartialMapManagedObject
   private void dehydrateFields(ObjectID objectID, DNAWriter writer) {
     writer.addPhysicalAction(SEGMENT_MASK_FIELD_NAME, segmentMask);
     writer.addPhysicalAction(SEGMENT_SHIFT_FIELD_NAME, segmentShift);
-
-    writer.addLiteralValue(new Integer(segments.length));
-    for (int i = 0; i < segments.length; i++) {
-      ObjectID segment = segments[i];
-      writer.addPhysicalAction(SEGMENT_FIELD_NAME + i, segment);
-    }
-  }
-
-  private void writeField(ObjectOutput out, String fieldName, Object fieldValue) throws IOException {
-    out.writeUTF(fieldName);
-    if (fieldValue == null) {
-      out.writeBoolean(false);
-    } else {
-      out.writeBoolean(true);
-      if (fieldValue instanceof ObjectID) {
-        out.writeLong(((ObjectID) fieldValue).toLong());
-      } else {
-        out.writeObject(fieldValue);
-      }
-    }
+    writer.addEntireArray(segments);
   }
 
   protected void basicWriteTo(ObjectOutput out) throws IOException {
-    writeField(out, SEGMENT_MASK_FIELD_NAME, segmentMask);
-    writeField(out, SEGMENT_SHIFT_FIELD_NAME, segmentShift);
-    if (segments == null) {
-      out.writeBoolean(false);
-    } else {
-      out.writeBoolean(true);
-      out.writeInt(segments.length);
-      for (int i = 0; i < segments.length; i++) {
-        writeField(out, SEGMENT_FIELD_NAME + i, segments[i]);
-      }
-    }
-  }
-
-  private static void readField(ObjectInput in, ConcurrentHashMapManagedObjectState mo, int index)
-      throws ClassNotFoundException, IOException {
-    String fieldName = in.readUTF();
-    boolean fieldExist = in.readBoolean();
-    if (fieldExist) {
-      if (fieldName.equals(SEGMENT_MASK_FIELD_NAME)) {
-        mo.segmentMask = in.readObject();
-      } else if (fieldName.equals(SEGMENT_SHIFT_FIELD_NAME)) {
-        mo.segmentShift = in.readObject();
-      } else if (fieldName.equals((SEGMENT_FIELD_NAME + index))) {
-        mo.segments[index] = new ObjectID(in.readLong());
-      } else {
-        throw new AssertionError("Field not recognized in ConcurrentHashMapManagedObjectState.readFrom().");
-      }
+    out.writeObject(segmentMask);
+    out.writeObject(segmentShift);
+    out.writeInt(segments.length);
+    for (int i = 0; i < segments.length; i++) {
+      out.writeLong(segments[i].toLong());
     }
   }
 
   static MapManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
     ConcurrentHashMapManagedObjectState mo = new ConcurrentHashMapManagedObjectState(in);
-    readField(in, mo, -1);
-    readField(in, mo, -1);
+    mo.segmentMask = in.readObject();
+    mo.segmentShift = in.readObject();
 
-    boolean segmentExist = in.readBoolean();
-    if (segmentExist) {
-      int segmentLength = in.readInt();
-      mo.segments = new ObjectID[segmentLength];
-      for (int i = 0; i < segmentLength; i++) {
-        readField(in, mo, i);
-      }
+    int segmentLength = in.readInt();
+    mo.segments = new ObjectID[segmentLength];
+    for (int i = 0; i < segmentLength; i++) {
+      mo.segments[i] = new ObjectID(in.readLong());
     }
-
     return mo;
   }
 

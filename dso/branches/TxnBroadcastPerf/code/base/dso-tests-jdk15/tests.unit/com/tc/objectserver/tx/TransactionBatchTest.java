@@ -6,13 +6,13 @@ package com.tc.objectserver.tx;
 
 import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.object.ApplicatorDNAEncodingImpl;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dmi.DmiClassSpec;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.DefaultGlobalTransactionIDGenerator;
 import com.tc.object.gtx.GlobalTransactionIDGenerator;
@@ -29,6 +29,7 @@ import com.tc.object.tx.TransactionContextImpl;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
+import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
@@ -46,7 +47,7 @@ import junit.framework.TestCase;
 
 public class TransactionBatchTest extends TestCase {
 
-  private DNAEncoding                         encoding = new DNAEncodingImpl(new MockClassProvider());
+  private DNAEncoding                         encoding = new ApplicatorDNAEncodingImpl(new MockClassProvider());
 
   private TransactionBatchWriter              writer;
   private TestCommitTransactionMessageFactory messageFactory;
@@ -60,14 +61,14 @@ public class TransactionBatchTest extends TestCase {
   }
 
   private TransactionBatchWriter newWriter(ObjectStringSerializer serializer) {
-    return new TransactionBatchWriter(new TxnBatchID(1), serializer, encoding, messageFactory, TCPropertiesImpl
-        .getProperties());
+    return new TransactionBatchWriter(new TxnBatchID(1), serializer, encoding, messageFactory, FoldingConfig
+        .createFromProperties(TCPropertiesImpl.getProperties()));
   }
 
   private TransactionBatchWriter newWriter(ObjectStringSerializer serializer, boolean foldEnabled, int lockLimit,
                                            int objectLimit) {
     return new TransactionBatchWriter(new TxnBatchID(1), serializer, encoding, messageFactory,
-                                      new BatchWriterProperties(foldEnabled, lockLimit, objectLimit));
+                                      new FoldingConfig(foldEnabled, objectLimit, lockLimit));
   }
 
   public void testGetMinTransaction() throws Exception {
@@ -143,7 +144,8 @@ public class TransactionBatchTest extends TestCase {
     ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(2), new NullRuntimeLogger());
     txn2.setTransactionContext(tc);
 
-    writer = new TransactionBatchWriter(batchID, serializer, encoding, mf, TCPropertiesImpl.getProperties());
+    writer = new TransactionBatchWriter(batchID, serializer, encoding, mf, FoldingConfig
+        .createFromProperties(TCPropertiesImpl.getProperties()));
 
     SequenceGenerator sequenceGenerator = new SequenceGenerator();
 

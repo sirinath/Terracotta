@@ -11,6 +11,8 @@ import java.io.Reader;
 import java.io.Writer;
 
 public interface StatisticsStore {
+  public final static String STORE_RANDOMSUFFIX_ENABLED_PROPERTY_NAME = "cvt.store.randomsuffix.enabled";
+
   public void open() throws StatisticsStoreException;
 
   public void close() throws StatisticsStoreException;
@@ -33,9 +35,9 @@ public interface StatisticsStore {
 
   public void importCsvStatistics(Reader reader, StatisticsStoreImportListener listener) throws StatisticsStoreException;
 
-  public void retrieveStatisticsAsCsvStream(OutputStream os, String filenameBase, StatisticsRetrievalCriteria criteria, boolean textformat) throws StatisticsStoreException;
+  public void retrieveStatisticsAsCsvStream(OutputStream os, String filenameBase, StatisticsRetrievalCriteria criteria, boolean zipContents) throws StatisticsStoreException;
 
-  public void aggregateStatisticsData(Writer writer, String sessionId, String agentDifferentiator, String[] names, String[] elements, Long interval) throws StatisticsStoreException;
+  public void aggregateStatisticsData(Writer writer, TextualDataFormat format, String sessionId, String agentDifferentiator, String[] names, String[] elements, Long interval) throws StatisticsStoreException;
 
   public void addListener(StatisticsStoreListener listener);
 

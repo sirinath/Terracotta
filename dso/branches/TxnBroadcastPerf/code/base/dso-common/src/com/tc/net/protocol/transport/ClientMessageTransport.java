@@ -29,12 +29,12 @@ import java.util.List;
  */
 public class ClientMessageTransport extends MessageTransportBase {
   // it was 2 minutes timeout, reduce to 10 sec
-  public static final long                  SYN_ACK_TIMEOUT = 10000;
+  public static final long                  TRANSPORT_HANDSHAKE_SYNACK_TIMEOUT = 10000;
   private final ClientConnectionEstablisher connectionEstablisher;
-  private boolean                           wasOpened       = false;
+  private boolean                           wasOpened                          = false;
   private TCFuture                          waitForSynAckResult;
   private final WireProtocolAdaptorFactory  wireProtocolAdaptorFactory;
-  private final SynchronizedBoolean         isOpening       = new SynchronizedBoolean(false);
+  private final SynchronizedBoolean         isOpening                          = new SynchronizedBoolean(false);
 
   /**
    * Constructor for when you want a transport that isn't connected yet (e.g., in a client). This constructor will
@@ -84,9 +84,9 @@ public class ClientMessageTransport extends MessageTransportBase {
           throw new MaxConnectionsExceededException("Maximum number of client connections exceeded: "
                                                     + result.maxConnections());
         }
+        sendAck();
         Assert.eval(!this.connectionId.isNull());
         isOpen.set(true);
-        sendAck();
         NetworkStackID nid = new NetworkStackID(this.connectionId.getChannelID());
         wasOpened = true;
         return (nid);
@@ -96,6 +96,7 @@ public class ClientMessageTransport extends MessageTransportBase {
         status.reset();
         throw e;
       } catch (IOException e) {
+        clearConnection();
         status.reset();
         throw e;
       } finally {
@@ -158,7 +159,7 @@ public class ClientMessageTransport extends MessageTransportBase {
           errorMessage = "\nTHERE IS A MISMATCH IN THE COMMUNICATION STACKS\n" + synAck.getErrorContext()
                          + errorMessage;
 
-          if ((getCommunicationStackFlags(this) & NetworkLayer.TYPE_OOO_LAYER) != 0 ) {
+          if ((getCommunicationStackFlags(this) & NetworkLayer.TYPE_OOO_LAYER) != 0) {
             logger.error(NetworkLayer.ERROR_OOO_IN_CLIENT_NOT_IN_SERVER);
             errorMessage = "\n\n" + NetworkLayer.ERROR_OOO_IN_CLIENT_NOT_IN_SERVER + errorMessage;
           } else {
@@ -211,7 +212,7 @@ public class ClientMessageTransport extends MessageTransportBase {
 
   private SynAckMessage waitForSynAck() throws TCTimeoutException {
     try {
-      SynAckMessage synAck = (SynAckMessage) waitForSynAckResult.get(SYN_ACK_TIMEOUT);
+      SynAckMessage synAck = (SynAckMessage) waitForSynAckResult.get(TRANSPORT_HANDSHAKE_SYNACK_TIMEOUT);
       return synAck;
     } catch (InterruptedException e) {
       throw new TCRuntimeException(e);
@@ -234,9 +235,10 @@ public class ClientMessageTransport extends MessageTransportBase {
     }
   }
 
-  private void sendAck() {
+  private void sendAck() throws IOException {
     synchronized (status) {
-      Assert.eval(status.isSynSent());
+      // DEV-1364 : Connection close might have happened
+      if (!status.isSynSent()) throw new IOException();
       TransportHandshakeMessage ack = this.messageFactory.createAck(this.connectionId, getConnection());
       // send ack message
       this.sendToConnection(ack);

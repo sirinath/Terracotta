@@ -13,9 +13,9 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.ObjectDNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
+import com.tc.object.dna.impl.StorageDNAEncodingImpl;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference, Serializable, PrettyPrintable {
   private static final TCLogger    logger                   = TCLogging.getLogger(ManagedObjectImpl.class);
-  private static final DNAEncoding DNA_STORAGE_ENCODING     = new DNAEncodingImpl(DNAEncoding.STORAGE);
+  private static final DNAEncoding DNA_STORAGE_ENCODING     = new StorageDNAEncodingImpl();
 
   private final static byte        IS_NEW_OFFSET            = 1;
   private final static byte        IS_DIRTY_OFFSET          = 2;
@@ -70,7 +70,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   private transient TLinkable      previous;
   private transient TLinkable      next;
 
-  private int                      accessed;
+  private transient int            accessed;
 
   public ManagedObjectImpl(ObjectID id) {
     Assert.assertNotNull(id);
@@ -147,11 +147,11 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   public void apply(DNA dna, TransactionID txnID, BackReferences includeIDs, ObjectInstanceMonitor instanceMonitor,
                     boolean ignoreIfOlderDNA) {
     boolean isInitialized = isInitialized();
-    String typeName = dna.getTypeName();
+
     long dna_version = dna.getVersion();
     if (dna_version <= this.version) {
       if (ignoreIfOlderDNA) {
-        logger.info("Ignoring apply of an old DNA for " + typeName + " id = " + id + " current version = "
+        logger.info("Ignoring apply of an old DNA for " + getClassname() + " id = " + id + " current version = "
                     + this.version + " dna_version = " + dna_version);
         return;
       } else {
@@ -168,21 +168,21 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
                                + " DNA = " + dna + " TransactionID = " + txnID);
     }
     if (isInitialized) {
-      instanceMonitor.instanceCreated(typeName);
+      instanceMonitor.instanceCreated(dna.getTypeName());
     }
     this.version = dna_version;
     DNACursor cursor = dna.getCursor();
 
     if (state == null) {
-      state = getStateFactory().createState(id, dna.getParentObjectID(), typeName, dna.getDefiningLoaderDescription(),
-                                            cursor);
+      state = getStateFactory().createState(id, dna.getParentObjectID(), dna.getTypeName(),
+                                            dna.getDefiningLoaderDescription(), cursor);
     }
     try {
       try {
         state.apply(id, cursor, includeIDs);
       } catch (ClassNotCompatableException cnce) {
         // reinitialize state object and try again
-        reinitializeState(dna.getParentObjectID(), typeName, dna.getDefiningLoaderDescription(), cursor, state);
+        reinitializeState(dna.getParentObjectID(), getClassname(), getLoaderDescription(), cursor, state);
         state.apply(id, cursor, includeIDs);
       }
     } catch (IOException e) {
@@ -230,9 +230,8 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
    */
   public void toDNA(TCByteBufferOutputStream out, ObjectStringSerializer serializer) {
     DNAWriter writer = new ObjectDNAWriterImpl(out, id, getClassname(), serializer, DNA_STORAGE_ENCODING,
-                                               getLoaderDescription(), version);
+                                               getLoaderDescription(), version, false);
     state.dehydrate(id, writer);
-    writer.setDelta(false);
     writer.markSectionEnd();
     writer.finalizeHeader();
   }

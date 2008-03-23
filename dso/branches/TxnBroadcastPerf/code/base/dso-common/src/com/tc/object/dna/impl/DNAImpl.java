@@ -22,7 +22,7 @@ import com.tc.util.Conversion;
 import java.io.IOException;
 
 public class DNAImpl implements DNA, DNACursor, TCSerializable {
-  private static final DNAEncoding     DNA_STORAGE_ENCODING = new DNAEncodingImpl(DNAEncoding.STORAGE);
+  private static final DNAEncoding     DNA_STORAGE_ENCODING = new StorageDNAEncodingImpl();
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
@@ -53,6 +53,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
   }
 
   public String getTypeName() {
+    Assert.assertNotNull(this.typeName);
     return typeName;
   }
 
@@ -92,25 +93,25 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     byte recordType = input.readByte();
 
     switch (recordType) {
-      case DNAEncodingImpl.PHYSICAL_ACTION_TYPE:
+      case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE:
         parsePhysical(encoding, false);
         return;
-      case DNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT:
+      case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT:
         parsePhysical(encoding, true);
         return;
-      case DNAEncodingImpl.LOGICAL_ACTION_TYPE:
+      case BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE:
         parseLogical(encoding);
         return;
-      case DNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE:
+      case BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE:
         parseArrayElement(encoding);
         return;
-      case DNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE:
+      case BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE:
         parseEntireArray(encoding);
         return;
-      case DNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE:
+      case BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE:
         parseLiteralValue(encoding);
         return;
-      case DNAEncodingImpl.SUB_ARRAY_ACTION_TYPE:
+      case BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE:
         parseSubArray(encoding);
         return;
       default:
@@ -238,16 +239,19 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     final byte flags = input.readByte();
 
     this.id = new ObjectID(input.readLong());
-    this.typeName = serializer.readString(input);
-    this.loaderDesc = serializer.readString(input);
+
+    this.isDelta = Conversion.getFlag(flags, DNA.IS_DELTA);
+
+    if (!isDelta) {
+      this.typeName = serializer.readString(input);
+      this.loaderDesc = serializer.readString(input);
+    }
 
     if (Conversion.getFlag(flags, DNA.HAS_VERSION)) {
       this.version = input.readLong();
     } else {
       this.version = DNA.NULL_VERSION;
     }
-
-    this.isDelta = Conversion.getFlag(flags, DNA.IS_DELTA);
 
     if (Conversion.getFlag(flags, DNA.HAS_PARENT_ID)) {
       this.parentID = new ObjectID(input.readLong());
@@ -265,6 +269,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
   }
 
   public String getDefiningLoaderDescription() {
+    Assert.assertNotNull(this.loaderDesc);
     return this.loaderDesc;
   }
 
