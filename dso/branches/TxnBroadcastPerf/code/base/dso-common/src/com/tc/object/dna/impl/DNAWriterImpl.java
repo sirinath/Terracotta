@@ -36,12 +36,13 @@ public class DNAWriterImpl implements DNAWriter {
   private boolean                        contiguous           = true;
 
   public DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
-                       ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc) {
-    this(output, id, className, serializer, encoding, loaderDesc, DNA.NULL_VERSION);
+                       ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, boolean isDelta) {
+    this(output, id, className, serializer, encoding, loaderDesc, DNA.NULL_VERSION, isDelta);
   }
 
   protected DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
-                          ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, long version) {
+                          ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, long version,
+                          boolean isDelta) {
     this.output = output;
     this.encoding = encoding;
     this.serializer = serializer;
@@ -51,8 +52,13 @@ public class DNAWriterImpl implements DNAWriter {
     output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for # of actions
     output.writeByte(flags);
     output.writeLong(id.toLong());
-    serializer.writeString(output, className);
-    serializer.writeString(output, loaderDesc);
+
+    if (!isDelta) {
+      serializer.writeString(output, className);
+      serializer.writeString(output, loaderDesc);
+    }
+
+    flags = Conversion.setFlag(flags, DNA.IS_DELTA, isDelta);
 
     if (version != DNA.NULL_VERSION) {
       flags = Conversion.setFlag(flags, DNA.HAS_VERSION, true);
@@ -89,7 +95,7 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addLogicalAction(int method, Object[] parameters) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.LOGICAL_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE);
     output.writeInt(method); // XXX: use a short instead?
     output.writeByte(parameters.length);
 
@@ -100,14 +106,14 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addSubArrayAction(int start, Object array, int length) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.SUB_ARRAY_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE);
     output.writeInt(start);
     encoding.encodeArray(array, output, length);
   }
 
   public void addClassLoaderAction(String classLoaderFieldName, ClassLoader value) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.PHYSICAL_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE);
     serializer.writeFieldName(output, classLoaderFieldName);
     encoding.encodeClassLoader(value, output);
   }
@@ -141,9 +147,9 @@ public class DNAWriterImpl implements DNAWriter {
       // Object o = new Integer(10);
       // XXX::Earlier we used to also check LiteralValues.isLiteralInstance(value) before entering this block, but I
       // think that is unnecessary and wrong when we optimize later to store ObjectIDs as longs in most cases in the L2
-      output.writeByte(DNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT);
+      output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT);
     } else {
-      output.writeByte(DNAEncodingImpl.PHYSICAL_ACTION_TYPE);
+      output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE);
     }
     serializer.writeFieldName(output, fieldName);
     encoding.encode(value, output);
@@ -151,20 +157,20 @@ public class DNAWriterImpl implements DNAWriter {
 
   public void addArrayElementAction(int index, Object value) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE);
     output.writeInt(index);
     encoding.encode(value, output);
   }
 
   public void addEntireArray(Object value) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE);
     encoding.encodeArray(value, output);
   }
 
   public void addLiteralValue(Object value) {
     actionCount++;
-    output.writeByte(DNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE);
+    output.writeByte(BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE);
     encoding.encode(value, output);
   }
 
@@ -204,10 +210,6 @@ public class DNAWriterImpl implements DNAWriter {
       Appender appender = (Appender) i.next();
       appender.copyTo(dest);
     }
-  }
-
-  public void setDelta(boolean value) {
-    flags = Conversion.setFlag(flags, DNA.IS_DELTA, value);
   }
 
   private static class Appender implements DNAWriter {
@@ -293,10 +295,6 @@ public class DNAWriterImpl implements DNAWriter {
 
     public void finalizeHeader() {
       throw new UnsupportedOperationException();
-    }
-
-    public void setDelta(boolean isDelta) {
-      // ignored -- the parent's setting is the one that matters
     }
   }
 

@@ -4,6 +4,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../dso-statistics">
       <sourceFolder url="file://$MODULE_DIR$/../dso-statistics/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../dso-statistics/tests.base" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../dso-statistics/tests.unit" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
@@ -46,6 +47,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/log4j-1.2.9.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../dso-statistics/lib/tcstats-xmlbeans-generated.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

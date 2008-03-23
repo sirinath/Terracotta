@@ -4,14 +4,16 @@
  */
 package com.tc.admin;
 
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.dijon.AbstractTreeCellRenderer;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
 import com.tc.admin.common.ComponentNode;
+import com.tc.admin.common.MBeanServerInvocationProxy;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XAbstractAction;
-import com.tc.admin.common.XTreeNode;
+import com.tc.admin.common.XTreeCellRenderer;
 import com.tc.admin.dso.ClassesNode;
 import com.tc.admin.dso.ClientNode;
 import com.tc.admin.dso.ClientsNode;
@@ -29,6 +31,7 @@ import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
@@ -40,7 +43,6 @@ import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.prefs.Preferences;
 
-import javax.management.MBeanServerInvocationHandler;
 import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationListener;
@@ -65,6 +67,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   private String                  m_baseLabel;
   private ServerConnectionManager m_connectManager;
   private Exception               m_connectException;
+  private L2Info[]                m_clusterMembers;
   private TCServerInfoMBean       m_serverInfoBean;
   private ProductInfo             m_productInfo;
   private ClusterPanel            m_clusterPanel;
@@ -85,6 +88,8 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   private ServersNode             m_serversNode;
   private ClientsNode             m_clientsNode;
   private GCStatsNode             m_gcStatsNode;
+  private ClusterThreadDumpsNode  m_threadDumpsNode;
+  private StatsRecorderNode       m_statsRecorderNode;
 
   private static final String     CONNECT_ACTION      = "Connect";
   private static final String     DISCONNECT_ACTION   = "Disconnect";
@@ -116,12 +121,25 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     }
     initMenu(autoConnect);
     setComponent(m_clusterPanel = createClusterPanel());
+    setRenderer(new ClusterNodeRenderer());
   }
 
+  private class ClusterNodeRenderer extends XTreeCellRenderer {
+    public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded,
+                                                  boolean leaf, int row, boolean focused) {
+      Component comp = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, focused);
+      if (haveActiveRecordingSession()) {
+        m_label.setForeground(sel ? Color.white : Color.red);
+        m_label.setText(getBaseLabel() + " (recording stats)");
+      }
+      return comp;
+    }
+  }
+  
   protected ClusterPanel createClusterPanel() {
     return new ClusterPanel(this);
   }
-  
+
   void handleNewActive(ServerConnectionManager scm) {
     String[] creds = ServerConnectionManager.getCachedCredentials(scm);
     if (creds != null) {
@@ -132,19 +150,23 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_connectManager.setAutoConnect(false);
     m_connectManager.setL2Info(new L2Info(scm.getL2Info()));
     resetBeanProxies();
-    
+
     try {
       m_connectManager.setConnected(m_connectManager.testIsConnected());
-      handleActivation();
-      m_clusterPanel.reinitialize();
-      if(m_rootsNode != null) {
-        m_rootsNode.newConnectionContext();
-        m_locksNode.newConnectionContext();
-        m_gcStatsNode.newConnectionContext();
-        m_clientsNode.newConnectionContext();
-      }
-    } catch(Exception e) {/**/}
+    } catch(Exception e) {
+      m_acc.controller.nodeChanged(ClusterNode.this);
+      m_connectManager.setAutoConnect(autoConnect);
+      return;
+    }
     
+    m_clusterPanel.reinitialize();
+    if (m_rootsNode != null) {
+      m_rootsNode.newConnectionContext();
+      m_locksNode.newConnectionContext();
+      m_gcStatsNode.newConnectionContext();
+      m_clientsNode.newConnectionContext();
+    }
+
     m_acc.controller.nodeChanged(ClusterNode.this);
     m_connectManager.setAutoConnect(autoConnect);
   }
@@ -251,6 +273,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     return MessageFormat.format("http://{0}:{1}/statistics-gatherer/retrieveStatistics", args);
   }
 
+  AuthScope getAuthScope() throws Exception {
+    return new AuthScope(getHost(), getDSOListenPort());
+  }
+  
   private void initMenu(boolean autoConnect) {
     m_popupMenu = new JPopupMenu("Server Actions");
 
@@ -644,13 +670,13 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   private class ActiveLocator extends Thread {
-    private ServerConnectionManager scm = null;
-    private boolean stop = false;
-    
+    private ServerConnectionManager scm  = null;
+    private boolean                 stop = false;
+
     void setStopped() {
       stop = true;
     }
-    
+
     private ServerConnectionManager getConnectionManager(L2Info l2Info) {
       if (scm == null) {
         scm = new ServerConnectionManager(l2Info, false, null);
@@ -659,26 +685,24 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
       }
       return scm;
     }
-    
+
     public void run() {
       L2Info[] l2Infos = getClusterMembers();
       if (l2Infos.length > 1) {
-        while(true) {
-          if(stop) return;
+        while (true) {
+          if (stop) return;
           for (L2Info l2Info : l2Infos) {
-            if(l2Info.equals(m_connectManager.getL2Info())) {
+            if (l2Info.equals(m_connectManager.getL2Info())) {
               continue;
             }
-            ThreadUtil.reallySleep(250);
-            if(stop) {
-              if(scm != null) scm.tearDown();
+            ThreadUtil.reallySleep(1000);
+            if (stop) {
+              if (scm != null) scm.tearDown();
               return;
             }
             scm = getConnectionManager(l2Info);
             try {
-              scm.setConnected(false);
               if (scm.testIsConnected()) {
-                scm.setConnected(true);
                 if (scm.testIsActive()) {
                   m_activeLocator = null;
                   SwingUtilities.invokeLater(new Runnable() {
@@ -691,7 +715,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
                 }
               }
             } catch (Exception e) {
-              e.printStackTrace();
+              /**/
             }
           }
         }
@@ -701,14 +725,14 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   private void cancelActiveLocator() {
-    if(m_activeLocator != null) {
+    if (m_activeLocator != null) {
       m_activeLocator.setStopped();
       m_activeLocator = null;
     }
   }
-  
+
   void handleStarting() {
-    if(m_activeLocator != null) {
+    if (m_activeLocator != null) {
       // The ActiveLocator tries to not consider the bootstrap server but the L2Info
       // may be different from the host/port the user enters in the ClusterPanel, so
       // we may be extraneously informed that we're starting.
@@ -717,7 +741,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     cancelActiveLocator();
     m_acc.controller.nodeChanged(ClusterNode.this);
     m_clusterPanel.started();
-    if(!m_connectManager.testIsActive()) {
+    if (!m_connectManager.testIsActive()) {
       m_activeLocator = new ActiveLocator();
       m_activeLocator.start();
     }
@@ -766,6 +790,8 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
       // older version of the server, that doesn't have the LockMonitorMBean we expect.
     }
     add(m_gcStatsNode = createGCStatsNode());
+    add(m_threadDumpsNode = createThreadDumpsNode());
+    add(m_statsRecorderNode = createStatsRecorderNode());
     add(m_serversNode = createServersNode());
     add(m_clientsNode = createClientsNode());
   }
@@ -774,22 +800,38 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     return new RootsNode(this);
   }
   
+  protected ClusterThreadDumpsNode createThreadDumpsNode() {
+    return new ClusterThreadDumpsNode(this);
+  }
+
+  protected StatsRecorderNode createStatsRecorderNode() {
+    return new StatsRecorderNode(this);
+  }
+  
+  void makeStatsRecorderUnavailable() {
+    if(m_statsRecorderNode != null) {
+      m_acc.controller.remove(m_statsRecorderNode);
+      m_statsRecorderNode.tearDown();
+      m_statsRecorderNode = null;
+    }
+  }
+  
   protected GCStatsNode createGCStatsNode() throws Exception {
     return new GCStatsNode(this);
   }
-  
+
   protected LocksNode createLocksNode() throws Exception {
     return new LocksNode(this);
   }
-  
+
   protected ServersNode createServersNode() {
-    return  new ServersNode(this);
+    return new ServersNode(this);
   }
-  
+
   protected ClientsNode createClientsNode() throws Exception {
     return new ClientsNode(this);
   }
-  
+
   void handlePassiveUninitialized() {
     try {
       tryAddChildren();
@@ -809,7 +851,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   void handleActivation() {
-    if(m_activeLocator != null) {
+    if (m_activeLocator != null) {
       cancelActiveLocator();
     }
     try {
@@ -822,14 +864,14 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   TCServerInfoMBean getServerInfoBean() throws Exception {
-    if(m_serverInfoBean != null) return m_serverInfoBean;
+    if (m_serverInfoBean != null) return m_serverInfoBean;
     m_serverInfoBean = ServerHelper.getHelper().getServerInfoBean(getConnectionContext());
     return m_serverInfoBean;
   }
 
   public ProductInfo getProductInfo() {
-    if(m_productInfo != null) return m_productInfo;
-    
+    if (m_productInfo != null) return m_productInfo;
+
     try {
       TCServerInfoMBean serverInfo = getServerInfoBean();
 
@@ -850,7 +892,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   public String getProductVersion() {
     return getProductInfo().getVersion();
   }
-  
+
   public String getProductBuildID() {
     return getProductInfo().getBuildID();
   }
@@ -858,7 +900,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   public String getProductLicense() {
     return getProductInfo().getLicense();
   }
-  
+
   String getEnvironment() {
     try {
       TCServerInfoMBean serverInfo = getServerInfoBean();
@@ -926,25 +968,28 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
 
   StatisticsLocalGathererMBean getStatisticsGathererMBean() {
     ConnectionContext cc = getConnectionContext();
-    return (StatisticsLocalGathererMBean) MBeanServerInvocationHandler
+    return (StatisticsLocalGathererMBean) MBeanServerInvocationProxy
         .newProxyInstance(cc.mbsc, StatisticsMBeanNames.STATISTICS_GATHERER, StatisticsLocalGathererMBean.class, true);
   }
 
   boolean haveActiveRecordingSession() {
-    return m_clusterPanel.haveActiveRecordingSession();
+    return m_statsRecorderNode != null && m_statsRecorderNode.isRecording();
   }
 
   L2Info[] getClusterMembers() {
-    L2Info[] result = null;
-
+    if(m_clusterMembers != null)  return m_clusterMembers;
+    
     try {
       TCServerInfoMBean serverInfo = getServerInfoBean();
-      result = serverInfo.getL2Info();
+      m_clusterMembers = serverInfo.getL2Info();
     } catch (Exception e) {
       m_acc.log(e);
+    } finally {
+      if(m_clusterMembers == null) {
+        m_clusterMembers = new L2Info[0];
+      }
     }
-
-    return result != null ? result : new L2Info[0];
+    return m_clusterMembers;
   }
 
   class ActiveWaiter implements Runnable {
@@ -984,18 +1029,19 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   boolean tryFindNewActive() {
-    if (m_serversNode != null) {
+    if (m_serversNode != null && m_serversNode.getChildCount() > 1) {
       int count = m_serversNode.getChildCount();
       for (int i = 0; i < count; i++) {
         ServerNode serverNode = (ServerNode) m_serversNode.getChildAt(i);
         ServerConnectionManager scm = serverNode.getServerConnectionManager();
-        if (!scm.equals(m_connectManager) && scm.isActive()) {
-          handleNewActive(scm);
-          return true;
-        }
-        if (scm.isStarted()) {
-          waitForNewActive();
-          return true;
+        if (!scm.equals(m_connectManager)) {
+          if (scm.isActive()) {
+            handleNewActive(scm);
+            return true;
+          } else if (scm.isStarted()) {
+            waitForNewActive();
+            return true;
+          }
         }
       }
     }
@@ -1006,7 +1052,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_serverInfoBean = null;
     m_productInfo = null;
   }
-  
+
   void handleDisconnect() {
     resetBeanProxies();
     if (!m_userDisconnecting && tryFindNewActive()) { return; }
@@ -1014,15 +1060,12 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
   }
 
   private void reallyHandleDisconnect() {
-    for (int i = getChildCount() - 1; i >= 0; i--) {
-      XTreeNode node = (XTreeNode) getChildAt(i);
-      node.tearDown();
-      remove(i);
-    }
-
-    m_clusterPanel.disconnected();
-    m_acc.controller.nodeStructureChanged(ClusterNode.this);
+    m_clusterMembers = null;
     m_acc.controller.select(this);
+    tearDownChildren();
+    removeAllChildren();
+    m_acc.controller.nodeStructureChanged(this);
+    m_clusterPanel.disconnected();
     m_userDisconnecting = false;
   }
 
@@ -1108,6 +1151,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
       }
     }
 
+    if(m_statsRecorderNode != null) {
+      m_statsRecorderNode.testTriggerThreadDumpSRA();
+    }
+
     return tde;
   }
 
@@ -1136,6 +1183,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener, No
     m_serversNode = null;
     m_clientsNode = null;
     m_gcStatsNode = null;
+    m_threadDumpsNode = null;
 
     super.tearDown();
   }

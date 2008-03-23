@@ -6,6 +6,7 @@ package com.tc.object.change;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.object.ApplicatorDNAEncodingImpl;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
@@ -15,7 +16,6 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
-import com.tc.object.dna.impl.DNAEncodingImpl;
 import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.DNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -28,9 +28,8 @@ public class TCChangeBufferTest extends TestCase {
   public void testLogicalClassIgnoresPhysicalChanges() throws Exception {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
-    DNAEncoding encoding = new DNAEncodingImpl(classProvider);
+    DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
     MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this, false, true);
-    mockTCObject.setDehydrateReturnValue(false);
     TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     // physical updates should be ignored
@@ -42,9 +41,10 @@ public class TCChangeBufferTest extends TestCase {
     TCByteBufferOutputStream output = new TCByteBufferOutputStream();
 
     DNAWriter writer = new DNAWriterImpl(output, mockTCObject.getObjectID(), mockTCObject.getTCClass().getName(),
-                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription());
+                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription(), false);
 
     buffer.writeTo(writer);
+    writer.markSectionEnd();
     writer.finalizeHeader();
     output.close();
 
@@ -71,9 +71,8 @@ public class TCChangeBufferTest extends TestCase {
   public void testLastPhysicalChangeWins() throws Exception {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
-    DNAEncoding encoding = new DNAEncodingImpl(classProvider);
+    DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
     MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this);
-    mockTCObject.setDehydrateReturnValue(false);
     TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     for (int i = 0; i < 100; i++) {
@@ -82,9 +81,10 @@ public class TCChangeBufferTest extends TestCase {
 
     TCByteBufferOutputStream output = new TCByteBufferOutputStream();
     DNAWriter writer = new DNAWriterImpl(output, mockTCObject.getObjectID(), mockTCObject.getTCClass().getName(),
-                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription());
+                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription(), false);
 
     buffer.writeTo(writer);
+    writer.markSectionEnd();
     writer.finalizeHeader();
     output.close();
 
@@ -110,9 +110,8 @@ public class TCChangeBufferTest extends TestCase {
   public void testLastArrayChangeWins() throws Exception {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     ClassProvider classProvider = new MockClassProvider();
-    DNAEncoding encoding = new DNAEncodingImpl(classProvider);
+    DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
     MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this, true, false);
-    mockTCObject.setDehydrateReturnValue(false);
     TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     for (int i = 0; i < 100; i++) {
@@ -122,9 +121,10 @@ public class TCChangeBufferTest extends TestCase {
     TCByteBufferOutputStream output = new TCByteBufferOutputStream();
 
     DNAWriter writer = new DNAWriterImpl(output, mockTCObject.getObjectID(), mockTCObject.getTCClass().getName(),
-                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription());
+                                         serializer, encoding, mockTCObject.getTCClass().getDefiningLoaderDescription(), false);
 
     buffer.writeTo(writer);
+    writer.markSectionEnd();
     writer.finalizeHeader();
     output.close();
 
