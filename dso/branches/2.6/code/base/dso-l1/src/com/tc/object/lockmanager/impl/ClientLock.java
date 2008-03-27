@@ -1000,6 +1000,7 @@ class ClientLock implements WaitTimerCallback, LockFlushCallback {
         int timeoutLockLevel = wlr.lockLevel();
         ThreadID timeoutThreadID = wlr.threadID();
         cannotAwardLock(timeoutThreadID, timeoutLockLevel);
+        return;
       }
     } else if (isOnlyWaitLockRequest(callbackObject)) {
       WaitLockRequest wlr = (WaitLockRequest) callbackObject;

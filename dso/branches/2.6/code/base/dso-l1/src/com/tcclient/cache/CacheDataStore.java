@@ -10,7 +10,6 @@ import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.util.Assert;
-import com.tc.util.DebugUtil;
 import com.tc.util.Util;
 
 import java.io.Serializable;
@@ -344,9 +343,6 @@ public class CacheDataStore implements Serializable {
 
   private void logDebug(String msg) {
     if (config.isLoggingEnabled()) {
-      if (DebugUtil.DEBUG) {
-        System.err.println(msg);
-      }
       logger.debug(msg);
     }
   }
