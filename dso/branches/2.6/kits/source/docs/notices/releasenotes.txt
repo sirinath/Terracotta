@@ -1,5 +1,5 @@
 
-Nightly Build from Trunk
+Terracotta 2.6
 
 
 Documentation: http://www.terracotta.org/confluence/display/docs1/Terracotta+Product+Documentation
@@ -9,5 +9,5 @@ Support:       http://www.terracotta.org/confluence/display/orgsite/Support
 
 
 
-Copyright (c) 2007, Terracotta, Inc.
+Copyright (c) 2008, Terracotta, Inc.
 http://www.terracotta.org
