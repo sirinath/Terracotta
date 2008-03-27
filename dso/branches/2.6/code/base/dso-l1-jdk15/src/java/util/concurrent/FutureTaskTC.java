@@ -1,9 +1,8 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package java.util.concurrent;
-
-import com.tc.object.bytecode.ManagerUtil;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -78,14 +77,14 @@ public class FutureTaskTC implements Future, Runnable {
 
     Sync(Callable callable) {
       this.callable = callable;
-      lock      = new ReentrantLock();
-      ran       = lock.newCondition();
+      lock = new ReentrantLock();
+      ran = lock.newCondition();
     }
 
     Sync() {
       callable = null;
-      lock      = null;
-      ran       = null;
+      lock = null;
+      ran = null;
     }
 
     private boolean ranOrCancelled(int state) {
@@ -215,7 +214,7 @@ public class FutureTaskTC implements Future, Runnable {
         lock.unlock();
       }
     }
-    
+
     private void managedInnerCancel() {
       Thread r = null;
       lock.lock();
