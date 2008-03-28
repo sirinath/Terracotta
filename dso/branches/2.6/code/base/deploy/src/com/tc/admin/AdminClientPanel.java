@@ -8,8 +8,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.dijon.Button;
 import org.dijon.CheckBox;
 import org.dijon.Container;
@@ -37,7 +35,6 @@ import com.tc.admin.common.XTabbedPane;
 import com.tc.admin.common.XTextField;
 import com.tc.admin.common.XTreeModel;
 import com.tc.admin.common.XTreeNode;
-import com.tc.util.Assert;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -328,7 +325,11 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     HelpAction() {
       super("AdminConsole Help");
       String kitID = com.tc.util.ProductInfo.getInstance().kitID();
-      Assert.assertNotNull(kitID);
+      if(kitID == null) {
+        if((kitID = System.getProperty("com.tc.kitID")) == null) {
+          kitID = "42.0";
+        }
+      }
       url = "http://www.terracotta.org/kit/reflector?kitID=" + kitID + "&pageID=ConsoleGuide";
     }
 
@@ -846,18 +847,6 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
     UpdateCheckerAction() {
       super(getBundleString("update-checker.action.label"));
-
-      Logger.getLogger("org.apache.commons.httpclient.HttpClient").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.params.DefaultHttpParams").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.methods.GetMethod").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.HttpMethodDirector").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.HttpConnection").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.HttpMethodBase").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.HttpState").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.HttpParser").setLevel(Level.OFF);
-      Logger.getLogger("org.apache.commons.httpclient.cookie.CookieSpec").setLevel(Level.OFF);
-      Logger.getLogger("httpclient.wire.header").setLevel(Level.OFF);
-      Logger.getLogger("httpclient.wire.content").setLevel(Level.OFF);
 
       if (!isEnabled()) return;
 
