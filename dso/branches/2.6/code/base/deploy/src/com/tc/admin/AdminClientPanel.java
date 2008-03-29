@@ -325,11 +325,6 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     HelpAction() {
       super("AdminConsole Help");
       String kitID = com.tc.util.ProductInfo.getInstance().kitID();
-      if(kitID == null) {
-        if((kitID = System.getProperty("com.tc.kitID")) == null) {
-          kitID = "42.0";
-        }
-      }
       url = "http://www.terracotta.org/kit/reflector?kitID=" + kitID + "&pageID=ConsoleGuide";
     }
 
