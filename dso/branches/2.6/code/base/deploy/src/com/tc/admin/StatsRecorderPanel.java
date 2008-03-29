@@ -798,7 +798,7 @@ public class StatsRecorderPanel extends XContainer {
 
     private String getSvtUrl() {
       String kitID = com.tc.util.ProductInfo.getInstance().kitID();
-      if(kitID == null) {
+      if(kitID == null || "[unknown]".equals(kitID)) {
         if((kitID = System.getProperty("com.tc.kitID")) == null) {
           kitID = "42.0";
         }
