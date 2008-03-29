@@ -278,21 +278,25 @@ public class StatsRecorderPanel extends XContainer {
       }
     }
 
-    private void showRecordingInProgress() {
-      m_isRecording = true;
-      m_startGatheringStatsButton.setSelected(true);
-      m_stopGatheringStatsButton.setSelected(false);
+    private void setRecording(boolean recording) {
+      m_isRecording = recording;
+
+      m_startGatheringStatsButton.setSelected(recording);
+      m_startGatheringStatsButton.setEnabled(!recording);
+
+      m_stopGatheringStatsButton.setSelected(!recording);
+      m_stopGatheringStatsButton.setEnabled(recording);
+      
       updateSessionsControls();
       m_statsRecorderNode.notifyChanged();
     }
+    
+    private void showRecordingInProgress() {
+      setRecording(true);
+    }
 
     private void hideRecordingInProgress() {
-      m_currentStatsSessionId = null;
-      m_isRecording = false;
-      m_startGatheringStatsButton.setSelected(false);
-      m_stopGatheringStatsButton.setSelected(true);
-      updateSessionsControls();
-      m_statsRecorderNode.notifyChanged();
+      setRecording(false);
     }
 
     public void handleNotification(Notification notification, Object handback) {
