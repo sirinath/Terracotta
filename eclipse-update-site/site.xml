@@ -7,7 +7,10 @@
 
 -->
 <site>
-
+   <feature url="features/org.terracotta.dso_VERSION.jar" id="org.terracotta.dso" version="VERSION">
+      <category name="dso"/>
+   </feature>
+   
    <feature url="features/org.terracotta.dso_2.5.2.r7031_v20080218.jar" id="org.terracotta.dso" version="2.5.2.r7031_v20080218">
       <category name="dso"/>
    </feature>
