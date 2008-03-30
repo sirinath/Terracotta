@@ -102,6 +102,11 @@ class BuildEnvironment < Environment
     @version
   end
 
+  # return maven artifacts version defined in build-config.global
+  def maven_version
+    @config_source['maven.version'] || 'unknown'
+  end
+
   # Edition info: opensource or enterprise  
   def edition
     @config_source['edition'] || "opensource"
