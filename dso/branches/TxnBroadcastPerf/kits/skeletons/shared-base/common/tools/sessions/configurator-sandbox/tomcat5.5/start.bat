@@ -13,27 +13,24 @@ rem -------------------------------------
 setlocal
 cd %~d0%~p0..
 set SANDBOX=%CD%
-for %%i in ("%SANDBOX%") do set SANDBOX=%%~fsi
+set SANDBOX="%SANDBOX:"=%"
 
 set TC_INSTALL_DIR=%SANDBOX%\..\..\..
 
 if not defined JAVA_HOME set JAVA_HOME="%TC_INSTALL_DIR%\jre"
 set JAVA_HOME="%JAVA_HOME:"=%"
-if not exist %JAVA_HOME% set JAVA_HOME=%TC_INSTALL_DIR%\jre
-FOR %%i IN (%JAVA_HOME%) DO SET JAVA_HOME=%%~fsi
 
 if not defined CATALINA_HOME (
-  echo CATALINA_HOME must be set to a Tomcat5.0 installation.
+  echo CATALINA_HOME must be set to a Tomcat5.5 installation.
   exit 1
 ) else (
   set CATALINA_HOME="%CATALINA_HOME:"=%"
+  
   if not exist %CATALINA_HOME% (
     echo CATALINA_HOME %CATALINA_HOME% does not exist.
     exit 1
   )
 )
-for %%i in (%CATALINA_HOME%) do set CATALINA_HOME=%%~fsi
-
 set CATALINA_BASE=%SANDBOX%\tomcat5.5\%1
 
 rem --------------------------------------------------------------------
@@ -57,7 +54,10 @@ set JAVA_OPTS=%OPTS% %JAVA_OPTS%
 :runCatalina
 
 cd %SANDBOX%
-call %CATALINA_HOME%\bin\catalina.bat run
+set CATALINA_HOME=%CATALINA_HOME:"=%
+set CATALINA_BASE=%CATALINA_BASE:"=%
+set JAVA_HOME=%JAVA_HOME:"=%
+call "%CATALINA_HOME%\bin\catalina.bat" run
 
 :end
 exit %ERRORLEVEL%

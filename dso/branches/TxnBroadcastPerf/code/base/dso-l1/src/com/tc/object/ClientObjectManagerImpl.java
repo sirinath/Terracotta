@@ -49,10 +49,12 @@ import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.text.StringFormatter;
 import com.tc.util.Assert;
+import com.tc.util.Counter;
 import com.tc.util.NonPortableReason;
 import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.State;
 import com.tc.util.Util;
+import com.tc.util.concurrent.ResetableLatch;
 import com.tc.util.concurrent.StoppableThread;
 
 import java.io.IOException;
@@ -80,25 +82,25 @@ import java.util.Set;
 public class ClientObjectManagerImpl implements ClientObjectManager, PortableObjectProvider, Evictable, DumpHandler,
     PrettyPrintable {
 
-  private static final State                   PAUSED                  = new State("PAUSED");
-  private static final State                   STARTING                = new State("STARTING");
-  private static final State                   RUNNING                 = new State("RUNNING");
+  private static final State                   PAUSED                 = new State("PAUSED");
+  private static final State                   STARTING               = new State("STARTING");
+  private static final State                   RUNNING                = new State("RUNNING");
 
-  private static final LiteralValues           literals                = new LiteralValues();
-  private static final TCLogger                staticLogger            = TCLogging.getLogger(ClientObjectManager.class);
+  private static final LiteralValues           literals               = new LiteralValues();
+  private static final TCLogger                staticLogger           = TCLogging.getLogger(ClientObjectManager.class);
 
-  private static final long                    POLL_TIME               = 1000;
-  private static final long                    STOP_WAIT               = POLL_TIME * 3;
+  private static final long                    POLL_TIME              = 1000;
+  private static final long                    STOP_WAIT              = POLL_TIME * 3;
 
-  private static final int                     NO_DEPTH                = 0;
+  private static final int                     NO_DEPTH               = 0;
 
-  private static final int                     COMMIT_SIZE             = 100;
+  private static final int                     COMMIT_SIZE            = 100;
 
-  private State                                state                   = RUNNING;
-  private final Object                         shutdownLock            = new Object();
-  private final Map                            roots                   = new HashMap();
-  private final Map                            idToManaged             = new HashMap();
-  private final Map                            pojoToManaged           = new IdentityWeakHashMap();
+  private State                                state                  = RUNNING;
+  private final Object                         shutdownLock           = new Object();
+  private final Map                            roots                  = new HashMap();
+  private final Map                            idToManaged            = new HashMap();
+  private final Map                            pojoToManaged          = new IdentityWeakHashMap();
   private final ClassProvider                  classProvider;
   private final RemoteObjectManager            remoteObjectManager;
   private final EvictionPolicy                 cache;
@@ -107,25 +109,32 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   private final TraverseTest                   traverseTest;
   private final DSOClientConfigHelper          clientConfiguration;
   private final TCClassFactory                 clazzFactory;
-  private final Set                            objectLookupsInProgress = new HashSet();
-  private final Set                            rootLookupsInProgress   = new HashSet();
+  private final Set                            rootLookupsInProgress  = new HashSet();
   private final ObjectIDProvider               idProvider;
-  private final ReferenceQueue                 referenceQueue          = new ReferenceQueue();
+  private final ReferenceQueue                 referenceQueue         = new ReferenceQueue();
   private final TCObjectFactory                factory;
 
   private ClientTransactionManager             txManager;
 
-  private StoppableThread                      reaper                  = null;
+  private StoppableThread                      reaper                 = null;
   private final TCLogger                       logger;
   private final RuntimeLogger                  runtimeLogger;
   private final NonPortableEventContextFactory appEventContextFactory;
-  private final ThreadLocal                    localCreationInProgress = new ThreadLocal();
-  private final Set                            pendingCreateTCObjects  = new HashSet();
+  private final Set                            pendingCreateTCObjects = new HashSet();
   private final Portability                    portability;
   private final DSOClientMessageChannel        channel;
   private final ToggleableReferenceManager     referenceManager;
 
-  private final boolean                        sendErrors              = System.getProperty("project.name") != null;
+  private final boolean                        sendErrors             = System.getProperty("project.name") != null;
+
+  private final Map                            objectLatchStateMap    = new HashMap();
+  private final ThreadLocal                    localLookupContext     = new ThreadLocal() {
+
+                                                                        protected synchronized Object initialValue() {
+                                                                          return new LocalLookupContext();
+                                                                        }
+
+                                                                      };
 
   public ClientObjectManagerImpl(RemoteObjectManager remoteObjectManager, DSOClientConfigHelper clientConfiguration,
                                  ObjectIDProvider idProvider, EvictionPolicy cache, RuntimeLogger runtimeLogger,
@@ -155,6 +164,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
                    + cache.getCacheCapacity());
     }
     startReaper();
+    ensureLocalLookupContextLoaded();
+  }
+
+  private void ensureLocalLookupContextLoaded() {
+    // load LocalLookupContext early to avoid ClassCircularityError: DEV-1386
+    new LocalLookupContext();
   }
 
   public Class getClassFor(String className, String loaderDesc) throws ClassNotFoundException {
@@ -259,6 +274,41 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
 
     return copy;
+  }
+
+  private LocalLookupContext getLocalLookupContext() {
+    return (LocalLookupContext) localLookupContext.get();
+  }
+
+  private ObjectLatchState getObjectLatchState(ObjectID id) {
+    return (ObjectLatchState) objectLatchStateMap.get(id);
+  }
+
+  private ObjectLatchState markLookupInProgress(ObjectID id) {
+    ResetableLatch latch = getLocalLookupContext().getLatch();
+    ObjectLatchState ols = new ObjectLatchState(id, latch);
+    Object old = objectLatchStateMap.put(id, ols);
+    Assert.assertNull(old);
+    return ols;
+  }
+
+  private synchronized void markCreateInProgress(ObjectLatchState ols, TCObject object, LocalLookupContext lookupContext) {
+    ResetableLatch latch = lookupContext.getLatch();
+    // Make sure this thread owns this object lookup
+    Assert.assertTrue(ols.getLatch() == latch);
+    ols.setObject(object);
+    ols.markCreateState();
+    lookupContext.getObjectCreationCount().increment();
+  }
+
+  private synchronized void removeCreateInProgress(ObjectID id) {
+    objectLatchStateMap.remove(id);
+    getLocalLookupContext().getObjectCreationCount().decrement();
+  }
+
+  // For testing purposes
+  protected Map getObjectLatchStateMap() {
+    return objectLatchStateMap;
   }
 
   /**
@@ -459,33 +509,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   }
 
   public boolean isCreationInProgress() {
-    Map m = (Map) localCreationInProgress.get();
-    return (m != null) && (m.size() > 0);
-  }
-
-  // Dealing with the case where a map contains a map. The faulting will deadlock without this stuff
-  private TCObject getCreationInProgress(ObjectID id) {
-    Map m = (Map) localCreationInProgress.get();
-    if (m == null) return null;
-    return (TCObject) m.get(id);
-  }
-
-  private void setCreationInProgress(ObjectID id, Object obj) {
-    Map m = (Map) localCreationInProgress.get();
-    if (m == null) {
-      m = new HashMap();
-      localCreationInProgress.set(m);
-    }
-    m.put(id, obj);
-    txManager.disableTransactionLogging(); // We dont want to log changes to transaction until we hydrate the new
-    // object.
-  }
-
-  private void removeCreationInProgress(ObjectID id) {
-    Map m = (Map) localCreationInProgress.get();
-    Assert.assertNotNull(m);
-    m.remove(id);
-    txManager.enableTransactionLogging();
+    return getLocalLookupContext().getObjectCreationCount().get() > 0 ? true : false;
   }
 
   // Done
@@ -499,48 +523,98 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     boolean retrieveNeeded = false;
     boolean isInterrupted = false;
 
-    synchronized (this) {
-      while (true) {
-        obj = basicLookupByID(id);
-        if (obj != null) return obj;
-        obj = getCreationInProgress(id);
-        if (obj != null) return obj;
-        if (!objectLookupInProgress(id)) {
-          retrieveNeeded = true;
-          markObjectLookupInProgress(id);
-          break;
-        } else {
-          try {
-            wait();
-          } catch (InterruptedException ie) {
-            isInterrupted = true;
+    LocalLookupContext lookupContext = getLocalLookupContext();
+
+    if (lookupContext.getCallStackCount().increment() == 1) {
+      // first time
+      txManager.disableTransactionLogging();
+      lookupContext.getLatch().reset();
+    }
+
+    try {
+      ObjectLatchState ols;
+      synchronized (this) {
+        while (true) {
+          ols = getObjectLatchState(id);
+          obj = basicLookupByID(id);
+          if (obj != null) {
+            // object exists in local cache
+            return obj;
+          } else if (ols != null && ols.isCreateState()) {
+            // if the object is being created, add to the wait set and return the object
+            lookupContext.getObjectLatchWaitSet().add(ols);
+            return ols.getObject();
+          } else if (ols != null && ols.isLookupState()) {
+            // the object is being looked up, wait.
+            try {
+              wait();
+            } catch (InterruptedException ie) {
+              isInterrupted = true;
+            }
+          } else {
+            // otherwise, we need to lookup the object
+            retrieveNeeded = true;
+            ols = markLookupInProgress(id);
+            break;
           }
         }
       }
-    }
-    Util.selfInterruptIfNeeded(isInterrupted);
+      Util.selfInterruptIfNeeded(isInterrupted);
 
-    if (retrieveNeeded) {
-      try {
-        DNA dna = noDepth ? remoteObjectManager.retrieve(id, NO_DEPTH) : (parentContext == null ? remoteObjectManager
-            .retrieve(id) : remoteObjectManager.retrieveWithParentContext(id, parentContext));
-        // obj = factory.getNewInstance(id, classProvider.getClassFor(dna.getTypeName(), dna
-        // .getDefiningLoaderDescription()));
-        obj = factory.getNewInstance(id, classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
-            .getTypeName()), dna.getDefiningLoaderDescription()), false);
-        setCreationInProgress(id, obj);
-        Assert.assertFalse(dna.isDelta());
-        obj.hydrate(dna, false);
-      } catch (ClassNotFoundException e) {
-        logger.warn("Exception: ", e);
-        throw e;
-      } finally {
-        if (obj != null) removeCreationInProgress(id);
+      // retrieving object required, first looking up the DNA from the remote server, and creating
+      // a pre-init TCObject, then hydrating the object
+      if (retrieveNeeded) {
+        try {
+          DNA dna = noDepth ? remoteObjectManager.retrieve(id, NO_DEPTH) : (parentContext == null ? remoteObjectManager
+              .retrieve(id) : remoteObjectManager.retrieveWithParentContext(id, parentContext));
+          obj = factory.getNewInstance(id, classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
+              .getTypeName()), dna.getDefiningLoaderDescription()), false);
+
+          // object is retrieved, now you want to make this as Creation in progress
+          markCreateInProgress(ols, obj, lookupContext);
+
+          Assert.assertFalse(dna.isDelta());
+          // now hydrate the object, this could call resolveReferences which would call this method recursively
+          obj.hydrate(dna, false);
+        } catch (ClassNotFoundException e) {
+          // remove the object creating in progress from the list.
+          removeCreateInProgress(id);
+          logger.warn("Exception: ", e);
+          throw e;
+        }
+        basicAddLocal(obj, true);
       }
-      basicAddLocal(obj);
+    } finally {
+      if (lookupContext.getCallStackCount().decrement() == 0) {
+        // release your own local latch
+        lookupContext.getLatch().release();
+        Set waitSet = lookupContext.getObjectLatchWaitSet();
+        waitAndClearLatchSet(waitSet);
+        // enabled transaction logging
+        txManager.enableTransactionLogging();
+      }
     }
     return obj;
 
+  }
+
+  private void waitAndClearLatchSet(Set waitSet) {
+    boolean isInterrupted = false;
+    // now wait till all the other objects you are waiting for releases there latch.
+    for (Iterator iter = waitSet.iterator(); iter.hasNext();) {
+      ObjectLatchState ols = (ObjectLatchState) iter.next();
+      while (true) {
+        try {
+          ols.getLatch().acquire();
+          break;
+        } catch (InterruptedException e) {
+          isInterrupted = true;
+        }
+      }
+
+    }
+    Util.selfInterruptIfNeeded(isInterrupted);
+    waitSet.clear();
   }
 
   public synchronized TCObject lookupIfLocal(ObjectID id) {
@@ -863,12 +937,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return tcobj;
   }
 
-  private void basicAddLocal(TCObject obj) {
+  private void basicAddLocal(TCObject obj, boolean removeCreateInProgress) {
     synchronized (this) {
       Assert.eval(!(obj instanceof TCObjectClone));
-      if (basicHasLocal(obj.getObjectID())) { throw Assert.failure("Attempt to add an object that already exists: "
-                                                                   + obj); }
-      idToManaged.put(obj.getObjectID(), obj);
+      ObjectID id = obj.getObjectID();
+      if (basicHasLocal(id)) { throw Assert.failure("Attempt to add an object that already exists: " + obj); }
+      idToManaged.put(id, obj);
 
       Object pojo = obj.getPeerObject();
 
@@ -893,7 +967,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
         }
       }
       cache.add(obj);
-      markObjectLookupNotInProgress(obj.getObjectID());
+      if (removeCreateInProgress) removeCreateInProgress(id);
       notifyAll();
     }
   }
@@ -986,8 +1060,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     if ((obj = basicLookup(pojo)) == null) {
       obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
       txManager.createObject(obj);
-      basicAddLocal(obj);
+      basicAddLocal(obj, false);
       executePostCreateMethod(pojo);
+      if (runtimeLogger.getNewManagedObjectDebug()) {
+        runtimeLogger.newManagedObject(obj);
+      }
     }
     return obj;
   }
@@ -1007,7 +1084,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     if ((obj = basicLookup(pojo)) == null) {
       obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
       pendingCreateTCObjects.add(obj);
-      basicAddLocal(obj);
+      basicAddLocal(obj, false);
     }
     return obj;
   }
@@ -1035,18 +1112,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
   private ObjectID nextObjectID() {
     return idProvider.next();
-  }
-
-  private boolean objectLookupInProgress(ObjectID id) {
-    return objectLookupsInProgress.contains(id);
-  }
-
-  private void markObjectLookupInProgress(ObjectID id) {
-    objectLookupsInProgress.add(id);
-  }
-
-  private void markObjectLookupNotInProgress(ObjectID id) {
-    objectLookupsInProgress.remove(id);
   }
 
   public WeakReference createNewPeer(TCClass clazz, DNA dna) {
@@ -1215,6 +1280,82 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     out.indent().print("idToManaged size: ").println(new Integer(idToManaged.size()));
     out.indent().print("pojoToManaged size: ").println(new Integer(pojoToManaged.size()));
     return out;
+  }
+
+  private static class LocalLookupContext {
+    private final ResetableLatch latch               = new ResetableLatch();
+    private final Counter        callStackCount      = new Counter(0);
+    private final Counter        objectCreationCount = new Counter(0);
+    private final Set            objectLatchWaitSet  = new HashSet();
+
+    public ResetableLatch getLatch() {
+      return latch;
+    }
+
+    public Counter getCallStackCount() {
+      return callStackCount;
+    }
+
+    public Counter getObjectCreationCount() {
+      return objectCreationCount;
+    }
+
+    public Set getObjectLatchWaitSet() {
+      return objectLatchWaitSet;
+    }
+
+  }
+
+  private static class ObjectLatchState {
+
+    private static final State   CREATE_STATE = new State("CREATE-STATE");
+
+    private static final State   LOOKUP_STATE = new State("LOOKUP-STATE");
+
+    private final ObjectID       objectID;
+
+    private final ResetableLatch latch;
+
+    private State                state        = LOOKUP_STATE;
+
+    private TCObject             object;
+
+    public ObjectLatchState(ObjectID objectID, ResetableLatch latch) {
+      this.objectID = objectID;
+      this.latch = latch;
+    }
+
+    public void setObject(TCObject obj) {
+      this.object = obj;
+    }
+
+    public ObjectID getObjectID() {
+      return objectID;
+    }
+
+    public ResetableLatch getLatch() {
+      return latch;
+    }
+
+    public TCObject getObject() {
+      return object;
+    }
+
+    public boolean isLookupState() {
+      return LOOKUP_STATE.equals(state);
+    }
+
+    public boolean isCreateState() {
+      return CREATE_STATE.equals(state);
+    }
+
+    public void markCreateState() {
+      state = CREATE_STATE;
+    }
+
+    public String toString() {
+      return "ObjectLatchState [" + objectID + " , " + latch + ", " + state + " ]";
+    }
   }
 
 }

@@ -24,8 +24,6 @@ rem
 
 if not defined JAVA_HOME set JAVA_HOME="%TC_INSTALL_DIR%\jre"
 set JAVA_HOME="%JAVA_HOME:"=%"
-if not exist %JAVA_HOME% set JAVA_HOME=%TC_INSTALL_DIR%\jre
-FOR %%i IN (%JAVA_HOME%) DO SET JAVA_HOME=%%~fsi
 
 set JAVACMD=%JAVA_HOME%\bin\java
 set TC_JAR=%TC_INSTALL_DIR%\lib\tc.jar
@@ -35,7 +33,7 @@ goto tc_set_dso_boot_jar__1_0
 
  :tc_set_dso_boot_jar__1_0
    if not defined TMPFILE set TMPFILE=%TEMP%\var~
-   "%JAVACMD%" %JAVA_OPTS% -cp "%TC_JAR%" com.tc.object.tools.BootJarSignature >%TMPFILE%
+   %JAVACMD% %JAVA_OPTS% -cp %TC_JAR% com.tc.object.tools.BootJarSignature >%TMPFILE%
    for /F %%i in (%TMPFILE%) do @set DSO_BOOT_JAR_NAME=%%i
    del %TMPFILE%
    set __BOOT_JAR_SIG_EXIT_CODE=%errorlevel%
@@ -51,17 +49,25 @@ goto tc_set_dso_boot_jar__1_0
 
    :tc_set_dso_boot_jar__1_0_2
      set DSO_BOOT_JAR=%TC_INSTALL_DIR%\lib\dso-boot\%DSO_BOOT_JAR_NAME%
-     if not exist "%DSO_BOOT_JAR%" goto tc_set_dso_boot_jar__1_1
+     set DSO_BOOT_JAR="%DSO_BOOT_JAR:"=%"
+     
+     if not exist %DSO_BOOT_JAR% goto tc_set_dso_boot_jar__1_1
      goto return
 
  :tc_set_dso_boot_jar__1_1
    if not defined TC_CONFIG_PATH goto tc_set_dso_boot_jar__1_1_1
-   call "%TC_INSTALL_DIR%\bin\make-boot-jar.bat" -o "%DSO_BOOT_JAR%" -f "%TC_CONFIG_PATH%"
+   set TC_CONFIG_PATH="%TC_CONFIG_PATH:"=%"
+   
+   set DSO_BOOT_JAR="%DSO_BOOT_JAR:"=%"
+   
+   call "%TC_INSTALL_DIR%\bin\make-boot-jar.bat" -o %DSO_BOOT_JAR% -f %TC_CONFIG_PATH%
    if %ERRORLEVEL% NEQ 0 goto error
    goto return
 
    :tc_set_dso_boot_jar__1_1_1
-     call "%TC_INSTALL_DIR%\bin\make-boot-jar.bat" -o "%DSO_BOOT_JAR%"
+     set DSO_BOOT_JAR="%DSO_BOOT_JAR:"=%"
+     
+     call "%TC_INSTALL_DIR%\bin\make-boot-jar.bat" -o %DSO_BOOT_JAR%
      if %ERRORLEVEL% NEQ 0 goto error
      goto return
 

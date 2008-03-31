@@ -30,6 +30,7 @@ import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.session.NullSessionManager;
+import com.tc.test.TCTestCase;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.PortChooser;
 import com.tc.util.UUID;
@@ -47,9 +48,7 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
-public class TCGroupManagerImplTest extends TestCase {
+public class TCGroupManagerImplTest extends TCTestCase {
 
   private final static String      LOCALHOST      = "localhost";
   MessageMonitor                   monitor        = new NullMessageMonitor();
@@ -317,8 +316,7 @@ public class TCGroupManagerImplTest extends TestCase {
 
   private L2StateMessage createL2StateMessage() {
     long weights[] = new long[] { 1, 23, 44, 78 };
-    Enrollment enroll = new Enrollment(new NodeIdComparable("test", UUID.getUUID().toString().getBytes()), true,
-                                       weights);
+    Enrollment enroll = new Enrollment(new NodeIDImpl("test", UUID.getUUID().toString().getBytes()), true, weights);
     L2StateMessage message = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
     return (message);
   }

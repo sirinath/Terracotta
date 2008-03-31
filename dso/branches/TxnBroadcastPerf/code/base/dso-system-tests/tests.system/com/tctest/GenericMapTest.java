@@ -6,7 +6,7 @@ package com.tctest;
 public class GenericMapTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 3;
-
+  
   protected void setUp() throws Exception {
     super.setUp();
     getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
