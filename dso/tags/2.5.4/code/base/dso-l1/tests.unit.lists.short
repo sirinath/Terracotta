@@ -1,0 +1,5 @@
+ClientObjectManagerTest
+ClientLockManagerTest
+ClientTransactionManagerTest
+RemoteTransactionManagerTest
+HashMapTCTest
