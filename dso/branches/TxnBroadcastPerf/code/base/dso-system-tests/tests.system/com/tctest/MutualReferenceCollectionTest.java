@@ -26,10 +26,6 @@ import java.util.List;
 public class MutualReferenceCollectionTest extends TransparentTestBase {
   private static final int NODE_COUNT = 3;
 
-  public MutualReferenceCollectionTest() {
-    // DEV-1153
-    disableAllUntil("2008-06-01");
-  }
   
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
@@ -77,16 +73,22 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
       if (barrier.barrier() == 0) {
         synchronized (firstList) {
           for (int i = 0; i < 5000; i++) {
-            firstList.add(new Object());
+           firstList.add(new Object());
+           if((i % 100) == 0) {
+             System.out.println(i + "entries has been intialized for firstList thus far, for thread " + Thread.currentThread());
+           }
           }
-          // reference oddList
+          // reference secondList
           firstList.add(secondList);
         }
         synchronized (secondList) {
           for (int i = 1; i < 5000; i++) {
-            secondList.add(new Object());
+           secondList.add(new Object());
+           if((i % 100) == 0) {
+             System.out.println(i + "entries has been intialized for secondList thus far, for thread " + Thread.currentThread());
+           }
           }
-          // reference evenList
+          // reference firstList
           secondList.add(firstList);
         }
       }
@@ -121,8 +123,13 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
       private void doWork() throws Throwable {
         // iterate through the list to force faulting
         synchronized (list) {
+          int i = 0;
           for (Iterator it = list.iterator(); it.hasNext();) {
             it.next();
+            if((i % 100) == 0) {
+              System.out.println(i + "entries has been read thus far for " + Thread.currentThread());
+            }
+            i++;
             Thread.sleep(5 + (int) (Math.random() * 10));
           }
         }

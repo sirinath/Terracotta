@@ -9,14 +9,13 @@ import com.tc.objectserver.context.TransactionLookupContext;
 import com.tc.util.Assert;
 import com.tc.util.MergableLinkedList;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class ServerTransactionSequencerImpl implements ServerTransactionSequencer {
+public class ServerTransactionSequencerImpl implements ServerTransactionSequencer, ServerTransactionSequencerStats {
 
   private static final TCLogger    logger      = TCLogging.getLogger(ServerTransactionSequencerImpl.class);
 
@@ -25,7 +24,6 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
   private final MergableLinkedList txnQ        = new MergableLinkedList();
   private final MergableLinkedList blockedQ    = new MergableLinkedList();
 
-  private final BlockedSet         locks       = new BlockedSet();
   private final BlockedSet         objects     = new BlockedSet();
 
   private int                      txnsCount;
@@ -66,7 +64,6 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
     if (reconcile) {
       // Add blockedQ to the beginning of txnQ, this call will also clear blockedQ
       txnQ.mergeToFront(blockedQ);
-      locks.clearBlocked();
       objects.clearBlocked();
       reconcile = false;
     }
@@ -74,7 +71,6 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
 
   private void addBlocked(TransactionLookupContext lookupContext) {
     ServerTransaction txn = lookupContext.getTransaction();
-    locks.addBlocked(Arrays.asList(txn.getLockIDs()));
     objects.addBlocked(txn.getObjectIDs());
     blockedQ.add(lookupContext);
   }
@@ -91,11 +87,10 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
   }
 
   private boolean isBlocked(ServerTransaction txn) {
-    return locks.isBlocked(Arrays.asList(txn.getLockIDs())) || objects.isBlocked(txn.getObjectIDs());
+    return objects.isBlocked(txn.getObjectIDs());
   }
 
   public synchronized void makePending(ServerTransaction txn) {
-    locks.makePending(Arrays.asList(txn.getLockIDs()));
     objects.makePending(txn.getObjectIDs());
     Assert.assertTrue(pendingTxns.add(txn.getServerTransactionID()));
     if (false) logger.info("Make Pending : " + txn);
@@ -103,7 +98,6 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
 
   public synchronized void makeUnpending(ServerTransaction txn) {
     Assert.assertTrue(pendingTxns.remove(txn.getServerTransactionID()));
-    locks.makeUnpending(Arrays.asList(txn.getLockIDs()));
     objects.makeUnpending(txn.getObjectIDs());
     reconcile = true;
     if (false) logger.info("Processed Pending : " + txn);
@@ -112,12 +106,32 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
   /*
    * Used for testing
    */
-  boolean isPending(List txns) {
+  synchronized boolean isPending(List txns) {
     for (Iterator i = txns.iterator(); i.hasNext();) {
       ServerTransaction st = (ServerTransaction) i.next();
       if (pendingTxns.contains(st.getServerTransactionID())) return true;
     }
     return false;
+  }
+
+  public synchronized String dumpBlockedQ() {
+    return blockedQ.toString();
+  }
+
+  public synchronized String dumpObjects() {
+    return objects.toString();
+  }
+
+  public synchronized String dumpPendingTxns() {
+    return pendingTxns.toString();
+  }
+
+  public synchronized String dumpTxnQ() {
+    return txnQ.toString();
+  }
+
+  public synchronized String reconcileStatus() {
+    return String.valueOf(reconcile);
   }
 
   private static final class BlockedSet {
@@ -147,6 +161,12 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
 
     public void clearBlocked() {
       effect.clear();
+    }
+
+    public String toString() {
+      StringBuffer toStringBuffer = new StringBuffer();
+      toStringBuffer.append("cause: " + cause).append("\n").append("effect: " + effect).append("\n");
+      return toStringBuffer.toString();
     }
   }
 }

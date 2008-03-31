@@ -10,6 +10,8 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCByteBufferOutputStream.Mark;
 import com.tc.lang.Recyclable;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
@@ -24,6 +26,7 @@ import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 import com.tc.util.SequenceGenerator;
@@ -32,26 +35,32 @@ import com.tc.util.concurrent.SetOnceFlag;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
 public class TransactionBatchWriter implements ClientTransactionBatch {
+  public static final String                    FOLDING_DEBUG_PROP        = "l1.transactionmanager.folding.debug";
   public static final String                    FOLDING_ENABLED_PROP      = "l1.transactionmanager.folding.enabled";
   public static final String                    FOLDING_OBJECT_LIMIT_PROP = "l1.transactionmanager.folding.object.limit";
   public static final String                    FOLDING_LOCK_LIMIT_PROP   = "l1.transactionmanager.folding.lock.limit";
 
+  private static final boolean                  DEBUG                     = TCPropertiesImpl.getProperties()
+                                                                              .getBoolean(FOLDING_DEBUG_PROP);
+
+  private static final TCLogger                 logger                    = TCLogging
+                                                                              .getLogger(TransactionBatchWriter.class);
+
   private final CommitTransactionMessageFactory commitTransactionMessageFactory;
   private final TxnBatchID                      batchID;
   private final LinkedHashMap                   transactionData           = new LinkedHashMap();
-  private final LinkedList                      foldingKeys               = new LinkedList();
+  private final Map                             foldingKeys               = new HashMap();
   private final ObjectStringSerializer          serializer;
   private final DNAEncoding                     encoding;
   private final List                            batchDataOutputStreams    = new ArrayList();
@@ -118,21 +127,6 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     if (outstandingWriteCount == 0) removed.recycle();
   }
 
-  private Set getDeltaOIDs(ClientTransaction txn) {
-    Set rv = null;
-    for (Iterator i = txn.getChangeBuffers().values().iterator(); i.hasNext();) {
-      TCChangeBuffer changeBuffer = (TCChangeBuffer) i.next();
-      TCObject tco = changeBuffer.getTCObject();
-      if (!tco.isNew()) {
-        if (rv == null) {
-          rv = new HashSet();
-        }
-        rv.add(tco.getObjectID());
-      }
-    }
-    return rv == null ? Collections.EMPTY_SET : rv;
-  }
-
   private TransactionBuffer getOrCreateBuffer(ClientTransaction txn, SequenceGenerator sequenceGenerator) {
     if (foldingEnabled) {
       final boolean exceedsLimits = exceedsLimits(txn);
@@ -142,50 +136,119 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       final boolean scanForClose = (txn.getNewRoots().size() > 0) || (txn.getDmiDescriptors().size() > 0)
                                    || (txn.getNotifies().size() > 0) || exceedsLimits;
 
+      if (DEBUG) log_incomingTxn(txn, exceedsLimits, scanForClose);
+
       if (scanForClose) {
         scanForClose(txn);
-      } else if (!exceedsLimits) {
-        final Set deltaOIDs = getDeltaOIDs(txn); // only need to do this once, not for each fold key
+      } else {
+        boolean dependencyFound = false;
+        FoldingKey potential = null;
+        IdentityHashMap dependentKeys = null;
 
-        boolean stop = false;
-        for (Iterator i = foldingKeys.iterator(); !stop && i.hasNext();) {
-          FoldingKey key = (FoldingKey) i.next();
+        for (Iterator i = txn.getChangeBuffers().values().iterator(); i.hasNext();) {
+          TCChangeBuffer changeBuffer = (TCChangeBuffer) i.next();
+          TCObject tco = changeBuffer.getTCObject();
+          if (tco.isNew()) {
+            if (DEBUG) logger.info("isNew for " + tco.getObjectID());
+            continue;
+          }
 
-          final byte action = key.analyzeForFold(txn, deltaOIDs);
-          switch (action) {
-            case FoldingKey.ACCEPT: {
-              numFolded++;
-              return key.getBuffer();
+          final ObjectID oid = tco.getObjectID();
+          final FoldingKey key = (FoldingKey) foldingKeys.get(oid);
+          if (key == null) {
+            if (DEBUG) logger.info("no fold key for " + oid);
+            continue;
+          }
+
+          if (potential == null) {
+            if (DEBUG) logger.info("setting potential key to " + System.identityHashCode(key) + " on " + oid);
+            potential = key;
+            continue;
+          }
+
+          if (dependencyFound || potential != key || potential.isClosed()) {
+            if (!dependencyFound) {
+              if (DEBUG) logger.info("dependency for " + oid + ", potential(" + System.identityHashCode(potential)
+                                     + "), key(" + System.identityHashCode(key) + "), potential.closed="
+                                     + potential.isClosed());
             }
-            case FoldingKey.DENY: {
-              break;
+
+            if (dependentKeys == null) {
+              Assert.assertFalse(dependencyFound);
+              dependentKeys = new IdentityHashMap();
+              if (DEBUG) logger.info("add " + System.identityHashCode(potential) + " to depKey set on " + oid);
+              dependentKeys.put(potential, null);
             }
-            case FoldingKey.CLOSE: {
-              i.remove();
-              stop = true;
-              break;
-            }
-            default: {
-              throw new AssertionError("unknown action: " + action);
-            }
+
+            dependencyFound = true;
+
+            if (DEBUG) logger.info("add " + System.identityHashCode(key) + " to depKey set on " + oid);
+            dependentKeys.put(key, null);
+          }
+        }
+
+        if (dependencyFound) {
+          if (DEBUG) logger.info("Dependency found -- closing dependent keys");
+          closeDependentKeys(dependentKeys.keySet());
+        } else if (!exceedsLimits && potential != null) {
+          if (DEBUG) logger.info("potential fold found " + System.identityHashCode(potential));
+          if (potential.canAcceptFold(txn.getAllLockIDs(), txn.getTransactionType())) {
+            if (DEBUG) logger.info("fold accepted into " + System.identityHashCode(potential));
+
+            // need to take on the incoming ObjectIDs present in the buffer we are folding into here
+            Set incomingOids = txn.getChangeBuffers().keySet();
+            potential.getObjectIDs().addAll(incomingOids);
+
+            registerKeyForOids(incomingOids, potential);
+
+            return potential.getBuffer();
+          } else {
+            if (DEBUG) logger.info("fold denied into " + System.identityHashCode(potential));
           }
         }
       }
     }
 
+    // if we are here, we are not folding
     SequenceID sid = new SequenceID(sequenceGenerator.getNextSequence());
     txn.setSequenceID(sid);
+    if (DEBUG) logger.info("NOT folding, created new sequence " + sid);
 
     TransactionBuffer txnBuffer = new TransactionBuffer(sid, newOutputStream(), serializer, encoding);
 
     if (foldingEnabled) {
-      foldingKeys.add(new FoldingKeyImpl(txnBuffer, txn.getTransactionType(), txn.getAllLockIDs(), new HashSet(txn
-          .getChangeBuffers().keySet())));
+      FoldingKey key = new FoldingKey(txnBuffer, txn.getTransactionType(), txn.getAllLockIDs(), new HashSet(txn
+          .getChangeBuffers().keySet()));
+      registerKeyForOids(txn.getChangeBuffers().keySet(), key);
     }
 
     transactionData.put(txn.getTransactionID(), txnBuffer);
 
     return txnBuffer;
+  }
+
+  private void registerKeyForOids(Set oids, FoldingKey key) {
+    for (Iterator i = oids.iterator(); i.hasNext();) {
+      ObjectID oid = (ObjectID) i.next();
+      Object prev = foldingKeys.put(oid, key);
+      if (DEBUG) logger.info("registered key(" + System.identityHashCode(key) + " for " + oid + ", replaces key("
+                             + System.identityHashCode(prev) + ")");
+    }
+  }
+
+  private void log_incomingTxn(ClientTransaction txn, boolean exceedsLimits, boolean scanForClose) {
+    logger.info("incoming txn [" + txn.getTransactionID() + " locks=" + txn.getAllLockIDs() + ", oids="
+                + txn.getChangeBuffers().keySet() + ", dmi=" + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots()
+                + ", notifies=" + txn.getNotifies() + ", type=" + txn.getTransactionType() + "] exceedsLimit="
+                + exceedsLimits + ", scanForClose=" + scanForClose);
+  }
+
+  private void closeDependentKeys(Collection dependentKeys) {
+    for (Iterator i = dependentKeys.iterator(); i.hasNext();) {
+      FoldingKey key = (FoldingKey) i.next();
+      if (DEBUG) logger.info("closing dependent key " + System.identityHashCode(key));
+      key.close();
+    }
   }
 
   private boolean exceedsLimits(ClientTransaction txn) {
@@ -194,13 +257,14 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   private void scanForClose(ClientTransaction txn) {
-    List locks = txn.getAllLockIDs();
+    Collection locks = new HashSet(txn.getAllLockIDs()); // XXX: only create set if needed?
     Set oids = txn.getChangeBuffers().keySet();
 
-    for (Iterator i = foldingKeys.iterator(); i.hasNext();) {
+    for (Iterator i = foldingKeys.values().iterator(); i.hasNext();) {
       FoldingKey key = (FoldingKey) i.next();
-      if (key.hasCommonality(locks, oids)) {
+      if (key.isClosed() || key.hasCommonality(locks, oids)) {
         i.remove();
+        key.close();
       }
     }
   }
@@ -488,60 +552,66 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
   }
 
-  private interface FoldingKey {
-    static final byte ACCEPT = 1;
-    static final byte CLOSE  = 2;
-    static final byte DENY   = 3;
-
-    byte analyzeForFold(ClientTransaction txn, Set deltaOIDs);
-
-    boolean hasCommonality(List allLockIDs, Set keySet);
-
-    TransactionBuffer getBuffer();
-  }
-
-  private static class FoldingKeyImpl implements FoldingKey {
+  private static class FoldingKey {
     private final List              lockIDs;
     private final Set               objectIDs;
     private final TxnType           txnType;
     private final TransactionBuffer buffer;
+    private boolean                 closed;
 
-    FoldingKeyImpl(TransactionBuffer buffer, TxnType txnType, List lockIDs, Set objectIDs) {
+    FoldingKey(TransactionBuffer buffer, TxnType txnType, List lockIDs, Set objectIDs) {
       this.buffer = buffer;
       this.txnType = txnType;
       this.lockIDs = lockIDs;
       this.objectIDs = objectIDs;
+
+      if (DEBUG) {
+        logger.info("created new fold key(" + System.identityHashCode(this) + "), locks=" + lockIDs + ", txnType="
+                    + txnType + ", oids=" + objectIDs);
+      }
     }
 
-    public boolean hasCommonality(List locks, Set oids) {
-      return CollectionUtils.containsAny(lockIDs, locks) || CollectionUtils.containsAny(objectIDs, oids);
+    Set getObjectIDs() {
+      return objectIDs;
+    }
+
+    public void close() {
+      closed = true;
+    }
+
+    public boolean isClosed() {
+      return closed;
+    }
+
+    public boolean hasCommonality(Collection locks, Collection oids) {
+      // XXX: Take a lock list here, and only upgrade the larger collection to a set if size > 3
+      return CollectionUtils.containsAny(new HashSet(lockIDs), locks) || CollectionUtils.containsAny(objectIDs, oids);
     }
 
     public TransactionBuffer getBuffer() {
       return this.buffer;
     }
 
-    public byte analyzeForFold(ClientTransaction txn, Set deltaOIDs) {
-      List txnLocks = txn.getAllLockIDs();
-
-      if (lockIDs.size() != txnLocks.size()) { return chooseCloseOrDeny(deltaOIDs); }
-
-      if (!txn.getTransactionType().equals(txnType)) { return chooseCloseOrDeny(deltaOIDs); }
-
-      if (lockIDs.equals(txnLocks) && CollectionUtils.containsAny(objectIDs, deltaOIDs)) {
-        // need to take on the new ObjectIDs present in the buffer we are folding into here
-        objectIDs.addAll(txn.getChangeBuffers().keySet());
-        return ACCEPT;
+    public boolean canAcceptFold(List txnLocks, TxnType type) {
+      if (lockIDs.size() != txnLocks.size()) {
+        if (DEBUG) logger.info(System.identityHashCode(this)
+                               + ": not accepting fold since lock lists are not equal size");
+        return false;
       }
 
-      return chooseCloseOrDeny(deltaOIDs);
-    }
+      if (!type.equals(txnType)) {
+        if (DEBUG) logger.info(System.identityHashCode(this) + ": not accepting fold since txn type is different");
+        return false;
+      }
 
-    private byte chooseCloseOrDeny(Set txnObjectIDs) {
-      if (CollectionUtils.containsAny(objectIDs, txnObjectIDs)) { return CLOSE; }
-      return DENY;
-    }
+      if (!lockIDs.equals(txnLocks)) {
+        if (DEBUG) logger.info(System.identityHashCode(this) + ": not accepting fold since locks lists are not equal");
+        return false;
+      }
 
+      if (DEBUG) logger.info(System.identityHashCode(this) + ": fold accepted");
+      return true;
+    }
   }
 
   public static class FoldingConfig {

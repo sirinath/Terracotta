@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util.runtime;
 
@@ -29,22 +30,17 @@ public class ThreadDumpUtilJdk15 {
       for (int i = 0; i < threadIds.length; i++) {
         ThreadInfo threadInfo = threadMXBean.getThreadInfo(threadIds[i], Integer.MAX_VALUE);
         if (threadInfo != null) {
-          String s = threadInfo.toString();
+         
+          sb.append(threadHeader(threadInfo, threadIds[i]));
+          sb.append('\n');
 
-          if (s.indexOf('\n') == -1) { // 1.5
-            sb.append(threadHeader(threadInfo, threadIds[i]));
+          StackTraceElement[] stea = threadInfo.getStackTrace();
+          for (int j = 0; j < stea.length; j++) {
+            sb.append("\tat ");
+            sb.append(stea[j].toString());
             sb.append('\n');
-
-            StackTraceElement[] stea = threadInfo.getStackTrace();
-            for (int j = 0; j < stea.length; j++) {
-              sb.append("\tat ");
-              sb.append(stea[j].toString());
-              sb.append('\n');
-            }
-            sb.append('\n');
-          } else {
-            sb.append(s);
           }
+          sb.append('\n');
         }
       }
     } catch (Exception e) {
