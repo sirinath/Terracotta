@@ -452,6 +452,10 @@ END
     check_one('AssertTest')
   end
 
+  def check_ibm
+    check_one('ReentrantReadWriteLockCrashTest')
+  end
+
   # monkey target to test reflector links
   def check_reflector
     check_one('ReflectorTest')
