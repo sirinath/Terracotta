@@ -16,14 +16,19 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.util.Assert;
+import com.tc.util.runtime.Vm;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * NOTE: This applicator is only used for IBM JDK
+ */
 public class AtomicIntegerApplicator extends BaseApplicator {
   public AtomicIntegerApplicator(DNAEncoding encoding) {
     super(encoding);
+    Vm.assertIsIbm();
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
@@ -39,14 +44,14 @@ public class AtomicIntegerApplicator extends BaseApplicator {
     if (po instanceof AtomicInteger) {
       if (cursor.next(encoding)) {
         PhysicalAction a = (PhysicalAction) cursor.getAction();
-        Integer value = (Integer)a.getObject();
-        ((AtomicInteger)po).set(value.intValue());
+        Integer value = (Integer) a.getObject();
+        ((AtomicInteger) po).set(value.intValue());
       }
     }
   }
 
   public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-    AtomicInteger ai = (AtomicInteger)pojo;
+    AtomicInteger ai = (AtomicInteger) pojo;
     int value = ai.get();
 
     writer.addPhysicalAction(AtomicIntegerAdapter.VALUE_FIELD_NAME, new Integer(value));

@@ -16,14 +16,19 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.util.Assert;
+import com.tc.util.runtime.Vm;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * NOTE: This applicator is only used for IBM JDK
+ */
 public class AtomicLongApplicator extends BaseApplicator {
   public AtomicLongApplicator(DNAEncoding encoding) {
     super(encoding);
+    Vm.assertIsIbm();
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
@@ -39,8 +44,8 @@ public class AtomicLongApplicator extends BaseApplicator {
     if (po instanceof AtomicLong) {
       if (cursor.next(encoding)) {
         PhysicalAction a = (PhysicalAction) cursor.getAction();
-        Long value = (Long)a.getObject();
-        ((AtomicLong)po).set(value.longValue());
+        Long value = (Long) a.getObject();
+        ((AtomicLong) po).set(value.longValue());
       }
     }
   }

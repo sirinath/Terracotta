@@ -522,8 +522,6 @@ public class BootJarTool {
       addInstrumentedJavaNetURL();
       addInstrumentedProxy();
       addTreeMap();
-      addInstrumentedAtomicInteger();
-      addInstrumentedAtomicLong();
 
       addIBMSpecific();
 
@@ -557,6 +555,9 @@ public class BootJarTool {
     if (Vm.isIBM()) {
       // Yes, the class name is misspelled
       adaptAndLoad("com.ibm.misc.SystemIntialization", new SystemInitializationAdapter());
+
+      addInstrumentedAtomicInteger();
+      addInstrumentedAtomicLong();
     }
   }
 
