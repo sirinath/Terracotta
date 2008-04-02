@@ -453,6 +453,7 @@ END
   end
 
   def check_ibm
+    @internal_config_source['tc.tests.configuration.transparent-tests.mode'] = 'active-passive'
     check_one('ReentrantReadWriteLockCrashTest')
   end
 
