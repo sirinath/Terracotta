@@ -32,5 +32,4 @@ public interface L1TVSConfigurationSetupManager {
   NewDSOApplicationConfig dsoApplicationConfigFor(String applicationName);
 
   NewSpringApplicationConfig springApplicationConfigFor(String applicationName);
-
 }

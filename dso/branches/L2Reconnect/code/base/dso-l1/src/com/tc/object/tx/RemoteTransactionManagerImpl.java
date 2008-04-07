@@ -38,7 +38,7 @@ import java.util.TimerTask;
 
 /**
  * Sends off committed transactions
- *
+ * 
  * @author steve
  */
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
@@ -82,8 +82,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   public RemoteTransactionManagerImpl(TCLogger logger, final TransactionBatchFactory batchFactory,
                                       TransactionBatchAccounting batchAccounting, LockAccounting lockAccounting,
-                                      SessionManager sessionManager, DSOClientMessageChannel channel, SampledCounter outstandingBatchesCounter,
-                                      SampledCounter numTransactionCounter, SampledCounter numBatchesCounter, final SampledCounter batchSizeCounter,
+                                      SessionManager sessionManager, DSOClientMessageChannel channel,
+                                      SampledCounter outstandingBatchesCounter, SampledCounter numTransactionCounter,
+                                      SampledCounter numBatchesCounter, final SampledCounter batchSizeCounter,
                                       final SampledCounter pendingTransactionsSize) {
     this.logger = logger;
     this.batchAccounting = batchAccounting;
@@ -91,8 +92,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     this.sessionManager = sessionManager;
     this.channel = channel;
     this.status = RUNNING;
-    this.sequencer = new TransactionSequencer(batchFactory, lockAccounting, numTransactionCounter, numBatchesCounter, batchSizeCounter,
-      pendingTransactionsSize);
+    this.sequencer = new TransactionSequencer(batchFactory, lockAccounting, numTransactionCounter, numBatchesCounter,
+                                              batchSizeCounter, pendingTransactionsSize);
     this.timer.schedule(new RemoteTransactionManagerTimerTask(), COMPLETED_ACK_FLUSH_TIMEOUT,
                         COMPLETED_ACK_FLUSH_TIMEOUT);
     this.outstandingBatchesCounter = outstandingBatchesCounter;
@@ -188,9 +189,10 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
             System.err.println(ManagerUtil.getClientID() + " flushing for lock " + lockID);
           }
           lock.wait(FLUSH_WAIT_INTERVAL);
-          if ((System.currentTimeMillis() - start) > FLUSH_WAIT_INTERVAL) {
-            logger.info("Flush for " + lockID + " took longer than: " + FLUSH_WAIT_INTERVAL
-                        + "ms. # Transactions not yet Acked = " + c.size() + "\n");
+          long now = System.currentTimeMillis();
+          if ((now - start) > FLUSH_WAIT_INTERVAL) {
+            logger.info("Flush for " + lockID + " took longer than: " + (FLUSH_WAIT_INTERVAL / 1000) + " sec. Took : "
+                        + (now - start) + " ms. # Transactions not yet Acked = " + c.size() + "\n");
           }
         } catch (InterruptedException e) {
           isInterrupted = true;
@@ -224,10 +226,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   public void commit(ClientTransaction txn) {
     if (!txn.hasChangesOrNotifies()) throw new AssertionError("Attempt to commit an empty transaction.");
 
-    TransactionID txID = txn.getTransactionID();
-
     if (DebugUtil.DEBUG) {
-      System.err.println(ManagerUtil.getClientID() + " commiting " + txID.toString());
+      System.err.println(ManagerUtil.getClientID() + " commiting " + txn.getTransactionID());
     }
 
     long start = System.currentTimeMillis();
@@ -382,7 +382,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
       Set completedLocks = lockAccounting.acknowledge(txID);
       if (DebugUtil.DEBUG) {
-        System.err.println(ManagerUtil.getClientID() + " receive ack " + txID.toString() + " completedLocks: " + completedLocks);
+        System.err.println(ManagerUtil.getClientID() + " receive ack " + txID.toString() + " completedLocks: "
+                           + completedLocks);
       }
 
       TxnBatchID container = batchAccounting.getBatchByTransactionID(txID);
