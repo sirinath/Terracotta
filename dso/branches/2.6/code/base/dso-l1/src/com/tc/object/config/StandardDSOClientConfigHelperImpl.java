@@ -31,7 +31,6 @@ import com.tc.jboss.transform.UCLAdapter;
 import com.tc.l1propertiesfroml2.L1ReconnectConfig;
 import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.object.LiteralValues;
@@ -1978,7 +1977,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       try {
         ConnectionInfo ci = connectInfo[i];
         theURL = new URL("http", ci.getHostname(), ci.getPort(), "/l1reconnectproperties");
-        consoleLogger.log(LogLevel.INFO, "Trying to get L1 Reconnect Properties from " + ci);
+        String text = "Trying to get L1 Reconnect Properties from " + theURL.toString();
+        logger.info(text);
         connection = theURL.openConnection();
         l1PropFromL2Stream = connection.getInputStream();
         if (l1PropFromL2Stream != null) return l1PropFromL2Stream;
@@ -1988,7 +1988,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         boolean tryAgain = i < connectInfo.length;
         if (tryAgain) text += " Skipping this source and going to the next one.";
         consoleLogger.warn(text);
-        if (!tryAgain) { throw e; }
       }
     }
     return null;
@@ -1996,15 +1995,21 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private void setupL1ReconnectProperties() {
     InputStream in = null;
+    boolean loggedInConsole = false;
     while (in == null) {
       try {
         PreparedComponentsFromL2Connection serverInfos = new PreparedComponentsFromL2Connection(configSetupManager);
         ConnectionInfoConfigItem connectInfo = (ConnectionInfoConfigItem) serverInfos.createConnectionInfoConfigItem();
         in = getL1PropertiesFromL2Stream((ConnectionInfo[]) connectInfo.getObject());
-      } catch (IOException e) {
-        String text = "We couldn't load l1 reconnect properties from any of the servers. Retrying.....";
-        consoleLogger.error(text);
-        ThreadUtil.reallySleep(1000);
+        if (in == null) {
+          String text = "We couldn't load l1 reconnect properties from any of the servers. Retrying.....";
+          if (loggedInConsole == false) {
+            loggedInConsole = true;
+            consoleLogger.error(text);
+          }
+          logger.error(text);
+          ThreadUtil.reallySleep(1000);
+        }
       } catch (Exception e) {
         throw new AssertionError(e);
       }
