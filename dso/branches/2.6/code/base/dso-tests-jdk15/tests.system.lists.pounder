@@ -1,6 +1,1 @@
-ConcurrentHashMapGCTest
-#LinkedBlockingQueueGCTest
-ConcurrentHashMapLoadTest
-FutureTaskTest
-ReentrantReadWriteLockTest
-
+ConcurrentHashMapGCRandomCrashTest
