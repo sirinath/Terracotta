@@ -373,7 +373,8 @@ public class ClassProcessorHelper {
         // This avoids a deadlock (see LKC-853, LKC-1387)
         java.security.Security.getProviders();
 
-        // Avoid another deadlock (DEV-1047)
+        // Avoid another deadlock (DEV-1047, DEV-1301)
+        // Looking at the sun-jdk17 sources, this deadlock shouldn't happen there
         LogManager.getLogManager();
 
         // Workaround bug in NIO on solaris 10
@@ -624,6 +625,13 @@ public class ClassProcessorHelper {
    * @param caller Classloader doing definition
    */
   public static void defineClass0Post(Class clazz, ClassLoader caller) {
+    if (IBM_DEBUG) {
+      StringBuffer msg = new StringBuffer();
+      msg.append("[" + Thread.currentThread().getName() + "] " + clazz.getName() + " has been defined\n");
+      System.err.println(msg);
+      System.err.flush();
+    }
+
     ClassPostProcessor postProcessor = getPostProcessor(caller);
     if (!initState.isInitialized()) { return; }
 

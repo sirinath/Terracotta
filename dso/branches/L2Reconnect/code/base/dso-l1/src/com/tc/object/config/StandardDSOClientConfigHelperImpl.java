@@ -28,8 +28,12 @@ import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
 import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
+import com.tc.l1propertiesfroml2.L1ReconnectConfig;
+import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.logging.CustomerLogging;
+import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
+import com.tc.net.core.ConnectionInfo;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
@@ -48,6 +52,7 @@ import com.tc.object.bytecode.THashMapAdapter;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TreeMapAdapter;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
+import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
@@ -70,6 +75,7 @@ import com.tc.tomcat.transform.WebAppLoaderAdapter;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Vm;
 import com.tc.weblogic.WeblogicHelper;
 import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
@@ -80,14 +86,17 @@ import com.tc.weblogic.transform.ServerAdapter;
 import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.L1ReconnectPropertiesFromL2Document;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 import com.terracottatech.config.SpringApplication;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -171,6 +180,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private final ModulesContext                   modulesContext                     = new ModulesContext();
 
   private volatile boolean                       allowCGLIBInstrumentation          = false;
+
+  private L1ReconnectConfig                      l1ReconnectConfig                  = null;
 
   public StandardDSOClientConfigHelperImpl(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -1957,6 +1968,63 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       if (webApp.equals(appName)) { return LockLevel.SYNCHRONOUS_WRITE; }
     }
     return LockLevel.WRITE;
+  }
+
+  public InputStream getL1PropertiesFromL2Stream(ConnectionInfo[] connectInfo) throws Exception {
+    URLConnection connection = null;
+    InputStream l1PropFromL2Stream = null;
+    URL theURL = null;
+    for (int i = 0; i < connectInfo.length; i++) {
+      try {
+        ConnectionInfo ci = connectInfo[i];
+        theURL = new URL("http", ci.getHostname(), ci.getPort(), "/l1reconnectproperties");
+        consoleLogger.log(LogLevel.INFO, "Trying to get L1 Reconnect Properties from " + ci);
+        connection = theURL.openConnection();
+        l1PropFromL2Stream = connection.getInputStream();
+        if (l1PropFromL2Stream != null) return l1PropFromL2Stream;
+      } catch (IOException e) {
+        String text = "We couldn't load l1 reconnect properties from the " + theURL.toString();
+        text += "; this error is permanent, so this source will not be retried.";
+        boolean tryAgain = i < connectInfo.length;
+        if (tryAgain) text += " Skipping this source and going to the next one.";
+        consoleLogger.warn(text);
+        if (!tryAgain) { throw e; }
+      }
+    }
+    return null;
+  }
+
+  private void setupL1ReconnectProperties() {
+    InputStream in = null;
+    while (in == null) {
+      try {
+        PreparedComponentsFromL2Connection serverInfos = new PreparedComponentsFromL2Connection(configSetupManager);
+        ConnectionInfoConfigItem connectInfo = (ConnectionInfoConfigItem) serverInfos.createConnectionInfoConfigItem();
+        in = getL1PropertiesFromL2Stream((ConnectionInfo[]) connectInfo.getObject());
+      } catch (IOException e) {
+        String text = "We couldn't load l1 reconnect properties from any of the servers. Retrying.....";
+        consoleLogger.error(text);
+        ThreadUtil.reallySleep(1000);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    }
+
+    L1ReconnectPropertiesFromL2Document l1PropFroL2;
+    try {
+      l1PropFroL2 = L1ReconnectPropertiesFromL2Document.Factory.parse(in);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
+
+    boolean l1ReconnectEnabled = l1PropFroL2.getL1ReconnectPropertiesFromL2().getL1ReconnectEnabled();
+    int l1ReconnectTimeout = l1PropFroL2.getL1ReconnectPropertiesFromL2().getL1ReconnectTimeout().intValue();
+    this.l1ReconnectConfig = new L1ReconnectConfigImpl(l1ReconnectEnabled, l1ReconnectTimeout);
+  }
+
+  public synchronized L1ReconnectConfig getL1ReconnectProperties() {
+    if (l1ReconnectConfig == null) setupL1ReconnectProperties();
+    return l1ReconnectConfig;
   }
 
 }

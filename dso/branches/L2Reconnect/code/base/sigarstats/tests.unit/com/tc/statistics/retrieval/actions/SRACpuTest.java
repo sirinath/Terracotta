@@ -3,8 +3,6 @@
  */
 package com.tc.statistics.retrieval.actions;
 
-import junit.framework.TestCase;
-
 import org.hyperic.sigar.Sigar;
 
 import com.tc.statistics.StatisticData;
@@ -12,6 +10,8 @@ import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.SigarUtil;
 
 import java.math.BigDecimal;
+
+import junit.framework.TestCase;
 
 public class SRACpuTest extends TestCase {
   static {
@@ -64,12 +64,6 @@ public class SRACpuTest extends TestCase {
       assertTrue(values1[i][0].compareTo(values2[i][0]) < 0);
       assertTrue(values1[i][1].compareTo(values2[i][1]) > 0);
     }
-
-    // assert that the cpu usage was almost the maximum during the second data collection
-    for (int i = 0; i < cpuCount; i++) {
-      assertTrue(values2[i][0].compareTo(new BigDecimal("0.95")) > 0);
-      assertTrue(values2[i][1].compareTo(new BigDecimal("0.05")) < 0);
-    }
   }
 
   private class UseCpuThread extends Thread {
@@ -89,7 +83,7 @@ public class SRACpuTest extends TestCase {
     BigDecimal[][] values = new BigDecimal[cpuCount][6];
     assertEquals(cpuCount * 6, data.length);
     for (int i = 0; i < data.length; i++) {
-      assertTrue(data[i].getName().startsWith(SRACpu.ACTION_NAME));
+      assertTrue(data[i].getName().startsWith(SRACpuConstants.ACTION_NAME));
       assertNull(data[i].getAgentIp()); // will be filled in with default
       assertNull(data[i].getAgentDifferentiator()); // will be filled in with default
       assertNull(data[i].getMoment()); // will be filled in with default
@@ -100,22 +94,22 @@ public class SRACpuTest extends TestCase {
       assertEquals("cpu " + cpu, data[i].getElement());
       switch (part) {
         case 0:
-          assertEquals(SRACpu.DATA_NAME_COMBINED, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_COMBINED, data[i].getName());
           break;
         case 1:
-          assertEquals(SRACpu.DATA_NAME_IDLE, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_IDLE, data[i].getName());
           break;
         case 2:
-          assertEquals(SRACpu.DATA_NAME_NICE, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_NICE, data[i].getName());
           break;
         case 3:
-          assertEquals(SRACpu.DATA_NAME_SYS, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_SYS, data[i].getName());
           break;
         case 4:
-          assertEquals(SRACpu.DATA_NAME_USER, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_USER, data[i].getName());
           break;
         case 5:
-          assertEquals(SRACpu.DATA_NAME_WAIT, data[i].getName());
+          assertEquals(SRACpuConstants.DATA_NAME_WAIT, data[i].getName());
           break;
         default:
           fail();

@@ -10,6 +10,7 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.cluster.Cluster;
 import com.tc.config.schema.dynamic.ConfigItem;
+import com.tc.l1propertiesfroml2.L1ReconnectConfig;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackDumpAdapter;
 import com.tc.logging.ChannelIDLogger;
@@ -155,6 +156,7 @@ public class DistributedObjectClient extends SEDA {
   private final Manager                            manager;
   private final Cluster                            cluster;
   private final TCThreadGroup                      threadGroup;
+  private final StatisticsAgentSubSystemImpl       statisticsAgentSubSystem;
 
   private DSOClientMessageChannel                  channel;
   private ClientLockManager                        lockManager;
@@ -169,7 +171,6 @@ public class DistributedObjectClient extends SEDA {
   private L1Management                             l1Management;
   private TCProperties                             l1Properties;
   private DmiManager                               dmiManager;
-  private StatisticsAgentSubSystemImpl             statisticsAgentSubSystem;
   private boolean                                  createDedicatedMBeanServer = false;
   private CounterManager                           sampledCounterManager;
 
@@ -185,6 +186,7 @@ public class DistributedObjectClient extends SEDA {
     this.manager = manager;
     this.cluster = cluster;
     this.threadGroup = threadGroup;
+    this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
   }
 
   public void setCreateDedicatedMBeanServer(boolean createDedicatedMBeanServer) {
@@ -220,7 +222,7 @@ public class DistributedObjectClient extends SEDA {
     registry.registerActionInstance(new SRAL1PendingTransactionsSize(pendingTransactionsSize));
   }
 
-  public void start() {
+  public synchronized void start() {
     TCProperties tcProperties = TCPropertiesImpl.getProperties();
     l1Properties = tcProperties.getPropertiesFor("l1");
     int maxSize = 50000;
@@ -236,13 +238,14 @@ public class DistributedObjectClient extends SEDA {
 
     // //////////////////////////////////
     // create NetworkStackHarnessFactory
-    final boolean useOOOLayer = l1Properties.getBoolean("reconnect.enabled");
+    L1ReconnectConfig l1ReconnectConfig = config.getL1ReconnectProperties();
+    final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled(); 
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink());
+                                                                     oooStage.getSink(), l1ReconnectConfig);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
@@ -326,7 +329,6 @@ public class DistributedObjectClient extends SEDA {
     toggleRefMgr.start();
 
     // setup statistics subsystem
-    statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
     if (statisticsAgentSubSystem.setup(config.getNewCommonL1Config())) {
       populateStatisticsRetrievalRegistry(statisticsAgentSubSystem.getStatisticsRetrievalRegistry(), stageManager, mm,
                                           outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
@@ -503,7 +505,7 @@ public class DistributedObjectClient extends SEDA {
     cluster.addClusterEventListener(l1Management.getTerracottaCluster());
   }
 
-  public void stop() {
+  public synchronized void stop() {
     try {
       statisticsAgentSubSystem.cleanup();
     } catch (Throwable e) {
