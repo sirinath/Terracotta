@@ -145,32 +145,25 @@ public class TCPProxy {
   synchronized void subStop(boolean waitDeadThread) {
     stop = true;
 
-    try {
-      if (serverSocket != null) {
-        serverSocket.close();
-      }
-    } catch (Exception e) {
-      log("Error closing serverSocket", e);
-    } finally {
-      serverSocket = null;
-    }
-
+    if (acceptThread != null) acceptThread.interrupt();
+    
     /*
      * Observed on windows-xp. The ServerSocket is still hanging around after "close()", until someone makes a new
      * connection. To make sure the old ServerSocket and accept thread go away for good, fake a connection to the old
      * socket.
      */
-    try {
-      Socket sk = new Socket("localhost", listenPort);
-      sk.close();
-    } catch (Exception x) {
-      // that's fine for fake connection.
+    while (true) {
+      try {
+        Socket sk = new Socket("localhost", listenPort);
+        sk.close();
+      } catch (Exception x) {
+        // that's fine for fake connection.
+        break;
+      }
     }
 
     try {
       if (acceptThread != null) {
-        acceptThread.interrupt();
-
         try {
           acceptThread.join(10000);
         } catch (InterruptedException e) {
@@ -180,7 +173,7 @@ public class TCPProxy {
     } finally {
       acceptThread = null;
     }
-
+    
     closeAllConnections(waitDeadThread);
   }
 
@@ -266,6 +259,11 @@ public class TCPProxy {
           }
         }
       }
+    }
+    try {
+      serverSocket.close();
+    } catch (IOException e) {
+      //throw e;
     }
   }
 

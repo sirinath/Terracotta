@@ -10,7 +10,7 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.cluster.Cluster;
 import com.tc.config.schema.dynamic.ConfigItem;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
+import com.tc.l1propertiesfroml2.ReconnectConfig;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackDumpAdapter;
 import com.tc.logging.ChannelIDLogger;
@@ -238,8 +238,8 @@ public class DistributedObjectClient extends SEDA {
 
     // //////////////////////////////////
     // create NetworkStackHarnessFactory
-    L1ReconnectConfig l1ReconnectConfig = config.getL1ReconnectProperties();
-    final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled(); 
+    ReconnectConfig l1ReconnectConfig = config.getL1ReconnectProperties();
+    final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
@@ -558,5 +558,5 @@ public class DistributedObjectClient extends SEDA {
   public StatisticsAgentSubSystem getStatisticsAgentSubSystem() {
     return statisticsAgentSubSystem;
   }
-  
+
 }
