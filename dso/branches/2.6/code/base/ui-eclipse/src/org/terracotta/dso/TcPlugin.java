@@ -947,7 +947,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       LineLengths lineLengths = getConfigurationLineLengths(project);
       handleXmlException(getConfigurationFile(project), lineLengths, xmle);
     } catch (Exception e) {
-      throw e;
+      openError("Loading configuration", e);
     }
 
     if (config == null) {
@@ -988,7 +988,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     server.setJmxPort(9520);
     server.setData("terracotta/server-data");
     server.setLogs("terracotta/server-logs");
-    server.setStatistics("terracotta/cluster-statistics");
+    server.setStatistics("terracotta/cluster-statistics/%d");
 
     Client clients = config.addNewClients();
     clients.setLogs("terracotta/client-logs");
@@ -1013,9 +1013,9 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
           LineLengths lineLengths = getConfigurationLineLengths(project);
           handleXmlException(getConfigurationFile(project), lineLengths, e);
         } catch (Exception e) {
-          /**/
+          openError("Loading configuration", e);
         } catch (NoClassDefFoundError noClassDef) {
-          noClassDef.printStackTrace();
+          openError("Loading configuration", noClassDef);
         }
 
         if (config == null) {
@@ -1114,13 +1114,13 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     synchronized (project) {
       clearConfigurationSessionProperties(project);
       getConfiguration(project);
+    }
 
-      ConfigurationEditor[] configEditors = getConfigurationEditors(project);
-      for (int i = 0; i < configEditors.length; i++) {
-        IFileEditorInput fileEditorInput = (IFileEditorInput) configEditors[i].getEditorInput();
-        IFile file = fileEditorInput.getFile();
-        configEditors[i].newInputFile(file);
-      }
+    ConfigurationEditor[] configEditors = getConfigurationEditors(project);
+    for (int i = 0; i < configEditors.length; i++) {
+      IFileEditorInput fileEditorInput = (IFileEditorInput) configEditors[i].getEditorInput();
+      IFile file = fileEditorInput.getFile();
+      configEditors[i].newInputFile(file);
     }
   }
 
