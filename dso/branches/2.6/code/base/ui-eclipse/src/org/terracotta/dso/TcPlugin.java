@@ -989,11 +989,11 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     server.setJmxPort(9520);
     server.setData("terracotta/server-data");
     server.setLogs("terracotta/server-logs");
-    server.setStatistics("terracotta/cluster-statistics/%d");
+    server.setStatistics("terracotta/cluster-statistics");
 
     Client clients = config.addNewClients();
     clients.setLogs("terracotta/client-logs");
-    clients.setStatistics("terracotta/client-statistics");
+    clients.setStatistics("terracotta/client-statistics/%d");
     
     servers.addNewUpdateCheck().setEnabled(true);
 
