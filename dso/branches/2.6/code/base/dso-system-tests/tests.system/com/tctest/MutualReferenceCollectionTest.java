@@ -79,8 +79,11 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
           firstList.add(secondList);
         }
         synchronized (secondList) {
-          for (int i = 1; i < 5000; i++) {
-            secondList.add(new Object());
+          for (int i = 1; i < 3000; i++) {
+           secondList.add(new Object());
+           if((i % 100) == 0) {
+             System.out.println(i + " entries has been intialized for secondList thus far, for thread " + Thread.currentThread());
+           }
           }
           // reference firstList
           secondList.add(firstList);
@@ -117,8 +120,13 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
       private void doWork() throws Throwable {
         // iterate through the list to force faulting
         synchronized (list) {
+          int i = 0;
           for (Iterator it = list.iterator(); it.hasNext();) {
             it.next();
+            if((i % 100) == 0) {
+              System.out.println(i + " entries has been read thus far for " + Thread.currentThread());
+            }
+            i++;
             Thread.sleep(5 + (int) (Math.random() * 10));
           }
         }
