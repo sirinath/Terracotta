@@ -969,6 +969,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
 
     if (helper == null) {
       helper = new ConfigurationHelper(project);
+      setSessionProperty(project, CONFIGURATION_HELPER, helper);
     }
 
     return helper;
