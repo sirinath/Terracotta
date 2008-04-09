@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.impl;
 
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.LogLevel;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -24,6 +26,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
   private final SyncObjectIdSet        extantObjectIDs;
   private final ManagedObjectPersistor objectPersistor;
   private boolean                      inShutdown;
+  private boolean                      isCollectionReachingFull = false;
 
   public PersistentManagedObjectStore(ManagedObjectPersistor persistor) {
     this.objectPersistor = persistor;
@@ -66,9 +69,13 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
   }
 
   public void addNewObject(ManagedObject managed) {
+    if(isCollectionReachingFull)
+      CustomerLogging.getConsoleLogger().log(LogLevel.WARN, "Collection of Object Ids has reached to 80% of the capacity" );
     assertNotInShutdown();
     boolean result = extantObjectIDs.add(managed.getID());
     Assert.eval(result);
+    if(extantObjectIDs.size() >= Integer.MAX_VALUE)
+      isCollectionReachingFull = true;
   }
 
   public void commitObject(PersistenceTransaction tx, ManagedObject managed) {
