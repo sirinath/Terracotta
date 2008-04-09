@@ -4,6 +4,8 @@
  */
 package com.tc.object;
 
+import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -43,6 +45,7 @@ import com.tc.net.protocol.tcm.MessageMonitorImpl;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
+import com.tc.net.protocol.transport.TransportHandshakeMessage;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.CacheConfigImpl;
@@ -177,7 +180,7 @@ public class DistributedObjectClient extends SEDA {
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
                                  Cluster cluster) {
-    super(threadGroup);
+    super(threadGroup, BoundedLinkedQueue.class.getName());
     Assert.assertNotNull(config);
     this.config = config;
     this.classProvider = classProvider;
@@ -268,9 +271,12 @@ public class DistributedObjectClient extends SEDA {
     String serverHost = connectionInfo[0].getHostname();
     int serverPort = connectionInfo[0].getPort();
 
-    channel = new DSOClientMessageChannelImpl(communicationsManager.createClientChannel(sessionProvider, -1,
-                                                                                        serverHost, serverPort, 10000,
-                                                                                        addrProvider));
+    int timeout = tcProperties.getInt("l1.socket.connect.timeout");
+    if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
+
+    channel = new DSOClientMessageChannelImpl(communicationsManager
+        .createClientChannel(sessionProvider, -1, serverHost, serverPort, timeout, addrProvider,
+                             TransportHandshakeMessage.NO_CALLBACK_PORT));
     ChannelIDLoggerProvider cidLoggerProvider = new ChannelIDLoggerProvider(channel.getChannelIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -319,8 +325,10 @@ public class DistributedObjectClient extends SEDA {
 
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(channel
         .getObjectIDBatchRequestMessageFactory());
-    BatchSequence sequence = new BatchSequence(remoteIDProvider, 50000);
+    BatchSequence sequence = new BatchSequence(remoteIDProvider, l1Properties
+        .getInt("objectmanager.objectid.request.size"));
     ObjectIDProvider idProvider = new ObjectIDProviderImpl(sequence);
+    remoteIDProvider.setBatchSequenceReceiver(sequence);
 
     TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, encoding);
     TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);

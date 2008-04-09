@@ -4,6 +4,8 @@
  */
 package com.tc.net.protocol.transport;
 
+import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
+
 import com.tc.async.api.Stage;
 import com.tc.async.impl.StageManagerImpl;
 import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
@@ -35,6 +37,7 @@ import com.tc.object.session.NullSessionManager;
 import com.tc.test.TCTestCase;
 import com.tc.util.PortChooser;
 import com.tc.util.SequenceGenerator;
+import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.util.HashSet;
@@ -57,12 +60,11 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
 
     if (true /* TCPropertiesImpl.getProperties().getBoolean(L1ReconnectProperties.L1_RECONNECT_ENABLED) */) {
       StageManagerImpl stageManager = new StageManagerImpl(new TCThreadGroup(new ThrowableHandler(TCLogging
-          .getLogger(StageManagerImpl.class))));
+          .getLogger(StageManagerImpl.class))), new QueueFactory(BoundedLinkedQueue.class.getName()));
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, 5000);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(),
-                                                                     new L1ReconnectConfigImpl());
+                                                                     oooStage.getSink(), new L1ReconnectConfigImpl());
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
@@ -124,7 +126,8 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
         .createClientChannel(new NullSessionManager(), -1 /* Unlimited Tries */, serverLsnr.getBindAddress()
             .getHostAddress(), proxyPort, 1000,
                              new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
-                                 .getBindAddress().getHostAddress(), proxyPort) }));
+                                 .getBindAddress().getHostAddress(), proxyPort) }),
+                                 TransportHandshakeMessage.NO_CALLBACK_PORT);
 
     clientMsgCh.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     clientMsgCh.routeMessageType(TCMessageType.PING_MESSAGE, new TCMessageSink() {
@@ -146,19 +149,19 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
   public long getMinSleepTimeToSendFirstProbe(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    return ((config.getPingIdleTime() + 2 * config.getPingInterval()) * 1000);
+    return config.getPingIdleTimeMillis() + (2 * config.getPingIntervalMillis());
   }
 
   public long getMinSleepTimeToConirmDeath(HealthCheckerConfig config) {
     assertNotNull(config);
     /* Interval time is doubled to give grace period */
-    long exact_time = (config.getPingIdleTime() + (config.getPingInterval() * config.getPingProbes())) * 1000;
-    long grace_time = config.getPingInterval() * 1000;
+    long exact_time = config.getPingIdleTimeMillis() + (config.getPingIntervalMillis() * config.getPingProbes());
+    long grace_time = config.getPingIntervalMillis();
     return (exact_time + grace_time);
   }
 
   public void testL1DisconnectAndL1Reconnect() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test11");
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10000, 4000, 2, "ServerCommsHC-Test11");
     this.setUp(hcConfig, null);
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
@@ -207,7 +210,7 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
   }
 
   public void testL2CloseL1Reconnect() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10, 4, 2, "ServerCommsHC-Test12");
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(10000, 4000, 2, "ServerCommsHC-Test12");
     this.setUp(hcConfig, null);
     ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
