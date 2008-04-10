@@ -75,11 +75,6 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private static final TCLogger                               logger                      = TCLogging
                                                                                               .getLogger(TCGroupManagerImpl.class);
   public static final String                                  HANDSHAKE_STATE_MACHINE_TAG = "TcGroupCommHandshake";
-  public static final String                                  NHA_TCCOMM_RESPONSE_TIMEOUT = "l2.nha.tcgroupcomm.response.timelimit";
-  private final static long                                   RESPONSE_TIMELIMIT;
-  static {
-    RESPONSE_TIMELIMIT = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_RESPONSE_TIMEOUT);
-  }
   private final ReconnectConfig                               l2ReconnectConfig;
 
   private final NodeIDImpl                                    thisNodeID;
@@ -695,16 +690,11 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
     public synchronized void waitForResponses(NodeIDImpl sender) throws GroupException {
       int count = 0;
-      long start = System.currentTimeMillis();
       while (!waitFor.isEmpty() && !manager.isStopped()) {
         try {
           this.wait(5000);
           if (++count > 1) {
             logger.warn(sender + " Still waiting for response from " + waitFor + ". Count = " + count);
-            if (System.currentTimeMillis() > (start + RESPONSE_TIMELIMIT)) {
-              // something wrong
-              throw new RuntimeException("Still waiting for response from " + waitFor);
-            }
           }
         } catch (InterruptedException e) {
           throw new GroupException(e);
