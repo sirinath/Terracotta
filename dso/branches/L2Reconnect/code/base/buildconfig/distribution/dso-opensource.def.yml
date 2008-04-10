@@ -78,6 +78,15 @@ bundled_components:
               - dso-l1-api
               - modules-common
               - thirdparty-api
+        - terracotta-jmx-api:
+            install_directory: lib
+            modules:
+              - common-api
+              - deploy-api
+              - dso-l1-api
+              - dso-l2-common
+              - dso-statistics-api
+              - management-api
       # NOTE: this section also controls what goes into the 'tc.jar' file
       modules:
         - aspectwerkz:
@@ -85,6 +94,7 @@ bundled_components:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -94,11 +104,12 @@ bundled_components:
         - dso-l2-common
         - dso-spring:
             exclude-runtime-libraries: true
+        - dso-statistics
         - dso-statistics-api
         - sigarstats
-        - dso-statistics
         - linked-child-process
         - management
+        - management-api
         - modules-common
         - thirdparty
         - thirdparty-api
@@ -154,9 +165,15 @@ postscripts:
         - artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
           pom: poms/tcconfig-pom.xml
+        - artifact: tc-l1-prop-from-l2
+          file: lib/tc-l1-prop-from-l2-xmlbeans-generated.jar
+          pom: poms/tc-l1-prop-from-l2-pom.xml
         - artifact: tc-session
           file: lib/session/tc-session.jar
           pom: poms/tc-session-pom.xml
         - artifact: terracotta-api
           file: lib/terracotta-api-version-PREALPHA.jar
           pom: poms/terracotta-api-pom.xml
+        - artifact: terracotta-jmx-api
+          file: lib/terracotta-jmx-api.jar
+          pom: poms/terracotta-jmx-api-pom.xml
