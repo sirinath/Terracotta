@@ -48,11 +48,16 @@ public class SRADiskActivity implements StatisticRetrievalAction {
 
       FileSystem[] list = sigar.getFileSystemList();
       for (int i = 0; i < list.length; i++) {
-        FileSystemUsage usage = sigar.getFileSystemUsage(list[i].getDirName());
-        bytesRead += usage.getDiskReadBytes();
-        bytesWrite += usage.getDiskWriteBytes();
-        reads += usage.getDiskReads();
-        writes += usage.getDiskWrites();
+        try{
+          FileSystemUsage usage = sigar.getFileSystemUsage(list[i].getDirName());
+          bytesRead += usage.getDiskReadBytes();
+          bytesWrite += usage.getDiskWriteBytes();
+          reads += usage.getDiskReads();
+          writes += usage.getDiskWrites();
+        } catch (SigarException ex) {
+          //ignore. e.g. on win32 D:\ fails with "Device not ready"
+          //if there is no cd in the drive.
+        }
       }
       List data = new ArrayList();
       data.add(new StatisticData(ACTION_NAME, ELEMENT_BYTES_READ, new Long(bytesRead)));
