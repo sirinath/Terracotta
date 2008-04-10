@@ -267,4 +267,8 @@ public final class NullManager implements Manager {
     return instrumentationLogger;
   }
 
+  public Object getObjectManager() {
+	  throw new UnsupportedOperationException();
+  }
+
 }

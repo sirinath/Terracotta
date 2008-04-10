@@ -4,6 +4,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.partitions.PartitionManager;
 import com.tc.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;
@@ -332,6 +333,8 @@ public class ManagerImpl implements Manager {
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) {
+   if(tcobj != null)
+	PartitionManager.assertSamePartition(tcobj); 	
     String lockObjectClass = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
     
     boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
@@ -341,6 +344,8 @@ public class ManagerImpl implements Manager {
   }
 
   private boolean tryBegin(String lockID, int type, Object instance, TimerSpec timeout, TCObject tcobj) {
+   if(tcobj != null)
+	PartitionManager.assertSamePartition(tcobj); 	
     String lockObjectType = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
     
     boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
@@ -673,6 +678,8 @@ public class ManagerImpl implements Manager {
 
   public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     TCObject tco = lookupExistingOrNull(receiver);
+   if(tco != null)
+	PartitionManager.assertSamePartition(tco); 	
 
     try {
       if (tco != null) {
@@ -901,6 +908,10 @@ public class ManagerImpl implements Manager {
   public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
     TCObject tcObj = lookupExistingOrNull(pojo);
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
+  }
+
+  public Object getObjectManager() {
+	  return objectManager;
   }
 
 }

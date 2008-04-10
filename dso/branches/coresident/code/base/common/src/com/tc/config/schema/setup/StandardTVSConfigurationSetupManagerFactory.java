@@ -55,6 +55,13 @@ public class StandardTVSConfigurationSetupManagerFactory extends BaseTVSConfigur
     this(parseDefaultCommandLine(args, isForL2), isForL2, illegalChangeHandler);
   }
 
+  public StandardTVSConfigurationSetupManagerFactory(String[] args, boolean isForL2,
+          											IllegalConfigurationChangeHandler illegalChangeHandler,
+          											String configSpec)
+  		throws ConfigurationSetupException {
+	  this(parseDefaultCommandLine(args, isForL2), isForL2, illegalChangeHandler,configSpec);
+  }
+  
   private static CommandLine parseDefaultCommandLine(String[] args, boolean isForL2) throws ConfigurationSetupException {
     try {
       if (args == null || args.length == 0) {
@@ -72,6 +79,14 @@ public class StandardTVSConfigurationSetupManagerFactory extends BaseTVSConfigur
   public StandardTVSConfigurationSetupManagerFactory(CommandLine commandLine, boolean isForL2,
                                                      IllegalConfigurationChangeHandler illegalChangeHandler)
       throws ConfigurationSetupException {
+	  this(commandLine,isForL2,illegalChangeHandler,
+			  System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME));
+	  
+  }
+  
+  public StandardTVSConfigurationSetupManagerFactory(CommandLine commandLine, boolean isForL2,
+                                                     IllegalConfigurationChangeHandler illegalChangeHandler, String configSpec)
+      throws ConfigurationSetupException {
     super(illegalChangeHandler);
 
     String configFileOnCommandLine = null;
@@ -81,8 +96,7 @@ public class StandardTVSConfigurationSetupManagerFactory extends BaseTVSConfigur
     l2NameOnCommandLine = StringUtils.trimToNull(commandLine.getOptionValue('n'));
 
     String effectiveConfigSpec;
-    effectiveConfigSpec = StringUtils.trimToNull(configFileOnCommandLine != null ? configFileOnCommandLine : System
-        .getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME));
+    effectiveConfigSpec = StringUtils.trimToNull(configFileOnCommandLine != null ? configFileOnCommandLine : configSpec);
     String specifiedL2Identifier = StringUtils.trimToNull(l2NameOnCommandLine != null ? l2NameOnCommandLine : System
         .getProperty(L2_NAME_PROPERTY_NAME));
 
@@ -100,8 +114,9 @@ public class StandardTVSConfigurationSetupManagerFactory extends BaseTVSConfigur
     if (StringUtils.isBlank(this.configSpec)) {
       // formatting
       throw new ConfigurationSetupException("You must specify the location of the Terracotta "
-                                            + "configuration file for this process, using the " + "'"
-                                            + CONFIG_FILE_PROPERTY_NAME + "' system property.");
+                                            + "configuration file for this process, using either " + "'"
+                                            + CONFIG_FILE_PROPERTY_NAME + "' or '" 
+                                            + PARTITIONED_CONFIG_FILE_PROPERTY_NAME + "' system property.");
     }
 
     String cwdAsString = System.getProperty("user.dir");
