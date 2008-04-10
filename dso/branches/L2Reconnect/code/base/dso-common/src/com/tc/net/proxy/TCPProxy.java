@@ -1,6 +1,7 @@
 package com.tc.net.proxy;
 
 import com.tc.util.StringUtil;
+import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -101,7 +102,6 @@ public class TCPProxy {
   }
 
   public synchronized void start() throws IOException {
-    stop();
 
     log("Starting listener on port " + listenPort + ", proxying to " + StringUtil.toString(endpoints, ", ", "[", "]")
         + " with " + getDelay() + "ms delay");
@@ -115,7 +115,7 @@ public class TCPProxy {
         serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 50);
       } catch (IOException e) {
         serverSocket.close();
-        throw e;
+        throw new RuntimeException("Failed to bind port " + listenPort + " is bad: " + e);
       }
     }
 
@@ -127,6 +127,36 @@ public class TCPProxy {
         ME.run();
       }
     }, "Accept thread (port " + listenPort + ")");
+    
+    // verify
+    int count = 0;
+    while (true) {
+      try {
+        Socket sk = new Socket("localhost", listenPort);
+        sk.close();
+        break;
+      } catch (Exception e) {
+        if(++count > 10) {
+          throw new RuntimeException("Listen socket at " + listenPort + " is bad: " + e);
+        }
+        log("Listen socket at " + listenPort + " is bad: " + e);
+
+        serverSocket.close();
+        ThreadUtil.reallySleep(100);
+        
+        log("Rebind listen socket at " + listenPort);
+        serverSocket = new ServerSocket();
+        serverSocket.setReuseAddress(true);
+        try {
+          serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 50);
+        } catch (IOException ee) {
+          serverSocket.close();
+          throw new RuntimeException("Failed to bind port " + listenPort + " is bad: " + ee);
+        }
+
+      }
+    }
+    acceptThread.setDaemon(true);
     acceptThread.start();
   }
 
@@ -237,6 +267,7 @@ public class TCPProxy {
       try {
         socket = serverSocket.accept();
       } catch (IOException ioe) {
+        log("Accept error " + ioe);
         continue;
       }
 
@@ -262,6 +293,7 @@ public class TCPProxy {
     }
     try {
       serverSocket.close();
+      serverSocket = null;
     } catch (IOException e) {
       //throw e;
     }
