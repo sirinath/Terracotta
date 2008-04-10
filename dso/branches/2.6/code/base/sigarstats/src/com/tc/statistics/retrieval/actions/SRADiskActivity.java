@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * This statistic gives the disk activity going on in the system
- *
+ * <p/>
  * It contains {@link StatisticData} with the following elements:
  * <ul>
  * <li>bytes read</li>
@@ -26,7 +26,7 @@ import java.util.List;
  * <li>writes</li>
  */
 public class SRADiskActivity implements StatisticRetrievalAction {
-  
+
   public final static String ACTION_NAME = "disk activity";
   public final static String ELEMENT_BYTES_READ = "bytes read";
   public final static String ELEMENT_BYTES_WRITTEN = "bytes written";
@@ -48,15 +48,12 @@ public class SRADiskActivity implements StatisticRetrievalAction {
 
       FileSystem[] list = sigar.getFileSystemList();
       for (int i = 0; i < list.length; i++) {
-        try{
+        if (list[i].getType() == FileSystem.TYPE_LOCAL_DISK) {
           FileSystemUsage usage = sigar.getFileSystemUsage(list[i].getDirName());
           bytesRead += usage.getDiskReadBytes();
           bytesWrite += usage.getDiskWriteBytes();
           reads += usage.getDiskReads();
           writes += usage.getDiskWrites();
-        } catch (SigarException ex) {
-          //ignore. e.g. on win32 D:\ fails with "Device not ready"
-          //if there is no cd in the drive.
         }
       }
       List data = new ArrayList();
