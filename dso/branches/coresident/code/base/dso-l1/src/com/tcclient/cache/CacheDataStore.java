@@ -94,7 +94,7 @@ public class CacheDataStore implements Serializable {
   /**
    * Called onload to initialize transient per-node state
    */
-  public void initialize() {
+  public void initialize(int partitionId) {
     logDebug("Initializing CacheDataStore");
 
     int startEvictionIndex = 0;
@@ -105,7 +105,7 @@ public class CacheDataStore implements Serializable {
                                                              config.getCacheName() + " invalidation thread" + i);
 
       cacheInvalidationTimer[i].start(new CacheEntryInvalidator(globalKeySet[i], startEvictionIndex, lastEvictionIndex,
-                                                                config, ManagerUtil.getManager(), this));
+                                                                config, ManagerUtil.getManager(), this),partitionId);
       startEvictionIndex = lastEvictionIndex;
     }
   }

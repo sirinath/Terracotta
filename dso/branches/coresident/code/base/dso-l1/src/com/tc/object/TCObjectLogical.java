@@ -4,7 +4,10 @@
  */
 package com.tc.object;
 
+import com.partitions.PartitionManager;
 import com.tc.object.bytecode.Clearable;
+import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.util.Assert;
 
 import java.lang.ref.ReferenceQueue;
@@ -16,6 +19,7 @@ public class TCObjectLogical extends TCObjectImpl {
   }
 
   public void logicalInvoke(int method, String methodName, Object[] parameters) {
+    verifyPartition(parameters);  
     this.markAccessed();
     getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
   }

@@ -509,6 +509,9 @@ public class BootJarTool {
 
       loadTerracottaClass(ReflectiveProxy.class.getName());
       loadTerracottaClass(ReflectiveProxy.Handler.class.getName());
+      loadTerracottaClass(com.partitions.PartitionManager.class.getName());
+      loadTerracottaClass(com.partitions.TCNoPartitionError.class.getName());
+      loadTerracottaClass(com.tc.exception.TCError.class.getName());
 
       addManagementClasses();
 

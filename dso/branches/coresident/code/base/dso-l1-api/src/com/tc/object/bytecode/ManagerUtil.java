@@ -4,6 +4,8 @@
  */
 package com.tc.object.bytecode;
 
+//import com.partitions.TCNoPartitionError;
+import com.partitions.PartitionManager;
 import com.tc.cluster.ClusterEventListener;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
@@ -40,16 +42,18 @@ public class ManagerUtil {
 
   public static Manager getManager() {
     if (!enabled) { return NULL_MANAGER; }
-
+    Manager rv = null;
     if (ClassProcessorHelper.USE_GLOBAL_CONTEXT) {
       return GlobalManagerHolder.instance;
+    } else if(ClassProcessorHelper.USE_PARTITIONED_CONTEXT) {
+        rv = PartitionManager.getPartitionManager();
     } else {
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      Manager rv = ClassProcessorHelper.getManager(loader);
+      rv = ClassProcessorHelper.getManager(loader);
+    }
       if (rv == null) { return NULL_MANAGER; }
       return rv;
     }
-  }
 
   /**
    * Get the named logger
