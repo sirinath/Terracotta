@@ -16,7 +16,6 @@ public class TCObjectLogical extends TCObjectImpl {
   }
 
   public void logicalInvoke(int method, String methodName, Object[] parameters) {
-    verifyPartition(parameters);
     this.markAccessed();
     getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
   }

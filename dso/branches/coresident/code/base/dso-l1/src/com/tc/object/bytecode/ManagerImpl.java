@@ -35,7 +35,6 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
-import com.tc.object.partitions.PartitionManager;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
@@ -54,11 +53,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class ManagerImpl implements Manager {
-  private static final TCLogger                    logger                 = TCLogging.getLogger(Manager.class);
+  private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
 
-  private static final LiteralValues               literals               = new LiteralValues();
+  private static final LiteralValues               literals      = new LiteralValues();
 
-  private final SetOnceFlag                        clientStarted          = new SetOnceFlag();
+  private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
   private final boolean                            startClient;
@@ -67,7 +66,7 @@ public class ManagerImpl implements Manager {
   private final Portability                        portability;
   private final Cluster                            cluster;
 
-  private RuntimeLogger                            runtimeLogger          = new NullRuntimeLogger();
+  private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
   private final InstrumentationLogger              instrumentationLogger;
 
   private ClientObjectManager                      objectManager;
@@ -76,8 +75,8 @@ public class ManagerImpl implements Manager {
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
   private OptimisticTransactionManager             optimisticTransactionManager;
-  private SerializationUtil                        serializer             = new SerializationUtil();
-  private MethodDisplayNames                       methodDisplay          = new MethodDisplayNames(serializer);
+  private SerializationUtil                        serializer    = new SerializationUtil();
+  private MethodDisplayNames                       methodDisplay = new MethodDisplayNames(serializer);
 
   public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
                      PreparedComponentsFromL2Connection connectionComponents) {
@@ -317,7 +316,7 @@ public class ManagerImpl implements Manager {
       Util.printLogAndRethrowError(t, logger);
     }
   }
-  
+
   public void beginLock(String lockID, int type, String contextInfo) {
     try {
       begin(lockID, type, null, null, contextInfo);
@@ -333,10 +332,8 @@ public class ManagerImpl implements Manager {
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) {
-   if(tcobj != null)
-	PartitionManager.assertSamePartition(tcobj); 	
-    String lockObjectClass = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-    
+    String lockObjectClass = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+
     boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
     if (locked && runtimeLogger.getLockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
@@ -344,10 +341,8 @@ public class ManagerImpl implements Manager {
   }
 
   private boolean tryBegin(String lockID, int type, Object instance, TimerSpec timeout, TCObject tcobj) {
-   if(tcobj != null)
-	PartitionManager.assertSamePartition(tcobj); 	
-    String lockObjectType = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-    
+    String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+
     boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
     if (locked && runtimeLogger.getLockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
@@ -678,8 +673,6 @@ public class ManagerImpl implements Manager {
 
   public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     TCObject tco = lookupExistingOrNull(receiver);
-   if(tco != null)
-	PartitionManager.assertSamePartition(tco); 	
 
     try {
       if (tco != null) {
@@ -825,7 +818,7 @@ public class ManagerImpl implements Manager {
   public InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
   }
-  
+
   private static class MethodDisplayNames {
 
     private final Map display = new HashMap();
@@ -908,10 +901,6 @@ public class ManagerImpl implements Manager {
   public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
     TCObject tcObj = lookupExistingOrNull(pojo);
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
-  }
-
-  public Object getObjectManager() {
-	  return objectManager;
   }
 
 }
