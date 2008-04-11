@@ -30,7 +30,7 @@ public final class NullManager implements Manager {
 
   /**
    * Get instance of the null manager
-   * 
+   *
    * @return NullManager
    */
   public static Manager getInstance() {
@@ -68,7 +68,7 @@ public final class NullManager implements Manager {
   public final void beginLock(String lockID, int type) {
     //
   }
-  
+
   public final void beginLock(String lockID, int type, String lockType) {
     //
   }
@@ -265,10 +265,6 @@ public final class NullManager implements Manager {
 
   public InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
-  }
-
-  public Object getObjectManager() {
-	  throw new UnsupportedOperationException();
   }
 
 }

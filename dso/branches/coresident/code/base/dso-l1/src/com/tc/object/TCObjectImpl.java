@@ -18,7 +18,6 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
-import com.tc.object.partitions.PartitionManager;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
@@ -288,8 +287,6 @@ public abstract class TCObjectImpl implements TCObject {
 
   public void objectFieldChanged(String classname, String fieldname, Object newValue, int index) {
     try {
-      verifyPartition(new Object[] { newValue });
-
       this.markAccessed();
       if (index == NULL_INDEX) {
         // Assert.eval(fieldname.indexOf('.') >= 0);
@@ -349,7 +346,6 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public void objectArrayChanged(int startPos, Object[] array, int length) {
-    verifyPartition(array);
     this.markAccessed();
     for (int i = 0; i < length; i++) {
       clearArrayReference(startPos + i);
@@ -358,7 +354,6 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public void primitiveArrayChanged(int startPos, Object array, int length) {
-    verifyPartition(null);
     this.markAccessed();
     getObjectManager().getTransactionManager().arrayChanged(this, startPos, array, length);
   }
@@ -444,17 +439,4 @@ public abstract class TCObjectImpl implements TCObject {
     return getObjectManager().getOrCreateToggleRef(objectID, peer);
   }
 
-  protected void verifyPartition(Object parameters[]) {
-    PartitionManager.assertSamePartition(this);
-    if (parameters != null) {
-      for (int i = 0; i < parameters.length; i++) {
-        Object param = parameters[i];
-        if (param == null) continue;
-
-        TCObject tcobj = getObjectManager().lookupExistingOrNull(param);
-
-        if (tcobj != null) PartitionManager.assertSamePartition(tcobj);
-      }
-    }
-  }
 }
