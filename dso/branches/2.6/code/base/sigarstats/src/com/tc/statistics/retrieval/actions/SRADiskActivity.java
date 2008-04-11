@@ -24,7 +24,7 @@ import java.util.List;
  * <li>bytes written</li>
  * <li>reads</li>
  * <li>writes</li>
- */ 
+ */
 public class SRADiskActivity implements StatisticRetrievalAction {
 
   public final static String ACTION_NAME = "disk activity";
