@@ -12,8 +12,6 @@ public interface TVSConfigurationSetupManagerFactory {
 
   public static final String CONFIG_FILE_PROPERTY_NAME = "tc.config";
 
-  public static final String PARTITIONED_CONFIG_FILE_PROPERTY_NAME = "partitioned.tc.config";
-
   L1TVSConfigurationSetupManager createL1TVSConfigurationSetupManager() throws ConfigurationSetupException;
 
   /**
