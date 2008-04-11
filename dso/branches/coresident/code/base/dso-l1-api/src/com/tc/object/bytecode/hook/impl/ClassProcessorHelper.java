@@ -5,6 +5,7 @@
 package com.tc.object.bytecode.hook.impl;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
+import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.net.NIOWorkarounds;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
@@ -30,9 +31,13 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.LogManager;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Helper class called by the modified version of java.lang.ClassLoader
@@ -68,6 +73,8 @@ public class ClassProcessorHelper {
 
   public static final boolean                USE_GLOBAL_CONTEXT;
 
+  public static final boolean                USE_PARTITIONED_CONTEXT;
+
   private static final State                 initState               = new State();
 
   private static final String                tcInstallRootSysProp    = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
@@ -76,6 +83,9 @@ public class ClassProcessorHelper {
   // If we didn't we'd prevent loaders from being GC'd
   private static final Map                   contextMap              = new WeakHashMap();
 
+  private static final Map					 partitionedContextMap 	 = new HashMap();
+  
+  private static int numPartitions									 = 1;
   private static final StandardClassProvider globalProvider          = new StandardClassProvider();
 
   private static URLClassLoader              tcLoader;
@@ -102,6 +112,17 @@ public class ClassProcessorHelper {
       } else {
         USE_GLOBAL_CONTEXT = GLOBAL_MODE_DEFAULT;
       }
+
+      String paritioned = System.getProperty("tc.dso.partitionedmode", null);
+      if (paritioned != null) {
+    	USE_PARTITIONED_CONTEXT = Boolean.valueOf(paritioned).booleanValue();
+    	if(USE_PARTITIONED_CONTEXT && USE_GLOBAL_CONTEXT) {
+    	      Banner.errorBanner("Both Global Context and Partitioned Context can not be enabled at the same time");
+    	      Util.exit();
+    	}
+      }
+      else
+    	  USE_PARTITIONED_CONTEXT = false;
 
       // See if we should trace or not -- if so grab System.[out|err] and keep a local reference to it. Applications
       // like WebSphere like to intercept this later and we can get caught in a loop and get a stack overflow
@@ -393,6 +414,10 @@ public class ClassProcessorHelper {
           globalContext = createGlobalContext();
         }
 
+        if(USE_PARTITIONED_CONTEXT) {
+        	registerStandardLoaders();
+        	initParitionedContexts();
+        }
         initState.initialized();
 
         System.setProperty(TC_ACTIVE_SYSPROP, Boolean.TRUE.toString());
@@ -403,6 +428,27 @@ public class ClassProcessorHelper {
       }
     }
   }
+
+	private static void initParitionedContexts() throws Exception{
+		String partitionedConfig = System.getProperty(TVSConfigurationSetupManagerFactory.PARTITIONED_CONFIG_FILE_PROPERTY_NAME);
+		String partitionedConfigSpecs[] = new String[]{""};
+		if(partitionedConfig != null)
+			partitionedConfigSpecs = partitionedConfig.split("#");
+		for(int i = 0; i < partitionedConfigSpecs.length; i++) {
+		      Method m = getContextMethod("createContext", new Class[] { String.class, ClassProvider.class });
+		      DSOContext context = (DSOContext) m.invoke(null, new Object[] { partitionedConfigSpecs[i], globalProvider });
+		      context.getManager().init();
+		      synchronized (partitionedContextMap) {
+		    	partitionedContextMap.put("Partition" + i, context);
+		    }
+		}
+		numPartitions = partitionedContextMap.size();
+	}
+
+	public static int getNumPartitions() {
+		return numPartitions;
+	}
+	
 
   private static void registerStandardLoaders() {
     ClassLoader loader1 = ClassLoader.getSystemClassLoader();
@@ -453,7 +499,7 @@ public class ClassProcessorHelper {
   }
 
   public static void registerGlobalLoader(NamedClassLoader loader) {
-    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
+    if (!USE_GLOBAL_CONTEXT && !USE_PARTITIONED_CONTEXT) { throw new IllegalStateException("Not global/partitioned DSO mode"); }
     if (TRACE) traceNamedLoader(loader);
     globalProvider.registerNamedLoader(loader);
   }
@@ -497,7 +543,7 @@ public class ClassProcessorHelper {
    * @param context DSOContext
    */
   public static void setContext(ClassLoader loader, DSOContext context) {
-    if (USE_GLOBAL_CONTEXT) { throw new IllegalStateException("DSO Context is global in this VM"); }
+    if (USE_GLOBAL_CONTEXT || USE_PARTITIONED_CONTEXT) { throw new IllegalStateException("DSO Context is global/Partitioned in this VM"); }
 
     if ((loader == null) || (context == null)) {
       // bad dog
@@ -523,6 +569,15 @@ public class ClassProcessorHelper {
     return context.getManager();
   }
 
+  public static Manager getParitionedManager(String serverId) {
+	    if (!USE_PARTITIONED_CONTEXT) { throw new IllegalStateException("DSO Context is not set to partitioned in this VM"); }
+	    DSOContext context;
+        synchronized (contextMap) {
+        	context = (DSOContext) partitionedContextMap.get(serverId);
+        }
+        if (context == null) { return null; }
+        return context.getManager();
+  }
   /**
    * Get the DSOContext for this classloader
    *
@@ -531,6 +586,12 @@ public class ClassProcessorHelper {
    */
   public static DSOContext getContext(ClassLoader cl) {
     if (USE_GLOBAL_CONTEXT) return globalContext;
+    if(USE_PARTITIONED_CONTEXT) {
+    	Iterator it = partitionedContextMap.values().iterator();
+    	if(it.hasNext())
+    		return (DSOContext)it.next();
+    	return null;
+    }
 
     synchronized (contextMap) {
       return (DSOContext) contextMap.get(cl);
@@ -651,7 +712,9 @@ public class ClassProcessorHelper {
 
   private static ClassPreProcessor getPreProcessor(ClassLoader caller) {
     if (USE_GLOBAL_CONTEXT) { return globalContext; }
-
+    if(USE_PARTITIONED_CONTEXT) {
+    	return (ClassPreProcessor)partitionedContextMap.values().iterator().next();
+    }
     synchronized (contextMap) {
       return (ClassPreProcessor) contextMap.get(caller);
     }
