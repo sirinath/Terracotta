@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.partitions.PartitionManager;
 import com.tc.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;
@@ -36,6 +35,7 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;

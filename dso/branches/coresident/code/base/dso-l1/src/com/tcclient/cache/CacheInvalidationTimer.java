@@ -3,7 +3,7 @@
  */
 package com.tcclient.cache;
 
-import com.partitions.PartitionManager;
+import com.tc.object.partitions.PartitionManager;
 
 
 public class CacheInvalidationTimer {
