@@ -14,7 +14,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.TransparentAccess;
-import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
@@ -289,8 +288,8 @@ public abstract class TCObjectImpl implements TCObject {
 
   public void objectFieldChanged(String classname, String fieldname, Object newValue, int index) {
     try {
-      verifyPartition(new Object[]{newValue});	
-      
+      verifyPartition(new Object[] { newValue });
+
       this.markAccessed();
       if (index == NULL_INDEX) {
         // Assert.eval(fieldname.indexOf('.') >= 0);
@@ -359,7 +358,7 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public void primitiveArrayChanged(int startPos, Object array, int length) {
-    verifyPartition(null); 	
+    verifyPartition(null);
     this.markAccessed();
     getObjectManager().getTransactionManager().arrayChanged(this, startPos, array, length);
   }
@@ -446,18 +445,16 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   protected void verifyPartition(Object parameters[]) {
-		PartitionManager.assertSamePartition(this); 	
-		if(parameters != null) {
-			for(int i = 0; i < parameters.length; i++) {
-				TCObject tcobj = null;
-		        if(parameters[i] instanceof Manageable)
-		        	tcobj = ((Manageable) parameters[i]).__tc_managed();
-		        else if(parameters[i].getClass().isArray()) 	
-		        	tcobj = ArrayManager.getObject(parameters[i]);
-		        
-		        if(tcobj != null)
-		        	PartitionManager.assertSamePartition(tcobj); 	
-			}
-		}
+    PartitionManager.assertSamePartition(this);
+    if (parameters != null) {
+      for (int i = 0; i < parameters.length; i++) {
+        Object param = parameters[i];
+        if (param == null) continue;
+
+        TCObject tcobj = getObjectManager().lookupExistingOrNull(param);
+
+        if (tcobj != null) PartitionManager.assertSamePartition(tcobj);
+      }
+    }
   }
 }
