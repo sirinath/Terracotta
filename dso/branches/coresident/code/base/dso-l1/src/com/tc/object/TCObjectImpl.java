@@ -8,7 +8,6 @@ import bsh.EvalError;
 import bsh.Interpreter;
 import bsh.ParseException;
 
-import com.partitions.PartitionManager;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -20,6 +19,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;

@@ -1,4 +1,4 @@
-package com.partitions;
+package com.tc.object.partitions;
 
 import com.tc.exception.ExceptionWrapper;
 import com.tc.exception.ExceptionWrapperImpl;

@@ -5,7 +5,6 @@
 package com.tc.object.bytecode;
 
 //import com.partitions.TCNoPartitionError;
-import com.partitions.PartitionManager;
 import com.tc.cluster.ClusterEventListener;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
@@ -15,6 +14,7 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.properties.TCProperties;
 
 import java.lang.reflect.Field;

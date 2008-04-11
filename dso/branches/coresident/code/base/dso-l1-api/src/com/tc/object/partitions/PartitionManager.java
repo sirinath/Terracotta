@@ -1,4 +1,4 @@
-package com.partitions;
+package com.tc.object.partitions;
 
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Manager;
