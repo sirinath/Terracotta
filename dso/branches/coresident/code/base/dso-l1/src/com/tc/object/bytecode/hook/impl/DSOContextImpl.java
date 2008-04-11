@@ -64,6 +64,26 @@ public class DSOContextImpl implements DSOContext {
     return new DSOContextImpl(configHelper, globalProvider, manager);
   }
 
+  public static DSOContext createContext(String configSpec, ClassProvider globalProvider) throws  ConfigurationSetupException{
+		StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
+                (String[])null, false, new FatalIllegalConfigurationChangeHandler(),configSpec);
+
+		L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager();
+		config.setupLogging();
+		PreparedComponentsFromL2Connection l2Connection;
+		try {
+			l2Connection = validateMakeL2Connection(config);
+		}catch (Exception e) {
+	        throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
+		}
+
+		DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config);
+//		StandardClassProvider classProvider = new StandardClassProvider();
+	    Manager manager = new ManagerImpl(configHelper, globalProvider, l2Connection);
+	    manager.init();
+	    return createContext(configHelper, globalProvider, manager);
+	  
+  }
   /**
    * For tests
    */
@@ -181,7 +201,7 @@ public class DSOContextImpl implements DSOContext {
     return staticConfigHelper;
   }
 
-  private static PreparedComponentsFromL2Connection validateMakeL2Connection(L1TVSConfigurationSetupManager config)
+  public static PreparedComponentsFromL2Connection validateMakeL2Connection(L1TVSConfigurationSetupManager config)
       throws UnknownHostException, IOException, TCTimeoutException {
     L2Data[] l2Data = (L2Data[]) config.l2Config().l2Data().getObjects();
     Assert.assertNotNull(l2Data);
