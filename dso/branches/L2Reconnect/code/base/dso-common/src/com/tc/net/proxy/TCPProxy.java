@@ -102,6 +102,11 @@ public class TCPProxy {
   }
 
   public synchronized void start() throws IOException {
+    
+    if (acceptThread != null) {
+      log("Stop previous accept thread before start a new one");
+      fastStop();
+    }
 
     log("Starting listener on port " + listenPort + ", proxying to " + StringUtil.toString(endpoints, ", ", "[", "]")
         + " with " + getDelay() + "ms delay");
@@ -112,7 +117,7 @@ public class TCPProxy {
       serverSocket = new ServerSocket();
       serverSocket.setReuseAddress(true);
       try {
-        serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 50);
+        serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 500);
       } catch (IOException e) {
         serverSocket.close();
         throw new RuntimeException("Failed to bind port " + listenPort + " is bad: " + e);
@@ -148,7 +153,7 @@ public class TCPProxy {
         serverSocket = new ServerSocket();
         serverSocket.setReuseAddress(true);
         try {
-          serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 50);
+          serverSocket.bind(new InetSocketAddress((InetAddress) null, listenPort), 500);
         } catch (IOException ee) {
           serverSocket.close();
           throw new RuntimeException("Failed to bind port " + listenPort + " is bad: " + ee);
@@ -296,6 +301,7 @@ public class TCPProxy {
       serverSocket = null;
     } catch (IOException e) {
       //throw e;
+      throw new RuntimeException("Unable to close client socket " + e);
     }
   }
 
