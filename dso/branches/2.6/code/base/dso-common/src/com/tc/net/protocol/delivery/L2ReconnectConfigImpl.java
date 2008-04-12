@@ -4,7 +4,7 @@
  */
 package com.tc.net.protocol.delivery;
 
-import com.tc.l1propertiesfroml2.ReconnectConfig;
+import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCPropertiesImpl;
 
 public class L2ReconnectConfigImpl implements ReconnectConfig {
