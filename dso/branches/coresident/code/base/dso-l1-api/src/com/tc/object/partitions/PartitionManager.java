@@ -23,4 +23,9 @@ public class PartitionManager {
     String clusterId = (String) partitionedClusterLocal.get();
     return ClassProcessorHelper.getParitionedManager(clusterId);
   }
+
+  public static void init() {
+    // does nothing, just a call to make sure this class is loaded
+  }
+
 }

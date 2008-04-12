@@ -16,6 +16,7 @@ import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 
@@ -99,6 +100,9 @@ public class ClassProcessorHelper {
   static {
 
     try {
+      // eagerly load this class
+      PartitionManager.init();
+
       // Make sure that the DSOContext class is loaded before using the
       // TC functionalities. This is needed for the IBM JDK when Hashtable is
       // instrumented for auto-locking in the bootjar.
@@ -115,7 +119,7 @@ public class ClassProcessorHelper {
 
       USE_PARTITIONED_CONTEXT = inferPartionedMode();
       if (USE_PARTITIONED_CONTEXT && USE_GLOBAL_CONTEXT) {
-        Banner.errorBanner("Both Global Context and Partitioned Context can not be enabled at the same time.\n"
+        Banner.errorBanner("Both Global Context and Partitioned Context can not be enabled at the same time."
                            + "To use Partioned Context, you must set " + TC_DSO_GLOBALMODE_SYSPROP + "=false");
         Util.exit();
       }
