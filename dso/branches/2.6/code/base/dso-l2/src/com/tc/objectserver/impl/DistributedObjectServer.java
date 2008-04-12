@@ -4,6 +4,9 @@
  */
 package com.tc.objectserver.impl;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -165,6 +168,7 @@ import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -217,9 +221,6 @@ import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
-
-import bsh.EvalError;
-import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -379,8 +380,8 @@ public class DistributedObjectServer implements TCDumper {
 
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     l1ReconnectConfig = new L1ReconnectConfigImpl(TCPropertiesImpl.getProperties()
-        .getBoolean(L1ReconnectConfig.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
-        .getInt(L1ReconnectConfig.L2_L1RECONNECT_TIMEOUT));
+        .getBoolean(TCPropertiesConsts.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS));
 
     final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
     // it's broken

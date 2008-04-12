@@ -5,8 +5,6 @@
 package com.tc.l1propertiesfroml2;
 
 public interface L1ReconnectConfig {
-  public final String L2_L1RECONNECT_ENABLED = "l2.l1reconnect.enabled";
-  public final String L2_L1RECONNECT_TIMEOUT = "l2.l1reconnect.timeout.millis";
 
   public boolean getReconnectEnabled();
 
