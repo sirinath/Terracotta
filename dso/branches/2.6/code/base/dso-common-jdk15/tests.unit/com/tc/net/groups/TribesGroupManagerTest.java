@@ -20,6 +20,7 @@ import com.tc.util.runtime.ThreadDump;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Date;
 import java.util.Random;
 
 public class TribesGroupManagerTest extends TCTestCase {
@@ -28,6 +29,7 @@ public class TribesGroupManagerTest extends TCTestCase {
   private static short          portnum = 0;
 
   public TribesGroupManagerTest() {
+    disableAllUntil(new Date(Long.MAX_VALUE));
     // use random mcast port for testing purpose.
     useRandomMcastPort();
   }
