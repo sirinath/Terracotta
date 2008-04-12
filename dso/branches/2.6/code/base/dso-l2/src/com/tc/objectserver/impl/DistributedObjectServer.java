@@ -18,7 +18,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
+import com.tc.l1propertiesfroml2.ReconnectConfig;
 import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
@@ -275,7 +275,7 @@ public class DistributedObjectServer implements TCDumper {
 
   private ServerTransactionSequencerImpl       serverTransactionSequencerImpl;
 
-  private L1ReconnectConfig                    l1ReconnectConfig;
+  private ReconnectConfig                      l1ReconnectConfig;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -1119,7 +1119,7 @@ public class DistributedObjectServer implements TCDumper {
     }
   }
 
-  public L1ReconnectConfig getL1ReconnectProperties() {
+  public ReconnectConfig getL1ReconnectProperties() {
     return l1ReconnectConfig;
   }
 }
