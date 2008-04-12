@@ -4,9 +4,9 @@
  */
 package com.tc.l1propertiesfroml2;
 
-public interface L1ReconnectConfig {
+public interface ReconnectConfig {
 
   public boolean getReconnectEnabled();
 
-  public int getL1ReconnectTimeout();
+  public int getReconnectTimeout();
 }
