@@ -5,6 +5,7 @@
 package com.tc.l1propertiesfroml2;
 
 public class L1ReconnectConfigImpl implements L1ReconnectConfig {
+
   private boolean l1ReconnectEnabled;
   private int     l1ReconnectTimeout;
   

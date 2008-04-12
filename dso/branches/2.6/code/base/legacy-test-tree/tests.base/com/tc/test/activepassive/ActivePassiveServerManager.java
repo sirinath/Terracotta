@@ -16,7 +16,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.TestState;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -139,7 +138,7 @@ public class ActivePassiveServerManager {
     lastCrashedIndex = NULL_VAL;
   }
 
-  private void createServers() throws FileNotFoundException {
+  private void createServers() {
     int startIndex = 0;
 
     if (DEBUG) {
@@ -219,7 +218,7 @@ public class ActivePassiveServerManager {
     return unused;
   }
 
-  private ServerControl getServerControl(int dsoPort, int jmxPort, String serverName) throws FileNotFoundException {
+  private ServerControl getServerControl(int dsoPort, int jmxPort, String serverName) {
     return new ExtraProcessServerControl(HOST, dsoPort, jmxPort, configFileLocation, true, serverName, this.jvmArgs,
                                          javaHome, true);
   }
