@@ -1450,7 +1450,9 @@ class ClientLock implements TimerCallback, LockFlushCallback {
         throw new AssertionError("Performing recall in state " + state);
       }
       this.recallLevel |= rlevel;
-      state = RECALLED;
+      if (state == GREEDY) {
+        state = RECALLED;
+      }
     }
 
     void leaseTimeout() {
