@@ -72,7 +72,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
       logger.info("Connection to [" + remoteAddress.getCanonicalStringForm()
                   + "] CLOSED. Health Monitoring for this node is now disabled.");
     } else {
-      logger.info("Connection CLOSED. Health Monitor for this node is disabled.");
+      logger.info("Connection " + transport.getConnectionId() + " CLOSED. Health Monitor for this node is disabled.");
     }
     monitorThreadEngine.removeConnection(transport);
   }
@@ -86,7 +86,17 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
-    //
+    // HealthChecker Ping Thread can anyway determine thru ping probe cycle and remove it
+    // from its radar. still lets do it earlier
+    TCSocketAddress remoteAddress = transport.getRemoteAddress();
+    if (remoteAddress != null) {
+      logger.info("Connection to [" + remoteAddress.getCanonicalStringForm()
+                  + "] DISCONNECTED. Health Monitoring for this node is now disabled.");
+    } else {
+      logger.info("Connection " + transport.getConnectionId()
+                  + " DISCONNECTED. Health Monitor for this node is disabled.");
+    }
+    monitorThreadEngine.removeConnection(transport);
   }
 
   private static class HealthCheckerMonitorThreadEngine implements Runnable {
