@@ -8,6 +8,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.cluster.Cluster;
 import com.tc.logging.TCLogger;
+import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
@@ -31,6 +32,7 @@ import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.session.SessionManager;
 import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.State;
 import com.tc.util.Util;
 import com.tc.util.sequence.BatchSequenceReceiver;
@@ -98,12 +100,10 @@ public class ClientHandshakeManager implements ChannelEventListener {
     handshakeMessage.setTransactionSequenceIDs(gtxManager.getTransactionSequenceIDs());
     handshakeMessage.setResentTransactionIDs(gtxManager.getResentTransactionIDs());
 
-    logger.debug("Getting object ids...");
     for (Iterator i = objectManager.getAllObjectIDsAndClear(new HashSet()).iterator(); i.hasNext();) {
       handshakeMessage.addObjectID((ObjectID) i.next());
     }
 
-    logger.debug("Getting lock holders...");
     for (Iterator i = lockManager.addAllHeldLocksTo(new HashSet()).iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       LockContext ctxt = new LockContext(request.lockID(), cidp.getClientID(), request.threadID(), request.lockLevel(),
@@ -111,7 +111,6 @@ public class ClientHandshakeManager implements ChannelEventListener {
       handshakeMessage.addLockContext(ctxt);
     }
 
-    logger.debug("Getting lock waiters...");
     for (Iterator i = lockManager.addAllWaitersTo(new HashSet()).iterator(); i.hasNext();) {
       WaitLockRequest request = (WaitLockRequest) i.next();
       WaitContext ctxt = new WaitContext(request.lockID(), cidp.getClientID(), request.threadID(), request.lockLevel(),
@@ -119,7 +118,6 @@ public class ClientHandshakeManager implements ChannelEventListener {
       handshakeMessage.addWaitContext(ctxt);
     }
 
-    logger.debug("Getting pending lock requests...");
     for (Iterator i = lockManager.addAllPendingLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       LockContext ctxt = new LockContext(request.lockID(), cidp.getClientID(), request.threadID(), request.lockLevel(),
@@ -127,7 +125,6 @@ public class ClientHandshakeManager implements ChannelEventListener {
       handshakeMessage.addPendingLockContext(ctxt);
     }
 
-    logger.debug("Getting pending tryLock requests...");
     for (Iterator i = lockManager.addAllPendingTryLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
       TryLockRequest request = (TryLockRequest) i.next();
       LockContext ctxt = new TryLockContext(request.lockID(), cidp.getClientID(), request.threadID(), request
@@ -135,7 +132,6 @@ public class ClientHandshakeManager implements ChannelEventListener {
       handshakeMessage.addPendingTryLockContext(ctxt);
     }
 
-    logger.debug("Checking to see if is object ids sequence is needed ...");
     handshakeMessage.setIsObjectIDsRequested(!sequenceReceiver.hasNext());
 
     logger.debug("Sending handshake message...");
@@ -179,19 +175,20 @@ public class ClientHandshakeManager implements ChannelEventListener {
   }
 
   public void acknowledgeHandshake(ClientHandshakeAckMessage handshakeAck) {
-    acknowledgeHandshake(handshakeAck.getPersistentServer(), handshakeAck.getThisNodeId(), handshakeAck.getAllNodes(),
-                         handshakeAck.getServerVersion());
+    acknowledgeHandshake(handshakeAck.getClientID(), handshakeAck.getPersistentServer(), handshakeAck.getThisNodeId(),
+                         handshakeAck.getAllNodes(), handshakeAck.getServerVersion());
   }
 
-  protected void acknowledgeHandshake(boolean persistentServer, String thisNodeId, String[] clusterMembers,
-                                      String serverVersion) {
+  protected void acknowledgeHandshake(ClientID clientID, boolean persistentServer, String thisNodeId,
+                                      String[] clusterMembers, String serverVersion) {
+    logger.info("Received Handshake ack for this node :" + clientID);
     if (getState() != STARTING) {
       logger.warn("Handshake acknowledged while not STARTING: " + getState());
       return;
     }
 
     final boolean checkVersionMatches = TCPropertiesImpl.getProperties()
-        .getBoolean("l1.connect.versionMatchCheck.enabled");
+        .getBoolean(TCPropertiesConsts.L1_CONNECT_VERSION_MATCH_CHECK);
     if (checkVersionMatches) {
       checkClientServerVersionMatch(logger, clientVersion, serverVersion);
     }

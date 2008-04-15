@@ -28,8 +28,6 @@ import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
 import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
-import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.ConnectionInfo;
@@ -66,6 +64,8 @@ import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
 import com.tc.object.tools.BootJarException;
+import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.ReconnectConfig;
 import com.tc.tomcat.transform.BootstrapAdapter;
 import com.tc.tomcat.transform.CatalinaAdapter;
 import com.tc.tomcat.transform.ContainerBaseAdapter;
@@ -180,7 +180,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private volatile boolean                       allowCGLIBInstrumentation          = false;
 
-  private L1ReconnectConfig                      l1ReconnectConfig                  = null;
+  private ReconnectConfig                      l1ReconnectConfig                  = null;
 
   public StandardDSOClientConfigHelperImpl(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -2027,7 +2027,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     this.l1ReconnectConfig = new L1ReconnectConfigImpl(l1ReconnectEnabled, l1ReconnectTimeout);
   }
 
-  public synchronized L1ReconnectConfig getL1ReconnectProperties() {
+  public synchronized ReconnectConfig getL1ReconnectProperties() {
     if (l1ReconnectConfig == null) setupL1ReconnectProperties();
     return l1ReconnectConfig;
   }

@@ -17,6 +17,10 @@ import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
+import com.tc.net.protocol.delivery.L2ReconnectConfigImpl;
+import com.tc.net.protocol.delivery.OOOEventHandler;
+import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
+import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
@@ -40,8 +44,10 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handler.ReceiveGroupMessageHandler;
 import com.tc.objectserver.handler.TCGroupHandshakeMessageHandler;
 import com.tc.objectserver.handler.TCGroupMemberDiscoveryHandler;
+import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
@@ -70,11 +76,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private static final TCLogger                               logger                      = TCLogging
                                                                                               .getLogger(TCGroupManagerImpl.class);
   public static final String                                  HANDSHAKE_STATE_MACHINE_TAG = "TcGroupCommHandshake";
-  public static final String                                  NHA_TCCOMM_RESPONSE_TIMEOUT = "l2.nha.tcgroupcomm.response.timelimit";
-  private final static long                                   RESPONSE_TIMELIMIT;
-  static {
-    RESPONSE_TIMELIMIT = TCPropertiesImpl.getProperties().getLong(NHA_TCCOMM_RESPONSE_TIMEOUT);
-  }
+  private final ReconnectConfig                               l2ReconnectConfig;
 
   private final NodeIDImpl                                    thisNodeID;
   private final int                                           groupPort;
@@ -85,10 +87,12 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private final AtomicBoolean                                 isStopped                   = new AtomicBoolean(false);
   private final ConcurrentHashMap<MessageChannel, NodeIDImpl> channelToNodeID             = new ConcurrentHashMap<MessageChannel, NodeIDImpl>();
   private final ConcurrentHashMap<NodeIDImpl, TCGroupMember>  members                     = new ConcurrentHashMap<NodeIDImpl, TCGroupMember>();
+  private final ConcurrentHashMap<String, TCGroupMember>      nodenameToMembers           = new ConcurrentHashMap<String, TCGroupMember>();
   private final Timer                                         handshakeTimer              = new Timer(true);
   private final Set<NodeID>                                   zappedSet                   = Collections
                                                                                               .synchronizedSet(new HashSet<NodeID>());
   private final StageManager                                  stageManager;
+  private final boolean                                       isUseOOOLayer;
 
   private CommunicationsManager                               communicationsManager;
   private NetworkListener                                     groupListener;
@@ -112,6 +116,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
                             StageManager stageManager) {
     this.connectionPolicy = connectionPolicy;
     this.stageManager = stageManager;
+    l2ReconnectConfig = new L2ReconnectConfigImpl();
+    this.isUseOOOLayer = l2ReconnectConfig.getReconnectEnabled();
 
     configSetupManager.commonl2Config().changesInItemIgnored(configSetupManager.commonl2Config().dataPath());
     NewL2DSOConfig l2DSOConfig = configSetupManager.dsoL2Config();
@@ -121,7 +127,14 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
     TCSocketAddress socketAddress;
     try {
-      socketAddress = new TCSocketAddress(l2DSOConfig.bind().getString(), groupPort);
+      int groupConnectPort = groupPort;
+
+      // proxy group port. use a different group port from tc.properties (if exist) than the one on tc-config
+      // currently used by L2Reconnect proxy test.
+      groupConnectPort = TCPropertiesImpl.getProperties().getInt(L2ReconnectConfigImpl.L2_RECONNECT_PROXY_TO_PORT,
+                                                                 groupPort);
+
+      socketAddress = new TCSocketAddress(l2DSOConfig.bind().getString(), groupConnectPort);
     } catch (UnknownHostException e) {
       throw new TCRuntimeException(e);
     }
@@ -136,6 +149,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int groupPort, StageManager stageManager) {
     this.connectionPolicy = connectionPolicy;
     this.stageManager = stageManager;
+    l2ReconnectConfig = new L2ReconnectConfigImpl();
+    this.isUseOOOLayer = l2ReconnectConfig.getReconnectEnabled();
     this.groupPort = groupPort;
     thisNodeID = init(makeGroupNodeName(hostname, groupPort), new TCSocketAddress(TCSocketAddress.WILDCARD_ADDR,
                                                                                   groupPort));
@@ -160,12 +175,21 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     discoveryStage = stageManager.createStage(ServerConfigurationContext.GROUP_DISCOVERY_STAGE,
                                               new TCGroupMemberDiscoveryHandler(this), 4, maxStageSize);
 
-    final NetworkStackHarnessFactory networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
+    final NetworkStackHarnessFactory networkStackHarnessFactory;
+    if (isUseOOOLayer) {
+      final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
+                                                                     new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
+                                                                     oooStage.getSink(), l2ReconnectConfig);
+    } else {
+      networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
+    }
+
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
                                                           this.connectionPolicy,
                                                           new HealthCheckerConfigImpl(l2Properties
-                                                              .getPropertiesFor("healthCheck.l2"), "TCGroupManager"));
+                                                              .getPropertiesFor("healthcheck.l2"), "TCGroupManager"));
 
     groupListener = communicationsManager.createListener(new NullSessionManager(), socketAddress, true,
                                                          new DefaultConnectionIdFactory());
@@ -215,6 +239,34 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     return thisNodeID;
   }
 
+  private void membersClear() {
+    members.clear();
+    nodenameToMembers.clear();
+  }
+
+  private void membersAdd(TCGroupMember member) {
+    NodeIDImpl nodeID = member.getPeerNodeID();
+    members.put(nodeID, member);
+    nodenameToMembers.put(nodeID.getName(), member);
+  }
+
+  private void membersRemove(TCGroupMember member) {
+    NodeIDImpl nodeID = member.getPeerNodeID();
+    members.remove(nodeID);
+    nodenameToMembers.remove(nodeID.getName());
+  }
+
+  private void removeIfMemberReconnecting(NodeIDImpl newNodeID) {
+    TCGroupMember oldMember = nodenameToMembers.get(newNodeID.getName());
+    if ((oldMember != null) && (oldMember.getPeerNodeID() != newNodeID)) {
+      MessageChannel channel = oldMember.getChannel();
+      if (!channel.isConnected()) { // channel may be reconnecting
+        channel.close();
+        logger.warn("Remove not connected member " + oldMember);
+      }
+    }
+  }
+
   public void stop(long timeout) throws TCTimeoutException {
     isStopped.set(true);
     stageManager.stopAll();
@@ -224,7 +276,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     for (TCGroupMember m : members.values()) {
       notifyAnyPendingRequests(m);
     }
-    members.clear();
+    membersClear();
     channelToNodeID.clear();
   }
 
@@ -258,7 +310,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
         return false;
       }
       member.setTCGroupManager(this);
-      members.put(member.getPeerNodeID(), member);
+      membersAdd(member);
     }
     logger.debug(getNodeID() + " added " + member);
     return true;
@@ -283,7 +335,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     member.setTCGroupManager(null);
     TCGroupMember m = members.get(member.getPeerNodeID());
     if ((m != null) && (m.getChannel() == member.getChannel())) {
-      members.remove(member.getPeerNodeID());
+      membersRemove(member);
       if (member.isJoinedEventFired()) fireNodeEvent(member, false);
       member.setJoinedEventFired(false);
       notifyAnyPendingRequests(member);
@@ -295,7 +347,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private void closeMember(TCGroupMember member, boolean isAdded, boolean byDisconnectEvent) {
     member.setReady(false);
     channelToNodeID.remove(member.getChannel());
-    if (isAdded) members.remove(member.getPeerNodeID());
+    if (isAdded) membersRemove(member);
     if (!byDisconnectEvent) member.close();
   }
 
@@ -366,8 +418,10 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
     if (isStopped.get()) return;
 
+    int maxReconnectTries = isUseOOOLayer ? -1 : 0;
     ClientMessageChannel channel = communicationsManager
-        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), 0, null, -1, 10000, addrProvider, groupPort);
+        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), maxReconnectTries, null, -1, 10000,
+                             addrProvider, groupPort);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage
@@ -385,8 +439,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
   public void openChannel(String hostname, int port, ChannelEventListener listener) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException {
-    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port) }),
-                listener);
+    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port) }), listener);
   }
 
   /*
@@ -634,17 +687,14 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     }
 
     public synchronized void waitForResponses(NodeIDImpl sender) throws GroupException {
-      int count = 0;
       long start = System.currentTimeMillis();
       while (!waitFor.isEmpty() && !manager.isStopped()) {
         try {
           this.wait(5000);
-          if (++count > 1) {
-            logger.warn(sender + " Still waiting for response from " + waitFor + ". Count = " + count);
-            if (System.currentTimeMillis() > (start + RESPONSE_TIMELIMIT)) {
-              // something wrong
-              throw new RuntimeException("Still waiting for response from " + waitFor);
-            }
+          long end = System.currentTimeMillis();
+          if (!waitFor.isEmpty() && (end - start) > 5000) {
+            logger.warn(sender + " Still waiting for response from " + waitFor + ". Waited for " + (end - start)
+                        + " ms");
           }
         } catch (InterruptedException e) {
           throw new GroupException(e);
@@ -705,15 +755,15 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
    * TCGroupHandshakeStateMachine -- State machine for group handshaking
    */
   private static class TCGroupHandshakeStateMachine {
-    private final HandshakeState     STATE_NODEID                      = new NodeIDState();
-    private final HandshakeState     STATE_TRY_ADD_MEMBER              = new TryAddMemberState();
-    private final HandshakeState     STATE_SUCCESS                     = new SuccessState();
-    private final HandshakeState     STATE_FAILURE                     = new FailureState();
+    private final HandshakeState     STATE_NODEID         = new NodeIDState();
+    private final HandshakeState     STATE_TRY_ADD_MEMBER = new TryAddMemberState();
+    private final HandshakeState     STATE_SUCCESS        = new SuccessState();
+    private final HandshakeState     STATE_FAILURE        = new FailureState();
 
-    public static final String       NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT = "l2.nha.tcgroupcomm.handshake.timeout";
     private final static long        HANDSHAKE_TIMEOUT;
     static {
-      HANDSHAKE_TIMEOUT = TCPropertiesImpl.getProperties().getLong(NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT);
+      HANDSHAKE_TIMEOUT = TCPropertiesImpl.getProperties()
+          .getLong(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT);
     }
 
     private final TCGroupManagerImpl manager;
@@ -870,6 +920,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
           switchToState(STATE_FAILURE);
         }
         if (!manager.isZappedNode(peerNodeID)) {
+          // remove the old member which is doing reconnecting from same node.
+          manager.removeIfMemberReconnecting(peerNodeID);
           switchToState(STATE_TRY_ADD_MEMBER);
         } else {
           logger.warn("Abort connecting to zapped node. " + stateInfo(current));

@@ -12,7 +12,6 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.cluster.Cluster;
 import com.tc.config.schema.dynamic.ConfigItem;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackDumpAdapter;
 import com.tc.logging.ChannelIDLogger;
@@ -74,6 +73,7 @@ import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
@@ -112,7 +112,9 @@ import com.tc.object.tx.TransactionBatchAccounting;
 import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
+import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -242,7 +244,7 @@ public class DistributedObjectClient extends SEDA {
 
     // //////////////////////////////////
     // create NetworkStackHarnessFactory
-    L1ReconnectConfig l1ReconnectConfig = config.getL1ReconnectProperties();
+    ReconnectConfig l1ReconnectConfig = config.getL1ReconnectProperties();
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
@@ -261,7 +263,7 @@ public class DistributedObjectClient extends SEDA {
 
     communicationsManager = new CommunicationsManagerImpl(mm, networkStackHarnessFactory, new NullConnectionPolicy(),
                                                           new HealthCheckerConfigImpl(l1Properties
-                                                              .getPropertiesFor("healthCheck.l2"), "DSO Client"));
+                                                              .getPropertiesFor("healthcheck.l2"), "DSO Client"));
 
     logger.debug("Created CommunicationsManager.");
 
@@ -272,7 +274,7 @@ public class DistributedObjectClient extends SEDA {
     String serverHost = connectionInfo[0].getHostname();
     int serverPort = connectionInfo[0].getPort();
 
-    int timeout = tcProperties.getInt("l1.socket.connect.timeout");
+    int timeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
     if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
 
     channel = new DSOClientMessageChannelImpl(communicationsManager
@@ -316,7 +318,9 @@ public class DistributedObjectClient extends SEDA {
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(ClientLockManager.class)), new RemoteLockManagerImpl(channel.getLockRequestMessageFactory(),
-                                                                        gtxManager), sessionManager, lockStatManager);
+                                                                        gtxManager), sessionManager, lockStatManager, 
+                                                                        new ClientLockManagerConfigImpl(l1Properties
+                                                                                                        .getPropertiesFor("lockmanager")));
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
     RemoteObjectManager remoteObjectManager = new RemoteObjectManagerImpl(new ChannelIDLogger(channel
         .getChannelIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), clientIDProvider, channel
