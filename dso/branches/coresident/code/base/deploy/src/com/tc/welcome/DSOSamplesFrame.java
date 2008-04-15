@@ -27,6 +27,7 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -84,6 +85,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
     m_outputPane = new XTextPane();
     m_outputPane.setForeground(Color.GREEN);
     m_outputPane.setBackground(Color.BLACK);
+    m_outputPane.setFont(Font.decode("Monospaced-plain-10"));
     ScrollPane scroller = new ScrollPane(m_outputPane);
     scroller.setPreferredSize(new Dimension(500, 200));
     cp.add(scroller, BorderLayout.SOUTH);
@@ -263,7 +265,8 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
   }
 
   private void internalRunServer() {
-    String[] cmdarray = { getJavaCmd().getAbsolutePath(), "-Dtc.config=tc-config.xml",
+    String[] cmdarray = { getJavaCmd().getAbsolutePath(), "-server", "-Xms256m", "-Xmx256m",
+        "-Dcom.sun.management.jmxremote", "-Dtc.config=tc-config.xml",
         "-Dtc.install-root=" + getInstallRoot().getAbsolutePath(), "-cp", getTCLib().getAbsolutePath(),
         ServerConstants.SERVER_MAIN_CLASS_NAME };
 

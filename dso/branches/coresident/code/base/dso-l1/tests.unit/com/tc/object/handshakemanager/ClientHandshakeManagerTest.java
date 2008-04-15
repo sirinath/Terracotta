@@ -37,6 +37,7 @@ import com.tc.object.tx.TestRemoteTransactionManager;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.test.TCTestCase;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.SequenceID;
@@ -169,7 +170,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     // make sure RuntimeException is thrown iff client/server versions don't match and version checking is enabled
     try {
-      mgr.acknowledgeHandshake(false, "1", new String[] {}, clientVersion + "a.b.c");
+      mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion + "a.b.c");
       if (checkVersionMatchEnabled()) {
         fail();
       }
@@ -180,7 +181,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     }
 
     // now ack for real
-    mgr.acknowledgeHandshake(false, "1", new String[] {}, clientVersion);
+    mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion);
 
     // make sure the remote object manager was told to requestOutstanding()
     remoteObjectManager.requestOutstandingContexts.take();
@@ -191,7 +192,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
   }
 
   private boolean checkVersionMatchEnabled() {
-    return TCPropertiesImpl.getProperties().getBoolean("l1.connect.versionMatchCheck.enabled");
+    return TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L1_CONNECT_VERSION_MATCH_CHECK);
   }
 
   private static class TestRemoteObjectManager implements RemoteObjectManager {
