@@ -578,9 +578,9 @@ public class ClassProcessorHelper {
   public static Manager getParitionedManager(String serverId) {
     if (!USE_PARTITIONED_CONTEXT) { throw new IllegalStateException("DSO Context is not set to partitioned in this VM"); }
     DSOContext context;
-    synchronized (partitionedContextMap) {
+//    synchronized (partitionedContextMap) {
       context = (DSOContext) partitionedContextMap.get(serverId);
-    }
+//    }
     if (context == null) { return null; }
     return context.getManager();
   }
