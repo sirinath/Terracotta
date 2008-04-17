@@ -16,7 +16,10 @@ public class PartitionManager {
   }
 
   public static int getNumPartitions() {
-    return ClassProcessorHelper.getNumPartitions();
+    int partitions = ClassProcessorHelper.getNumPartitions();
+    if(partitions == 0)
+    	partitions = 1;
+    return partitions;
   }
 
   public static Manager getPartitionManager() {
