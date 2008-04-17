@@ -45,11 +45,13 @@ public class CreateLotsOfGarbageGCTest extends GCTestBase implements TestConfigu
 
   /**
    * Test Application
+   * 
+   * This test is tuned down so much to accommodate slow boxes.
    */
   public static class CreateLotsOfGarbageGCTestApp extends AbstractTransparentApp {
 
     private static final int SIZE       = 100;
-    private static final int LOOP_COUNT = 4000;
+    private static final int LOOP_COUNT = 2000;
 
     private Object[]         array      = new Object[SIZE];
 
