@@ -45,6 +45,8 @@ public class CreateLotsOfGarbageGCTest extends GCTestBase implements TestConfigu
 
   /**
    * Test Application
+   * 
+   * This test is tuned down so much to accommodate slow boxes.
    */
   public static class CreateLotsOfGarbageGCTestApp extends AbstractTransparentApp {
 
