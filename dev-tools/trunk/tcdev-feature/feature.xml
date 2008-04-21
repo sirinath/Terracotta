@@ -2,7 +2,7 @@
 <feature
       id="org.terracotta.tcdev"
       label="Terracotta development"
-      version="1.5.2"
+      version="1.5.3.2"
       provider-name="Terracotta, Inc.">
 
    <description url="http://intranet.terracotta.lan/xwiki/bin/view/Main/TCDev+Plugin">
@@ -41,7 +41,7 @@
          id="org.terracotta.tcdev"
          download-size="0"
          install-size="0"
-         version="1.5.2"
+         version="1.5.3.2"
          unpack="false"/>
 
 </feature>

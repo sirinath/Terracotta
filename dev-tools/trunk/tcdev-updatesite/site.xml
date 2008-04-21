@@ -3,7 +3,7 @@
    <description url="http://download.terracotta.org/tcdev-plugin">
       Terracotta Development Plugin
    </description>
-   <feature url="features/org.terracotta.tcdev_1.5.2.jar" id="org.terracotta.tcdev" version="1.5.2">
+   <feature url="features/org.terracotta.tcdev_1.5.3.2.jar" id="org.terracotta.tcdev" version="1.5.3.2">
       <category name="TCDev"/>
    </feature>
    <category-def name="TCDev" label="TCDev">

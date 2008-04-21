@@ -48,8 +48,15 @@ import util.DirectoryCleaner;
 public class LaunchShortcut extends JUnitLaunchShortcut implements
     IJavaLaunchConfigurationConstants {
 
-  private static final String J2SE_14               = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
-  private static final String J2SE_15               = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
+  private static final String J2SE_14               = JDKEnvironment.J2SE_1_4
+                                                        .getJavaHome()
+                                                        .getAbsolutePath();
+  private static final String J2SE_15               = JDKEnvironment.J2SE_1_5
+                                                        .getJavaHome()
+                                                        .getAbsolutePath();
+  private static final String JavaSE_16             = JDKEnvironment.JavaSE_1_6
+                                                        .getJavaHome()
+                                                        .getAbsolutePath();
 
   private static final String TESTS_PREP_PROP_LOC   = "common"
                                                         + File.separator
@@ -72,7 +79,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
   private File                prepProps;
 
   public void launch(IEditorPart editor, String mode) {
-    IJavaElement element = JavaUI.getEditorInputJavaElement(editor.getEditorInput());
+    IJavaElement element = JavaUI.getEditorInputJavaElement(editor
+        .getEditorInput());
     if (element != null) {
       try {
         checkPrep(element);
@@ -96,9 +104,12 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         }
       }
     }
+
     super.launch(selection, mode);
   }
 
+  
+  
   public void checkPrep(final IJavaElement element) throws Exception {
     String relativePath = element.getPath().toString();
     String absolutePath = element.getResource().getLocation().toString();
@@ -109,10 +120,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     String module = parts[1];
     String subtree = parts[2];
     File workingDirectory = new File(basePath);
-    File externallyRunTestFolder = new File(basePath, "build/externally-run-tests/" + module);
-    
-    if (!externallyRunTestFolder.exists())
-      runCheckPrep(workingDirectory, module, subtree, basePath);
+
+    runCheckPrep(workingDirectory, module, subtree, basePath);
     loadProperties(prepProps, module, subtree, workingDirectory, basePath);
     cleanTempAndDataDirectories();
   }
@@ -132,17 +141,20 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
   protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(
       IJavaElement element) throws CoreException {
     if (argTypes == null) {
-      RuntimeException re = new RuntimeException("vmArgs null, this should never happen. JUnit impl must have changed.");
+      RuntimeException re = new RuntimeException(
+          "vmArgs null, this should never happen. JUnit impl must have changed.");
       throw re;
     }
 
     try {
-      ILaunchConfigurationWorkingCopy wc = super.createLaunchConfiguration(element);
+      ILaunchConfigurationWorkingCopy wc = super
+          .createLaunchConfiguration(element);
 
       setInstalledJRE(argTypes.getProperty(JVM_VERSION), wc);
 
       final StringBuffer vmArgs = new StringBuffer();
-      int argsCount = new Integer(argTypes.getProperty(VM_ARGS_COUNT)).intValue();
+      int argsCount = new Integer(argTypes.getProperty(VM_ARGS_COUNT))
+          .intValue();
       for (int i = 0; i < argsCount; i++) {
         vmArgs.append(argTypes.getProperty(VM_ARG + i) + " ");
       }
@@ -182,8 +194,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
           + "] must start with \"tests.\"");
     }
     if (!(subtree.endsWith("unit") || subtree.endsWith("system"))) {
-      final IllegalArgumentException iae = new IllegalArgumentException("Subtree["
-          + subtree + "] must end with \"unit\" or \"system\"");
+      final IllegalArgumentException iae = new IllegalArgumentException(
+          "Subtree[" + subtree + "] must end with \"unit\" or \"system\"");
       throw iae;
     }
     final String testType = subtree.replaceFirst("tests\\.", "");
@@ -206,8 +218,9 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     Map<String, String> env = System.getenv();
     final Map<String, String> modifiedEnv = new HashMap<String, String>(env);
     modifiedEnv.put("JAVA_HOME", J2SE_15);
-    modifiedEnv.put("J2SE_14", J2SE_14);
-    modifiedEnv.put("J2SE_15", J2SE_15);
+    modifiedEnv.put("JAVA_HOME_14", J2SE_14);
+    modifiedEnv.put("JAVA_HOME_15", J2SE_15);
+    modifiedEnv.put("JAVA_HOME_16", JavaSE_16);
     final List<String> environmentList = new LinkedList<String>();
     for (Iterator<String> pos = modifiedEnv.keySet().iterator(); pos.hasNext();) {
       final String key = pos.next();
@@ -218,7 +231,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     environmentList.toArray(environment);
 
     info("Running check prep: " + commandLineList + "\n");
-    final ExternalJob tcbuild = new ExternalJob(TCBUILD, commandLine, environment, workingDirectory);
+    final ExternalJob tcbuild = new ExternalJob(TCBUILD, commandLine,
+        environment, workingDirectory);
     tcbuild.setPriority(Job.BUILD);
     tcbuild.setUser(true);
     tcbuild.schedule();
@@ -239,8 +253,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         if (installs[j] instanceof IVMInstall2) {
           IVMInstall2 install2 = (IVMInstall2) installs[j];
           if (jreVersion.startsWith(install2.getJavaVersion())) {
-            wc.setAttribute(ATTR_JRE_CONTAINER_PATH,
-                JavaRuntime.newJREContainerPath(installs[j]).toPortableString());
+            wc.setAttribute(ATTR_JRE_CONTAINER_PATH, JavaRuntime
+                .newJREContainerPath(installs[j]).toPortableString());
             jreAvailable = true;
           }
         }
@@ -250,7 +264,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
       String msg = "Java Version: " + jreVersion
           + " not available as an installed JRE in Eclipse.";
       info(msg);
-      Status status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, msg, null);
+      Status status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, msg,
+          null);
       throw new CoreException(status);
     } else {
       info("Using JRE Version: " + jreVersion);
@@ -280,8 +295,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
    */
   private void cleanTempAndDataDirectories() throws FileNotFoundException,
       IOException {
-    final String testInfoPropertiesLocation = argTypes != null ? argTypes.getProperty(TESTS_INFO_PROP_FILES)
-        : null;
+    final String testInfoPropertiesLocation = argTypes != null ? argTypes
+        .getProperty(TESTS_INFO_PROP_FILES) : null;
     if (testInfoPropertiesLocation != null) {
       final File testInfoPropertiesFile = new File(testInfoPropertiesLocation);
       if (testInfoPropertiesFile.exists() && testInfoPropertiesFile.canRead()) {
@@ -290,7 +305,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         final Properties testInfoProps = new Properties();
         testInfoProps.load(new FileInputStream(testInfoPropertiesFile));
         for (int pos = 0; pos < keysForDirectoriesToClean.length; ++pos) {
-          final String dirToCleanLocation = testInfoProps.getProperty(keysForDirectoriesToClean[pos]);
+          final String dirToCleanLocation = testInfoProps
+              .getProperty(keysForDirectoriesToClean[pos]);
           if (dirToCleanLocation != null) {
             final File dirToClean = new File(dirToCleanLocation);
             if (dirToClean.exists() && dirToClean.isDirectory()
@@ -355,7 +371,8 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
       }
 
       public void run() {
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(
+            stream));
         try {
           String line;
           while ((line = reader.readLine()) != null) {
@@ -401,17 +418,23 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         process = Runtime.getRuntime().exec(commandLine, environment,
             workingDirectory);
         monitor.worked(1);
-        copyStreamsToConsoleInBackground(process.getInputStream(),
-            process.getErrorStream());
+        copyStreamsToConsoleInBackground(process.getInputStream(), process
+            .getErrorStream());
         final int exitCode = process.waitFor();
         monitor.worked(1);
         monitor.done();
-        return exitCode == 0 ? Status.OK_STATUS
-            : new Status(IStatus.ERROR, Activator.PLUGIN_ID, exitCode, "External command failed", null);
+        return exitCode == 0 ? Status.OK_STATUS : new Status(IStatus.ERROR,
+            Activator.PLUGIN_ID, exitCode, "External command failed", null);
       } catch (IOException ioe) {
-        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, "I/O exception when executing external command", ioe);
+        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1,
+            "I/O exception when executing external command", ioe);
       } catch (InterruptedException ie) {
-        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, "Interrupted while waiting for executing external command to finish", ie);
+        return new Status(
+            IStatus.ERROR,
+            Activator.PLUGIN_ID,
+            1,
+            "Interrupted while waiting for executing external command to finish",
+            ie);
       }
     }
 
