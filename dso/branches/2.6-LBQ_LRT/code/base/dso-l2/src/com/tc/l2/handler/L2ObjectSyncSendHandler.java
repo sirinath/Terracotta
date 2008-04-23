@@ -23,6 +23,7 @@ import com.tc.net.groups.GroupManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 
 public class L2ObjectSyncSendHandler extends AbstractEventHandler {
 
@@ -32,15 +33,19 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
   private static final boolean       TXN_ACK_THROTTLING_ENABLED           = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getBoolean(
-                                                                                          "l2.transactionmanager.passive.throttle.enabled");
+                                                                                          TCPropertiesConsts.L2_TRANSACTIONMANAGER_PASSIVE_THROTTLE_ENABLED);
   private static final int           TOTAL_PENDING_TRANSACTIONS_THRESHOLD = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getInt(
-                                                                                      "l2.transactionmanager.passive.throttle.threshold");
+                                                                                      TCPropertiesConsts.L2_TRANSACTIONMANAGER_PASSIVE_THROTTLE_THRESHOLD);
   private static final int           MAX_SLEEP_SECS                       = TCPropertiesImpl
                                                                               .getProperties()
                                                                               .getInt(
-                                                                                      "l2.transactionmanager.passive.throttle.maxSleepSeconds");
+                                                                                      TCPropertiesConsts.L2_TRANSACTIONMANAGER_PASSIVE_THROTTLE_MAXSLEEPSECONDS);
+  private static final long          TIME_TO_THROTTLE_ON_OBJECT_SEND      = TCPropertiesImpl
+                                                                              .getProperties()
+                                                                              .getLong(
+                                                                                       TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_TIME);
 
   private final L2ObjectStateManager objectStateManager;
   private GroupManager               groupManager;
@@ -58,6 +63,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
       ManagedObjectSyncContext mosc = (ManagedObjectSyncContext) context;
       if (sendObjects(mosc)) {
         if (mosc.hasMore()) {
+          throttleOnObjectSync();
           syncRequestSink.add(new SyncObjectsRequest(mosc.getNodeID()));
         }
       }
@@ -69,8 +75,18 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
     }
   }
 
+  private synchronized void throttleOnObjectSync() {
+    if (TIME_TO_THROTTLE_ON_OBJECT_SEND > 0) {
+      try {
+        this.wait(TIME_TO_THROTTLE_ON_OBJECT_SEND);
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
+      }
+    }
+  }
+
   private void sendAcks(ServerTxnAckMessage ackMsg) {
-    if (TXN_ACK_THROTTLING_ENABLED) throttle();
+    if (TXN_ACK_THROTTLING_ENABLED) throttleOnTxnAck();
     try {
       this.groupManager.sendTo(ackMsg.getDestinationID(), ackMsg);
     } catch (GroupException e) {
@@ -84,7 +100,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
   }
 
   // A Simple way to throttle Active from Passive when the number of pending txns reaches the threshold
-  private synchronized void throttle() {
+  private synchronized void throttleOnTxnAck() {
     int totalPendingTxns = serverTxnMgr.getTotalPendingTransactionsCount();
     int factor = totalPendingTxns / TOTAL_PENDING_TRANSACTIONS_THRESHOLD;
     if (factor < 1) {
@@ -135,8 +151,8 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
     ObjectSyncMessage msg = ObjectSyncMessageFactory.createObjectSyncMessageFrom(mosc);
     try {
       this.groupManager.sendTo(mosc.getNodeID(), msg);
-      logger.info("Sent " + mosc.getDNACount() + " objects to " + mosc.getNodeID() + " roots = "
-                  + mosc.getRootsMap().size());
+      logger.info("Sent " + mosc.getTotalObjectsSynced() + " objects out of " + mosc.getTotalObjectsToSync() + " to "
+                  + mosc.getNodeID() + (mosc.getRootsMap().size() == 0 ? "" : " roots = " + mosc.getRootsMap().size()));
       objectStateManager.close(mosc);
       return true;
     } catch (GroupException e) {

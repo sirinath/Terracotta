@@ -30,9 +30,9 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.StartupHelper;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -43,6 +43,7 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.ConnectionPolicyImpl;
 import com.tc.objectserver.core.impl.ServerManagementContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.servlets.L1PropertiesFromL2Servlet;
 import com.tc.statistics.StatisticsGathererSubSystem;
@@ -57,6 +58,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -64,10 +66,6 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 
 public class TCServerImpl extends SEDA implements TCServer {
-
-  private static final String                  HTTP_DEFAULTSERVLET_ENABLED                  = "http.defaultservlet.enabled";
-  private static final String                  HTTP_DEFAULTSERVLET_ATTRIBUTE_DIRALLOWED     = "http.defaultservlet.attribute.dirallowed";
-  private static final String                  HTTP_DEFAULTSERVLET_ATTRIBUTE_ALIASES        = "http.defaultservlet.attribute.aliases";
 
   private static final String                  VERSION_SERVLET_PATH                         = "/version";
   private static final String                  CONFIG_SERVLET_PATH                          = "/config";
@@ -87,14 +85,13 @@ public class TCServerImpl extends SEDA implements TCServer {
   private DistributedObjectServer              dsoServer;
   private Server                               httpServer;
   private TerracottaConnector                  terracottaConnector;
+  private StatisticsGathererSubSystem    statisticsGathererSubSystem;
 
   private final Object                         stateLock                                    = new Object();
   private final L2State                        state                                        = new L2State();
 
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final ConnectionPolicy               connectionPolicy;
-
-  private final StatisticsGathererSubSystem    statisticsGathererSubSystem;
 
   /**
    * This should only be used for tests.
@@ -108,7 +105,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   public TCServerImpl(L2TVSConfigurationSetupManager manager, TCThreadGroup group, ConnectionPolicy connectionPolicy) {
-    super(group);
+    super(group, LinkedBlockingQueue.class.getName());
     this.connectionPolicy = connectionPolicy;
     Assert.assertNotNull(manager);
     this.configurationSetupManager = manager;
@@ -253,6 +250,16 @@ public class TCServerImpl extends SEDA implements TCServer {
 
     if (logger.isDebugEnabled()) {
       consoleLogger.debug("Stopping TC server...");
+    }
+
+    if (statisticsGathererSubSystem != null) {
+      try {
+        statisticsGathererSubSystem.cleanup();
+      } catch (Exception e) {
+        logger.error("Error shutting down statistics gatherer", e);
+      } finally {
+        statisticsGathererSubSystem = null;
+      }
     }
 
     if (terracottaConnector != null) {
@@ -411,15 +418,15 @@ public class TCServerImpl extends SEDA implements TCServer {
     createAndAddServlet(servletHandler, L1PropertiesFromL2Servlet.class.getName(),
                         L1_RECONNECT_PROPERTIES_FROML2_SERVELET_PATH);
 
-    if (TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ENABLED, false)) {
+    if (TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ENABLED, false)) {
       if (!tcInstallDirValid) {
         String msg = "Default HTTP servlet with file serving NOT enabled because the '"
                      + Directories.TC_INSTALL_ROOT_PROPERTY_NAME + "' system property is invalid.";
         consoleLogger.warn(msg);
         logger.warn(msg);
       } else {
-        boolean aliases = TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ATTRIBUTE_ALIASES, false);
-        boolean dirallowed = TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ATTRIBUTE_DIRALLOWED,
+        boolean aliases = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_ALIASES, false);
+        boolean dirallowed = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_DIR_ALLOWED,
                                                                          false);
         context.setAttribute("aliases", aliases);
         context.setAttribute("dirAllowed", dirallowed);

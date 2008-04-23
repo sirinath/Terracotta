@@ -8,10 +8,12 @@ import org.apache.commons.lang.StringUtils;
 
 import com.tc.config.schema.L2Info;
 import com.tc.management.JMXConnectorProxy;
+import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.rmi.ConnectException;
-import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -43,7 +45,6 @@ public class ServerConnectionManager implements NotificationListener {
   private ConnectThread                      m_connectThread;
   private ConnectionMonitorAction            m_connectMonitorAction;
   private Timer                              m_connectMonitorTimer;
-  private AutoConnectListener                m_autoConnectListener;
   
   private static final Map<String, String[]> m_credentialsMap       = new HashMap<String, String[]>();
 
@@ -122,10 +123,14 @@ public class ServerConnectionManager implements NotificationListener {
   }
 
   public void setCredentials(String username, String password) {
-    Map<String, Object> connEnv = getConnectionEnvironment();
-    connEnv.put("jmx.remote.credentials", new String[] { username, password });
+    setCredentials(new String[] { username, password });
   }
 
+  public void setCredentials(String[] creds) {
+    Map<String, Object> connEnv = getConnectionEnvironment();
+    connEnv.put("jmx.remote.credentials", creds);
+  }
+  
   public String[] getCredentials() {
     Map<String, Object> connEnv = getConnectionEnvironment();
     return (String[]) connEnv.get("jmx.remote.credentials");
@@ -133,13 +138,13 @@ public class ServerConnectionManager implements NotificationListener {
 
   static void cacheCredentials(ServerConnectionManager scm, String[] credentials) {
     m_credentialsMap.put(scm.toString(), credentials);
-    m_credentialsMap.put(scm.getHostname(), credentials);
+    m_credentialsMap.put(scm.safeGetHostName(), credentials);
   }
 
   public static String[] getCachedCredentials(ServerConnectionManager scm) {
     String[] result = m_credentialsMap.get(scm.toString());
     if (result == null) {
-      result = m_credentialsMap.get(scm.getHostname());
+      result = m_credentialsMap.get(scm.safeGetHostName());
     }
     return result;
   }
@@ -239,7 +244,7 @@ public class ServerConnectionManager implements NotificationListener {
       } catch (Exception e) {/**/
       }
     }
-    m_jmxConnector = new JMXConnectorProxy(getHostname(), getJMXPortNumber(), getConnectionEnvironment());
+    m_jmxConnector = new JMXConnectorProxy(safeGetHostName(), getJMXPortNumber(), getConnectionEnvironment());
   }
 
   public JMXConnector getJmxConnector() {
@@ -310,10 +315,7 @@ public class ServerConnectionManager implements NotificationListener {
     }
 
     public void run() {
-      try {
-        sleep(500);
-      } catch (InterruptedException ie) {/**/
-      }
+      ThreadUtil.reallySleep(500);
 
       while (!m_cancel && !m_connected) {
         try {
@@ -328,19 +330,19 @@ public class ServerConnectionManager implements NotificationListener {
           } else {
             m_connectException = e;
             if (m_connectListener != null) {
-              if (e instanceof SecurityException) {
-                setAutoConnect(false);
-                fireToggleAutoConnectEvent();
-                m_connectListener.handleException();
-                return;
-              }
+//              if (e instanceof SecurityException) {
+//                setAutoConnect(false);
+//                fireToggleAutoConnectEvent();
+//                m_connectListener.handleException();
+//                return;
+//              }
               m_connectListener.handleException();
             }
           }
         }
 
         try {
-          sleep(2000);
+          sleep(1000);
         } catch (InterruptedException ie) {
           // We may interrupt the connect thread when a new host or port comes in
           // because we have to recreate the connection context, JMX service URL,
@@ -355,14 +357,6 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  void addToggleAutoConnectListener(AutoConnectListener listener) {
-    m_autoConnectListener = listener;
-  }
-
-  private void fireToggleAutoConnectEvent() {
-    if (m_autoConnectListener != null) m_autoConnectListener.handleEvent();
-  }
-
   JMXServiceURL getJMXServiceURL() {
     return m_jmxConnector.getServiceURL();
   }
@@ -375,6 +369,18 @@ public class ServerConnectionManager implements NotificationListener {
     return m_l2Info.host();
   }
 
+  public InetAddress getInetAddress() throws UnknownHostException {
+    return m_l2Info.getInetAddress();
+  }
+  
+  public String getCanonicalHostName() throws UnknownHostException {
+    return getInetAddress().getCanonicalHostName();
+  }
+  
+  public String getHostAddress() throws UnknownHostException {
+    return m_l2Info.getHostAddress();
+  }
+  
   public int getJMXPortNumber() {
     return m_l2Info.jmxPort();
   }
@@ -526,8 +532,26 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
+  public String safeGetHostName() {
+    try {
+      String s = getCanonicalHostName();
+      return s;
+    } catch(UnknownHostException uhe) {
+      return getHostname();
+    }
+  }
+  
+  public String safeGetHostAddress() {
+    try {
+      String s = getHostAddress();
+      return s;
+    } catch(UnknownHostException uhe) {
+      return "<unknown>";
+    }
+  }
+  
   public String toString() {
-    return getHostname() + ":" + getJMXPortNumber();
+    return safeGetHostName() + ":" + getJMXPortNumber();
   }
 
   public String getStatusString() {
@@ -577,17 +601,11 @@ public class ServerConnectionManager implements NotificationListener {
     if(!(o instanceof ServerConnectionManager)) return false;
     
     ServerConnectionManager other = (ServerConnectionManager)o;
-    String otherHostname = other.getHostname();
+    String otherHostname = other.safeGetHostName();
     int otherJMXPort = other.getJMXPortNumber();
-    String hostname = getHostname();
+    String hostname = safeGetHostName();
     int jmxPort = getJMXPortNumber();
     
     return otherJMXPort == jmxPort && StringUtils.equals(otherHostname, hostname);
-  }
-  
-  // --------------------------------------------------------------------------------
-
-  public static interface AutoConnectListener extends EventListener {
-    void handleEvent();
   }
 }

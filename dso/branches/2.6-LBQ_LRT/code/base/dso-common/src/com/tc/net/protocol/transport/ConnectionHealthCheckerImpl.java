@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnectionManager;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
@@ -66,7 +67,13 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   public void notifyTransportClosed(MessageTransport transport) {
     // HealthChecker Ping Thread can anyway determine this in the next probe interval thru mtb.isConnected and remove it
     // from its radar. still lets do it earlier
-    logger.info("Connection to NodeID[" + transport.getConnectionId().getChannelID() + "] CLOSED. Health Monitoring for this node is now disabled.");
+    TCSocketAddress remoteAddress = transport.getRemoteAddress();
+    if (remoteAddress != null) {
+      logger.info("Connection to [" + remoteAddress.getCanonicalStringForm()
+                  + "] CLOSED. Health Monitoring for this node is now disabled.");
+    } else {
+      logger.info("Connection " + transport.getConnectionId() + " CLOSED. Health Monitor for this node is disabled.");
+    }
     monitorThreadEngine.removeConnection(transport);
   }
 
@@ -79,13 +86,23 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
-    //
+    // HealthChecker Ping Thread can anyway determine thru ping probe cycle and remove it
+    // from its radar. still lets do it earlier
+    TCSocketAddress remoteAddress = transport.getRemoteAddress();
+    if (remoteAddress != null) {
+      logger.info("Connection to [" + remoteAddress.getCanonicalStringForm()
+                  + "] DISCONNECTED. Health Monitoring for this node is now disabled.");
+    } else {
+      logger.info("Connection " + transport.getConnectionId()
+                  + " DISCONNECTED. Health Monitor for this node is disabled.");
+    }
+    monitorThreadEngine.removeConnection(transport);
   }
 
   private static class HealthCheckerMonitorThreadEngine implements Runnable {
-    private ConcurrentHashMap         connectionMap = new ConcurrentHashMap();
-    private final int                 pingIdleTime;
-    private final int                 pingInterval;
+    private final ConcurrentHashMap   connectionMap = new ConcurrentHashMap();
+    private final long                pingIdleTime;
+    private final long                pingInterval;
     private final int                 pingProbes;
     private final SetOnceFlag         stop          = new SetOnceFlag();
     private final HealthCheckerConfig config;
@@ -94,9 +111,9 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
 
     public HealthCheckerMonitorThreadEngine(HealthCheckerConfig healthCheckerConfig,
                                             TCConnectionManager connectionManager, TCLogger logger) {
-      pingIdleTime = healthCheckerConfig.getPingIdleTime() * 1000;
-      pingInterval = healthCheckerConfig.getPingInterval() * 1000;
-      pingProbes = healthCheckerConfig.getPingProbes();
+      this.pingIdleTime = healthCheckerConfig.getPingIdleTimeMillis();
+      this.pingInterval = healthCheckerConfig.getPingIntervalMillis();
+      this.pingProbes = healthCheckerConfig.getPingProbes();
       this.connectionManager = connectionManager;
       this.config = healthCheckerConfig;
 
@@ -140,7 +157,8 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
           MessageTransportBase mtb = (MessageTransportBase) connectionIterator.next();
 
           if (!mtb.isConnected()) {
-            logger.info("NodeID[" + mtb.getConnectionId().getChannelID() + "] is not connected. Disabling Health Monitoring for the same.");
+            logger.info("[" + mtb.getConnection().getRemoteAddress().getCanonicalStringForm()
+                        + "] is not connected. Health Monitoring for this node is now disabled.");
             connectionIterator.remove();
             continue;
           }
@@ -149,7 +167,7 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
           if ((mtb.getConnection().getIdleReceiveTime() >= this.pingIdleTime)) {
 
             if (!connContext.probeIfAlive()) {
-              // Conn is dead. Diconnect the transport.
+              // Connection is dead. Disconnect the transport.
               mtb.disconnect();
               connectionIterator.remove();
             }

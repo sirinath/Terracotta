@@ -7,7 +7,6 @@ package com.tc.net.protocol.transport;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
-import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
@@ -24,6 +23,7 @@ import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.object.session.NullSessionManager;
+import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.TCTimeoutException;
 
@@ -60,7 +60,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                     new ConnectionInfo[] { connectionInfo }),
                                                                       maxRetries, 5000);
     transport = new ClientMessageTransport(cce, handshakeErrorHandler, this.transportMessageFactory,
-                                           new WireProtocolAdaptorFactoryImpl());
+                                           new WireProtocolAdaptorFactoryImpl(),
+                                           TransportHandshakeMessage.NO_CALLBACK_PORT);
   }
 
   public void testRoundRobinReconnect() throws Exception {
@@ -124,7 +125,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                     new ConnectionInfo[] { connInfo }),
                                                                       0, 1000);
     transport = new ClientMessageTransport(cce, this.handshakeErrorHandler, this.transportMessageFactory,
-                                           new WireProtocolAdaptorFactoryImpl());
+                                           new WireProtocolAdaptorFactoryImpl(),
+                                           TransportHandshakeMessage.NO_CALLBACK_PORT);
     transport.open();
     assertTrue(transport.isConnected());
     listener.stop(5000);
@@ -167,8 +169,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                    new NullMessageMonitor(),
                                                    new OOONetworkStackHarnessFactory(
                                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                     null,
-                                                                                     new L1ReconnectConfigImpl()),
+                                                                                     null, new L1ReconnectConfigImpl()),
                                                    new NullConnectionPolicy(), 0);
 
     try {
@@ -204,7 +205,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                   maxRetries, timeout);
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
                                                                 transportMessageFactory,
-                                                                new WireProtocolAdaptorFactoryImpl());
+                                                                new WireProtocolAdaptorFactoryImpl(),
+                                                                TransportHandshakeMessage.NO_CALLBACK_PORT);
         return cmt;
       }
 

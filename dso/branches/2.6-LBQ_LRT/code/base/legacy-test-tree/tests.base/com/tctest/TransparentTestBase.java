@@ -10,7 +10,6 @@ import org.apache.commons.lang.ClassUtils;
 import com.tc.config.schema.SettableConfigItem;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
 import com.tc.management.beans.L2DumperMBean;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.net.proxy.TCPProxy;
@@ -18,11 +17,10 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
-import com.tc.statistics.buffer.StatisticsBuffer;
-import com.tc.statistics.store.StatisticsStore;
 import com.tc.test.ProcessInfo;
 import com.tc.test.TestConfigObject;
 import com.tc.test.activepassive.ActivePassiveServerConfigCreator;
@@ -60,38 +58,38 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int                         DEFAULT_CLIENT_COUNT            = 2;
-  public static final int                         DEFAULT_INTENSITY               = 10;
-  public static final int                         DEFAULT_VALIDATOR_COUNT         = 0;
-  public static final int                         DEFAULT_ADAPTED_MUTATOR_COUNT   = 0;
-  public static final int                         DEFAULT_ADAPTED_VALIDATOR_COUNT = 0;
+  public static final int               DEFAULT_CLIENT_COUNT            = 2;
+  public static final int               DEFAULT_INTENSITY               = 10;
+  public static final int               DEFAULT_VALIDATOR_COUNT         = 0;
+  public static final int               DEFAULT_ADAPTED_MUTATOR_COUNT   = 0;
+  public static final int               DEFAULT_ADAPTED_VALIDATOR_COUNT = 0;
 
-  protected DistributedTestRunner                 runner;
+  protected DistributedTestRunner       runner;
 
-  private DistributedTestRunnerConfig             runnerConfig                    = new DistributedTestRunnerConfig(
-                                                                                                                    getTimeoutValueInSeconds());
-  private TransparentAppConfig                    transparentAppConfig;
-  private ApplicationConfigBuilder                possibleApplicationConfigBuilder;
+  private DistributedTestRunnerConfig   runnerConfig                    = new DistributedTestRunnerConfig(
+                                                                                                          getTimeoutValueInSeconds());
+  private TransparentAppConfig          transparentAppConfig;
+  private ApplicationConfigBuilder      possibleApplicationConfigBuilder;
 
-  private String                                  mode;
-  private ServerControl                           serverControl;
-  private boolean                                 controlledCrashMode             = false;
-  private ServerCrasher                           crasher;
-  private File                                    javaHome;
-  private int                                     pid                             = -1;
-  private final ProxyConnectManager               proxyMgr                        = new ProxyConnectManagerImpl();
+  private String                        mode;
+  private ServerControl                 serverControl;
+  private boolean                       controlledCrashMode             = false;
+  private ServerCrasher                 crasher;
+  private File                          javaHome;
+  private int                           pid                             = -1;
+  private final ProxyConnectManager     proxyMgr                        = new ProxyConnectManagerImpl();
 
   // for active-passive tests
-  private ActivePassiveServerManager              apServerManager;
-  private ActivePassiveTestSetupManager           apSetupManager;
-  private TestState                               crashTestState;
+  private ActivePassiveServerManager    apServerManager;
+  private ActivePassiveTestSetupManager apSetupManager;
+  private TestState                     crashTestState;
 
   // used by ResolveTwoActiveServersTest only
-  private ServerControl[]                         serverControls                  = null;
-  private TCPProxy[]                              proxies                         = null;
+  private ServerControl[]               serverControls                  = null;
+  private TCPProxy[]                    proxies                         = null;
 
-  private int dsoPort = -1;
-  private int adminPort = -1;
+  private int                           dsoPort                         = -1;
+  private int                           adminPort                       = -1;
 
   protected TestConfigObject getTestConfigObject() {
     return TestConfigObject.getInstance();
@@ -107,19 +105,26 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void setJvmArgsL1Reconnect(final ArrayList jvmArgs) {
-    System.setProperty("com.tc." + L1ReconnectConfig.L2_L1RECONNECT_ENABLED, "true");
-    TCPropertiesImpl.setProperty(L1ReconnectConfig.L2_L1RECONNECT_ENABLED, "true");
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_L1RECONNECT_ENABLED, "true");
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_L1RECONNECT_ENABLED, "true");
+    
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_L1RECONNECT_ENABLED + "=true");
+  }
 
-    jvmArgs.add("-Dcom.tc." + L1ReconnectConfig.L2_L1RECONNECT_ENABLED + "=true");
+  protected void setJvmArgsL2Reconnect(final ArrayList jvmArgs) {
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
+
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED + "=true");
   }
 
   protected void setJvmArgsCvtIsolation(final ArrayList jvmArgs) {
-    final String buffer_randomsuffix_sysprop = TCPropertiesImpl.tcSysProp(StatisticsBuffer.BUFFER_RANDOMSUFFIX_ENABLED_PROPERTY_NAME);
-    final String store_randomsuffix_sysprop = TCPropertiesImpl.tcSysProp(StatisticsStore.STORE_RANDOMSUFFIX_ENABLED_PROPERTY_NAME);
+    final String buffer_randomsuffix_sysprop = TCPropertiesImpl.tcSysProp(TCPropertiesConsts.CVT_BUFFER_RANDOM_SUFFIX_ENABLED);
+    final String store_randomsuffix_sysprop = TCPropertiesImpl.tcSysProp(TCPropertiesConsts.CVT_STORE_RANDOM_SUFFIX_ENABLED);
     System.setProperty(buffer_randomsuffix_sysprop, "true");
-    TCPropertiesImpl.setProperty(StatisticsBuffer.BUFFER_RANDOMSUFFIX_ENABLED_PROPERTY_NAME, "true");
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.CVT_BUFFER_RANDOM_SUFFIX_ENABLED, "true");
     System.setProperty(store_randomsuffix_sysprop, "true");
-    TCPropertiesImpl.setProperty(StatisticsStore.STORE_RANDOMSUFFIX_ENABLED_PROPERTY_NAME, "true");
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.CVT_STORE_RANDOM_SUFFIX_ENABLED, "true");
 
     jvmArgs.add("-D" + buffer_randomsuffix_sysprop + "=true");
     jvmArgs.add("-D" + store_randomsuffix_sysprop + "=true");
@@ -131,18 +136,23 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // config should be set up before tc-config for external L2s are written out
     setupConfig(configFactory());
 
-    if (!canSkipL1ReconnectCheck() && canRunProxyConnect() && !enableL1Reconnect()) {
-      //
-      throw new AssertionError("proxy-connect needs l1reconnect enabled, please overwrite enableL1Reconnect()");
-    }
+    if (!canSkipL1ReconnectCheck() && canRunL1ProxyConnect() && !enableL1Reconnect()) { throw new AssertionError(
+                                                                                                                 "L1 proxy-connect needs l1reconnect enabled, please overwrite enableL1Reconnect()"); }
+
+    if (canRunL2ProxyConnect() && !enableL2Reconnect()) { throw new AssertionError(
+                                                                                   "L2 proxy-connect needs l2reconnect enabled, please overwrite enableL2Reconnect()"); }
 
     ArrayList jvmArgs = new ArrayList();
     addTestTcPropertiesFile(jvmArgs);
     setJvmArgsCvtIsolation(jvmArgs);
-    
+
     // for some test cases to enable l1reconnect
     if (enableL1Reconnect()) {
       setJvmArgsL1Reconnect(jvmArgs);
+    }
+
+    if (enableL2Reconnect()) {
+      setJvmArgsL2Reconnect(jvmArgs);
     }
 
     RestartTestHelper helper = null;
@@ -161,7 +171,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       adminPort = helper.getAdminPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-      if (!canRunProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort);
+      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers(portChooser, jvmArgs);
@@ -170,10 +180,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       adminPort = portChooser.chooseRandomPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-      if (!canRunProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, -1);
+      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, -1);
     }
 
-    if (canRunProxyConnect()) {
+    if (canRunL1ProxyConnect()) {
       setupProxyConnect(helper, portChooser);
     }
 
@@ -183,7 +193,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       crashTestState = new TestState(false);
       crasher = new ServerCrasher(serverControl, helper.getServerCrasherConfig().getRestartInterval(), helper
           .getServerCrasherConfig().isCrashy(), crashTestState, proxyMgr);
-      if (canRunProxyConnect()) crasher.setProxyConnectMode(true);
+      if (canRunL1ProxyConnect()) crasher.setProxyConnectMode(true);
       crasher.startAutocrash();
     }
   }
@@ -223,8 +233,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
                                                      ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
-                                                     javaHome, configFactory(), jvmArgs);
+                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
     apServerManager.addServersToL1Config(configFactory());
+    if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
 
   protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
@@ -264,19 +275,29 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     proxyMgr.setDsoPort(dsoPort);
     proxyMgr.setProxyPort(dsoProxyPort);
     proxyMgr.setupProxy();
-    setupProxyConnectTest(proxyMgr);
+    setupL1ProxyConnectTest(proxyMgr);
 
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
     configFactory().addServerToL1Config(null, dsoProxyPort, -1);
   }
 
-  protected void setupProxyConnectTest(ProxyConnectManager mgr) {
+  protected void setupL1ProxyConnectTest(ProxyConnectManager mgr) {
     /*
      * subclass can overwrite to change the test parameters.
      */
     mgr.setProxyWaitTime(20 * 1000);
     mgr.setProxyDownTime(100);
+  }
+
+  protected void setupL2ProxyConnectTest(ProxyConnectManager[] managers) {
+    /*
+     * subclass can overwrite to change the test parameters.
+     */
+    for (int i = 0; i < managers.length; ++i) {
+      managers[i].setProxyWaitTime(20 * 1000);
+      managers[i].setProxyDownTime(100);
+    }
   }
 
   protected boolean useExternalProcess() {
@@ -342,7 +363,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   private final void setUpTransparent(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper,
-                           boolean serverControlsSet) throws Exception {
+                                      boolean serverControlsSet) throws Exception {
     super.setUp(factory, helper);
     if (serverControlsSet) {
       transparentAppConfig = new TransparentAppConfig(getApplicationClass().getName(), new TestGlobalIdGenerator(),
@@ -439,7 +460,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return false;
   }
 
-  protected boolean canRunProxyConnect() {
+  protected boolean canRunL1ProxyConnect() {
     return false;
   }
 
@@ -452,6 +473,14 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected boolean enableL1Reconnect() {
+    return false;
+  }
+
+  protected boolean canRunL2ProxyConnect() {
+    return false;
+  }
+
+  protected boolean enableL2Reconnect() {
     return false;
   }
 
@@ -471,6 +500,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void duringRunningCluster() throws Exception {
+    //
   }
 
   public void test() throws Exception {
@@ -488,7 +518,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       // NOTE: for crash tests the server needs to be started by the ServerCrasher.. timing issue
 
       this.runner.startServer();
-      if (canRunProxyConnect()) {
+      if (canRunL1ProxyConnect()) {
         proxyMgr.proxyUp();
 
         if (!enableManualProxyConnectControl()) {
@@ -644,8 +674,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
-  protected File writeMinimalConfig(int port, int adminPort) {
-    TerracottaConfigBuilder builder = createConfigBuilder(port, adminPort);
+  protected File writeMinimalConfig(int port, int administratorPort) {
+    TerracottaConfigBuilder builder = createConfigBuilder(port, administratorPort);
     FileOutputStream out = null;
     File configFile = null;
     try {
@@ -664,11 +694,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return configFile;
   }
 
-  protected TerracottaConfigBuilder createConfigBuilder(int port, int adminPort) {
+  protected TerracottaConfigBuilder createConfigBuilder(int port, int administratorPort) {
     TerracottaConfigBuilder out = new TerracottaConfigBuilder();
 
     out.getServers().getL2s()[0].setDSOPort(port);
-    out.getServers().getL2s()[0].setJMXPort(adminPort);
+    out.getServers().getL2s()[0].setJMXPort(administratorPort);
 
     return out;
   }
