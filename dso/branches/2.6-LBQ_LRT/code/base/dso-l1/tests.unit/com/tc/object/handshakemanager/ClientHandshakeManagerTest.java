@@ -37,6 +37,7 @@ import com.tc.object.tx.TestRemoteTransactionManager;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.test.TCTestCase;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.SequenceID;
@@ -99,8 +100,8 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       objectManager.objects.put(id, new Object());
     }
 
-    WaitLockRequest waitLockRequest = new WaitLockRequest(new LockID("1"), new ThreadID(1), LockLevel.WRITE, String.class.getName(),
-                                                          new TimerSpec());
+    WaitLockRequest waitLockRequest = new WaitLockRequest(new LockID("1"), new ThreadID(1), LockLevel.WRITE,
+                                                          String.class.getName(), new TimerSpec());
     lockManager.outstandingWaitLockRequests.add(waitLockRequest);
 
     LockRequest lockRequest = new LockRequest(new LockID("2"), new ThreadID(2), LockLevel.WRITE);
@@ -169,7 +170,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     // make sure RuntimeException is thrown iff client/server versions don't match and version checking is enabled
     try {
-      mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion + "a.b.c");
+      mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion + "a.b.c");
       if (checkVersionMatchEnabled()) {
         fail();
       }
@@ -180,7 +181,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     }
 
     // now ack for real
-    mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion);
+    mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion);
 
     // make sure the remote object manager was told to requestOutstanding()
     remoteObjectManager.requestOutstandingContexts.take();
@@ -191,7 +192,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
   }
 
   private boolean checkVersionMatchEnabled() {
-    return TCPropertiesImpl.getProperties().getBoolean("l1.connect.versionMatchCheck.enabled");
+    return TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L1_CONNECT_VERSION_MATCH_CHECK);
   }
 
   private static class TestRemoteObjectManager implements RemoteObjectManager {
@@ -287,7 +288,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public void awardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
       return;
     }
-    
+
     public LockID lockIDFor(String id) {
       return null;
     }
@@ -340,7 +341,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public void recall(LockID lockID, ThreadID id, int level) {
       return;
     }
-    
+
     public void recall(LockID lockID, ThreadID threadID, int level, int leaseTimeInMs) {
       return;
     }
@@ -408,12 +409,12 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     public void dump(Writer writer) {
       throw new ImplementMe();
-      
+
     }
 
     public void dumpToLogger() {
       throw new ImplementMe();
-      
+
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {

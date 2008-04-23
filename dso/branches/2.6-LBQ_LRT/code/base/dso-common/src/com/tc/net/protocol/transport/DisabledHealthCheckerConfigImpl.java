@@ -15,11 +15,11 @@ public class DisabledHealthCheckerConfigImpl implements HealthCheckerConfig {
     return false;
   }
 
-  public int getPingIdleTime() {
+  public long getPingIdleTimeMillis() {
     throw new AssertionError("Disabled HealthChecker");
   }
 
-  public int getPingInterval() {
+  public long getPingIntervalMillis() {
     throw new AssertionError("Disabled HealthChecker");
   }
 
@@ -35,7 +35,11 @@ public class DisabledHealthCheckerConfigImpl implements HealthCheckerConfig {
     throw new AssertionError("Disabled HealthChecker");
   }
 
-  public int getMaxSocketConnectCount() {
+  public int getSocketConnectMaxCount() {
+    throw new AssertionError("Disabled HealthChecker");
+  }
+
+  public int getSocketConnectTimeout() {
     throw new AssertionError("Disabled HealthChecker");
   }
 

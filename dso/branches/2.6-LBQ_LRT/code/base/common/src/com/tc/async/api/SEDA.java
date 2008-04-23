@@ -5,6 +5,7 @@ package com.tc.async.api;
 
 import com.tc.async.impl.StageManagerImpl;
 import com.tc.lang.TCThreadGroup;
+import com.tc.util.concurrent.QueueFactory;
 
 /**
  * Manages the startup and shutdown of a SEDA environment
@@ -17,9 +18,14 @@ public class SEDA {
 
   public SEDA(TCThreadGroup threadGroup) {
     this.threadGroup = threadGroup;
-    this.stageManager = new StageManagerImpl(threadGroup);
+    this.stageManager = new StageManagerImpl(threadGroup, new QueueFactory());
   }
 
+  public SEDA(TCThreadGroup threadGroup, String className){
+    this.threadGroup = threadGroup;
+    this.stageManager = new StageManagerImpl(threadGroup, new QueueFactory(className));
+  }
+  
   public StageManager getStageManager() {
     return stageManager;
   }

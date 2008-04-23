@@ -4,6 +4,9 @@
  */
 package com.tc.objectserver.impl;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -15,8 +18,6 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
-import com.tc.l1propertiesfroml2.L1ReconnectConfig;
-import com.tc.l1propertiesfroml2.L1ReconnectConfigImpl;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
@@ -164,7 +165,10 @@ import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
+import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -192,6 +196,7 @@ import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.util.Assert;
+import com.tc.util.CommonShutDownHook;
 import com.tc.util.PortChooser;
 import com.tc.util.ProductInfo;
 import com.tc.util.SequenceValidator;
@@ -216,9 +221,6 @@ import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
-
-import bsh.EvalError;
-import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -273,7 +275,7 @@ public class DistributedObjectServer implements TCDumper {
 
   private ServerTransactionSequencerImpl       serverTransactionSequencerImpl;
 
-  private L1ReconnectConfig                    l1ReconnectConfig;
+  private ReconnectConfig                      l1ReconnectConfig;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -378,8 +380,8 @@ public class DistributedObjectServer implements TCDumper {
 
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     l1ReconnectConfig = new L1ReconnectConfigImpl(TCPropertiesImpl.getProperties()
-        .getBoolean(L1ReconnectConfig.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
-        .getInt(L1ReconnectConfig.L2_L1RECONNECT_TIMEOUT));
+        .getBoolean(TCPropertiesConsts.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS));
 
     final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
     // it's broken
@@ -494,7 +496,7 @@ public class DistributedObjectServer implements TCDumper {
 
     communicationsManager = new CommunicationsManagerImpl(mm, networkStackHarnessFactory, connectionPolicy,
                                                           numCommWorkers, new HealthCheckerConfigImpl(l2Properties
-                                                              .getPropertiesFor("healthCheck.l1"), "DSO Server"));
+                                                              .getPropertiesFor("healthcheck.l1"), "DSO Server"));
 
     final DSOApplicationEvents appEvents;
     try {
@@ -770,7 +772,10 @@ public class DistributedObjectServer implements TCDumper {
                                                                                                .getStage(
                                                                                                          ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
                                                                                                .getSink(),
-                                                                                           objectStore,
+                                                                                           stageManager
+                                                                                               .getStage(
+                                                                                                         ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE)
+                                                                                               .getSink(),
                                                                                            new TCTimerImpl(
                                                                                                            "Reconnect timer",
                                                                                                            true),
@@ -818,6 +823,15 @@ public class DistributedObjectServer implements TCDumper {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
+    setLoggerOnExit();
+  }
+
+  private void setLoggerOnExit() {
+    CommonShutDownHook.addShutdownHook(new Runnable() {
+      public void run() {
+        logger.info("L2 Exiting...");
+      }
+    });
   }
 
   private void populateStatisticsRetrievalRegistry(final DSOGlobalServerStats serverStats,
@@ -1105,7 +1119,7 @@ public class DistributedObjectServer implements TCDumper {
     }
   }
 
-  public L1ReconnectConfig getL1ReconnectProperties() {
+  public ReconnectConfig getL1ReconnectProperties() {
     return l1ReconnectConfig;
   }
 }

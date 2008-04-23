@@ -36,6 +36,9 @@ import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -141,11 +144,22 @@ public class ModulesLoader {
     moduleList.addAll(Arrays.asList(modules));
 
     final Module[] allModules = (Module[]) moduleList.toArray(new Module[moduleList.size()]);
-    final Resolver resolver = new Resolver(osgiRuntime.getRepositories());
-    final URL[] locations = resolver.resolve(allModules);
+    
+    final URL[] osgiRepositories = osgiRuntime.getRepositories();
+    final Resolver resolver = new Resolver(Resolver.urlsToStrings(osgiRepositories));
+    final File[] locations = resolver.resolve(allModules);
 
-    osgiRuntime.installBundles(locations);
-    osgiRuntime.startBundles(locations, handler);
+    final URL[] bundleURLs = new URL[locations.length];
+    for(int i=0; i<locations.length; i++) {
+      try {
+        bundleURLs[i] = locations[i].toURL();
+      } catch(MalformedURLException e) {
+        throw new RuntimeException("Malformed file URL for bundle: " + locations[i].getAbsolutePath(), e);
+      }
+    }
+    
+    osgiRuntime.installBundles(bundleURLs);
+    osgiRuntime.startBundles(bundleURLs, handler);
   }
 
   private static List getAdditionalModules() {
@@ -286,7 +300,7 @@ public class ModulesLoader {
         if (application != null) {
           final ConfigLoader loader = new ConfigLoader(configHelper, logger);
           loader.loadDsoConfig(application);
-          logger.info("Module configuration loaded for " + bundle.getSymbolicName() + " (" + configPath + ")");
+          logConfig(application, bundle, configPath);
           // loader.loadSpringConfig(application.getSpring());
         }
         is.close();
@@ -308,6 +322,20 @@ public class ModulesLoader {
       } finally {
         IOUtils.closeQuietly(is);
       }
+    }
+  }
+  
+  private static void logConfig(DsoApplication application, Bundle bundle, String configPath) {
+    logger.info("Config loaded from module: " + bundle.getSymbolicName() + " (" + configPath + ")");
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    BufferedOutputStream buf = new BufferedOutputStream(bas);
+    try {
+      application.save(buf);
+      buf.flush();
+      buf.close();
+      logger.info("Here's the config from the module:\n\n" + bas.toString());
+    } catch (IOException e) {
+      logger.warn("Unable to generate a log entry to for the module's config info.");
     }
   }
 }

@@ -21,6 +21,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
   public final static String STATISTICS_LOCALGATHERER_STORE_CLOSED_TYPE = "tc.statistics.localgatherer.store.closed";
   public final static String STATISTICS_LOCALGATHERER_STATISTICS_ENABLED_TYPE = "tc.statistics.localgatherer.statistics.enabled";
 
+  public boolean isActive();
+
   public void startup();
 
   public void shutdown();
@@ -45,6 +47,8 @@ public interface StatisticsLocalGathererMBean extends TerracottaMBean {
 
   public void stopCapturing();
 
+  public boolean isCapturing();
+  
   public void setGlobalParam(String key, Object value);
 
   public Object getGlobalParam(String key);

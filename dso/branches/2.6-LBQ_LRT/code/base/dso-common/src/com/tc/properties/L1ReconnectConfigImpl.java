@@ -2,9 +2,11 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.l1propertiesfroml2;
+package com.tc.properties;
 
-public class L1ReconnectConfigImpl implements L1ReconnectConfig {
+
+public class L1ReconnectConfigImpl implements ReconnectConfig {
+  
   private boolean l1ReconnectEnabled;
   private int     l1ReconnectTimeout;
   
@@ -18,7 +20,7 @@ public class L1ReconnectConfigImpl implements L1ReconnectConfig {
     this.l1ReconnectTimeout = l1ReconnectTimeout;
   }
 
-  public int getL1ReconnectTimeout() {
+  public int getReconnectTimeout() {
     return l1ReconnectTimeout;
   }
 

@@ -135,6 +135,7 @@ import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullInstrumentationLogger;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.object.util.OverrideCheck;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
@@ -509,6 +510,7 @@ public class BootJarTool {
 
       loadTerracottaClass(ReflectiveProxy.class.getName());
       loadTerracottaClass(ReflectiveProxy.Handler.class.getName());
+      loadTerracottaClass(PartitionManager.class.getName());
 
       addManagementClasses();
 
@@ -1295,8 +1297,8 @@ public class BootJarTool {
     for (Iterator iter = specs.values().iterator(); iter.hasNext();) {
       TransparencyClassSpec spec = (TransparencyClassSpec) iter.next();
       if (foreignClass) spec.markForeign();
-      byte[] classBytes = doDSOTransform(spec.getClassName(), getSystemBytes(spec.getClassName()));
       announce("Adapting: " + spec.getClassName());
+      byte[] classBytes = doDSOTransform(spec.getClassName(), getSystemBytes(spec.getClassName()));
       loadClassIntoJar(spec.getClassName(), classBytes, spec.isPreInstrumented(), foreignClass);
     }
   }
@@ -1311,11 +1313,9 @@ public class BootJarTool {
     TransparencyClassSpec[] allSpecs = configHelper.getAllSpecs();
     for (int i = 0; i < allSpecs.length; i++) {
       TransparencyClassSpec spec = allSpecs[i];
-
-      if (!spec.isPreInstrumented()) {
-        continue;
+      if (spec.isPreInstrumented()) {
+        map.put(spec.getClassName(), spec);
       }
-      map.put(spec.getClassName(), spec);
     }
 
     return Collections.unmodifiableMap(map);
