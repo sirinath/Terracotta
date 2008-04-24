@@ -9,6 +9,8 @@ import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ProxyConnectManagerImpl implements ProxyConnectManager {
   private TCPProxy         proxy    = null;
@@ -48,9 +50,14 @@ public class ProxyConnectManagerImpl implements ProxyConnectManager {
   public int getDsoPort() {
     return (dsoPort);
   }
+  
+  private String timeStamp() {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+    return (formatter.format(new Date()));
+  }
 
   public void proxyDown() {
-    System.out.println("XXX stop proxy");
+    System.out.println("XXX " + timeStamp() + " stop proxy");
     proxy.fastStop();
   }
 
@@ -63,11 +70,11 @@ public class ProxyConnectManagerImpl implements ProxyConnectManager {
       } catch (Exception e) {
         //
       }
-      if (i++ > 600) { throw new RuntimeException("L2 is not ready!"); }
+      if (i++ > 1200) { throw new RuntimeException("L2 is not ready!"); }
     }
 
     try {
-      System.out.println("XXX start proxy at " + proxyPort + " to " + dsoPort);
+      System.out.println("XXX " + timeStamp() + " start proxy at " + proxyPort + " to " + dsoPort);
       proxy.start();
     } catch (Exception x) {
       throw new RuntimeException("proxyUp failed! " + x);
@@ -86,7 +93,7 @@ public class ProxyConnectManagerImpl implements ProxyConnectManager {
       }
       if (td.isAlive()) td.interrupt();
     }
-    System.out.println("XXX proxy thread stopped");
+    System.out.println("XXX " + timeStamp() + " proxy thread stopped");
   }
 
   public void startProxyTest() {

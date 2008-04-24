@@ -114,7 +114,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
   }
 
-  protected void finishConnect() {
+  protected void finishConnect() throws IOException {
     Assert.assertNotNull("channel", channel);
     recordSocketAddress(channel.socket());
     setConnected(true);
@@ -542,20 +542,18 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     this.connected.set(connected);
   }
 
-  private final void recordSocketAddress(Socket socket) {
+  private final void recordSocketAddress(Socket socket) throws IOException {
     if (socket != null) {
-      isSocketEndpoint.set(true);
       InetAddress localAddress = socket.getLocalAddress();
       InetAddress remoteAddress = socket.getInetAddress();
 
-      // This null check isn't strictly necessary, but doing to be consistent
-      if (localAddress != null) {
+      if (remoteAddress != null && localAddress != null) {
+        isSocketEndpoint.set(true);
         localSocketAddress.set(new TCSocketAddress(cloneInetAddress(localAddress), socket.getLocalPort()));
-      }
-
-      // remote address can be null if the socket isn't connected at the time it is asked for
-      if (remoteAddress != null) {
         remoteSocketAddress.set(new TCSocketAddress(cloneInetAddress(remoteAddress), socket.getPort()));
+      } else {
+        // abort if socket is not connected
+        throw new IOException("socket is not connected");
       }
     }
   }
