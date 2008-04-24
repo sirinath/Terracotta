@@ -13,12 +13,12 @@ import com.tc.util.runtime.Os;
 
 public class TreeMapL2ReconnectActivePassiveTest extends TransparentTestBase {
 
-  private static final int NODE_COUNT = 3;
+  private static final int NODE_COUNT = 2;
 
   public TreeMapL2ReconnectActivePassiveTest() {
     if (Os.isWindows()) {
-      System.err.println("Disabling it for windows only for now");
-      disableAllUntil("2008-05-21");
+//      System.err.println("Disabling it for windows only for now");
+//      disableAllUntil("2008-05-21");
     }
   }
 
