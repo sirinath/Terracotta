@@ -3,8 +3,10 @@
  */
 package com.tc.bundles.exception;
 
-public interface Hints {
+public interface BundleExceptionSummary {
 
-  public String getHints();
+  String INDENT = "   ";
+  
+  public String getSummary();
   
 }
