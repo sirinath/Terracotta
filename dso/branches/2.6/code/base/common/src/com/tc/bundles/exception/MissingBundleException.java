@@ -18,7 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-public class MissingBundleException extends BundleException implements Hints {
+public class MissingBundleException extends BundleException implements BundleExceptionSummary {
 
   private String groupId;
   private String name;
@@ -44,24 +44,26 @@ public class MissingBundleException extends BundleException implements Hints {
     this.dependencyStack = dependencyStack;
   }
 
-  private static String INDENT = "   ";
+  private String expectedPaths() {
+    final StringBuffer repos = new StringBuffer();
+    for (int j = 0; j < repositories.size(); j++) {
+      String root = canonicalPath(repositories.get(j).toString());
+      String mavenStyle = OSGiToMaven.makeBundlePathname(root, groupId, name, version);
+      String flatStyle  = OSGiToMaven.makeFlatBundlePathname(root, name, version, false);
+      repos.append("+ ").append(mavenStyle).append("\n").append(INDENT + INDENT);
+      repos.append("+ ").append(flatStyle).append("\n").append(INDENT + INDENT);
+    }
+    return repos.toString();
+  }
 
-  private String expectedLocations() {
-    return repositoriesToString(OSGiToMaven.makeBundlePathname("/", groupId, name, version) + "\n" + INDENT + INDENT)
-           + repositoriesToString(OSGiToMaven.makeFlatBundlePathname("/", groupId, name, version) + "\n" + INDENT
-                                  + INDENT);
+  private String searchAttributes() {
+    return "groupId: " + groupId + "\n" + INDENT + INDENT + "name   : " + name + "\n" + INDENT + INDENT + "Version: "
+           + version;
   }
 
   private String expectedAttributes() {
     return "Bundle-SymbolicName: " + MavenToOSGi.artifactIdToSymbolicName(groupId, name) + "\n" + INDENT + INDENT
-           + "Bundle-Version: " + MavenToOSGi.projectVersionToBundleVersion(version);
-  }
-
-  private String repositoriesToString(String sep) {
-    final StringBuffer repos = new StringBuffer();
-    for (int j = 0; j < repositories.size(); j++)
-      repos.append("+ ").append(canonicalPath(repositories.get(j).toString())).append(sep);
-    return repos.toString();
+           + "Bundle-Version     : " + MavenToOSGi.projectVersionToBundleVersion(version);
   }
 
   private String canonicalPath(String path) {
@@ -71,18 +73,38 @@ public class MissingBundleException extends BundleException implements Hints {
       return path;
     }
   }
+  
+  private String searchedRepositories() {
+    final StringBuffer repos = new StringBuffer();
+    for (int j = 0; j < repositories.size(); j++) {
+      String root = canonicalPath(repositories.get(j).toString());
+      repos.append("+ ").append(root).append("\n").append(INDENT + INDENT);
+    }
+    return repos.toString();
+  }
 
-  public String getHints() {
-    String msg = getMessage();
-    msg += "\n\n" + INDENT + "Repositories searched:\n\n" + INDENT + INDENT
-           + repositoriesToString("\n" + INDENT + INDENT);
-    msg += "\n\n" + INDENT + "Expected jar filename:\n\n" + INDENT + INDENT
-           + OSGiToMaven.makeBundleFilename(name, version);
-    msg += "\n\n" + INDENT + "Expected paths to jar file:\n\n" + INDENT + INDENT + expectedLocations();
-    msg += "\n\n" + INDENT + "Expected manifest attributes:\n\n" + INDENT + INDENT + expectedAttributes();
-    if (dependencyStack != null) msg += "\n\n" + INDENT + "TIM dependency stack:\n\n"
-                                        + dependencyStackAsString(dependencyStack);
-    return msg;
+  public String getSummary() {
+    StringBuffer buf = new StringBuffer(getMessage()).append("\n\n").append(INDENT);
+    buf.append("Attempted to resolve the TIM using the following descriptors:\n\n").append(INDENT + INDENT);
+    buf.append(searchAttributes()).append("\n\n").append(INDENT);
+    buf.append("Expected the TIM's filename to be:\n\n").append(INDENT + INDENT);
+    buf.append(OSGiToMaven.makeBundleFilename(name, version)).append("\n\n").append(INDENT);
+    buf.append("Expected these attributes to be in the manifest:\n\n").append(INDENT + INDENT);
+    buf.append(expectedAttributes()).append("\n\n").append(INDENT);
+    buf.append("Searched using the following repositories:\n\n").append(INDENT + INDENT);
+    buf.append(searchedRepositories()).append("\n").append(INDENT);
+    buf.append("Tried to resolve the jar file using the following paths:\n\n").append(INDENT + INDENT);
+    buf.append(expectedPaths()).append("\n").append(INDENT);
+    if (dependencyStack != null) {
+      buf.append("The following shows the dependencies path the resolver took and why it ");
+      buf.append("needed to locate the missing TIM:\n\n");
+      buf.append(dependencyStackAsString(dependencyStack)).append("\n").append(INDENT);
+    }
+    buf.append("If the jar file exists and is in one of the paths listed\n").append(INDENT);
+    buf.append("above, make sure that the Bundle-SymbolicName and\n").append(INDENT);
+    buf.append("Bundle-Version attribute in its manifest matches the ones\n").append(INDENT);
+    buf.append("that the resolver expects.");
+    return buf.toString();
   }
 
   private String dependencyStackAsString(Stack dependencyStack) {
@@ -107,7 +129,7 @@ public class MissingBundleException extends BundleException implements Hints {
         out.write((INDENT + INDENT).getBytes());
         for (int j = 0; j < (depth - 1) * indent; j++)
           out.write(" ".getBytes());
-        out.write((" +- " + entry.toString() + "\n").getBytes());
+        out.write(("+- " + entry.toString() + "\n").getBytes());
       }
       out.flush();
     } catch (IOException e) {
