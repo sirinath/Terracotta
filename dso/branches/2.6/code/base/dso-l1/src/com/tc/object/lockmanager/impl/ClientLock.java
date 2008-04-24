@@ -429,7 +429,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
    */
   public synchronized void recall(int interestedLevel, LockFlushCallback callback) {
     // debug("recall() - BEGIN - ", LockLevel.toString(interestedLevel));
-    if (greediness.isGreedy()) {
+    if (greediness.isGreedyState()) {
       greediness.recall(interestedLevel);
       if (canProceedWithRecall()) {
         greediness.startRecallCommit();
@@ -443,7 +443,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
 
   public synchronized void recall(int interestedLevel, LockFlushCallback callback, int leaseTimeInMs) {
     // debug("recall() - BEGIN - ", LockLevel.toString(interestedLevel));
-    if (greediness.isGreedy()) {
+    if (greediness.isGreedyState()) {
       if (!shouldProceedToLease(ThreadID.NULL_ID)) {
         recall(interestedLevel, callback);
       } else {
@@ -1527,6 +1527,10 @@ class ClientLock implements TimerCallback, LockFlushCallback {
 
     boolean isGreedyLease() {
       return (state == ON_GREEDY_LEASE);
+    }
+    
+    boolean isGreedyState() {
+      return (state == GREEDY);
     }
 
     void startRecallCommit() {
