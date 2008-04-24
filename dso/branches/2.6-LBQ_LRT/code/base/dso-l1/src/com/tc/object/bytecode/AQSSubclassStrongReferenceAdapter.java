@@ -7,6 +7,7 @@ package com.tc.object.bytecode;
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
+import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.util.ToggleableStrongReference;
@@ -37,6 +38,16 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
 
   public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
     return new AQSSubclassStrongReferenceAdapter(visitor);
+  }
+  
+  public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+    MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+    
+    if ("tryRelease".equals(name) && "(I)Z".equals(desc)) {
+      mv = new TryReleaseMethodAdapter(mv);
+    }
+    
+    return mv;
   }
 
   public void visitEnd() {
@@ -119,6 +130,34 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
   private void addToggleRefField() {
     super.visitField(ACC_PRIVATE | ACC_SYNTHETIC | ACC_VOLATILE | ACC_TRANSIENT, TOGGLE_REF_FIELD, TOGGLE_REF_TYPE,
                      null, null);
+  }
+
+  
+  private static class TryReleaseMethodAdapter extends MethodAdapter {
+
+    public TryReleaseMethodAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+    
+    public void visitJumpInsn(int opcode, Label label) {
+      super.visitJumpInsn(opcode, label);
+      if (IF_ACMPEQ == opcode) {
+        super.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        super.visitTypeInsn(NEW, "java/lang/StringBuilder");
+        super.visitInsn(DUP);
+        super.visitLdcInsn("In Sync.tryRelease -- owner: ");
+        super.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+        super.visitVarInsn(ALOAD, 0);
+        super.visitFieldInsn(GETFIELD, "java/util/concurrent/locks/ReentrantLock$Sync", "owner", "Ljava/lang/Thread;");
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;");
+        super.visitLdcInsn(" currentThread: ");
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+        super.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;");
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;");
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+      }
+    }
   }
 
 }
