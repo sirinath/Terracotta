@@ -30,6 +30,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   private final String             rawConfigText;
   private final JVMMemoryManager   manager;
   private StatisticRetrievalAction cpuSRA;
+  private String[]                 cpuNames;
 
   public L1Info(String rawConfigText) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
@@ -43,10 +44,9 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
       }
     } catch (LinkageError e) {
       /**
-       * it's ok not output any errors or warnings here since when the
-       * CVT is initialized, it will notify about the incapacity of leading
-       * Sigar-based SRAs.
-       **/
+       * it's ok not output any errors or warnings here since when the CVT is initialized, it will notify about the
+       * incapacity of leading Sigar-based SRAs.
+       */
     } catch (Exception e) {
       /**/
     }
@@ -105,7 +105,8 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   public String[] getCpuStatNames() {
-    if (cpuSRA == null) { return new String[0]; }
+    if (cpuNames != null) return cpuNames;
+    if (cpuSRA == null) return cpuNames = new String[0];
 
     List list = new ArrayList();
     StatisticData[] statsData = cpuSRA.retrieveStatisticData();
@@ -114,9 +115,9 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
         list.add(statsData[i].getElement());
       }
     }
-    return (String[]) list.toArray(new String[0]);
+    return cpuNames = (String[]) list.toArray(new String[0]);
   }
-  
+
   public Map getStatistics() {
     HashMap map = new HashMap();
     MemoryUsage usage = manager.getMemoryUsage();
@@ -125,7 +126,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     map.put(MEMORY_MAX, new Long(usage.getMaxMemory()));
 
     if (cpuSRA != null) {
-      StatisticData[] statsData = cpuSRA.retrieveStatisticData();
+      StatisticData[] statsData = getCpuUsage();
       if (statsData != null) {
         map.put(CPU_USAGE, statsData);
       }
@@ -134,6 +135,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return map;
   }
 
+  public StatisticData[] getCpuUsage() {
+    if (cpuSRA != null) {
+      return cpuSRA.retrieveStatisticData();
+    }
+    return null;
+  }
+  
   public void reset() {
     /**/
   }
