@@ -6,10 +6,11 @@ package com.tc.stats;
 import com.tc.management.TerracottaMBean;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.NoSuchObjectException;
-import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
+import com.tc.statistics.StatisticData;
 import com.tc.stats.counter.Counter;
+import com.tc.stats.statistics.CountStatistic;
 
 import java.util.Map;
 
@@ -41,8 +42,10 @@ public interface DSOMBean extends DSOStats, TerracottaMBean {
 
   Map<String, Counter> getAllPendingRequests();
   
-  DeadlockChain[] scanForDeadLocks();
-
+  Map<ObjectName, CountStatistic> getClientTransactionRates();
+  
+  Map<ObjectName, StatisticData[]> getL1CpuUsages();
+  
   ManagedObjectFacade lookupFacade(ObjectID objectID, int limit) throws NoSuchObjectException;
 
 }
