@@ -93,7 +93,8 @@ public abstract class TerracottaManagement {
   private static final String EQUALS          = "=";
   private static final String SLASH           = "/";
 
-  private static final String NODE_PREFIX     = "clients" + EQUALS + "Clients";
+  private static final String NODE_PREFIX_KEY = "clients";
+  private static final String NODE_PREFIX     = NODE_PREFIX_KEY + EQUALS + "Clients";
 
   private static final String NODE_NAME       = System.getProperty(MANAGEMENT_RESOURCES.getNodeNameSystemProperty());
 
@@ -130,7 +131,9 @@ public abstract class TerracottaManagement {
   public static ObjectName addNodeInfo(ObjectName objName, TCSocketAddress addr) throws MalformedObjectNameException {
     if (objName.getKeyProperty(MBeanKeys.MBEAN_NODE) != null) { return objName; }
     StringBuffer sb = new StringBuffer(objName.getCanonicalName());
-    sb.append(COMMA).append(NODE_PREFIX);
+    if(objName.getKeyProperty(NODE_PREFIX_KEY) == null) {
+      sb.append(COMMA).append(NODE_PREFIX);
+    }
     addNodeInfo(sb, addr);
     return new ObjectName(sb.toString());
   }
