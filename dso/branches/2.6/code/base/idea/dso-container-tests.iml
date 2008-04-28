@@ -41,15 +41,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../dependencies/lib/cargo-core-uberjar-0.9-tc-20080103.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/cglib-nodep-2.1_3.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -203,7 +194,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../dependencies/lib/jtidy-4aug2000r7-dev.jar!/" />
+          <root url="jar://$MODULE_DIR$/../dependencies/lib/nekohtml-1.9.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -213,6 +204,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../dependencies/lib/spring-2.0.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../dependencies/lib/tc-cargo-core-uberjar-0.9-20080103.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
