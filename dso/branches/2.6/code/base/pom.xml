@@ -348,10 +348,6 @@ Dir.foreach( "." ) { |dir|
             <modulesDef>
               <options>
                 <option>
-                  <module>linked-child-process</module>
-                  <jdk>J2SE-1.4</jdk>
-                </option>
-                <option>
                   <module>thirdparty</module>
                   <jdk>J2SE-1.4</jdk>
                 </option>
@@ -556,7 +552,6 @@ Dir.foreach( "." ) { |dir|
 	            <moduleGroup>
 	              <name>dso</name>
 	              <modules>
-                    <module>linked-child-process</module>
                     <module>common</module>
                     <module>thirdparty</module>
                     <module>aspectwerkz</module>
