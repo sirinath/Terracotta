@@ -517,6 +517,17 @@ public class ClassProcessorHelper {
    * Shut down the ClassProcessorHelper
    */
   public static void shutdown() {
+    if (USE_PARTITIONED_CONTEXT) {
+      Manager[] managers = getPartitionedManagers();
+      for (int i = 0; i < managers.length; i++) {
+        try {
+          managers[i].stop();
+        } catch (Throwable t) {
+          t.printStackTrace();
+        }
+      }
+      return;
+    }
     if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
     try {
       if (globalContext != null) {
@@ -579,7 +590,7 @@ public class ClassProcessorHelper {
     return context.getManager();
   }
 
-  public static Manager[] getParitionedManagers() {
+  public static Manager[] getPartitionedManagers() {
     if (!USE_PARTITIONED_CONTEXT) { return new Manager[] { ManagerUtil.getManager() }; }
 
     final DSOContext[] contexts;
