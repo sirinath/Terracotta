@@ -29,8 +29,7 @@ class MessageTransportStatus {
     if (isEnd()) {
       Assert.eval("Transport StateChange from END state not allowed", newState != MessageTransportState.STATE_END);
       logger.warn("Unexpected Transport StateChange attempt. Changing from " + state.toString() + " to "
-                  + newState.toString());
-      Thread.dumpStack();
+                  + newState.toString(), new Throwable());
     }
     state = newState;
   }
