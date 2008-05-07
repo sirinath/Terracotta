@@ -1,10 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.bytecode.hook.impl;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
+import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
 import com.tc.net.NIOWorkarounds;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
@@ -15,7 +16,9 @@ import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.partitions.PartitionManager;
 import com.tc.text.Banner;
+import com.tc.util.Assert;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,6 +33,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.LogManager;
@@ -39,41 +44,51 @@ import java.util.logging.LogManager;
  */
 public class ClassProcessorHelper {
 
+  /** Name reserved for apps running as root web app in a container */
+  public static final String ROOT_WEB_APP_NAME = "ROOT";
+
+  // XXX: remove this!
+  public static volatile boolean             IBM_DEBUG               = false;
+
   // Setting this system property will delay the timing of when the DSO client is initialized. With the default
   // behavior, the debug subsystem of the VM will not be started until after the DSO client starts up. This means it is
   // impossible to use the debugger during dso client startup. Setting this flag to true will allow debugging, but at
   // the expense of the fixes applied for CDV-424 and DEV-959
-  private static final String                TC_BOOT_DEBUG_SYSPROP   = "tc.boot.debug";
+  private static final String                TC_BOOT_DEBUG_SYSPROP     = "tc.boot.debug";
 
   // Directory where Terracotta jars (and dependencies) can be found
-  private static final String                TC_INSTALL_ROOT_SYSPROP = "tc.install-root";
+  private static final String                TC_INSTALL_ROOT_SYSPROP   = "tc.install-root";
 
   // Property to indicate whether the Terracotta classloader is active
-  private static final String                TC_ACTIVE_SYSPROP       = "tc.active";
+  private static final String                TC_ACTIVE_SYSPROP         = "tc.active";
 
   // NOTE: This is not intended to be a public/documented system property,
   // it is for dev use only. It is NOT for QA or customer use
-  private static final String                TC_CLASSPATH_SYSPROP    = "tc.classpath";
+  private static final String                TC_CLASSPATH_SYSPROP      = "tc.classpath";
+
+  private static final String                TC_DSO_GLOBALMODE_SYSPROP = "tc.dso.globalmode";
 
   // Used for converting resource names into class names
-  private static final String                CLASS_SUFFIX            = ".class";
-  private static final int                   CLASS_SUFFIX_LENGTH     = CLASS_SUFFIX.length();
+  private static final String                CLASS_SUFFIX              = ".class";
+  private static final int                   CLASS_SUFFIX_LENGTH       = CLASS_SUFFIX.length();
 
   private static final boolean               DELAY_BOOT;
 
-  private static final boolean               GLOBAL_MODE_DEFAULT     = true;
+  private static final boolean               GLOBAL_MODE_DEFAULT       = true;
 
   public static final boolean                USE_GLOBAL_CONTEXT;
+  public static final boolean                USE_PARTITIONED_CONTEXT;
 
-  private static final State                 initState               = new State();
+  private static final State                 initState                 = new State();
 
-  private static final String                tcInstallRootSysProp    = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
+  private static final String                tcInstallRootSysProp      = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
 
   // This map should only hold a weak reference to the loader (key).
   // If we didn't we'd prevent loaders from being GC'd
-  private static final Map                   contextMap              = new WeakHashMap();
+  private static final Map                   contextMap                = new WeakHashMap();
+  private static final Map                   partitionedContextMap     = new HashMap();
 
-  private static final StandardClassProvider globalProvider          = new StandardClassProvider();
+  private static final StandardClassProvider globalProvider            = new StandardClassProvider();
 
   private static URLClassLoader              tcLoader;
   private static DSOContext                  globalContext;
@@ -81,11 +96,16 @@ public class ClassProcessorHelper {
   private static final boolean               TRACE;
   private static final PrintStream           TRACE_STREAM;
 
-  private static boolean                     systemLoaderInitialized = false;
+  private static final String                PARTITIONED_MODE_SEP      = "#";
+
+  private static boolean                     systemLoaderInitialized   = false;
 
   static {
 
     try {
+      // eagerly load this class
+      PartitionManager.init();
+
       // Make sure that the DSOContext class is loaded before using the
       // TC functionalities. This is needed for the IBM JDK when Hashtable is
       // instrumented for auto-locking in the bootjar.
@@ -93,11 +113,18 @@ public class ClassProcessorHelper {
 
       DELAY_BOOT = Boolean.valueOf(System.getProperty(TC_BOOT_DEBUG_SYSPROP)).booleanValue();
 
-      String global = System.getProperty("tc.dso.globalmode", null);
+      String global = System.getProperty(TC_DSO_GLOBALMODE_SYSPROP, null);
       if (global != null) {
         USE_GLOBAL_CONTEXT = Boolean.valueOf(global).booleanValue();
       } else {
         USE_GLOBAL_CONTEXT = GLOBAL_MODE_DEFAULT;
+      }
+
+      USE_PARTITIONED_CONTEXT = inferPartionedMode();
+      if (USE_PARTITIONED_CONTEXT && USE_GLOBAL_CONTEXT) {
+        Banner.errorBanner("Both Global Context and Partitioned Context can not be enabled at the same time."
+                           + "To use Partioned Context, you must set " + TC_DSO_GLOBALMODE_SYSPROP + "=false");
+        Util.exit();
       }
 
       // See if we should trace or not -- if so grab System.[out|err] and keep a local reference to it. Applications
@@ -124,9 +151,15 @@ public class ClassProcessorHelper {
     return new URLClassLoader(buildTerracottaClassPath(), null);
   }
 
+  private static boolean inferPartionedMode() {
+    String tcConfig = System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME, null);
+    if (tcConfig == null) return false;
+    return tcConfig.indexOf(PARTITIONED_MODE_SEP) >= 0;
+  }
+
   /**
    * Get resource URL
-   * 
+   *
    * @param name Resource name
    * @param cl Loading classloader
    * @return URL to load resource from
@@ -154,7 +187,7 @@ public class ClassProcessorHelper {
 
   /**
    * Get TC class definition
-   * 
+   *
    * @param name Class name
    * @param cl Classloader
    * @return Class bytes
@@ -370,7 +403,8 @@ public class ClassProcessorHelper {
         // This avoids a deadlock (see LKC-853, LKC-1387)
         java.security.Security.getProviders();
 
-        // Avoid another deadlock (DEV-1047)
+        // Avoid another deadlock (DEV-1047, DEV-1301)
+        // Looking at the sun-jdk17 sources, this deadlock shouldn't happen there
         LogManager.getLogManager();
 
         // Workaround bug in NIO on solaris 10
@@ -378,7 +412,7 @@ public class ClassProcessorHelper {
 
         tcLoader = createTCLoader();
 
-        if (USE_GLOBAL_CONTEXT) {
+        if (USE_GLOBAL_CONTEXT || USE_GLOBAL_CONTEXT) {
           registerStandardLoaders();
         }
 
@@ -389,6 +423,9 @@ public class ClassProcessorHelper {
           globalContext = createGlobalContext();
         }
 
+        if (USE_PARTITIONED_CONTEXT) {
+          initParitionedContexts();
+        }
         initState.initialized();
 
         System.setProperty(TC_ACTIVE_SYSPROP, Boolean.TRUE.toString());
@@ -398,6 +435,33 @@ public class ClassProcessorHelper {
         throw new AssertionError(); // shouldn't get here
       }
     }
+  }
+
+  private static void initParitionedContexts() throws Exception {
+    String tcConfig = System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME);
+
+    Assert.assertNotNull(tcConfig);
+    Assert.assertTrue(tcConfig, tcConfig.indexOf(PARTITIONED_MODE_SEP) >= 0);
+
+    String partitionedConfigSpecs[] = tcConfig.split(PARTITIONED_MODE_SEP);
+    for (int i = 0; i < partitionedConfigSpecs.length; i++) {
+      Method m = getContextMethod("createContext", new Class[] { String.class, ClassProvider.class });
+      DSOContext context = (DSOContext) m.invoke(null, new Object[] { partitionedConfigSpecs[i], globalProvider });
+      context.getManager().init();
+      synchronized (partitionedContextMap) {
+        partitionedContextMap.put("Partition" + i, context);
+      }
+    }
+  }
+
+  public static int getNumPartitions() {
+    if (USE_PARTITIONED_CONTEXT) {
+      synchronized (partitionedContextMap) {
+        return partitionedContextMap.size();
+      }
+    }
+
+    return 1;
   }
 
   private static void registerStandardLoaders() {
@@ -449,7 +513,8 @@ public class ClassProcessorHelper {
   }
 
   public static void registerGlobalLoader(NamedClassLoader loader) {
-    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
+    if (!USE_GLOBAL_CONTEXT && !USE_PARTITIONED_CONTEXT) { throw new IllegalStateException(
+                                                                                           "Not global/partitioned DSO mode"); }
     if (TRACE) traceNamedLoader(loader);
     globalProvider.registerNamedLoader(loader);
   }
@@ -458,7 +523,18 @@ public class ClassProcessorHelper {
    * Shut down the ClassProcessorHelper
    */
   public static void shutdown() {
-    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
+    if (USE_PARTITIONED_CONTEXT) {
+      Manager[] managers = getPartitionedManagers();
+      for (int i = 0; i < managers.length; i++) {
+        try {
+          managers[i].stop();
+        } catch (Throwable t) {
+          t.printStackTrace();
+        }
+      }
+      return;
+    }
+    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global/partitioned DSO mode"); }
     try {
       if (globalContext != null) {
         globalContext.getManager().stop();
@@ -470,12 +546,12 @@ public class ClassProcessorHelper {
 
   /**
    * Check whether this web app is using DSO sessions
-   * 
+   *
    * @param appName Web app name
    * @return True if DSO sessions enabled
    */
   public static boolean isDSOSessions(String appName) {
-    appName = ("/".equals(appName)) ? "ROOT" : appName;
+    appName = ("/".equals(appName)) ? ROOT_WEB_APP_NAME : appName;
     try {
       Method m = getContextMethod("isDSOSessions", new Class[] { String.class });
       boolean rv = ((Boolean) m.invoke(null, new Object[] { appName })).booleanValue();
@@ -488,12 +564,13 @@ public class ClassProcessorHelper {
 
   /**
    * WARNING: Used by test framework only
-   * 
+   *
    * @param loader Loader
    * @param context DSOContext
    */
   public static void setContext(ClassLoader loader, DSOContext context) {
-    if (USE_GLOBAL_CONTEXT) { throw new IllegalStateException("DSO Context is global in this VM"); }
+    if (USE_GLOBAL_CONTEXT || USE_PARTITIONED_CONTEXT) { throw new IllegalStateException(
+                                                                                         "DSO Context is global/Partitioned in this VM"); }
 
     if ((loader == null) || (context == null)) {
       // bad dog
@@ -519,14 +596,31 @@ public class ClassProcessorHelper {
     return context.getManager();
   }
 
+  public static Manager[] getPartitionedManagers() {
+    if (!USE_PARTITIONED_CONTEXT) { return new Manager[] { ManagerUtil.getManager() }; }
+
+    final DSOContext[] contexts;
+    synchronized (partitionedContextMap) {
+      contexts = (DSOContext[]) partitionedContextMap.values().toArray(new DSOContext[partitionedContextMap.size()]);
+    }
+
+    Manager[] managers = new Manager[contexts.length];
+    for (int i = 0; i < contexts.length; i++) {
+      managers[i] = contexts[i].getManager();
+    }
+
+    return managers;
+  }
+
   /**
    * Get the DSOContext for this classloader
-   * 
+   *
    * @param cl Loader
    * @return Context
    */
   public static DSOContext getContext(ClassLoader cl) {
     if (USE_GLOBAL_CONTEXT) return globalContext;
+    if (USE_PARTITIONED_CONTEXT) { return getFirstPartionedContext(); }
 
     synchronized (contextMap) {
       return (DSOContext) contextMap.get(cl);
@@ -546,12 +640,36 @@ public class ClassProcessorHelper {
     }
   }
 
+  // XXX: remove this!
+  public static byte[] defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len, ProtectionDomain pd) {
+    byte[] rv = _defineClass0Pre(caller, name, b, off, len, pd);
+
+    if (IBM_DEBUG) {
+      StringBuffer msg = new StringBuffer();
+      msg.append("[" + Thread.currentThread().getName() + "] " + name + ": byte[] " + ((rv == b) ? "are" : "are not")
+                 + " equal\n");
+      msg.append("offset: " + off + ", len: " + len + "\n");
+
+      // uncomment this to get the class bytes (provided there is a consistent class name that is crashing the IBM JDK
+
+      // for (int i = 0, n = rv.length; i < n; i++) {
+      // msg.append(rv[i]).append(", ");
+      // }
+      // msg.append("\n");
+
+      System.err.println(msg);
+      System.err.flush();
+    }
+
+    return rv;
+  }
+
   /**
    * byte code instrumentation of class loaded <br>
    * XXX::NOTE:: Do NOT optimize to return same input byte array if the class was instrumented (I can't imagine why we
    * would). Our instrumentation in java.lang.ClassLoader checks the returned byte array to see if the class is
    * instrumented or not to maintain the array offset.
-   * 
+   *
    * @param caller Loader defining class
    * @param name Class name
    * @param b Data
@@ -561,7 +679,8 @@ public class ClassProcessorHelper {
    * @return Modified class array
    * @see ClassLoaderPreProcessorImpl
    */
-  public static byte[] defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len, ProtectionDomain pd) {
+  private static byte[] _defineClass0Pre(ClassLoader caller, String name, byte[] b, int off, int len,
+                                         ProtectionDomain pd) {
     if (skipClass(caller)) { return b; }
 
     // needed for JRockit
@@ -591,11 +710,18 @@ public class ClassProcessorHelper {
 
   /**
    * Post process class during definition
-   * 
+   *
    * @param clazz Class being defined
    * @param caller Classloader doing definition
    */
   public static void defineClass0Post(Class clazz, ClassLoader caller) {
+    if (IBM_DEBUG) {
+      StringBuffer msg = new StringBuffer();
+      msg.append("[" + Thread.currentThread().getName() + "] " + clazz.getName() + " has been defined\n");
+      System.err.println(msg);
+      System.err.flush();
+    }
+
     ClassPostProcessor postProcessor = getPostProcessor(caller);
     if (!initState.isInitialized()) { return; }
 
@@ -615,9 +741,16 @@ public class ClassProcessorHelper {
 
   private static ClassPreProcessor getPreProcessor(ClassLoader caller) {
     if (USE_GLOBAL_CONTEXT) { return globalContext; }
-
+    if (USE_PARTITIONED_CONTEXT) { return getFirstPartionedContext(); }
     synchronized (contextMap) {
       return (ClassPreProcessor) contextMap.get(caller);
+    }
+  }
+
+  private static DSOContext getFirstPartionedContext() {
+    synchronized (partitionedContextMap) {
+      Iterator iter = partitionedContextMap.values().iterator();
+      return (DSOContext) (iter.hasNext() ? iter.next() : null);
     }
   }
 
@@ -631,7 +764,7 @@ public class ClassProcessorHelper {
 
   /**
    * Check whether this is an AspectWerkz dependency
-   * 
+   *
    * @param className Class name
    * @return True if AspectWerkz dependency
    */
@@ -647,7 +780,7 @@ public class ClassProcessorHelper {
 
   /**
    * Check whether this is a DSO dependency
-   * 
+   *
    * @param className Class name
    * @return True if DSO dependency
    */
@@ -662,7 +795,7 @@ public class ClassProcessorHelper {
 
   /**
    * Get type of lock used by sessions
-   * 
+   *
    * @param appName Web app context
    * @return Lock type
    */

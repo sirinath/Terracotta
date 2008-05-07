@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.msg;
@@ -37,8 +37,11 @@ public class L2StateMessageFactory {
     return new L2StateMessage(L2StateMessage.ELECTION_WON, e);
   }
 
+  public static GroupMessage createElectionWonAlreadyMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.ELECTION_WON_ALREADY, e);
+  }
+
   public static GroupMessage createMoveToPassiveStandbyMessage(Enrollment e) {
     return new L2StateMessage(L2StateMessage.MOVE_TO_PASSIVE_STANDBY, e);
   }
-
 }

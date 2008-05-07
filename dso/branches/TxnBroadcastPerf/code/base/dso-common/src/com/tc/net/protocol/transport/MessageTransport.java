@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
@@ -36,9 +36,13 @@ public interface MessageTransport extends NetworkLayer {
   public TCSocketAddress getLocalAddress();
 
   public void setAllowConnectionReplace(boolean allow);
-  
+
   public short getCommunicationStackFlags(NetworkLayer parentLayer);
-  
+
   public String getCommunicationStackNames(NetworkLayer parentLayer);
+
+  public void setRemoteCallbackPort(int callbackPort);
+
+  public int getRemoteCallbackPort();
 
 }

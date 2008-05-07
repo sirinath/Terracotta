@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso.dialogs;
@@ -20,7 +20,6 @@ import org.eclipse.swt.widgets.Text;
 import org.terracotta.ui.util.SWTUtil;
 
 import java.io.File;
-import java.net.MalformedURLException;
 
 public class RepoLocationDialog extends MessageDialog {
 
@@ -52,9 +51,7 @@ public class RepoLocationDialog extends MessageDialog {
         String path = directoryDialog.open();
         if (path != null) {
           File dir = new File(path);
-          try {
-            m_repoLocation.setText(dir.toURL().toString());
-          } catch(MalformedURLException mure) {/**/}
+          m_repoLocation.setText(dir.toString());
         }
       }
     });

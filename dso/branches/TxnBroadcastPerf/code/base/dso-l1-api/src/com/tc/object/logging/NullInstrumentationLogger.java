@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.logging;
@@ -14,6 +14,7 @@ public class NullInstrumentationLogger implements InstrumentationLogger {
   }
 
   public void setClassInclusion(boolean classInclusion) {
+    //
   }
 
   public boolean getLockInsertion() {
@@ -21,6 +22,7 @@ public class NullInstrumentationLogger implements InstrumentationLogger {
   }
 
   public void setLockInsertion(boolean lockInsertion) {
+    //
   }
 
   public boolean getRootInsertion() {
@@ -28,6 +30,7 @@ public class NullInstrumentationLogger implements InstrumentationLogger {
   }
 
   public void setRootInsertion(boolean rootInsertion) {
+    //
   }
 
   public boolean getDistMethodCallInsertion() {
@@ -35,6 +38,7 @@ public class NullInstrumentationLogger implements InstrumentationLogger {
   }
 
   public void setDistMethodCallInsertion(boolean distMethodClassInsertion) {
+    //
   }
 
   public boolean getTransientRootWarning() {
@@ -42,26 +46,34 @@ public class NullInstrumentationLogger implements InstrumentationLogger {
   }
 
   public void setTransientRootWarning(boolean transientRootWarning) {
+    //
   }
 
   public void classIncluded(String className) {
+    //
   }
 
   public void autolockInserted(String className, String methodName, String methodDesc, LockDefinition lockDef) {
+    //
   }
 
   public void lockInserted(String className, String methodName, String methodDesc, LockDefinition[] locks) {
+    //
   }
 
   public void subclassOfLogicallyManagedClasses(String className, Collection logicalSuperClasses) {
+    //
   }
 
   public void transientRootWarning(String className, String fieldName) {
+    //
   }
 
   public void rootInserted(String className, String fieldName, String desc, boolean isStatic) {
+    //
   }
 
   public void distMethodCallInserted(String className, String methodName, String desc) {
+    //
   }
 }

@@ -1,5 +1,5 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.util;
@@ -194,7 +194,7 @@ public class Assert {
   public static void assertNotEmpty(Object what, String s) {
     assertNotNull(what, s);
     if ((s.length() == 0) && isEnabled()) throw new IllegalArgumentException(StringUtil.safeToString(what)
-        + " is empty");
+                                                                             + " is empty");
   }
 
   /**
@@ -215,7 +215,7 @@ public class Assert {
   public static void assertNotBlank(Object what, String s) {
     assertNotEmpty(what, s);
     if ((s.trim().length() == 0) && isEnabled()) throw new IllegalArgumentException(StringUtil.safeToString(what)
-        + " is blank");
+                                                                                    + " is blank");
   }
 
   /**
@@ -271,7 +271,7 @@ public class Assert {
    */
   public static void assertEquals(Object msg, int expected, int actual) {
     if (expected != actual && isEnabled()) { throw new TCAssertionError(msg + ": Expected <" + expected + "> but got <"
-        + actual + ">"); }
+                                                                        + actual + ">"); }
   }
 
   /**
@@ -371,6 +371,15 @@ public class Assert {
     if (isEnabled()) {
       throw failure("Element<" + requiredElement + "> not found in array "
           + StringUtil.toString(objectArray, ",", "<", ">"));
+    }
+  }
+
+  public static void assertDoesNotContainsElement(Object[] objectArray, Object element) {
+    assertNotNull(objectArray);
+    for (int pos = 0; pos < objectArray.length; pos++) {
+      if (objectArray[pos] == element) {
+        failure("Element<" + element + "> was found in array " + StringUtil.toString(objectArray, ",", "<", ">"));
+      }
     }
   }
 

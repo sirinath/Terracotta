@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package java.util.concurrent.locks;
@@ -73,8 +73,8 @@ public class ReentrantReadWriteLockTC extends ReentrantReadWriteLock {
       return lock;
     }
 
-    public String getLockState(int lockLevel) {
-      return (ManagerUtil.isLocked(lock, lockLevel) ? (ManagerUtil.isHeldByCurrentThread(lock, lockLevel) ? "[Locally locked]"
+    public String getLockState(int level) {
+      return (ManagerUtil.isLocked(lock, level) ? (ManagerUtil.isHeldByCurrentThread(lock, level) ? "[Locally locked]"
           : "[Remotelly locked]")
           : "[Unlocked]");
     }

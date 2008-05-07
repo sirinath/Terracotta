@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso;
@@ -22,7 +22,7 @@ import com.terracottatech.config.WebApplication;
 import com.terracottatech.config.WebApplications;
 import com.terracottatech.config.DistributedMethods.MethodExpression;
 
-import java.net.URL;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,10 +64,10 @@ public class ModulesConfiguration {
   
   public ModuleInfo associateBundle(Bundle bundle) {
     for(ModuleInfo moduleInfo : fModuleInfoList) {
-      URL location = moduleInfo.getLocation();
+      File location = moduleInfo.getLocation();
       String bundleLocation = bundle.getLocation();
       
-      if(location != null && location.toString().equals(bundleLocation)) {
+      if(location != null && location.getAbsolutePath().equals(bundleLocation)) {
         moduleInfo.setBundle(bundle);
         return moduleInfo;
       }

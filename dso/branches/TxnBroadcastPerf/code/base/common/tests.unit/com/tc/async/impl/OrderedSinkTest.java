@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.async.impl;
@@ -71,7 +71,12 @@ public class OrderedSinkTest extends TCTestCase {
 
   private void assertEvents(MockSink des, int id, int count) {
     while (count-- > 0) {
-      MyOrderedEventContext oc = (MyOrderedEventContext) des.queue.remove(0);
+      MyOrderedEventContext oc;
+      try {
+        oc = (MyOrderedEventContext) des.queue.take();
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
+      }
       assertEquals(id++, oc.getSequenceID());
     }
     assertTrue(des.queue.isEmpty());

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.lockmanager.impl;
@@ -79,10 +79,10 @@ class ServerThreadContext {
   }
 
   synchronized void setWaitingOn(Lock lock) {
-    if (!(this.waitingOn == null || !this.waitingOn.equals(lock))) { throw new AssertionError("Assert Failed : "
-                                                                                              + toString()
-                                                                                              + " : old = " + waitingOn
-                                                                                              + " : new = " + lock); }
+    if (this.waitingOn != null && !this.waitingOn.equals(lock)) { throw new AssertionError("Assert Failed : "
+                                                                                           + toString()
+                                                                                           + " : old = " + waitingOn
+                                                                                           + " : new = " + lock); }
     this.waitingOn = lock;
   }
 

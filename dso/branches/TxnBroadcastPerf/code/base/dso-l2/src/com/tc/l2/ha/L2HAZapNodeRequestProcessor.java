@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.ha;
@@ -72,7 +72,7 @@ public class L2HAZapNodeRequestProcessor implements ZapNodeRequestProcessor {
       case NODE_JOINED_WITH_DIRTY_DB:
         return "Newly Joined Node Contains dirty database. (Please clean up DB and restart node)";
       case SPLIT_BRAIN:
-        return "SPLIT BRAIN DEDUCTED";
+        return "SPLIT BRAIN DETECTED";
       default:
         throw new AssertionError("Unknown type : " + type);
     }

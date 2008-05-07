@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
@@ -12,9 +12,9 @@ import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventListener;
 import com.tc.config.lock.LockContextInfo;
 import com.tc.lang.StartupHelper;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
@@ -36,7 +36,7 @@ import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.tx.ClientTransactionManager;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
 import com.tc.object.tx.optimistic.OptimisticTransactionManagerImpl;
 import com.tc.properties.TCProperties;
@@ -54,11 +54,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class ManagerImpl implements Manager {
-  private static final TCLogger                    logger                 = TCLogging.getLogger(Manager.class);
+  private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
 
-  private static final LiteralValues               literals               = new LiteralValues();
+  private static final LiteralValues               literals      = new LiteralValues();
 
-  private final SetOnceFlag                        clientStarted          = new SetOnceFlag();
+  private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
   private final boolean                            startClient;
@@ -67,7 +67,7 @@ public class ManagerImpl implements Manager {
   private final Portability                        portability;
   private final Cluster                            cluster;
 
-  private RuntimeLogger                            runtimeLogger          = new NullRuntimeLogger();
+  private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
   private final InstrumentationLogger              instrumentationLogger;
 
   private ClientObjectManager                      objectManager;
@@ -76,8 +76,8 @@ public class ManagerImpl implements Manager {
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
   private OptimisticTransactionManager             optimisticTransactionManager;
-  private SerializationUtil                        serializer             = new SerializationUtil();
-  private MethodDisplayNames                       methodDisplay          = new MethodDisplayNames(serializer);
+  private SerializationUtil                        serializer    = new SerializationUtil();
+  private MethodDisplayNames                       methodDisplay = new MethodDisplayNames(serializer);
 
   public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
                      PreparedComponentsFromL2Connection connectionComponents) {
@@ -185,9 +185,9 @@ public class ManagerImpl implements Manager {
 
         methodCallManager = dso.getDmiManager();
 
-        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
-            .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(),
-                                                    connectionComponents);
+        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(),
+          dso.getStageManager(), dso.getCommunicationsManager(), dso.getChannel(),
+          dso.getClientHandshakeManager(), dso.getStatisticsAgentSubSystem(), connectionComponents);
       }
     };
 
@@ -317,7 +317,7 @@ public class ManagerImpl implements Manager {
       Util.printLogAndRethrowError(t, logger);
     }
   }
-  
+
   public void beginLock(String lockID, int type, String contextInfo) {
     try {
       begin(lockID, type, null, null, contextInfo);
@@ -333,17 +333,17 @@ public class ManagerImpl implements Manager {
   }
 
   private void begin(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) {
-    String lockObjectClass = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-    
+    String lockObjectClass = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+
     boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
     if (locked && runtimeLogger.getLockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
   }
 
-  private boolean tryBegin(String lockID, int type, Object instance, WaitInvocation timeout, TCObject tcobj) {
-    String lockObjectType = instance == null? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-    
+  private boolean tryBegin(String lockID, int type, Object instance, TimerSpec timeout, TCObject tcobj) {
+    String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
+
     boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
     if (locked && runtimeLogger.getLockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
@@ -352,7 +352,7 @@ public class ManagerImpl implements Manager {
   }
 
   private boolean tryBegin(String lockID, int type, Object instance, TCObject tcobj) {
-    return tryBegin(lockID, type, instance, new WaitInvocation(0), tcobj);
+    return tryBegin(lockID, type, instance, new TimerSpec(0), tcobj);
   }
 
   public void commitVolatile(TCObject tcObject, String fieldName) {
@@ -410,7 +410,7 @@ public class ManagerImpl implements Manager {
 
     if (tco != null) {
       try {
-        WaitInvocation call = new WaitInvocation();
+        TimerSpec call = new TimerSpec();
         if (runtimeLogger.getWaitNotifyDebug()) {
           runtimeLogger.objectWait(call, obj, tco);
         }
@@ -429,7 +429,7 @@ public class ManagerImpl implements Manager {
     TCObject tco = lookupExistingOrNull(obj);
     if (tco != null) {
       try {
-        WaitInvocation call = new WaitInvocation(millis);
+        TimerSpec call = new TimerSpec(millis);
         if (runtimeLogger.getWaitNotifyDebug()) {
           runtimeLogger.objectWait(call, obj, tco);
         }
@@ -449,7 +449,7 @@ public class ManagerImpl implements Manager {
 
     if (tco != null) {
       try {
-        WaitInvocation call = new WaitInvocation(millis, nanos);
+        TimerSpec call = new TimerSpec(millis, nanos);
         if (runtimeLogger.getWaitNotifyDebug()) {
           runtimeLogger.objectWait(call, obj, tco);
         }
@@ -554,13 +554,13 @@ public class ManagerImpl implements Manager {
     TCObject tco = lookupExistingOrNull(obj);
 
     try {
-      WaitInvocation timeout = null;
+      TimerSpec timeout = null;
       if (timeoutInNanos <= 0) {
-        timeout = new WaitInvocation(0);
+        timeout = new TimerSpec(0);
       } else {
         long mills = Util.getMillis(timeoutInNanos);
         int nanos = Util.getNanos(timeoutInNanos, mills);
-        timeout = new WaitInvocation(mills, nanos);
+        timeout = new TimerSpec(mills, nanos);
       }
 
       if (tco != null) {
@@ -822,7 +822,7 @@ public class ManagerImpl implements Manager {
   public InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
   }
-  
+
   private static class MethodDisplayNames {
 
     private final Map display = new HashMap();

@@ -1,11 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tcsimulator;
 
+import com.tc.lcp.LinkedJavaProcess;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOApplicationConfig;
-import com.tc.process.LinkedJavaProcess;
 import com.tc.simulator.distrunner.ArgParser;
 import com.tcsimulator.distrunner.ServerSpec;
 

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.config.schema.setup;
@@ -48,14 +48,16 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
     loadedFromTrustedSource = this.configurationCreator.loadedFromTrustedSource();
 
     commonL1Config = new NewCommonL1ConfigObject(createContext(clientBeanRepository(), null));
-    l2ConfigForL1 = new L2ConfigForL1Object(createContext(serversBeanRepository(), null), createContext(
-        systemBeanRepository(), null));
+    l2ConfigForL1 = new L2ConfigForL1Object(createContext(serversBeanRepository(), null),
+                                            createContext(systemBeanRepository(), null));
     dsoL1Config = new NewL1DSOConfigObject(createContext(new ChildBeanRepository(clientBeanRepository(),
-        DsoClientData.class, new ChildBeanFetcher() {
-          public XmlObject getChild(XmlObject parent) {
-            return ((Client) parent).getDso();
-          }
-        }), null));
+                                                                                 DsoClientData.class,
+                                                                                 new ChildBeanFetcher() {
+                                                                                   public XmlObject getChild(
+                                                                                                             XmlObject parent) {
+                                                                                     return ((Client) parent).getDso();
+                                                                                   }
+                                                                                 }), null));
 
   }
 
@@ -68,7 +70,7 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
   public String rawConfigText() {
     return configurationCreator.rawConfigText();
   }
-  
+
   public boolean loadedFromTrustedSource() {
     return this.loadedFromTrustedSource;
   }
@@ -84,4 +86,5 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
   public NewL1DSOConfig dsoL1Config() {
     return this.dsoL1Config;
   }
+
 }

@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -62,7 +62,14 @@ class BuildSubtree
             # is why that class is pretty much in its own module), as it's in the CLASSPATH used to run application
             # servers -- and they typically don't like it if you put random stuff in their CLASSPATH that isn't
             # their own classes.
-            write_dynamic_property(file, "linked-child-process-classpath", build_module.module_set['linked-child-process'].subtree('src').classpath(build_results, :full, :runtime))
+            common_classpath = build_module.module_set['common'].subtree('tests.base').classpath(build_results, :module_only, :runtime)
+            linked_child_process_jars = common_classpath.grep(/linked-child-process.*\.jar$/)
+            if linked_child_process_jars.empty?
+              fail("Could not find linked-child-process JAR")
+            elsif linked_child_process_jars.size > 1
+              fail("ERROR: There is more than one linked-child-processs JAR in the CLASSPATH for module common")
+            end
+            write_dynamic_property(file, "linked-child-process-classpath", linked_child_process_jars.first)
 
             if container_home
                 write_dynamic_property(file, "appserver.home", container_home)
@@ -101,9 +108,13 @@ class BuildSubtree
 
             # Write out the properties that control how the L2 is started.  Since the L2 requires
             # a 1.5 or higher JVM, it must be started in an external JVM if the current JVM is 1.4.
-            jvm_15 = Registry[:jvm_set].find_jvm(:min_version => '1.5.0')
-            fail("Can't find JVM 15 or greater to run L2") unless jvm_15
-            write_dynamic_property(file, "l2.startup.jvm", jvm_15.home.to_s)
+            if jvm.version >= '1.5.0'
+              server_jvm = jvm
+            else
+              server_jvm = Registry[:jvm_set].find_jvm(:min_version => '1.5.0')
+            end
+            fail("Can't find JVM 15 or greater to run L2") unless server_jvm
+            write_dynamic_property(file, "l2.startup.jvm", server_jvm.home.to_s)
 
             if jvm.version < '1.5.0'
               write_dynamic_property(file, "l2.startup.mode", "external")
@@ -424,14 +435,14 @@ class SubtreeTestRun
 
         @jvmargs = [ ]
 
-        modules_url = @build_results.modules_home.to_url
+        modules_dir = @build_results.modules_home
 
         # 'tc.tests.info.property-files' is set so that TestConfigObject knows which file to go read.
         @sysproperties = {
             'tc.base-dir' => @static_resources.root_dir.to_s,
             'java.awt.headless' => true,
             'tc.tests.info.property-files' => @testrun_results.build_configuration_file(@subtree).to_s,
-            'com.tc.l1.modules.repositories' => modules_url
+            'com.tc.l1.modules.repositories' => modules_dir
         }
 
         @sysproperties['java.library.path'] = native_library_path.to_s unless native_library_path.to_s.blank?

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.bytecode.hook.impl;
@@ -62,6 +62,31 @@ public class DSOContextImpl implements DSOContext {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
     Manager manager = new ManagerImpl(configHelper, globalProvider, preparedComponentsFromL2Connection);
     return new DSOContextImpl(configHelper, globalProvider, manager);
+  }
+
+  public static DSOContext createContext(String configSpec, ClassProvider globalProvider)
+      throws ConfigurationSetupException {
+    StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
+                                                                                                          (String[]) null,
+                                                                                                          false,
+                                                                                                          new FatalIllegalConfigurationChangeHandler(),
+                                                                                                          configSpec);
+
+    L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager();
+    config.setupLogging();
+    PreparedComponentsFromL2Connection l2Connection;
+    try {
+      l2Connection = validateMakeL2Connection(config);
+    } catch (Exception e) {
+      throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
+    }
+
+    DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config);
+    // StandardClassProvider classProvider = new StandardClassProvider();
+    Manager manager = new ManagerImpl(configHelper, globalProvider, l2Connection);
+    manager.init();
+    return createContext(configHelper, globalProvider, manager);
+
   }
 
   /**

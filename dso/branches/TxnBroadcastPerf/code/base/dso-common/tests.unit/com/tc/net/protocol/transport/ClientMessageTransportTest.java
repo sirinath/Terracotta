@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
@@ -23,6 +23,7 @@ import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.object.session.NullSessionManager;
+import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.TCTimeoutException;
 
@@ -33,15 +34,15 @@ import java.util.List;
  * x normal connect and handshake o reconnect and handshake
  */
 public class ClientMessageTransportTest extends TCTestCase {
-  private ConnectionID                     connectionId;
-  private ClientMessageTransport           transport;
-  private MockConnectionManager            connectionManager;
-  private MockTCConnection                 connection;
-  private TransportHandshakeMessageFactory transportMessageFactory;
-  private TestTransportHandshakeErrorHandler   handshakeErrorHandler;
-  private final int                        maxRetries         = 10;
-  private MessageTransportFactory          transportFactory;
-  private final int                        timeout            = 3000;
+  private ConnectionID                       connectionId;
+  private ClientMessageTransport             transport;
+  private MockConnectionManager              connectionManager;
+  private MockTCConnection                   connection;
+  private TransportHandshakeMessageFactory   transportMessageFactory;
+  private TestTransportHandshakeErrorHandler handshakeErrorHandler;
+  private final int                          maxRetries = 10;
+  private MessageTransportFactory            transportFactory;
+  private final int                          timeout    = 3000;
 
   public void setUp() {
     DefaultConnectionIdFactory connectionIDProvider = new DefaultConnectionIdFactory();
@@ -59,7 +60,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                     new ConnectionInfo[] { connectionInfo }),
                                                                       maxRetries, 5000);
     transport = new ClientMessageTransport(cce, handshakeErrorHandler, this.transportMessageFactory,
-                                           new WireProtocolAdaptorFactoryImpl());
+                                           new WireProtocolAdaptorFactoryImpl(),
+                                           TransportHandshakeMessage.NO_CALLBACK_PORT);
   }
 
   public void testRoundRobinReconnect() throws Exception {
@@ -123,7 +125,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                     new ConnectionInfo[] { connInfo }),
                                                                       0, 1000);
     transport = new ClientMessageTransport(cce, this.handshakeErrorHandler, this.transportMessageFactory,
-                                           new WireProtocolAdaptorFactoryImpl());
+                                           new WireProtocolAdaptorFactoryImpl(),
+                                           TransportHandshakeMessage.NO_CALLBACK_PORT);
     transport.open();
     assertTrue(transport.isConnected());
     listener.stop(5000);
@@ -140,7 +143,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                          new NullMessageMonitor(),
                                                                          new OOONetworkStackHarnessFactory(
                                                                                                            new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                                           null),
+                                                                                                           null,
+                                                                                                           new L1ReconnectConfigImpl()),
                                                                          new NullConnectionPolicy(), 0);
 
     CommunicationsManager clientCommsMgr = new CommunicationsManagerImpl(new NullMessageMonitor(),
@@ -165,8 +169,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                    new NullMessageMonitor(),
                                                    new OOONetworkStackHarnessFactory(
                                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                     null), new NullConnectionPolicy(),
-                                                   0);
+                                                                                     null, new L1ReconnectConfigImpl()),
+                                                   new NullConnectionPolicy(), 0);
 
     try {
       createStacksAndTest(serverCommsMgr, clientCommsMgr);
@@ -201,7 +205,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                   maxRetries, timeout);
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
                                                                 transportMessageFactory,
-                                                                new WireProtocolAdaptorFactoryImpl());
+                                                                new WireProtocolAdaptorFactoryImpl(),
+                                                                TransportHandshakeMessage.NO_CALLBACK_PORT);
         return cmt;
       }
 
@@ -239,11 +244,10 @@ public class ClientMessageTransportTest extends TCTestCase {
     assertTrue(handshakeErrorHandler.getStackLayerMismatch());
     listener.stop(5000);
   }
-  
-  private static class TestTransportHandshakeErrorHandler implements TransportHandshakeErrorHandler {
-    
-    private boolean                          stackLayerMismatch = false;
 
+  private static class TestTransportHandshakeErrorHandler implements TransportHandshakeErrorHandler {
+
+    private boolean stackLayerMismatch = false;
 
     public void handleHandshakeError(TransportHandshakeErrorContext e) {
       if (e.getErrorType() == TransportHandshakeError.ERROR_STACK_MISMATCH) stackLayerMismatch = true;
@@ -252,8 +256,8 @@ public class ClientMessageTransportTest extends TCTestCase {
     public void handleHandshakeError(TransportHandshakeErrorContext e, TransportHandshakeMessage m) {
       if (e.getErrorType() == TransportHandshakeError.ERROR_STACK_MISMATCH) stackLayerMismatch = true;
     }
-    
-    public boolean getStackLayerMismatch(){
+
+    public boolean getStackLayerMismatch() {
       return stackLayerMismatch;
     }
   }

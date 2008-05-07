@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.state;
@@ -23,6 +23,7 @@ import com.tc.net.groups.Node;
 import com.tc.net.groups.NodeID;
 import com.tc.net.groups.TribesGroupManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.test.TCTestCase;
 import com.tc.util.PortChooser;
 import com.tc.util.State;
@@ -40,7 +41,8 @@ public class StateManagerTest extends TCTestCase {
   private static short          portnum = 0;
 
   public StateManagerTest() {
-    // disableAllUntil("2007-05-23");
+    // disable tribe tests
+    disableAllUntil("2008-08-30");
     useRandomMcastPort();
   }
 
@@ -55,7 +57,7 @@ public class StateManagerTest extends TCTestCase {
       portnum = (short) (r.nextInt(Short.MAX_VALUE - 1025) + 1024);
     }
 
-    TCPropertiesImpl.setProperty("l2.nha.tribes.mcast.mcastPort", String.valueOf(portnum));
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_NHA_TRIBES_MCAST_MCASTPORT, String.valueOf(portnum));
     logger.info("McastService uses random mcast port: " + portnum);
   }
 

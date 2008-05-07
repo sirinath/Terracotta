@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -9,7 +9,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   protected
   def postscript(ant, build_environment, product_dir, *args)
     require 'builder'
-    File.open(FilePath.new(product_dir, "pom.xml").to_s, File::CREAT) do |out|
+    File.open(FilePath.new(product_dir, "pom.xml").to_s, "w") do |out|
       xml = Builder::XmlMarkup.new(:target => out, :indent => 3)
       xml.project do
         xml.modelVersion "4.0.0"

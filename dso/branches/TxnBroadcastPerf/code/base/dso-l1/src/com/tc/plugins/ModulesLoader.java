@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.plugins;
@@ -15,6 +15,8 @@ import org.osgi.framework.ServiceReference;
 import com.tc.bundles.EmbeddedOSGiEventHandler;
 import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.bundles.Resolver;
+import com.tc.bundles.ResolverUtils;
+import com.tc.bundles.exception.BundleExceptionSummary;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -36,6 +38,9 @@ import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -96,8 +101,12 @@ public class ModulesLoader {
         if (!forBootJar) {
           getModulesCustomApplicatorSpecs(osgiRuntime, configHelper);
         }
+      } catch (BundleException e) {
+        final String msg = (e instanceof BundleExceptionSummary) ? ((BundleExceptionSummary)e).getSummary() : e.getMessage();
+        consoleLogger.fatal(msg);
+        System.exit(1);
       } catch (Exception e) {
-        logger.error(e); // at least log this exception, it's very frustrating if it is completely swallowed
+        consoleLogger.error(e); // at least log this exception, it's very frustrating if it is completely swallowed
         System.exit(-9);
       } finally {
         if (forBootJar) {
@@ -141,11 +150,22 @@ public class ModulesLoader {
     moduleList.addAll(Arrays.asList(modules));
 
     final Module[] allModules = (Module[]) moduleList.toArray(new Module[moduleList.size()]);
-    final Resolver resolver = new Resolver(osgiRuntime.getRepositories());
-    final URL[] locations = resolver.resolve(allModules);
 
-    osgiRuntime.installBundles(locations);
-    osgiRuntime.startBundles(locations, handler);
+    final URL[] osgiRepositories = osgiRuntime.getRepositories();
+    final Resolver resolver = new Resolver(ResolverUtils.urlsToStrings(osgiRepositories));
+    final File[] locations = resolver.resolve(allModules);
+
+    final URL[] bundleURLs = new URL[locations.length];
+    for(int i=0; i<locations.length; i++) {
+      try {
+        bundleURLs[i] = locations[i].toURL();
+      } catch(MalformedURLException e) {
+        throw new RuntimeException("Malformed file URL for bundle: " + locations[i].getAbsolutePath(), e);
+      }
+    }
+
+    osgiRuntime.installBundles(bundleURLs);
+    osgiRuntime.startBundles(bundleURLs, handler);
   }
 
   private static List getAdditionalModules() {
@@ -157,9 +177,7 @@ public class ModulesLoader {
       final String[] additionalModules = additionalModuleList.split(";");
       Pattern pattern = Pattern.compile("(.+?)-([0-9\\.]+)-([0-9\\.\\-]+)");
       for (int i = 0; i < additionalModules.length; i++) {
-        if (additionalModules[i].length() == 0) {
-          continue;
-        }
+        if (additionalModules[i].length() == 0) continue;
 
         final Matcher matcher = pattern.matcher(additionalModules[i]);
         if (!matcher.find() || matcher.groupCount() < 3) {
@@ -249,7 +267,7 @@ public class ModulesLoader {
         path = "terracotta.xml";
       }
     }
-    
+
     final String[] paths = path.split(",");
     for (int i = 0; i < paths.length; i++) {
       paths[i] = paths[i].trim();
@@ -286,7 +304,7 @@ public class ModulesLoader {
         if (application != null) {
           final ConfigLoader loader = new ConfigLoader(configHelper, logger);
           loader.loadDsoConfig(application);
-          logger.info("Module configuration loaded for " + bundle.getSymbolicName() + " (" + configPath + ")");
+          logConfig(application, bundle, configPath);
           // loader.loadSpringConfig(application.getSpring());
         }
         is.close();
@@ -308,6 +326,19 @@ public class ModulesLoader {
       } finally {
         IOUtils.closeQuietly(is);
       }
+    }
+  }
+
+  private static void logConfig(DsoApplication application, Bundle bundle, String configPath) {
+    logger.info("Config loaded from module: " + bundle.getSymbolicName() + " (" + configPath + ")");
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    BufferedOutputStream buf = new BufferedOutputStream(bas);
+    try {
+      application.save(buf);
+      buf.close();
+      logger.info("Here's the config from the module:\n\n" + bas.toString());
+    } catch (IOException e) {
+      logger.warn("Unable to generate a log entry to for the module's config info.");
     }
   }
 }

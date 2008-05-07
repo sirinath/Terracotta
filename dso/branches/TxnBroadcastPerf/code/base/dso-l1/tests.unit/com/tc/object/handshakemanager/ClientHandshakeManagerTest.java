@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.handshakemanager;
@@ -34,8 +34,9 @@ import com.tc.object.msg.TestClientHandshakeMessage;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TestRemoteTransactionManager;
+import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TransactionID;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.text.PrettyPrinter;
@@ -99,8 +100,8 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       objectManager.objects.put(id, new Object());
     }
 
-    WaitLockRequest waitLockRequest = new WaitLockRequest(new LockID("1"), new ThreadID(1), LockLevel.WRITE, String.class.getName(),
-                                                          new WaitInvocation());
+    WaitLockRequest waitLockRequest = new WaitLockRequest(new LockID("1"), new ThreadID(1), LockLevel.WRITE,
+                                                          String.class.getName(), new TimerSpec());
     lockManager.outstandingWaitLockRequests.add(waitLockRequest);
 
     LockRequest lockRequest = new LockRequest(new LockID("2"), new ThreadID(2), LockLevel.WRITE);
@@ -144,7 +145,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     WaitContext wctxt = (WaitContext) waitContexts.get(0);
     assertEquals(waitLockRequest.lockID(), wctxt.getLockID());
     assertEquals(waitLockRequest.threadID(), wctxt.getThreadID());
-    assertEquals(waitLockRequest.getWaitInvocation(), wctxt.getWaitInvocation());
+    assertEquals(waitLockRequest.getTimerSpec(), wctxt.getTimerSpec());
 
     // make sure that the manager called addAllOutstandingLocksTo on the lock
     // manager.
@@ -169,7 +170,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     // make sure RuntimeException is thrown iff client/server versions don't match and version checking is enabled
     try {
-      mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion + "a.b.c");
+      mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion + "a.b.c");
       if (checkVersionMatchEnabled()) {
         fail();
       }
@@ -180,7 +181,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     }
 
     // now ack for real
-    mgr.acknowledgeHandshake(0, 0, false, "1", new String[] {}, clientVersion);
+    mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion);
 
     // make sure the remote object manager was told to requestOutstanding()
     remoteObjectManager.requestOutstandingContexts.take();
@@ -191,7 +192,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
   }
 
   private boolean checkVersionMatchEnabled() {
-    return TCPropertiesImpl.getProperties().getBoolean("l1.connect.versionMatchCheck.enabled");
+    return TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L1_CONNECT_VERSION_MATCH_CHECK);
   }
 
   private static class TestRemoteObjectManager implements RemoteObjectManager {
@@ -287,12 +288,12 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public void awardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
       return;
     }
-    
+
     public LockID lockIDFor(String id) {
       return null;
     }
 
-    public void wait(LockID lockID, ThreadID threadID, WaitInvocation call, Object waitObject, WaitListener listener) {
+    public void wait(LockID lockID, ThreadID threadID, TimerSpec call, Object waitObject, WaitListener listener) {
       return;
     }
 
@@ -340,7 +341,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public void recall(LockID lockID, ThreadID id, int level) {
       return;
     }
-    
+
     public void recall(LockID lockID, ThreadID threadID, int level, int leaseTimeInMs) {
       return;
     }
@@ -378,7 +379,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int level, String lockObjectType) {
+    public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int level, String lockObjectType) {
       throw new ImplementMe();
     }
 
@@ -408,12 +409,12 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     public void dump(Writer writer) {
       throw new ImplementMe();
-      
+
     }
 
     public void dumpToLogger() {
       throw new ImplementMe();
-      
+
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {

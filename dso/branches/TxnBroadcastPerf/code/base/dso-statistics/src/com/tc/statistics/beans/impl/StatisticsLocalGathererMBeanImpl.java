@@ -69,6 +69,11 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
   }
 
   public void reset() {
+    //
+  }
+
+  public boolean isActive() {
+    return subsystem.isActive();
   }
 
   public void startup() {
@@ -211,6 +216,14 @@ public class StatisticsLocalGathererMBeanImpl extends AbstractTerracottaMBean im
     }
   }
 
+  public boolean isCapturing() {
+    if (!subsystem.isActive()) {
+      return false;
+    }
+
+    return subsystem.getStatisticsGatherer().isCapturing();
+  }
+  
   public void setGlobalParam(final String key, final Object value) {
     if (!subsystem.isActive()) {
       return;

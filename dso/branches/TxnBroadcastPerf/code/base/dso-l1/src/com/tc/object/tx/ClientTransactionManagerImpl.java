@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.tx;
@@ -19,7 +19,6 @@ import com.tc.object.appevent.ReadOnlyObjectEvent;
 import com.tc.object.appevent.ReadOnlyObjectEventContext;
 import com.tc.object.appevent.UnlockedSharedObjectEvent;
 import com.tc.object.appevent.UnlockedSharedObjectEventContext;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
@@ -35,7 +34,7 @@ import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
-import com.tc.util.DebugUtil;
+import com.tc.util.Util;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -138,7 +137,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
   }
 
-  public boolean tryBegin(String lockName, WaitInvocation timeout, int lockLevel, String lockObjectType) {
+  public boolean tryBegin(String lockName, TimerSpec timeout, int lockLevel, String lockObjectType) {
     logTryBegin0(lockName, lockLevel);
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return true; }
@@ -212,15 +211,15 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
   }
 
-  public void wait(String lockName, WaitInvocation call, Object object) throws UnlockedSharedObjectException,
+  public void wait(String lockName, TimerSpec call, Object object) throws UnlockedSharedObjectException,
       InterruptedException {
     final ClientTransaction topTxn = getTransactionOrNull();
 
-    if (topTxn == null) { throw new IllegalMonitorStateException(); }
+    if (topTxn == null) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     LockID lockID = lockManager.lockIDFor(lockName);
 
-    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(); }
+    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     commit(lockID, topTxn, true);
 
@@ -234,13 +233,29 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   public void notify(String lockName, boolean all, Object object) throws UnlockedSharedObjectException {
     final ClientTransaction currentTxn = getTransactionOrNull();
 
-    if (currentTxn == null) { throw new IllegalMonitorStateException(); }
+    if (currentTxn == null) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     LockID lockID = lockManager.lockIDFor(lockName);
 
-    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(); }
+    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     currentTxn.addNotify(lockManager.notify(lockID, all));
+  }
+
+  private String getIllegalMonitorStateExceptionMessage() {
+    StringBuffer errorMsg = new StringBuffer("An IllegalStateMonitor is usually caused by one of the following:");
+    errorMsg.append("\n");
+    errorMsg.append("1) No synchronization");
+    errorMsg.append("\n");
+    errorMsg.append("2) The object synchronized is not the same as the object waited/notified");
+    errorMsg.append("\n");
+    errorMsg.append("3) The object being waited/notified on is a Terracotta distributed object, but no Terracotta auto-lock has been specified.");
+    errorMsg.append("\n\n");
+    errorMsg.append("For more information on this issue, please visit our Troubleshooting Guide at:");
+    errorMsg.append("\n");
+    errorMsg.append("http://terracotta.org/kit/troubleshooting");
+
+    return Util.getFormattedMessage(errorMsg.toString());
   }
 
   private void logTryBegin0(String lockID, int type) {
@@ -430,11 +445,6 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       }
 
       currentTransaction.setAlreadyCommitted();
-      
-      if (DebugUtil.DEBUG) {
-        System.err.println(ManagerUtil.getClientID() + " txID " + currentTransaction.getTransactionID() + " changes: "
-                           + currentTransaction.hasChangesOrNotifies() + " create: " + hasPendingCreateObjects);
-      }
 
       if (currentTransaction.hasChangesOrNotifies() || hasPendingCreateObjects) {
         if (txMonitor.isEnabled()) {
@@ -853,7 +863,15 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
   }
 
-  private static final String READ_ONLY_TEXT = "Current transaction with read-only access attempted to modify a shared object.  "
-                                               + "\nPlease alter the locks section of your Terracotta configuration so that the methods involved in this transaction have read/write access.";
+//  private static final String READ_ONLY_TEXT = "Current transaction with read-only access attempted to modify a shared object.  "
+//                                               + "\nPlease alter the locks section of your Terracotta configuration so that the methods involved in this transaction have read/write access.";
+
+  private static final String READ_ONLY_TEXT = "Attempt to write to a shared object inside the scope of a lock declared as a" +
+  "\nread lock. All writes to shared objects must be within the scope of one or" +
+  "\nmore shared locks with write access defined in your Terracotta configuration." +
+  "\n\nPlease alter the locks section of your Terracotta configuration so that this" +
+  "\naccess is auto-locked or protected by a named lock with write access." +
+  "\n\nFor more information on this issue, please visit our Troubleshooting Guide at:" +
+  "\nhttp://terracotta.org/kit/troubleshooting ";
 
 }

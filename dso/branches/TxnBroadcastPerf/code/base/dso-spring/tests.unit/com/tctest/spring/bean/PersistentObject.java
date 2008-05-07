@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tctest.spring.bean;
 
@@ -14,6 +14,7 @@ public class PersistentObject {
 	private PersistentSubobject status = new PersistentSubobject(PersistentSubobject.NOT_SENT);
 
 	public PersistentObject() {
+	  //
 	}
 
 	public PersistentObject(int id, String phoneNumber, String message) {

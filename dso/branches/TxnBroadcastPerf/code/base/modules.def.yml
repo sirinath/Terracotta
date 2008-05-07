@@ -13,9 +13,6 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - common
-  - linked-child-process:
-      options:
-        jdk: J2SE-1.4
   - thirdparty-api:
       options:
         jdk: J2SE-1.4
@@ -32,7 +29,6 @@ modules:
         jdk: J2SE-1.4
       dependencies:
         - common-api
-        - linked-child-process        
   - aspectwerkz:
       options:
         jdk: J2SE-1.4
@@ -41,6 +37,12 @@ modules:
         - common-api
         - thirdparty
         - thirdparty-api
+  - dso-statistics-api:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - common-api
   - dso-l1-api:
       options:
         jdk: J2SE-1.4
@@ -48,6 +50,71 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - dso-statistics-api
+        - thirdparty-api
+  - dso-common:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - common-api
+        - dso-l1-api
+        - thirdparty-api
+        - dso-statistics-api
+  - dso-common-jdk15:
+      options:
+        jdk: J2SE-1.5
+      dependencies:
+        - common
+        - common-api
+        - dso-common
+        - dso-statistics-api
+  - dso-common-jdk16:
+      options:
+        jdk: JavaSE-1.6
+      dependencies:
+        - common
+        - common-api
+        - dso-common
+        - dso-statistics-api
+  - management-api:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - common-api
+        - dso-common
+        - dso-l1-api
+        - dso-statistics-api
+  - management:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common
+        - common-api
+        - dso-common
+        - dso-l1-api
+        - dso-statistics-api
+        - management-api
+  - dso-l2-common:
+      options:
+        jdk: J2SE-1.4
+      dependencies:
+        - common-api
+        - dso-common
+        - dso-common-jdk15
+        - dso-l1-api
+        - dso-statistics-api
+        - management-api
+        - thirdparty-api
+  - deploy-api:
+      options:
+        jdk: J2SE-1.5
+      dependencies:
+        - common-api
+        - dso-l1-api
+        - dso-l2-common
+        - dso-statistics-api
         - thirdparty-api
   - modules-common:
       options:
@@ -98,51 +165,13 @@ modules:
         - dso-l1-api
         - modules-common
         - thirdparty-api
-  - dso-statistics-api:
+  - sigarstats:
       options:
         jdk: J2SE-1.4
       dependencies:
         - common
         - common-api
-  - dso-common:
-      options:
-        jdk: J2SE-1.4
-      dependencies:
-        - common
-        - common-api
-        - dso-l1-api
-        - thirdparty-api
         - dso-statistics-api
-  - dso-common-jdk15:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - common
-        - common-api
-        - dso-common
-        - dso-statistics-api
-  - management:
-      options:
-        jdk: J2SE-1.4
-      dependencies:
-        - common
-        - common-api
-        - dso-common
-        - dso-l1-api
-        - dso-statistics-api
-  - dso-l2-common:
-      options:
-        jdk: J2SE-1.4
-      dependencies:
-        - common
-        - common-api
-        - dso-common
-        - dso-common-jdk15
-        - dso-l1-api
-        - dso-memory-datastore
-        - management
-        - thirdparty
-        - thirdparty-api
   - dso-statistics:
       options:
         jdk: J2SE-1.4
@@ -155,6 +184,7 @@ modules:
         - dso-l2-common
         - dso-statistics-api
         - management
+        - management-api
   - dso-l1:
       options:
         jdk: J2SE-1.4
@@ -168,6 +198,7 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - management
+        - management-api
         - thirdparty
         - thirdparty-api
   - dso-l1-jdk15:
@@ -193,6 +224,7 @@ modules:
         - dso-l1
         - dso-l1-api
         - management
+        - management-api
   - dso-weblogic-stubs:
       options:
         jdk: J2SE-1.4
@@ -259,6 +291,7 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - management
+        - management-api
         - thirdparty
         - thirdparty-api
   - deploy:
@@ -268,6 +301,7 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -276,8 +310,8 @@ modules:
         - dso-l2-common
         - dso-statistics
         - dso-statistics-api
-        - linked-child-process
-        - management
+        - management-api
+        - sigarstats
         - thirdparty
         - thirdparty-api
   - simulator:
@@ -302,6 +336,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -328,6 +363,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -353,6 +389,7 @@ modules:
         # to classes in the deploy module because deploy is compiled with JDK 1.5, while this
         # module is compiled with JDK 1.4.
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -363,8 +400,8 @@ modules:
         - dso-l2-common
         - dso-statistics
         - dso-statistics-api
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -376,6 +413,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -385,8 +423,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -398,6 +436,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -408,8 +447,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -421,6 +460,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -434,8 +474,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -447,6 +487,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -457,8 +498,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -470,6 +511,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -480,9 +522,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
-        - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -494,6 +535,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -509,8 +551,8 @@ modules:
         - dso-system-tests
         - dso-tests-jdk15
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -522,6 +564,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -535,8 +578,8 @@ modules:
         - dso-statistics-api
         - dso-system-tests
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -548,6 +591,7 @@ modules:
         - aspectwerkz
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1-api
@@ -557,8 +601,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -572,6 +616,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -582,8 +627,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -597,6 +642,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -607,8 +653,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -620,6 +666,7 @@ modules:
         - aspectwerkz
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -631,8 +678,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -647,6 +694,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -658,8 +706,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -672,6 +720,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-l1
         - dso-l1-api
@@ -692,6 +741,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -703,8 +753,8 @@ modules:
         - dso-statistics-api
         - dso-system-tests
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -719,6 +769,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -730,8 +781,8 @@ modules:
         - dso-statistics-api
         - dso-system-tests
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -744,14 +795,15 @@ modules:
         - aspectwerkz
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1-api
         - dso-l2
         - dso-memory-datastore
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -774,6 +826,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-l1
@@ -784,9 +837,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
-        - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -801,6 +853,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -812,8 +865,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -828,6 +881,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -839,8 +893,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -854,7 +908,7 @@ modules:
         - common
         - common-api
         - deploy
-        - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -868,8 +922,8 @@ modules:
         - dso-statistics-api
         - legacy-test-tree
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - simulator
@@ -884,6 +938,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -895,8 +950,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - thirdparty
@@ -909,6 +964,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -922,8 +978,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - simulator
         - thirdparty
         - thirdparty-api
@@ -936,6 +992,7 @@ modules:
         - common
         - common-api
         - deploy
+        - deploy-api
         - dso-common
         - dso-common-jdk15
         - dso-container-tests
@@ -950,8 +1007,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - legacy-test-tree
-        - linked-child-process
         - management
+        - management-api
         - modules-common
         - simulator
         - simulator
@@ -973,7 +1030,6 @@ module-groups:
     - dso-spring-tests
     - dso-spring-crash-tests
   dso:
-    - linked-child-process
     - common
     - thirdparty
     - aspectwerkz

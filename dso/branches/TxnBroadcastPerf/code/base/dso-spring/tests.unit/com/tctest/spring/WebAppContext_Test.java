@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest.spring;
@@ -49,6 +49,9 @@ public class WebAppContext_Test extends TransparentTestBase {
   private static final int NODE_COUNT      = 4;
 
   public WebAppContext_Test() {
+    // MNK-500
+    disableAllUntil("2008-05-30");
+    
     if (Vm.isIBM()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }

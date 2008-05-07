@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.config;
@@ -30,6 +30,7 @@ import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.net.core.ConnectionInfo;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
@@ -48,6 +49,7 @@ import com.tc.object.bytecode.THashMapAdapter;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TreeMapAdapter;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
+import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
@@ -62,6 +64,8 @@ import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
 import com.tc.object.tools.BootJarException;
+import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.ReconnectConfig;
 import com.tc.tomcat.transform.BootstrapAdapter;
 import com.tc.tomcat.transform.CatalinaAdapter;
 import com.tc.tomcat.transform.ContainerBaseAdapter;
@@ -70,6 +74,7 @@ import com.tc.tomcat.transform.WebAppLoaderAdapter;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Vm;
 import com.tc.weblogic.WeblogicHelper;
 import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
@@ -80,14 +85,17 @@ import com.tc.weblogic.transform.ServerAdapter;
 import com.tc.weblogic.transform.ServletResponseImplAdapter;
 import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.terracottatech.config.DsoApplication;
+import com.terracottatech.config.L1ReconnectPropertiesFromL2Document;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 import com.terracottatech.config.SpringApplication;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -171,6 +179,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private final ModulesContext                   modulesContext                     = new ModulesContext();
 
   private volatile boolean                       allowCGLIBInstrumentation          = false;
+
+  private ReconnectConfig                        l1ReconnectConfig                  = null;
 
   public StandardDSOClientConfigHelperImpl(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -1024,17 +1034,20 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
                                                  "com.tc.object.applicator.ConcurrentHashMapApplicator");
     spec.setHonorTransient(true);
     spec.setPostCreateMethod("__tc_rehash");
+    // The "segments" array is itself not a shared object and doesn't need array instrumentation
+    TransparencyCodeSpec defaultCodeSpec = TransparencyCodeSpecImpl.getDefaultLogicalCodeSpec();
+    defaultCodeSpec.setArrayOperatorInstrumentationReq(false);
+    spec.setDefaultCodeSpec(defaultCodeSpec);
 
     spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
+    // The "table" array is itself not a shared object and doesn't need array instrumentation
+    defaultCodeSpec = TransparencyCodeSpecImpl.getDefaultPhysicalCodeSpec();
+    defaultCodeSpec.setArrayOperatorInstrumentationReq(false);
+    defaultCodeSpec.setForceRawFieldAccess(); // field reads of HashEntry instances do not need to be instrumented
+    spec.setDefaultCodeSpec(defaultCodeSpec);
     spec.setCallConstructorOnLoad(true);
     spec.setHonorTransient(true);
 
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$HashEntry");
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$ValueIterator");
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$EntryIterator");
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Values");
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$KeySet");
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$HashIterator");
     if (Vm.isJDK16Compliant()) {
       spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$WriteThroughEntry");
       spec = getOrCreateSpec("java.util.AbstractMap$SimpleEntry");
@@ -1957,6 +1970,68 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       if (webApp.equals(appName)) { return LockLevel.SYNCHRONOUS_WRITE; }
     }
     return LockLevel.WRITE;
+  }
+
+  public InputStream getL1PropertiesFromL2Stream(ConnectionInfo[] connectInfo) throws Exception {
+    URLConnection connection = null;
+    InputStream l1PropFromL2Stream = null;
+    URL theURL = null;
+    for (int i = 0; i < connectInfo.length; i++) {
+      try {
+        ConnectionInfo ci = connectInfo[i];
+        theURL = new URL("http", ci.getHostname(), ci.getPort(), "/l1reconnectproperties");
+        String text = "Trying to get L1 Reconnect Properties from " + theURL.toString();
+        logger.info(text);
+        connection = theURL.openConnection();
+        l1PropFromL2Stream = connection.getInputStream();
+        if (l1PropFromL2Stream != null) return l1PropFromL2Stream;
+      } catch (IOException e) {
+        String text = "We couldn't load l1 reconnect properties from the URL :" + theURL.toString();
+        boolean tryAgain = i < connectInfo.length;
+        if (tryAgain) text += " \n Skipping this source and going to the next one.";
+        logger.warn(text);
+      }
+    }
+    return null;
+  }
+
+  private void setupL1ReconnectProperties() {
+    InputStream in = null;
+    boolean loggedInConsole = false;
+    while (in == null) {
+      try {
+        PreparedComponentsFromL2Connection serverInfos = new PreparedComponentsFromL2Connection(configSetupManager);
+        ConnectionInfoConfigItem connectInfo = (ConnectionInfoConfigItem) serverInfos.createConnectionInfoConfigItem();
+        in = getL1PropertiesFromL2Stream((ConnectionInfo[]) connectInfo.getObject());
+        if (in == null) {
+          String text = "We couldn't load l1 reconnect properties from any of the servers. Retrying.....";
+          if (loggedInConsole == false) {
+            loggedInConsole = true;
+            consoleLogger.error(text);
+          }
+          logger.error(text);
+          ThreadUtil.reallySleep(1000);
+        }
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    }
+
+    L1ReconnectPropertiesFromL2Document l1PropFroL2;
+    try {
+      l1PropFroL2 = L1ReconnectPropertiesFromL2Document.Factory.parse(in);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
+
+    boolean l1ReconnectEnabled = l1PropFroL2.getL1ReconnectPropertiesFromL2().getL1ReconnectEnabled();
+    int l1ReconnectTimeout = l1PropFroL2.getL1ReconnectPropertiesFromL2().getL1ReconnectTimeout().intValue();
+    this.l1ReconnectConfig = new L1ReconnectConfigImpl(l1ReconnectEnabled, l1ReconnectTimeout);
+  }
+
+  public synchronized ReconnectConfig getL1ReconnectProperties() {
+    if (l1ReconnectConfig == null) setupL1ReconnectProperties();
+    return l1ReconnectConfig;
   }
 
 }

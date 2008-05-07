@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso;
@@ -83,9 +83,11 @@ public class ClasspathProvider extends StandardClasspathProvider {
 
     String[] dirs = {
       "deploy",
+      "deploy-api",
       "common",
       "common-api",
       "management",
+      "management-api",
       "aspectwerkz",
       "thirdparty",
       "thirdparty-api",
@@ -97,7 +99,8 @@ public class ClasspathProvider extends StandardClasspathProvider {
       "dso-l2",
       "dso-l2-common",
       "dso-spring",
-      "dso-statistics"};
+      "dso-statistics",
+      "dso-statistics-api"};
 
     for (int i = 0; i < dirs.length; i++) {
       list.add(buildPath.append(dirs[i]).append("build.eclipse").append("src.classes"));

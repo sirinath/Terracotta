@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -109,8 +109,12 @@ public class AccessibleObjectTestApp extends AbstractTransparentApp {
 
     if (index == 1) {
       Field f = root.getF1();
-      synchronized (root) {
-        f.setAccessible(true);
+
+      // Do this many times to potentially get this action folded
+      for (int i = 0; i < 1000; i++) {
+        synchronized (root) {
+          f.setAccessible(true);
+        }
       }
     }
 

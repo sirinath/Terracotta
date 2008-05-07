@@ -1,9 +1,9 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.lockmanager.api;
 
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 
 public interface ThreadLockManager {
 
@@ -11,9 +11,9 @@ public interface ThreadLockManager {
 
   public void lock(LockID lockID, int lockLevel, String lockObjectType, String contextInfo);
   
-  public boolean tryLock(LockID lockID, WaitInvocation timeout, int lockLevel, String lockObjectType);
+  public boolean tryLock(LockID lockID, TimerSpec timeout, int lockLevel, String lockObjectType);
 
-  public void wait(LockID lockID, WaitInvocation call, Object object, WaitListener waitListener) throws InterruptedException;
+  public void wait(LockID lockID, TimerSpec call, Object object, WaitListener waitListener) throws InterruptedException;
 
   public Notify notify(LockID lockID, boolean all);
 

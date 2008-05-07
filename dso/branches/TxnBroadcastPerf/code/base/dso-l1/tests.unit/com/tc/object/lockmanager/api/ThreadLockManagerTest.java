@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.lockmanager.api;
 
@@ -7,7 +7,7 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.config.lock.LockContextInfo;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 
 import junit.framework.TestCase;
 
@@ -82,7 +82,7 @@ public class ThreadLockManagerTest extends TestCase {
 
   public void testWait() throws Exception {
     final LockID lockID = new LockID("lock");
-    final WaitInvocation call = new WaitInvocation();
+    final TimerSpec call = new TimerSpec();
     final Object lockObject = new Object();
     final WaitListener waitListener = null;
     tlm.wait(lockID, call, lockObject, waitListener);
@@ -117,7 +117,7 @@ public class ThreadLockManagerTest extends TestCase {
 
   }
 
-  private void verifyWaitArgs(LockID lockID, ThreadID threadID, WaitInvocation call, Object lockObject,
+  private void verifyWaitArgs(LockID lockID, ThreadID threadID, TimerSpec call, Object lockObject,
                               WaitListener waitListener, Object[] args) {
     assertEquals(lockID, args[0]);
     assertEquals(threadID, args[1]);

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso.editors.chooser;
@@ -178,7 +178,7 @@ public class PackageNavigator extends MessageDialog {
 
     private Layout(Composite parent, int style) {
       this.m_viewer = new TreeViewer(parent, style | SWT.BORDER);
-      m_viewer.setAutoExpandLevel(2);
+      m_viewer.setAutoExpandLevel(1);
       m_viewer.getTree().setLayoutData(new GridData(GridData.FILL_BOTH));
       m_viewer.getTree().addMouseListener(new MouseAdapter() {
         public void mouseDoubleClick(MouseEvent e) {

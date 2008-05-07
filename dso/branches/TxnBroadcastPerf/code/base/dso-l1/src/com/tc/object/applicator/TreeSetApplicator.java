@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.applicator;
 
@@ -53,25 +53,18 @@ public class TreeSetApplicator extends HashSetApplicator {
     TreeSet set = (TreeSet) pojo;
     DNACursor cursor = dna.getCursor();
 
-    if (!cursor.next(encoding)) { return; }
-
-    Object action = cursor.getAction();
-    if (action instanceof PhysicalAction) {
-      PhysicalAction pa = (PhysicalAction) action;
-      Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-      setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject()));
-    } else {
-      LogicalAction la = (LogicalAction) action;
-      int method = la.getMethod();
-      Object[] params = la.getParameters();
-      super.apply(objectManager, set, method, params);
-    }
-
     while (cursor.next(encoding)) {
-      LogicalAction la = cursor.getLogicalAction();
-      int method = la.getMethod();
-      Object[] params = la.getParameters();
-      super.apply(objectManager, set, method, params);
+      Object action = cursor.getAction();
+      if (action instanceof PhysicalAction) {
+        PhysicalAction pa = (PhysicalAction) action;
+        Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
+        setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject()));
+      } else {
+        LogicalAction la = (LogicalAction) action;
+        int method = la.getMethod();
+        Object[] params = la.getParameters();
+        super.apply(objectManager, set, method, params);
+      }
     }
   }
 

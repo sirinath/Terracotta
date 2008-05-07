@@ -1,9 +1,10 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso.dialogs;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
@@ -30,16 +31,21 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.bundles.BundleSpec;
+import com.tc.bundles.OSGiToMaven;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 public class NewAddModuleDialog extends MessageDialog {
   private Modules                  fModules;
@@ -61,7 +67,7 @@ public class NewAddModuleDialog extends MessageDialog {
 
   public NewAddModuleDialog(Shell parentShell, String title, String message, Modules modules) {
     super(parentShell, "Select modules", null, "Select modules to add to your configuration", MessageDialog.NONE,
-        new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
+          new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
     setShellStyle(SWT.DIALOG_TRIM | getDefaultOrientation() | SWT.RESIZE);
     fModules = modules != null ? (Modules) modules.copy() : Modules.Factory.newInstance();
     fColumnSelectionListener = new ColumnSelectionListener();
@@ -94,7 +100,7 @@ public class NewAddModuleDialog extends MessageDialog {
     fGroupIdCombo.addFocusListener(new FocusAdapter() {
       public void focusLost(FocusEvent e) {
         Shell shell = getShell();
-        if(shell == null || shell.isDisposed()) return;
+        if (shell == null || shell.isDisposed()) return;
         String text = fGroupIdCombo.getText();
         if (fGroupIdCombo.indexOf(text) == -1) {
           fGroupIdCombo.add(text);
@@ -133,10 +139,10 @@ public class NewAddModuleDialog extends MessageDialog {
 
     populateTable();
     fTable.setFocus();
-    
+
     fTable.addMouseMoveListener(new MouseMoveListener() {
       public void mouseMove(MouseEvent e) {
-        String tip = null; 
+        String tip = null;
         TableItem item = fTable.getItem(new Point(e.x, e.y));
         if (item != null) {
           ItemData itemData = (ItemData) item.getData();
@@ -160,11 +166,8 @@ public class NewAddModuleDialog extends MessageDialog {
         String path = directoryDialog.open();
         if (path != null) {
           File dir = new File(path);
-          try {
-            fModules.addRepository(dir.toURL().toString());
-            populateTable();
-          } catch (MalformedURLException mure) {/**/
-          }
+          fModules.addRepository(dir.toString());
+          populateTable();
         }
       }
     });
@@ -179,19 +182,26 @@ public class NewAddModuleDialog extends MessageDialog {
     String[] repos = fModules.getRepositoryArray();
     if (repos != null) {
       for (String repo : repos) {
-        try {
-          File repoDir = new File(new URL(repo).getFile());
-          if (repoDir.exists() && repoDir.isDirectory()) {
-            populateTable(repoDir, null);
+        File repoDir = null;
+        if (repo.startsWith("file:")) {
+          try {
+            repoDir = new File(new URL(repo).getFile());
+          } catch (MalformedURLException e) {/**/
           }
-        } catch (MalformedURLException e) {/**/
+        } else {
+          repoDir = new File(repo);
+        }
+
+        if (repoDir != null && repoDir.exists() && repoDir.isDirectory()) {
+          populateTable(repoDir, null);
         }
       }
     }
   }
 
   private void populateTable(File repoDir, String nickname) {
-    File groupDir = new File(repoDir, fGroupIdCombo.getText().replace('.', File.separatorChar));
+    String targetGroupId = fGroupIdCombo.getText();
+    File groupDir = new File(repoDir, targetGroupId.replace('.', File.separatorChar));
     File[] names = groupDir.listFiles();
 
     if (names == null) return;
@@ -213,6 +223,55 @@ public class NewAddModuleDialog extends MessageDialog {
         File archiveFile = new File(versionFile, name + "-" + version + ".jar");
         item.setData(new ItemData(strings, repoDir, archiveFile));
       }
+    }
+
+    // Handle any modules located at the root of the repository
+
+    File[] jarFiles = repoDir.listFiles(new FilenameFilter() {
+      public boolean accept(File dir, String name) {
+        return name.endsWith(".jar");
+      }
+    });
+    for (File jarFile : jarFiles) {
+      Manifest manifest = getManifest(jarFile);
+      if (manifest != null) {
+        String version = BundleSpec.getVersion(manifest);
+        String symbolicName = BundleSpec.getSymbolicName(manifest);
+
+        if (symbolicName != null && version != null) {
+          String bundleGroupId = OSGiToMaven.groupIdFromSymbolicName(symbolicName);
+          if (!targetGroupId.equals(bundleGroupId)) {
+            if(fGroupIdCombo.indexOf(bundleGroupId) == -1) {
+              fGroupIdCombo.add(bundleGroupId);
+            }
+            return;
+          }
+
+          TableItem item = new TableItem(fTable, SWT.NONE);
+          String repo = nickname != null ? nickname : repoDir.getAbsolutePath();
+          String[] strings = new String[] { repo, OSGiToMaven.artifactIdFromSymbolicName(symbolicName),
+              OSGiToMaven.bundleVersionToProjectVersion(version) };
+          item.setText(strings);
+          item.setData(new ItemData(strings, repoDir, jarFile));
+        }
+      }
+    }
+  }
+
+  private static Manifest getManifest(final File file) {
+    try {
+      return getManifest(file.toURI().toURL());
+    } catch (MalformedURLException e) {
+      return null;
+    }
+  }
+
+  private static Manifest getManifest(final URL location) {
+    try {
+      final JarFile bundle = new JarFile(FileUtils.toFile(location));
+      return bundle.getManifest();
+    } catch (IOException e) {
+      return null;
     }
   }
 

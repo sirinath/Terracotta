@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
@@ -35,7 +35,13 @@ public class TestCommunicationsManager implements CommunicationsManager {
                                                   ConnectionAddressProvider addressProvider) {
     throw new ImplementMe();
   }
-  
+
+  public ClientMessageChannel createClientChannel(SessionProvider sessionProvider, int maxReconnectTries,
+                                                  String hostname, int port, int timeout,
+                                                  ConnectionAddressProvider addressProvider, int callbackPort) {
+    throw new ImplementMe();
+  }
+
   public ClientMessageChannel createClientChannel(SessionProvider sessionProvider, int maxReconnectTries,
                                                   String hostname, int port, int timeout,
                                                   ConnectionAddressProvider addressProvider,

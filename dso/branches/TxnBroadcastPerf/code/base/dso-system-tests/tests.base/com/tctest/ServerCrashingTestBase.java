@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -42,6 +42,10 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
     // for some test cases to enable l1reconnect
     if (enableL1Reconnect()) {
       setJvmArgsL1Reconnect((ArrayList)jvmArgs);
+    }
+    
+    if (enableL2Reconnect()) {
+      setJvmArgsL2Reconnect((ArrayList)jvmArgs);
     }
 
     // XXX: ERR! HACK! Will collide eventually

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin;
 
@@ -25,7 +25,7 @@ public class ClusterMemberTable extends XObjectTable {
       Exception               e     = scm.getConnectionException();
       
       if(e != null) {
-        tip = ServerNode.getConnectionExceptionString(e, scm);
+        tip = ClusterNode.getConnectionExceptionString(e, scm.getConnectionContext());
       }
     }
     

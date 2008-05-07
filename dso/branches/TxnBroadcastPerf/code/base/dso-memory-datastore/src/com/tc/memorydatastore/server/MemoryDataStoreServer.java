@@ -1,5 +1,7 @@
 package com.tc.memorydatastore.server;
 
+import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
+
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
@@ -25,6 +27,7 @@ import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.session.NullSessionManager;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.TCTimeoutException;
+import com.tc.util.concurrent.QueueFactory;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -61,7 +64,7 @@ public class MemoryDataStoreServer {
   private StageManager getStageManager() {
     ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(MemoryDataStoreServer.class));
     TCThreadGroup threadGroup = new TCThreadGroup(throwableHandler);
-    return new StageManagerImpl(threadGroup);
+    return new StageManagerImpl(threadGroup, new QueueFactory(BoundedLinkedQueue.class.getName()));
   }
 
   private void setupListener(int serverPort) {

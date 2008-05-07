@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.management;
@@ -10,6 +10,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
                                                                 .getLogger(TerracottaMBean.class));
 
   private static final boolean        ENABLED               = TCPropertiesImpl.getProperties().getBoolean(
-                                                                "tc.management.mbeans.enabled");
+                                                                TCPropertiesConsts.TC_MANAGEMENT_MBEANS_ENABLED);
 
   private final TCLogger              logger;
   private final ResourceBundle        beanBundle;
@@ -145,6 +146,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
   }
   
   protected synchronized void enabledStateChanged() {
+    //
   }
 
   public final synchronized boolean isEnabled() {

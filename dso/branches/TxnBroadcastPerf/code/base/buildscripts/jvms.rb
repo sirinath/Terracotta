@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -366,7 +366,8 @@ class JVMSet
       path = criteria[:path]
       version_like = criteria[:version_like]
 
-      @jvms.each do |key, jvm|
+      @jvms.keys.sort.each do |key|
+        jvm = @jvms[key]
         next unless jvm && jvm.valid?
 
         meets_criteria = false

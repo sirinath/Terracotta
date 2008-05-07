@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.config;
@@ -79,14 +79,14 @@ public interface TransparencyClassSpec {
    * @return this
    */
   public TransparencyClassSpec markForeign();
-  
+
   /**
-   * Check whether this class is not included in the bootjar 
+   * Check whether this class is not included in the bootjar
    * by default. When a class is declared in the <additional-boot-jar-classes/>
    * section of the tc-config, then it is marked as foreign.
    */
   public boolean isForeign();
-  
+
   /**
    * Get lock definitions for member
    * @param memberInfo Member
@@ -575,5 +575,11 @@ public interface TransparencyClassSpec {
    * @return Class spec for super class
    */
   public TransparencyClassSpec getClassSpec(String superName);
+
+
+  /**
+   * The supplied spec will be returned if there exists no specific code spec for particular methods
+   */
+  public void setDefaultCodeSpec(TransparencyCodeSpec codeSpec);
 
 }

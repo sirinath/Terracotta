@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package net.sf.ehcache.store;
@@ -11,6 +11,7 @@ import net.sf.ehcache.Element;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.tc.object.bytecode.ManagerUtil;
 import com.tcclient.ehcache.TimeExpiryMap;
 
 import java.util.Map;
@@ -27,7 +28,7 @@ public class TimeExpiryMemoryStore extends MemoryStore {
 
     try {
       map = loadMapInstance(cache.getName());
-      ((SpoolingTimeExpiryMap)map).initialize();
+      ((SpoolingTimeExpiryMap)map).initialize(ManagerUtil.getManager());
     } catch (CacheException e) {
       LOG.error(cache.getName() + "Cache: Cannot start TimeExpiryMemoryStore. Initial cause was " + e.getMessage(), e);
     }

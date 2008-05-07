@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.gtx;
@@ -77,6 +77,6 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
   }
 
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback) {
-    throw new ImplementMe();
+    return true;
   }
 }

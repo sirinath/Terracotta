@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.net;
@@ -104,13 +104,13 @@ public class DSOChannelManagerImpl implements DSOChannelManager, DSOChannelManag
     return activeChannels.keySet();
   }
 
-  public void makeChannelActive(ClientID clientID, long startIDs, long endIDs, boolean persistent) {
+  public void makeChannelActive(ClientID clientID, boolean persistent) {
     try {
       ClientHandshakeAckMessage ackMsg = newClientHandshakeAckMessage(clientID);
       MessageChannel channel = ackMsg.getChannel();
       synchronized (activeChannels) {
         activeChannels.put(clientID, channel);
-        ackMsg.initialize(startIDs, endIDs, persistent, getAllActiveClientIDsString(), clientID.toString(),
+        ackMsg.initialize(persistent, getAllActiveClientIDsString(), clientID.toString(),
                           serverVersion);
         ackMsg.send();
       }

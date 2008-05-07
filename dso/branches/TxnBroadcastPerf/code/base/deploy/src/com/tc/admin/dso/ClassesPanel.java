@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.admin.dso;
@@ -81,30 +81,45 @@ public class ClassesPanel extends XContainer {
     DSOClassInfo[] classInfo = ClassesHelper.getHelper().getClassInfo(cc);
     ArrayList<DSOClassInfo> list = new ArrayList<DSOClassInfo>();
 
-    for (DSOClassInfo info : classInfo) {
-      String className = info.getClassName();
-      if (className.startsWith("com.tcclient")) continue;
-      if (className.startsWith("[")) {
-        int i = 0;
-        while (className.charAt(i) == '[')
-          i++;
-        if(className.charAt(i) == 'L') {
-          className = className.substring(i + 1, className.length() - 1);
-        } else {
-          switch(className.charAt(i)) {
-            case 'Z': className = "boolean"; break;
-            case 'I': className = "int"; break;
-            case 'F': className = "float"; break;
-            case 'C': className = "char"; break;
-            case 'D': className = "double"; break;
+    if (classInfo != null) {
+      for (DSOClassInfo info : classInfo) {
+        String className = info.getClassName();
+        if (className.startsWith("com.tcclient")) continue;
+        if (className.startsWith("[")) {
+          int i = 0;
+          while (className.charAt(i) == '[')
+            i++;
+          if (className.charAt(i) == 'L') {
+            className = className.substring(i + 1, className.length() - 1);
+          } else {
+            switch (className.charAt(i)) {
+              case 'Z':
+                className = "boolean";
+                break;
+              case 'I':
+                className = "int";
+                break;
+              case 'F':
+                className = "float";
+                break;
+              case 'C':
+                className = "char";
+                break;
+              case 'D':
+                className = "double";
+                break;
+              case 'B':
+                className = "byte";
+                break;
+            }
           }
+          StringBuffer sb = new StringBuffer(className);
+          for (int j = 0; j < i; j++)
+            sb.append("[]");
+          className = sb.toString();
         }
-        StringBuffer sb = new StringBuffer(className);
-        for (int j = 0; j < i; j++)
-          sb.append("[]");
-        className = sb.toString();
+        list.add(new DSOClassInfo(className, info.getInstanceCount()));
       }
-      list.add(new DSOClassInfo(className, info.getInstanceCount()));
     }
 
     return list.toArray(new DSOClassInfo[0]);

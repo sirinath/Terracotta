@@ -37,7 +37,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
 
   public final static MBeanNotificationInfo[] NOTIFICATION_INFO;
 
-  private final static TCLogger logger = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
+  private final static TCLogger LOGGER = TCLogging.getLogger(StatisticsEmitterMBeanImpl.class);
 
   static {
     final String[] notifTypes = new String[] { STATISTICS_EMITTER_DATA_TYPE };
@@ -104,6 +104,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void reset() {
+    //
   }
 
   public void capturingStarted(final String sessionId) {
@@ -111,9 +112,11 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void capturingStopped(final String sessionId) {
+    //
   }
 
   public void opened() {
+    //
   }
 
   public void closing() {
@@ -121,19 +124,24 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
   }
 
   public void closed() {
+    //
   }
 
   private class SendStatsTask extends TimerTask {
-    private volatile boolean shutdown = false;
+    private boolean shutdown = false;
 
     public void shutdown() {
-      shutdown = true;
+      synchronized(StatisticsEmitterMBeanImpl.this) {
+        shutdown = true;
+      }
     }
 
     public void run() {
-      if (shutdown) {
-        cancel();
-        return;
+      synchronized(StatisticsEmitterMBeanImpl.this) {
+        if (shutdown) {
+          cancel();
+          return;
+        }
       }
 
       boolean has_listeners = hasListeners();
@@ -166,7 +174,7 @@ public class StatisticsEmitterMBeanImpl extends AbstractTerracottaMBean implemen
             notification.setUserData(notification_data);
             sendNotification(notification);
           } catch (StatisticsBufferException e) {
-            logger.error("Unexpected error while emitting buffered statistics.", e);
+            LOGGER.error("Unexpected error while emitting buffered statistics.", e);
           }
         }
       }

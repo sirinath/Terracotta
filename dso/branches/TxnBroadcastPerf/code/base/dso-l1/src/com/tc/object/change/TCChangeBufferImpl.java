@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.change;
@@ -69,6 +69,15 @@ public class TCChangeBufferImpl implements TCChangeBuffer {
       logicalEvents = null;
       arrayEvents = null;
     }
+  }
+
+  public boolean isEmpty() {
+    if ((physicalEvents != null) && (!physicalEvents.isEmpty())) { return false; }
+    if ((literalValueChangedEvents != null) && (!literalValueChangedEvents.isEmpty())) { return false; }
+    if ((logicalEvents != null) && (!logicalEvents.isEmpty())) { return false; }
+    if ((arrayEvents != null) && (!arrayEvents.isEmpty())) { return false; }
+
+    return true;
   }
 
   public void writeTo(DNAWriter writer) {

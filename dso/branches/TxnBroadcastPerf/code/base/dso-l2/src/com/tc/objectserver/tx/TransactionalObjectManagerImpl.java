@@ -1,12 +1,11 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.tx;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
-import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
@@ -20,6 +19,7 @@ import com.tc.objectserver.context.RecallObjectsContext;
 import com.tc.objectserver.context.TransactionLookupContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
@@ -50,7 +50,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   private static final int                     MAX_COMMIT_SIZE         = TCPropertiesImpl
                                                                            .getProperties()
                                                                            .getInt(
-                                                                                   "l2.objectmanager.maxObjectsToCommit");
+                                                                                   TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
   private final ObjectManager                  objectManager;
   private final ServerTransactionSequencer     sequencer;
   private final ServerGlobalTransactionManager gtxm;
@@ -91,7 +91,7 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
         ServerTransaction stx = (ServerTransaction) i.next();
         logger.error("Txn = " + stx);
       }
-      throw new TCRuntimeException(t);
+      throw new AssertionError(t);
     }
   }
 

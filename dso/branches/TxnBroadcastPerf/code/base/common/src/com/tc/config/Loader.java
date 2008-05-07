@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.config;
@@ -99,13 +99,17 @@ public final class Loader {
     return convert(url.openStream(), xmlOptions);
   }
 
-  public boolean testIsOld(File file) throws IOException, XmlException {
+  public boolean testIsOld(File file) {
     return !testIsCurrent(file);
   }
 
-  public boolean testIsCurrent(File file) throws IOException, XmlException {
-    com.terracottatech.config.TcConfigDocument.Factory.parse(new FileInputStream(file));
-    return true;
+  public boolean testIsCurrent(File file) {
+    try {
+      com.terracottatech.config.TcConfigDocument.Factory.parse(new FileInputStream(file));
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   public void updateToCurrent(File file) throws IOException, XmlException {

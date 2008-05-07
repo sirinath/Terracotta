@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso;
@@ -64,8 +64,8 @@ import com.terracottatech.config.TransientFields;
 import com.terracottatech.config.DistributedMethods.MethodExpression;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
+import java.io.File;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -3876,11 +3876,15 @@ public class ConfigurationHelper {
       ModulesConfiguration modulesConfig = m_plugin.getModulesConfiguration(m_project);
 
       for (String repo : modules.getRepositoryArray()) {
-        try {
-          URL url = new URL(repo);
-          url.openStream().close();
-        } catch (Exception e) {
-          reportConfigProblem(repo, e.getMessage(), MODULE_REPO_PROBLEM_MARKER);
+        if(repo.startsWith("file:")) {
+          reportConfigProblem(repo, "File URLs have been deprecated - use file path instead", MODULE_REPO_PROBLEM_MARKER);
+        } else {
+          File file = new File(repo);
+          if(! file.exists()) {
+            reportConfigProblem(repo, "Repository does not exist", MODULE_REPO_PROBLEM_MARKER);
+          } else if(! file.isDirectory()) {
+            reportConfigProblem(repo, "Repository is not a directory", MODULE_REPO_PROBLEM_MARKER);
+          } 
         }
       }
 

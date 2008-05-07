@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.test.server.appserver.glassfishv1;
@@ -11,8 +11,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.tc.lcp.CargoLinkedChildProcess;
+import com.tc.lcp.HeartBeatService;
 import com.tc.process.Exec;
-import com.tc.process.HeartBeatService;
 import com.tc.process.Exec.Result;
 import com.tc.test.TestConfigObject;
 import com.tc.test.server.ServerParameters;
@@ -20,7 +21,6 @@ import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AbstractAppServer;
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.AppServerResult;
-import com.tc.test.server.appserver.cargo.CargoLinkedChildProcess;
 import com.tc.test.server.util.AppServerUtil;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
@@ -259,7 +259,7 @@ public final class GlassfishV1AppServer extends AbstractAppServer {
       }
 
       if (s.startsWith("-Djava.class.path=")) {
-        cmd.set(i, s + File.pathSeparator + TestConfigObject.getInstance().linkedChildProcessClasspath());
+        cmd.set(i, s + File.pathSeparator + TestConfigObject.getInstance().extraClassPathForAppServer());
         break;
       }
     }

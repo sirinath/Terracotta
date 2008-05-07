@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.server;
@@ -43,7 +43,9 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.ConnectionPolicyImpl;
 import com.tc.objectserver.core.impl.ServerManagementContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.servlets.L1PropertiesFromL2Servlet;
 import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.impl.StatisticsLocalGathererMBeanImpl;
@@ -56,6 +58,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -64,35 +67,31 @@ import javax.management.NotCompliantMBeanException;
 
 public class TCServerImpl extends SEDA implements TCServer {
 
-  private static final String                  HTTP_DEFAULTSERVLET_ENABLED              = "http.defaultservlet.enabled";
-  private static final String                  HTTP_DEFAULTSERVLET_ATTRIBUTE_DIRALLOWED = "http.defaultservlet.attribute.dirallowed";
-  private static final String                  HTTP_DEFAULTSERVLET_ATTRIBUTE_ALIASES    = "http.defaultservlet.attribute.aliases";
+  private static final String                  VERSION_SERVLET_PATH                         = "/version";
+  private static final String                  CONFIG_SERVLET_PATH                          = "/config";
+  private static final String                  STATISTICS_GATHERER_SERVLET_PATH             = "/statistics-gatherer/*";
+  private static final String                  L1_RECONNECT_PROPERTIES_FROML2_SERVELET_PATH = "/l1reconnectproperties";
 
-  private static final String                  VERSION_SERVLET_PATH = "/version";
-  private static final String                  CONFIG_SERVLET_PATH = "/config";
-  private static final String                  STATISTICS_GATHERER_SERVLET_PATH = "/statistics-gatherer/*";
+  private static final String                  HTTP_AUTHENTICATION_ROLE_STATISTICS          = "statistics";
 
-  private static final String                  HTTP_AUTHENTICATION_ROLE_STATISTICS = "statistics";
+  private static final TCLogger                logger                                       = TCLogging
+                                                                                                .getLogger(TCServer.class);
+  private static final TCLogger                consoleLogger                                = CustomerLogging
+                                                                                                .getConsoleLogger();
 
-  private static final TCLogger                logger                                   = TCLogging
-                                                                                            .getLogger(TCServer.class);
-  private static final TCLogger                consoleLogger                            = CustomerLogging
-                                                                                            .getConsoleLogger();
-
-  private volatile long                        startTime                                = -1;
-  private volatile long                        activateTime                             = -1;
+  private volatile long                        startTime                                    = -1;
+  private volatile long                        activateTime                                 = -1;
 
   private DistributedObjectServer              dsoServer;
   private Server                               httpServer;
   private TerracottaConnector                  terracottaConnector;
+  private StatisticsGathererSubSystem    statisticsGathererSubSystem;
 
-  private final Object                         stateLock                                = new Object();
-  private final L2State                        state                                    = new L2State();
+  private final Object                         stateLock                                    = new Object();
+  private final L2State                        state                                        = new L2State();
 
   private final L2TVSConfigurationSetupManager configurationSetupManager;
   private final ConnectionPolicy               connectionPolicy;
-
-  private final StatisticsGathererSubSystem    statisticsGathererSubSystem;
 
   /**
    * This should only be used for tests.
@@ -106,7 +105,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   public TCServerImpl(L2TVSConfigurationSetupManager manager, TCThreadGroup group, ConnectionPolicy connectionPolicy) {
-    super(group);
+    super(group, LinkedBlockingQueue.class.getName());
     this.connectionPolicy = connectionPolicy;
     Assert.assertNotNull(manager);
     this.configurationSetupManager = manager;
@@ -253,6 +252,16 @@ public class TCServerImpl extends SEDA implements TCServer {
       consoleLogger.debug("Stopping TC server...");
     }
 
+    if (statisticsGathererSubSystem != null) {
+      try {
+        statisticsGathererSubSystem.cleanup();
+      } catch (Exception e) {
+        logger.error("Error shutting down statistics gatherer", e);
+      } finally {
+        statisticsGathererSubSystem = null;
+      }
+    }
+
     if (terracottaConnector != null) {
       try {
         terracottaConnector.shutdown();
@@ -315,10 +324,11 @@ public class TCServerImpl extends SEDA implements TCServer {
       // the following code starts the jmx server as well
       startDSOServer(stage.getSink());
 
-      updateActivateTime();
-
-      if (activationListener != null) {
-        activationListener.serverActivated();
+      if (isActive()) {
+        updateActivateTime();
+        if (activationListener != null) {
+          activationListener.serverActivated();
+        }
       }
 
       if (updateCheckEnabled()) {
@@ -353,7 +363,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     httpServer = new Server();
     httpServer.addConnector(tcConnector);
 
-    Context context = new Context(null, "/", Context.NO_SESSIONS|Context.SECURITY);
+    Context context = new Context(null, "/", Context.NO_SESSIONS | Context.SECURITY);
 
     if (commonL2Config.httpAuthentication()) {
       Constraint constraint = new Constraint();
@@ -366,11 +376,13 @@ public class TCServerImpl extends SEDA implements TCServer {
       cm.setPathSpec(STATISTICS_GATHERER_SERVLET_PATH);
 
       SecurityHandler sh = new SecurityHandler();
-      sh.setUserRealm(new HashUserRealm("Terracotta Statistics Gatherer", commonL2Config.httpAuthenticationUserRealmFile()));
-      sh.setConstraintMappings(new ConstraintMapping[]{cm});
+      sh.setUserRealm(new HashUserRealm("Terracotta Statistics Gatherer", commonL2Config
+          .httpAuthenticationUserRealmFile()));
+      sh.setConstraintMappings(new ConstraintMapping[] { cm });
 
       context.addHandler(sh);
-      logger.info("HTTP Authentication enabled for path '" + STATISTICS_GATHERER_SERVLET_PATH + "', using user realm file '" + commonL2Config.httpAuthenticationUserRealmFile() + "'");
+      logger.info("HTTP Authentication enabled for path '" + STATISTICS_GATHERER_SERVLET_PATH
+                  + "', using user realm file '" + commonL2Config.httpAuthenticationUserRealmFile() + "'");
     }
 
     context.setAttribute(ConfigServlet.CONFIG_ATTRIBUTE, this.configurationSetupManager);
@@ -392,10 +404,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     File userDir = new File(System.getProperty("user.dir"));
     boolean tcInstallDirValid = false;
     File resourceBaseDir = userDir;
-    if (tcInstallDir != null &&
-        tcInstallDir.exists() &&
-        tcInstallDir.isDirectory() &&
-        tcInstallDir.canRead()) {
+    if (tcInstallDir != null && tcInstallDir.exists() && tcInstallDir.isDirectory() && tcInstallDir.canRead()) {
       tcInstallDirValid = true;
       resourceBaseDir = tcInstallDir;
     }
@@ -404,16 +413,18 @@ public class TCServerImpl extends SEDA implements TCServer {
     createAndAddServlet(servletHandler, VersionServlet.class.getName(), VERSION_SERVLET_PATH);
     createAndAddServlet(servletHandler, ConfigServlet.class.getName(), CONFIG_SERVLET_PATH);
     createAndAddServlet(servletHandler, StatisticsGathererServlet.class.getName(), STATISTICS_GATHERER_SERVLET_PATH);
+    createAndAddServlet(servletHandler, L1PropertiesFromL2Servlet.class.getName(),
+                        L1_RECONNECT_PROPERTIES_FROML2_SERVELET_PATH);
 
-    if (TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ENABLED, false)) {
+    if (TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ENABLED, false)) {
       if (!tcInstallDirValid) {
         String msg = "Default HTTP servlet with file serving NOT enabled because the '"
                      + Directories.TC_INSTALL_ROOT_PROPERTY_NAME + "' system property is invalid.";
         consoleLogger.warn(msg);
         logger.warn(msg);
       } else {
-        boolean aliases = TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ATTRIBUTE_ALIASES, false);
-        boolean dirallowed = TCPropertiesImpl.getProperties().getBoolean(HTTP_DEFAULTSERVLET_ATTRIBUTE_DIRALLOWED,
+        boolean aliases = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_ALIASES, false);
+        boolean dirallowed = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_DIR_ALLOWED,
                                                                          false);
         context.setAttribute("aliases", aliases);
         context.setAttribute("dirAllowed", dirallowed);

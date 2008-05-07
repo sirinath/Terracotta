@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -21,7 +21,7 @@ public class DistributedMethodCallGCTest extends GCTestBase {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     super.doSetUp(t);
-    t.getTransparentAppConfig().setAttribute("gc-interval-ms", new Long(getGCIntervalInSeconds() * 1000));
+    t.getTransparentAppConfig().setAttribute("gc-interval-ms", new Long(getGarbageCollectionInterval() * 1000));
   }
 
   protected Class getApplicationClass() {

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.modules.cglib_2_1_3;
@@ -81,12 +81,12 @@ public class CGLibProxyEnhancerAdapter extends ClassAdapter implements ClassAdap
     }
   }
 
-  public byte[] getBytesForClass(final Bundle bundle, Class clazz) throws ClassNotFoundException {
+  public byte[] getBytesForClass(final Bundle bundleArg, Class clazz) throws ClassNotFoundException {
     String className = clazz.getName().replace('.', '/') + ".class";
     InputStream is = null;
     ByteArrayOutputStream baos = null;
     try {
-      is = JarResourceLoader.getJarResource(new URL(bundle.getLocation()), className);
+      is = JarResourceLoader.getJarResource(new URL(bundleArg.getLocation()), className);
       if (is == null) { throw new ClassNotFoundException("No resource found for class: " + className); }
       final int size = 4096;
       byte[] buffer = new byte[size];

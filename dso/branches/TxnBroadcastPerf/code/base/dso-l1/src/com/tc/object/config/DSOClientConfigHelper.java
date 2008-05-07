@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.config;
@@ -19,6 +19,7 @@ import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.properties.ReconnectConfig;
 import com.terracottatech.config.Modules;
 
 import java.io.File;
@@ -218,4 +219,6 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig {
   ClassAdapterFactory getCustomAdapter(ClassInfo classInfo);
 
   boolean reflectionEnabled();
+  
+  public ReconnectConfig getL1ReconnectProperties();
 }

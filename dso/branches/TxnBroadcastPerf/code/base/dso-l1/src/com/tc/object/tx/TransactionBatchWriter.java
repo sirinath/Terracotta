@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.tx;
@@ -27,6 +27,7 @@ import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 import com.tc.util.SequenceGenerator;
@@ -46,13 +47,8 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public class TransactionBatchWriter implements ClientTransactionBatch {
-  public static final String                    FOLDING_DEBUG_PROP        = "l1.transactionmanager.folding.debug";
-  public static final String                    FOLDING_ENABLED_PROP      = "l1.transactionmanager.folding.enabled";
-  public static final String                    FOLDING_OBJECT_LIMIT_PROP = "l1.transactionmanager.folding.object.limit";
-  public static final String                    FOLDING_LOCK_LIMIT_PROP   = "l1.transactionmanager.folding.lock.limit";
-
   private static final boolean                  DEBUG                     = TCPropertiesImpl.getProperties()
-                                                                              .getBoolean(FOLDING_DEBUG_PROP);
+                                                                              .getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_DEBUG);
 
   private static final TCLogger                 logger                    = TCLogging
                                                                               .getLogger(TransactionBatchWriter.class);
@@ -277,11 +273,23 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   public synchronized boolean addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator) {
     numTxns++;
 
+    removeEmptyDeltaDna(txn);
+
     TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator);
 
     bytesWritten += txnBuffer.write(txn);
 
     return txnBuffer.getTxnCount() > 1;
+  }
+
+  private void removeEmptyDeltaDna(ClientTransaction txn) {
+    for (Iterator i = txn.getChangeBuffers().entrySet().iterator(); i.hasNext();) {
+      Map.Entry entry = (Entry) i.next();
+      TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
+      if ((!buffer.getTCObject().isNew()) && buffer.isEmpty()) {
+        i.remove();
+      }
+    }
   }
 
   // Called from CommitTransactionMessageImpl
@@ -638,8 +646,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     public static FoldingConfig createFromProperties(TCProperties props) {
-      return new FoldingConfig(props.getBoolean(FOLDING_ENABLED_PROP), props.getInt(FOLDING_OBJECT_LIMIT_PROP), props
-          .getInt(FOLDING_LOCK_LIMIT_PROP));
+      return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED), props.getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT), props
+          .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
     }
   }
 

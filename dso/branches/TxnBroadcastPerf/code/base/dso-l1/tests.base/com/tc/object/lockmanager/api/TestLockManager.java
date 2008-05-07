@@ -1,15 +1,14 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.lockmanager.api;
 
 import com.tc.exception.ImplementMe;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.session.SessionID;
+import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TransactionID;
-import com.tc.object.tx.WaitInvocation;
 import com.tc.text.PrettyPrinter;
-
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class TestLockManager implements ClientLockManager {
     locks.add(new Object[] { id, threadID, new Integer(lockType) });
   }
 
-  public void wait(LockID lockID, ThreadID transactionID, WaitInvocation call, Object waitLock,
+  public void wait(LockID lockID, ThreadID transactionID, TimerSpec call, Object waitLock,
                    WaitListener listener) {
     waitCalls.add(new Object[] { lockID, transactionID, call, waitLock, listener });
   }
@@ -126,7 +125,7 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int lockType, String lockObjectType) {
+  public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     throw new ImplementMe();
   }
 

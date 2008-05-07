@@ -1,7 +1,9 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.async.impl;
+
+import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Stage;
@@ -9,6 +11,7 @@ import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
 import junit.framework.TestCase;
@@ -46,7 +49,7 @@ public class StageManagerImplTest extends TestCase {
     super.setUp();
     try {
     stageManager = new StageManagerImpl(new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(StageManagerImpl.class))));
+        .getLogger(StageManagerImpl.class))), new QueueFactory(BoundedLinkedQueue.class.getName()));
     testEventHandler = new TestEventHandler();
     } catch(Throwable t) {
       t.printStackTrace();
@@ -65,7 +68,6 @@ public class StageManagerImplTest extends TestCase {
     assertTrue(testEventHandler.getContexts().size() == 0);
     s.start(new ConfigurationContextImpl(null));
     ThreadUtil.reallySleep(1000);
-    System.out.println("size=" + s.getSink().size());
     assertTrue(s.getSink().size() == 0);
     assertTrue(testEventHandler.getContexts().size() == 2);
     stageManager.stopAll();

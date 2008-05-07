@@ -35,11 +35,12 @@ J2SE-1.5:
       - tests-1.5
       - "1.5"
 
-JAVASE-16:
+JavaSE-1.6:
     min_version: 1.6.0_0
     max_version: 1.6.999_999
     env:
       - JAVASE_16
+      - JAVASE_6
       - JAVA_HOME_16
     alias:
       - tests-1.6

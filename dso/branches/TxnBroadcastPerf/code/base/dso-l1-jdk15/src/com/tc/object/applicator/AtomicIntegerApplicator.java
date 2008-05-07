@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.applicator;
@@ -15,14 +15,20 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.tx.optimistic.OptimisticTransactionManager;
+import com.tc.util.Assert;
+import com.tc.util.runtime.Vm;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * NOTE: This applicator is only used for IBM JDK
+ */
 public class AtomicIntegerApplicator extends BaseApplicator {
   public AtomicIntegerApplicator(DNAEncoding encoding) {
     super(encoding);
+    Vm.assertIsIbm();
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
@@ -34,14 +40,13 @@ public class AtomicIntegerApplicator extends BaseApplicator {
       IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
-    if (po instanceof AtomicInteger) {
+    Assert.assertTrue(po.getClass().getName(), po instanceof AtomicInteger);
 
-      // You can get multiple actions for an AtomicInteger if txn get folded in the client
-      while (cursor.next(encoding)) {
-        PhysicalAction a = cursor.getPhysicalAction();
-        Integer value = (Integer) a.getObject();
-        ((AtomicInteger) po).set(value.intValue());
-      }
+    // You can get multiple actions for an AtomicInteger if txn get folded in the client
+    while (cursor.next(encoding)) {
+      PhysicalAction a = cursor.getPhysicalAction();
+      Integer value = (Integer) a.getObject();
+      ((AtomicInteger) po).set(value.intValue());
     }
   }
 
