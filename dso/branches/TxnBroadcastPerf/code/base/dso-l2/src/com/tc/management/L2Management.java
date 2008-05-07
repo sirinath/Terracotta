@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.management;
@@ -16,6 +16,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
@@ -223,7 +224,7 @@ public class L2Management extends TerracottaManagement {
     }
     mBeanServer.registerMBean(statisticsGateway, StatisticsMBeanNames.STATISTICS_GATEWAY);
 
-    if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
+    if (TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.TC_MANAGEMENT_TEST_MBEANS_ENABLED)) {
       mBeanServer.registerMBean(new L2Dumper(tcDumper), L2MBeanNames.DUMPER);
     }
   }
@@ -238,7 +239,7 @@ public class L2Management extends TerracottaManagement {
     }
     mBeanServer.unregisterMBean(StatisticsMBeanNames.STATISTICS_GATEWAY);
 
-    if (TCPropertiesImpl.getProperties().getBoolean("tc.management.test.mbeans.enabled")) {
+    if (TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.TC_MANAGEMENT_TEST_MBEANS_ENABLED)) {
       mBeanServer.unregisterMBean(L2MBeanNames.DUMPER);
     }
   }

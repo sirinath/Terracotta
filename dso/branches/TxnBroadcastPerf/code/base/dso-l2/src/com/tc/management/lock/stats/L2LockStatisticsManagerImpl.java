@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.management.lock.stats;
@@ -15,8 +15,8 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
-import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -51,20 +51,11 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   }
 
   public L2LockStatisticsManagerImpl() {
-    TCProperties tcProperties = TCPropertiesImpl.getProperties().getPropertiesFor("lock.statistics");
-    if (tcProperties == null) {
-      this.lockStatisticsEnabled = false;
-    } else {
-      if (tcProperties.getProperty("enabled") == null) {
-        this.lockStatisticsEnabled = false;
-      } else {
-        this.lockStatisticsEnabled = tcProperties.getBoolean("enabled");
-      }
-    }
+    this.lockStatisticsEnabled = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.LOCK_STATISTICS_ENABLED, false);
   }
 
-  public synchronized void start(DSOChannelManager channelManager) {
-    this.channelManager = channelManager;
+  public synchronized void start(DSOChannelManager dsoChannelManager) {
+    this.channelManager = dsoChannelManager;
   }
 
   /**
@@ -132,8 +123,8 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
                                              long awardedTimeInMillis) {
     if (!lockStatisticsEnabled) { return; }
 
-    int nestedDepth = super.incrementNestedDepth(new LockKey(nodeID, threadID));
-    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, nestedDepth);
+    int depth = super.incrementNestedDepth(new LockKey(nodeID, threadID));
+    super.recordLockAwarded(lockID, nodeID, threadID, isGreedy, awardedTimeInMillis, depth);
   }
 
   public synchronized void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID) {

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.common;
 
@@ -112,7 +112,7 @@ public class DemoChartFactory {
     ValueAxis axis = plot.getDomainAxis();
     axis.setFixedAutoRange(30000.0);
     if(axis instanceof DateAxis) {
-      ((DateAxis)axis).setDateFormatOverride(new SimpleDateFormat("kk:mm:ss"));
+      ((DateAxis)axis).setDateFormatOverride(new SimpleDateFormat("h:mm:ss"));
     }
 
     NumberAxis numberAxis = (NumberAxis)plot.getRangeAxis();
@@ -164,7 +164,7 @@ public class DemoChartFactory {
     ValueAxis axis = plot.getDomainAxis();
     axis.setFixedAutoRange(30000.0);
     if(axis instanceof DateAxis) {
-      ((DateAxis)axis).setDateFormatOverride(new SimpleDateFormat("kk:mm:ss"));
+      ((DateAxis)axis).setDateFormatOverride(new SimpleDateFormat("h:mm:ss"));
     }
 
     NumberAxis numberAxis = (NumberAxis)plot.getRangeAxis();

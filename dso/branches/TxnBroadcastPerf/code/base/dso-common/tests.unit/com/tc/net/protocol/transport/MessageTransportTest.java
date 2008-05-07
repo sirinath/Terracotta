@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
@@ -235,7 +235,7 @@ public class MessageTransportTest extends TCTestCase {
 
     this.clientTransport = new ClientMessageTransport(cce, createHandshakeErrorHandler(),
                                                       this.transportHandshakeMessageFactory,
-                                                      new WireProtocolAdaptorFactoryImpl());
+                                                      new WireProtocolAdaptorFactoryImpl(), TransportHandshakeMessage.NO_CALLBACK_PORT);
     this.clientResponder = new ClientHandshakeMessageResponder(this.clientResponderSentQueue,
                                                                this.clientResponderReceivedQueue,
                                                                this.transportHandshakeMessageFactory,

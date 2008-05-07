@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.bundles;
@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
  */
 public class MavenToOSGi implements IConstants {
   private MavenToOSGi() {
+    //
   }
 
   private static String replaceInvalidChars(String value) {

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package java.util.concurrent;
 
@@ -89,8 +89,8 @@ public class FutureTaskTC implements Future, Runnable {
       ran       = null;
     }
 
-    private boolean ranOrCancelled(int state) {
-      return (state & (RAN | CANCELLED)) != 0;
+    private boolean ranOrCancelled(int stateArg) {
+      return (stateArg & (RAN | CANCELLED)) != 0;
     }
 
     private int tryAcquireShared() {

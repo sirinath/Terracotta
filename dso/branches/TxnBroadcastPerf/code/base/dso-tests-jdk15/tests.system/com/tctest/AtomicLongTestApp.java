@@ -1,16 +1,19 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.object.bytecode.Manageable;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tc.util.runtime.Vm;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,6 +31,14 @@ public class AtomicLongTestApp extends AbstractTransparentApp {
 
   public void run() {
     try {
+      AtomicLong al = new AtomicLong();
+
+      if (Vm.isIBM()) {
+        Assert.assertFalse(al instanceof Manageable);
+      } else {
+        Assert.assertTrue(al instanceof Manageable);
+      }
+
       atomicIntegerTesting();
     } catch (Throwable t) {
       notifyError(t);
@@ -46,6 +57,28 @@ public class AtomicLongTestApp extends AbstractTransparentApp {
     getAndAddTesting();
     incrementAndGetTesting();
     decrementAndGetTesting();
+
+    loadTest();
+
+  }
+
+  /**
+   * This method was added to make it likely that some transactions on AtomicLong get folded (DEV-1439)
+   */
+  private void loadTest() throws Exception {
+    clear();
+    initialize();
+
+    int index = barrier.barrier();
+    if (index == 0) {
+      for (int i = 0; i < 5000; i++) {
+        root.getLongValue().incrementAndGet();
+      }
+    }
+
+    barrier.barrier();
+
+    Assert.assertEquals(5010, root.getLongValue().get());
   }
 
   private void clear() throws Exception {

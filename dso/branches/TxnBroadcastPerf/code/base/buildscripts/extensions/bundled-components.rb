@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -42,8 +42,9 @@ module BundledComponents
 
     jarfile = FilePath.new(destdir, "tc.jar")
     if File.exist?(libdir.to_s)
+      ant.chmod(:dir => libdir.to_s, :perm => "a+x", :includes => "**/*.dll")
       ant.jar(:destfile => jarfile.to_s, :basedir => runtime_classes_dir.to_s) do
-        classpath = 'svt.jar '
+        classpath = ''
         libfiles  = Dir.entries(libdir.to_s).delete_if { |item| /\.jar$/ !~ item }
         classpath << "#{libfiles.first} "
         libfiles[1..-2].each { |item| classpath << "#{item} " }

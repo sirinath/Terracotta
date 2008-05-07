@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.ha;
@@ -40,7 +40,6 @@ import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
 import com.tc.l2.state.StateManagerConfigImpl;
 import com.tc.l2.state.StateManagerImpl;
-import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.GroupEventsListener;
@@ -59,6 +58,7 @@ import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.sequence.SequenceGenerator;
 import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorException;
 import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorListener;
@@ -69,7 +69,6 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     SequenceGeneratorListener {
 
   private static final TCLogger                logger                  = TCLogging.getLogger(L2HACoordinator.class);
-  public static final String                   NHA_COMM_LAYER_PROPERTY = "l2.nha.groupcomm.type";
   public static final String                   TC_GROUP_COMM           = "tc-group-comm";
   public static final String                   TRIBES_COMM             = "tribes";
 
@@ -88,15 +87,13 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
 
   private NewHaConfig                          haConfig;
   private final L2TVSConfigurationSetupManager configSetupManager;
-  private final TCThreadGroup                  threadGroup;
 
-  public L2HACoordinator(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
-                         TCLogger consoleLogger, DistributedObjectServer server, StageManager stageManager,
+  public L2HACoordinator(L2TVSConfigurationSetupManager configSetupManager, TCLogger consoleLogger,
+                         DistributedObjectServer server, StageManager stageManager,
                          PersistentMapStore clusterStateStore, ObjectManager objectManager,
                          ServerTransactionManager transactionManager, ServerGlobalTransactionManager gtxm,
                          DSOChannelManager channelManager, NewHaConfig haConfig, MessageRecycler recycler) {
     this.configSetupManager = configSetupManager;
-    this.threadGroup = threadGroup;
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.haConfig = haConfig;
@@ -125,13 +122,13 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
     final Sink stateChangeSink = stageManager.createStage(ServerConfigurationContext.L2_STATE_CHANGE_STAGE,
                                                           new L2StateChangeHandler(), 1, Integer.MAX_VALUE).getSink();
     // choose a group comm layer
-    final String commLayer = TCPropertiesImpl.getProperties().getProperty(NHA_COMM_LAYER_PROPERTY);
+    final String commLayer = TCPropertiesImpl.getProperties().getProperty(TCPropertiesConsts.L2_NHA_GROUPCOMM_TYPE);
     if (commLayer.equals(TC_GROUP_COMM)) {
       this.groupManager = new TCGroupManagerImpl(configSetupManager, stageManager);
     } else if (commLayer.equals(TRIBES_COMM)) {
       this.groupManager = new TribesGroupManager();
     } else {
-      throw new GroupException("wrong property " + NHA_COMM_LAYER_PROPERTY + " can be " + TC_GROUP_COMM + " or "
+      throw new GroupException("wrong property " + TCPropertiesConsts.L2_NHA_GROUPCOMM_TYPE + " can be " + TC_GROUP_COMM + " or "
                                + TRIBES_COMM);
     }
 
@@ -266,9 +263,6 @@ public class L2HACoordinator implements L2Coordinator, StateChangeListener, Grou
       } catch (IOException e) {
         throw new AssertionError(e);
       }
-    } else {
-      // TODO:// handle
-      logger.info("Recd. " + sce + " ! Ignoring for now !!!!");
     }
   }
 

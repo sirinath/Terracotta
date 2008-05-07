@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.lockmanager.impl;
@@ -13,10 +13,11 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockRequest;
+import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.session.TestSessionManager;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
@@ -40,7 +41,8 @@ public class ClientServerLockManagerTest extends TestCase {
     super.setUp();
     sessionManager = new TestSessionManager();
     glue = new ClientServerLockManagerGlue(sessionManager);
-    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), glue, sessionManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
+    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), glue, sessionManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER, 
+                                                  new NullClientLockManagerConfig());
 
     serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
     serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
@@ -100,7 +102,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               try {
@@ -138,7 +140,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter
@@ -172,7 +174,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter
@@ -217,7 +219,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter
@@ -276,7 +278,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter
@@ -334,7 +336,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter
@@ -395,7 +397,7 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new WaitInvocation(), new Object(), new WaitListener() {
+          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
 
             public void handleWaitEvent() {
               // Formatter

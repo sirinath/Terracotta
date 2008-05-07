@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package net.sf.ehcache;
@@ -394,8 +394,8 @@ public class CacheTC implements Ehcache {
 
   }
 
-  private void changeStatus(Status status) {
-    this.status = status;
+  private void changeStatus(Status statusArg) {
+    this.status = statusArg;
   }
 
   /**

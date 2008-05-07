@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
@@ -27,7 +27,7 @@ public interface CommunicationsManager {
 
   /**
    * Creates a client message channel to the given host/port.
-   * 
+   *
    * @param maxReconnectTries The number of times the channel will attempt to reestablish communications with the server
    *        if the connection is lost. If n==0, the channel will not attempt to reestablish communications. If n>0, the
    *        channel will attempt to reestablish communications n times. If n<0 the channel will always try to
@@ -39,8 +39,12 @@ public interface CommunicationsManager {
    */
   public ClientMessageChannel createClientChannel(SessionProvider sessionProvider, final int maxReconnectTries,
                                                   String hostname, int port, final int timeout,
+                                                  ConnectionAddressProvider addressProvider, int callbackPort);
+
+  public ClientMessageChannel createClientChannel(SessionProvider sessionProvider, final int maxReconnectTries,
+                                                  String hostname, int port, final int timeout,
                                                   ConnectionAddressProvider addressProvider);
-  
+
   public ClientMessageChannel createClientChannel(SessionProvider sessionProvider, final int maxReconnectTries,
                                                   String hostname, int port, final int timeout,
                                                   ConnectionAddressProvider addressProvider,

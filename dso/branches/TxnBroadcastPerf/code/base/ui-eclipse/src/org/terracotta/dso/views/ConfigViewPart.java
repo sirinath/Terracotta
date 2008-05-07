@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso.views;
@@ -94,7 +94,6 @@ public class ConfigViewPart extends ViewPart
   
   public ConfigViewPart() {
     super();
-    fPlugin.addConfigurationListener(m_configAdapter = new ConfigAdapter());
   }
 
   public void createPartControl(Composite parent) {
@@ -113,6 +112,7 @@ public class ConfigViewPart extends ViewPart
     fillViewMenu();
     getSite().getPage().addPartListener(this);
     ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
+    fPlugin.addConfigurationListener(m_configAdapter = new ConfigAdapter());
   }
 
   public void menuAboutToShow(IMenuManager menu) {

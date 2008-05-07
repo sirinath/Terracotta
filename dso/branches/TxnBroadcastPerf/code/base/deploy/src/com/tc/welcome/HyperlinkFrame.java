@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.welcome;
 
@@ -60,7 +60,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
     menu.add(new AboutAction());
     
     URL    url;
-    String iconPath = "/com/tc/admin/icons/logo_small.gif";
+    String iconPath = "/com/tc/admin/icons/logo_small.png";
     
     if((url = getClass().getResource(iconPath)) != null) {
       setIconImage(new Image(url));

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso;
@@ -22,7 +22,7 @@ public class MultiChangeSignaller {
     if (rootsChanged) plugin.fireRootsChanged(project);
     if (namedLocksChanged) plugin.fireNamedLocksChanged(project);
     if (autolocksChanged) plugin.fireAutolocksChanged(project);
-    if (bootClassesChanged) plugin.fireAutolocksChanged(project);
+    if (bootClassesChanged) plugin.fireBootClassesChanged(project);
     if (transientFieldsChanged) plugin.fireTransientFieldsChanged(project);
     if (distributedMethodsChanged) plugin.fireDistributedMethodsChanged(project);
     if (includeRulesChanged) plugin.fireIncludeRulesChanged(project);

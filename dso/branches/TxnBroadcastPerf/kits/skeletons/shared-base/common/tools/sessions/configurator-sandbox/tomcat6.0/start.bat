@@ -23,13 +23,12 @@ set JAVA_HOME="%JAVA_HOME:"=%"
 if not defined CATALINA_HOME (
   echo CATALINA_HOME must be set to a Tomcat6.0 installation.
   exit 1
-) else (
-  set CATALINA_HOME="%CATALINA_HOME:"=%"
-  
-  if not exist %CATALINA_HOME% (
-    echo CATALINA_HOME %CATALINA_HOME% does not exist.
-    exit 1
-  )
+)
+set CATALINA_HOME="%CATALINA_HOME:"=%"
+
+if not exist %CATALINA_HOME% (
+  echo CATALINA_HOME %CATALINA_HOME% does not exist.
+  exit 1
 )
 set CATALINA_BASE=%SANDBOX%\tomcat6.0\%1
 
@@ -45,15 +44,15 @@ call %TC_INSTALL_DIR%\bin\dso-env.bat -q "%TC_CONFIG%"
 
 if "%EXITFLAG%"=="TRUE" goto end
 
-set JAVA_OPTS=%JAVA_OPTS% %TC_JAVA_OPTS%
-set JAVA_OPTS=%JAVA_OPTS% -Dwebserver.log.name=%1
-set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote
+set OPTS=%TC_JAVA_OPTS% -Dwebserver.log.name=tomcat-%1
+set OPTS=%OPTS% -Dcom.sun.management.jmxremote
 set OPTS=%OPTS% -Dproject.name=Configurator
-set JAVA_OPTS=%JAVA_OPTS% -Dtc.node-name=tomcat-%1
+set JAVA_OPTS=%OPTS% %JAVA_OPTS%
 
 :runCatalina
 
 cd %SANDBOX%
+set CLASSPATH=%CLASSPATH:"=%
 set CATALINA_HOME=%CATALINA_HOME:"=%
 set CATALINA_BASE=%CATALINA_BASE:"=%
 set JAVA_HOME=%JAVA_HOME:"=%

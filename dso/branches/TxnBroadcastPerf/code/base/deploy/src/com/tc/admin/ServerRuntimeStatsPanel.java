@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
@@ -12,8 +13,8 @@ import org.jfree.data.time.Second;
 import org.jfree.data.time.TimeSeries;
 
 import com.tc.admin.common.BasicWorker;
+import com.tc.admin.common.ExceptionHelper;
 import com.tc.admin.dso.RuntimeStatsPanel;
-import com.tc.management.RuntimeStatisticConstants;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.stats.DSOMBean;
@@ -21,14 +22,17 @@ import com.tc.stats.statistics.CountStatistic;
 import com.tc.stats.statistics.Statistic;
 
 import java.awt.GridLayout;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.swing.border.TitledBorder;
 
@@ -82,7 +86,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
   private void setupFlushRatePanel(Container parent) {
     m_flushRateSeries = createTimeSeries("");
     m_flushRateChart = createChart(m_flushRateSeries);
-    m_flushRatePanel = new ChartPanel(m_flushRateChart, false);
+    m_flushRatePanel = createChartPanel(m_flushRateChart);
     parent.add(m_flushRatePanel);
     m_flushRatePanel.setPreferredSize(fDefaultGraphSize);
     m_flushRatePanel.setBorder(new TitledBorder("Object Flush Rate"));
@@ -91,7 +95,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
   private void setupFaultRatePanel(Container parent) {
     m_faultRateSeries = createTimeSeries("");
     m_faultRateChart = createChart(m_faultRateSeries);
-    m_faultRatePanel = new ChartPanel(m_faultRateChart, false);
+    m_faultRatePanel = createChartPanel(m_faultRateChart);
     parent.add(m_faultRatePanel);
     m_faultRatePanel.setPreferredSize(fDefaultGraphSize);
     m_faultRatePanel.setBorder(new TitledBorder("Object Fault Rate"));
@@ -100,7 +104,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
   private void setupTxnRatePanel(Container parent) {
     m_txnRateSeries = createTimeSeries("");
     m_txnRateChart = createChart(m_txnRateSeries);
-    m_txnRatePanel = new ChartPanel(m_txnRateChart, false);
+    m_txnRatePanel = createChartPanel(m_txnRateChart);
     parent.add(m_txnRatePanel);
     m_txnRatePanel.setPreferredSize(fDefaultGraphSize);
     m_txnRatePanel.setBorder(new TitledBorder("Transaction Rate"));
@@ -109,7 +113,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
   private void setupCacheMissRatePanel(Container parent) {
     m_cacheMissRateSeries = createTimeSeries("");
     m_cacheMissRateChart = createChart(m_cacheMissRateSeries);
-    m_cacheMissRatePanel = new ChartPanel(m_cacheMissRateChart, false);
+    m_cacheMissRatePanel = createChartPanel(m_cacheMissRateChart);
     parent.add(m_cacheMissRatePanel);
     m_cacheMissRatePanel.setPreferredSize(fDefaultGraphSize);
     m_cacheMissRatePanel.setBorder(new TitledBorder("Cache Miss Rate"));
@@ -124,7 +128,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     numberAxis.setAutoRangeIncludesZero(true);
     DecimalFormat formatter = new DecimalFormat("0M");
     numberAxis.setNumberFormatOverride(formatter);
-    m_memoryPanel = new ChartPanel(m_memoryChart, false);
+    m_memoryPanel = createChartPanel(m_memoryChart);
     parent.add(m_memoryPanel);
     m_memoryPanel.setPreferredSize(fDefaultGraphSize);
     m_memoryPanel.setBorder(new TitledBorder("Heap Usage"));
@@ -141,7 +145,12 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     XYPlot plot = (XYPlot) m_cpuChart.getPlot();
     NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
     numberAxis.setRange(0.0, 1.0);
+    if(m_rangeAxisSpace != null) {
+      plot.setFixedRangeAxisSpace(m_rangeAxisSpace);
+    }
     m_cpuPanel.setChart(m_cpuChart);
+    m_cpuPanel.setDomainZoomable(false);
+    m_cpuPanel.setRangeZoomable(false);
   }
 
   private class CpuPanelWorker extends BasicWorker<String[]> {
@@ -158,7 +167,6 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     protected void finished() {
       Exception e = getException();
       if (e != null) {
-        AdminClient.getContext().log(e);
         setupInstructions();
       } else {
         String[] cpuNames = getResult();
@@ -177,7 +185,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
   }
 
   private void setupCpuPanel(Container parent) {
-    m_cpuPanel = new ChartPanel(null, false);
+    m_cpuPanel = createChartPanel(null);
     parent.add(m_cpuPanel);
     m_cpuPanel.setPreferredSize(fDefaultGraphSize);
     m_cpuPanel.setBorder(new TitledBorder("CPU Usage"));
@@ -195,16 +203,27 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     }
 
     protected void finished() {
-      Exception e = getException();
-      if (e == null) {
-        Map statMap = getResult();
-        if (statMap != null) {
-          handleTCInfoStats(statMap);
+      try {
+        Exception e = getException();
+        if (e == null) {
+          Map statMap = getResult();
+          if (statMap != null) {
+            handleTCInfoStats(statMap);
+          }
+        } else {
+          if (m_acc != null) {
+            Throwable rootCause = ExceptionHelper.getRootCause(e);
+            if (rootCause instanceof IOException) {
+              return;
+            } else if (!(rootCause instanceof TimeoutException)) {
+              m_acc.log(new Date() + ": Unable to retrieve server system stats: " + rootCause.getMessage());
+            }
+          }
         }
-      }
-
-      if (m_acc != null) {
-        m_acc.executorService.submit(new DSOServerStatGetter());
+      } finally {
+        if (m_acc != null) {
+          m_acc.executorService.submit(new DSOServerStatGetter());
+        }
       }
     }
   }
@@ -214,13 +233,11 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
 
     Second now = new Second();
 
-    m_memoryMaxTimeSeries
-        .addOrUpdate(now, ((Number) statMap.get(RuntimeStatisticConstants.MEMORY_MAX)).longValue() / 1024000d);
-    m_memoryUsedTimeSeries
-        .addOrUpdate(now, ((Number) statMap.get(RuntimeStatisticConstants.MEMORY_USED)).longValue() / 1024000d);
+    m_memoryMaxTimeSeries.addOrUpdate(now, ((Number) statMap.get(MEMORY_MAX)).longValue() / 1024000d);
+    m_memoryUsedTimeSeries.addOrUpdate(now, ((Number) statMap.get(MEMORY_USED)).longValue() / 1024000d);
 
     if (m_cpuTimeSeries != null) {
-      StatisticData[] cpuUsageData = (StatisticData[]) statMap.get(RuntimeStatisticConstants.CPU_USAGE);
+      StatisticData[] cpuUsageData = (StatisticData[]) statMap.get(CPU_USAGE);
       if (cpuUsageData != null) {
         for (int i = 0; i < cpuUsageData.length; i++) {
           StatisticData cpuData = cpuUsageData[i];
@@ -248,15 +265,27 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     }
 
     protected void finished() {
-      Exception e = getException();
-      if (e == null) {
-        Statistic[] stats = getResult();
-        if (stats != null) {
-          handleDSOServerStats(stats);
+      try {
+        Exception e = getException();
+        if (e == null) {
+          Statistic[] stats = getResult();
+          if (stats != null) {
+            handleDSOServerStats(stats);
+          }
+        } else {
+          if (m_acc != null) {
+            Throwable rootCause = ExceptionHelper.getRootCause(e);
+            if (rootCause instanceof IOException) {
+              return;
+            } else if (!(rootCause instanceof TimeoutException)) {
+              m_acc.log(new Date() + ": Unable to retrieve server DSO stats: " + rootCause.getMessage());
+            }
+          }
         }
-      }
-      if (m_statsGathererTimer != null) {
-        m_statsGathererTimer.start();
+      } finally {
+        if (m_statsGathererTimer != null) {
+          m_statsGathererTimer.start();
+        }
       }
     }
   }

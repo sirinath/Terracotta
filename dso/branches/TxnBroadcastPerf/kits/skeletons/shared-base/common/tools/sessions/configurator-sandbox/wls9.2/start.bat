@@ -17,20 +17,19 @@ set SANDBOX="%SANDBOX:"=%"
 set TC_INSTALL_DIR=%SANDBOX%\..\..\..
 
 if not defined BEA_HOME (
-	echo BEA_HOME must be set to a Weblogic Server 9.2 installation.
-	exit 1
-	endlocal  
+  echo BEA_HOME must be set to a Weblogic Server 9.2 installation.
+  endlocal
+  exit 1
 )
 set BEA_HOME="%BEA_HOME:"=%"
-
 
 if not defined JAVA_HOME set JAVA_HOME=%BEA_HOME%\jdk150_10
 set JAVA_HOME="%JAVA_HOME:"=%"
 
 if not exist %JAVA_HOME% (
   echo JAVA_HOME %JAVA_HOME% does not exist.
+  endlocal
   exit 1
-  endlocal  
 )
 
 %JAVA_HOME%\bin\java -classpath %TC_INSTALL_DIR%\lib\tc.jar com.tc.CheckJavaVersion "1.5"
@@ -46,9 +45,8 @@ call %TC_INSTALL_DIR%\bin\dso-env.bat -q "%TC_CONFIG%"
 
 if %ERRORLEVEL% neq 0 goto end
 
-set OPTS=%TC_JAVA_OPTS% -Dwebserver.log.name=%1
+set OPTS=%TC_JAVA_OPTS% -Dwebserver.log.name=weblogic-%1
 set OPTS=%OPTS% -Dcom.sun.management.jmxremote
-set OPTS=%OPTS% -Dtc.node-name=weblogic-%1
 set OPTS=%OPTS% -Dproject.name=Configurator
 set JAVA_OPTIONS=%OPTS% %JAVA_OPTS%
 

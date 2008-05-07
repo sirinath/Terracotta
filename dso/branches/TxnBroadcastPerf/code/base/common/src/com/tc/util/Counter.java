@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2006 Terracotta, Inc. All rights reserved.
+ * Copyright (c) 2003-2008 Terracotta, Inc. All rights reserved.
  */
 package com.tc.util;
 
@@ -38,6 +38,15 @@ public class Counter {
 
   public synchronized int get() {
     return count;
+  }
+  
+  public synchronized void reset() {
+    reset(0);
+  }
+  
+  public synchronized void reset(int initialValue) {
+    this.count = initialValue;
+    notifyAll();
   }
 
   public synchronized void waitUntil(int value) {

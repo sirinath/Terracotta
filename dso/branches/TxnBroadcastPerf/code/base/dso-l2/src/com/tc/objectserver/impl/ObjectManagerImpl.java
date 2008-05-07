@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
@@ -40,6 +40,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.tx.NullTransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -71,7 +72,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private static final int                     MAX_COMMIT_SIZE          = TCPropertiesImpl
                                                                             .getProperties()
                                                                             .getInt(
-                                                                                    "l2.objectmanager.maxObjectsToCommit");
+                                                                                    TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
   // XXX:: Should go to property file
   private static final int                     INITIAL_SET_SIZE         = 16;
   private static final float                   LOAD_FACTOR              = 0.75f;
@@ -143,7 +144,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.println(getClass().getName());
-    out.indent().print("roots: ").println(getRoots());
     out.indent().print("collector: ").visit(collector).println();
     out.indent().print("references: ").visit(references).println();
 
@@ -152,6 +152,19 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
     out.indent().print("objectStore: ").duplicateAndIndent().visit(objectStore).println();
     out.indent().print("stateManager: ").duplicateAndIndent().visit(stateManager).println();
+    try {
+
+      StringBuffer rootBuff = new StringBuffer();
+      for (Iterator rootIter = getRootNames(); rootIter.hasNext();) {
+        rootBuff.append(rootIter.next());
+        if(rootIter.hasNext()) {
+          rootBuff.append(",");
+        }
+      }
+      out.indent().print("roots: " + rootBuff.toString()).println();
+    } catch (Throwable t) {
+      logger.error("exception printing roots in ObjectManagerImpl", t);
+    }
     return out;
   }
 
@@ -281,7 +294,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       FaultingManagedObjectReference fmr = (FaultingManagedObjectReference) rv;
       if (!fmr.isFaultingInProgress()) {
         references.remove(id);
-        logger.warn("Request for non-exisitent object : " + id + " context = " + context);
+        logger.warn("Request for non-existent object : " + id + " context = " + context);
         context.missingObject(id);
         return null;
       }
@@ -1063,8 +1076,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private static class PendingList {
-    List pending = new ArrayList();
-    Map  blocked = new HashMap();
+    List pending      = new ArrayList();
+    Map  blocked      = new HashMap();
+    int  blockedCount = 0;
 
     public void makeBlocked(ObjectID blockedOid, Pending pd) {
       ArrayList blockedRequests = (ArrayList) blocked.get(blockedOid);
@@ -1073,6 +1087,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         blocked.put(blockedOid, blockedRequests);
       }
       blockedRequests.add(pd);
+      blockedCount++;
     }
 
     public boolean isBlocked(ObjectID id) {
@@ -1083,6 +1098,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       ArrayList blockedRequests = (ArrayList) blocked.remove(id);
       if (blockedRequests != null) {
         pending.addAll(blockedRequests);
+        blockedCount -= blockedRequests.size();
       }
     }
 
@@ -1101,7 +1117,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
 
     public String toString() {
-      return "PendingList { pending lookups = " + pending.size() + ", blocked oids = " + blocked.keySet() + " } ";
+      return "PendingList { pending lookups = " + pending.size() + ", blocked count = " + blockedCount
+             + ", blocked oids = " + blocked.keySet() + " } ";
     }
   }
 

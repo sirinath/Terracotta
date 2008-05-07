@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.admin.dso.locks;
@@ -16,7 +16,7 @@ public abstract class BasicLockNode implements LockNode {
       case 3:
         return Long.valueOf(getStats().getAvgNumberOfPendingRequests());
       case 4:
-        return Long.valueOf(getStats().getTotalWaitTimeToAwardedInMillis());
+        return Long.valueOf(getStats().getAvgWaitTimeToAwardInMillis());
       case 5:
         return Long.valueOf(getStats().getAvgHeldTimeInMillis());
       case 6:

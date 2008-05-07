@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package eclipsegen;
@@ -12,7 +12,7 @@ public class Jdk {
 
   public static final Jdk               JDK_14      = new Jdk("1.4", "J2SE-1.4", "J2SE-1.4");
   public static final Jdk               JDK_15      = new Jdk("1.5", "J2SE-1.5", "J2SE-1.5");
-  public static final Jdk               JDK_16      = new Jdk("1.6", "JavaSE-1.6", "J2SE-1.6");
+  public static final Jdk               JDK_16      = new Jdk("1.6", "JavaSE-1.6", "JavaSE-1.6");
 
   private final String                  raw;
   private final String                  eclipse;

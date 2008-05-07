@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.change;
@@ -17,6 +17,8 @@ public interface TCChangeBuffer {
   public final static int PHYSICAL = 1;
   public final static int LOGICAL  = 3;
   public final static int ARRAY    = 7;
+
+  public boolean isEmpty();
 
   public void literalValueChanged(Object newValue);
 

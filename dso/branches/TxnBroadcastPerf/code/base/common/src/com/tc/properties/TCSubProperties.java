@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.properties;
@@ -50,6 +50,10 @@ class TCSubProperties implements TCProperties {
 
   public long getLong(String key) {
     return properties.getLong(getActualKey(key));
+  }
+  
+  public long getLong(String key, long defaultValue) {
+    return properties.getLong(getActualKey(key), defaultValue);
   }
 
   public String getProperty(String key, boolean missingOkay) {

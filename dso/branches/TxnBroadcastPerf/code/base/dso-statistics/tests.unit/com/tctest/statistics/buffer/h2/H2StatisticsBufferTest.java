@@ -7,7 +7,6 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.buffer.StatisticsBuffer;
 import com.tc.statistics.buffer.StatisticsBufferListener;
 import com.tc.statistics.buffer.StatisticsConsumer;
-import com.tc.statistics.buffer.exceptions.StatisticsBufferCaptureSessionCreationErrorException;
 import com.tc.statistics.buffer.exceptions.StatisticsBufferException;
 import com.tc.statistics.buffer.h2.H2StatisticsBufferImpl;
 import com.tc.statistics.config.impl.StatisticsConfigImpl;
@@ -181,12 +180,7 @@ public class H2StatisticsBufferTest extends TestCase {
 
   public void testCreateCaptureSessionNotUnique() throws Exception {
     buffer.createCaptureSession("theid1");
-    try {
-      buffer.createCaptureSession("theid1");
-      fail("expected exception");
-    } catch (StatisticsBufferCaptureSessionCreationErrorException e) {
-      // sessionId can't be null
-    }
+    buffer.createCaptureSession("theid1");
   }
 
   public void testStoreStatisticsDataNullSessionId() throws Exception {
@@ -657,6 +651,8 @@ public class H2StatisticsBufferTest extends TestCase {
   public void testStartCapturingException() throws Exception {
     buffer.createCaptureSession("sessionid");
     buffer.startCapturing("sessionid");
+    buffer.startCapturing("sessionid");
+    buffer.stopCapturing("sessionid");
     try {
       buffer.startCapturing("sessionid");
       fail();
@@ -727,28 +723,28 @@ public class H2StatisticsBufferTest extends TestCase {
 
     private boolean limitWithExceptions = false;
 
-    public TestStaticticConsumer countOffset1(int countOffset1) {
-      this.countOffset1 = countOffset1;
+    public TestStaticticConsumer countOffset1(int countOffset) {
+      this.countOffset1 = countOffset;
       return this;
     }
 
-    public TestStaticticConsumer countOffset2(int countOffset2) {
-      this.countOffset2 = countOffset2;
+    public TestStaticticConsumer countOffset2(int countOffset) {
+      this.countOffset2 = countOffset;
       return this;
     }
 
-    public TestStaticticConsumer countLimit1(int countLimit1) {
-      this.countLimit1 = countLimit1;
+    public TestStaticticConsumer countLimit1(int countLimit) {
+      this.countLimit1 = countLimit;
       return this;
     }
 
-    public TestStaticticConsumer countLimit2(int countLimit2) {
-      this.countLimit2 = countLimit2;
+    public TestStaticticConsumer countLimit2(int countLimit) {
+      this.countLimit2 = countLimit;
       return this;
     }
 
-    public TestStaticticConsumer limitWithExceptions(boolean limitWithExceptions) {
-      this.limitWithExceptions = limitWithExceptions;
+    public TestStaticticConsumer limitWithExceptions(boolean limitWithExceptionsArg) {
+      this.limitWithExceptions = limitWithExceptionsArg;
       return this;
     }
 
@@ -825,17 +821,17 @@ public class H2StatisticsBufferTest extends TestCase {
       return closed;
     }
 
-    public void capturingStarted(String sessionId) {
+    public void capturingStarted(String sessionID) {
       assertEquals(false, started);
       assertEquals(false, stopped);
-      assertEquals(this.sessionId, sessionId);
+      assertEquals(this.sessionId, sessionID);
       started = true;
     }
 
-    public void capturingStopped(String sessionId) {
+    public void capturingStopped(String sessionID) {
       assertEquals(true, started);
       assertEquals(false, stopped);
-      assertEquals(this.sessionId, sessionId);
+      assertEquals(this.sessionId, sessionID);
       stopped = true;
     }
 

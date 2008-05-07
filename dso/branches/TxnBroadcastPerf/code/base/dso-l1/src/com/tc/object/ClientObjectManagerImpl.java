@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object;
@@ -120,7 +120,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
   private final TCLogger                       logger;
   private final RuntimeLogger                  runtimeLogger;
   private final NonPortableEventContextFactory appEventContextFactory;
-  private final Set                            pendingCreateTCObjects = new HashSet();
+
+  private final Collection                     pendingCreateTCObjects = new ArrayList();
+  private final Collection                     pendingCreatePojos     = new ArrayList();
+
   private final Portability                    portability;
   private final DSOClientMessageChannel        channel;
   private final ToggleableReferenceManager     referenceManager;
@@ -564,6 +567,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       // retrieving object required, first looking up the DNA from the remote server, and creating
       // a pre-init TCObject, then hydrating the object
       if (retrieveNeeded) {
+        boolean createInProgressSet = false;
         try {
           DNA dna = noDepth ? remoteObjectManager.retrieve(id, NO_DEPTH) : (parentContext == null ? remoteObjectManager
               .retrieve(id) : remoteObjectManager.retrieveWithParentContext(id, parentContext));
@@ -572,15 +576,17 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
           // object is retrieved, now you want to make this as Creation in progress
           markCreateInProgress(ols, obj, lookupContext);
+          createInProgressSet = true;
 
           Assert.assertFalse(dna.isDelta());
           // now hydrate the object, this could call resolveReferences which would call this method recursively
           obj.hydrate(dna, false);
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
           // remove the object creating in progress from the list.
-          removeCreateInProgress(id);
+          if (createInProgressSet) removeCreateInProgress(id);
           logger.warn("Exception: ", e);
-          throw e;
+          if (e instanceof ClassNotFoundException) { throw (ClassNotFoundException) e; }
+          throw new RuntimeException(e);
         }
         basicAddLocal(obj, true);
       }
@@ -1004,8 +1010,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
   public void storeObjectHierarchy(Object root, ApplicationEventContext context) {
     try {
-      WalkVisitor wv = new WalkVisitor(this, this.clientConfiguration, root, context);
-      ObjectGraphWalker walker = new ObjectGraphWalker(context.getPojo(), wv, wv);
+      WalkVisitor wv = new WalkVisitor(this, this.clientConfiguration, context);
+      ObjectGraphWalker walker = new ObjectGraphWalker(root, wv, wv);
       walker.walk();
       context.setTreeModel(wv.getTreeModel());
     } catch (Throwable t) {
@@ -1084,6 +1090,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     if ((obj = basicLookup(pojo)) == null) {
       obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
       pendingCreateTCObjects.add(obj);
+      pendingCreatePojos.add(pojo);
       basicAddLocal(obj, false);
     }
     return obj;
@@ -1104,6 +1111,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       txManager.createObject(tcObject);
     }
     pendingCreateTCObjects.clear();
+    pendingCreatePojos.clear();
   }
 
   public synchronized boolean hasPendingCreateObjects() {

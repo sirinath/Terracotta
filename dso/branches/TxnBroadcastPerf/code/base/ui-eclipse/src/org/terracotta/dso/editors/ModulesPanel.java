@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package org.terracotta.dso.editors;
@@ -36,7 +36,7 @@ import com.terracottatech.config.Client;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
-import java.net.URL;
+import java.io.File;
 
 public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectStructureListener {
   private Client                 m_dsoClient;
@@ -53,7 +53,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   private RemoveRepoHandler      m_removeRepoHandler;
 
   private static final String    MODULE_DECLARATION    = "Module Declaration";
-  private static final String    MODULE_REPO_LOCATION  = "Repository Location (URL)";
+  private static final String    MODULE_REPO_LOCATION  = "Repository Location";
   private static final String    REPO_DECLARATION      = "Repository Declaration";
 
   private static final int       MODULE_NAME_INDEX     = 0;
@@ -406,9 +406,9 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
             if (error != null) {
               tip = error.getMessage();
             } else {
-              URL loc = moduleInfo.getLocation();
+              File loc = moduleInfo.getLocation();
               if(loc != null) {
-                tip = loc.toString();
+                tip = loc.getAbsolutePath();
               }
             }
           }
@@ -424,6 +424,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
 
   class AddModuleHandler extends SelectionAdapter {
     public void widgetSelected(SelectionEvent e) {
+      m_layout.m_moduleTable.forceFocus();
       NewAddModuleDialog dialog = new NewAddModuleDialog(getShell(), MODULE_DECLARATION, MODULE_DECLARATION, m_modules);
       dialog.addValueListener(new NewAddModuleDialog.ValueListener() {
         public void setValue(Modules modules) {
@@ -438,6 +439,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
 
   class RemoveModuleHandler extends SelectionAdapter {
     public void widgetSelected(SelectionEvent e) {
+      m_layout.m_moduleTable.forceFocus();
       int[] selection = m_layout.m_moduleTable.getSelectionIndices();
       Modules modules = ensureModules();
       for (int i = selection.length - 1; i >= 0; i--) {
@@ -452,6 +454,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
 
   class AddRepoHandler extends SelectionAdapter {
     public void widgetSelected(SelectionEvent e) {
+      m_layout.m_moduleRepoTable.forceFocus();
       RepoLocationDialog dialog = new RepoLocationDialog(getShell(), REPO_DECLARATION, MODULE_REPO_LOCATION);
       dialog.addValueListener(new RepoLocationDialog.ValueListener() {
         public void setValues(String repoLocation) {
@@ -468,6 +471,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
 
   class RemoveRepoHandler extends SelectionAdapter {
     public void widgetSelected(SelectionEvent e) {
+      m_layout.m_moduleRepoTable.forceFocus();
       int[] selection = m_layout.m_moduleRepoTable.getSelectionIndices();
       Modules modules = ensureModules();
       for (int i = selection.length - 1; i >= 0; i--) {

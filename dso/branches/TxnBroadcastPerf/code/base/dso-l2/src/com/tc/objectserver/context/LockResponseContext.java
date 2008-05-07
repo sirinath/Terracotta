@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.context;
@@ -21,7 +21,7 @@ import java.util.Iterator;
 
 public class LockResponseContext implements EventContext {
 
-  private static final int     LOCK_NO_LEASE     = -1;
+  private static final int     LOCK_NO_LEASE     = 0;
 
   public static final int      LOCK_AWARD        = 1;
   public static final int      LOCK_RECALL       = 2;

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.dna.impl;
@@ -175,6 +175,11 @@ public class DNAWriterImpl implements DNAWriter {
   }
 
   public void finalizeHeader() {
+    if (Conversion.getFlag(flags, DNA.IS_DELTA) && actionCount == 0) {
+      // this scenario (empty delta DNA) should be caught when txns are committed
+      throw new AssertionError("sending delta DNA with no actions!");
+    }
+
     byte[] lengths = new byte[9];
     Conversion.writeInt(totalLength, lengths, 0);
     Conversion.writeInt(actionCount, lengths, 4);

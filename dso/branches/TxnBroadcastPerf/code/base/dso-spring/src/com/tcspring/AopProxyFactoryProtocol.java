@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tcspring;
 
@@ -59,8 +59,8 @@ public class AopProxyFactoryProtocol {
   public static class BeanFactoryAwareMixin implements BeanFactoryAware {
     private transient BeanFactory beanFactory;
     
-    public void tc$setBeanFactory(BeanFactory beanFactory) {
-      this.beanFactory = beanFactory;
+    public void tc$setBeanFactory(BeanFactory beanFactoryArg) {
+      this.beanFactory = beanFactoryArg;
     }
 
     public BeanFactory tc$getBeanFactory() {

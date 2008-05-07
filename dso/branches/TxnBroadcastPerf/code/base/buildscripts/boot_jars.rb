@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -107,7 +107,7 @@ class BootJar
 
       sysproperties = {
         PropertyNames::TC_BASE_DIR => @static_resources.root_dir.to_s,
-        PropertyNames::MODULES_URL => @build_results.modules_home.to_url
+        PropertyNames::MODULES_URL => @build_results.modules_home.to_s
       }
 
       begin

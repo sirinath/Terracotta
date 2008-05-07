@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.server;
@@ -7,6 +7,7 @@ package com.tc.server;
 import com.tc.config.schema.L2Info;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.statistics.StatisticData;
 
 import java.util.Map;
 
@@ -99,6 +100,10 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
   }
   
   public Map getStatistics() {
+    return null;
+  }
+  
+  public StatisticData[] getCpuUsage() {
     return null;
   }
   

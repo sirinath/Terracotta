@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.bundles;
@@ -10,6 +10,7 @@ import org.osgi.framework.ServiceReference;
 
 import com.terracottatech.config.Modules;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -48,7 +49,10 @@ public interface EmbeddedOSGiRuntime {
       int repoCount = modules.sizeOfRepositoryArray();
       for (int i = 0; i < repoCount; i++) {
         final String location = modules.getRepositoryArray(i);
-        repoList.add(new URL(location.replaceFirst("^/", "file:///")));
+        File file = Resolver.resolveRepositoryLocation(location);
+        if(file != null) {
+          repoList.add(file.toURI().toURL());
+        }
       }
       return new KnopflerfishOSGi((URL[]) repoList.toArray(new URL[0]));
     }

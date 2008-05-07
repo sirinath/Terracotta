@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
@@ -13,8 +13,18 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage, HealthCheckerProbeMessage {
+class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage, SynAckMessage, AckMessage,
+    HealthCheckerProbeMessage {
+  
+  /**
+   * VERSION_1: Transport Handshake Message Version for Terracotta <= 2.5
+   * VERSION_2: Transport Handshake Message Version for Terracotta = 2.6
+   * VERSION: Current Version for Transport Handshake Messages
+   */
   static final byte          VERSION_1  = 1;
+  static final byte          VERSION_2  = 2;
+  static final byte          VERSION    = VERSION_2;
+
 
   static final byte          SYN        = 1;
   static final byte          ACK        = 2;
@@ -31,16 +41,16 @@ class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage
   private final boolean      isMaxConnectionsExceeded;
   private final short        stackLayerFlags;
   private final short        errorType;
+  private final int          callbackPort;
 
-  TransportMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload)
-      throws TCProtocolException {
+  TransportMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] payload) throws TCProtocolException {
     super(source, header, payload);
 
     try {
       TCByteBufferInputStream in = new TCByteBufferInputStream(payload);
       this.version = in.readByte();
 
-      if (version != VERSION_1) { throw new TCProtocolException("Bad Version: " + version + " != " + VERSION_1); }
+      if (version != VERSION) { throw new TCProtocolException("Version Mismatch for Transport Message Handshake: " + version + " != " + VERSION); }
 
       this.type = in.readByte();
 
@@ -53,6 +63,7 @@ class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage
       this.isMaxConnectionsExceeded = in.readBoolean();
       this.maxConnections = in.readInt();
       this.stackLayerFlags = in.readShort();
+      this.callbackPort = in.readInt();
       this.hasErrorContext = in.readBoolean();
 
       if (this.hasErrorContext) {
@@ -106,11 +117,11 @@ class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage
     return this.errorContext;
   }
 
-  public short getErrorType(){
+  public short getErrorType() {
     Assert.eval(hasErrorContext());
     return this.errorType;
   }
-  
+
   public boolean isPing() {
     return type == PING;
   }
@@ -146,6 +157,10 @@ class TransportMessageImpl extends WireProtocolMessageImpl implements SynMessage
 
   public short getStackLayerFlags() {
     return this.stackLayerFlags;
+  }
+
+  public int getCallbackPort() {
+    return this.callbackPort;
   }
 
 }

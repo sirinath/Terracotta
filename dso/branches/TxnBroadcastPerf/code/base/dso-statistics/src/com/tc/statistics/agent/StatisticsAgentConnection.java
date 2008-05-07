@@ -3,14 +3,15 @@
  */
 package com.tc.statistics.agent;
 
-import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsManager;
 import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionAlreadyConnectedException;
 import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionConnectErrorException;
 import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionDisconnectErrorException;
 import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionException;
+import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionNotConnectedException;
 import com.tc.statistics.agent.exceptions.StatisticsAgentConnectionToNonAgentException;
 import com.tc.statistics.beans.StatisticsEmitterMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
@@ -29,8 +30,7 @@ import javax.management.ObjectName;
 import javax.management.RuntimeMBeanException;
 
 public class StatisticsAgentConnection implements StatisticsManager {
-  private final static TCLogger logger = CustomerLogging.getDSOGenericLogger();
-  private final static TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+  private final static TCLogger LOGGER = TCLogging.getLogger(StatisticsAgentConnection.class);
 
   private boolean isServerAgent = false;
   private MBeanServerConnection serverConnection = null;
@@ -78,8 +78,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
     if (e.getCause() instanceof UnknownStatisticsSessionIdException) {
       UnknownStatisticsSessionIdException ussie = (UnknownStatisticsSessionIdException)e.getCause();
       String msg_full = msg + " for session '" + ussie.getSessionId() + "' on node '" + ussie.getNodeName() + "'";
-      logger.warn(msg_full);
-      consoleLogger.warn(msg_full);
+      LOGGER.warn(msg_full);
     } else {
       throw e;
     }
@@ -161,18 +160,18 @@ public class StatisticsAgentConnection implements StatisticsManager {
     }
   }
 
-  public void connect(final MBeanServerConnection serverConnection, final NotificationListener listener) throws StatisticsAgentConnectionException {
-    Assert.assertNotNull("serverConnection", serverConnection);
+  public void connect(final MBeanServerConnection serverConn, final NotificationListener notificationListener) throws StatisticsAgentConnectionException {
+    Assert.assertNotNull("serverConnection", serverConn);
     if (statManager != null) throw new StatisticsAgentConnectionAlreadyConnectedException();
 
-    this.serverConnection = serverConnection;
-    setupManagerMBean(serverConnection);
-    ObjectName emitter_name = setupEmitterMBean(serverConnection);
+    this.serverConnection = serverConn;
+    setupManagerMBean(serverConn);
+    ObjectName emitter_name = setupEmitterMBean(serverConn);
 
     // register the statistics data listener
-    this.listener = listener;
+    this.listener = notificationListener;
     try {
-      serverConnection.addNotificationListener(emitter_name, listener, null, null);
+      serverConn.addNotificationListener(emitter_name, notificationListener, null, null);
     } catch (Exception e) {
       throw new StatisticsAgentConnectionConnectErrorException("Unexpected error while registering the notification listener for statistics emitting.", e);
     }
@@ -230,7 +229,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
   }
 
   public void disconnect() throws StatisticsAgentConnectionException {
-    if (null == statManager) throw new AssertionError("the agent is not connected");
+    if (null == statManager) throw new StatisticsAgentConnectionNotConnectedException();
 
     try {
       serverConnection.removeNotificationListener(StatisticsMBeanNames.STATISTICS_EMITTER, listener);

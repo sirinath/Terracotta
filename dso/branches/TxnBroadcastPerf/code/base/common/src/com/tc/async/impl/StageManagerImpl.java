@@ -1,11 +1,8 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.async.impl;
-
-import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
-import EDU.oswego.cs.dl.util.concurrent.Channel;
-import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventHandler;
@@ -16,9 +13,12 @@ import com.tc.logging.DefaultLoggerProvider;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLoggerProvider;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.stats.Stats;
 import com.tc.text.StringFormatter;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.QueueFactory;
+import com.tc.util.concurrent.TCQueue;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.util.Arrays;
@@ -35,20 +35,19 @@ import java.util.Map;
  */
 public class StageManagerImpl implements StageManager {
 
-  private static final String  STAGE_MONITOR       = "tc.stage.monitor.enabled";
-  private static final String  STAGE_MONITOR_DELAY = "tc.stage.monitor.delay";
-
-  private static final boolean MONITOR             = TCPropertiesImpl.getProperties().getBoolean(STAGE_MONITOR);
-  private static final long    MONITOR_DELAY       = TCPropertiesImpl.getProperties().getLong(STAGE_MONITOR_DELAY);
+  private static final boolean MONITOR             = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.TC_STAGE_MONITOR_ENABLED);
+  private static final long    MONITOR_DELAY       = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.TC_STAGE_MONITOR_DELAY);
 
   private Map                  stages              = new HashMap();
   private TCLoggerProvider     loggerProvider;
   private final ThreadGroup    group;
   private String[]             stageNames          = new String[] {};
+  private QueueFactory         queueFactory        = null;
 
-  public StageManagerImpl(ThreadGroup threadGroup) {
+  public StageManagerImpl(ThreadGroup threadGroup, QueueFactory queueFactory) {
     this.loggerProvider = new DefaultLoggerProvider();
     this.group = threadGroup;
+    this.queueFactory = queueFactory;
 
     if (MONITOR) {
       startMonitor();
@@ -87,7 +86,8 @@ public class StageManagerImpl implements StageManager {
   }
 
   public synchronized Stage createStage(String name, EventHandler handler, int threads, int maxSize) {
-    Channel q = maxSize > 0 ? (Channel) new BoundedLinkedQueue(maxSize) : new LinkedQueue();
+    //Channel q = maxSize > 0 ? (Channel) new BoundedLinkedQueue(maxSize) : new LinkedQueue();
+    TCQueue q = this.queueFactory.createInstance(maxSize);
     Stage s = new StageImpl(loggerProvider, name, handler, new StageQueueImpl(loggerProvider, name, q), threads, group);
     addStage(name, s);
     return s;

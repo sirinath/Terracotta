@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.admin;
@@ -26,8 +26,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
@@ -38,8 +36,6 @@ import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.generic.ConnectionClosedException;
-import javax.naming.CommunicationException;
-import javax.naming.ServiceUnavailableException;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -52,6 +48,9 @@ import javax.swing.SwingUtilities;
  * All connection actions go through the ServerConnectionManager, which calls back through ConnectionListener. The
  * ServerConnectionManager handles auto-connecting, active-connection monitoring, and connection-state messaging. A JMX
  * notification handler (handleNotification) informs when the server goes from started->active state.
+ *
+ * TODO: this class and ClusterNode have much in common as ClusterNode was derived from ServerNode.
+ * The commonality should be reduced through a refactoring.
  */
 
 public class ServerNode extends ComponentNode implements ConnectionListener, NotificationListener {
@@ -88,17 +87,26 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
     initMenu();
     setComponent(m_serverPanel = createServerPanel());
     AutoConnectionListener acl = new AutoConnectionListener();
-    m_connectManager = new ServerConnectionManager(m_l2Info, true, acl);
+    m_connectManager = new ServerConnectionManager(m_l2Info, false, acl);
     String[] creds = ServerConnectionManager.getCachedCredentials(m_connectManager);
     if (creds != null) {
-      m_connectManager.setCredentials(creds[0], creds[1]);
+      m_connectManager.setCredentials(creds);
     }
+    m_connectManager.setAutoConnect(true);
   }
 
   protected ServerPanel createServerPanel() {
     return new ServerPanel(this);
   }
 
+  void newConnectionContext() {
+    resetBeanProxies();
+    String[] creds = ServerConnectionManager.getCachedCredentials(m_connectManager);
+    if (creds != null) {
+      m_connectManager.setCredentials(creds);
+    }
+  }
+  
   /**
    * We need to use invokeLater here because this is being called from a background thread and all Swing stuff has to be
    * done in the primary event loop.
@@ -174,7 +182,15 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
   public String getHost() {
     return m_l2Info.host();
   }
+  
+  public String getCanonicalHostName() {
+    return m_connectManager.safeGetHostName();
+  }
 
+  public String getHostAddress() {
+    return m_connectManager.safeGetHostAddress();
+  }
+  
   public int getPort() {
     return m_l2Info.jmxPort();
   }
@@ -300,7 +316,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
 
     String[] creds = ServerConnectionManager.getCachedCredentials(getServerConnectionManager());
     if (creds != null) {
-      m_connectManager.setCredentials(creds[0], creds[1]);
+      m_connectManager.setCredentials(creds);
     }
 
     cd.center(frame);
@@ -336,45 +352,8 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
     m_acc.controller.unblock();
   }
 
-  public static String getConnectionExceptionString(Exception e, Object connectionObject) {
-    AdminClientContext acc = AdminClient.getContext();
-    String msg = null;
-
-    if (e instanceof ServiceUnavailableException || e.getCause() instanceof ServiceUnavailableException) {
-      String tmpl = acc.getMessage("service.unavailable");
-      MessageFormat form = new MessageFormat(tmpl);
-      Object[] args = new Object[] { connectionObject };
-
-      msg = form.format(args);
-    } else if (e.getCause() instanceof ConnectException) {
-      String tmpl = acc.getMessage("cannot.connect.to");
-      MessageFormat form = new MessageFormat(tmpl);
-      Object[] args = new Object[] { connectionObject };
-
-      msg = form.format(args);
-    } else if (e.getCause() instanceof UnknownHostException
-               || (e.getCause() != null && e.getCause().getCause() instanceof java.rmi.UnknownHostException)) {
-      String tmpl = acc.getMessage("unknown.host");
-      MessageFormat form = new MessageFormat(tmpl);
-      Object[] args = new Object[] { connectionObject };
-
-      msg = form.format(args);
-    } else if (e.getCause() instanceof CommunicationException) {
-      String tmpl = acc.getMessage("cannot.connect.to");
-      MessageFormat form = new MessageFormat(tmpl);
-      Object[] args = new Object[] { connectionObject };
-
-      msg = form.format(args);
-
-    } else {
-      msg = e.getMessage();
-    }
-
-    return "<html>" + msg + "</html>";
-  }
-
   private void reportConnectionException(Exception e) {
-    String msg = getConnectionExceptionString(e, this);
+    String msg = ClusterNode.getConnectionExceptionString(e, getConnectionContext());
 
     m_connectException = e;
     if (msg != null && m_serverPanel != null) {
@@ -389,7 +368,6 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
     Object[] args = new Object[] { this };
 
     m_acc.controller.setStatus(form.format(args));
-    m_connectManager.setAutoConnect(false);
     m_acc.controller.updateServerPrefs();
     m_connectManager.setConnected(false);
   }
@@ -682,6 +660,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
   }
 
   private void resetBeanProxies() {
+    m_dsoBean = null;
     m_serverInfoBean = null;
     m_productInfo = null;
   }

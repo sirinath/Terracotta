@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.objectserver.persistence.sleepycat;
 
@@ -43,8 +43,8 @@ public class SleepycatCollectionsPersistor extends SleepycatPersistorBase {
     this.oo = new TCObjectOutputStream(bao);
   }
 
-  public void saveMap(PersistenceTransaction tx, SleepycatPersistableMap map) throws IOException, DatabaseException {
-    map.commit(this, tx, database);
+  public int saveMap(PersistenceTransaction tx, SleepycatPersistableMap map) throws IOException, DatabaseException {
+    return map.commit(this, tx, database);
   }
 
   public synchronized byte[] serialize(long id, Object o) throws IOException {

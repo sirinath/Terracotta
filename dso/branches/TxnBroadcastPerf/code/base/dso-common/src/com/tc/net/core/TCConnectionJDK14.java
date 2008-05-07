@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.core;
@@ -25,10 +25,12 @@ import com.tc.util.concurrent.SetOnceRef;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.GatheringByteChannel;
@@ -112,7 +114,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
   }
 
-  protected void finishConnect() {
+  protected void finishConnect() throws IOException {
     Assert.assertNotNull("channel", channel);
     recordSocketAddress(channel.socket());
     setConnected(true);
@@ -540,11 +542,33 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     this.connected.set(connected);
   }
 
-  private final void recordSocketAddress(Socket socket) {
+  private final void recordSocketAddress(Socket socket) throws IOException {
     if (socket != null) {
-      isSocketEndpoint.set(true);
-      localSocketAddress.set(new TCSocketAddress(socket.getLocalAddress(), socket.getLocalPort()));
-      remoteSocketAddress.set(new TCSocketAddress(socket.getInetAddress(), socket.getPort()));
+      InetAddress localAddress = socket.getLocalAddress();
+      InetAddress remoteAddress = socket.getInetAddress();
+
+      if (remoteAddress != null && localAddress != null) {
+        isSocketEndpoint.set(true);
+        localSocketAddress.set(new TCSocketAddress(cloneInetAddress(localAddress), socket.getLocalPort()));
+        remoteSocketAddress.set(new TCSocketAddress(cloneInetAddress(remoteAddress), socket.getPort()));
+      } else {
+        // abort if socket is not connected
+        throw new IOException("socket is not connected");
+      }
+    }
+  }
+
+  /**
+   * This madness to workaround a SocketException("protocol family not available"). For whatever reason, the actual
+   * InetAddress instances obtained directly from the connected socket has it's "family" field set to IPv6 even though
+   * when it is an instance of Inet4Address. Trying to use that instance to connect to throws an exception
+   */
+  private static InetAddress cloneInetAddress(InetAddress addr) {
+    try {
+      byte[] address = addr.getAddress();
+      return InetAddress.getByAddress(address);
+    } catch (UnknownHostException e) {
+      throw new AssertionError(e);
     }
   }
 

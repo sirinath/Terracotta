@@ -1,5 +1,5 @@
 /**
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.test;
@@ -89,6 +89,8 @@ public class TestConfigObject {
   private static final String     APP_SERVER_MINOR_VERSION         = STATIC_PROPERTIES_PREFIX
                                                                      + "appserver.minor-version";
 
+  private static final String     APP_SERVER_SPECIFICATION         = STATIC_PROPERTIES_PREFIX + "appserver";
+
   private static final String     TRANSPARENT_TESTS_MODE           = STATIC_PROPERTIES_PREFIX
                                                                      + "transparent-tests.mode";
 
@@ -102,6 +104,7 @@ public class TestConfigObject {
 
   private final Properties        properties;
   private final AppServerInfo     appServerInfo;
+  private String                  extraClassPathForAppServer;
 
   private TestConfigObject() throws IOException {
     this.properties = new Properties();
@@ -146,12 +149,18 @@ public class TestConfigObject {
 
     this.properties.putAll(System.getProperties());
 
-    appServerInfo = new AppServerInfo();
-    appServerInfo.setName(properties.getProperty(APP_SERVER_FACTORY_NAME, "unknown"));
-    appServerInfo.setMajor(properties.getProperty(APP_SERVER_MAJOR_VERSION, "unknown"));
-    appServerInfo.setMinor(properties.getProperty(APP_SERVER_MINOR_VERSION, "unknown"));
+    this.appServerInfo = createAppServerInfo();
+    extraClassPathForAppServer = linkedChildProcessPath();
 
     logger.info("Loaded test configuration from " + loadedFrom.toString());
+  }
+
+  private AppServerInfo createAppServerInfo() {
+    if (properties.containsKey(APP_SERVER_SPECIFICATION)) { return AppServerInfo.parse(properties
+        .getProperty(APP_SERVER_SPECIFICATION)); }
+
+    return new AppServerInfo(properties.getProperty(APP_SERVER_FACTORY_NAME, "unknown"), properties
+        .getProperty(APP_SERVER_MAJOR_VERSION, "unknown"), properties.getProperty(APP_SERVER_MINOR_VERSION, "unknown"));
   }
 
   public static synchronized TestConfigObject getInstance() {
@@ -328,7 +337,7 @@ public class TestConfigObject {
   public String executableSearchPath() {
     String nativeLibDirPath = this.properties.getProperty(EXECUTABLE_SEARCH_PATH);
     if (nativeLibDirPath == null) return null;
-    
+
     if (nativeLibDirPath.endsWith(NATIVE_LIB_LINUX_32) || nativeLibDirPath.endsWith(NATIVE_LIB_LINUX_64)) {
       int lastSeparator = nativeLibDirPath.lastIndexOf(File.separator);
       String vmType = System.getProperty("sun.arch.data.model");
@@ -366,7 +375,15 @@ public class TestConfigObject {
     return out;
   }
 
-  public String linkedChildProcessClasspath() {
+  public String extraClassPathForAppServer() {
+    return extraClassPathForAppServer;
+  }
+
+  public void addToAppServerClassPath(String cp) {
+    extraClassPathForAppServer += File.pathSeparator + cp;
+  }
+  
+  public String linkedChildProcessPath() {
     String out = this.properties.getProperty(LINKED_CHILD_PROCESS_CLASSPATH);
     Assert.assertNotBlank(out);
     assertValidClasspath(out);

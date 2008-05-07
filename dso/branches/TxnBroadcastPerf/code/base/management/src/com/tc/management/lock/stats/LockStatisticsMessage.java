@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.management.lock.stats;
@@ -115,9 +115,9 @@ public class LockStatisticsMessage extends DSOMessageBase {
     return this.gatherInterval;
   }
 
-  public void initializeEnableStat(int traceDepth, int gatherInterval) {
-    this.traceDepth = traceDepth;
-    this.gatherInterval = gatherInterval;
+  public void initializeEnableStat(int traceDepthArg, int gatherIntervalArg) {
+    this.traceDepth = traceDepthArg;
+    this.gatherInterval = gatherIntervalArg;
     this.type = LOCK_STATISTICS_ENABLE_MESSAGE_TYPE;
   }
 

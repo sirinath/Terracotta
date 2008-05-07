@@ -1,11 +1,10 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest.spring.integrationtests.load;
 
 import com.tc.test.server.appserver.deployment.Deployment;
-import com.tc.test.server.appserver.deployment.ServerTestSetup;
 import com.tc.test.server.appserver.deployment.TestCallback;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
 import com.tctest.spring.bean.EventManager;
@@ -15,8 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
-import junit.framework.Test;
 
 public class DistributedEventsLoadTest extends SpringDeploymentTest {
   private static final boolean DEBUG                         = true;
@@ -29,10 +26,6 @@ public class DistributedEventsLoadTest extends SpringDeploymentTest {
   private static final String  BEAN_NAME                     = "eventManager";
 
   private Deployment           deployment;
-
-  public static Test suite() {
-    return new ServerTestSetup(DistributedEventsLoadTest.class);
-  }
 
   public DistributedEventsLoadTest() {
     // this.disableAllUntil("2010-01-01", new String[]{"solaris"});

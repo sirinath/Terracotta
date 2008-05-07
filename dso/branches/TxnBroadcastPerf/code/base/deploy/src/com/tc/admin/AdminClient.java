@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin;
 
@@ -43,17 +43,7 @@ public class AdminClient extends ApplicationManager {
     Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
 
     // Silence httpclient
-    Logger.getLogger("org.apache.commons.httpclient.HttpClient").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.params.DefaultHttpParams").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.methods.GetMethod").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.HttpMethodDirector").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.HttpConnection").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.HttpMethodBase").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.HttpState").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.HttpParser").setLevel(Level.OFF);
-    Logger.getLogger("org.apache.commons.httpclient.cookie.CookieSpec").setLevel(Level.OFF);
-    Logger.getLogger("httpclient.wire.header").setLevel(Level.OFF);
-    Logger.getLogger("httpclient.wire.content").setLevel(Level.OFF);
+    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
   }
   
   protected AdminClient() {
@@ -62,7 +52,6 @@ public class AdminClient extends ApplicationManager {
     if(Os.isMac()) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
-
       System.setProperty("apple.awt.showGrowBox", "true");
       System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
     }
@@ -75,9 +64,7 @@ public class AdminClient extends ApplicationManager {
     m_cntx.nodeFactory = AbstractNodeFactory.getFactory();
     m_cntx.executorService = Executors.newCachedThreadPool();
 
-    if(!Boolean.getBoolean("com.tc.ui.java-icon")) {
-      setIconImage(new Image(getBytes("/com/tc/admin/icons/logo_small.gif")));
-    }
+    setIconImage(new Image(getClass().getResource("/com/tc/admin/icons/logo_small.png")));
   }
 
   static byte[] getBytes(String path) {
@@ -175,8 +162,10 @@ public class AdminClient extends ApplicationManager {
   }
 
   public void start() {
-    m_cntx.controller = new AdminClientFrame();
-    Timer t = new Timer(2000, new ActionListener() {
+    AdminClientFrame frame = new AdminClientFrame();
+    frame.setIconImage(getIconImage());
+    m_cntx.controller = frame;
+    Timer t = new Timer(250, new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
         ((AdminClientFrame)m_cntx.controller).setVisible(true);
         splashProc.destroy();

@@ -39,12 +39,5 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>dependencies</artifactId>
-      <version>${tcVersion}</version>
-    </dependency>
-  </dependencies>
 </project>
+

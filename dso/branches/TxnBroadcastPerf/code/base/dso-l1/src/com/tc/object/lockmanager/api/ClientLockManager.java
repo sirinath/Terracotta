@@ -1,12 +1,12 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.lockmanager.api;
 
 import com.tc.logging.DumpHandler;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.session.SessionID;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
@@ -28,17 +28,13 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable {
 
   /**
    * obtain a lock
-   *
-   * @param obj
    */
   public void lock(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo);
 
-  public boolean tryLock(LockID id, ThreadID threadID, WaitInvocation timeout, int lockType, String lockObjectType);
+  public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType);
 
   /**
    * releases the lock so that others can have at it
-   *
-   * @param obj
    */
   public void unlock(LockID id, ThreadID threadID);
 
@@ -51,7 +47,7 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable {
 
   public LockID lockIDFor(String id);
 
-  public void wait(LockID lockID, ThreadID threadID, WaitInvocation call, Object waitObject, WaitListener listener) throws InterruptedException;
+  public void wait(LockID lockID, ThreadID threadID, TimerSpec call, Object waitObject, WaitListener listener) throws InterruptedException;
 
   public void waitTimedOut(LockID lockID, ThreadID threadID);
 
@@ -75,8 +71,6 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable {
   
   /**
    * Adds all lock waits to the given collection and returns that collection.
-   *
-   * @param c
    */
   public Collection addAllWaitersTo(Collection c);
 

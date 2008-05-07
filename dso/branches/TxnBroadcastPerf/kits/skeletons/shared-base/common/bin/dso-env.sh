@@ -38,7 +38,8 @@ else
   TC_INSTALL_DIR=`dirname "$0"`/..
 fi
 
-if test -n "$1"; then
+if (test "$1" = "-f") || (test "$1" = "--config"); then
+  shift
   TC_CONFIG_PATH="$1"
 fi
 
@@ -51,9 +52,8 @@ if $cygwin; then
   [ -n "$TC_CONFIG_PATH" ] && TC_CONFIG_PATH=`cygpath --windows "$TC_CONFIG_PATH"`
 fi
 
-TC_JAVA_OPTS="-Xbootclasspath/p:${DSO_BOOT_JAR} \
- -Dtc.install-root=${TC_INSTALL_DIR} \
- -Dtc.config=${TC_CONFIG_PATH}"
+TC_JAVA_OPTS="-Xbootclasspath/p:${DSO_BOOT_JAR} -Dtc.install-root=${TC_INSTALL_DIR}"
  
+test "${TC_CONFIG_PATH}" && TC_JAVA_OPTS="${TC_JAVA_OPTS} -Dtc.config=${TC_CONFIG_PATH}" 
 test "${TC_SERVER}" && TC_JAVA_OPTS="${TC_JAVA_OPTS} -Dtc.server=${TC_SERVER}"
 test -z "${__DSO_ENV_QUIET}" && echo "${TC_JAVA_OPTS}"

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object;
@@ -38,7 +38,7 @@ public class TestClassFactory implements TCClassFactory {
     private boolean portable = false;
 
     public MockTCClass() {
-      
+      //
     }
     
     public MockTCClass(ClientObjectManager clientObjectManager, boolean hasOnLoadExecuteScript, boolean hasOnLoadMethod, boolean portable, TCField [] portableFields  ) {

@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -140,6 +140,11 @@ class BuildResults
     # schema (.xsd files).
     def config_schema_generation_directory
         FilePath.new(@build_dir, "generated", "config-schema")
+    end
+    
+    # The directory into which we generate the XMLBeans source code that represents the l1 properties from l2 (.xsd files)
+    def l1_prop_from_l2_schema_generation_directory
+        FilePath.new(@build_dir, "generated", "l1-prop-from-l2-schema")
     end
 
     def stats_config_schema_generation_directory

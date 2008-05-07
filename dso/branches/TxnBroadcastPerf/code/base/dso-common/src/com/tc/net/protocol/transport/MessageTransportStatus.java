@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.net.protocol.transport;
@@ -26,7 +26,11 @@ class MessageTransportStatus {
       logger.debug("Changing from " + state.toString() + " to " + newState.toString());
     }
 
-    Assert.eval(!isEnd());
+    if (isEnd()) {
+      Assert.eval("Transport StateChange from END state not allowed", newState != MessageTransportState.STATE_END);
+      logger.warn("Unexpected Transport StateChange attempt. Changing from " + state.toString() + " to "
+                  + newState.toString(), new Throwable());
+    }
     state = newState;
   }
 

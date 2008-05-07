@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.management.beans;
@@ -22,6 +22,7 @@ import com.tc.util.State;
 import com.tc.util.runtime.ThreadDumpUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
 
   private final JVMMemoryManager               manager;
   private StatisticRetrievalAction             cpuSRA;
+  private String[]                             cpuNames;
 
   public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
@@ -180,8 +182,9 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   }
 
   public String[] getCpuStatNames() {
-    if (cpuSRA == null) { return new String[0]; }
-
+    if (cpuNames != null) return cpuNames;
+    if (cpuSRA == null) return cpuNames = new String[0];
+    
     List list = new ArrayList();
     StatisticData[] statsData = cpuSRA.retrieveStatisticData();
     if (statsData != null) {
@@ -189,26 +192,33 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
         list.add(statsData[i].getElement());
       }
     }
-    return (String[]) list.toArray(new String[0]);
+    return cpuNames = (String[]) list.toArray(new String[0]);
   }
   
   public Map getStatistics() {
     HashMap<String, Object> map = new HashMap<String, Object>();
     MemoryUsage usage = manager.getMemoryUsage();
 
-    map.put("memory used", new Long(usage.getUsedMemory()));
-    map.put("memory max", new Long(usage.getMaxMemory()));
+    map.put(MEMORY_USED, new Long(usage.getUsedMemory()));
+    map.put(MEMORY_MAX, new Long(usage.getMaxMemory()));
 
     if(cpuSRA != null) {
-      StatisticData[] statsData = cpuSRA.retrieveStatisticData();
+      StatisticData[] statsData = getCpuUsage();
       if (statsData != null) {
-        map.put("cpu usage", statsData);
+        map.put(CPU_USAGE, statsData);
       }
     }
     
     return map;
   }
 
+  public StatisticData[] getCpuUsage() {
+    if (cpuSRA != null) {
+      return cpuSRA.retrieveStatisticData();
+    }
+    return null;
+  }
+  
   public String takeThreadDump(long requestMillis) {
     String text = ThreadDumpUtil.getThreadDump();
     logger.info(text);
@@ -229,6 +239,11 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
       }
     }
 
+    String[] props = l.toArray(new String[0]);
+    Arrays.sort(props);
+    l.clear();
+    l.addAll(Arrays.asList(props));
+    
     int maxKeyLen = 0;
     for (String key : l) {
       maxKeyLen = Math.max(key.length(), maxKeyLen);
@@ -251,7 +266,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   public String getConfig() {
     return server.getConfig();
   }
-
+  
   private static String makeBuildID(final ProductInfo productInfo) {
     String timeStamp = productInfo.buildTimestampAsString();
     String revision = productInfo.buildRevision();

@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -156,7 +156,6 @@ class TerracottaBuilder
         # Print out the duration and the results at the end.
         puts ""
         puts "[%8.2f seconds] %s" % [ (end_time - @start_time), @script_results.to_s ]
-
         ExitCodeHelper.exit(@script_results.result_code)
     end
 

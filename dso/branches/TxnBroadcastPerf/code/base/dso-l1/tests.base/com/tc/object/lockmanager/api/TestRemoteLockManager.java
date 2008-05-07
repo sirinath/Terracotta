@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.lockmanager.api;
@@ -7,7 +7,7 @@ package com.tc.object.lockmanager.api;
 import com.tc.exception.ImplementMe;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TransactionID;
-import com.tc.object.tx.WaitInvocation;
+import com.tc.object.tx.TimerSpec;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.Arrays;
@@ -44,6 +44,10 @@ public class TestRemoteLockManager implements RemoteLockManager {
 
   public void setClientLockManager(ClientLockManager lockManager) {
     this.lockManager = lockManager;
+  }
+  
+  public ClientLockManager getClientLockManager() {
+    return lockManager;
   }
 
   public synchronized int getLockRequestCount() {
@@ -123,7 +127,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
     lockResponder.respondToLockRequest(new LockRequest(lockID, lock.threadID, lock.type));
   }
 
-  public void releaseLockWait(LockID lockID, ThreadID threadID, WaitInvocation call) {
+  public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
     return;
   }
 
@@ -191,7 +195,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
     throw new ImplementMe();
   }
 
-  public void tryRequestLock(LockID lockID, ThreadID threadID, WaitInvocation timeout, int lockType, String lockObjectType) {
+  public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     //
   }
 }

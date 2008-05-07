@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.msg;
@@ -167,10 +167,10 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         state.setNextAvailableGlobalTransactionID(nextAvailableGID);
         break;
       case COMPLETE_STATE:
+        state.setClusterID(clusterID);
         state.setNextAvailableObjectID(nextAvailableObjectID);
         state.setNextAvailableGlobalTransactionID(nextAvailableGID);
         state.setNextAvailableChannelID(nextAvailableChannelID);
-        state.setClusterID(clusterID);
         for (Iterator i = connectionIDs.iterator(); i.hasNext();) {
           ConnectionID conn = (ConnectionID) i.next();
           state.addNewConnection(conn);

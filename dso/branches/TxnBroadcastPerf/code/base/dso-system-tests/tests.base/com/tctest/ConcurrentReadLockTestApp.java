@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -262,12 +262,12 @@ public class ConcurrentReadLockTestApp extends AbstractTransparentApp {
       super();
     }
 
-    public synchronized void makeShared(SharedObject obj) {
-      this.obj = obj;
+    public synchronized void makeShared(SharedObject object) {
+      this.obj = object;
     }
     
-    public synchronized void makeShared(String obj) {
-      this.str = obj;
+    public synchronized void makeShared(String object) {
+      this.str = object;
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.tx;
@@ -32,6 +32,7 @@ import com.tc.object.tx.TxnType;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.Assert;
 import com.tc.util.SequenceGenerator;
 
@@ -132,7 +133,11 @@ public class TransactionBatchTest extends TestCase {
     txn1.setTransactionContext(tc);
 
     txn1.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
-    txn1.createObject(new MockTCObject(new ObjectID(2), this));
+
+    MockTCObject mtco = new MockTCObject(new ObjectID(2), this);
+    mtco.setNew(true);
+
+    txn1.createObject(mtco);
     txn1.createRoot("root", new ObjectID(3));
     for (int i = 0; i < 10; i++) {
       Notify notify = new Notify(new LockID("" + i), new ThreadID(i), i % 2 == 0);
@@ -425,6 +430,90 @@ public class TransactionBatchTest extends TestCase {
     assertEquals(4 + startSeq, sequenceGenerator.getCurrentSequence());
   }
 
+  public void testFoldBug1() {
+    // Consider these 3 txns...
+    // (txn1) - Lock1, Obj1(delta)
+    // (txn2) - Lock2, Obj2(new)
+    // (txn3) - Lock1, Obj1(delta), Obj2(delta)
+    //
+    // txn3 cannot be folded into txn1 because it would put the Obj2 delta before the txn that creates it (txn2)
+
+    ObjectStringSerializer serializer = new ObjectStringSerializer();
+    writer = newWriter(serializer, true, 0, 0);
+
+    LockID lid1 = new LockID("1");
+    LockID lid2 = new LockID("2");
+
+    TransactionContext tc = new TransactionContextImpl(lid1, TxnType.NORMAL);
+    ClientTransaction txn1 = new ClientTransactionImpl(new TransactionID(101), new NullRuntimeLogger());
+    txn1.setTransactionContext(tc);
+    txn1.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
+
+    tc = new TransactionContextImpl(lid2, TxnType.NORMAL);
+    ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(102), new NullRuntimeLogger());
+    txn2.setTransactionContext(tc);
+    MockTCObject mtco = new MockTCObject(new ObjectID(2), new Object());
+    mtco.setNew(true);
+    txn2.createObject(mtco);
+
+    tc = new TransactionContextImpl(lid1, TxnType.NORMAL);
+    ClientTransaction txn3 = new ClientTransactionImpl(new TransactionID(101), new NullRuntimeLogger());
+    txn3.setTransactionContext(tc);
+    txn3.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
+    txn3.fieldChanged(new MockTCObject(new ObjectID(2), this), "class", "class.field", ObjectID.NULL_ID, -1);
+
+    SequenceGenerator sequenceGenerator = new SequenceGenerator();
+    final long startSeq = sequenceGenerator.getCurrentSequence();
+
+    boolean folded;
+
+    folded = writer.addTransaction(txn1, sequenceGenerator);
+    assertFalse(folded);
+    assertEquals(1 + startSeq, sequenceGenerator.getCurrentSequence());
+    folded = writer.addTransaction(txn2, sequenceGenerator);
+    assertFalse(folded);
+    assertEquals(2 + startSeq, sequenceGenerator.getCurrentSequence());
+    folded = writer.addTransaction(txn3, sequenceGenerator);
+    assertFalse(folded);
+  }
+
+  public void testTxnWithNewObjCanBeFolded() {
+    // (txn1) - Lock1, Obj1(delta)
+    // (txn2) - Lock1, Obj1(delta), Obj2(new)
+    //
+    // txn2 should be folded into txn1 even though it contains a "new" object
+
+    ObjectStringSerializer serializer = new ObjectStringSerializer();
+    writer = newWriter(serializer, true, 0, 0);
+
+    LockID lid1 = new LockID("1");
+
+    TransactionContext tc = new TransactionContextImpl(lid1, TxnType.NORMAL);
+    ClientTransaction txn1 = new ClientTransactionImpl(new TransactionID(101), new NullRuntimeLogger());
+    txn1.setTransactionContext(tc);
+    txn1.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
+
+    tc = new TransactionContextImpl(lid1, TxnType.NORMAL);
+    ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(102), new NullRuntimeLogger());
+    txn2.setTransactionContext(tc);
+    txn2.fieldChanged(new MockTCObject(new ObjectID(1), this), "class", "class.field", ObjectID.NULL_ID, -1);
+    MockTCObject mtco = new MockTCObject(new ObjectID(2), new Object());
+    mtco.setNew(true);
+    txn2.createObject(mtco);
+
+    SequenceGenerator sequenceGenerator = new SequenceGenerator();
+    final long startSeq = sequenceGenerator.getCurrentSequence();
+
+    boolean folded;
+
+    folded = writer.addTransaction(txn1, sequenceGenerator);
+    assertFalse(folded);
+    assertEquals(1 + startSeq, sequenceGenerator.getCurrentSequence());
+    folded = writer.addTransaction(txn2, sequenceGenerator);
+    assertTrue(folded);
+    assertEquals(1 + startSeq, sequenceGenerator.getCurrentSequence());
+  }
+
   public void testOrdering() {
     ObjectStringSerializer serializer = new ObjectStringSerializer();
     writer = newWriter(serializer, true, 0, 0);
@@ -483,7 +572,7 @@ public class TransactionBatchTest extends TestCase {
     }
 
     public boolean getBoolean(String key, boolean defaultValue) {
-      if (TransactionBatchWriter.FOLDING_ENABLED_PROP.equals(key)) { return foldEnabled; }
+      if (TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED.equals(key)) { return foldEnabled; }
 
       throw new AssertionError("key: " + key);
     }
@@ -497,8 +586,8 @@ public class TransactionBatchTest extends TestCase {
     }
 
     public int getInt(String key, int defaultValue) {
-      if (TransactionBatchWriter.FOLDING_LOCK_LIMIT_PROP.equals(key)) { return lockLimit; }
-      if (TransactionBatchWriter.FOLDING_OBJECT_LIMIT_PROP.equals(key)) { return objectLimit; }
+      if (TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT.equals(key)) { return lockLimit; }
+      if (TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT.equals(key)) { return objectLimit; }
       throw new AssertionError("key: " + key);
     }
 
@@ -521,6 +610,10 @@ public class TransactionBatchTest extends TestCase {
     public String getProperty(String key) {
       throw new AssertionError();
     }
+
+    public long getLong(String key, long defaultValue) {
+      throw new AssertionError();
+   }
 
   }
 

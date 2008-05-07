@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package org.terracotta.dso;
 
@@ -11,6 +11,7 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
+import com.tc.exception.ImplementMe;
 import com.tc.object.Portability;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.TransparencyClassAdapter;
@@ -32,6 +33,7 @@ import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.properties.ReconnectConfig;
 import com.terracottatech.config.Modules;
 
 import java.io.File;
@@ -418,4 +420,9 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   public void addWriteAutolock(String methodPattern, String lockContextInfo) {
     //      
   }
+
+  public ReconnectConfig getL1ReconnectProperties() {
+    throw new ImplementMe();
+  }
+
 }

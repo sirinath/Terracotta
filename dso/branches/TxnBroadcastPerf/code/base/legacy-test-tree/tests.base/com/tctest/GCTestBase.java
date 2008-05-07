@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -34,10 +34,6 @@ public abstract class GCTestBase extends TransparentTestBase implements TestConf
 
   protected boolean getGCEnabled() {
     return GC_ENABLED;
-  }
-
-  public int getGCIntervalInSeconds() {
-    return GARBAGE_COLLECTION_INTERVAL;
   }
 
   protected boolean getGCVerbose() {

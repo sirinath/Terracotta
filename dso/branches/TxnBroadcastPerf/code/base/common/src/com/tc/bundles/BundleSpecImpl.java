@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.bundles;
@@ -99,9 +99,9 @@ final class BundleSpecImpl extends BundleSpec {
     return (verspec == null) ? "" : verspec;
   }
 
-  public boolean isCompatible(final String symbolicName, final String version) {
+  public boolean isCompatible(final String symbolicNameArg, final String version) {
     // symbolic-names must match
-    if (!BundleSpec.isMatchingSymbolicName(this.symbolicName, symbolicName)) return false;
+    if (!BundleSpec.isMatchingSymbolicName(this.symbolicName, symbolicNameArg)) return false;
 
     // if symbolic-names are matching, then check for version compatibility -
     // and if no specific bundle-version required/specified so it must be compatible with the version

@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package java.util;
@@ -62,10 +62,14 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   public synchronized Object clone() {
     if (__tc_isManaged()) {
       synchronized (__tc_managed().getResolveLock()) {
-        Hashtable clone = new Hashtable(this);
+        Hashtable clone = (Hashtable) super.clone();
 
-        // This call to fixTCObjectReference isn't strictly required, but if someone every changes
-        // this method to actually use any built-in clone mechanism, it will be needed -- better safe than sorry here
+        for (Iterator it = clone.entrySet().iterator(); it.hasNext();) {
+          Map.Entry cloneEntry = (Map.Entry)it.next();
+          //make sure any cleared references are looked-up before returning the clone
+          //otherwise the clone may end up having ValueWrapper's with ObjectID's instead of the actual value object
+          ((HashtableTC)clone).lookUpAndStoreIfNecessary(cloneEntry);
+        }
         return Util.fixTCObjectReferenceOfClonedObject(this, clone);
       }
     }
@@ -294,6 +298,33 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       }
     } else {
       super.remove(key);
+    }
+  }
+  
+  /**
+   * This method is to be invoked when one needs a put to get broadcast, but do not want to fault in the value of a
+   * map entry.
+   */
+  public synchronized void __tc_put_logical(Object key, Object value) {
+    if (__tc_isManaged()) {
+      synchronized (__tc_managed().getResolveLock()) {
+        if (key == null || value == null) { throw new NullPointerException(); }
+        ManagerUtil.checkWriteAccess(this);
+        Entry e = __tc_getEntry(key);
+        if (e == null) {
+          // New mapping
+          ManagerUtil.logicalInvoke(this, "put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", new Object[] {
+              key, value });
+          // Sucks to do a second lookup !!
+          super.put(key, wrapValueIfNecessary(value));
+        } else {
+          ManagerUtil.logicalInvoke(this, "put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                                    new Object[] { e.getKey(), value });
+          e.setValue(wrapValueIfNecessary(value));
+        }
+      }
+    } else {
+      super.put(key, value);
     }
   }
 
@@ -586,7 +617,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     public CollectionWrapper() {
       super();
     }
-    
+
     public Object[] toArray() {
       synchronized (HashtableTC.this) {
         if (__tc_isManaged()) {

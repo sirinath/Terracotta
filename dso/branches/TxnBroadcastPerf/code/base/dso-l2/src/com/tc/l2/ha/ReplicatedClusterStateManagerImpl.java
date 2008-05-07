@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.ha;
@@ -164,6 +164,9 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
                                                                               + L2HAZapNodeRequestProcessor
                                                                                   .getErrorString(new Throwable()));
     } else {
+      // XXX:: Is it a good idea to check if the message we are receiving is from the active server that we think is
+      // active ? There is a race between publishing active and pushing cluster state and hence we don't do the check.
+      // May be someday these tow messages will merge into one.
       msg.initState(state);
       sendChannelLifeCycleEventsIfNecessary(msg);
       sendOKResponse(fromNode, msg);

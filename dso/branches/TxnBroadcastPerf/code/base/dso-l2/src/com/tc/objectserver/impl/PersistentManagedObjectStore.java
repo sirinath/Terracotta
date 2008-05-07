@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.impl;
@@ -119,7 +119,6 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     PrettyPrinter rv = out;
     out = out.println(getClass().getName()).duplicateAndIndent();
     out.indent().print("extantObjectIDs: ").visit(extantObjectIDs).println();
-    out.indent().print("objectPersistor: ").duplicateAndIndent().visit(objectPersistor).println();
     return rv;
   }
 

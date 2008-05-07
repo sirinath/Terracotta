@@ -1,5 +1,5 @@
 #
-# All content copyright (c) 2003-2006 Terracotta, Inc.,
+# All content copyright (c) 2003-2008 Terracotta, Inc.,
 # except as may otherwise be noted in a separate copyright notice.
 # All rights reserved
 #
@@ -290,11 +290,12 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   def check_compile
     begin
       @no_compile = false # override this if it's turned on
+      check_maven_version
       check_short
-      raise "There's failure in tests." if @script_results.failed?
+      raise "check_short failed." if @script_results.failed?
       mark_this_revision_as_good(@build_environment.current_revision)
-    rescue
-      mark_this_revision_as_bad(@build_environment.current_revision)
+    rescue 
+      mark_this_revision_as_bad(@build_environment.current_revision, $!)
       raise
     end
   end
@@ -427,6 +428,44 @@ END
       ant.fileset(:dir => schema_config_dir.to_s, :includes => '*.xsdconfig')
     }
   end
+  
+  # Generates the JAR containg the class files that represent the XML schema  
+  # for the l1 properties from l2 
+  def generate_l1_prop_from_l2_classes
+    schema_dir = @static_resources.l1_prop_from_l2_schema_source_directory(@module_set)
+    schema_config_dir = @static_resources.l1_prop_from_l2_schema_config_directory(@module_set)
+    dest_jar = @static_resources.compiled_l1_prop_from_l2_jar(@module_set)
+    generated_source_dir = @build_results.l1_prop_from_l2_schema_generation_directory
+
+    text = <<END
+BUILDING NEW L1 PROPERTIES FROMM L2 JAR.
+
+You are creating new Java classes
+to correspond to the XML Schema currently in
+
+    %s
+
+The JAR at
+
+    %s
+
+will be overwritten; you must make sure you CHECK THIS FILE IN
+to source-code control. (We check this file in, rather than
+generating it each time, both to save time and to avoid
+accidental changes to our config schema.)
+END
+    puts text % [ schema_dir.to_s, dest_jar.to_s ]
+
+    generated_source_dir.delete
+
+    ant.xmlbean(:destfile => dest_jar.to_s,
+                :executable => @jvm_set['J2SE-1.4'].javac.to_s,
+    :debug => true, :classpath => @module_set['dso-common'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
+    :srcgendir => generated_source_dir.to_s) {
+      ant.fileset(:dir => schema_dir.to_s, :includes => '*.xsd')
+      ant.fileset(:dir => schema_config_dir.to_s, :includes => '*.xsdconfig')
+    }
+  end
 
   def generate_stats_config_classes
     schema_dir = @static_resources.stats_config_schema_source_directory(@module_set)
@@ -463,6 +502,19 @@ END
   def check_nogroup
     groupless = @module_set.find_all { |mod| mod.groups.empty? }.map { |mod| mod.name }
     run_tests(FixedModuleTypeTestSet.new(groupless, %w(all)))
+  end
+  
+  def check_maven_version
+    maven_version = @config_source['maven.version']
+    printf("%-50s: %s\n",  "maven.version defined in build-config.global", maven_version)
+    poms = Dir.glob('poms/*.xml')
+    poms << 'parent14/pom.xml'
+    poms << 'parent15/pom.xml'
+    poms << 'dependencies/pom.xml'
+    poms.each do |pom|
+      compare_maven_version(maven_version, pom, '/project/parent/version')
+    end
+    compare_maven_version(maven_version, 'pom.xml', '/project/properties/tcVersion')
   end
 
   # Runs a class, as specified on the command line. Takes one argument, which is the name of the test;
@@ -745,12 +797,9 @@ END
     FileUtils.rm(sinnerList) if File.exist?(sinnerList)
   end
 
-  def mark_this_revision_as_bad(revision)
-    if @script_results.failed?
-      STDERR.puts("Revision #{revision} is bad, mm'kay! check_short fails.")
-    else
-      STDERR.puts("Revision #{revision} is bad, mm'kay! It doesn't compile.")
-    end
+  def mark_this_revision_as_bad(revision, exception)
+    STDERR.puts("Revision #{revision} is bad, mm'kay!")
+    STDERR.puts(exception)
     
     # get the original sinner who broke the build
     sinnerList = File.join(ENV['HOME'], ".tc", "sinner.txt")
@@ -971,9 +1020,9 @@ END
             'jvmargs'  => config_source['jvmargs'],
 
             'tests-jdk' => @jvm_set['tests-jdk'].short_description,
-            'JAVA_HOME_14' => @jvm_set['J2SE-1.4'].short_description,
-            'JAVA_HOME_15' => @jvm_set['J2SE-1.5'].short_description
-
+            'JAVA_HOME_14' => @jvm_set['1.4'].short_description,
+            'JAVA_HOME_15' => @jvm_set['1.5'].short_description,
+            'JAVA_HOME_16' => @jvm_set['1.6'].short_description
       }
 
 

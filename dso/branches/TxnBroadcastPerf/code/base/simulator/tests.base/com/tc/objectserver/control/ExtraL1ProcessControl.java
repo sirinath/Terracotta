@@ -1,17 +1,18 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.control;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.process.LinkedJavaProcess;
+import com.tc.lcp.LinkedJavaProcess;
 import com.tc.test.TestConfigObject;
 import com.tc.util.Assert;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Iterator;
 import java.util.List;
 
 public class ExtraL1ProcessControl extends ExtraProcessServerControl {
@@ -38,6 +39,20 @@ public class ExtraL1ProcessControl extends ExtraProcessServerControl {
     this.directory = directory;
 
     setJVMArgs();
+  }
+
+  public void setCoresidentMode(String coresidentConfigFileLoc) {
+    for (Iterator it = this.jvmArgs.iterator(); it.hasNext(); ) {
+      String arg = (String) it.next();
+      if (arg.startsWith("-Dtc.config=")) {
+        it.remove();
+        System.err.println("Removed original arg: " + arg);
+      }
+    }
+    final String newArg = "-Dtc.config=" + super.configFileLoc + "#" + coresidentConfigFileLoc;
+    this.jvmArgs.add(newArg);
+    System.err.println("Added new arg: " + newArg);
+    this.jvmArgs.add("-Dtc.dso.globalmode=false");
   }
 
   public File getJavaHome() {

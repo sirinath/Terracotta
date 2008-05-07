@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tctest;
@@ -31,7 +31,7 @@ public class IllegalReconnectTest extends TransparentTestBase {
     return App.class;
   }
 
-  protected boolean canRunProxyConnect() {
+  protected boolean canRunL1ProxyConnect() {
     return true;
   }
 
