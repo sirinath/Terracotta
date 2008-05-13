@@ -53,54 +53,48 @@ public class Resolver {
    * 
    * @param repositoryStrings Each repository string can be either a file path or a file:// URL
    */
-  public Resolver(final String[] repositoryStrings) {
+  public Resolver(final String[] repositoryStrings) throws BundleException {
     this(repositoryStrings, true);
   }
 
-  public Resolver(final String[] repositoryStrings, final boolean injectDefault) {
+  public Resolver(final String[] repositoryStrings, final boolean injectDefault) throws BundleException {
     if (injectDefault) injectDefaultRepositories();
 
     for (int i = 0; i < repositoryStrings.length; i++) {
       String repository = repositoryStrings[i];
       File repoFile = resolveRepositoryLocation(repository);
-      if (repoFile != null) repositories.add(repoFile);
+      if (repoFile != null) {
+        repositories.add(repoFile);
+      }
     }
 
     if (repositories.isEmpty()) {
-      final String msg = "No valid TIM repository locations defined, set the value of the com.tc.l1.modules.repositories "
-                         + "system property to declare a default TIM repository.";
-      consoleLogger.fatal(msg);
-      System.exit(1);
+      String msg = "No module repositories have been specified via the com.tc.l1.modules.repositories system property";
+      throw new RuntimeException(msg);
     }
   }
 
-  private void injectDefaultRepositories() {
+  private void injectDefaultRepositories() throws BundleException {
     final String installRoot = System.getProperty("tc.install-root");
     if (installRoot != null) {
       final File defaultRepository = new File(installRoot, "modules");
-      if (resolveRepositoryLocation(defaultRepository.getPath()) == null) {
-        consoleLogger.fatal("The default TIM repository: '" + ResolverUtils.canonicalize(defaultRepository)
-                            + "' does not exist.");
-        System.exit(1);
-      }
-      consoleLogger.debug("Appending default TIM repository: '" + defaultRepository + "'");
+      consoleLogger.debug("Appending default TIM repository: '" + defaultRepository.toString() + "'");
       repositories.add(defaultRepository);
     }
 
     final TCProperties props = TCPropertiesImpl.getProperties().getPropertiesFor(TC_PROPERTIES_SECTION);
     final String reposProp = props != null ? props.getProperty("repositories", true) : null;
-    if (reposProp == null) return;
-
-    final String[] entries = reposProp.split(",");
-    for (int i = 0; i < entries.length; i++) {
-      final String entry = entries[i].trim();
-      final File repoFile = resolveRepositoryLocation(entry);
-      if (repoFile == null) {
-        consoleLogger.warn("Ignored non-existent TIM repository: '" + ResolverUtils.canonicalize(entry) + "'");
-        continue;
+    if (reposProp != null && reposProp.length() > 0) {
+      final String[] entries = reposProp.split(",");
+      if (entries != null) {
+        for (int i = 0; i < entries.length; i++) {
+          String entry = entries[i].trim();
+          if (entry != null && entry.length() > 0) {
+            consoleLogger.debug("Prepending default TIM repository: '" + entry.toString() + "'");
+            repositories.add(resolveRepositoryLocation(entry));
+          }
+        }
       }
-      consoleLogger.debug("Prepending default TIM repository: '" + ResolverUtils.canonicalize(repoFile) + "'");
-      repositories.add(repoFile);
     }
   }
 
@@ -140,8 +134,7 @@ public class Resolver {
     // deprecated but allowed file URL
     file = FileUtils.toFile(url);
     if (!file.isDirectory()) {
-      consoleLogger.warn("Skipping repository URL: '" + repository
-                         + "', it either does not exist nor resolve to a directory.");
+      consoleLogger.warn("Skipping repository URL: '" + repository + "', it either does not exist nor resolve to a directory.");
       return null;
     }
 
@@ -344,8 +337,7 @@ public class Resolver {
       if (required == null) {
         String msg = formatMessage(Message.ERROR_BUNDLE_DEPENDENCY_UNRESOLVED, new Object[] { spec.getName(),
             spec.getVersion(), spec.getGroupId() });
-        throw new MissingBundleException(msg, spec.getGroupId(), spec.getName(), spec.getVersion(), repositories,
-                                         dependencyStack);
+        throw new MissingBundleException(msg);
       }
       addToRegistry(required, getManifest(required));
       resolveDependencies(required, dependencyStack);
