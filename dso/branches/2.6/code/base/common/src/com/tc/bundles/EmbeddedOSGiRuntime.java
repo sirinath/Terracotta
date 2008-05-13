@@ -49,8 +49,10 @@ public interface EmbeddedOSGiRuntime {
       int repoCount = modules.sizeOfRepositoryArray();
       for (int i = 0; i < repoCount; i++) {
         final String location = modules.getRepositoryArray(i);
-        final File file = Resolver.resolveRepositoryLocation(location);
-        if (file != null) repoList.add(file.toURI().toURL());
+        File file = Resolver.resolveRepositoryLocation(location);
+        if(file != null) {
+          repoList.add(file.toURI().toURL());
+        }
       }
       return new KnopflerfishOSGi((URL[]) repoList.toArray(new URL[0]));
     }
