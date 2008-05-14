@@ -9,6 +9,7 @@ import com.tc.async.api.EventContext;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.util.Assert;
 
 /**
  * @author steve
@@ -18,7 +19,11 @@ public class ReceiveTransactionCompleteHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     AcknowledgeTransactionMessage atm = (AcknowledgeTransactionMessage) context;
-    transactionManager.receivedAcknowledgement(atm.getLocalSessionID(), atm.getRequestID());
+    int acks = atm.acksBatchSize();
+    Assert.assertTrue(acks > 0);
+    for(int i = 0; i < acks; ++i) {
+      transactionManager.receivedAcknowledgement(atm.getLocalSessionID(), atm.getRequestID(i));
+    }
   }
 
   public void initialize(ConfigurationContext context) {

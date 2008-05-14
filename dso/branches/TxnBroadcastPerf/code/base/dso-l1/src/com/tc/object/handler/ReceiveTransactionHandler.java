@@ -20,6 +20,7 @@ import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockContext;
+import com.tc.object.msg.AcknowledgeTransactionBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -48,25 +49,29 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   private final ChannelIDProvider                    cidProvider;
   private final Sink                                 dmiSink;
   private final DmiManager                           dmiManager;
+  private final AcknowledgeTransactionBatchManager   acknowledgeTransactionBatchManager;
 
   public ReceiveTransactionHandler(ChannelIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
-                                   Sink dmiSink, DmiManager dmiManager) {
+                                   Sink dmiSink, DmiManager dmiManager,
+                                   AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager) {
     this.cidProvider = provider;
     this.atmFactory = atmFactory;
     this.gtxManager = gtxManager;
     this.sessionManager = sessionManager;
     this.dmiSink = dmiSink;
     this.dmiManager = dmiManager;
+    this.acknowledgeTransactionBatchManager = acknowledgeTransactionBatchManager;
   }
 
   public void handleEvent(EventContext context) {
     final BroadcastTransactionMessageImpl btm = (BroadcastTransactionMessageImpl) context;
 
     if (DebugUtil.DEBUG) System.err.println(cidProvider.getChannelID() + ": ReceiveTransactionHandler: committer="
-                                  + btm.getCommitterID() + ", " + btm.getTransactionID() + btm.getGlobalTransactionID()
-                                  + ", notified: " + btm.addNotifiesTo(new LinkedList()) + ", lookup ObjectIDs: "
-                                  + btm.getLookupObjectIDs());
+                                            + btm.getCommitterID() + ", " + btm.getTransactionID()
+                                            + btm.getGlobalTransactionID() + ", notified: "
+                                            + btm.addNotifiesTo(new LinkedList()) + ", lookup ObjectIDs: "
+                                            + btm.getLookupObjectIDs());
 
     Assert.eval(btm.getLockIDs().size() > 0);
     GlobalTransactionID lowWaterMark = btm.getLowGlobalTransactionIDWatermark();
@@ -113,7 +118,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     if (sessionManager.isCurrentSession(btm.getLocalSessionID())) {
       AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage();
       ack.initialize(btm.getCommitterID(), btm.getTransactionID());
-      ack.send();
+      // batching ack.send();
+      acknowledgeTransactionBatchManager.batchAckSend(ack);
     }
     btm.recycle();
   }

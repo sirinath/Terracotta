@@ -9,6 +9,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.msg.AcknowledgeTransactionBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.net.DSOChannelManager;
@@ -22,14 +23,17 @@ import com.tc.objectserver.tx.TransactionBatchManager;
  * @author steve
  */
 public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeAction {
-  private final DSOChannelManager       channelManager;
-  private final TCLogger                logger = TCLogging.getLogger(TransactionAcknowledgeActionImpl.class);
-  private final TransactionBatchManager transactionBatchManager;
+  private final DSOChannelManager                  channelManager;
+  private final TCLogger                           logger = TCLogging.getLogger(TransactionAcknowledgeActionImpl.class);
+  private final TransactionBatchManager            transactionBatchManager;
+  private final AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager;
 
   public TransactionAcknowledgeActionImpl(DSOChannelManager channelManager,
-                                          TransactionBatchManager transactionBatchManager) {
+                                          TransactionBatchManager transactionBatchManager,
+                                          AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager) {
     this.channelManager = channelManager;
     this.transactionBatchManager = transactionBatchManager;
+    this.acknowledgeTransactionBatchManager = acknowledgeTransactionBatchManager;
   }
 
   public void acknowledgeTransaction(ServerTransactionID stxID) {
@@ -41,7 +45,8 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
       AcknowledgeTransactionMessage m = (AcknowledgeTransactionMessage) channel
           .createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
       m.initialize(stxID.getSourceID(), stxID.getClientTransactionID());
-      m.send();
+      // batching m.send();
+      acknowledgeTransactionBatchManager.batchAckSend(m);
 
       // send batch ack if necessary
       try {
