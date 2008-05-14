@@ -46,8 +46,8 @@ import javax.management.remote.JMXConnector;
 /**
  * Note: Doing server and client crashes manually in a unit test may not always run properly in the monkeys. Writing a
  * System test for the same is highly recommended as the below test is very hard to maintain. If you encounter more and
- * more problems maintaining this test, just disable this, for a System test will be written for the same. Right now
- * System test is not available, once written, will be updated here.
+ * more problems maintaining this test, just disable this, for a System test is available for the same. Equivalent
+ * System test is ClientAbscondAfterServerCrashTest
  * 
  * @author mgovinda
  */
@@ -73,7 +73,6 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
     List jvmArgs = new ArrayList();
     int proxyPort = portChooser.chooseRandomPort();
 
-
     RestartTestHelper helper = new RestartTestHelper(isCrashy,
                                                      new RestartTestEnvironment(this.getTempDirectory(), portChooser,
                                                                                 RestartTestEnvironment.DEV_MODE),
@@ -81,7 +80,7 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
     int dsoPort = helper.getServerPort();
     int jmxPort = helper.getAdminPort();
     ServerControl server = helper.getServerControl();
-    
+
     ProxyConnectManager mgr = new ProxyConnectManagerImpl();
     mgr.setDsoPort(dsoPort);
     mgr.setProxyPort(proxyPort);
@@ -126,7 +125,7 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
 
     // Now crash the server
     server.crash();
-    
+
     Thread.sleep(3 * 1000);
 
     // (simulation) client1 crash. Close the client channel so that it doesn't start the Async Reconnect
@@ -136,7 +135,7 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
 
     Thread.sleep(3 * 1000);
 
-    // start the server back 
+    // start the server back
     server.start();
     System.out.println("Server: I am back");
 
@@ -144,7 +143,7 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
     Thread.sleep(15 * 1000);
     System.out.println("JMX should have been up by now");
 
-    //Wait till server accepts client2's reconnect request
+    // Wait till server accepts client2's reconnect request
     pauseListener2.waitUntilUnpaused();
     System.out.println("Client 2 UNPAUSED");
 
