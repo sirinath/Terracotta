@@ -10,13 +10,18 @@ import com.tc.async.api.EventContext;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.util.Assert;
 
 public class TransactionAcknowledgementHandler extends AbstractEventHandler {
   private ServerTransactionManager transactionManager;
 
   public void handleEvent(EventContext context) {
     AcknowledgeTransactionMessage atm = (AcknowledgeTransactionMessage) context;
-    transactionManager.acknowledgement(atm.getRequesterID(), atm.getRequestID(), atm.getClientID());
+    int acks = atm.acksBatchSize();
+    Assert.assertTrue(acks > 0);
+    for (int i = 0; i < acks; ++i) {
+      transactionManager.acknowledgement(atm.getRequesterID(), atm.getRequestID(i), atm.getClientID());
+    }
   }
 
   public void initialize(ConfigurationContext context) {

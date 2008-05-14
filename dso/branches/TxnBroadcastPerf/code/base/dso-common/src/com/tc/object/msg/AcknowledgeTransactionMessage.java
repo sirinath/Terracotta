@@ -12,10 +12,14 @@ import com.tc.object.tx.TransactionID;
 public interface AcknowledgeTransactionMessage {
 
   public void initialize(NodeID channelID, TransactionID txID);
+  
+  public void batchAck(TransactionID txID);
 
   public NodeID getRequesterID();
 
   public TransactionID getRequestID();
+  
+  public TransactionID getRequestID(int index);
 
   public void send();
 
@@ -23,4 +27,5 @@ public interface AcknowledgeTransactionMessage {
 
   public SessionID getLocalSessionID();
 
+  public int acksBatchSize();
 }

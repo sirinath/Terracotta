@@ -79,6 +79,8 @@ import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
+import com.tc.object.msg.AcknowledgeTransactionBatchManager;
+import com.tc.object.msg.AcknowledgeTransactionBatchManagerImpl;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -385,11 +387,12 @@ public class DistributedObjectClient extends SEDA {
     Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(dmiManager), 1,
                                               maxSize);
 
+    AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionBatchManagerImpl();
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE,
                      new ReceiveTransactionHandler(channel.getChannelIDProvider(), channel
                          .getAcknowledgeTransactionMessageFactory(), gtxManager, sessionManager, dmiStage.getSink(),
-                                                   dmiManager), 1, maxSize);
+                                                   dmiManager, acknowledgeTransactionBatchManager), 1, maxSize);
     Stage oidRequestResponse = stageManager.createStage(ClientConfigurationContext.OBJECT_ID_REQUEST_RESPONSE_STAGE,
                                                         remoteIDProvider, 1, maxSize);
     Stage transactionResponse = stageManager.createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_COMPLETE_STAGE,
