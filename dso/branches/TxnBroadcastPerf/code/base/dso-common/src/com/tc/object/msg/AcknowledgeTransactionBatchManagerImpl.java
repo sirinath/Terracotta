@@ -53,7 +53,6 @@ public class AcknowledgeTransactionBatchManagerImpl implements AcknowledgeTransa
           ackWaiting = ack;
         } else {
           ackWaiting.batchAck(ack.getRequestID());
-          ((AcknowledgeTransactionMessageImpl) ack).recycle();
         }
       }
     }
