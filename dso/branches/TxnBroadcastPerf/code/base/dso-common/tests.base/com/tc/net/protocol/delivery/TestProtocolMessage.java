@@ -4,11 +4,18 @@
  */
 package com.tc.net.protocol.delivery;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.protocol.TCNetworkHeader;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.TCNetworkMessageEvent;
+import com.tc.net.protocol.TCNetworkMessageListener;
 import com.tc.net.protocol.delivery.OOOProtocolMessage;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * 
@@ -23,6 +30,7 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public boolean          isAck              = false;
   private boolean         isGoodbye          = false;
   public short            sessionId          = 0;
+  private final Set       listeners          = new CopyOnWriteArraySet();
 
   public TestProtocolMessage(TCNetworkMessage msg, long sent, long ack) {
     this.msg = msg;
@@ -132,5 +140,18 @@ public class TestProtocolMessage implements OOOProtocolMessage {
 
   public void reallyDoRecycleOnWrite() {
     //
+  }
+
+  public void addListener(TCNetworkMessageListener listener) {
+    listeners.add(listener);
+  }
+
+  public boolean isEmptyListeners() {
+    return (listeners.isEmpty());  }
+
+  public void notifyMessageEvent(TCNetworkMessageEvent event) {
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      ((TCNetworkMessageListener) i.next()).notifyMessageEvent(event);
+    }
   }
 }

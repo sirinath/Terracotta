@@ -322,15 +322,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
 
   public OOOProtocolMessage createProtocolMessage(long sequence, final TCNetworkMessage msg) {
     OOOProtocolMessage rv = messageFactory.createNewSendMessage(getSessionId(), sequence, msg);
-    final Runnable callback = msg.getSentCallback();
-    if (callback != null) {
-      rv.setSentCallback(new Runnable() {
-        public void run() {
-          callback.run();
-        }
-      });
-    }
-
+    if(!msg.isEmptyListeners()) rv.addListener(msg);
     return rv;
   }
 

@@ -117,7 +117,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     // and before we actually send it, the server may go down and come back up !
     if (sessionManager.isCurrentSession(btm.getLocalSessionID())) {
       AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage();
-      ack.initialize(btm.getCommitterID(), btm.getTransactionID());
+      ack.initialize(btm.getCommitterID());
+      ack.addAckMessage(btm.getTransactionID());
       // batching ack.send();
       acknowledgeTransactionBatchManager.batchAckSend(ack);
     }

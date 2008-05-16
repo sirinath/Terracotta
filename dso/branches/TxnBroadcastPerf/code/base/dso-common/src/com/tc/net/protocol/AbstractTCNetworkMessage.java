@@ -1,7 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol;
+
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCInternalError;
@@ -11,13 +14,17 @@ import com.tc.util.Assert;
 import com.tc.util.StringUtil;
 import com.tc.util.concurrent.SetOnceFlag;
 
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * Base class for network messages
  * 
  * @author teck
  */
 public class AbstractTCNetworkMessage implements TCNetworkMessage {
-  protected static final TCLogger logger = TCLogging.getLogger(TCNetworkMessage.class);
+  private final List              listeners = new CopyOnWriteArrayList();
+  protected static final TCLogger logger    = TCLogging.getLogger(TCNetworkMessage.class);
 
   protected AbstractTCNetworkMessage(TCNetworkHeader header, boolean seal) {
     this(header, null, null, seal);
@@ -189,16 +196,16 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
 
     return buf.toString();
   }
-  
+
   protected String dump() {
     StringBuffer toRet = new StringBuffer(toString());
     toRet.append("\n\n");
-    if(entireMessageData != null) {
+    if (entireMessageData != null) {
       for (int i = 0; i < entireMessageData.length; i++) {
         toRet.append('[').append(i).append(']').append('=').append(entireMessageData[i].toString());
         toRet.append(" =  { ");
-          byte ba[] = entireMessageData[i].array();
-        for (int j = 0 ; j < ba.length; j++) {
+        byte ba[] = entireMessageData[i].array();
+        for (int j = 0; j < ba.length; j++) {
           toRet.append(Byte.toString(ba[j])).append(' ');
         }
         toRet.append(" }  \n\n");
@@ -234,7 +241,9 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
   }
 
   public final void wasSent() {
-    fireSentCallback();
+    if (!isEmptyListeners()) {
+      fireEvent(new TCNetworkMessageEventImpl(TCNetworkMessageEventType.SENT_EVENT, this));
+    }
     doRecycleOnWrite();
   }
 
@@ -266,26 +275,6 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     return isSealed() && entireMessageData == null;
   }
 
-  private void fireSentCallback() {
-    if (sentCallback != null) {
-      if (sentCallbackFired.attemptSet()) {
-        try {
-          sentCallback.run();
-        } catch (Exception e) {
-          logger.error("Caught exception running sent callback", e);
-        }
-      }
-    }
-  }
-
-  public final void setSentCallback(Runnable callback) {
-    this.sentCallback = callback;
-  }
-
-  public final Runnable getSentCallback() {
-    return this.sentCallback;
-  }
-  
   private void checkNotRecycled() {
     if (isRecycled()) { throw new IllegalStateException("Message is already Recycled"); }
   }
@@ -298,8 +287,28 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     if (sealed.isSet()) { throw new IllegalStateException("Message is sealed"); }
   }
 
+  public void addListener(TCNetworkMessageListener listener) {
+    listeners.add(listener);
+  }
+
+  private void fireEvent(TCNetworkMessageEvent event) {
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      ((TCNetworkMessageListener) i.next()).notifyMessageEvent(event);
+    }
+  }
+
+  public boolean isEmptyListeners() {
+    return (listeners.isEmpty());
+  }
+
+  /*
+   * Cascade event notification when message wrapped or event pass by
+   */
+  public void notifyMessageEvent(TCNetworkMessageEvent event) {
+    fireEvent(event);
+  }
+
   private final SetOnceFlag           sealed             = new SetOnceFlag();
-  private final SetOnceFlag           sentCallbackFired  = new SetOnceFlag();
   private static final TCByteBuffer[] EMPTY_BUFFER_ARRAY = {};
   private final TCNetworkHeader       header;
   private TCByteBuffer[]              payloadData;
@@ -308,6 +317,5 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
   private int                         totalLength;
   private int                         dataLength;
   private int                         headerLength;
-  private Runnable                    sentCallback       = null;
 
 }

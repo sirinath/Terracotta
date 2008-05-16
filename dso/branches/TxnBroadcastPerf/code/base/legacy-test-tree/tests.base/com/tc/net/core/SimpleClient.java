@@ -11,6 +11,8 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.GenericNetworkMessage;
 import com.tc.net.protocol.GenericNetworkMessageSink;
 import com.tc.net.protocol.GenericProtocolAdaptor;
+import com.tc.net.protocol.TCNetworkMessageEvent;
+import com.tc.net.protocol.TCNetworkMessageListener;
 
 public class SimpleClient {
   private final int                 numMsgs;
@@ -44,8 +46,8 @@ public class SimpleClient {
     for (int i = 0; (numMsgs < 0) || (i < numMsgs); i++) {
       TCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, dataSize);
       final GenericNetworkMessage msg = new GenericNetworkMessage(conn, data);
-      msg.setSentCallback(new Runnable() {
-        public void run() {
+      msg.addListener(new TCNetworkMessageListener() {
+        public void notifyMessageEvent(TCNetworkMessageEvent event) {
           msg.setSent();
         }
       });

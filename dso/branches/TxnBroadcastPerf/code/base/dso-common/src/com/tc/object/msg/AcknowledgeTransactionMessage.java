@@ -11,9 +11,9 @@ import com.tc.object.tx.TransactionID;
 
 public interface AcknowledgeTransactionMessage {
 
-  public void initialize(NodeID channelID, TransactionID txID);
+  public void initialize(NodeID channelID);
   
-  public void batchAck(TransactionID txID);
+  public void addAckMessage(TransactionID txID);
 
   public NodeID getRequesterID();
 

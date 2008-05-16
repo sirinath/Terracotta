@@ -182,16 +182,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       final TCNetworkMessage payload = message;
 
       message = WireProtocolMessageImpl.wrapMessage(message, connection);
-      Assert.eval(message.getSentCallback() == null);
-
-      final Runnable callback = payload.getSentCallback();
-      if (callback != null) {
-        message.setSentCallback(new Runnable() {
-          public void run() {
-            callback.run();
-          }
-        });
-      }
+      if(!payload.isEmptyListeners()) message.addListener(payload);
     }
 
     WireProtocolHeader hdr = (WireProtocolHeader) message.getHeader();
