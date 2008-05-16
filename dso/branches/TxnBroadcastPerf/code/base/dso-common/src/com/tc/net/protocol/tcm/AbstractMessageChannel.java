@@ -15,6 +15,8 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.TCNetworkMessageEvent;
+import com.tc.net.protocol.TCNetworkMessageListener;
 import com.tc.net.protocol.transport.MessageTransport;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
@@ -134,36 +136,16 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   
   public void send(final TCNetworkMessage message) {
     if (logger.isDebugEnabled()) {
-      final Runnable logMsg = new Runnable() {
-        public void run() {
-          logger.debug("Message Sent: " + message.toString());
+      message.addListener(new TCNetworkMessageListener() {
+        public void notifyMessageEvent(TCNetworkMessageEvent event) {
+          logger.debug("Message Sent: " + event.getMessage());
         }
-      };
-
-      final Runnable existingCallback = message.getSentCallback();
-      final Runnable newCallback;
-
-      if (existingCallback != null) {
-        newCallback = new Runnable() {
-          public void run() {
-            try {
-              existingCallback.run();
-            } catch (Exception e) {
-              logger.error(e);
-            } finally {
-              logMsg.run();
-            }
-          }
-        };
-      } else {
-        newCallback = logMsg;
-      }
-
-      message.setSentCallback(newCallback);
+      });
     }
 
     this.sendLayer.send(message);
   }
+  
 
   public final void receive(TCByteBuffer[] msgData) {
     this.router.putMessage(parser.parseMessage(this, msgData));

@@ -7,6 +7,8 @@ package com.tc.net.core.event;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.TCNetworkMessageEventImpl;
+import com.tc.net.protocol.TCNetworkMessageEventType;
 import com.tc.util.concurrent.SetOnceFlag;
 
 import java.util.Iterator;
@@ -33,6 +35,9 @@ public class TCConnectionEventCaller {
   public void fireErrorEvent(List eventListeners, TCConnection conn, final Exception exception,
                              final TCNetworkMessage context) {
     if (errorEvent.attemptSet()) {
+      // notify message event listeners
+      if (context != null && !context.isEmptyListeners()) context
+          .notifyMessageEvent(new TCNetworkMessageEventImpl(TCNetworkMessageEventType.SEND_ERROR_EVENT, context));
       final TCConnectionErrorEvent event = new TCConnectionErrorEvent(conn, exception, context);
       fireEvent(eventListeners, event, logger, ERROR);
     }

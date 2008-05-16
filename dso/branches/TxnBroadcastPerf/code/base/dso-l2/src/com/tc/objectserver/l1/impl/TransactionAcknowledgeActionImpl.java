@@ -44,7 +44,8 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
       // send ack
       AcknowledgeTransactionMessage m = (AcknowledgeTransactionMessage) channel
           .createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
-      m.initialize(stxID.getSourceID(), stxID.getClientTransactionID());
+      m.initialize(stxID.getSourceID());
+      m.addAckMessage(stxID.getClientTransactionID());
       // batching m.send();
       acknowledgeTransactionBatchManager.batchAckSend(m);
 

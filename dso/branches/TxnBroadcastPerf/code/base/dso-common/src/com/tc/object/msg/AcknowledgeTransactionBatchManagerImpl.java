@@ -5,11 +5,16 @@
 package com.tc.object.msg;
 
 import com.tc.net.groups.NodeID;
+import com.tc.net.protocol.TCNetworkMessageEvent;
+import com.tc.net.protocol.TCNetworkMessageEventType;
+import com.tc.net.protocol.TCNetworkMessageListener;
+import com.tc.net.protocol.tcm.ChannelManagerEventListener;
+import com.tc.net.protocol.tcm.MessageChannel;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class AcknowledgeTransactionBatchManagerImpl implements AcknowledgeTransactionBatchManager {
+public class AcknowledgeTransactionBatchManagerImpl implements AcknowledgeTransactionBatchManager, ChannelManagerEventListener {
 
   private final Map batchAckStates; // Map<NodeID, BatchAckState>
 
@@ -18,72 +23,76 @@ public class AcknowledgeTransactionBatchManagerImpl implements AcknowledgeTransa
   }
 
   public void batchAckSend(AcknowledgeTransactionMessage ack) {
-    BatchAckState state = getOrCreateState(ack.getRequesterID());
+    AckBatchingState state = getOrCreateState(ack);
     state.batchAck(ack);
   }
 
-  private BatchAckState getOrCreateState(NodeID nid) {
+  private AckBatchingState getOrCreateState(AcknowledgeTransactionMessage ack) {
+    NodeID nid = ack.getRequesterID();
     synchronized (batchAckStates) {
-      BatchAckState state = (BatchAckState) batchAckStates.get(nid);
+      AckBatchingState state = (AckBatchingState) batchAckStates.get(nid);
       if (state == null) {
-        state = new BatchAckState();
+        state = new AckBatchingState(nid);
         batchAckStates.put(nid, state);
       }
       return (state);
     }
   }
+  
+  public void channelCreated(MessageChannel channel) {
+  }
 
-  private static class BatchAckState {
+  public void channelRemoved(MessageChannel channel) {
+  }
 
-    private final Runnable                ackSentCallback;
-    private Runnable                      originalSentCallBack;
-    private AcknowledgeTransactionMessage ackSending;
-    private AcknowledgeTransactionMessage ackWaiting;
+  private class AckBatchingState implements TCNetworkMessageListener {
 
-    private BatchAckState() {
-      ackSentCallback = sentCallback();
+    private volatile AcknowledgeTransactionMessage ackSending;
+    private volatile AcknowledgeTransactionMessage ackWaiting;
+    private final NodeID                           nid;
+
+    private AckBatchingState(NodeID nid) {
+      this.nid = nid;
     }
 
     private synchronized void batchAck(AcknowledgeTransactionMessage ack) {
       if (ackSending == null) {
         ackSending = ack;
-        ackSend(ackSending);
+        sendAck(ackSending);
       } else {
         if (ackWaiting == null) {
           ackWaiting = ack;
         } else {
-          ackWaiting.batchAck(ack.getRequestID());
+          ackWaiting.addAckMessage(ack.getRequestID());
         }
       }
     }
 
-    private void ackSend(AcknowledgeTransactionMessage ack) {
-      AcknowledgeTransactionMessageImpl impl = (AcknowledgeTransactionMessageImpl) ack;
-      originalSentCallBack = impl.getSentCallback();
-      impl.setSentCallback(ackSentCallback);
-      impl.send();
+    private void sendAck(AcknowledgeTransactionMessage ack) {
+      AcknowledgeTransactionMessageImpl msg = (AcknowledgeTransactionMessageImpl) ack;
+      msg.addListener(this);
+      msg.send();
     }
 
     private synchronized void ackSent() {
       ackSending = null;
-      originalSentCallBack = null;
       if (ackWaiting != null) {
         ackSending = ackWaiting;
         ackWaiting = null;
-        ackSend(ackSending);
+        sendAck(ackSending);
+      } else {
+        // XXX a better way to remove state
+        batchAckStates.remove(nid);
       }
     }
 
-    private Runnable sentCallback() {
-      Runnable callback = new Runnable() {
-        public void run() {
-          if (originalSentCallBack != null) {
-            originalSentCallBack.run();
-          }
-          ackSent();
-        }
-      };
-      return (callback);
+    public void notifyMessageEvent(TCNetworkMessageEvent event) {
+      if (event.getType() == TCNetworkMessageEventType.SENT_EVENT) {
+        ackSent();
+      } else if (event.getType() == TCNetworkMessageEventType.SEND_ERROR_EVENT) {
+        // XXX
+      }
     }
   }
+
 }

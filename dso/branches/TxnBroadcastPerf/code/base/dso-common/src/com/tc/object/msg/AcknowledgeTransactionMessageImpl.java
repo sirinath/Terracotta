@@ -14,7 +14,6 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
-import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,13 +58,11 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
     }
   }
 
-  public void initialize(NodeID nid, TransactionID txID) {
+  public void initialize(NodeID nid) {
     requesterID = nid;
-    acks.add(txID);
-    Assert.assertTrue(acks.size() == 1);
   }
 
-  public void batchAck(TransactionID txID) {
+  public void addAckMessage(TransactionID txID) {
     acks.add(txID);
   }
 

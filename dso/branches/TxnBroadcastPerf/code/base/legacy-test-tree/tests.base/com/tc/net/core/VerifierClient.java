@@ -12,6 +12,8 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.GenericNetworkMessage;
 import com.tc.net.protocol.GenericNetworkMessageSink;
 import com.tc.net.protocol.GenericProtocolAdaptor;
+import com.tc.net.protocol.TCNetworkMessageEvent;
+import com.tc.net.protocol.TCNetworkMessageListener;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
@@ -129,8 +131,8 @@ public class VerifierClient implements Runnable {
         sentCallbacks.put(msg, new SetOnceFlag());
       }
 
-      msg.setSentCallback(new Runnable() {
-        public void run() {
+      msg.addListener(new TCNetworkMessageListener() {
+        public void notifyMessageEvent(TCNetworkMessageEvent event) {
           synchronized (sentCallbacks) {
             ((SetOnceFlag) sentCallbacks.get(msg)).set();
           }
@@ -166,8 +168,10 @@ public class VerifierClient implements Runnable {
     // must use a multiple of 8 for the data in this message. Data is <id><counter><id><counter>....where id and
     // counter are both 4 byte ints
     int extra = 8 + (8 * random.nextInt(13));
-    TCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, 4096 * dataSize
-                                                                                     + (this.addExtra == true ? extra : 0));
+    TCByteBuffer data[] = TCByteBufferFactory.getFixedSizedInstancesForLength(false, 4096
+                                                                                     * dataSize
+                                                                                     + (this.addExtra == true ? extra
+                                                                                         : 0));
 
     if (this.dataSize == 0 && this.addExtra) {
       Assert.assertEquals(1, data.length);

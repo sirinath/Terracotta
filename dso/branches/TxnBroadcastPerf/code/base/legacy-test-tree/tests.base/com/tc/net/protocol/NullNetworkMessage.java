@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol;
 
@@ -63,6 +64,18 @@ public class NullNetworkMessage implements TCNetworkMessage {
   }
 
   public void recycle() {
+    return;
+  }
+
+  public void addListener(TCNetworkMessageListener listener) {
+    return;
+  }
+
+  public boolean isEmptyListeners() {
+    return true;
+  }
+
+  public void notifyMessageEvent(TCNetworkMessageEvent event) {
     return;
   }
 

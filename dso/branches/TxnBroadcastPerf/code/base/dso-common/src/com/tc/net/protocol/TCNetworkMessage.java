@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol;
 
@@ -10,7 +11,7 @@ import com.tc.lang.Recyclable;
 /**
  * @author teck
  */
-public interface TCNetworkMessage extends EventContext, Recyclable {
+public interface TCNetworkMessage extends EventContext, Recyclable, TCNetworkMessageListener {
 
   public TCNetworkHeader getHeader();
 
@@ -32,7 +33,8 @@ public interface TCNetworkMessage extends EventContext, Recyclable {
 
   public void wasSent();
 
-  public void setSentCallback(Runnable callback);
+  public void addListener(TCNetworkMessageListener listener);
   
-  public Runnable getSentCallback();
+  public boolean isEmptyListeners();
+  
 }
