@@ -161,7 +161,7 @@
       <!-- dso-l2 -->
       <groupId>berkeleydb</groupId>
       <artifactId>je</artifactId>
-      <version>3.2.74</version>
+      <version>3.2.76</version>
     </dependency>
     <!--
     <dependency>
