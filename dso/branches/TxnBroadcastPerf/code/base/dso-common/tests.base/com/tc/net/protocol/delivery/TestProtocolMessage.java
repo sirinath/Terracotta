@@ -122,10 +122,6 @@ public class TestProtocolMessage implements OOOProtocolMessage {
     throw new ImplementMe();
   }
   
-  public void wasPosted() {
-    throw new ImplementMe();
-  }
-
   public void setSentCallback(Runnable callback) {
     throw new ImplementMe();
   }

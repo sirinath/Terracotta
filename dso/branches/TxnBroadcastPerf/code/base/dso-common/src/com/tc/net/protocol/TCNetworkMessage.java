@@ -33,8 +33,6 @@ public interface TCNetworkMessage extends EventContext, Recyclable, TCNetworkMes
 
   public void wasSent();
   
-  public void wasPosted();
-
   public void addListener(TCNetworkMessageListener listener);
   
   public boolean isEmptyListeners();

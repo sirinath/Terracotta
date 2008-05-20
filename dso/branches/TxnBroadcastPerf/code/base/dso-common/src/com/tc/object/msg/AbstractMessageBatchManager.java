@@ -66,6 +66,7 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
   private class BatchingState implements TCNetworkMessageListener {
 
     private volatile DSOMessageBase sending;
+    private volatile DSOMessageBase posting;
     private volatile DSOMessageBase batching;
     private final MessageChannel    channel;
 
@@ -77,12 +78,15 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
       synchronized (this) {
         if (sending == null) {
           sending = msg;
+        } else if (posting == null) {
+          posting = msg;
         } else {
           if (batching == null) {
             batching = msg;
           } else {
             queueMessageToBatch(batching, msg);
           }
+//          logger.info("XXX batching message " + msg.getMessageType());
           return;
         }
       }
@@ -94,14 +98,16 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
       msg.send();
     }
 
-    private void ackPosted() {
+    private void ackSent() {
       DSOMessageBase msg;
       synchronized (this) {
         if (batching != null) {
-          msg = sending = batching;
+          sending = posting;
+          msg = posting = batching;
           batching = null;
         } else {
-          sending = null;
+          sending = posting;
+          posting = null;
           return;
         }
       }
@@ -117,10 +123,8 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
     }
 
     public void notifyMessageEvent(TCNetworkMessageEvent event) {
-      if (event.getType() == TCNetworkMessageEventType.POSTED_EVENT) {
-        ackPosted();
-      } else if (event.getType() == TCNetworkMessageEventType.SENT_EVENT) {
-        //
+      if (event.getType() == TCNetworkMessageEventType.SENT_EVENT) {
+        ackSent();
       } else if (event.getType() == TCNetworkMessageEventType.SEND_ERROR_EVENT) {
         drop();
       }
