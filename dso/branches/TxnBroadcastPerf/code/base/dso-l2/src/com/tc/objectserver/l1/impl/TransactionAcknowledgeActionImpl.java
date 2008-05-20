@@ -9,8 +9,8 @@ import com.tc.logging.TCLogging;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.msg.AcknowledgeTransactionBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
+import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
@@ -23,14 +23,15 @@ import com.tc.objectserver.tx.TransactionBatchManager;
  * @author steve
  */
 public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeAction {
-  private final DSOChannelManager                  channelManager;
-  private final TCLogger                           logger = TCLogging.getLogger(TransactionAcknowledgeActionImpl.class);
-  private final TransactionBatchManager            transactionBatchManager;
-  private final AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager;
+  private final DSOChannelManager                         channelManager;
+  private final TCLogger                                  logger = TCLogging
+                                                                     .getLogger(TransactionAcknowledgeActionImpl.class);
+  private final TransactionBatchManager                   transactionBatchManager;
+  private final AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
 
   public TransactionAcknowledgeActionImpl(DSOChannelManager channelManager,
                                           TransactionBatchManager transactionBatchManager,
-                                          AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager) {
+                                          AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
     this.channelManager = channelManager;
     this.transactionBatchManager = transactionBatchManager;
     this.acknowledgeTransactionBatchManager = acknowledgeTransactionBatchManager;
@@ -46,8 +47,8 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
           .createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
       m.initialize(stxID.getSourceID());
       m.addAckMessage(stxID.getClientTransactionID());
-      // batching m.send();
-      acknowledgeTransactionBatchManager.batchAckSend(m);
+      m.setBatchManager(acknowledgeTransactionBatchManager);
+      m.batch();
 
       // send batch ack if necessary
       try {

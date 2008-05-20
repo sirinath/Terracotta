@@ -49,7 +49,7 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public long getSent() {
     return sent;
   }
-
+  
   public boolean isHandshake() {
     return isHandshake;
   }
@@ -119,6 +119,10 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   }
 
   public void wasSent() {
+    throw new ImplementMe();
+  }
+  
+  public void wasPosted() {
     throw new ImplementMe();
   }
 

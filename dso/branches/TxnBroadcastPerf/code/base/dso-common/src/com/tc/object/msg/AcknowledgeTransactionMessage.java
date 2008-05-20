@@ -9,16 +9,16 @@ import com.tc.net.groups.NodeID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
 
-public interface AcknowledgeTransactionMessage {
+public interface AcknowledgeTransactionMessage extends MessageBatchable {
 
   public void initialize(NodeID channelID);
-  
+
   public void addAckMessage(TransactionID txID);
 
   public NodeID getRequesterID();
 
   public TransactionID getRequestID();
-  
+
   public TransactionID getRequestID(int index);
 
   public void send();
@@ -27,5 +27,4 @@ public interface AcknowledgeTransactionMessage {
 
   public SessionID getLocalSessionID();
 
-  public int acksBatchSize();
 }

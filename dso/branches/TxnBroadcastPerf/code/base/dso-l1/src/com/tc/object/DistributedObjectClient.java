@@ -79,8 +79,7 @@ import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
-import com.tc.object.msg.AcknowledgeTransactionBatchManager;
-import com.tc.object.msg.AcknowledgeTransactionBatchManagerImpl;
+import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -112,8 +111,8 @@ import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchAccounting;
 import com.tc.object.tx.TransactionBatchFactory;
-import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.object.tx.TransactionBatchWriterFactory;
+import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
@@ -387,7 +386,7 @@ public class DistributedObjectClient extends SEDA {
     Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(dmiManager), 1,
                                               maxSize);
 
-    AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionBatchManagerImpl();
+    AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionMessageBatchManager();
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE,
                      new ReceiveTransactionHandler(channel.getChannelIDProvider(), channel

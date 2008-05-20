@@ -7,6 +7,7 @@ package com.tc.net.protocol;
 public class TCNetworkMessageEventType {
 
   public static final TCNetworkMessageEventType SENT_EVENT       = new TCNetworkMessageEventType("MESSAGE_SENT_EVENT");
+  public static final TCNetworkMessageEventType POSTED_EVENT     = new TCNetworkMessageEventType("MESSAGE_POSTED_EVENT");
   public static final TCNetworkMessageEventType SEND_ERROR_EVENT = new TCNetworkMessageEventType(
                                                                                                  "MESSAGE_SEND_ERROR_EVENT");
 
