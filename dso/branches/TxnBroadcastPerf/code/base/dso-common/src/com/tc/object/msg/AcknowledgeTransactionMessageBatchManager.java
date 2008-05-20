@@ -5,12 +5,10 @@
 package com.tc.object.msg;
 
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 
-public class AcknowledgeTransactionMessageBatchManager extends AbstractMessageBatchManager {
-  private static final TCLogger logger = TCLogging.getLogger(AcknowledgeTransactionMessageBatchManager.class);
+abstract public class AcknowledgeTransactionMessageBatchManager extends AbstractMessageBatchManager {
 
-  public AcknowledgeTransactionMessageBatchManager() {
+  public AcknowledgeTransactionMessageBatchManager(TCLogger logger) {
     super(logger);
   }
 
@@ -18,7 +16,8 @@ public class AcknowledgeTransactionMessageBatchManager extends AbstractMessageBa
     AcknowledgeTransactionMessage ackBatch = (AcknowledgeTransactionMessage) batchMsg;
     AcknowledgeTransactionMessage ack = (AcknowledgeTransactionMessage) msg;
     ackBatch.addAckMessage(ack.getRequestID());
-//    logger.info("XXX batching to " + batchMsg.getChannelID() + " size=" + ackBatch.size() + " with " + ack.getRequestID());
+    // logger.info("XXX batching to " + batchMsg.getChannelID() + " size=" + ackBatch.size() + " with " +
+    // ack.getRequestID());
   }
 
 }

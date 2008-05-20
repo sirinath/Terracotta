@@ -8,10 +8,10 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
-import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
+import com.tc.object.msg.DSOMessageBase;
+import com.tc.object.msg.L2AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.object.tx.ServerTransactionID;
@@ -23,15 +23,15 @@ import com.tc.objectserver.tx.TransactionBatchManager;
  * @author steve
  */
 public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeAction {
-  private final DSOChannelManager                         channelManager;
-  private final TCLogger                                  logger = TCLogging
-                                                                     .getLogger(TransactionAcknowledgeActionImpl.class);
-  private final TransactionBatchManager                   transactionBatchManager;
-  private final AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
+  private final DSOChannelManager                           channelManager;
+  private final TCLogger                                    logger = TCLogging
+                                                                       .getLogger(TransactionAcknowledgeActionImpl.class);
+  private final TransactionBatchManager                     transactionBatchManager;
+  private final L2AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
 
   public TransactionAcknowledgeActionImpl(DSOChannelManager channelManager,
                                           TransactionBatchManager transactionBatchManager,
-                                          AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
+                                          L2AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
     this.channelManager = channelManager;
     this.transactionBatchManager = transactionBatchManager;
     this.acknowledgeTransactionBatchManager = acknowledgeTransactionBatchManager;
@@ -43,16 +43,15 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
       MessageChannel channel = channelManager.getActiveChannel(nodeID);
 
       // send ack
-      AcknowledgeTransactionMessage m = (AcknowledgeTransactionMessage) channel
-          .createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
+      AcknowledgeTransactionMessage m = acknowledgeTransactionBatchManager.createMessage(channel);
       m.initialize(stxID.getSourceID());
       m.addAckMessage(stxID.getClientTransactionID());
-      m.setBatchManager(acknowledgeTransactionBatchManager);
-      m.batch();
+      acknowledgeTransactionBatchManager.sendBatch((DSOMessageBase)m);
 
       // send batch ack if necessary
       try {
         if (transactionBatchManager.batchComponentComplete(nodeID, stxID.getClientTransactionID())) {
+          
           BatchTransactionAcknowledgeMessage msg = channelManager.newBatchTransactionAcknowledgeMessage(nodeID);
           // We always send null batch ID since its never used - clean up
           msg.initialize(TxnBatchID.NULL_BATCH_ID);

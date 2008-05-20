@@ -21,9 +21,9 @@ import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
-import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
-import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
+import com.tc.object.msg.DSOMessageBase;
+import com.tc.object.msg.L1AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.session.SessionManager;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.Assert;
@@ -39,24 +39,22 @@ import java.util.List;
  * @author steve
  */
 public class ReceiveTransactionHandler extends AbstractEventHandler {
-  private static final TCLogger                           logger = TCLogging.getLogger(ReceiveTransactionHandler.class);
+  private static final TCLogger                             logger = TCLogging
+                                                                       .getLogger(ReceiveTransactionHandler.class);
 
-  private ClientTransactionManager                        txManager;
-  private ClientLockManager                               lockManager;
-  private final SessionManager                            sessionManager;
-  private final ClientGlobalTransactionManager            gtxManager;
-  private final AcknowledgeTransactionMessageFactory      atmFactory;
-  private final ChannelIDProvider                         cidProvider;
-  private final Sink                                      dmiSink;
-  private final DmiManager                                dmiManager;
-  private final AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
+  private ClientTransactionManager                          txManager;
+  private ClientLockManager                                 lockManager;
+  private final SessionManager                              sessionManager;
+  private final ClientGlobalTransactionManager              gtxManager;
+  private final ChannelIDProvider                           cidProvider;
+  private final Sink                                        dmiSink;
+  private final DmiManager                                  dmiManager;
+  private final L1AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
 
-  public ReceiveTransactionHandler(ChannelIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
-                                   ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
-                                   Sink dmiSink, DmiManager dmiManager,
-                                   AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
+  public ReceiveTransactionHandler(ChannelIDProvider provider, ClientGlobalTransactionManager gtxManager,
+                                   SessionManager sessionManager, Sink dmiSink, DmiManager dmiManager,
+                                   L1AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
     this.cidProvider = provider;
-    this.atmFactory = atmFactory;
     this.gtxManager = gtxManager;
     this.sessionManager = sessionManager;
     this.dmiSink = dmiSink;
@@ -116,11 +114,11 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     // XXX:: This is a potential race condition here 'coz after we decide to send an ACK
     // and before we actually send it, the server may go down and come back up !
     if (sessionManager.isCurrentSession(btm.getLocalSessionID())) {
-      AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage();
+      AcknowledgeTransactionMessage ack = acknowledgeTransactionBatchManager.createMessage();
       ack.initialize(btm.getCommitterID());
       ack.addAckMessage(btm.getTransactionID());
-      ack.setBatchManager(acknowledgeTransactionBatchManager);
-      ack.batch();
+      // ack.send()
+      acknowledgeTransactionBatchManager.sendBatch((DSOMessageBase)ack);
     }
     btm.recycle();
   }
