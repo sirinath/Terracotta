@@ -44,6 +44,9 @@ import java.util.logging.LogManager;
  */
 public class ClassProcessorHelper {
 
+  /** Name reserved for apps running as root web app in a container */
+  public static final String ROOT_WEB_APP_NAME = "ROOT";
+
   // Setting this system property will delay the timing of when the DSO client is initialized. With the default
   // behavior, the debug subsystem of the VM will not be started until after the DSO client starts up. This means it is
   // impossible to use the debugger during dso client startup. Setting this flag to true will allow debugging, but at
@@ -545,7 +548,7 @@ public class ClassProcessorHelper {
    * @return True if DSO sessions enabled
    */
   public static boolean isDSOSessions(String appName) {
-    appName = ("/".equals(appName)) ? "ROOT" : appName;
+    appName = ("/".equals(appName)) ? ROOT_WEB_APP_NAME : appName;
     try {
       Method m = getContextMethod("isDSOSessions", new Class[] { String.class });
       boolean rv = ((Boolean) m.invoke(null, new Object[] { appName })).booleanValue();
