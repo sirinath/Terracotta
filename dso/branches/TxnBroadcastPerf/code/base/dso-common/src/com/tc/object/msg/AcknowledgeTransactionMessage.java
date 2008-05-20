@@ -9,7 +9,7 @@ import com.tc.net.groups.NodeID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
 
-public interface AcknowledgeTransactionMessage extends MessageBatchable {
+public interface AcknowledgeTransactionMessage {
 
   public void initialize(NodeID channelID);
 
@@ -26,5 +26,7 @@ public interface AcknowledgeTransactionMessage extends MessageBatchable {
   public ClientID getClientID();
 
   public SessionID getLocalSessionID();
+  
+  public int size();
 
 }

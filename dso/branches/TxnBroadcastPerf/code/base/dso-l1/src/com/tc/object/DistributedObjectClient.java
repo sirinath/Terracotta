@@ -79,7 +79,6 @@ import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
-import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -89,6 +88,7 @@ import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.L1AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
@@ -386,12 +386,13 @@ public class DistributedObjectClient extends SEDA {
     Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE, new DmiHandler(dmiManager), 1,
                                               maxSize);
 
-    AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionMessageBatchManager();
+    L1AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new L1AcknowledgeTransactionMessageBatchManager(
+                                                                                                                                     channel
+                                                                                                                                         .getAcknowledgeTransactionMessageFactory());
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE,
-                     new ReceiveTransactionHandler(channel.getChannelIDProvider(), channel
-                         .getAcknowledgeTransactionMessageFactory(), gtxManager, sessionManager, dmiStage.getSink(),
-                                                   dmiManager, acknowledgeTransactionBatchManager), 1, maxSize);
+                     new ReceiveTransactionHandler(channel.getChannelIDProvider(), gtxManager, sessionManager, dmiStage
+                         .getSink(), dmiManager, acknowledgeTransactionBatchManager), 1, maxSize);
     Stage oidRequestResponse = stageManager.createStage(ClientConfigurationContext.OBJECT_ID_REQUEST_RESPONSE_STAGE,
                                                         remoteIDProvider, 1, maxSize);
     Stage transactionResponse = stageManager.createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_COMPLETE_STAGE,
