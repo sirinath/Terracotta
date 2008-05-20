@@ -4,8 +4,6 @@
  */
 package com.tc.net.protocol;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
-
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCInternalError;
 import com.tc.logging.TCLogger;
@@ -14,17 +12,14 @@ import com.tc.util.Assert;
 import com.tc.util.StringUtil;
 import com.tc.util.concurrent.SetOnceFlag;
 
-import java.util.Iterator;
-import java.util.List;
-
 /**
  * Base class for network messages
  * 
  * @author teck
  */
 public class AbstractTCNetworkMessage implements TCNetworkMessage {
-  private final List              listeners = new CopyOnWriteArrayList();
-  protected static final TCLogger logger    = TCLogging.getLogger(TCNetworkMessage.class);
+  private TCNetworkMessageListener listeners;
+  protected static final TCLogger  logger = TCLogging.getLogger(TCNetworkMessage.class);
 
   protected AbstractTCNetworkMessage(TCNetworkHeader header, boolean seal) {
     this(header, null, null, seal);
@@ -246,7 +241,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     }
     doRecycleOnWrite();
   }
-  
+
   // Can be overloaded by sub classes to decide when to recycle differently.
   public void doRecycleOnWrite() {
     recycle();
@@ -288,17 +283,17 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
   }
 
   public void addListener(TCNetworkMessageListener listener) {
-    listeners.add(listener);
+    // support only one listener
+    Assert.assertNull(listeners);
+    listeners = listener;
   }
 
   private void fireEvent(TCNetworkMessageEvent event) {
-    for (Iterator i = listeners.iterator(); i.hasNext();) {
-      ((TCNetworkMessageListener) i.next()).notifyMessageEvent(event);
-    }
+    listeners.notifyMessageEvent(event);
   }
 
   public boolean isEmptyListeners() {
-    return (listeners.isEmpty());
+    return (listeners == null);
   }
 
   /*
