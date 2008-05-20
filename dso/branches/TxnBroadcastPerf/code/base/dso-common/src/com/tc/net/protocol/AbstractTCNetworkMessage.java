@@ -246,6 +246,12 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     }
     doRecycleOnWrite();
   }
+  
+  public final void wasPosted() {
+    if (!isEmptyListeners()) {
+      fireEvent(new TCNetworkMessageEventImpl(TCNetworkMessageEventType.POSTED_EVENT, this));
+    }
+  }
 
   // Can be overloaded by sub classes to decide when to recycle differently.
   public void doRecycleOnWrite() {

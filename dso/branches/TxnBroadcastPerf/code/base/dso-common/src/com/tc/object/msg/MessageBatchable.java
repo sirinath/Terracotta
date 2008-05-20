@@ -4,7 +4,12 @@
  */
 package com.tc.object.msg;
 
+public interface MessageBatchable {
 
-public interface AcknowledgeTransactionBatchManager {
-  public void batchAckSend(AcknowledgeTransactionMessage ack);
+  public void batch();
+
+  public void setBatchManager(MessageBatchManager batchManager);
+  
+  public int size();
+
 }

@@ -69,8 +69,7 @@ import com.tc.object.cache.LRUEvictionPolicy;
 import com.tc.object.cache.NullCache;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.config.schema.PersistenceMode;
-import com.tc.object.msg.AcknowledgeTransactionBatchManager;
-import com.tc.object.msg.AcknowledgeTransactionBatchManagerImpl;
+import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -588,7 +587,7 @@ public class DistributedObjectServer implements TCDumper {
     lockManager = new LockManagerImpl(channelManager, lockStatsManager);
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
-    AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionBatchManagerImpl();
+    AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new AcknowledgeTransactionMessageBatchManager();
     TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
     TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager, acknowledgeTransactionBatchManager);
     SampledCounter globalTxnCounter = (SampledCounter) sampledCounterManager

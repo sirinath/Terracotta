@@ -22,11 +22,12 @@ import java.util.ArrayList;
  * @author steve
  */
 public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements AcknowledgeTransactionMessage {
-  private final static byte REQUEST_ID   = 1;
-  private final static byte REQUESTER_ID = 2;
+  private final static byte   REQUEST_ID   = 1;
+  private final static byte   REQUESTER_ID = 2;
 
-  private NodeID            requesterID;
-  private final ArrayList   acks         = new ArrayList(); // ArrayList<TransactionID>
+  private NodeID              requesterID;
+  private final ArrayList     acks         = new ArrayList(); // ArrayList<TransactionID>
+  private MessageBatchManager batchManager;
 
   public AcknowledgeTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                            MessageChannel channel, TCMessageType type) {
@@ -78,8 +79,16 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
     return ((TransactionID) acks.get(index));
   }
 
-  public int acksBatchSize() {
+  public int size() {
     return acks.size();
+  }
+
+  public void batch() {
+    batchManager.sendBatch(this);
+  }
+
+  public void setBatchManager(MessageBatchManager batchManager) {
+    this.batchManager = batchManager;
   }
 
 }

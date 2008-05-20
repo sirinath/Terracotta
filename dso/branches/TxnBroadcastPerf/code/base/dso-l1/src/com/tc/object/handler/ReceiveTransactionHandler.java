@@ -20,8 +20,8 @@ import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.msg.AcknowledgeTransactionBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
+import com.tc.object.msg.AcknowledgeTransactionMessageBatchManager;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
 import com.tc.object.session.SessionManager;
@@ -39,22 +39,22 @@ import java.util.List;
  * @author steve
  */
 public class ReceiveTransactionHandler extends AbstractEventHandler {
-  private static final TCLogger                      logger = TCLogging.getLogger(ReceiveTransactionHandler.class);
+  private static final TCLogger                           logger = TCLogging.getLogger(ReceiveTransactionHandler.class);
 
-  private ClientTransactionManager                   txManager;
-  private ClientLockManager                          lockManager;
-  private final SessionManager                       sessionManager;
-  private final ClientGlobalTransactionManager       gtxManager;
-  private final AcknowledgeTransactionMessageFactory atmFactory;
-  private final ChannelIDProvider                    cidProvider;
-  private final Sink                                 dmiSink;
-  private final DmiManager                           dmiManager;
-  private final AcknowledgeTransactionBatchManager   acknowledgeTransactionBatchManager;
+  private ClientTransactionManager                        txManager;
+  private ClientLockManager                               lockManager;
+  private final SessionManager                            sessionManager;
+  private final ClientGlobalTransactionManager            gtxManager;
+  private final AcknowledgeTransactionMessageFactory      atmFactory;
+  private final ChannelIDProvider                         cidProvider;
+  private final Sink                                      dmiSink;
+  private final DmiManager                                dmiManager;
+  private final AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager;
 
   public ReceiveTransactionHandler(ChannelIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
                                    Sink dmiSink, DmiManager dmiManager,
-                                   AcknowledgeTransactionBatchManager acknowledgeTransactionBatchManager) {
+                                   AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager) {
     this.cidProvider = provider;
     this.atmFactory = atmFactory;
     this.gtxManager = gtxManager;
@@ -119,8 +119,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
       AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage();
       ack.initialize(btm.getCommitterID());
       ack.addAckMessage(btm.getTransactionID());
-      // batching ack.send();
-      acknowledgeTransactionBatchManager.batchAckSend(ack);
+      ack.setBatchManager(acknowledgeTransactionBatchManager);
+      ack.batch();
     }
     btm.recycle();
   }

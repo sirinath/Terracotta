@@ -17,7 +17,7 @@ public class TransactionAcknowledgementHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     AcknowledgeTransactionMessage atm = (AcknowledgeTransactionMessage) context;
-    int acks = atm.acksBatchSize();
+    int acks = atm.size();
     Assert.assertTrue(acks > 0);
     for (int i = 0; i < acks; ++i) {
       transactionManager.acknowledgement(atm.getRequesterID(), atm.getRequestID(i), atm.getClientID());

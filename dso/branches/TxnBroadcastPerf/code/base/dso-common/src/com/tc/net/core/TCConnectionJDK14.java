@@ -384,6 +384,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
       commNIOServiceThread.requestWriteInterest(this, channel);
     }
+    message.wasPosted();
   }
 
   public final void asynchClose() {

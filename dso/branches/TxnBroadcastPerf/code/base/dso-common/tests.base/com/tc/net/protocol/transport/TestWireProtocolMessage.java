@@ -72,6 +72,10 @@ public class TestWireProtocolMessage implements WireProtocolMessage {
 
   }
 
+  public void wasPosted() {
+    throw new ImplementMe();
+  }
+
   public void setSentCallback(Runnable callback) {
     throw new ImplementMe();
 
