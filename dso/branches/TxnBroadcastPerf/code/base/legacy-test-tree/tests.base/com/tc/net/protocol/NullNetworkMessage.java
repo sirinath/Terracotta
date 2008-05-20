@@ -55,10 +55,6 @@ public class NullNetworkMessage implements TCNetworkMessage {
     return;
   }
   
-  public void wasPosted() {
-    return;
-  }
-
   public void setSentCallback(Runnable callback) {
     return;
   }
