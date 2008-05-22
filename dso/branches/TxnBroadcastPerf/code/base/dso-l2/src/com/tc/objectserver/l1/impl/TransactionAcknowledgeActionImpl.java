@@ -44,8 +44,8 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
 
       // send ack
       AcknowledgeTransactionMessage m = acknowledgeTransactionBatchManager.createMessage(channel);
-      m.initialize(stxID.getSourceID());
-      m.addAckMessage(stxID.getClientTransactionID());
+      m.initialize();
+      m.addAckMessage(stxID.getSourceID(), stxID.getClientTransactionID());
       acknowledgeTransactionBatchManager.sendBatch((DSOMessageBase)m);
 
       // send batch ack if necessary
@@ -54,6 +54,7 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
           
           BatchTransactionAcknowledgeMessage msg = channelManager.newBatchTransactionAcknowledgeMessage(nodeID);
           // We always send null batch ID since its never used - clean up
+          acknowledgeTransactionBatchManager.flush(((DSOMessageBase)msg).getChannel());
           msg.initialize(TxnBatchID.NULL_BATCH_ID);
           msg.send();
         }

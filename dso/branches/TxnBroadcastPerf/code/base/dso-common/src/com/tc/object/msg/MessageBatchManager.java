@@ -4,8 +4,11 @@
  */
 package com.tc.object.msg;
 
+import com.tc.net.protocol.tcm.MessageChannel;
+
 public interface MessageBatchManager {
 
   public void sendBatch(DSOMessageBase msg);
 
+  public void flush(MessageChannel channel);
 }

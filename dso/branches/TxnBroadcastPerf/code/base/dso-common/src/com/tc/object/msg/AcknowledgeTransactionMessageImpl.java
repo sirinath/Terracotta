@@ -22,11 +22,11 @@ import java.util.ArrayList;
  * @author steve
  */
 public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements AcknowledgeTransactionMessage {
-  private final static byte   REQUEST_ID   = 1;
-  private final static byte   REQUESTER_ID = 2;
+  private final static byte REQUEST_ID   = 1;
+  private final static byte REQUESTER_ID = 2;
 
-  private NodeID              requesterID;
-  private final ArrayList     acks         = new ArrayList(); // ArrayList<TransactionID>
+  private NodeID            requesterID;
+  private final ArrayList   acks         = new ArrayList(); // ArrayList<BaseAckTxnMessage>
 
   public AcknowledgeTransactionMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                            MessageChannel channel, TCMessageType type) {
@@ -39,8 +39,8 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
   }
 
   protected void dehydrateValues() {
-    putNVPair(REQUESTER_ID, new NodeIDSerializer(requesterID));
     for (int i = 0; i < acks.size(); ++i) {
+      putNVPair(REQUESTER_ID, new NodeIDSerializer(getRequesterID(i)));
       putNVPair(REQUEST_ID, getRequestID(i).toLong());
     }
   }
@@ -51,35 +51,50 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
         requesterID = ((NodeIDSerializer) getObject(new NodeIDSerializer())).getNodeID();
         return true;
       case REQUEST_ID:
-        acks.add(new TransactionID(getLongValue()));
+        acks.add(new BaseAckTxnMessage(requesterID, new TransactionID(getLongValue())));
         return true;
       default:
         return false;
     }
   }
 
-  public void initialize(NodeID nid) {
-    requesterID = nid;
+  public void initialize() {
+    //
   }
 
-  public void addAckMessage(TransactionID txID) {
-    acks.add(txID);
+  public void addAckMessage(NodeID nid, TransactionID txID) {
+    acks.add(new BaseAckTxnMessage(nid, txID));
   }
 
-  public NodeID getRequesterID() {
-    return requesterID;
-  }
-
-  public TransactionID getRequestID() {
-    return getRequestID(0);
+  public NodeID getRequesterID(int index) {
+    return ((BaseAckTxnMessage) acks.get(index)).getRequesterID();
   }
 
   public TransactionID getRequestID(int index) {
-    return ((TransactionID) acks.get(index));
+    return ((BaseAckTxnMessage) acks.get(index)).getRequestID();
   }
 
   public int size() {
     return acks.size();
+  }
+
+  private static class BaseAckTxnMessage {
+    private final NodeID        requesterID;
+    private final TransactionID requestID;
+
+    private BaseAckTxnMessage(NodeID nid, TransactionID txID) {
+      this.requesterID = nid;
+      this.requestID = txID;
+    }
+
+    private NodeID getRequesterID() {
+      return requesterID;
+    }
+
+    private TransactionID getRequestID() {
+      return requestID;
+    }
+
   }
 
 }

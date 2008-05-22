@@ -8,24 +8,38 @@ import com.tc.logging.TCLogger;
 import com.tc.net.protocol.TCNetworkMessageEvent;
 import com.tc.net.protocol.TCNetworkMessageEventType;
 import com.tc.net.protocol.TCNetworkMessageListener;
+import com.tc.net.protocol.tcm.ChannelEvent;
+import com.tc.net.protocol.tcm.ChannelEventListener;
+import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
 
-abstract public class AbstractMessageBatchManager implements MessageBatchManager, ChannelManagerEventListener {
+abstract public class AbstractMessageBatchManager implements MessageBatchManager, ChannelManagerEventListener,
+    ChannelEventListener {
   private final TCLogger logger;
-  private final Map      batchAckStates; // Map<MessageChannel, BatchAckState>
+  private final Map      batchAckStates;  // Map<MessageChannel, BatchAckState>
+  private final int      preBatchMessages; // outstanding messages before start batching
 
-  public AbstractMessageBatchManager(TCLogger logger) {
+  public AbstractMessageBatchManager(TCLogger logger, int preBatchMessages) {
     this.logger = logger;
+    this.preBatchMessages = preBatchMessages;
     batchAckStates = new HashMap();
   }
 
   public void sendBatch(DSOMessageBase msg) {
     BatchingState state = getOrCreateState(msg);
     if (state != null) state.sendOrQueue(msg);
+  }
+
+  public void flush(MessageChannel channel) {
+    synchronized (batchAckStates) {
+      BatchingState state = (BatchingState) batchAckStates.get(channel);
+      if (state != null) state.flush();
+    }
   }
 
   /*
@@ -37,23 +51,21 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
     MessageChannel ch = msg.getChannel();
     synchronized (batchAckStates) {
       BatchingState state = (BatchingState) batchAckStates.get(ch);
-      if (state == null) {
-        if (ch.isClosed()) {
-          logger.warn("Send message to closed channel " + ch.getChannelID());
-          return null;
-        }
-        state = new BatchingState(ch);
-        batchAckStates.put(ch, state);
-      }
+      Assert.assertNotNull("Unavailabe state " + ch.getChannelID(), state);
       return (state);
     }
   }
 
-  public void channelCreated(MessageChannel channel) {
-    //
+  private void created(MessageChannel channel) {
+    synchronized (batchAckStates) {
+      Assert.assertNull("Stale state " + channel.getLocalAddress() + " -> " + channel.getRemoteAddress(),
+                        batchAckStates.get(channel));
+      batchAckStates.put(channel, new BatchingState(channel));
+    }
+//    logger.info("XXX created " + channel.getLocalAddress() + " -> " + channel.getRemoteAddress());
   }
 
-  public void channelRemoved(MessageChannel channel) {
+  private void removed(MessageChannel channel) {
     synchronized (batchAckStates) {
       BatchingState state = (BatchingState) batchAckStates.get(channel);
       if (state != null) {
@@ -61,12 +73,31 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
         batchAckStates.remove(channel);
       }
     }
+//    logger.info("XXX removed " + channel.getChannelID());
+  }
+
+  // listen to L2
+  public void channelCreated(MessageChannel channel) {
+    created(channel);
+  }
+
+  // listen to L2
+  public void channelRemoved(MessageChannel channel) {
+    removed(channel);
+  }
+
+  // listen to L1
+  public void notifyChannelEvent(ChannelEvent event) {
+    if (ChannelEventType.TRANSPORT_CONNECTED_EVENT.matches(event)) {
+      created(event.getChannel());
+    } else if (ChannelEventType.TRANSPORT_DISCONNECTED_EVENT.matches(event)) {
+      removed(event.getChannel());
+    }
   }
 
   private class BatchingState implements TCNetworkMessageListener {
 
-    private volatile DSOMessageBase sending;
-    private volatile DSOMessageBase posting;
+    private volatile int            sending;
     private volatile DSOMessageBase batching;
     private final MessageChannel    channel;
 
@@ -76,17 +107,15 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
 
     private void sendOrQueue(DSOMessageBase msg) {
       synchronized (this) {
-        if (sending == null) {
-          sending = msg;
-        } else if (posting == null) {
-          posting = msg;
+        if (sending < preBatchMessages) {
+          ++sending;
         } else {
           if (batching == null) {
             batching = msg;
           } else {
             queueMessageToBatch(batching, msg);
           }
-//          logger.info("XXX batching message " + msg.getMessageType());
+//          logger.info("XXX batching message " + msg.getChannelID() + " " + msg.getMessageType());
           return;
         }
       }
@@ -102,12 +131,10 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
       DSOMessageBase msg;
       synchronized (this) {
         if (batching != null) {
-          sending = posting;
-          msg = posting = batching;
+          msg = batching;
           batching = null;
         } else {
-          sending = posting;
-          posting = null;
+          --sending;
           return;
         }
       }
@@ -115,11 +142,23 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
     }
 
     private synchronized void drop() {
-      sending = null;
+      sending = 0;
       if (batching != null) {
         batching = null;
         logger.warn("Drop batch messages " + channel.getChannelID());
       }
+    }
+
+    private synchronized void flush() {
+      DSOMessageBase msg = null;
+      synchronized (this) {
+        if (batching != null) {
+          msg = batching;
+          batching = null;
+          ++sending;
+        }
+      }
+      if (msg != null) send(msg);
     }
 
     public void notifyMessageEvent(TCNetworkMessageEvent event) {
