@@ -8,14 +8,14 @@ import com.tc.logging.TCLogger;
 
 abstract public class AcknowledgeTransactionMessageBatchManager extends AbstractMessageBatchManager {
 
-  public AcknowledgeTransactionMessageBatchManager(TCLogger logger) {
-    super(logger);
+  public AcknowledgeTransactionMessageBatchManager(TCLogger logger, int preBatchMessages) {
+    super(logger, preBatchMessages);
   }
 
   protected void queueMessageToBatch(DSOMessageBase batchMsg, DSOMessageBase msg) {
     AcknowledgeTransactionMessage ackBatch = (AcknowledgeTransactionMessage) batchMsg;
     AcknowledgeTransactionMessage ack = (AcknowledgeTransactionMessage) msg;
-    ackBatch.addAckMessage(ack.getRequestID());
+    ackBatch.addAckMessage(ack.getRequesterID(0), ack.getRequestID(0));
     // logger.info("XXX batching to " + batchMsg.getChannelID() + " size=" + ackBatch.size() + " with " +
     // ack.getRequestID());
   }

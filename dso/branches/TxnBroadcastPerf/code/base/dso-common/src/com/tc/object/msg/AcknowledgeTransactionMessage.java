@@ -11,13 +11,11 @@ import com.tc.object.tx.TransactionID;
 
 public interface AcknowledgeTransactionMessage {
 
-  public void initialize(NodeID channelID);
+  public void initialize();
 
-  public void addAckMessage(TransactionID txID);
+  public void addAckMessage(NodeID nid, TransactionID txID);
 
-  public NodeID getRequesterID();
-
-  public TransactionID getRequestID();
+  public NodeID getRequesterID(int index);
 
   public TransactionID getRequestID(int index);
 

@@ -13,6 +13,7 @@ import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.util.Assert;
 
 public class TransactionAcknowledgementHandler extends AbstractEventHandler {
+//  private static final TCLogger logger = TCLogging.getLogger(TransactionAcknowledgementHandler.class);
   private ServerTransactionManager transactionManager;
 
   public void handleEvent(EventContext context) {
@@ -20,7 +21,8 @@ public class TransactionAcknowledgementHandler extends AbstractEventHandler {
     int acks = atm.size();
     Assert.assertTrue(acks > 0);
     for (int i = 0; i < acks; ++i) {
-      transactionManager.acknowledgement(atm.getRequesterID(), atm.getRequestID(i), atm.getClientID());
+//      logger.info("XXX L2 receive ack " + ((DSOMessageBase)atm).getChannelID() + " ack[" + i + "]" + " " + atm.getRequestID(i));
+      transactionManager.acknowledgement(atm.getRequesterID(i), atm.getRequestID(i), atm.getClientID());
     }
   }
 

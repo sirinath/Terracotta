@@ -319,9 +319,9 @@ public class DistributedObjectClient extends SEDA {
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(ClientLockManager.class)), new RemoteLockManagerImpl(channel.getLockRequestMessageFactory(),
-                                                                        gtxManager), sessionManager, lockStatManager, 
-                                                                        new ClientLockManagerConfigImpl(l1Properties
-                                                                                                        .getPropertiesFor("lockmanager")));
+                                                                        gtxManager), sessionManager, lockStatManager,
+                                            new ClientLockManagerConfigImpl(l1Properties
+                                                .getPropertiesFor("lockmanager")));
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
     RemoteObjectManager remoteObjectManager = new RemoteObjectManagerImpl(new ChannelIDLogger(channel
         .getChannelIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), clientIDProvider, channel
@@ -389,6 +389,7 @@ public class DistributedObjectClient extends SEDA {
     L1AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new L1AcknowledgeTransactionMessageBatchManager(
                                                                                                                                      channel
                                                                                                                                          .getAcknowledgeTransactionMessageFactory());
+    channel.channel().addListener(acknowledgeTransactionBatchManager);
     Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE,
                      new ReceiveTransactionHandler(channel.getChannelIDProvider(), gtxManager, sessionManager, dmiStage
@@ -531,12 +532,9 @@ public class DistributedObjectClient extends SEDA {
   }
 
   /**
-   * Note that this method shuts down the manager that is associated with this
-   * client, this is only used in tests.
-   *
-   * To properly shut down resources of this client for production, the
-   * code should be added to {@link ClientShutdownManager} and not to this
-   * method.
+   * Note that this method shuts down the manager that is associated with this client, this is only used in tests. To
+   * properly shut down resources of this client for production, the code should be added to
+   * {@link ClientShutdownManager} and not to this method.
    */
   public synchronized void stopForTests() {
     manager.stop();

@@ -15,6 +15,7 @@ import com.tc.util.Assert;
  * @author steve
  */
 public class ReceiveTransactionCompleteHandler extends AbstractEventHandler {
+//  private static final TCLogger logger = TCLogging.getLogger(ReceiveTransactionCompleteHandler.class);
   private ClientTransactionManager transactionManager;
 
   public void handleEvent(EventContext context) {
@@ -22,6 +23,7 @@ public class ReceiveTransactionCompleteHandler extends AbstractEventHandler {
     int acks = atm.size();
     Assert.assertTrue(acks > 0);
     for(int i = 0; i < acks; ++i) {
+//      logger.info("XXX L1 receive complete " + ((DSOMessageBase)atm).getChannelID() + " ack[" + i + "]" + " " + atm.getRequestID(i));
       transactionManager.receivedAcknowledgement(atm.getLocalSessionID(), atm.getRequestID(i));
     }
   }

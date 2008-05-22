@@ -588,6 +588,7 @@ public class DistributedObjectServer implements TCDumper {
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
     L2AcknowledgeTransactionMessageBatchManager acknowledgeTransactionBatchManager = new L2AcknowledgeTransactionMessageBatchManager();
+    l1Listener.getChannelManager().addEventListener(acknowledgeTransactionBatchManager);
     TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
     TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager, acknowledgeTransactionBatchManager);
     SampledCounter globalTxnCounter = (SampledCounter) sampledCounterManager
