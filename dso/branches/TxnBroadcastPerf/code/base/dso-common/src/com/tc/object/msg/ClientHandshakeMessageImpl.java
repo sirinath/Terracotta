@@ -17,7 +17,6 @@ import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
-import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 
 import java.io.IOException;
@@ -48,8 +47,8 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   private boolean           requestObjectIDs;
   private String            clientVersion            = "UNKNOW";
 
-  public ClientHandshakeMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out, MessageChannel channel,
-                                    TCMessageType messageType) {
+  public ClientHandshakeMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+                                    MessageChannel channel, TCMessageType messageType) {
     super(sessionID, monitor, out, channel, messageType);
   }
 
@@ -58,65 +57,72 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
     super(sessionID, monitor, channel, header, data);
   }
 
-  public void addObjectID(ObjectID objectID) {
-    synchronized (objectIDs) {
-      objectIDs.add(objectID);
-    }
-  }
-
-  public void addLockContext(LockContext ctxt) {
-    synchronized (lockContexts) {
-      lockContexts.add(ctxt);
-    }
-  }
-
   public Collection getLockContexts() {
-    synchronized (lockContexts) {
-      return new HashSet(lockContexts);
-    }
-  }
-
-  public void addPendingLockContext(LockContext ctxt) {
-    synchronized (pendingLockContexts) {
-      pendingLockContexts.add(ctxt);
-    }
-  }
-
-  public void addPendingTryLockContext(LockContext ctxt) {
-    Assert.eval(ctxt instanceof TryLockContext);
-    synchronized (pendingTryLockContexts) {
-      pendingTryLockContexts.add(ctxt);
-    }
-  }
-
-  public Collection getPendingLockContexts() {
-    synchronized (pendingLockContexts) {
-      return new HashSet(pendingLockContexts);
-    }
-  }
-
-  public Collection getPendingTryLockContexts() {
-    synchronized (pendingTryLockContexts) {
-      return new HashSet(pendingTryLockContexts);
-    }
-  }
-
-  public void addWaitContext(WaitContext ctxt) {
-    synchronized (waitContexts) {
-      waitContexts.add(ctxt);
-    }
+    return lockContexts;
   }
 
   public Collection getWaitContexts() {
-    synchronized (waitContexts) {
-      return new HashSet(waitContexts);
-    }
+    return waitContexts;
   }
 
   public Set getObjectIDs() {
-    synchronized (objectIDs) {
-      return new HashSet(objectIDs);
-    }
+    return objectIDs;
+  }
+
+  public Collection getPendingLockContexts() {
+    return pendingLockContexts;
+  }
+
+  public Collection getPendingTryLockContexts() {
+    return pendingTryLockContexts;
+  }
+
+  public Collection getTransactionSequenceIDs() {
+    return sequenceIDs;
+  }
+
+  public Collection getResentTransactionIDs() {
+    return txnIDs;
+  }
+
+  public boolean isObjectIDsRequested() {
+    return this.requestObjectIDs;
+  }
+
+  public String getClientVersion() {
+    return clientVersion;
+  }
+
+  public void addTransactionSequenceIDs(Collection seqIDs) {
+    this.sequenceIDs.addAll(seqIDs);
+  }
+
+  public void addResentTransactionIDs(Collection resentTransactionIDs) {
+    this.txnIDs.addAll(resentTransactionIDs);
+  }
+
+  public void setIsObjectIDsRequested(boolean request) {
+    this.requestObjectIDs = request;
+  }
+
+  public void setClientVersion(String version) {
+    clientVersion = version;
+  }
+
+  public void addLockContext(LockContext ctxt) {
+    lockContexts.add(ctxt);
+  }
+
+  public void addPendingLockContext(LockContext ctxt) {
+    pendingLockContexts.add(ctxt);
+  }
+
+  public void addPendingTryLockContext(TryLockContext ctxt) {
+    pendingTryLockContexts.add(ctxt);
+  }
+
+  public void addWaitContext(WaitContext ctxt) {
+    waitContexts.add(ctxt);
   }
 
   protected void dehydrateValues() {
@@ -179,35 +185,4 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
     }
   }
 
-  public Collection getTransactionSequenceIDs() {
-    return sequenceIDs;
-  }
-
-  public Collection getResentTransactionIDs() {
-    return txnIDs;
-  }
-
-  public void setTransactionSequenceIDs(Collection seqIDs) {
-    this.sequenceIDs.addAll(seqIDs);
-  }
-
-  public void setResentTransactionIDs(Collection resentTransactionIDs) {
-    this.txnIDs.addAll(resentTransactionIDs);
-  }
-
-  public void setIsObjectIDsRequested(boolean request) {
-    this.requestObjectIDs = request;
-  }
-
-  public boolean isObjectIDsRequested() {
-    return this.requestObjectIDs;
-  }
-
-  public String getClientVersion() {
-    return clientVersion;
-  }
-
-  public void setClientVersion(String v) {
-    clientVersion = v;
-  }
 }

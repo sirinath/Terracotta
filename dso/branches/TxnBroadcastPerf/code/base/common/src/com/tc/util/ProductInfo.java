@@ -9,11 +9,11 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public final class ProductInfo {
   private static final ResourceBundleHelper bundleHelper                 = new ResourceBundleHelper(ProductInfo.class);
 
-  private static final DateFormat           DATE_FORMAT                  = new SimpleDateFormat("yyyyMMdd-HHmmss");
+  private static final String               DATE_FORMAT                  = "yyyyMMdd-HHmmss";
   private static final Pattern              KITIDPATTERN                 = Pattern.compile("(\\d+\\.\\d+).*");
   private static final String               BUILD_DATA_RESOURCE_NAME     = "/build-data.txt";
 
@@ -39,6 +39,7 @@ public final class ProductInfo {
   private static final String               BUILD_DATA_HOST_KEY          = "host";
   private static final String               BUILD_DATA_USER_KEY          = "user";
   private static final String               BUILD_DATA_REVISION_KEY      = "revision";
+  private static final String               BUILD_DATA_EE_REVISION_KEY   = "ee.revision";
   private static final String               BUILD_DATA_BRANCH_KEY        = "branch";
   private static final String               UNKNOWN_VALUE                = "[unknown]";
 
@@ -51,6 +52,7 @@ public final class ProductInfo {
   private final String                      branch;
   private final String                      edition;
   private final String                      revision;
+  private final String                      ee_revision;
   private final String                      kitID;
 
   private ProductInfo(InputStream in, String fromWhere) {
@@ -76,11 +78,12 @@ public final class ProductInfo {
     this.user = getProperty(properties, BUILD_DATA_USER_KEY, UNKNOWN_VALUE);
     this.branch = getProperty(properties, BUILD_DATA_BRANCH_KEY, UNKNOWN_VALUE);
     this.revision = getProperty(properties, BUILD_DATA_REVISION_KEY, UNKNOWN_VALUE);
+    this.ee_revision = getProperty(properties, BUILD_DATA_EE_REVISION_KEY, UNKNOWN_VALUE);
 
     Date realTimestamp = null;
     if (timestampString != null) {
       try {
-        realTimestamp = DATE_FORMAT.parse(timestampString);
+        realTimestamp = new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
       } catch (ParseException pe) {
         pe.printStackTrace();
         System.exit(1);
@@ -112,6 +115,11 @@ public final class ProductInfo {
     }
 
     return PRODUCTINFO;
+  }
+
+  public static void printRawData() throws IOException {
+    InputStream in = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
+    IOUtils.copy(in, System.out);
   }
 
   public boolean isDevMode() {
@@ -148,7 +156,7 @@ public final class ProductInfo {
 
   public String buildTimestampAsString() {
     if (this.timestamp == null) return UNKNOWN_VALUE;
-    else return DATE_FORMAT.format(this.timestamp);
+    else return new SimpleDateFormat(DATE_FORMAT).format(this.timestamp);
   }
 
   public String buildHost() {
@@ -171,13 +179,25 @@ public final class ProductInfo {
     return this.revision;
   }
 
+  public String buildRevisionFromEE() {
+    return this.ee_revision;
+  }
+
   public String toShortString() {
     return this.moniker + " " + ("opensource".equals(edition) ? "" : (edition + " ")) + buildVersion();
   }
 
   public String toLongString() {
-    return toShortString() + ", as of " + buildTimestampAsString() + " (Revision " + buildRevision() + " by "
-           + buildUser() + "@" + buildHost() + " from " + buildBranch() + ")";
+    return toShortString() + ", as of " + buildID();
+  }
+
+  public String buildID() {
+    String rev = this.revision;
+    if (edition.indexOf("Enterprise") >= 0) {
+      rev = this.ee_revision + "-" + this.revision;
+    }
+    return buildTimestampAsString() + " (Revision " + rev + " by " + buildUser() + "@" + buildHost() + " from "
+           + buildBranch() + ")";
   }
 
   public String toString() {
@@ -187,6 +207,7 @@ public final class ProductInfo {
   public static void main(String[] args) throws Exception {
     Options options = new Options();
     options.addOption("v", "verbose", false, bundleHelper.getString("option.verbose"));
+    options.addOption("r", "raw", false, bundleHelper.getString("option.raw"));
     options.addOption("h", "help", false, bundleHelper.getString("option.help"));
 
     CommandLineParser parser = new GnuParser();
@@ -198,6 +219,8 @@ public final class ProductInfo {
 
     if (cli.hasOption("v")) {
       System.out.println(getInstance().toLongString());
+    } else if (cli.hasOption("r")) {
+      printRawData();
     } else {
       System.out.println(getInstance().toShortString());
     }
