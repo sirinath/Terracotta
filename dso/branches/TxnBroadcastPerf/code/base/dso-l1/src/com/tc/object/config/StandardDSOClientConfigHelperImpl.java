@@ -59,7 +59,6 @@ import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
-import com.tc.object.glassfish.transform.RuntimeModelAdapter;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
@@ -769,9 +768,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", new UCLAdapter());
     addCustomAdapter("org.jboss.Main", new MainAdapter());
 
-    // Glassfish adapters
-    addCustomAdapter("com.sun.jdo.api.persistence.model.RuntimeModel", new RuntimeModelAdapter());
-
     // TODO for the Event Swing sample only
     LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
     ld.commit();
@@ -1075,7 +1071,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private void removeTomcatAdapters() {
-    // XXX: hack for starting Glassfish w/o session support
+    // XXX: hack to avoid problems with coresident L1 (this can be removed when session support becomes a 1st class
+    // module)
     if (applicationNames.isEmpty()) {
       removeCustomAdapter("org.apache.catalina.core.ContainerBase");
     }

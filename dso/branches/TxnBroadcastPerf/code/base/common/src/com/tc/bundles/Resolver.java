@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.osgi.framework.BundleException;
 
 import com.tc.bundles.exception.BundleSpecException;
+import com.tc.bundles.exception.MissingDefaultRepositoryException;
 import com.tc.bundles.exception.UnreadableBundleException;
 import com.tc.bundles.exception.MissingBundleException;
 import com.tc.logging.CustomerLogging;
@@ -48,53 +49,54 @@ public class Resolver {
   // List of Entry objects describing already resolved bundles
   private final List            registry              = new ArrayList();
 
-  /**
-   * Create a resolver for resolving modules from a set of repositories
-   * 
-   * @param repositoryStrings Each repository string can be either a file path or a file:// URL
-   */
-  public Resolver(final String[] repositoryStrings) throws BundleException {
+  public Resolver(final String[] repositoryStrings) throws MissingDefaultRepositoryException {
     this(repositoryStrings, true);
   }
 
-  public Resolver(final String[] repositoryStrings, final boolean injectDefault) throws BundleException {
+  public Resolver(final String[] repositoryStrings, final boolean injectDefault)
+      throws MissingDefaultRepositoryException {
     if (injectDefault) injectDefaultRepositories();
 
     for (int i = 0; i < repositoryStrings.length; i++) {
-      String repository = repositoryStrings[i];
+      String repository = repositoryStrings[i].trim();
+      if (repository.length() == 0) continue;
       File repoFile = resolveRepositoryLocation(repository);
-      if (repoFile != null) {
-        repositories.add(repoFile);
-      }
+      if (repoFile != null) repositories.add(repoFile);
     }
 
     if (repositories.isEmpty()) {
-      String msg = "No module repositories have been specified via the com.tc.l1.modules.repositories system property";
-      throw new RuntimeException(msg);
+      final String msg = "No valid TIM repository locations defined.";
+      throw new MissingDefaultRepositoryException(msg);
     }
   }
 
-  private void injectDefaultRepositories() throws BundleException {
+  private void injectDefaultRepositories() throws MissingDefaultRepositoryException {
     final String installRoot = System.getProperty("tc.install-root");
     if (installRoot != null) {
       final File defaultRepository = new File(installRoot, "modules");
-      consoleLogger.debug("Appending default TIM repository: '" + defaultRepository.toString() + "'");
+      if (resolveRepositoryLocation(defaultRepository.getPath()) == null) {
+        final String msg = "The default TIM repository does not exist.";
+        throw new MissingDefaultRepositoryException(msg, defaultRepository);
+      }
+      consoleLogger.debug("Appending default TIM repository: '" + defaultRepository + "'");
       repositories.add(defaultRepository);
     }
 
     final TCProperties props = TCPropertiesImpl.getProperties().getPropertiesFor(TC_PROPERTIES_SECTION);
     final String reposProp = props != null ? props.getProperty("repositories", true) : null;
-    if (reposProp != null && reposProp.length() > 0) {
-      final String[] entries = reposProp.split(",");
-      if (entries != null) {
-        for (int i = 0; i < entries.length; i++) {
-          String entry = entries[i].trim();
-          if (entry != null && entry.length() > 0) {
-            consoleLogger.debug("Prepending default TIM repository: '" + entry.toString() + "'");
-            repositories.add(resolveRepositoryLocation(entry));
-          }
-        }
+    if (reposProp == null) return;
+
+    final String[] entries = reposProp.split(",");
+    for (int i = 0; i < entries.length; i++) {
+      final String entry = entries[i].trim();
+      if (entry.length() == 0) continue;
+      final File repoFile = resolveRepositoryLocation(entry);
+      if (repoFile == null) {
+        consoleLogger.warn("Ignored non-existent TIM repository: '" + ResolverUtils.canonicalize(entry) + "'");
+        continue;
       }
+      consoleLogger.debug("Prepending default TIM repository: '" + ResolverUtils.canonicalize(repoFile) + "'");
+      repositories.add(repoFile);
     }
   }
 
@@ -120,8 +122,8 @@ public class Resolver {
 
     if (url == null) {
       consoleLogger.warn("Skipping repository location: '" + repository
-                         + "', it either does not exist or is not a directory; make sure that the directory path '"
-                         + ResolverUtils.canonicalize(repository) + "' exists.");
+                         + "', it either does not exist or is not a directory; make sure that the path '"
+                         + ResolverUtils.canonicalize(repository) + "' actually exists.");
       return null;
     }
 
@@ -134,7 +136,8 @@ public class Resolver {
     // deprecated but allowed file URL
     file = FileUtils.toFile(url);
     if (!file.isDirectory()) {
-      consoleLogger.warn("Skipping repository URL: '" + repository + "', it either does not exist nor resolve to a directory.");
+      consoleLogger.warn("Skipping repository URL: '" + repository
+                         + "', it either does not exist nor resolve to a directory.");
       return null;
     }
 
@@ -157,30 +160,24 @@ public class Resolver {
       throw new BundleException(msg);
     }
 
-    try {
-      final File location = resolveLocation(name, version, groupId);
-      if (location == null) {
-        final String msg = formatMessage(Message.ERROR_BUNDLE_UNRESOLVED, new Object[] { name, version, groupId });
-        throw new MissingBundleException(msg, groupId, name, version, repositories, null);
-      }
-      logger.info("Resolved TIM " + groupId + ":" + name + ":" + version + " from " + location);
-      DependencyStack dependencyStack = new DependencyStack();
-      dependencyStack.push(module.getGroupId(), module.getName(), module.getVersion());
-      resolveDependencies(location, dependencyStack);
-      // printDependencyStack(dependencyStack, 0, 4, System.out);
-      return location;
-    } catch (BundleException e) {
-      throw e;
+    final File location = resolveLocation(name, version, groupId);
+    if (location == null) {
+      final String msg = formatMessage(Message.ERROR_BUNDLE_UNRESOLVED, new Object[] { name, version, groupId });
+      throw new MissingBundleException(msg, groupId, name, version, repositories, null);
     }
+
+    logger.info("Resolved TIM " + groupId + ":" + name + ":" + version + " from " + location);
+    DependencyStack dependencyStack = new DependencyStack();
+    dependencyStack.push(module.getGroupId(), module.getName(), module.getVersion());
+    resolveDependencies(location, dependencyStack);
+    return location;
   }
 
   public final File[] resolve(Module[] modules) throws BundleException {
     resolveDefaultModules();
     resolveAdditionalModules();
-
     for (int i = 0; (modules != null) && (i < modules.length); i++)
       resolve(modules[i]);
-
     return getResolvedFiles();
   }
 
@@ -196,7 +193,6 @@ public class Resolver {
 
   private File findJar(String groupId, String name, String version, Locator locator) {
     if (logger.isDebugEnabled()) logger.debug("Resolving location of " + groupId + ":" + name + ":" + version);
-
     final List paths = ResolverUtils.searchPathnames(repositories, groupId, name, version);
     for (Iterator i = paths.iterator(); i.hasNext();) {
 
@@ -208,7 +204,6 @@ public class Resolver {
         warn(Message.WARN_FILE_IGNORED_MISSING_MANIFEST, new Object[] { bundle.getName() });
         continue;
       }
-
       if (locator.check(bundle, manifest)) return bundle;
     }
     return null;
@@ -272,7 +267,6 @@ public class Resolver {
         DependencyStack dependencyStack = new DependencyStack();
         dependencyStack.push(spec.getSymbolicName(), spec.getVersion());
         ensureBundle(spec, dependencyStack);
-        // printDependencyStack(dependencyStack, 0, 4, System.out);
       }
       return;
     }
@@ -289,7 +283,6 @@ public class Resolver {
       DependencyStack dependencyStack = new DependencyStack();
       dependencyStack.push(spec.getSymbolicName(), spec.getVersion());
       ensureBundle(spec, dependencyStack);
-      // printDependencyStack(dependencyStack, 0, 4, System.out);
     }
   }
 
@@ -337,7 +330,8 @@ public class Resolver {
       if (required == null) {
         String msg = formatMessage(Message.ERROR_BUNDLE_DEPENDENCY_UNRESOLVED, new Object[] { spec.getName(),
             spec.getVersion(), spec.getGroupId() });
-        throw new MissingBundleException(msg);
+        throw new MissingBundleException(msg, spec.getGroupId(), spec.getName(), spec.getVersion(), repositories,
+                                         dependencyStack);
       }
       addToRegistry(required, getManifest(required));
       resolveDependencies(required, dependencyStack);
@@ -382,11 +376,6 @@ public class Resolver {
   private String warn(final Message message, final Object[] arguments) {
     final String msg = formatMessage(message, arguments);
     logger.warn(msg);
-    return msg;
-  }
-
-  private String fatal(final String msg) {
-    if (msg != null) consoleLogger.fatal(msg);
     return msg;
   }
 

@@ -174,8 +174,8 @@ public class TCGroupManagerImplTest extends TCTestCase {
   public void testSendTo() throws Exception {
     setupGroups(2);
 
-    TestGroupMessageListener listener1 = new TestGroupMessageListener(100);
-    TestGroupMessageListener listener2 = new TestGroupMessageListener(100);
+    TestGroupMessageListener listener1 = new TestGroupMessageListener(2000);
+    TestGroupMessageListener listener2 = new TestGroupMessageListener(2000);
     groups[0].registerForMessages(ObjectSyncMessage.class, listener1);
     groups[1].registerForMessages(ObjectSyncMessage.class, listener2);
 
@@ -260,13 +260,13 @@ public class TCGroupManagerImplTest extends TCTestCase {
     for (long i = 1; i <= 100; ++i) {
       oidSet.add(new ObjectID(i));
     }
-    GCResultMessage message = new GCResultMessage(GCResultMessage.GC_RESULT, oidSet);
+    GCResultMessage message = new GCResultMessage(GCResultMessage.GC_RESULT, 1, oidSet);
     return (message);
   }
 
   private boolean cmpGCResultMessage(GCResultMessage o1, GCResultMessage o2) {
-    return ((o1.getType() == o2.getType() && o1.getMessageID().equals(o2.getMessageID()) && o1.getGCedObjectIDs()
-        .equals(o2.getGCedObjectIDs())));
+    return (o1.getType() == o2.getType() && o1.getMessageID().equals(o2.getMessageID()) && o1.getGCedObjectIDs()
+        .equals(o2.getGCedObjectIDs()) && o1.getGCIterationCount() == o2.getGCIterationCount());
   }
 
   public void testSendToAll() throws Exception {
