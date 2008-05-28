@@ -53,7 +53,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
     barrier = new CyclicBarrier(getParticipantCount());
     random = new Random(new Random(System.currentTimeMillis() + getApplicationId().hashCode()).nextLong());
     numOfGetters = getParticipantCount() - numOfPutters;
-    isCrashTest = "true".equals(cfg.getAttribute(CRASH_TEST))? true : false;
+    isCrashTest = "true".equals(cfg.getAttribute(CRASH_TEST));
   }
 
   // TODO: We need to add a test case for a situation where an unshared ReentrantLock become
@@ -113,16 +113,20 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
     int index = barrier.await();
 
     if (index == 0) {
+      System.err.println("Locking in client 1");
       lock.lock();
-      barrier2.await();
       try {
-        Thread.sleep(10000);
+        barrier2.await();
+        barrier2.await();
       } finally {
+        System.err.println("Unlocking in client 1");
         lock.unlock();
       }
-      barrier2.await();
+
     } else if (index == 1) {
       barrier2.await();
+
+      System.err.println("Testing try lock failures in client 2");
       int count = 0;
       for (int i=0; i<100; i++) {
         if (!lock.tryLock()) {
@@ -131,16 +135,24 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       }
       Assert.assertEquals(100, count);
       barrier2.await();
+
+      System.err.println("Locking in client 2");
+      lock.lock();
+      System.err.println("Unlocking in client 2");
+      lock.unlock();
+
+      System.err.println("Testing try lock successes in client 2");
       count = 0;
       for (int i=0; i<100; i++) {
         if (!lock.tryLock()) {
-          if (lock.isLocked()) count++;
+          count++;
         }
       }
-      Assert.assertEquals(100, count);
+      Assert.assertEquals(0, count);
     }
+
     barrier.await();
-}
+  }
 
   private void sharedUnSharedTesting() throws Exception {
     int index = barrier.await();
