@@ -58,7 +58,8 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
   private TestPauseListener pauseListener2;
 
   public ClientCrashedAfterServerCrashTest() {
-    //
+    //MNK-539 -- disabling this test till the fix review is over
+    disableAllUntil("2008-06-03");
   }
 
   @Override
