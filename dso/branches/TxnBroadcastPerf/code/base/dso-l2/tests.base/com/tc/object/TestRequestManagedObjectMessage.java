@@ -68,8 +68,8 @@ public class TestRequestManagedObjectMessage implements RequestManagedObjectMess
     //      
   }
 
-  public void send() {
-    //      
+  public int send() {
+    return 0;   
   }
 
   public MessageChannel getChannel() {

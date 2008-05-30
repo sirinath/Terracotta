@@ -46,7 +46,7 @@ public class MockMessageTransport implements MessageTransport {
     this.receiveLayer = layer;
   }
 
-  public void send(TCNetworkMessage message) {
+  public int send(TCNetworkMessage message) {
     throw new ImplementMe();
   }
 
@@ -76,8 +76,9 @@ public class MockMessageTransport implements MessageTransport {
 
   public final NoExceptionLinkedQueue sendToConnectionCalls = new NoExceptionLinkedQueue();
 
-  public void sendToConnection(TCNetworkMessage message) {
+  public int sendToConnection(TCNetworkMessage message) {
     sendToConnectionCalls.put(message);
+    return 0;
   }
 
   public TCSocketAddress getRemoteAddress() {

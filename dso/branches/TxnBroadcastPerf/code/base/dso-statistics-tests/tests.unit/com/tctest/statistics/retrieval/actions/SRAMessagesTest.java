@@ -142,8 +142,8 @@ public class SRAMessagesTest extends TCTestCase {
       return;
     }
 
-    public void send() {
-      return;
+    public int send() {
+      return 0;
     }
 
     public MessageChannel getChannel() {

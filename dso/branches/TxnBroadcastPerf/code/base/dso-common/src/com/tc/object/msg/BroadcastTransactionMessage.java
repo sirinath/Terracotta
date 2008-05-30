@@ -48,6 +48,6 @@ public interface BroadcastTransactionMessage {
 
   public List getDmiDescriptors();
 
-  public void send();
+  public int send();
 
 }

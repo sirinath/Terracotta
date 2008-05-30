@@ -37,8 +37,9 @@ public class TestClientHandshakeMessage implements ClientHandshakeMessage {
   private TestMessageChannel    channel;
   private String                clientVersion;
 
-  public void send() {
+  public int send() {
     sendCalls.put(new Object());
+    return 1;
   }
 
   public MessageChannel getChannel() {

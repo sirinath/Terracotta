@@ -166,8 +166,8 @@ public class ChannelManagerTest extends TestCase {
       return;
     }
 
-    public void send(TCNetworkMessage message) {
-      return;
+    public int send(TCNetworkMessage message) {
+      return 1;
     }
 
     public void receive(TCByteBuffer[] msgData) {

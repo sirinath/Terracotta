@@ -433,8 +433,9 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       this.channel.channelID = clientID.getChannelID();
     }
 
-    public void send() {
+    public int send() {
       sendQueue.put(new Object());
+      return 1;
     }
 
     public boolean getPersistentServer() {

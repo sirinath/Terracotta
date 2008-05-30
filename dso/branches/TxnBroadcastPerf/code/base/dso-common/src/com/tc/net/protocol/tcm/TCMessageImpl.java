@@ -314,16 +314,19 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
    * 
    * @see com.tc.net.protocol.tcm.ApplicationMessage#send()
    */
-  public void send() {
+  public int send() {
     if (isSent.attemptSet()) {
       dehydrate();
-      basicSend();
+      return basicSend();
+    } else {
+      return 0;
     }
   }
 
-  private void basicSend() {
-    channel.send(this);
+  private int basicSend() {
+    int count = channel.send(this);
     monitor.newOutgoingMessage(this);
+    return count;
   }
 
   // FIXME:: This is here till them tc-comms merge.

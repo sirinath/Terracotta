@@ -52,6 +52,7 @@ public class AcknowledgeTransactionMessageImpl extends DSOMessageBase implements
         return true;
       case REQUEST_ID:
         acks.add(new BaseAckTxnMessage(requesterID, new TransactionID(getLongValue())));
+        requesterID = null;
         return true;
       default:
         return false;

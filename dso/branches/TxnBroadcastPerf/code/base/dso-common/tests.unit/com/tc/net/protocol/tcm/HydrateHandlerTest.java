@@ -155,7 +155,7 @@ public class HydrateHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void send(TCNetworkMessage message) {
+    public int send(TCNetworkMessage message) {
       throw new ImplementMe();
     }
 
@@ -200,7 +200,7 @@ public class HydrateHandlerTest extends TCTestCase {
                                  "This exception is SUPPOSED to happen -- please don't squelch it's printing in HydrateHandler");
     }
 
-    public void send() {
+    public int send() {
       throw new ImplementMe();
     }
 

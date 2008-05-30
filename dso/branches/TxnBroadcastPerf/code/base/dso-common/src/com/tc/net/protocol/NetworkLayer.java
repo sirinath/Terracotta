@@ -55,7 +55,7 @@ public interface NetworkLayer {
 
   public NetworkLayer getReceiveLayer();
 
-  public void send(TCNetworkMessage message);
+  public int send(TCNetworkMessage message);
 
   public void receive(TCByteBuffer[] msgData);
 

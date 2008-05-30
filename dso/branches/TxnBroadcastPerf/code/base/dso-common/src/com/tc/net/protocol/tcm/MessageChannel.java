@@ -57,7 +57,7 @@ public interface MessageChannel {
   // ////////////////////////////////
   public boolean isConnected();
 
-  public void send(TCNetworkMessage message);
+  public int send(TCNetworkMessage message);
 
   public NetworkStackID open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException,
       IOException;

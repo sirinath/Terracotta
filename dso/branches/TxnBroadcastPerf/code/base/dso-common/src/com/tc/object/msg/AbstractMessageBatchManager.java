@@ -21,12 +21,12 @@ import java.util.Map;
 abstract public class AbstractMessageBatchManager implements MessageBatchManager, ChannelManagerEventListener,
     ChannelEventListener {
   private final TCLogger logger;
-  private final Map      batchAckStates;  // Map<MessageChannel, BatchAckState>
-  private final int      preBatchMessages; // outstanding messages before start batching
+  private final Map      batchAckStates; // Map<MessageChannel, BatchAckState>
+  private final int      batchThreshold; // outstanding messages before start batching
 
-  public AbstractMessageBatchManager(TCLogger logger, int preBatchMessages) {
+  public AbstractMessageBatchManager(TCLogger logger, int batchThreshold) {
     this.logger = logger;
-    this.preBatchMessages = preBatchMessages;
+    this.batchThreshold = batchThreshold;
     batchAckStates = new HashMap();
   }
 
@@ -36,16 +36,21 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
   }
 
   public void flush(MessageChannel channel) {
+    BatchingState state;
     synchronized (batchAckStates) {
-      BatchingState state = (BatchingState) batchAckStates.get(channel);
-      if (state != null) state.flush();
+      state = (BatchingState) batchAckStates.get(channel);
     }
+    if (state != null) state.flush();
   }
 
   /*
    * Overwritten by subclasses to queue new message into batch
    */
   abstract protected void queueMessageToBatch(DSOMessageBase batchMsg, DSOMessageBase msg);
+  
+  public void sendStatisticsRecord(DSOMessageBase msg) {
+    // to be overwritten by subclasses
+  }
 
   private BatchingState getOrCreateState(DSOMessageBase msg) {
     MessageChannel ch = msg.getChannel();
@@ -62,7 +67,7 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
                         batchAckStates.get(channel));
       batchAckStates.put(channel, new BatchingState(channel));
     }
-//    logger.info("XXX created " + channel.getLocalAddress() + " -> " + channel.getRemoteAddress());
+    // logger.info("XXX created " + channel.getLocalAddress() + " -> " + channel.getRemoteAddress());
   }
 
   private void removed(MessageChannel channel) {
@@ -73,7 +78,7 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
         batchAckStates.remove(channel);
       }
     }
-//    logger.info("XXX removed " + channel.getChannelID());
+    // logger.info("XXX removed " + channel.getChannelID());
   }
 
   // listen to L2
@@ -94,10 +99,10 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
       removed(event.getChannel());
     }
   }
-
+  
   private class BatchingState implements TCNetworkMessageListener {
 
-    private volatile int            sending;
+    private volatile boolean        doBatching = false;
     private volatile DSOMessageBase batching;
     private final MessageChannel    channel;
 
@@ -105,44 +110,43 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
       this.channel = channel;
     }
 
-    private void sendOrQueue(DSOMessageBase msg) {
-      synchronized (this) {
-        if (sending < preBatchMessages) {
-          ++sending;
-        } else {
-          if (batching == null) {
-            batching = msg;
-          } else {
-            queueMessageToBatch(batching, msg);
-          }
-//          logger.info("XXX batching message " + msg.getChannelID() + " " + msg.getMessageType());
-          return;
-        }
+    private synchronized void sendOrQueue(DSOMessageBase msg) {
+      if (!doBatching) {
+        send(msg);
+        return;
       }
-      send(msg);
+
+      if (batching == null) {
+        batching = msg;
+      } else {
+        queueMessageToBatch(batching, msg);
+      }
+      // logger.info("XXX batching message " + msg.getChannelID() + " " + msg.getMessageType());
     }
+    
 
     private void send(DSOMessageBase msg) {
+      sendStatisticsRecord(msg);
       msg.addListener(this);
+      doBatching = (msg.send() > batchThreshold);
+    }
+
+    private void sendNoCallback(DSOMessageBase msg) {
+      sendStatisticsRecord(msg);
       msg.send();
     }
 
-    private void ackSent() {
-      DSOMessageBase msg;
-      synchronized (this) {
-        if (batching != null) {
-          msg = batching;
-          batching = null;
-        } else {
-          --sending;
-          return;
-        }
+    private synchronized void ackSent() {
+      if (batching == null) {
+        doBatching = false;
+      } else {
+        send(batching);
+        batching = null;
       }
-      send(msg);
     }
 
     private synchronized void drop() {
-      sending = 0;
+      doBatching = false;
       if (batching != null) {
         batching = null;
         logger.warn("Drop batch messages " + channel.getChannelID());
@@ -150,15 +154,10 @@ abstract public class AbstractMessageBatchManager implements MessageBatchManager
     }
 
     private synchronized void flush() {
-      DSOMessageBase msg = null;
-      synchronized (this) {
-        if (batching != null) {
-          msg = batching;
-          batching = null;
-          ++sending;
-        }
+      if (batching != null) {
+        sendNoCallback(batching);
+        batching = null;
       }
-      if (msg != null) send(msg);
     }
 
     public void notifyMessageEvent(TCNetworkMessageEvent event) {

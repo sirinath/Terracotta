@@ -9,5 +9,5 @@ package com.tc.net.protocol;
  * @author teck
  */
 public interface NetworkMessageSink {
-  public void putMessage(TCNetworkMessage message);
+  public int putMessage(TCNetworkMessage message);
 }

@@ -64,7 +64,7 @@ public class TestTCConnection implements TCConnection {
     throw new ImplementMe();
   }
 
-  public void putMessage(TCNetworkMessage message) {
+  public int putMessage(TCNetworkMessage message) {
     throw new ImplementMe();
   }
 

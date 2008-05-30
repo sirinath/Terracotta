@@ -339,7 +339,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     return buffer.getNioBuffer();
   }
 
-  private void putMessageImpl(TCNetworkMessage message) {
+  private int putMessageImpl(TCNetworkMessage message) {
     // ??? Does the message queue and the WriteContext belong in the base connection class?
     final boolean debug = logger.isDebugEnabled();
 
@@ -354,7 +354,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     final boolean newData;
     final int msgCount;
     synchronized (writeContexts) {
-      if (closed.isSet()) { return; }
+      if (closed.isSet()) { return(0); }
 
       writeContexts.addLast(context);
       msgCount = writeContexts.size();
@@ -384,6 +384,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
       commNIOServiceThread.requestWriteInterest(this, channel);
     }
+    return(msgCount);
   }
 
   public final void asynchClose() {
@@ -516,7 +517,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     return rv;
   }
 
-  public final void putMessage(TCNetworkMessage message) {
+  public final int putMessage(TCNetworkMessage message) {
     lastDataWriteTime.set(System.currentTimeMillis());
 
     // if (!isConnected() || isClosed()) {
@@ -524,7 +525,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     // return;
     // }
 
-    putMessageImpl(message);
+    return putMessageImpl(message);
   }
 
   public final TCSocketAddress getLocalAddress() {

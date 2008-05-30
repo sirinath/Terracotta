@@ -6,31 +6,62 @@ package com.tc.object.msg;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class L1AcknowledgeTransactionMessageBatchManager extends AcknowledgeTransactionMessageBatchManager {
-  private final static int PRE_BATCH_MESSAGES = 1;  // XXX tunable, read from config
-
-  private static final TCLogger                logger = TCLogging
-                                                          .getLogger(L1AcknowledgeTransactionMessageBatchManager.class);
+  private final static boolean                 BATCH_ENABLED   = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getBoolean(
+                                                                               TCPropertiesConsts.L1_BATCH_TXN_ACK_ENABLED);
+  private final static int                     BATCH_THRESHOLD = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getInt(
+                                                                           TCPropertiesConsts.L1_BATCH_TXN_ACK_THRESHOLD);
+  private static final TCLogger                logger          = TCLogging
+                                                                   .getLogger(L1AcknowledgeTransactionMessageBatchManager.class);
   private AcknowledgeTransactionMessageFactory atmFactory;
 
+  private int                                  ackCounter;
+  private int                                  batchCounter;
+
   public L1AcknowledgeTransactionMessageBatchManager(AcknowledgeTransactionMessageFactory atmFactory) {
-    super(logger, PRE_BATCH_MESSAGES);
+    super(logger, BATCH_THRESHOLD);
     this.atmFactory = atmFactory;
+    logStatistics();
   }
 
   public AcknowledgeTransactionMessage createMessage() {
     AcknowledgeTransactionMessage msg = atmFactory.newAcknowledgeTransactionMessage();
     return msg;
   }
-  
-  // for testing
-//  public void sendBatch(DSOMessageBase msg) {
-//    AcknowledgeTransactionMessage acks = (AcknowledgeTransactionMessage)msg;
-//    for(int i = 0; i < acks.size(); ++i) {
-//      logger.info("XXX L1 Send to " + msg.getChannelID() + " " + acks.getRequestID(i));
-//    }
-//    super.sendBatch(msg);
-//  }
 
+  public void sendBatch(DSOMessageBase msg) {
+    if (!BATCH_ENABLED) {
+      msg.send();
+    }
+
+    // AcknowledgeTransactionMessage acks = (AcknowledgeTransactionMessage) msg;
+    // for (int i = 0; i < acks.size(); ++i) {
+    // logger.info("XXX L1 Send to " + msg.getChannelID() + " " + acks.getRequestID(i));
+    // }
+    super.sendBatch(msg);
+  }
+
+  private void logStatistics() {
+    TimerTask task = new TimerTask() {
+      public void run() {
+        logger.info("XXX L1toL2 batches=" + batchCounter + " acks=" + ackCounter);
+      }
+    };
+    new Timer().schedule(task, 1000, 60000);
+  }
+
+  public void sendStatisticsRecord(DSOMessageBase msg) {
+    ++batchCounter;
+    ackCounter += ((AcknowledgeTransactionMessage) msg).size();
+  }
 }

@@ -19,7 +19,7 @@ public interface AcknowledgeTransactionMessage {
 
   public TransactionID getRequestID(int index);
 
-  public void send();
+  public int send();
 
   public ClientID getClientID();
 

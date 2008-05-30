@@ -10,7 +10,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import java.util.Set;
 
 public interface ClientHandshakeAckMessage {
-  public void send();
+  public int send();
 
   public boolean getPersistentServer();
 

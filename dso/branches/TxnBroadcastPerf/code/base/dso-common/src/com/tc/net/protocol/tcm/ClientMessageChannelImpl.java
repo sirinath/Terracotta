@@ -79,11 +79,12 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
    * Session message filter. 
    * To drop old session msgs when session changed. 
    */
-  public void send (final TCNetworkMessage message) {
+  public int send (final TCNetworkMessage message) {
     if (channelSessionID == ((DSOMessageBase)message).getLocalSessionID()) {
-     super.send(message);  
+     return super.send(message);  
     } else {
       logger.info("Drop old message: "+ ((DSOMessageBase)message).getMessageType() + " Expected "+ channelSessionID + " but got " + ((DSOMessageBase)message).getLocalSessionID());
+      return 0;
     }
   }
 

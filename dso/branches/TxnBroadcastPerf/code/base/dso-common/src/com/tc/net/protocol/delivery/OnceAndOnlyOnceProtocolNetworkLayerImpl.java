@@ -92,8 +92,9 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     return this.receiveLayer;
   }
 
-  public void send(TCNetworkMessage message) {
+  public int send(TCNetworkMessage message) {
     delivery.send(message);
+    return 1;
   }
 
   public void receive(TCByteBuffer[] msgData) {
@@ -359,7 +360,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
     throw new AssertionError("Must not call!");
   }
 
-  public void sendToConnection(TCNetworkMessage message) {
+  public int sendToConnection(TCNetworkMessage message) {
     throw new AssertionError("Must not call!");
   }
 

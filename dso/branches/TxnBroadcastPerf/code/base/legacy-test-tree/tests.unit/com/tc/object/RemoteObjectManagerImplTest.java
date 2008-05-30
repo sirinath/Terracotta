@@ -493,8 +493,9 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       return;
     }
 
-    public void send() {
+    public int send() {
       sendQueue.put(new Object());
+      return 1;
     }
 
     public ClientID getClientID() {
@@ -543,8 +544,9 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       this.initializeQueue.put(new Object[] { ctxt, oids, removedIDs });
     }
 
-    public void send() {
+    public int send() {
       sendQueue.put(new Object());
+      return 1;
     }
 
     public MessageChannel getChannel() {

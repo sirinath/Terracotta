@@ -29,7 +29,7 @@ public interface MessageTransport extends NetworkLayer {
 
   public void receiveTransportMessage(WireProtocolMessage message);
 
-  public void sendToConnection(TCNetworkMessage message);
+  public int sendToConnection(TCNetworkMessage message);
 
   public TCSocketAddress getRemoteAddress();
 
