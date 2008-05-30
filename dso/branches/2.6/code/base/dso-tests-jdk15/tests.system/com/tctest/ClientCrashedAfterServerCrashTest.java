@@ -58,7 +58,8 @@ public class ClientCrashedAfterServerCrashTest extends BaseDSOTestCase {
   private TestPauseListener pauseListener2;
 
   public ClientCrashedAfterServerCrashTest() {
-    //
+    // MNK-539
+    disableAllUntil("2008-06-30");
   }
 
   @Override
