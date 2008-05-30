@@ -19,7 +19,7 @@ public interface CommitTransactionMessage {
 
   public TCByteBuffer[] getBatchData();
   
-  public void send();
+  public int send();
   
   public ClientID getClientID();
   

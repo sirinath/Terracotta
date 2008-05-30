@@ -59,8 +59,9 @@ public class TestMessageChannel implements MessageChannel {
     return;
   }
 
-  public void send(TCNetworkMessage msg) {
+  public int send(TCNetworkMessage msg) {
     sendQueue.put(msg);
+    return 1;
   }
 
   public void receive(TCByteBuffer[] msgData) {

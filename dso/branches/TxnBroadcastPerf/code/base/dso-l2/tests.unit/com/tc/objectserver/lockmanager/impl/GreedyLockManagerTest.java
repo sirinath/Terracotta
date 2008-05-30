@@ -921,7 +921,7 @@ public class GreedyLockManagerTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public void send(TCNetworkMessage message) {
+    public int send(TCNetworkMessage message) {
       throw new ImplementMe();
     }
 

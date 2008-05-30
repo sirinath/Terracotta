@@ -96,9 +96,10 @@ public class MockMessageChannel implements MessageChannelInternal {
     throw new ImplementMe();
   }
 
-  public void send(TCNetworkMessage message) {
+  public int send(TCNetworkMessage message) {
     ++this.numSends;
     this.lastSentMessage = message;
+    return this.numSends;
   }
 
   public void receive(TCByteBuffer[] msgData) {

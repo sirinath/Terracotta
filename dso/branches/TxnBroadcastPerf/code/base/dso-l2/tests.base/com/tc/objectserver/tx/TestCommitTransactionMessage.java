@@ -46,8 +46,9 @@ public class TestCommitTransactionMessage implements CommitTransactionMessage {
     return tcbb;
   }
 
-  public void send() {
+  public int send() {
     this.sendCalls.add(new Object());
+    return 1;
   }
 
   public ObjectStringSerializer getSerializer() {

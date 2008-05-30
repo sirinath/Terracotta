@@ -134,7 +134,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     return null;
   }
   
-  public void send(final TCNetworkMessage message) {
+  public int send(final TCNetworkMessage message) {
     if (logger.isDebugEnabled()) {
       message.addListener(new TCNetworkMessageListener() {
         public void notifyMessageEvent(TCNetworkMessageEvent event) {
@@ -143,7 +143,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
       });
     }
 
-    this.sendLayer.send(message);
+    return this.sendLayer.send(message);
   }
   
 

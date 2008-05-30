@@ -11,6 +11,6 @@ public interface BatchTransactionAcknowledgeMessage {
 
   public TxnBatchID getBatchID();
 
-  public void send();
+  public int send();
 
 }

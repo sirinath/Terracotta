@@ -160,7 +160,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     }
   }
 
-  public final void send(TCNetworkMessage message) {
+  public final int send(TCNetworkMessage message) {
     // synchronized (isOpen) {
     // Assert.eval("Can't send on an unopen transport [" +
     // Thread.currentThread().getName() + "]", isOpen.get());
@@ -169,14 +169,14 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     synchronized (status) {
       if (!status.isEstablished()) {
         logger.warn("Ignoring message sent to non-established transport: " + message);
-        return;
+        return(0);
       }
 
-      sendToConnection(message);
+      return sendToConnection(message);
     }
   }
 
-  public final void sendToConnection(TCNetworkMessage message) {
+  public final int sendToConnection(TCNetworkMessage message) {
     if (message == null) throw new AssertionError("Attempt to send a null message.");
     if (!(message instanceof WireProtocolMessage)) {
       final TCNetworkMessage payload = message;
@@ -193,7 +193,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     hdr.setDestinationPort(getDestinationPort());
     hdr.computeChecksum();
 
-    connection.putMessage(message);
+    return connection.putMessage(message);
   }
 
   /**

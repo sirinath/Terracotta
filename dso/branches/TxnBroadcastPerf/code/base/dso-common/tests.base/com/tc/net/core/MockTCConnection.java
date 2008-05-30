@@ -89,9 +89,9 @@ public class MockTCConnection implements TCConnection {
     this.messageSink = sink;
   }
 
-  public void putMessage(TCNetworkMessage message) {
+  public int putMessage(TCNetworkMessage message) {
     this.sentMessages.add(message);
-    if (this.messageSink != null) this.messageSink.putMessage(message);
+    return (this.messageSink != null)? this.messageSink.putMessage(message) : 0;
   }
 
   public List getSentMessages() {

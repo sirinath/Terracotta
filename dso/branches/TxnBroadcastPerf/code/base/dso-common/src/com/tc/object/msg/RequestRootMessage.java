@@ -12,7 +12,7 @@ public interface RequestRootMessage extends Recyclable {
 
   public void initialize(String name);
 
-  public void send();
+  public int send();
   
   public ClientID getClientID();
 

@@ -247,9 +247,10 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
       }
     }
 
-    public void send(TCNetworkMessage message) {
-      super.send(message);
+    public int send(TCNetworkMessage message) {
+      int count = super.send(message);
       sink.add(message);
+      return count;
     }
 
     public void addClassMapping(TCMessageType type, Class msgClass) {

@@ -41,7 +41,7 @@ public interface ClientHandshakeMessage {
 
   public ClientID getClientID();
 
-  public void send();
+  public int send();
 
   public void addTransactionSequenceIDs(Collection transactionSequenceIDs);
 

@@ -23,7 +23,7 @@ public interface TCMessage extends EventContext {
 
   public void dehydrate();
 
-  public void send();
+  public int send();
 
   public MessageChannel getChannel();
 

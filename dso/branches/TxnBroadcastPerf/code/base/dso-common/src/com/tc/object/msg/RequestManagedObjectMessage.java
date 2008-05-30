@@ -23,7 +23,7 @@ public interface RequestManagedObjectMessage extends Recyclable {
 
   public void initialize(ObjectRequestContext ctxt, Set objectIDs, Set removedIDs);
 
-  public void send();
+  public int send();
 
   public MessageChannel getChannel();
 
