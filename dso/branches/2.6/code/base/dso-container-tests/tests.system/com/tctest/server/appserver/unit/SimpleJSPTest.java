@@ -19,7 +19,8 @@ public class SimpleJSPTest extends AbstractTwoServerDeploymentTest {
   private static final String INDEXJSP = "index.jsp";
 
   public SimpleJSPTest() {
-    disableTestUntil("testManageable", "2008-06-01");
+    // DEV-1307
+    disableTestUntil("testManageable", "2008-12-01");
   }
 
   public static Test suite() {
@@ -53,7 +54,7 @@ public class SimpleJSPTest extends AbstractTwoServerDeploymentTest {
   }
 
   /** ****** test setup ********* */
-  private static class SimpleJSPTestSetup extends TwoServerTestSetup {
+  private static class SimpleJSPTestSetup extends TwoServerTestSetup { 
 
     public SimpleJSPTestSetup() {
       super(SimpleJSPTest.class, CONTEXT);
