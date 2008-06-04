@@ -24,6 +24,8 @@ public class L2AcknowledgeTransactionMessageBatchManager extends AcknowledgeTran
 
   private int                   ackCounter;
   private int                   batchCounter;
+  private int                   noPendingCount;
+  private int                   maxSendQueuePosition;
 
   public L2AcknowledgeTransactionMessageBatchManager() {
     super(logger, BATCH_THRESHOLD);
@@ -52,7 +54,8 @@ public class L2AcknowledgeTransactionMessageBatchManager extends AcknowledgeTran
   private void logStatistics() {
     TimerTask task = new TimerTask() {
       public void run() {
-        logger.info("XXX L2toL1 batches=" + batchCounter + " acks=" + ackCounter);
+        logger.info("XXX L1toL2 batches=" + batchCounter + " acks=" + ackCounter + " noPending=" + noPendingCount + " maxQueue="
+                    + maxSendQueuePosition);
       }
     };
     new Timer().schedule(task, 1000, 60000);
@@ -61,6 +64,16 @@ public class L2AcknowledgeTransactionMessageBatchManager extends AcknowledgeTran
   public void sendStatisticsRecord(DSOMessageBase msg) {
     ++batchCounter;
     ackCounter += ((AcknowledgeTransactionMessage) msg).size();
+  }
+
+  public void sendStatisticsNoPending() {
+    ++noPendingCount;
+  }
+
+  public void sendStatisticsQueuePosition(int sendQueuePosition) {
+    if (sendQueuePosition > maxSendQueuePosition) {
+      maxSendQueuePosition = sendQueuePosition;
+    }
   }
 
 }

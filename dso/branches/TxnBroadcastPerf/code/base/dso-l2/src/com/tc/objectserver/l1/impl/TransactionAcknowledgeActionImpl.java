@@ -54,7 +54,6 @@ public class TransactionAcknowledgeActionImpl implements TransactionAcknowledgeA
           
           BatchTransactionAcknowledgeMessage msg = channelManager.newBatchTransactionAcknowledgeMessage(nodeID);
           // We always send null batch ID since its never used - clean up
-          acknowledgeTransactionBatchManager.flush(((DSOMessageBase)msg).getChannel());
           msg.initialize(TxnBatchID.NULL_BATCH_ID);
           msg.send();
         }

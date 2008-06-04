@@ -10,7 +10,5 @@ public interface MessageBatchManager {
 
   public void sendBatch(DSOMessageBase msg);
   
-  public void sendStatisticsRecord(DSOMessageBase msg);
-
   public void flush(MessageChannel channel);
 }
