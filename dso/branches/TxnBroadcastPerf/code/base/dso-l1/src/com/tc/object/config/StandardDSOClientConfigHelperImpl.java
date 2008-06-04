@@ -102,7 +102,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,7 +117,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private static final TCLogger                  consoleLogger                      = CustomerLogging
                                                                                         .getConsoleLogger();
 
-  private static final InstrumentationDescriptor DEAFULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
+  private static final InstrumentationDescriptor DEFAULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
 
   private final ManagerHelperFactory             mgrHelperFactory                   = new ManagerHelperFactory();
   private final DSOClientConfigHelperLogger      helperLogger;
@@ -137,23 +136,36 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private final CompoundExpressionMatcher        nonportablesMatcher;
   private final List                             autoLockExcludes                   = new CopyOnWriteArrayList();
   private final List                             distributedMethods                 = new CopyOnWriteArrayList();          // <DistributedMethodSpec>
-  private final Map                              userDefinedBootSpecs               = new HashMap();
 
   // private final ClassInfoFactory classInfoFactory;
   private final ExpressionHelper                 expressionHelper;
 
-  private final Map                              adaptableCache                     = new HashMap();
+  private final Map                              adaptableCache                     = Collections.synchronizedMap(new HashMap());
 
   /**
    * A list of InstrumentationDescriptor representing include/exclude patterns
    */
-  private final LinkedList                       instrumentationDescriptors         = new LinkedList();
+  private final List                             instrumentationDescriptors         = new CopyOnWriteArrayList();
+
+  
+  // ======================================================================================================================
+  /**
+   * The lock for both {@link #userDefinedBootSpecs} and {@link #classSpecs} Maps
+   */
+  private final Object                           specLock                           = new Object();
+
+  /**
+   * A map of class names to TransparencyClassSpec
+   * @GuardedBy {@link #specLock}
+   */
+  private final Map                              userDefinedBootSpecs               = new HashMap();
 
   /**
    * A map of class names to TransparencyClassSpec for individual classes
+   * @GuardedBy {@link #specLock}
    */
-  private final Map                              classSpecs                         = Collections
-                                                                                        .synchronizedMap(new HashMap());
+  private final Map                              classSpecs                         = new HashMap();
+  // ======================================================================================================================
 
   private final Map                              customAdapters                     = new ConcurrentHashMap();
 
@@ -406,19 +418,15 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public void addInstrumentationDescriptor(InstrumentedClass classDesc) {
-    synchronized (this.instrumentationDescriptors) {
-      this.instrumentationDescriptors.addFirst(newInstrumentationDescriptor(classDesc));
-    }
+    this.instrumentationDescriptors.add(0, newInstrumentationDescriptor(classDesc));
   }
 
   public boolean hasIncludeExcludePatterns() {
-    synchronized (this.instrumentationDescriptors) {
-      return !this.instrumentationDescriptors.isEmpty();
-    }
+    return !this.instrumentationDescriptors.isEmpty();
   }
 
   public boolean hasIncludeExcludePattern(ClassInfo classInfo) {
-    return getInstrumentationDescriptorFor(classInfo) != DEAFULT_INSTRUMENTATION_DESCRIPTOR;
+    return getInstrumentationDescriptorFor(classInfo) != DEFAULT_INSTRUMENTATION_DESCRIPTOR;
   }
 
   public DSORuntimeLoggingOptions runtimeLoggingOptions() {
@@ -1130,9 +1138,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private void markAllSpecsPreInstrumented() {
-    for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
-      TransparencyClassSpec s = (TransparencyClassSpec) i.next();
-      s.markPreInstrumented();
+    // Technically, synchronization isn't needed here if this method is only called
+    // during construction, in a 1.5 JVM, and if specLock is final, because the JMM guarantees
+    // initialization safety w/o synchronization under those conditions
+    synchronized (specLock){
+      for (Iterator i = classSpecs.values().iterator(); i.hasNext();) {
+        TransparencyClassSpec s = (TransparencyClassSpec) i.next();
+        s.markPreInstrumented();
+      }
     }
   }
 
@@ -1141,7 +1154,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public Iterator getAllUserDefinedBootSpecs() {
-    return this.userDefinedBootSpecs.values().iterator();
+    Collection values = null;
+    synchronized (specLock){
+      values = new HashSet(userDefinedBootSpecs.values());
+    }
+    return values.iterator();
   }
 
   public void setFaultCount(int count) {
@@ -1404,16 +1421,16 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return faultCount < 0 ? this.configSetupManager.dsoL1Config().faultCount().getInt() : faultCount;
   }
 
-  private synchronized Boolean readAdaptableCache(String name) {
+  private Boolean readAdaptableCache(String name) {
     return (Boolean) adaptableCache.get(name);
   }
 
-  private synchronized boolean cacheIsAdaptable(String name, boolean adaptable) {
+  private boolean cacheIsAdaptable(String name, boolean adaptable) {
     adaptableCache.put(name, adaptable ? Boolean.TRUE : Boolean.FALSE);
     return adaptable;
   }
 
-  private synchronized void clearAdaptableCache() {
+  private void clearAdaptableCache() {
     this.adaptableCache.clear();
   }
 
@@ -1455,9 +1472,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public void addLock(String methodPattern, LockDefinition lockDefinition) {
     // keep the list in reverse order of add
-    synchronized (locks) {
-      locks.add(0, new Lock(methodPattern, lockDefinition));
-    }
+    locks.add(0, new Lock(methodPattern, lockDefinition));
   }
 
   public boolean shouldBeAdapted(ClassInfo classInfo) {
@@ -1509,13 +1524,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private InstrumentationDescriptor getInstrumentationDescriptorFor(ClassInfo classInfo) {
-    synchronized (this.instrumentationDescriptors) {
-      for (Iterator i = this.instrumentationDescriptors.iterator(); i.hasNext();) {
-        InstrumentationDescriptor rv = (InstrumentationDescriptor) i.next();
-        if (rv.matches(classInfo)) { return rv; }
-      }
+    for (Iterator i = this.instrumentationDescriptors.iterator(); i.hasNext();) {
+      InstrumentationDescriptor rv = (InstrumentationDescriptor) i.next();
+      if (rv.matches(classInfo)) { return rv; }
     }
-    return DEAFULT_INSTRUMENTATION_DESCRIPTOR;
+    return DEFAULT_INSTRUMENTATION_DESCRIPTOR;
   }
 
   private String outerClassnameWithoutInner(String fullName) {
@@ -1653,7 +1666,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private TransparencyClassSpec basicGetOrCreateSpec(String className, String applicator, boolean rememberSpec) {
-    synchronized (classSpecs) {
+    synchronized (specLock) {
       TransparencyClassSpec spec = getSpec(className);
       if (spec == null) {
         if (applicator != null) {
@@ -1679,7 +1692,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private void addSpec(TransparencyClassSpec spec) {
-    synchronized (classSpecs) {
+    synchronized (specLock) {
       Assert.eval(!classSpecs.containsKey(spec.getClassName()));
       Assert.assertNotNull(spec);
       classSpecs.put(spec.getClassName(), spec);
@@ -1762,18 +1775,20 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public TransparencyClassSpec getSpec(String className) {
-    // NOTE: This method doesn't create a spec for you. If you want that use getOrCreateSpec()
-    className = className.replace('/', '.');
-    TransparencyClassSpec rv = (TransparencyClassSpec) classSpecs.get(className);
-
-    if (rv == null) {
-      rv = (TransparencyClassSpec) userDefinedBootSpecs.get(className);
-    } else {
-      // shouldn't have a spec in both of the spec collections
-      Assert.assertNull(userDefinedBootSpecs.get(className));
+    synchronized (specLock){
+      // NOTE: This method doesn't create a spec for you. If you want that use getOrCreateSpec()
+      className = className.replace('/', '.');
+      TransparencyClassSpec rv = (TransparencyClassSpec) classSpecs.get(className);
+      
+      if (rv == null) {
+        rv = (TransparencyClassSpec) userDefinedBootSpecs.get(className);
+      } else {
+        // shouldn't have a spec in both of the spec collections
+        Assert.assertNull(userDefinedBootSpecs.get(className));
+      }
+      
+      return rv;
     }
-
-    return rv;
   }
 
   private void scanForMissingClassesDeclaredInConfig(BootJar bootJar) throws BootJarException, IOException {
@@ -1781,21 +1796,25 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     int preInstrumentedCount = 0;
     Set preinstClasses = bootJar.getAllPreInstrumentedClasses();
     int bootJarPopulation = preinstClasses.size();
-    TransparencyClassSpec[] allSpecs = getAllSpecs(true);
-    for (int i = 0; i < allSpecs.length; i++) {
-      TransparencyClassSpec classSpec = allSpecs[i];
-      Assert.assertNotNull(classSpec);
-      String cname = classSpec.getClassName().replace('/', '.');
-      if (!classSpec.isForeign() && (userDefinedBootSpecs.get(cname) != null)) continue;
-      if (classSpec.isPreInstrumented()) {
-        preInstrumentedCount++;
-        if (!(preinstClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific())) {
-          String message = "* " + classSpec.getClassName() + "... missing";
-          missingCount++;
-          logger.info(message);
+    
+    synchronized (specLock){
+      TransparencyClassSpec[] allSpecs = getAllSpecs(true);
+      for (int i = 0; i < allSpecs.length; i++) {
+        TransparencyClassSpec classSpec = allSpecs[i];
+        Assert.assertNotNull(classSpec);
+        String cname = classSpec.getClassName().replace('/', '.');
+        if (!classSpec.isForeign() && (userDefinedBootSpecs.get(cname) != null)) continue;
+        if (classSpec.isPreInstrumented()) {
+          preInstrumentedCount++;
+          if (!(preinstClasses.contains(classSpec.getClassName()) || classSpec.isHonorJDKSubVersionSpecific())) {
+            String message = "* " + classSpec.getClassName() + "... missing";
+            missingCount++;
+            logger.info(message);
+          }
         }
       }
     }
+    
 
     if (missingCount > 0) {
       logger.info("Number of classes in the DSO boot jar:" + bootJarPopulation);
@@ -1826,15 +1845,17 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
-  private synchronized TransparencyClassSpec[] getAllSpecs(boolean includeBootJarSpecs) {
-    ArrayList rv = new ArrayList(classSpecs.values());
-
-    if (includeBootJarSpecs) {
-      for (Iterator i = getAllUserDefinedBootSpecs(); i.hasNext();) {
-        rv.add(i.next());
+  private TransparencyClassSpec[] getAllSpecs(boolean includeBootJarSpecs) {
+    List rv = null;
+    synchronized(specLock){
+      rv = new ArrayList(classSpecs.values());
+      
+      if (includeBootJarSpecs) {
+        for (Iterator i = getAllUserDefinedBootSpecs(); i.hasNext();) {
+          rv.add(i.next());
+        }
       }
     }
-
     return (TransparencyClassSpec[]) rv.toArray(new TransparencyClassSpec[rv.size()]);
   }
 
@@ -1912,7 +1933,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public void addUserDefinedBootSpec(String className, TransparencyClassSpec spec) {
-    userDefinedBootSpecs.put(className, spec);
+    synchronized (specLock){
+      userDefinedBootSpecs.put(className, spec);
+    }
   }
 
   public void addRepository(String location) {
@@ -1969,7 +1992,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return LockLevel.WRITE;
   }
 
-  public InputStream getL1PropertiesFromL2Stream(ConnectionInfo[] connectInfo) throws Exception {
+  public static InputStream getL1PropertiesFromL2Stream(ConnectionInfo[] connectInfo) throws Exception {
     URLConnection connection = null;
     InputStream l1PropFromL2Stream = null;
     URL theURL = null;

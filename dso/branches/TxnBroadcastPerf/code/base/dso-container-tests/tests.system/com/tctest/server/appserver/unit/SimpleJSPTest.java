@@ -19,7 +19,7 @@ public class SimpleJSPTest extends AbstractTwoServerDeploymentTest {
   private static final String INDEXJSP = "index.jsp";
 
   public SimpleJSPTest() {
-    disableTestUntil("testManageable", "2008-06-01");
+    //
   }
 
   public static Test suite() {
@@ -34,18 +34,6 @@ public class SimpleJSPTest extends AbstractTwoServerDeploymentTest {
 
     WebResponse response2 = request(server1, "cmd=query", conversation);
     assertEquals("OK", response2.getText().trim());
-  }
-
-  public void testManageable() throws Exception {
-    // only test with Tomcat
-    if (appServerInfo().getId() != AppServerInfo.TOMCAT) return;
-
-    WebConversation conversation = new WebConversation();
-    WebResponse response1 = request(server0, "cmd=getClass", conversation);
-    System.out.println("compiled servlet class: " + response1.getText().trim());
-
-    response1 = request(server0, "cmd=isManagable", conversation);
-    assertEquals("true", response1.getText().trim());
   }
 
   private WebResponse request(WebApplicationServer server, String params, WebConversation con) throws Exception {
