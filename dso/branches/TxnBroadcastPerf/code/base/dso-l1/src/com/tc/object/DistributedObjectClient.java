@@ -428,7 +428,7 @@ public class DistributedObjectClient extends SEDA {
                                                         objectManager, remoteObjectManager, lockManager, rtxManager,
                                                         gtxManager, stagesToPauseOnDisconnect, pauseStage.getSink(),
                                                         sessionManager, pauseListener, sequence, cluster, pInfo
-                                                            .buildVersion());
+                                                            .version());
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,

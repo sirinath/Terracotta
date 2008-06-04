@@ -588,7 +588,7 @@ public class DistributedObjectServer implements TCDumper {
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
     ProductInfo pInfo = ProductInfo.getInstance();
-    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager(), pInfo.buildVersion());
+    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager(), pInfo.version());
     channelManager.addEventListener(cteh);
     channelManager.addEventListener(connectionIdFactory);
 
