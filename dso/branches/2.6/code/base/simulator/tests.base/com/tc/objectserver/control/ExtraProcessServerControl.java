@@ -131,7 +131,6 @@ public class ExtraProcessServerControl extends ServerControlBase {
     jvmArgs.add("-Djava.net.preferIPv4Stack=true");
     debugParams.addDebugParamsTo(jvmArgs);
     jvmArgs.add("-D" + TCPropertiesImpl.SYSTEM_PROP_PREFIX + TCPropertiesConsts.TC_MANAGEMENT_TEST_MBEANS_ENABLED + "=true");
-    addClasspath(jvmArgs);
     addLibPath(jvmArgs);
     addEnvVarsForWindows(jvmArgs);
 
@@ -153,12 +152,6 @@ public class ExtraProcessServerControl extends ServerControlBase {
     String libPath = System.getProperty("java.library.path");
     if (libPath == null || libPath.equals("")) { throw new AssertionError("java.library.path is not set!"); }
     args.add("-Djava.library.path=" + libPath);
-  }
-
-  private void addClasspath(List args) {
-    String classpath = System.getProperty("java.class.path");
-    if (classpath == null || classpath.equals("")) { throw new AssertionError("java.class.path is not set!"); }
-    args.add("-Djava.class.path=" + classpath);
   }
 
   private void addEnvVarsForWindows(List args) {
