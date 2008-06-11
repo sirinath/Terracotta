@@ -243,6 +243,7 @@ public class DistributedObjectServer implements TCDumper {
   private CommunicationsManager                communicationsManager;
   private ServerConfigurationContext           context;
   private ObjectManagerImpl                    objectManager;
+  private ObjectRequestManager                 objectRequestManager;
   private TransactionalObjectManager           txnObjectManager;
   private CounterManager                       sampledCounterManager;
   private LockManagerImpl                      lockManager;
@@ -639,8 +640,7 @@ public class DistributedObjectServer implements TCDumper {
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(transactionManager));
 
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
-    ObjectRequestManager objectRequestManager = new ObjectRequestManagerImpl(objectManager, transactionManager);
-
+   
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
                              maxStageSize);
 
@@ -682,14 +682,18 @@ public class DistributedObjectServer implements TCDumper {
     stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE, channelLifeCycleHandler, 1,
                              maxStageSize);
     channelManager.addEventListener(channelLifeCycleHandler);
+    
+    Stage respondToObjectRequestStage = stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
+                                                                 new RespondToObjectRequestHandler(), 4, maxStageSize);
+                                      
+    
+    objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager, clientStateManager, transactionManager, respondToObjectRequestStage.getSink());
+
 
     Stage objectRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE,
                                                    new ManagedObjectRequestHandler(globalObjectFaultCounter,
-                                                                                   globalObjectFlushCounter,
-                                                                                   objectRequestManager), 1,
+                                                                                   globalObjectFlushCounter), 1,
                                                    maxStageSize);
-    stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
-                             new RespondToObjectRequestHandler(), 4, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
@@ -804,7 +808,7 @@ public class DistributedObjectServer implements TCDumper {
       l2Coordinator = new L2HADisabledCooridinator();
     }
 
-    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectStore, lockManager, channelManager,
+    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore, lockManager, channelManager,
                                                  clientStateManager, transactionManager, txnObjectManager,
                                                  clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader(gtxm));

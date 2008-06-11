@@ -18,4 +18,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/management-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty-api"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>

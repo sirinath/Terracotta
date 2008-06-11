@@ -950,6 +950,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       // We only want to update the stats the first time we process this request.
       return responseContext.updateStats() && isNewRequest();
     }
+
   }
 
   private static class WaitForLookupContext implements ObjectManagerResultsContext {
@@ -1013,7 +1014,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     public boolean updateStats() {
       return true;
     }
-
+    
   }
 
   private static class Pending {

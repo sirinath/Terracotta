@@ -10,6 +10,7 @@ import com.tc.l2.api.L2Coordinator;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
@@ -27,6 +28,7 @@ import com.tc.objectserver.tx.TransactionalObjectManager;
 public class ServerConfigurationContextImpl extends ConfigurationContextImpl implements ServerConfigurationContext {
 
   private final ObjectManager                 objectManager;
+  private final ObjectRequestManager          objectRequestManager;
   private final LockManager                   lockManager;
   private final DSOChannelManager             channelManager;
   private final ClientStateManager            clientStateManager;
@@ -38,7 +40,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
   private final TransactionalObjectManager    txnObjectManager;
   private final L2Coordinator                 l2Coordinator;
 
-  public ServerConfigurationContextImpl(StageManager stageManager, ObjectManager objectManager,
+  public ServerConfigurationContextImpl(StageManager stageManager, ObjectManager objectManager, ObjectRequestManager objectRequestManager,
                                         ManagedObjectStore objectStore, LockManager lockManager,
                                         DSOChannelManager channelManager, ClientStateManager clientStateManager,
                                         ServerTransactionManager transactionManager,
@@ -48,6 +50,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
                                         TransactionBatchReaderFactory transactionBatchReaderFactory) {
     super(stageManager);
     this.objectManager = objectManager;
+    this.objectRequestManager = objectRequestManager;
     this.objectStore = objectStore;
     this.lockManager = lockManager;
     this.channelManager = channelManager;
@@ -66,6 +69,10 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
 
   public ObjectManager getObjectManager() {
     return objectManager;
+  }
+  
+  public ObjectRequestManager getObjectRequestManager() {
+    return objectRequestManager;
   }
 
   public LockManager getLockManager() {
