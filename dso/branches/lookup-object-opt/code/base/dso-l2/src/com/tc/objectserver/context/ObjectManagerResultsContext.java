@@ -14,7 +14,7 @@ import java.util.Set;
  * Interface for a context that needs ObjectManager look results
  */
 public interface ObjectManagerResultsContext extends EventContext {
-
+  
   public Set getLookupIDs();
 
   public Set getNewObjectIDs();
