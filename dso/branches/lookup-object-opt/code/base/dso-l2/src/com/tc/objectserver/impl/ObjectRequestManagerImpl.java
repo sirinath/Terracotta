@@ -155,10 +155,12 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
                                    boolean serverInitiated, String requestingThreadName) {
     Set lookupIDs = new HashSet();
 
-    for (Iterator iter = ids.iterator(); iter.hasNext();) {
-      ObjectID id = (ObjectID) iter.next();
-      if (objectRequestCache.add(clientID, id)) {
-        lookupIDs.add(id);
+    synchronized (this) {
+      for (Iterator iter = ids.iterator(); iter.hasNext();) {
+        ObjectID id = (ObjectID) iter.next();
+        if (objectRequestCache.add(clientID, id)) {
+          lookupIDs.add(id);
+        }
       }
     }
 
@@ -172,29 +174,39 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
   private void basicSendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs,
                                 Set missingObjectIDs, boolean isServerInitiated) {
     Map messageMap = new HashMap();
+    Map clientObjectIDMap = new HashMap();
+
     LinkedList objectsInOrder = new LinkedList();
     try {
       long batchID = batchIDSequence.next();
 
       Set ids = new HashSet(Math.max((int) (objs.size() / .75f) + 1, 16));
-      for (Iterator i = objs.iterator(); i.hasNext();) {
-        ManagedObject mo = (ManagedObject) i.next();
-        ObjectID id = mo.getID();
+      synchronized (this) {
+        for (Iterator i = objs.iterator(); i.hasNext();) {
+          ManagedObject mo = (ManagedObject) i.next();
+          ObjectID id = mo.getID();
 
-        // prepare channels
-        Set clients = objectRequestCache.clients(id);
-        for (Iterator iter = clients.iterator(); iter.hasNext();) {
-          ClientID clientID = (ClientID) iter.next();
-          MessageChannel channel = channelManager.getActiveChannel(clientID);
-          messageMap.put(clientID, new MessageBatchAndSend(channel, batchID));
+          // prepare channels
+          Set clients = objectRequestCache.clients(id);
+
+          for (Iterator iter = clients.iterator(); iter.hasNext();) {
+            ClientID clientID = (ClientID) iter.next();
+            clientObjectIDMap.put(clientID, objectRequestCache.ids(clientID));
+            MessageChannel channel = channelManager.getActiveChannel(clientID);
+            messageMap.put(clientID, new MessageBatchAndSend(channel, batchID));
+          }
+          objectRequestCache.remove(id);
+          ids.add(id);
+          if (requestedObjectIDs.contains(mo.getID())) {
+            objectsInOrder.addLast(mo);
+          } else {
+            objectsInOrder.addFirst(mo);
+          }
+        }
+        if (!missingObjectIDs.isEmpty()) {
+          objectRequestCache.remove(missingObjectIDs);
         }
 
-        ids.add(id);
-        if (requestedObjectIDs.contains(mo.getID())) {
-          objectsInOrder.addLast(mo);
-        } else {
-          objectsInOrder.addFirst(mo);
-        }
       }
 
       // Only send objects that are NOT already there in the client. Look at the comment below.
@@ -222,7 +234,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             // logger.info("Ignoring request for look up from " + morc.getChannelID() + " for " + m.getID());
           }
         }
-        objectRequestCache.remove(m.getID());
         objectManager.releaseReadOnly(m);
       }
 
@@ -243,11 +254,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           for (Iterator missingIterator = messageMap.keySet().iterator(); missingIterator.hasNext();) {
             ClientID clientID = (ClientID) missingIterator.next();
             MessageBatchAndSend mbas = (MessageBatchAndSend) messageMap.get(clientID);
-            mbas.sendMissingObjects(missingObjectIDs, objectRequestCache.ids(clientID));
+            mbas.sendMissingObjects(missingObjectIDs, (Set) clientObjectIDMap.get(clientID));
           }
           //
         }
-        objectRequestCache.remove(missingObjectIDs);
       }
 
     } catch (NoSuchChannelException e) {
@@ -265,19 +275,16 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     private Set objectRequestSet = new HashSet();
     private Map objectRequestMap = new HashMap();
 
-    public synchronized boolean add(ClientID clientID, ObjectID id) {
-      boolean inCache = false;
+    public boolean add(ClientID clientID, ObjectID id) {
       // check already been requested.
-      if (objectRequestSet.contains(id)) {
-        inCache = true;
-      }
+      boolean inCache = objectRequestSet.add(id);
+
       Set ids = (Set) objectRequestMap.get(clientID);
       if (ids == null) {
-        ids = new HashSet();
+        objectRequestMap.put(clientID, (ids = new HashSet()));
       }
-      if (!ids.contains(id)) {
-        ids.add(id);
-      }
+      ids.add(id);
+
       return inCache;
     }
 
@@ -295,21 +302,17 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       return clients;
     }
 
-    public synchronized Iterator clients() {
-      return objectRequestMap.keySet().iterator();
-    }
-
-    public synchronized Set ids(ClientID id) {
+    public Set ids(ClientID id) {
       return (Set) objectRequestMap.get(id);
     }
 
-    public synchronized void remove(Set ids) {
+    public void remove(Set ids) {
       for (Iterator i = ids.iterator(); i.hasNext();) {
         remove((ObjectID) i.next());
       }
     }
 
-    public synchronized void remove(ObjectID id) {
+    public void remove(ObjectID id) {
       objectRequestSet.remove(id);
       for (Iterator i = objectRequestMap.keySet().iterator(); i.hasNext();) {
         ClientID clientID = (ClientID) i.next();
@@ -435,6 +438,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       missingObjects.add(oid);
     }
 
+    // XXX implement checkoutMap in future
     public void setResults(ObjectManagerLookupResults results) {
       objects = results.getObjects();
       if (results.getLookupPendingObjectIDs().size() > 0) {
