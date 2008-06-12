@@ -381,7 +381,8 @@ public class DistributedObjectServer implements TCDumper {
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     l1ReconnectConfig = new L1ReconnectConfigImpl(TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS));
+        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS), TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP));
 
     final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
     // it's broken
@@ -399,8 +400,8 @@ public class DistributedObjectServer implements TCDumper {
       System.exit(1);
     }
 
-    int maxStageSize = 5000;
-
+    int maxStageSize = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY);
+    
     StageManager stageManager = seda.getStageManager();
     SessionManager sessionManager = new NullSessionManager();
     SessionProvider sessionProvider = (SessionProvider) sessionManager;
@@ -483,9 +484,11 @@ public class DistributedObjectServer implements TCDumper {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      final int sendQueueCap = l1ReconnectConfig.getSendQueueCapacity();
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(), l1ReconnectConfig);
+                                                                     oooStage.getSink(), l1ReconnectConfig,
+                                                                     sendQueueCap);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }

@@ -12,6 +12,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.net.protocol.delivery.L2ReconnectConfigImpl;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 import com.tc.test.proxyconnect.ProxyConnectManagerImpl;
 import com.tc.util.PortChooser;
@@ -198,7 +199,7 @@ public class ActivePassiveServerManager {
       if (isProxyL2groupPorts) {
         // hidden tc.properties only used by L2 proxy testing purpose
         perServerJvmArgs = new ArrayList(jvmArgs);
-        perServerJvmArgs.add("-Dcom.tc." + L2ReconnectConfigImpl.L2_RECONNECT_PROXY_TO_PORT + "=" + l2GroupPorts[i]);
+        perServerJvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_L2PROXY_TO_PORT + "=" + l2GroupPorts[i]);
       } else {
         perServerJvmArgs = jvmArgs;
       }
