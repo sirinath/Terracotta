@@ -131,7 +131,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
       // proxy group port. use a different group port from tc.properties (if exist) than the one on tc-config
       // currently used by L2Reconnect proxy test.
-      groupConnectPort = TCPropertiesImpl.getProperties().getInt(L2ReconnectConfigImpl.L2_RECONNECT_PROXY_TO_PORT,
+      groupConnectPort = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_L2PROXY_TO_PORT,
                                                                  groupPort);
 
       socketAddress = new TCSocketAddress(l2DSOConfig.bind().getString(), groupConnectPort);
@@ -178,9 +178,10 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (isUseOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      final int sendQueueCap = l2ReconnectConfig.getSendQueueCapacity();
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(), l2ReconnectConfig);
+                                                                     oooStage.getSink(), l2ReconnectConfig, sendQueueCap);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
