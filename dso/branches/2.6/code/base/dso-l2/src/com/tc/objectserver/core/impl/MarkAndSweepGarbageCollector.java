@@ -126,7 +126,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   public void gc() {
-    
+
     while (!requestGCStart()) {
       gcLogger.log_GCDisabled();
       logger.info("GC is Disabled. Waiting for 1 min before checking again ...");
@@ -288,6 +288,13 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
         for (Iterator r = obj.getObjectReferences().iterator(); r.hasNext();) {
           ObjectID mid = (ObjectID) r.next();
+
+          if (mid == null) {
+            // see CDV-765
+            logger.error("null value returned from getObjectReferences() on " + obj);
+            continue;
+          }
+
           if (mid.isNull() || !managedObjectIds.contains(mid)) continue;
           if (filter.shouldVisit(mid)) toBeVisited.add(mid);
           managedObjectIds.remove(mid);
