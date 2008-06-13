@@ -9,7 +9,6 @@ import com.tc.management.JMXConnectorProxy;
 import com.tc.management.beans.L2DumperMBean;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
-import com.tc.net.protocol.delivery.L2ReconnectConfigImpl;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCPropertiesConsts;
@@ -84,7 +83,7 @@ public class ActivePassiveServerManager {
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, ActivePassiveTestSetupManager setupManger, File javaHome,
-                                    TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs, 
+                                    TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     boolean isProxyL2GroupPorts)
       throws Exception {
     this.isProxyL2groupPorts = isProxyL2GroupPorts;
@@ -122,13 +121,13 @@ public class ActivePassiveServerManager {
     jmxConnectors = new JMXConnector[this.serverCount];
     createServers();
 
-    serverConfigCreator = new ActivePassiveServerConfigCreator(this.serverCount, dsoPorts, jmxPorts, 
+    serverConfigCreator = new ActivePassiveServerConfigCreator(this.serverCount, dsoPorts, jmxPorts,
                                                                (isProxyL2GroupPorts)? proxyL2GroupPorts: l2GroupPorts,
                                                                serverNames, serverPersistence, serverNetworkShare,
                                                                this.configModel, configFile, this.tempDir,
                                                                configFactory);
     serverConfigCreator.writeL2Config();
-    
+
     // setup proxy
     if (isProxyL2GroupPorts) {
       proxyL2Managers = new ProxyConnectManager[this.serverCount];
@@ -151,7 +150,7 @@ public class ActivePassiveServerManager {
       System.out.println("***** Random number generator seed=[" + seed + "]");
     }
   }
-  
+
   public ProxyConnectManager[] getL2ProxyManagers() {
     return proxyL2Managers;
   }
