@@ -17,9 +17,9 @@ import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.QueryLockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
+import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
-import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.tx.TimerSpec;
@@ -44,7 +44,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TimerTask;
-import java.util.Map.Entry;
 
 /**
  * The Top level lock manager and entry point into the lock manager subsystem in the L1.
