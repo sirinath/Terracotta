@@ -55,13 +55,13 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   private static final boolean            debug            = false;
 
   public OnceAndOnlyOnceProtocolNetworkLayerImpl(OOOProtocolMessageFactory messageFactory,
-                                                 OOOProtocolMessageParser messageParser, Sink workSink,
-                                                 ReconnectConfig reconnectConfig, boolean isClient) {
+                                                 OOOProtocolMessageParser messageParser, Sink sendSink,
+                                                 Sink receiveSink, ReconnectConfig reconnectConfig, boolean isClient) {
     super(logger);
     this.messageFactory = messageFactory;
     this.messageParser = messageParser;
     this.isClient = isClient;
-    this.delivery = new GuaranteedDeliveryProtocol(this, workSink, reconnectConfig, isClient);
+    this.delivery = new GuaranteedDeliveryProtocol(this, sendSink, receiveSink, reconnectConfig, isClient);
     this.delivery.start();
     this.delivery.pause();
     this.sessionId = (this.isClient) ? -1 : newRandomSessionId();

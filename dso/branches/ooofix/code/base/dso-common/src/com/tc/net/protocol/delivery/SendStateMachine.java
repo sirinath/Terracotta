@@ -47,7 +47,7 @@ public class SendStateMachine extends AbstractStateMachine {
     // set sendWindow from tc.properties if exist. 0 to disable window send.
     sendWindow = reconnectConfig.getSendWindow();
     int queueCap = reconnectConfig.getSendQueueCapacity();
-    this.sendQueueCap = (queueCap == 0)? Integer.MAX_VALUE : queueCap;
+    this.sendQueueCap = (queueCap == 0) ? Integer.MAX_VALUE : queueCap;
     this.sendQueue = new BoundedLinkedQueue(this.sendQueueCap);
     this.isClient = isClient;
     this.debugId = (this.isClient) ? "CLIENT" : "SERVER";
@@ -213,10 +213,8 @@ public class SendStateMachine extends AbstractStateMachine {
 
     BoundedLinkedQueue tmpQ = sendQueue;
     sendQueue = new BoundedLinkedQueue(sendQueueCap);
-    synchronized (tmpQ) {
-      while (!tmpQ.isEmpty()) {
-        dequeue(tmpQ);
-      }
+    while (!tmpQ.isEmpty()) {
+      dequeue(tmpQ);
     }
   }
 
