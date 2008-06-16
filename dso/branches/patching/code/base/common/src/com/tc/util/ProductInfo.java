@@ -103,7 +103,7 @@ public final class ProductInfo {
    * @param buildStream Build properties in stream conforming to Java Properties file format, null if none
    * @param patchStream Patch properties in stream conforming to Java Properties file format, null if none
    */
-  private ProductInfo(InputStream buildStream, InputStream patchStream) {
+  ProductInfo(InputStream buildStream, InputStream patchStream) {
     Properties properties = new Properties();
 
     moniker = bundleHelper.getString("moniker");
@@ -298,10 +298,6 @@ public final class ProductInfo {
     return toShortString() + ", as of " + buildID();
   }
   
-  public String toPatchString() {
-    return "Patch Level " + patchLevel + ", as of " + patchTimestampAsString() + " (Revision " + patchRevision + " by " + patchUser + "@" + patchHost + " from " + patchBranch + ")";
-  }
-
   public String buildID() {
     if (buildID == null) {
       String rev = revision;
@@ -311,6 +307,18 @@ public final class ProductInfo {
       buildID = buildTimestampAsString() + " (Revision " + rev + " by " + user + "@" + host + " from " + branch + ")";
     }
     return buildID;
+  }
+  
+  public String toLongPatchString() {
+    return toShortPatchString() + ", as of " + patchBuildID();  
+  }
+  
+  public String toShortPatchString() {
+    return "Patch Level " + patchLevel;
+  }
+
+  public String patchBuildID() {
+    return patchTimestampAsString() + " (Revision " + patchRevision + " by " + patchUser + "@" + patchHost + " from " + patchBranch + ")";
   }
 
   public String toString() {
@@ -333,7 +341,7 @@ public final class ProductInfo {
     if (cli.hasOption("v")) {
       System.out.println(getInstance().toLongString());
       if(getInstance().hasPatchInfo()) {
-        System.out.println(getInstance().toPatchString());
+        System.out.println(getInstance().toLongPatchString());
       }
     } else if (cli.hasOption("r")) {
       printRawData();

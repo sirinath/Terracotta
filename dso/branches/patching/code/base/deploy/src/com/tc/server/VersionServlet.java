@@ -21,7 +21,7 @@ public class VersionServlet extends HttpServlet {
     writer.println(productInfo.toLongString());
     if(productInfo.hasPatchInfo()) {
       writer.println("<br>");
-      writer.println(productInfo.toPatchString());
+      writer.println(productInfo.toLongPatchString());
     }
     writer.println("</pre></body></html>");
   }
