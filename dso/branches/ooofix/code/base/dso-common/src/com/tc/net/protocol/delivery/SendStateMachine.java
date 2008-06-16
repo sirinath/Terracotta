@@ -235,5 +235,10 @@ public class SendStateMachine extends AbstractStateMachine {
       DebugUtil.trace("SENDER-" + debugId + "-" + delivery.getConnectionId() + " -> " + msg);
     }
   }
+  
+  // for testing purpose only
+  boolean isClean() {
+    return (sendQueue.isEmpty() && outstandingMsgs.isEmpty());
+  }
 
 }
