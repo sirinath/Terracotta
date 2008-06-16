@@ -66,13 +66,13 @@ public class ReceiveStateMachine extends AbstractStateMachine {
       final long curRecv = received.get();
       if (r <= curRecv) {
         // we already got message
-        debugLog("Received dup msg "+r);
+        debugLog("Received dup msg " + r);
         sendAck(curRecv);
         delayedAcks.set(0);
         return;
       } else if (r > (curRecv + 1)) {
         // message missed, resend ack, receive to resend message.
-        debugLog("Received out of order msg "+r);
+        debugLog("Received out of order msg " + r);
         sendAck(curRecv);
         delayedAcks.set(0);
         return;
@@ -92,16 +92,15 @@ public class ReceiveStateMachine extends AbstractStateMachine {
     if ((delayedAcks.get() < maxDelayedAcks) && (getRunnerEventLength() > 0)) {
       delayedAcks.increment();
     } else {
-       /*
-       * saw IllegalStateException by AbstractTCNetworkMessage.checkSealed
-       * when message sent to non-established transport by MessageTransportBase.send.
-       * reset delayedAcks only ack can be sent.
+      /*
+       * saw IllegalStateException by AbstractTCNetworkMessage.checkSealed when message sent to non-established
+       * transport by MessageTransportBase.send. reset delayedAcks only ack can be sent.
        */
-        if (sendAck(next)) {
-          delayedAcks.set(0);
-        } else {
-          debugLog("Failed to send ack:"+next);
-        }
+      if (sendAck(next)) {
+        delayedAcks.set(0);
+      } else {
+        debugLog("Failed to send ack:" + next);
+      }
     }
   }
 
@@ -133,4 +132,10 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   public void setRunner(StateMachineRunner receive) {
     this.runner = receive;
   }
+
+  // for testing purpose only
+  boolean isClean() {
+    return ((received.get() == -1) && (delayedAcks.get() == 0));
+  }
+
 }
