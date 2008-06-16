@@ -22,11 +22,12 @@ public class GuaranteedDeliveryProtocolTest extends TestCase {
   public void tests() throws Exception {
     LinkedQueue receiveQueue = new LinkedQueue();
     TestProtocolMessageDelivery delivery = new TestProtocolMessageDelivery(receiveQueue);
-    TestSink workSink = new TestSink();
+    TestSink sendSink = new TestSink();
+    TestSink receiveSink = new TestSink();
     final short sessionId = 124;
 
     final ReconnectConfig reconnectConfig = new L1ReconnectConfigImpl();
-    GuaranteedDeliveryProtocol gdp = new GuaranteedDeliveryProtocol(delivery, workSink, reconnectConfig, true);
+    GuaranteedDeliveryProtocol gdp = new GuaranteedDeliveryProtocol(delivery, sendSink, receiveSink, reconnectConfig, true);
     gdp.start();
     gdp.resume();
 
@@ -36,19 +37,19 @@ public class GuaranteedDeliveryProtocolTest extends TestCase {
     msg.isHandshake = true;
     msg.setSessionId(sessionId);
     gdp.receive(msg);
-    runWorkSink(workSink);
+    runWorkSink(sendSink);
     // reply ack=-1 from receiver
     msg = new TestProtocolMessage(null, 0, -1);
     msg.isAck = true;
     msg.setSessionId(sessionId);
     gdp.receive(msg);
-    runWorkSink(workSink);
+    runWorkSink(sendSink);
 
     TCNetworkMessage tcMessage = new PingMessage(new NullMessageMonitor());
-    assertTrue(workSink.size() == 0);
+    assertTrue(sendSink.size() == 0);
     gdp.send(tcMessage);
-    assertTrue(workSink.size() == 1);
-    runWorkSink(workSink);
+    assertTrue(sendSink.size() == 1);
+    runWorkSink(sendSink);
     assertTrue(delivery.created);
     assertTrue(delivery.tcMessage == tcMessage);
     TestProtocolMessage pm = (TestProtocolMessage) delivery.msg;
@@ -56,8 +57,8 @@ public class GuaranteedDeliveryProtocolTest extends TestCase {
     delivery.clear();
     pm.isSend = true;
     gdp.receive(pm);
-    assertTrue(workSink.size() == 1);
-    runWorkSink(workSink);
+    assertTrue(receiveSink.size() == 1);
+    runWorkSink(receiveSink);
 
     assertTrue(receiveQueue.take() == tcMessage);
     assertTrue(delivery.sentAck);
@@ -69,15 +70,15 @@ public class GuaranteedDeliveryProtocolTest extends TestCase {
     ackMessage.ack = 0;
     ackMessage.isAck = true;
     gdp.receive(ackMessage);
-    assertTrue(workSink.size() == 1);
-    runWorkSink(workSink);
+    assertTrue(sendSink.size() == 1);
+    runWorkSink(sendSink);
     delivery.clear();
 
     gdp.send(tcMessage);
     gdp.send(tcMessage);
-    assertTrue(workSink.size() == 1);
-    runWorkSink(workSink);
-    assertTrue(workSink.size() == 1);
+    assertTrue(sendSink.size() == 1);
+    runWorkSink(sendSink);
+    assertTrue(sendSink.size() == 1);
   }
 
   private void runWorkSink(TestSink sink) {
