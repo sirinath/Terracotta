@@ -19,11 +19,12 @@ import java.util.ArrayList;
 public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends TransparentTestBase implements TestConfigurator {
 
   private int clientCount = 6;
-  private String smallSink = "250";
+  private String smallL2Sink = "50";
+  private String smallSendQueue = "50";
   
   public ObjectDataSmallSinkL1ReconnectActivePassiveTest() {
     // MNK-568
-    disableAllUntil("2008-07-15");
+    //disableAllUntil("2008-07-15");
   }
 
   protected Class getApplicationClass() {
@@ -36,13 +37,14 @@ public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends Transparent
   }
   
   protected void setExtraJvmArgs(final ArrayList jvmArgs) {
-    System.setProperty("com.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY + "="+smallSink);
+    // set L2 stage sink capacity
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallL2Sink);
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallL2Sink);
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY + "=" + smallL2Sink);
 
-    System.setProperty("com.tc." + TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    TCPropertiesImpl.setProperty(TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY + "="+smallSink);
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP, smallSendQueue);
+    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP, smallSendQueue);
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP + "=" + smallSendQueue);
   }
 
 
