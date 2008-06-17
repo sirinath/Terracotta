@@ -134,27 +134,6 @@ public interface TCPropertiesConsts {
    * tcgroupcomm.reconnect.enabled  -  enable L2-L2 reconnect
 
    ********************************************************************************************************************/
-  public static final String   L2_NHA_GROUPCOMM_TYPE                                  = "l2.nha.groupcomm.type";
-  public static final String   L2_NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT                   = "l2.nha.tcgroupcomm.handshake.timeout";
-  public static final String   L2_NHA_TCGROUPCOMM_RESPONSE_TIMELIMIT                  = "l2.nha.tcgroupcomm.response.timelimit";
-  public static final String   L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED                   = "l2.nha.tcgroupcomm.reconnect.enabled";
-  public static final String   L2_NHA_TCGROUPCOMM_RECONNECT_TIMEOUT                   = "l2.nha.tcgroupcomm.reconnect.timeout";
-  public static final String   L2_NHA_TCGROUPCOMM_DISCOVERY_INTERVAL                  = "l2.nha.tcgroupcomm.discovery.interval";
-  // a hidden tc.properties only used for l2 proxy testing purpose
-  public static final String   L2_NHA_TCGROUPCOMM_RECONNECT_L2PROXY_TO_PORT           = "l2.nha.tcgroupcomm.l2proxytoport";
-  public static final String   L2_NHA_SEND_TIMEOUT_MILLS                              = "l2.nha.send.timeout.millis";
-  public static final String   L2_NHA_TRIBES_FAILURE_DETECTOR_MILLS                   = "l2.nha.tribes.failuredetector.millis";
-  public static final String   L2_NHA_MCAST_ENABLED                                   = "l2.nha.mcast.enabled";
-  public static final String   L2_NHA_TRIBES_ORDER_INTERCEPTOR_ENABLED                = "l2.nha.tribes.orderinterceptor.enabled";
-  public static final String   L2_NHA_TRIBES_MCAST_MCASTPORT                          = "l2.nha.tribes.mcast.mcastPort";
-  public static final String   L2_NHA_TRIBES_MCAST_MCASTADDRESS                       = "l2.nha.tribes.mcast.mcastAddress";
-  public static final String   L2_NHA_TRIBES_MCAST_MEMBERDROPTIME                     = "l2.nha.tribes.mcast.memberDropTime";
-  public static final String   L2_NHA_TRIBES_MCAST_MCASTFREQUENCY                     = "l2.nha.tribes.mcast.mcastFrequency";
-  public static final String   L2_NHA_TRIBES_MCAST_TCPLISTENPORT                      = "l2.nha.tribes.mcast.tcpListenPort";
-  public static final String   L2_NHA_TRIBES_MCAST_TCPLISTENHOST                      = "l2.nha.tribes.mcast.tcpListenHost";
-  public static final String   L2_NHA_OOO_MAX_DELAYEDACKS                             = "l2.nha.ooo.maxDelayedAcks";
-  public static final String   L2_NHA_OOO_SEND_WINDOW                                 = "l2.nha.ooo.sendWindow";
-=======
   public static final String L2_NHA_GROUPCOMM_TYPE                                  = "l2.nha.groupcomm.type";
   public static final String L2_NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT                   = "l2.nha.tcgroupcomm.handshake.timeout";
   public static final String L2_NHA_TCGROUPCOMM_RESPONSE_TIMELIMIT                  = "l2.nha.tcgroupcomm.response.timelimit";
@@ -176,7 +155,6 @@ public interface TCPropertiesConsts {
   public static final String L2_NHA_TRIBES_MCAST_MCASTFREQUENCY                     = "l2.nha.tribes.mcast.mcastFrequency";
   public static final String L2_NHA_TRIBES_MCAST_TCPLISTENPORT                      = "l2.nha.tribes.mcast.tcpListenPort";
   public static final String L2_NHA_TRIBES_MCAST_TCPLISTENHOST                      = "l2.nha.tribes.mcast.tcpListenHost";
->>>>>>> .merge-right.r8846
 
   /*********************************************************************************************************************
    * Section : Misc L2 Properties Description : Other Miscellaneous L2 Properties
